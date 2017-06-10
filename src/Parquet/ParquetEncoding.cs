@@ -18,7 +18,7 @@ namespace Parquet
             case ParquetTypes.Type.Int64:
                 return (T)(object) Int64.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
             case ParquetTypes.Type.Int96:
-               return (T)(object) Convert.ToInt64(parquetBlock[0]);
+               return (T)(object) Decimal.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
              case ParquetTypes.Type.Float:
                 return (T)(object) Single.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
              case ParquetTypes.Type.Double:
