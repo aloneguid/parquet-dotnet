@@ -13,8 +13,10 @@ namespace Parquet
           {
             case ParquetTypes.Type.Int32:
                return (T)(object)Convert.ToInt32(parquetBlock[0]);
-             case ParquetTypes.Type.Int64:
+            case ParquetTypes.Type.Int64:
                 return (T)(object)Convert.ToInt64(parquetBlock[0]);
+            case ParquetTypes.Type.Int96:
+               return (T)(object)Convert.ToInt64(parquetBlock[0]);
             default:
                return default(T);
          }

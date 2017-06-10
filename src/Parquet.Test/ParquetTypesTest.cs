@@ -29,6 +29,25 @@ namespace Parquet.Test
           Assert.Equal(1, output);
        }
 
+       [Fact]
+       public void TestInt96()
+       {
+         // have to fit 12 bytes into this 
+         /*
+          * assert b'\x00\x00\x00\x00\x00\x00\x00\x00\xe7\x03\x00\x00' == fastparquet.encoding.read_plain(
+
+             struct.pack(b"<qi", 0, 999),
+
+             parquet_thrift.Type.INT96, 1)
+             */
+          byte[] parquetBlock = new byte[] {1 };
+         
+          var encoding = new ParquetEncoding();
+          var output = encoding.ReadPlain<Int64>(parquetBlock, ParquetTypes.Type.Int64, 1);
+
+          Assert.Equal(1, output);
+       }
+
       private string GetDataFilePath(string name)
         {
             string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
