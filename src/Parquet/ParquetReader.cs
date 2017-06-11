@@ -1,44 +1,46 @@
-﻿using System;
+﻿using Parquet.File;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace Parquet
 {
-    public class ParquetReader : IDisposable
-    {
-        private readonly Stream _input;
-        private readonly BinaryReader _reader;
+   public class ParquetReader : IDisposable
+   {
+      private readonly Stream _input;
+      private readonly BinaryReader _reader;
+      private readonly FileMetaData _meta;
 
-        public ParquetReader(Stream input)
-        {
-            _input = input;
-            _reader = new BinaryReader(input);
+      public ParquetReader(Stream input)
+      {
+         _input = input;
+         _reader = new BinaryReader(input);
 
-            ReadMetadata();
-        }
+         _meta = ReadMetadata();
+      }
 
-        private void ReadMetadata()
-        {
-            _input.Seek(-8, SeekOrigin.End);
-            int footerLength = _reader.ReadInt32();
-            char[] magic = _reader.ReadChars(4);
+      public void TestRead()
+      {
+         ColumnChunk cc = _meta.Row_groups[0].Columns[1];   //bool col
 
-            _input.Seek(-8 - footerLength, SeekOrigin.End);
-            FileMetaData meta = _input.ThriftRead<FileMetaData>();
+         var p = new Page(cc, _input);
+      }
 
-            /*foreach (PQ.SchemaElement se in meta.Schema)
-            {
-                _columnNameToSchema[se.Name] = se;
-            }
+      private FileMetaData ReadMetadata()
+      {
+         //go to -4 bytes (PAR1) -4 bytes (footer length number)
+         _input.Seek(-8, SeekOrigin.End);
+         int footerLength = _reader.ReadInt32();
+         char[] magic = _reader.ReadChars(4);
 
-            Version = new Version(meta.Version, 0, 0, 0);
-            CreatedBy = meta.Created_by;
-            _rowGroups.AddRange(ParquetRowGroup.FromParquet(meta.Row_groups));*/
-        }
+         //go to footer data and deserialize it
+         _input.Seek(-8 - footerLength, SeekOrigin.End);
+         return _input.ThriftRead<FileMetaData>();
+      }
 
-        public void Dispose()
-        {
-        }
-    }
+      public void Dispose()
+      {
+      }
+   }
 }
