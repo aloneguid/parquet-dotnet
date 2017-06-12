@@ -24,3 +24,5 @@ More to come once I understand the complexity of parquet.
 We use [Thrift for .NET Core](https://github.com/apache/thrift/tree/master/lib/netcore) project to read Thrift specification which is take from the official [parquet-format](https://github.com/Parquet/parquet-format) repository as is. This depends on .NET Standard 1.6 which makes it a requirement for this project as well.
 
 To regenerate thrift classes use `scripts\thriftgen.ps1`. Project is set to define `SILVERLIGHT` constant as .NET Standard is not fully compatible with this generator, but tested to be working in silverlight compatibility mode.
+
+Parquet compatibility samples: https://github.com/Parquet/parquet-compatibility
