@@ -6,11 +6,15 @@ using System.Text;
 
 namespace Parquet
 {
+   /// <summary>
+   /// Implements Apache Parquet format reader
+   /// </summary>
    public class ParquetReader : IDisposable
    {
       private readonly Stream _input;
       private readonly BinaryReader _reader;
       private readonly FileMetaData _meta;
+      private readonly Schema _schema;
 
       public ParquetReader(Stream input)
       {
@@ -18,17 +22,27 @@ namespace Parquet
          _reader = new BinaryReader(input);
 
          _meta = ReadMetadata();
+         _schema = new Schema(_meta);
       }
 
-      public void TestRead()
+      /// <summary>
+      /// Test read, to be defined
+      /// </summary>
+      public void Read()
       {
-         ColumnChunk cc = _meta.Row_groups[0].Columns[1];   //bool col
-
-         var p = new Page(cc, _input);
+         foreach(RowGroup rg in _meta.Row_groups)
+         {
+            foreach(ColumnChunk cc in rg.Columns)
+            {
+               var p = new Page(cc, _schema, _input);
+            }
+         }
       }
 
       private FileMetaData ReadMetadata()
       {
+         //todo: validation that it's a parquet format indeed
+
          //go to -4 bytes (PAR1) -4 bytes (footer length number)
          _input.Seek(-8, SeekOrigin.End);
          int footerLength = _reader.ReadInt32();

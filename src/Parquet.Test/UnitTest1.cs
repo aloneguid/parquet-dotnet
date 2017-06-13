@@ -30,7 +30,7 @@ namespace Parquet.Test
          {
             using (var r = new ParquetReader(s))
             {
-               r.TestRead();
+               r.Read();
             }
          }
 

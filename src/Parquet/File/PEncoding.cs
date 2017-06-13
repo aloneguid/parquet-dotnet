@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using TType = global::Type;
 
 namespace Parquet.File
 {
@@ -43,18 +45,62 @@ namespace Parquet.File
             ReadBitpacked(header, reader);
       }
 
-      public static void ReadPlain(BinaryReader reader)
+      public static void ReadPlain(BinaryReader reader, TType thriftType)
       {
          long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
          byte[] data = reader.ReadBytes((int)byteCount);
 
-         //todo: avoid using BitArray as this requires creating a new class every time we read data
-         bool[] result = new BitArray(data).ConvertToBoolArray(8);
+         switch (thriftType)
+         {
+            case TType.BOOLEAN:
+               //todo: avoid using BitArray as this requires creating a new class every time we read data
+               bool[] rb = ReadPlainBoolean(data, 8);
+               break;
+            case TType.INT32:
+               var r32 = new List<int>();
+               for(int i = 0; i < data.Length; i += 4)
+               {
+                  int iv = BitConverter.ToInt32(data, i);
+                  r32.Add(iv);
+               }
+               break;
+            case TType.INT96:
+               //todo: this is a sample how to read int96, not tested this yet
+               var r96 = new List<BigInteger>();
+               byte[] v96 = new byte[12];
+               for(int i = 0; i < data.Length; i+= 12)
+               {
+                  Array.Copy(data, i, v96, 0, 12);
+                  var bi = new BigInteger(v96);
+               }
+               break;
+            default:
+               throw new NotImplementedException($"type {thriftType} not implemented");
+         }
+
       }
 
-      private static void ReadPlainBoolean()
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      private static bool[] ReadPlainBoolean(byte[] data, int count)
       {
+         var res = new bool[count];
+         int ibit = 0;
+         int ibyte = 0;
+         byte b = data[0];
 
+         for(int ires = 0; ires < res.Length; ires++)
+         {
+            if (ibit == 8)
+            {
+               b = data[++ibyte];
+               ibit = 0;
+            }
+
+            bool set = ((b >> ibit++) & 1) == 1;
+            res[ires] = set;
+         }
+
+         return res;
       }
 
       /// <summary>
