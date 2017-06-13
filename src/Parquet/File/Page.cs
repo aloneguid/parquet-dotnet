@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text;
 
 namespace Parquet.File
@@ -36,17 +37,37 @@ namespace Parquet.File
          byte[] data = new byte[_ph.Compressed_page_size];
          int read = _inputStream.Read(data, 0, data.Length);
 
-         //read definition levels
+         using (var dataStream = new MemoryStream(data))
+         {
+            using (var dataReader = new BinaryReader(dataStream))
+            {
+               //todo: read repetition levels
 
+               //read definition levels
+               ReadData(dataReader, _ph.Data_page_header.Definition_level_encoding);
 
-
-         //bool[] values = new BitArray(data).ConvertToBoolArray(count);/
-
-
+               //read actual data
+               ReadData(dataReader, _ph.Data_page_header.Encoding);
+            }
+         }
          //assume plain encoding
-
-
-
       }
+
+      private void ReadData(BinaryReader reader, Encoding encoding)
+      {
+         switch(encoding)
+         {
+            case Encoding.RLE:   //this is RLE/Bitpacking hybrid, not just RLE
+               PEncoding.ReadRleBitpackedHybrid(reader);
+               break;
+            case Encoding.PLAIN:
+               PEncoding.ReadPlain(reader);
+               break;
+            default:
+               throw new ApplicationException($"encoding {encoding} is not supported.");  //todo: replace with own exception type
+         }
+      }
+
+
     }
 }
