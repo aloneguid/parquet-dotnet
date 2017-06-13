@@ -14,7 +14,11 @@ We have just started to work on this library, contributors are welcome.
 
 |Phase|Description|State|
 |-----|-----------|-----|
-|1|Implement plain encoding reader and writer for all known types|in progress|
+|1|Implement reader which can understand the first test file (alltypes_plain.parquet). This is using a variety of encodings an no compression. Inline columns are not supported. Understand how to return results with minimum of boxing/unboxing.|in progress|
+|2|Implement readers for any types not mentioned in phase 1, support NULL values.|planning|
+|3|Implement writer which can do the same types as in phase 1 and 2.|planning|
+|4|Support GZIP decompression/compression|planning|
+|5|Support Snappy decompression/compression. Must be managed.|planning| 
 
 More to come once I understand the complexity of parquet.
 
