@@ -25,11 +25,9 @@ namespace Parquet.File
          _thriftChunk = thriftChunk;
          _schema = schema;
          _inputStream = inputStream;
-
-         Read();
       }
 
-      private void Read()
+      public ParquetFrame Read()
       {
          //get the minimum offset, we'll just read pages in sequence
          long offset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
@@ -48,7 +46,7 @@ namespace Parquet.File
          long num = 0;
          while(true)
          {
-            var page = ReadPage(ph);
+            var page = ReadDataPage(ph);
 
             if (num >= _thriftChunk.Meta_data.Num_values)
             {
@@ -57,6 +55,8 @@ namespace Parquet.File
             }
             ph = _inputStream.ThriftRead<PageHeader>(); //get next page
          }
+
+         return new ParquetFrame(); //todo: collect results
       }
 
       private ICollection ReadDictionaryPage(PageHeader ph)
@@ -74,39 +74,74 @@ namespace Parquet.File
          }
       }
 
-      private (ICollection definitions, ICollection repetitions, ICollection values) ReadPage(PageHeader ph)
+      private (ICollection definitions, ICollection repetitions, ICollection values) ReadDataPage(PageHeader ph)
       {
          byte[] data = ReadRawBytes(ph, _inputStream);
 
          using (var dataStream = new MemoryStream(data))
          {
-            using (var dataReader = new BinaryReader(dataStream))
+            using (var reader = new BinaryReader(dataStream))
             {
                //todo: read repetition levels (only relevant for nested columns)
 
                //read definition levels
-               ICollection definitions = ReadData(dataReader, ph.Data_page_header.Definition_level_encoding);
+
+               ICollection definitions = ReadDefinitionLevels(reader);
 
                //read actual data
-               ICollection values = ReadData(dataReader, ph.Data_page_header.Encoding);
+               ICollection values = ReadData(reader, ph.Data_page_header.Encoding, 0);
 
                return (definitions, null, values);
             }
          }
       }
 
-      private ICollection ReadData(BinaryReader reader, Encoding encoding)
+      private ICollection ReadDefinitionLevels(BinaryReader reader)
       {
+         const int maxDefinitionLevel = 1;   //todo: for nested columns this needs to be calculated properly
+         int bitWidth = PEncoding.GetWidthFromMaxInt(maxDefinitionLevel);
+         return PEncoding.ReadRleBitpackedHybrid(reader, bitWidth, 0);
+      }
+
+      private ICollection ReadData(BinaryReader reader, Encoding encoding, int bitWidth)
+      {
+         //dictionary encoding uses RLE to encode data
+
          switch(encoding)
          {
             case Encoding.RLE:               //this is RLE/Bitpacking hybrid, not just RLE
+               //RLE bit width is either in schema definition, or when missing a following byte from stream
+               int rleBitWidth;
+               if (bitWidth != 0)
+               {
+                  rleBitWidth = bitWidth;
+               }
+               else
+               {
+                  rleBitWidth = _schema[_thriftChunk].Type_length;
+                  if (rleBitWidth == 0) rleBitWidth = reader.ReadInt32();
+               }
+               int rleLength = GetRemainingLength(reader);
+               return PEncoding.ReadRleBitpackedHybrid(reader, rleBitWidth, rleLength);
+
             case Encoding.PLAIN_DICTIONARY:  //dictinary page is also encoded in RLE, but needs merging upwards
-               return PEncoding.ReadRleBitpackedHybrid(reader);
+               //before the values in RLE format there is 1 byte specifying bit width of entry IDs
+               int dicBitWidth = bitWidth;
+               if(dicBitWidth == 0) dicBitWidth = reader.ReadByte();
+               int dicLength = GetRemainingLength(reader);
+               return PEncoding.ReadRleBitpackedHybrid(reader, dicBitWidth, dicLength);
+
             case Encoding.PLAIN:
                return PEncoding.ReadPlain(reader, Type.BOOLEAN);   //todo: it's not just boolean!
+
             default:
                throw new Exception($"encoding {encoding} is not supported.");  //todo: replace with own exception type
          }
+      }
+
+      private int GetRemainingLength(BinaryReader reader)
+      {
+         return (int)(reader.BaseStream.Length - reader.BaseStream.Position);
       }
 
       private static byte[] ReadRawBytes(PageHeader ph, Stream inputStream)

@@ -33,14 +33,15 @@ namespace Parquet.File
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
 
-      public static ICollection ReadRleBitpackedHybrid(BinaryReader reader)
+      public static ICollection ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length)
       {
-         int length = reader.ReadInt32();
+         if (length == 0) length = reader.ReadInt32();
+
          int header = ReadUnsignedVarInt(reader);
          bool isRle = (header & 1) == 0;
 
          if (isRle)
-            return ReadRle(header, reader);
+            return ReadRle(header, reader, bitWidth);
          else
             return ReadBitpacked(header, reader);
       }
@@ -125,7 +126,7 @@ namespace Parquet.File
       /// <summary>
       /// Read run-length encoded run from the given header and bit length.
       /// </summary>
-      public static int[] ReadRle(int header, BinaryReader reader, int bitWidth = 1)
+      public static int[] ReadRle(int header, BinaryReader reader, int bitWidth)
       {
          // The count is determined from the header and the width is used to grab the
          // value that's repeated. Yields the value repeated count times.
@@ -183,6 +184,17 @@ namespace Parquet.File
       public static int MaskForBits(int width)
       {
          return (1 << width) - 1;
+      }
+
+      public static int GetWidthFromMaxInt(int value)
+      {
+         for(int i = 0; i < 64; i++)
+         {
+            if (value == 0) return i;
+            value >>= 1;
+         }
+
+         return 1;
       }
 
    }
