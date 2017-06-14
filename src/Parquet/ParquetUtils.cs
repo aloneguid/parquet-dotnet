@@ -25,5 +25,46 @@ namespace Parquet
              byt = (byte)((byt << 1) | (array[i] ? 1 : 0));
           return byt;
        }
+
+       
+   }
+
+   public class NumericUtils
+   {
+      public byte[] IntToLittleEndian(int data)
+      {
+         byte[] b = new byte[4];
+         b[0] = (byte) data;
+         b[1] = (byte) (((uint) data >> 8) & 0xFF);
+         b[2] = (byte) (((uint) data >> 16) & 0xFF);
+         b[3] = (byte) (((uint) data >> 24) & 0xFF);
+
+         return b;
+      }
+
+
+      public byte[] LongToLittleEndian(long data)
+      {
+         byte[] b = new byte[8];
+
+         for (int i = 0; i < 8; i++)
+         {
+            b[i] = (byte) (data & 0xFF);
+            data >>= 8;
+         }
+
+         return b;
+      }
+      
+
+      public byte[] DoubleToLittleEndian(double data)
+      {
+         return BitConverter.GetBytes(data);
+      }
+
+      public byte[] FloatToLittleEndian(float data)
+      {
+         return BitConverter.GetBytes(data);
+      }
    }
 }
