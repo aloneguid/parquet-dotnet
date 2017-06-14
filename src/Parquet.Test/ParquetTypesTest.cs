@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using Xunit;
 
@@ -11,7 +12,8 @@ namespace Parquet.Test
        [Fact]
        public void TestInt32()
        {
-          byte[] parquetBlock = System.Text.Encoding.UTF8.GetBytes("999");
+          var utils = new NumericUtils();
+          byte[] parquetBlock = utils.IntToLittleEndian(999);
 
           var encoding = new ParquetEncoding();
           var output = encoding.ReadPlain<int>(parquetBlock, ParquetTypes.Type.Int32, 3);
@@ -22,10 +24,11 @@ namespace Parquet.Test
        [Fact]
        public void TestInt64()
        {
-          byte[] parquetBlock = System.Text.Encoding.UTF8.GetBytes("9999");
+          var utils = new NumericUtils();
+          byte[] parquetBlock = utils.LongToLittleEndian(9999);
 
           var encoding = new ParquetEncoding();
-          var output = encoding.ReadPlain<Int64>(parquetBlock, ParquetTypes.Type.Int64, 4);
+          var output = encoding.ReadPlain<long>(parquetBlock, ParquetTypes.Type.Int64, 4);
 
           Assert.Equal(9999, output);
        }
@@ -33,7 +36,8 @@ namespace Parquet.Test
        [Fact]
        public void TestFloat()
        {
-          byte[] parquetBlock = System.Text.Encoding.UTF8.GetBytes("9999.999");
+          var utils = new NumericUtils();
+          byte[] parquetBlock = utils.FloatToLittleEndian(9999.999f);
 
           var encoding = new ParquetEncoding();
           var output = encoding.ReadPlain<float>(parquetBlock, ParquetTypes.Type.Float, 8);
@@ -44,7 +48,8 @@ namespace Parquet.Test
        [Fact]
        public void TestDouble()
        {
-          byte[] parquetBlock = System.Text.Encoding.UTF8.GetBytes("9999.9999999");
+          var utils = new NumericUtils();
+          byte[] parquetBlock = utils.DoubleToLittleEndian(9999.9999999D);
 
           var encoding = new ParquetEncoding();
           var output = encoding.ReadPlain<double>(parquetBlock, ParquetTypes.Type.Double, 12);
@@ -67,20 +72,14 @@ namespace Parquet.Test
        [Fact]
        public void TestInt96()
        {
-         // have to fit 12 bytes into this 
-         /*
-          * assert b'\x00\x00\x00\x00\x00\x00\x00\x00\xe7\x03\x00\x00' == fastparquet.encoding.read_plain(
-
-             struct.pack(b"<qi", 0, 999),
-
-             parquet_thrift.Type.INT96, 1)
-             */
-          byte[] parquetBlock = new byte[] {1 };
+          byte[] parquetBlock = new byte[] { 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
          
           var encoding = new ParquetEncoding();
-          var output = encoding.ReadPlain<Int64>(parquetBlock, ParquetTypes.Type.Int64, 1);
+          var output = encoding.ReadPlain<BigInteger>(parquetBlock, ParquetTypes.Type.Int96, 1);
 
-          Assert.Equal(1, output);
+          var bi = new BigInteger(65535D);
+
+          Assert.Equal(bi, output);
        }
 
       private string GetDataFilePath(string name)

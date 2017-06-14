@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace Parquet
@@ -14,15 +15,15 @@ namespace Parquet
           switch (type)
           {
             case ParquetTypes.Type.Int32:
-               return (T) (object) Int32.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
+               return (T) (object) BitConverter.ToInt32(parquetBlock, 0);
             case ParquetTypes.Type.Int64:
-                return (T)(object) Int64.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
+                return (T)(object) BitConverter.ToInt64(parquetBlock, 0);
             case ParquetTypes.Type.Int96:
-               return (T)(object) Convert.ToInt64(parquetBlock[0]);
+               return (T)(object) new BigInteger(parquetBlock);
              case ParquetTypes.Type.Float:
-                return (T)(object) Single.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
+                return (T)(object) BitConverter.ToSingle(parquetBlock, 0);
              case ParquetTypes.Type.Double:
-                return (T)(object) Double.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
+                return (T) (object) BitConverter.ToDouble(parquetBlock, 0);
              case ParquetTypes.Type.Boolean:
                 return (T) (object) new BitArray(parquetBlock).ConvertToBoolArray(count);
             default:
