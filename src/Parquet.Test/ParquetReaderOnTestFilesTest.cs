@@ -33,7 +33,9 @@ namespace Parquet.Test
          {
             using (var r = new ParquetReader(s))
             {
-               r.Read();
+               ParquetFrame frame = r.Read();
+
+               //todo: test ID column
             }
          }
 

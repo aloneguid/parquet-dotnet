@@ -15,5 +15,10 @@ namespace System.IO
          res.Read(proto);
          return res;
       }
+
+      public static void ThriftWrite<T>(this Stream output, T obj) where T: TBase, new()
+      {
+
+      }
    }
 }
