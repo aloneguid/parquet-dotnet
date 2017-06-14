@@ -15,65 +15,65 @@ using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
 
-
-#if !SILVERLIGHT
-[Serializable]
-#endif
-public partial class IndexPageHeader : TBase
+namespace Parquet.Thrift
 {
 
-  public IndexPageHeader() {
-  }
-
-  public void Read (TProtocol iprot)
+  class IndexPageHeader : TBase
   {
-    iprot.IncrementRecursionDepth();
-    try
+
+    public IndexPageHeader() {
+    }
+
+    public void Read (TProtocol iprot)
     {
-      TField field;
-      iprot.ReadStructBegin();
-      while (true)
+      iprot.IncrementRecursionDepth();
+      try
       {
-        field = iprot.ReadFieldBegin();
-        if (field.Type == TType.Stop) { 
-          break;
-        }
-        switch (field.ID)
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
         {
-          default: 
-            TProtocolUtil.Skip(iprot, field.Type);
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
             break;
+          }
+          switch (field.ID)
+          {
+            default: 
+              TProtocolUtil.Skip(iprot, field.Type);
+              break;
+          }
+          iprot.ReadFieldEnd();
         }
-        iprot.ReadFieldEnd();
+        iprot.ReadStructEnd();
       }
-      iprot.ReadStructEnd();
+      finally
+      {
+        iprot.DecrementRecursionDepth();
+      }
     }
-    finally
-    {
-      iprot.DecrementRecursionDepth();
-    }
-  }
 
-  public void Write(TProtocol oprot) {
-    oprot.IncrementRecursionDepth();
-    try
-    {
-      TStruct struc = new TStruct("IndexPageHeader");
-      oprot.WriteStructBegin(struc);
-      oprot.WriteFieldStop();
-      oprot.WriteStructEnd();
+    public void Write(TProtocol oprot) {
+      oprot.IncrementRecursionDepth();
+      try
+      {
+        TStruct struc = new TStruct("IndexPageHeader");
+        oprot.WriteStructBegin(struc);
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+      finally
+      {
+        oprot.DecrementRecursionDepth();
+      }
     }
-    finally
-    {
-      oprot.DecrementRecursionDepth();
-    }
-  }
 
-  public override string ToString() {
-    StringBuilder __sb = new StringBuilder("IndexPageHeader(");
-    __sb.Append(")");
-    return __sb.ToString();
+    public override string ToString() {
+      StringBuilder __sb = new StringBuilder("IndexPageHeader(");
+      __sb.Append(")");
+      return __sb.ToString();
+    }
+
   }
 
 }
-

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Parquet
 {
-    public class ParquetEncoding
+    class ParquetEncoding
     {
        public T ReadPlain<T>(byte[] parquetBlock, ParquetTypes.Type type, int count, int width = 0)
        {
@@ -19,7 +19,11 @@ namespace Parquet
             case ParquetTypes.Type.Int64:
                 return (T)(object) BitConverter.ToInt64(parquetBlock, 0);
             case ParquetTypes.Type.Int96:
+<<<<<<< HEAD
                return (T)(object) new BigInteger(parquetBlock);
+=======
+               return (T)(object) Decimal.Parse(System.Text.Encoding.UTF8.GetString(parquetBlock));
+>>>>>>> a44d614d3090aac60225a52446d138e4948d7b45
              case ParquetTypes.Type.Float:
                 return (T)(object) BitConverter.ToSingle(parquetBlock, 0);
              case ParquetTypes.Type.Double:

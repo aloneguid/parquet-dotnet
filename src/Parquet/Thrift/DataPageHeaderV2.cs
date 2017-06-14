@@ -15,317 +15,317 @@ using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
 
-
-/// <summary>
-/// New page format alowing reading levels without decompressing the data
-/// Repetition and definition levels are uncompressed
-/// The remaining section containing the data is compressed if is_compressed is true
-/// 
-/// </summary>
-#if !SILVERLIGHT
-[Serializable]
-#endif
-public partial class DataPageHeaderV2 : TBase
+namespace Parquet.Thrift
 {
-  private bool _is_compressed;
-  private Statistics _statistics;
 
   /// <summary>
-  /// Number of values, including NULLs, in this data page. *
-  /// </summary>
-  public int Num_values { get; set; }
-
-  /// <summary>
-  /// Number of NULL values, in this data page.
-  /// Number of non-null = num_values - num_nulls which is also the number of values in the data section *
-  /// </summary>
-  public int Num_nulls { get; set; }
-
-  /// <summary>
-  /// Number of rows in this data page. which means pages change on record boundaries (r = 0) *
-  /// </summary>
-  public int Num_rows { get; set; }
-
-  /// <summary>
-  /// Encoding used for data in this page *
+  /// New page format alowing reading levels without decompressing the data
+  /// Repetition and definition levels are uncompressed
+  /// The remaining section containing the data is compressed if is_compressed is true
   /// 
-  /// <seealso cref="Encoding"/>
   /// </summary>
-  public Encoding Encoding { get; set; }
-
-  /// <summary>
-  /// length of the repetition levels
-  /// </summary>
-  public int Definition_levels_byte_length { get; set; }
-
-  /// <summary>
-  /// length of the definition levels
-  /// </summary>
-  public int Repetition_levels_byte_length { get; set; }
-
-  /// <summary>
-  /// whether the values are compressed.
-  /// Which means the section of the page between
-  /// definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
-  /// is compressed with the compression_codec.
-  /// If missing it is considered compressed
-  /// </summary>
-  public bool Is_compressed
+  class DataPageHeaderV2 : TBase
   {
-    get
+    private bool _is_compressed;
+    private Statistics _statistics;
+
+    /// <summary>
+    /// Number of values, including NULLs, in this data page. *
+    /// </summary>
+    public int Num_values { get; set; }
+
+    /// <summary>
+    /// Number of NULL values, in this data page.
+    /// Number of non-null = num_values - num_nulls which is also the number of values in the data section *
+    /// </summary>
+    public int Num_nulls { get; set; }
+
+    /// <summary>
+    /// Number of rows in this data page. which means pages change on record boundaries (r = 0) *
+    /// </summary>
+    public int Num_rows { get; set; }
+
+    /// <summary>
+    /// Encoding used for data in this page *
+    /// 
+    /// <seealso cref="Encoding"/>
+    /// </summary>
+    public Encoding Encoding { get; set; }
+
+    /// <summary>
+    /// length of the repetition levels
+    /// </summary>
+    public int Definition_levels_byte_length { get; set; }
+
+    /// <summary>
+    /// length of the definition levels
+    /// </summary>
+    public int Repetition_levels_byte_length { get; set; }
+
+    /// <summary>
+    /// whether the values are compressed.
+    /// Which means the section of the page between
+    /// definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+    /// is compressed with the compression_codec.
+    /// If missing it is considered compressed
+    /// </summary>
+    public bool Is_compressed
     {
-      return _is_compressed;
-    }
-    set
-    {
-      __isset.is_compressed = true;
-      this._is_compressed = value;
-    }
-  }
-
-  /// <summary>
-  /// optional statistics for this column chunk
-  /// </summary>
-  public Statistics Statistics
-  {
-    get
-    {
-      return _statistics;
-    }
-    set
-    {
-      __isset.statistics = true;
-      this._statistics = value;
-    }
-  }
-
-
-  public Isset __isset;
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
-  public struct Isset {
-    public bool is_compressed;
-    public bool statistics;
-  }
-
-  public DataPageHeaderV2() {
-    this._is_compressed = true;
-    this.__isset.is_compressed = true;
-  }
-
-  public DataPageHeaderV2(int num_values, int num_nulls, int num_rows, Encoding encoding, int definition_levels_byte_length, int repetition_levels_byte_length) : this() {
-    this.Num_values = num_values;
-    this.Num_nulls = num_nulls;
-    this.Num_rows = num_rows;
-    this.Encoding = encoding;
-    this.Definition_levels_byte_length = definition_levels_byte_length;
-    this.Repetition_levels_byte_length = repetition_levels_byte_length;
-  }
-
-  public void Read (TProtocol iprot)
-  {
-    iprot.IncrementRecursionDepth();
-    try
-    {
-      bool isset_num_values = false;
-      bool isset_num_nulls = false;
-      bool isset_num_rows = false;
-      bool isset_encoding = false;
-      bool isset_definition_levels_byte_length = false;
-      bool isset_repetition_levels_byte_length = false;
-      TField field;
-      iprot.ReadStructBegin();
-      while (true)
+      get
       {
-        field = iprot.ReadFieldBegin();
-        if (field.Type == TType.Stop) { 
-          break;
-        }
-        switch (field.ID)
-        {
-          case 1:
-            if (field.Type == TType.I32) {
-              Num_values = iprot.ReadI32();
-              isset_num_values = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 2:
-            if (field.Type == TType.I32) {
-              Num_nulls = iprot.ReadI32();
-              isset_num_nulls = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 3:
-            if (field.Type == TType.I32) {
-              Num_rows = iprot.ReadI32();
-              isset_num_rows = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 4:
-            if (field.Type == TType.I32) {
-              Encoding = (Encoding)iprot.ReadI32();
-              isset_encoding = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 5:
-            if (field.Type == TType.I32) {
-              Definition_levels_byte_length = iprot.ReadI32();
-              isset_definition_levels_byte_length = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 6:
-            if (field.Type == TType.I32) {
-              Repetition_levels_byte_length = iprot.ReadI32();
-              isset_repetition_levels_byte_length = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 7:
-            if (field.Type == TType.Bool) {
-              Is_compressed = iprot.ReadBool();
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 8:
-            if (field.Type == TType.Struct) {
-              Statistics = new Statistics();
-              Statistics.Read(iprot);
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          default: 
-            TProtocolUtil.Skip(iprot, field.Type);
-            break;
-        }
-        iprot.ReadFieldEnd();
+        return _is_compressed;
       }
-      iprot.ReadStructEnd();
-      if (!isset_num_values)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
-      if (!isset_num_nulls)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
-      if (!isset_num_rows)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
-      if (!isset_encoding)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
-      if (!isset_definition_levels_byte_length)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
-      if (!isset_repetition_levels_byte_length)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
+      set
+      {
+        __isset.is_compressed = true;
+        this._is_compressed = value;
+      }
     }
-    finally
-    {
-      iprot.DecrementRecursionDepth();
-    }
-  }
 
-  public void Write(TProtocol oprot) {
-    oprot.IncrementRecursionDepth();
-    try
+    /// <summary>
+    /// optional statistics for this column chunk
+    /// </summary>
+    public Statistics Statistics
     {
-      TStruct struc = new TStruct("DataPageHeaderV2");
-      oprot.WriteStructBegin(struc);
-      TField field = new TField();
-      field.Name = "num_values";
-      field.Type = TType.I32;
-      field.ID = 1;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteI32(Num_values);
-      oprot.WriteFieldEnd();
-      field.Name = "num_nulls";
-      field.Type = TType.I32;
-      field.ID = 2;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteI32(Num_nulls);
-      oprot.WriteFieldEnd();
-      field.Name = "num_rows";
-      field.Type = TType.I32;
-      field.ID = 3;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteI32(Num_rows);
-      oprot.WriteFieldEnd();
-      field.Name = "encoding";
-      field.Type = TType.I32;
-      field.ID = 4;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteI32((int)Encoding);
-      oprot.WriteFieldEnd();
-      field.Name = "definition_levels_byte_length";
-      field.Type = TType.I32;
-      field.ID = 5;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteI32(Definition_levels_byte_length);
-      oprot.WriteFieldEnd();
-      field.Name = "repetition_levels_byte_length";
-      field.Type = TType.I32;
-      field.ID = 6;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteI32(Repetition_levels_byte_length);
-      oprot.WriteFieldEnd();
-      if (__isset.is_compressed) {
-        field.Name = "is_compressed";
-        field.Type = TType.Bool;
-        field.ID = 7;
+      get
+      {
+        return _statistics;
+      }
+      set
+      {
+        __isset.statistics = true;
+        this._statistics = value;
+      }
+    }
+
+
+    public Isset __isset;
+    
+    
+    
+    public struct Isset {
+      public bool is_compressed;
+      public bool statistics;
+    }
+
+    public DataPageHeaderV2() {
+      this._is_compressed = true;
+      this.__isset.is_compressed = true;
+    }
+
+    public DataPageHeaderV2(int num_values, int num_nulls, int num_rows, Encoding encoding, int definition_levels_byte_length, int repetition_levels_byte_length) : this() {
+      this.Num_values = num_values;
+      this.Num_nulls = num_nulls;
+      this.Num_rows = num_rows;
+      this.Encoding = encoding;
+      this.Definition_levels_byte_length = definition_levels_byte_length;
+      this.Repetition_levels_byte_length = repetition_levels_byte_length;
+    }
+
+    public void Read (TProtocol iprot)
+    {
+      iprot.IncrementRecursionDepth();
+      try
+      {
+        bool isset_num_values = false;
+        bool isset_num_nulls = false;
+        bool isset_num_rows = false;
+        bool isset_encoding = false;
+        bool isset_definition_levels_byte_length = false;
+        bool isset_repetition_levels_byte_length = false;
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
+        {
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            case 1:
+              if (field.Type == TType.I32) {
+                Num_values = iprot.ReadI32();
+                isset_num_values = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 2:
+              if (field.Type == TType.I32) {
+                Num_nulls = iprot.ReadI32();
+                isset_num_nulls = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 3:
+              if (field.Type == TType.I32) {
+                Num_rows = iprot.ReadI32();
+                isset_num_rows = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 4:
+              if (field.Type == TType.I32) {
+                Encoding = (Encoding)iprot.ReadI32();
+                isset_encoding = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 5:
+              if (field.Type == TType.I32) {
+                Definition_levels_byte_length = iprot.ReadI32();
+                isset_definition_levels_byte_length = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 6:
+              if (field.Type == TType.I32) {
+                Repetition_levels_byte_length = iprot.ReadI32();
+                isset_repetition_levels_byte_length = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 7:
+              if (field.Type == TType.Bool) {
+                Is_compressed = iprot.ReadBool();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 8:
+              if (field.Type == TType.Struct) {
+                Statistics = new Statistics();
+                Statistics.Read(iprot);
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            default: 
+              TProtocolUtil.Skip(iprot, field.Type);
+              break;
+          }
+          iprot.ReadFieldEnd();
+        }
+        iprot.ReadStructEnd();
+        if (!isset_num_values)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_num_nulls)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_num_rows)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_encoding)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_definition_levels_byte_length)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_repetition_levels_byte_length)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+      }
+      finally
+      {
+        iprot.DecrementRecursionDepth();
+      }
+    }
+
+    public void Write(TProtocol oprot) {
+      oprot.IncrementRecursionDepth();
+      try
+      {
+        TStruct struc = new TStruct("DataPageHeaderV2");
+        oprot.WriteStructBegin(struc);
+        TField field = new TField();
+        field.Name = "num_values";
+        field.Type = TType.I32;
+        field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteBool(Is_compressed);
+        oprot.WriteI32(Num_values);
         oprot.WriteFieldEnd();
+        field.Name = "num_nulls";
+        field.Type = TType.I32;
+        field.ID = 2;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI32(Num_nulls);
+        oprot.WriteFieldEnd();
+        field.Name = "num_rows";
+        field.Type = TType.I32;
+        field.ID = 3;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI32(Num_rows);
+        oprot.WriteFieldEnd();
+        field.Name = "encoding";
+        field.Type = TType.I32;
+        field.ID = 4;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI32((int)Encoding);
+        oprot.WriteFieldEnd();
+        field.Name = "definition_levels_byte_length";
+        field.Type = TType.I32;
+        field.ID = 5;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI32(Definition_levels_byte_length);
+        oprot.WriteFieldEnd();
+        field.Name = "repetition_levels_byte_length";
+        field.Type = TType.I32;
+        field.ID = 6;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI32(Repetition_levels_byte_length);
+        oprot.WriteFieldEnd();
+        if (__isset.is_compressed) {
+          field.Name = "is_compressed";
+          field.Type = TType.Bool;
+          field.ID = 7;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteBool(Is_compressed);
+          oprot.WriteFieldEnd();
+        }
+        if (Statistics != null && __isset.statistics) {
+          field.Name = "statistics";
+          field.Type = TType.Struct;
+          field.ID = 8;
+          oprot.WriteFieldBegin(field);
+          Statistics.Write(oprot);
+          oprot.WriteFieldEnd();
+        }
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+      finally
+      {
+        oprot.DecrementRecursionDepth();
+      }
+    }
+
+    public override string ToString() {
+      StringBuilder __sb = new StringBuilder("DataPageHeaderV2(");
+      __sb.Append(", Num_values: ");
+      __sb.Append(Num_values);
+      __sb.Append(", Num_nulls: ");
+      __sb.Append(Num_nulls);
+      __sb.Append(", Num_rows: ");
+      __sb.Append(Num_rows);
+      __sb.Append(", Encoding: ");
+      __sb.Append(Encoding);
+      __sb.Append(", Definition_levels_byte_length: ");
+      __sb.Append(Definition_levels_byte_length);
+      __sb.Append(", Repetition_levels_byte_length: ");
+      __sb.Append(Repetition_levels_byte_length);
+      if (__isset.is_compressed) {
+        __sb.Append(", Is_compressed: ");
+        __sb.Append(Is_compressed);
       }
       if (Statistics != null && __isset.statistics) {
-        field.Name = "statistics";
-        field.Type = TType.Struct;
-        field.ID = 8;
-        oprot.WriteFieldBegin(field);
-        Statistics.Write(oprot);
-        oprot.WriteFieldEnd();
+        __sb.Append(", Statistics: ");
+        __sb.Append(Statistics== null ? "<null>" : Statistics.ToString());
       }
-      oprot.WriteFieldStop();
-      oprot.WriteStructEnd();
+      __sb.Append(")");
+      return __sb.ToString();
     }
-    finally
-    {
-      oprot.DecrementRecursionDepth();
-    }
-  }
 
-  public override string ToString() {
-    StringBuilder __sb = new StringBuilder("DataPageHeaderV2(");
-    __sb.Append(", Num_values: ");
-    __sb.Append(Num_values);
-    __sb.Append(", Num_nulls: ");
-    __sb.Append(Num_nulls);
-    __sb.Append(", Num_rows: ");
-    __sb.Append(Num_rows);
-    __sb.Append(", Encoding: ");
-    __sb.Append(Encoding);
-    __sb.Append(", Definition_levels_byte_length: ");
-    __sb.Append(Definition_levels_byte_length);
-    __sb.Append(", Repetition_levels_byte_length: ");
-    __sb.Append(Repetition_levels_byte_length);
-    if (__isset.is_compressed) {
-      __sb.Append(", Is_compressed: ");
-      __sb.Append(Is_compressed);
-    }
-    if (Statistics != null && __isset.statistics) {
-      __sb.Append(", Statistics: ");
-      __sb.Append(Statistics== null ? "<null>" : Statistics.ToString());
-    }
-    __sb.Append(")");
-    return __sb.ToString();
   }
 
 }
-

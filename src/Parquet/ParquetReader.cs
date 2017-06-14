@@ -1,44 +1,61 @@
-﻿using System;
+﻿using Parquet.File;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Parquet.Thrift;
 
 namespace Parquet
 {
-    public class ParquetReader : IDisposable
-    {
-        private readonly Stream _input;
-        private readonly BinaryReader _reader;
+   /// <summary>
+   /// Implements Apache Parquet format reader
+   /// </summary>
+   public class ParquetReader : IDisposable
+   {
+      private readonly Stream _input;
+      private readonly BinaryReader _reader;
+      private readonly FileMetaData _meta;
+      private readonly Schema _schema;
 
-        public ParquetReader(Stream input)
-        {
-            _input = input;
-            _reader = new BinaryReader(input);
+      public ParquetReader(Stream input)
+      {
+         _input = input;
+         _reader = new BinaryReader(input);
 
-            ReadMetadata();
-        }
+         _meta = ReadMetadata();
+         _schema = new Schema(_meta);
+      }
 
-        private void ReadMetadata()
-        {
-            _input.Seek(-8, SeekOrigin.End);
-            int footerLength = _reader.ReadInt32();
-            char[] magic = _reader.ReadChars(4);
-
-            _input.Seek(-8 - footerLength, SeekOrigin.End);
-            FileMetaData meta = _input.ThriftRead<FileMetaData>();
-
-            /*foreach (PQ.SchemaElement se in meta.Schema)
+      /// <summary>
+      /// Test read, to be defined
+      /// </summary>
+      public void Read()
+      {
+         foreach(RowGroup rg in _meta.Row_groups)
+         {
+            foreach(ColumnChunk cc in rg.Columns)
             {
-                _columnNameToSchema[se.Name] = se;
+               var p = new Page(cc, _schema, _input);
             }
+         }
+      }
 
-            Version = new Version(meta.Version, 0, 0, 0);
-            CreatedBy = meta.Created_by;
-            _rowGroups.AddRange(ParquetRowGroup.FromParquet(meta.Row_groups));*/
-        }
+      private FileMetaData ReadMetadata()
+      {
+         //todo: validation that it's a parquet format indeed
 
-        public void Dispose()
-        {
-        }
-    }
+         //go to -4 bytes (PAR1) -4 bytes (footer length number)
+         _input.Seek(-8, SeekOrigin.End);
+         int footerLength = _reader.ReadInt32();
+         char[] magic = _reader.ReadChars(4);
+
+         //go to footer data and deserialize it
+         _input.Seek(-8 - footerLength, SeekOrigin.End);
+         return _input.ThriftRead<FileMetaData>();
+      }
+
+      public void Dispose()
+      {
+      }
+   }
 }

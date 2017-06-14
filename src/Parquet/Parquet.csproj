@@ -6,6 +6,8 @@
 
   <PropertyGroup>
     <DefineConstants>SILVERLIGHT</DefineConstants>
+    <SignAssembly>False</SignAssembly>
+    <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

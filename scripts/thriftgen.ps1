@@ -1,1 +1,1 @@
- ..\tools\thrift-0.10.0.exe --gen csharp -out ..\src\Parquet\Thrift\ ..\src\Parquet\Thrift\parquet.thrift
+ ..\tools\thrift-0.10.0.exe --gen csharp -out ..\src\ ..\src\Parquet\Thrift\parquet.thrift

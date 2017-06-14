@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Encoding = Parquet.Thrift.Encoding;
 
 namespace Parquet
 {
@@ -333,13 +334,13 @@ namespace Parquet
          public Int32? NumValues;
 
          /** Encoding used for this data page **/
-         public Encoding? DataPageEncoding;
+         //public Encoding? DataPageEncoding;
 
          /** Encoding used for definition levels **/
-         public Encoding? DefinitionLevelEncoding;
+         //public Encoding? DefinitionLevelEncoding;
 
          /** Encoding used for repetition levels **/
-         public Encoding? RepetitionLevelEncoding;
+         //public Encoding? RepetitionLevelEncoding;
 
          /** Optional statistics for the data in this page**/
          public Statistics? ParquetStatistics;
@@ -356,7 +357,7 @@ namespace Parquet
          public Int32 NumValues;
 
          /** Encoding using this dictionary page **/
-         public Encoding? ParquetEncoding;
+         //public Encoding? ParquetEncoding;
 
          /** If true, the entries in the dictionary are sorted in ascending order **/
          public bool IsSorted;
@@ -380,7 +381,7 @@ namespace Parquet
          public Int32 NumRows;
 
 /** Encoding used for data in this page **/
-         public Encoding? ParquetEncoding;
+         //public Encoding? ParquetEncoding;
 
 // repetition levels and definition levels are always using RLE (without size in it)
 
@@ -460,7 +461,7 @@ If missing it is considered compressed */
          public PageType PageType;
 
 /** encoding of the page **/
-         public Encoding Encoding;
+         //public Encoding Encoding;
 
 /** number of pages of this type with this encoding **/
          public Int32 Count;
@@ -476,7 +477,7 @@ If missing it is considered compressed */
 
 /** Set of all encodings used for this column. The purpose is to validate
  * whether we can decode those pages. **/
-         public List<Encoding> Encodings;
+         //public List<Encoding> Encodings;
 
 /** Path in schema **/
          public List<string> PathInSchema;
