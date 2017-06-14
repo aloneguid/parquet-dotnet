@@ -33,9 +33,13 @@ namespace Parquet.File
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
 
-      public static ICollection ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length)
+      public static List<int> ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length)
       {
          if (length == 0) length = reader.ReadInt32();
+
+         //todo: use length to read continuously up to "length" bytes
+         //there might be one page after another in RLE/Bitpacking following each other
+         //all the code below is repeatable
 
          int header = ReadUnsignedVarInt(reader);
          bool isRle = (header & 1) == 0;
@@ -43,7 +47,7 @@ namespace Parquet.File
          if (isRle)
             return ReadRle(header, reader, bitWidth);
          else
-            return ReadBitpacked(header, reader);
+            return ReadBitpacked(header, reader, bitWidth);
       }
 
       public static ICollection ReadPlain(BinaryReader reader, TType thriftType)
@@ -126,7 +130,7 @@ namespace Parquet.File
       /// <summary>
       /// Read run-length encoded run from the given header and bit length.
       /// </summary>
-      public static int[] ReadRle(int header, BinaryReader reader, int bitWidth)
+      public static List<int> ReadRle(int header, BinaryReader reader, int bitWidth)
       {
          // The count is determined from the header and the width is used to grab the
          // value that's repeated. Yields the value repeated count times.
@@ -134,28 +138,27 @@ namespace Parquet.File
          int count = header >> 1;
          int width = bitWidth + 7 / 8; //round up to next byte
          byte[] data = reader.ReadBytes(width);
-         //int value = BitConverter(data, 0);
+         if (data.Length > 1) throw new NotImplementedException();
          int value = (int)data[0];
-         int[] result = Enumerable.Repeat(value, count).ToArray();   //todo: not sure how fast it is
-         return result;
+         return Enumerable.Repeat(value, count).ToList();   //todo: not sure how fast it is
       }
 
-      public static ICollection ReadBitpacked(int header, BinaryReader reader, int width = 1)
+      public static List<int> ReadBitpacked(int header, BinaryReader reader, int bitWidth)
       {
          int groupCount = header >> 1;
          int count = groupCount * 8;
-         int byteCount = (width * count) / 8;
+         int byteCount = (bitWidth * count) / 8;
 
          byte[] rawBytes = reader.ReadBytes(byteCount);
-         int mask = MaskForBits(width);
+         int mask = MaskForBits(bitWidth);
 
          int i = 0;
-         byte b = rawBytes[i];
+         int b = rawBytes[i];
          int total = byteCount * 8;
          int bwl = 8;
          int bwr = 0;
-         var tmp = new List<byte>();
-         while (total >= width)
+         var result = new List<int>(total);
+         while (total >= bitWidth)
          {
             if (bwr >= 8)
             {
@@ -163,21 +166,21 @@ namespace Parquet.File
                bwl -= 8;
                b >>= 8;
             }
-            else if (bwl - bwr >= width)
+            else if (bwl - bwr >= bitWidth)
             {
-               byte r = (byte)((b >> bwr) & mask);
-               total -= width;
-               bwr += width;
-               tmp.Add(r);
+               int r = ((b >> bwr) & mask);
+               total -= bitWidth;
+               bwr += bitWidth;
+               result.Add(r);
             }
-            else if (i < byteCount)
+            else if (i + 1 < byteCount)
             {
                i += 1;
-               b |= (byte)(rawBytes[i] << bwl);
+               b |= (rawBytes[i] << bwl);
                bwl += 8;
             }
          }
-         return tmp;
+         return result;
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
