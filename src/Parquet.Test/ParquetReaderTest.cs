@@ -7,7 +7,7 @@ namespace Parquet.Test
 {
    using File = System.IO.File;
 
-   public class UnitTest1
+   public class ParquetReaderTest
    {
       /// <summary>
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+

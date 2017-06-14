@@ -1,16 +1,22 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.12
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A0507D42-940E-4EF9-BD33-46BB6561A2F5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4B-4489-9EE7-C609A2C1BFBB}"
 	ProjectSection(SolutionItems) = preProject
+		..\doc\contributing.md = ..\doc\contributing.md
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.Test", "Parquet.Test\Parquet.Test.csproj", "{8B0A6566-6722-4550-8EF2-1D91DF188F9B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{9B670DE1-D2C6-4F18-81C8-EC0E6A583E53}"
+	ProjectSection(SolutionItems) = preProject
+		..\scripts\thriftgen.ps1 = ..\scripts\thriftgen.ps1
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

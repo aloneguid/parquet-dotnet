@@ -15,136 +15,136 @@ using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
 
-
-/// <summary>
-/// Wrapper struct to store key values
-/// </summary>
-#if !SILVERLIGHT
-[Serializable]
-#endif
-public partial class KeyValue : TBase
+namespace Parquet.Thrift
 {
-  private string _value;
 
-  public string Key { get; set; }
-
-  public string Value
+  /// <summary>
+  /// Wrapper struct to store key values
+  /// </summary>
+  class KeyValue : TBase
   {
-    get
+    private string _value;
+
+    public string Key { get; set; }
+
+    public string Value
     {
-      return _value;
-    }
-    set
-    {
-      __isset.@value = true;
-      this._value = value;
-    }
-  }
-
-
-  public Isset __isset;
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
-  public struct Isset {
-    public bool @value;
-  }
-
-  public KeyValue() {
-  }
-
-  public KeyValue(string key) : this() {
-    this.Key = key;
-  }
-
-  public void Read (TProtocol iprot)
-  {
-    iprot.IncrementRecursionDepth();
-    try
-    {
-      bool isset_key = false;
-      TField field;
-      iprot.ReadStructBegin();
-      while (true)
+      get
       {
-        field = iprot.ReadFieldBegin();
-        if (field.Type == TType.Stop) { 
-          break;
-        }
-        switch (field.ID)
+        return _value;
+      }
+      set
+      {
+        __isset.@value = true;
+        this._value = value;
+      }
+    }
+
+
+    public Isset __isset;
+    
+    
+    
+    public struct Isset {
+      public bool @value;
+    }
+
+    public KeyValue() {
+    }
+
+    public KeyValue(string key) : this() {
+      this.Key = key;
+    }
+
+    public void Read (TProtocol iprot)
+    {
+      iprot.IncrementRecursionDepth();
+      try
+      {
+        bool isset_key = false;
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
         {
-          case 1:
-            if (field.Type == TType.String) {
-              Key = iprot.ReadString();
-              isset_key = true;
-            } else { 
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            case 1:
+              if (field.Type == TType.String) {
+                Key = iprot.ReadString();
+                isset_key = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 2:
+              if (field.Type == TType.String) {
+                Value = iprot.ReadString();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            default: 
               TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 2:
-            if (field.Type == TType.String) {
-              Value = iprot.ReadString();
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          default: 
-            TProtocolUtil.Skip(iprot, field.Type);
-            break;
+              break;
+          }
+          iprot.ReadFieldEnd();
         }
-        iprot.ReadFieldEnd();
+        iprot.ReadStructEnd();
+        if (!isset_key)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
-      iprot.ReadStructEnd();
-      if (!isset_key)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
+      finally
+      {
+        iprot.DecrementRecursionDepth();
+      }
     }
-    finally
-    {
-      iprot.DecrementRecursionDepth();
-    }
-  }
 
-  public void Write(TProtocol oprot) {
-    oprot.IncrementRecursionDepth();
-    try
-    {
-      TStruct struc = new TStruct("KeyValue");
-      oprot.WriteStructBegin(struc);
-      TField field = new TField();
-      field.Name = "key";
-      field.Type = TType.String;
-      field.ID = 1;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteString(Key);
-      oprot.WriteFieldEnd();
-      if (Value != null && __isset.@value) {
-        field.Name = "value";
+    public void Write(TProtocol oprot) {
+      oprot.IncrementRecursionDepth();
+      try
+      {
+        TStruct struc = new TStruct("KeyValue");
+        oprot.WriteStructBegin(struc);
+        TField field = new TField();
+        field.Name = "key";
         field.Type = TType.String;
-        field.ID = 2;
+        field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteString(Value);
+        oprot.WriteString(Key);
         oprot.WriteFieldEnd();
+        if (Value != null && __isset.@value) {
+          field.Name = "value";
+          field.Type = TType.String;
+          field.ID = 2;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteString(Value);
+          oprot.WriteFieldEnd();
+        }
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
       }
-      oprot.WriteFieldStop();
-      oprot.WriteStructEnd();
+      finally
+      {
+        oprot.DecrementRecursionDepth();
+      }
     }
-    finally
-    {
-      oprot.DecrementRecursionDepth();
-    }
-  }
 
-  public override string ToString() {
-    StringBuilder __sb = new StringBuilder("KeyValue(");
-    __sb.Append(", Key: ");
-    __sb.Append(Key);
-    if (Value != null && __isset.@value) {
-      __sb.Append(", Value: ");
-      __sb.Append(Value);
+    public override string ToString() {
+      StringBuilder __sb = new StringBuilder("KeyValue(");
+      __sb.Append(", Key: ");
+      __sb.Append(Key);
+      if (Value != null && __isset.@value) {
+        __sb.Append(", Value: ");
+        __sb.Append(Value);
+      }
+      __sb.Append(")");
+      return __sb.ToString();
     }
-    __sb.Append(")");
-    return __sb.ToString();
+
   }
 
 }
-

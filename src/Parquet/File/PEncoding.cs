@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using TType = global::Type;
+using TType = Parquet.Thrift.Type;
 
 namespace Parquet.File
 {

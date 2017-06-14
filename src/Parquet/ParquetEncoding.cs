@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Parquet
 {
-    public class ParquetEncoding
+    class ParquetEncoding
     {
        public T ReadPlain<T>(byte[] parquetBlock, ParquetTypes.Type type, int count, int width = 0)
        {

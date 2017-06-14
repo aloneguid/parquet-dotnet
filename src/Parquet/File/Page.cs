@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Parquet.Thrift;
+using Encoding = Parquet.Thrift.Encoding;
+using Type = Parquet.Thrift.Type;
 
 namespace Parquet.File
 {
