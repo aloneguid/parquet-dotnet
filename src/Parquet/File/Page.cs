@@ -40,7 +40,7 @@ namespace Parquet.File
 
          if(ph.Type == PageType.DICTIONARY_PAGE)
          {
-            ReadDictionaryPage(ph);
+            ICollection dictionaryPage = ReadDictionaryPage(ph);
 
             ph = _inputStream.ThriftRead<PageHeader>(); //get next page
          }
@@ -48,7 +48,7 @@ namespace Parquet.File
          long num = 0;
          while(true)
          {
-            ReadPage(ph);
+            var page = ReadPage(ph);
 
             if (num >= _thriftChunk.Meta_data.Num_values)
             {
@@ -59,7 +59,7 @@ namespace Parquet.File
          }
       }
 
-      private void ReadDictionaryPage(PageHeader ph)
+      private ICollection ReadDictionaryPage(PageHeader ph)
       {
          //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain enncoding.
 
@@ -69,44 +69,41 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               PEncoding.ReadPlain(dataReader, _thriftChunk.Meta_data.Type);
+               return PEncoding.ReadPlain(dataReader, _thriftChunk.Meta_data.Type);
             }
          }
       }
 
-      private void ReadPage(PageHeader ph)
+      private (ICollection definitions, ICollection repetitions, ICollection values) ReadPage(PageHeader ph)
       {
-         //chunk:
-         //encoding: RLE, PLAIN_DICTIONARY, PLAIN
-
          byte[] data = ReadRawBytes(ph, _inputStream);
 
          using (var dataStream = new MemoryStream(data))
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               //todo: read repetition levels
+               //todo: read repetition levels (only relevant for nested columns)
 
                //read definition levels
-               ReadData(dataReader, ph.Data_page_header.Definition_level_encoding);
+               ICollection definitions = ReadData(dataReader, ph.Data_page_header.Definition_level_encoding);
 
                //read actual data
-               ReadData(dataReader, ph.Data_page_header.Encoding);
+               ICollection values = ReadData(dataReader, ph.Data_page_header.Encoding);
+
+               return (definitions, null, values);
             }
          }
-         //assume plain encoding
       }
 
-      private void ReadData(BinaryReader reader, Encoding encoding)
+      private ICollection ReadData(BinaryReader reader, Encoding encoding)
       {
          switch(encoding)
          {
-            case Encoding.RLE:   //this is RLE/Bitpacking hybrid, not just RLE
-               PEncoding.ReadRleBitpackedHybrid(reader);
-               break;
+            case Encoding.RLE:               //this is RLE/Bitpacking hybrid, not just RLE
+            case Encoding.PLAIN_DICTIONARY:  //dictinary page is also encoded in RLE, but needs merging upwards
+               return PEncoding.ReadRleBitpackedHybrid(reader);
             case Encoding.PLAIN:
-               PEncoding.ReadPlain(reader, Type.BOOLEAN);   //todo: it's not just boolean!
-               break;
+               return PEncoding.ReadPlain(reader, Type.BOOLEAN);   //todo: it's not just boolean!
             default:
                throw new Exception($"encoding {encoding} is not supported.");  //todo: replace with own exception type
          }

@@ -33,19 +33,19 @@ namespace Parquet.File
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
 
-      public static void ReadRleBitpackedHybrid(BinaryReader reader)
+      public static ICollection ReadRleBitpackedHybrid(BinaryReader reader)
       {
          int length = reader.ReadInt32();
          int header = ReadUnsignedVarInt(reader);
          bool isRle = (header & 1) == 0;
 
          if (isRle)
-            ReadRle(header, reader);
+            return ReadRle(header, reader);
          else
-            ReadBitpacked(header, reader);
+            return ReadBitpacked(header, reader);
       }
 
-      public static void ReadPlain(BinaryReader reader, TType thriftType)
+      public static ICollection ReadPlain(BinaryReader reader, TType thriftType)
       {
          long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
          byte[] data = reader.ReadBytes((int)byteCount);
@@ -54,26 +54,25 @@ namespace Parquet.File
          {
             case TType.BOOLEAN:
                //todo: avoid using BitArray as this requires creating a new class every time we read data
-               bool[] rb = ReadPlainBoolean(data, 8);
-               break;
+               return ReadPlainBoolean(data, 8);
             case TType.INT32:
-               var r32 = new List<int>();
+               var r32 = new List<int>(data.Length / 4);
                for(int i = 0; i < data.Length; i += 4)
                {
                   int iv = BitConverter.ToInt32(data, i);
                   r32.Add(iv);
                }
-               break;
+               return r32;
             case TType.INT96:
                //todo: this is a sample how to read int96, not tested this yet
-               var r96 = new List<BigInteger>();
+               var r96 = new List<BigInteger>(data.Length / 12);
                byte[] v96 = new byte[12];
                for(int i = 0; i < data.Length; i+= 12)
                {
                   Array.Copy(data, i, v96, 0, 12);
                   var bi = new BigInteger(v96);
                }
-               break;
+               return r96;
             default:
                throw new NotImplementedException($"type {thriftType} not implemented");
          }
@@ -140,7 +139,7 @@ namespace Parquet.File
          return result;
       }
 
-      public static void ReadBitpacked(int header, BinaryReader reader, int width = 1)
+      public static ICollection ReadBitpacked(int header, BinaryReader reader, int width = 1)
       {
          int groupCount = header >> 1;
          int count = groupCount * 8;
@@ -168,6 +167,7 @@ namespace Parquet.File
                byte r = (byte)((b >> bwr) & mask);
                total -= width;
                bwr += width;
+               tmp.Add(r);
             }
             else if (i < byteCount)
             {
@@ -176,6 +176,7 @@ namespace Parquet.File
                bwl += 8;
             }
          }
+         return tmp;
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]

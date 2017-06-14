@@ -14,6 +14,7 @@
     <PackageReference Include="apache-thrift-netcore">
       <Version>0.9.3</Version>
     </PackageReference>
+    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
 
 </Project>
