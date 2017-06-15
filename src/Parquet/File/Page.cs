@@ -55,6 +55,8 @@ namespace Parquet.File
 
             //todo: combine tuple into real values
 
+            num += page.values.Count;
+
             if (num >= _thriftChunk.Meta_data.Num_values)
             {
                //all data pages read
