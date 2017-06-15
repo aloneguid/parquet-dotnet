@@ -30,3 +30,10 @@ We use [Thrift for .NET Core](https://github.com/apache/thrift/tree/master/lib/n
 To regenerate thrift classes use `scripts\thriftgen.ps1`. Project is set to define `SILVERLIGHT` constant as .NET Standard is not fully compatible with this generator, but tested to be working in silverlight compatibility mode.
 
 Parquet compatibility samples: https://github.com/Parquet/parquet-compatibility
+
+## Useful links
+
+- [List of Parquet encodings](https://github.com/Parquet/parquet-format/blob/master/Encodings.md)
+- [Parquet Logical Types](https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md)
+- [The striping and assembly algorithms from the Dremel paper](https://github.com/Parquet/parquet-mr/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) (what Parquet is based on)
+- To better understand Parquet, especially what repetition and definition levels are - [Dremel made simple with Parquet](https://blog.twitter.com/engineering/en_us/a/2013/dremel-made-simple-with-parquet.html)
