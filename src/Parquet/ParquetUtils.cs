@@ -26,6 +26,13 @@ namespace Parquet
           return byt;
        }
 
+       // ReSharper disable once InconsistentNaming
+       public static int GetByteArrayLELength(byte[] len)
+       {
+          int output = BitConverter.ToInt32(len, 0);
+          return output;
+       }
+
        
    }
 
