@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 
 namespace Parquet
 {
@@ -7,14 +8,24 @@ namespace Parquet
    /// </summary>
    public class ParquetColumn : IEquatable<ParquetColumn>
    {
-      public ParquetColumn(string name)
+      public ParquetColumn(string name, IList values)
       {
          Name = name;
+         Values = values;
       }
 
       public string Name { get; }
 
-      //todo: add more meta
+      public IList Values { get; }
+
+      public void Add(ParquetColumn col)
+      {
+         foreach(var value in col.Values)
+         {
+            Values.Add(value);
+         }
+      }
+
 
       public override string ToString()
       {

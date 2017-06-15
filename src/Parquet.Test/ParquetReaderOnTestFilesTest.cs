@@ -26,14 +26,14 @@ namespace Parquet.Test
       /// |1  |false   |1          |1           |1      |10        |1.1      |10.1      |[30 31 2F 30 31 2F 30 39]|[31]      |2009-01-01 00:01:00.0|
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// </summary>
-      //[Fact]
+      [Fact]
       public void Alltypes_plain()
       {
          using (Stream s = File.OpenRead(GetDataFilePath("alltypes_plain.parquet")))
          {
             using (var r = new ParquetReader(s))
             {
-               ParquetFrame frame = r.Read();
+               ParquetDataSet frame = r.Read();
 
                //todo: test ID column
             }

@@ -11,13 +11,13 @@ using Type = Parquet.Thrift.Type;
 
 namespace Parquet.File
 {
-   class Page
+   class PColumn
    {
       private readonly ColumnChunk _thriftChunk;
       private readonly Stream _inputStream;
       private readonly Schema _schema;
 
-      public Page(ColumnChunk thriftChunk, Schema schema, Stream inputStream)
+      public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream)
       {
          if (thriftChunk.Meta_data.Path_in_schema.Count != 1)
             throw new NotImplementedException("path in scheme is not flat");
@@ -27,9 +27,9 @@ namespace Parquet.File
          _inputStream = inputStream;
       }
 
-      public ParquetFrame Read()
+      public ParquetColumn Read()
       {
-         var result = new ParquetFrame();
+         IList result = null;
 
          //get the minimum offset, we'll just read pages in sequence
          long offset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
@@ -55,6 +55,19 @@ namespace Parquet.File
 
             //todo: combine tuple into real values
 
+            //add values
+            if(result == null)
+            {
+               result = page.values;
+            }
+            else
+            {
+               foreach(var value in page.values)
+               {
+                  result.Add(value);
+               }
+            }
+
             num += page.values.Count;
 
             if (num >= _thriftChunk.Meta_data.Num_values)
@@ -65,7 +78,9 @@ namespace Parquet.File
             ph = _inputStream.ThriftRead<PageHeader>(); //get next page
          }
 
-         return result;
+         return new ParquetColumn(
+            string.Join(".", _thriftChunk.Meta_data.Path_in_schema),
+            result);
       }
 
       private ICollection ReadDictionaryPage(PageHeader ph)
@@ -83,7 +98,7 @@ namespace Parquet.File
          }
       }
 
-      private (ICollection definitions, ICollection repetitions, ICollection values) ReadDataPage(PageHeader ph)
+      private (ICollection definitions, ICollection repetitions, IList values) ReadDataPage(PageHeader ph)
       {
          byte[] data = ReadRawBytes(ph, _inputStream);
 
@@ -95,7 +110,7 @@ namespace Parquet.File
 
                List<int> definitions = ReadDefinitionLevels(reader, ph.Data_page_header.Num_values);
 
-               ICollection values = ReadColumnValues(reader, ph.Data_page_header.Encoding);
+               IList values = ReadColumnValues(reader, ph.Data_page_header.Encoding);
 
                return (definitions, null, values);
             }
@@ -115,7 +130,7 @@ namespace Parquet.File
          return result;
       }
 
-      private ICollection ReadColumnValues(BinaryReader reader, Encoding encoding)
+      private IList ReadColumnValues(BinaryReader reader, Encoding encoding)
       {
          //dictionary encoding uses RLE to encode data
 

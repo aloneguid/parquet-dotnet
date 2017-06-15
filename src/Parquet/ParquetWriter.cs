@@ -27,7 +27,7 @@ namespace Parquet
          _meta.Version = 1;
       }
 
-      public void Write(ParquetFrame frame)
+      public void Write(ParquetDataSet frame)
       {
          //todo: detect frame schema
       }

@@ -50,7 +50,7 @@ namespace Parquet.File
             return ReadBitpacked(header, reader, bitWidth);
       }
 
-      public static ICollection ReadPlain(BinaryReader reader, TType thriftType)
+      public static IList ReadPlain(BinaryReader reader, TType thriftType)
       {
          long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
          byte[] data = reader.ReadBytes((int)byteCount);

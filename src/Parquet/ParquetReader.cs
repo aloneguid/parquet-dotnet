@@ -29,21 +29,21 @@ namespace Parquet
       /// <summary>
       /// Test read, to be defined
       /// </summary>
-      public ParquetFrame Read()
+      public ParquetDataSet Read()
       {
-         var result = new ParquetFrame();
+         var result = new List<ParquetColumn>();
 
          foreach(RowGroup rg in _meta.Row_groups)
          {
             foreach(ColumnChunk cc in rg.Columns)
             {
-               var p = new Page(cc, _schema, _input);
-               ParquetFrame pageFrame = p.Read();
-               result.Merge(pageFrame);
+               var p = new PColumn(cc, _schema, _input);
+               ParquetColumn column = p.Read();
+               result.Add(column);
             }
          }
 
-         return result;
+         return new ParquetDataSet(result);
       }
 
       private FileMetaData ReadMetadata()
