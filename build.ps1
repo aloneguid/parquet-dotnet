@@ -62,7 +62,7 @@ if($Publish -and (-not $NuGetApiKey))
 
 # Update version numbers
 Set-VstsBuildNumber $PackageVersion
-Update-ProjectVersion "src\NetBox\netbox.csproj"
+Update-ProjectVersion "src\Parquet\Parquet.csproj"
 
 # Restore packages
 Exec "dotnet restore $SlnPath"
@@ -72,7 +72,7 @@ Get-ChildItem *.nupkg -Recurse | Remove-Item -ErrorAction Ignore
 Exec "dotnet build $SlnPath -c release"
 
 # Run the tests
-Exec "dotnet test src\NetBox.Tests\NetBox.Tests.csproj"
+Exec "dotnet test src\Parquet.Test\Parquet.Test.csproj"
 
 # publish the nugets
 if($Publish.IsPresent)
