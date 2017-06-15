@@ -1,4 +1,4 @@
-# parquet-dotnet
+# parquet-dotnet [![Visual Studio Team services](https://img.shields.io/vso/build/elastacloud/bad95de3-58b5-428f-96a5-1b28793d0a5f/13.svg?style=plastic)]()
 
 A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files.
 
