@@ -7,7 +7,10 @@ namespace Parquet.Test
 {
    using File = System.IO.File;
 
-   public class ParquetReaderTest
+   /// <summary>
+   /// Tests a set of predefined test files that they read back correct
+   /// </summary>
+   public class ParquetReaderOnTestFilesTest
    {
       /// <summary>
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
@@ -24,7 +27,7 @@ namespace Parquet.Test
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// </summary>
       [Fact]
-      public void Read_alltypes_plain_parquet()
+      public void Alltypes_plain()
       {
          using (Stream s = File.OpenRead(GetDataFilePath("alltypes_plain.parquet")))
          {

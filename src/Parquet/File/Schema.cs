@@ -26,6 +26,19 @@ namespace Parquet.File
          }
       }
 
+      public int GetMaxDefinitionLevel(ColumnChunk cc)
+      {
+         int max = 0;
+
+         foreach(string part in cc.Meta_data.Path_in_schema)
+         {
+            SchemaElement element = _pathToElement[part];
+            if (element.Repetition_type != FieldRepetitionType.REQUIRED) max += 1;
+         }
+
+         return max;
+      }
+
       private void Build(FileMetaData fileMeta)
       {
          foreach(SchemaElement se in fileMeta.Schema)
