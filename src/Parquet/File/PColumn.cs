@@ -38,9 +38,10 @@ namespace Parquet.File
 
          PageHeader ph = _inputStream.ThriftRead<PageHeader>();
 
-         if(ph.Type == PageType.DICTIONARY_PAGE)
+         IList dictionaryPage = null;
+         if (ph.Type == PageType.DICTIONARY_PAGE)
          {
-            ICollection dictionaryPage = ReadDictionaryPage(ph);
+            dictionaryPage = ReadDictionaryPage(ph);
 
             ph = _inputStream.ThriftRead<PageHeader>(); //get next page
          }
@@ -80,10 +81,27 @@ namespace Parquet.File
 
          return new ParquetColumn(
             string.Join(".", _thriftChunk.Meta_data.Path_in_schema),
-            result);
+            dictionaryPage == null
+               ? result
+               : MergeDictionaryEncoding(dictionaryPage, result));
       }
 
-      private ICollection ReadDictionaryPage(PageHeader ph)
+      private static IList MergeDictionaryEncoding(IList dictionary, IList values)
+      {
+         //values will be ints if dictionary encoding is present
+         int[] indexes = new int[values.Count];
+         int i = 0;
+         foreach(var value in values)
+         {
+            indexes[i++] = (int)value;
+         }
+
+         return indexes
+            .Select(index => dictionary[index])
+            .ToList();
+      }
+
+      private IList ReadDictionaryPage(PageHeader ph)
       {
          //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain enncoding.
 

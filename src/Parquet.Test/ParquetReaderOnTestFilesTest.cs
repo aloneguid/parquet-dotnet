@@ -33,9 +33,21 @@ namespace Parquet.Test
          {
             using (var r = new ParquetReader(s))
             {
-               ParquetDataSet frame = r.Read();
+               ParquetDataSet ds = r.Read();
 
-               //todo: test ID column
+               Assert.Equal(11, ds.Columns.Count);
+
+               ParquetColumn idColumn = ds.Columns[0];
+               Assert.Equal("id", idColumn.Name);
+               Assert.Equal(4, idColumn.Values[0]);
+               Assert.Equal(5, idColumn.Values[1]);
+               Assert.Equal(6, idColumn.Values[2]);
+               Assert.Equal(7, idColumn.Values[3]);
+               Assert.Equal(2, idColumn.Values[4]);
+               Assert.Equal(3, idColumn.Values[5]);
+               Assert.Equal(0, idColumn.Values[6]);
+               Assert.Equal(1, idColumn.Values[7]);
+
             }
          }
 

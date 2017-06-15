@@ -25,6 +25,11 @@ namespace Parquet
       }
 
       /// <summary>
+      /// Gets dataset columns
+      /// </summary>
+      public List<ParquetColumn> Columns => new List<ParquetColumn>(_columns.Keys);
+
+      /// <summary>
       /// Merges data into this dataset
       /// </summary>
       /// <param name="source"></param>

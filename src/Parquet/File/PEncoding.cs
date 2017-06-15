@@ -68,6 +68,30 @@ namespace Parquet.File
                   r32.Add(iv);
                }
                return r32;
+            case TType.FLOAT:
+               var rf32 = new List<float>(data.Length / 4);
+               for (int i = 0; i < data.Length; i += 4)
+               {
+                  float iv = BitConverter.ToSingle(data, i);
+                  rf32.Add(iv);
+               }
+               return rf32;
+            case TType.INT64:
+               var r64 = new List<long>(data.Length / 8);
+               for(int i = 0; i < data.Length; i+= 8)
+               {
+                  long lv = BitConverter.ToInt64(data, i);
+                  r64.Add(lv);
+               }
+               return r64;
+            case TType.DOUBLE:
+               var f64 = new List<double>(data.Length / 8);
+               for (int i = 0; i < data.Length; i += 8)
+               {
+                  double lv = BitConverter.ToDouble(data, i);
+                  f64.Add(lv);
+               }
+               return f64;
             case TType.INT96:
                //todo: this is a sample how to read int96, not tested this yet
                var r96 = new List<BigInteger>(data.Length / 12);
@@ -76,8 +100,21 @@ namespace Parquet.File
                {
                   Array.Copy(data, i, v96, 0, 12);
                   var bi = new BigInteger(v96);
+                  r96.Add(bi);
                }
                return r96;
+            case TType.BYTE_ARRAY:
+               var rba = new List<byte[]>();
+               for(int i = 0; i < data.Length;)
+               {
+                  int length = BitConverter.ToInt32(data, i);
+                  i += 4;        //fast-forward to data
+                  byte[] ar = new byte[length];
+                  Array.Copy(data, i, ar, 0, length);
+                  i += length;   //fast-forward to the next element
+                  rba.Add(ar);
+               }
+               return rba;
             default:
                throw new NotImplementedException($"type {thriftType} not implemented");
          }
