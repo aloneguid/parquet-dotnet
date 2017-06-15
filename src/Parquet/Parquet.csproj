@@ -1,20 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>netstandard1.6;net451</TargetFrameworks>
+    <Version>1.0.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <DefineConstants>DEBUG;RELEASE</DefineConstants>
     <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>
+    <Description>A .NET library to read and write Apache Parquet files.</Description>
+    <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
+    <Company>Elastacloud</Company>
+    <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageProjectUrl>https://github.com/elastacloud/parquet-dotnet</PackageProjectUrl>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="apache-thrift-netcore">
       <Version>0.9.3</Version>
     </PackageReference>
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
-
 </Project>
