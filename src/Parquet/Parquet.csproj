@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>SILVERLIGHT</DefineConstants>
+    <DefineConstants>DEBUG;RELEASE</DefineConstants>
     <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
