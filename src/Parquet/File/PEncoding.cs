@@ -58,7 +58,6 @@ namespace Parquet.File
          switch (thriftType)
          {
             case TType.BOOLEAN:
-               //todo: avoid using BitArray as this requires creating a new class every time we read data
                return ReadPlainBoolean(data, 8);
             case TType.INT32:
                var r32 = new List<int>(data.Length / 4);
@@ -122,7 +121,7 @@ namespace Parquet.File
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static bool[] ReadPlainBoolean(byte[] data, int count)
+      private static IList ReadPlainBoolean(byte[] data, int count)
       {
          var res = new bool[count];
          int ibit = 0;

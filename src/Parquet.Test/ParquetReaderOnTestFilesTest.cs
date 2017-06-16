@@ -48,9 +48,42 @@ namespace Parquet.Test
                Assert.Equal(0, idColumn.Values[6]);
                Assert.Equal(1, idColumn.Values[7]);
 
+               ParquetColumn boolCol = ds.Columns[1];
+               Assert.Equal("bool_col", boolCol.Name);
+               Assert.Equal(true, boolCol.Values[0]);
+               Assert.Equal(false, boolCol.Values[1]);
+               Assert.Equal(true, boolCol.Values[2]);
+               Assert.Equal(false, boolCol.Values[3]);
+               Assert.Equal(true, boolCol.Values[4]);
+               Assert.Equal(false, boolCol.Values[5]);
+               Assert.Equal(true, boolCol.Values[6]);
+               Assert.Equal(false, boolCol.Values[7]);
+
+               ParquetColumn tinyintCol = ds.Columns[2];
+               Assert.Equal("tinyint_col", tinyintCol.Name);
+               Assert.Equal(0, tinyintCol.Values[0]);
+               Assert.Equal(1, tinyintCol.Values[1]);
+               Assert.Equal(0, tinyintCol.Values[2]);
+               Assert.Equal(1, tinyintCol.Values[3]);
+               Assert.Equal(0, tinyintCol.Values[4]);
+               Assert.Equal(1, tinyintCol.Values[5]);
+               Assert.Equal(0, tinyintCol.Values[6]);
+               Assert.Equal(1, tinyintCol.Values[7]);
             }
          }
 
+      }
+
+      [Fact]
+      public void Alltypes_dictionary()
+      {
+         using (Stream s = File.OpenRead(GetDataFilePath("alltypes_dictionary.parquet")))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               ParquetDataSet ds = r.Read();
+            }
+         }
       }
 
       private string GetDataFilePath(string name)
