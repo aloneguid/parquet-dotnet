@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Parquet.Thrift;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +19,8 @@ namespace Parquet.File
    /// </summary>
    static class PEncoding
    {
+      private static readonly System.Text.Encoding UTF8 = System.Text.Encoding.UTF8;
+
       /* from specs:
        * rle-bit-packed-hybrid: <length> <encoded-data>
        * length := length of the <encoded-data> in bytes stored as 4 bytes little endian
@@ -50,12 +53,12 @@ namespace Parquet.File
             return ReadBitpacked(header, reader, bitWidth);
       }
 
-      public static IList ReadPlain(BinaryReader reader, TType thriftType)
+      public static IList ReadPlain(BinaryReader reader, SchemaElement schemaElement)
       {
          long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
          byte[] data = reader.ReadBytes((int)byteCount);
 
-         switch (thriftType)
+         switch (schemaElement.Type)
          {
             case TType.BOOLEAN:
                return ReadPlainBoolean(data, 8);
@@ -103,19 +106,9 @@ namespace Parquet.File
                }
                return r96;
             case TType.BYTE_ARRAY:
-               var rba = new List<byte[]>();
-               for(int i = 0; i < data.Length;)
-               {
-                  int length = BitConverter.ToInt32(data, i);
-                  i += 4;        //fast-forward to data
-                  byte[] ar = new byte[length];
-                  Array.Copy(data, i, ar, 0, length);
-                  i += length;   //fast-forward to the next element
-                  rba.Add(ar);
-               }
-               return rba;
+               return ReadByteArray(data, schemaElement);
             default:
-               throw new NotImplementedException($"type {thriftType} not implemented");
+               throw new NotImplementedException($"type {schemaElement.Type} not implemented");
          }
 
       }
@@ -141,6 +134,37 @@ namespace Parquet.File
          }
 
          return res;
+      }
+
+      private static IList ReadByteArray(byte[] data, SchemaElement schemaElement)
+      {
+         if (schemaElement.Converted_type == ConvertedType.UTF8)
+         {
+            var result = new List<string>();
+            for (int i = 0; i < data.Length;)
+            {
+               int length = BitConverter.ToInt32(data, i);
+               i += 4;        //fast-forward to data
+               string s = UTF8.GetString(data, i, length);
+               i += length;   //fast-forward to the next element
+               result.Add(s);
+            }
+            return result;
+         }
+         else
+         {
+            var result = new List<byte[]>();
+            for (int i = 0; i < data.Length;)
+            {
+               int length = BitConverter.ToInt32(data, i);
+               i += 4;        //fast-forward to data
+               byte[] ar = new byte[length];
+               Array.Copy(data, i, ar, 0, length);
+               i += length;   //fast-forward to the next element
+               result.Add(ar);
+            }
+            return result;
+         }
       }
 
       /// <summary>

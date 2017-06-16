@@ -16,6 +16,7 @@ namespace Parquet.File
       private readonly ColumnChunk _thriftChunk;
       private readonly Stream _inputStream;
       private readonly Schema _schema;
+      private readonly SchemaElement _schemaElement;
 
       public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream)
       {
@@ -25,6 +26,7 @@ namespace Parquet.File
          _thriftChunk = thriftChunk;
          _schema = schema;
          _inputStream = inputStream;
+         _schemaElement = _schema[_thriftChunk];
       }
 
       public ParquetColumn Read()
@@ -111,7 +113,7 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               return PEncoding.ReadPlain(dataReader, _thriftChunk.Meta_data.Type);
+               return PEncoding.ReadPlain(dataReader, _schemaElement);
             }
          }
       }
@@ -155,14 +157,14 @@ namespace Parquet.File
          switch(encoding)
          {
             case Encoding.PLAIN:
-               return PEncoding.ReadPlain(reader, Type.BOOLEAN);   //todo: it's not just boolean! use Richard's implementation
+               return PEncoding.ReadPlain(reader, _schemaElement);   //todo: it's not just boolean! use Richard's implementation
 
             case Encoding.RLE:
             case Encoding.PLAIN_DICTIONARY:
 
                int bitWidth;
                if (encoding == Encoding.RLE)
-                  bitWidth = _schema[_thriftChunk].Type_length;
+                  bitWidth = _schemaElement.Type_length;
                else
                   bitWidth = reader.ReadByte();
 
