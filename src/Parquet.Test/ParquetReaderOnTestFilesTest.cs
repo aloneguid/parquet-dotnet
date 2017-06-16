@@ -92,6 +92,18 @@ namespace Parquet.Test
                Assert.Equal(0, intCol.Values[6]);
                Assert.Equal(1, intCol.Values[7]);
 
+               ParquetColumn bigintCol = ds.Columns[5];
+               Assert.Equal("bigint_col", bigintCol.Name);
+               Assert.Equal(0L, bigintCol.Values[0]);
+               Assert.Equal(10L, bigintCol.Values[1]);
+               Assert.Equal(0L, bigintCol.Values[2]);
+               Assert.Equal(10L, bigintCol.Values[3]);
+               Assert.Equal(0L, bigintCol.Values[4]);
+               Assert.Equal(10L, bigintCol.Values[5]);
+               Assert.Equal(0L, bigintCol.Values[6]);
+               Assert.Equal(10L, bigintCol.Values[7]);
+
+
             }
          }
 
