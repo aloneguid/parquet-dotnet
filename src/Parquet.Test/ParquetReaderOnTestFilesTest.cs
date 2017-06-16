@@ -114,6 +114,17 @@ namespace Parquet.Test
                Assert.Equal((float)0.0, floatCol.Values[6]);
                Assert.Equal((float)1.1, floatCol.Values[7]);
 
+               ParquetColumn doubleCol = ds.Columns[7];
+               Assert.Equal("double_col", doubleCol.Name);
+               Assert.Equal((double)0.0, doubleCol.Values[0]);
+               Assert.Equal((double)10.1, doubleCol.Values[1]);
+               Assert.Equal((double)0.0, doubleCol.Values[2]);
+               Assert.Equal((double)10.1, doubleCol.Values[3]);
+               Assert.Equal((double)0.0, doubleCol.Values[4]);
+               Assert.Equal((double)10.1, doubleCol.Values[5]);
+               Assert.Equal((double)0.0, doubleCol.Values[6]);
+               Assert.Equal((double)10.1, doubleCol.Values[7]);
+
             }
          }
 
