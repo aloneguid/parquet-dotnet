@@ -136,6 +136,18 @@ namespace Parquet.Test
                Assert.Equal("01/01/09", dateStringCol.Values[6]);
                Assert.Equal("01/01/09", dateStringCol.Values[7]);
 
+               ParquetColumn stringCol = ds.Columns[9];
+               Assert.Equal("string_col", stringCol.Name);
+               Assert.Equal("0", stringCol.Values[0]);
+               Assert.Equal("1", stringCol.Values[1]);
+               Assert.Equal("0", stringCol.Values[2]);
+               Assert.Equal("1", stringCol.Values[3]);
+               Assert.Equal("0", stringCol.Values[4]);
+               Assert.Equal("1", stringCol.Values[5]);
+               Assert.Equal("0", stringCol.Values[6]);
+               Assert.Equal("1", stringCol.Values[7]);
+
+
             }
          }
 
