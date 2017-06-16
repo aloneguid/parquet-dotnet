@@ -103,6 +103,16 @@ namespace Parquet.Test
                Assert.Equal(0L, bigintCol.Values[6]);
                Assert.Equal(10L, bigintCol.Values[7]);
 
+               ParquetColumn floatCol = ds.Columns[6];
+               Assert.Equal("float_col", floatCol.Name);
+               Assert.Equal((float)0.0, floatCol.Values[0]);
+               Assert.Equal((float)1.1, floatCol.Values[1]);
+               Assert.Equal((float)0, floatCol.Values[2]);
+               Assert.Equal((float)1.1, floatCol.Values[3]);
+               Assert.Equal((float)0.0, floatCol.Values[4]);
+               Assert.Equal((float)1.1, floatCol.Values[5]);
+               Assert.Equal((float)0.0, floatCol.Values[6]);
+               Assert.Equal((float)1.1, floatCol.Values[7]);
 
             }
          }
