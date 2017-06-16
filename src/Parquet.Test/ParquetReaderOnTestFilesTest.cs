@@ -94,6 +94,18 @@ namespace Parquet.Test
          }
       }
 
+      //[Fact]
+      public void Postcodes()
+      {
+         using (Stream s = File.OpenRead(GetDataFilePath("postcodes.parquet")))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               ParquetDataSet ds = r.Read();
+            }
+         }
+      }
+
       private string GetDataFilePath(string name)
       {
          string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
