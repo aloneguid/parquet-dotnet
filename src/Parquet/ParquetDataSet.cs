@@ -9,7 +9,7 @@ namespace Parquet
    /// </summary>
    public class ParquetDataSet
    {
-      private readonly Dictionary<ParquetColumn, ParquetColumn> _columns = new Dictionary<ParquetColumn, ParquetColumn>();
+      private readonly Dictionary<string, ParquetColumn> _columns = new Dictionary<string, ParquetColumn>();
 
       public ParquetDataSet()
       {
@@ -20,14 +20,27 @@ namespace Parquet
       {
          foreach(ParquetColumn column in columns)
          {
-            _columns.Add(column, column);
+            _columns.Add(column.Name, column);
          }
       }
 
       /// <summary>
       /// Gets dataset columns
       /// </summary>
-      public List<ParquetColumn> Columns => new List<ParquetColumn>(_columns.Keys);
+      public List<ParquetColumn> Columns => new List<ParquetColumn>(_columns.Values);
+
+      /// <summary>
+      /// Gets column by name
+      /// </summary>
+      /// <param name="name"></param>
+      /// <returns></returns>
+      public ParquetColumn this[string name]
+      {
+         get
+         {
+            return _columns[name];
+         }
+      }
 
       /// <summary>
       /// Merges data into this dataset
@@ -41,13 +54,13 @@ namespace Parquet
          {
             if(!_columns.TryGetValue(kv.Key, out ParquetColumn col))
             {
-               _columns[kv.Key] = kv.Key;
+               _columns[kv.Key] = kv.Value;
 
                //todo: zero values
             }
             else
             {
-               col.Add(kv.Key);
+               col.Add(kv.Value);
             }
          }
       }

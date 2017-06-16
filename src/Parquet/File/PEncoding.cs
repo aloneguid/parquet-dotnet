@@ -121,14 +121,14 @@ namespace Parquet.File
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static IList ReadPlainBoolean(byte[] data, int count)
+      private static List<bool> ReadPlainBoolean(byte[] data, int count)
       {
-         var res = new bool[count];
+         var res = new List<bool>(count);
          int ibit = 0;
          int ibyte = 0;
          byte b = data[0];
 
-         for(int ires = 0; ires < res.Length; ires++)
+         for(int ires = 0; ires < res.Count; ires++)
          {
             if (ibit == 8)
             {
