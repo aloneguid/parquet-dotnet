@@ -128,7 +128,7 @@ namespace Parquet.File
          int ibyte = 0;
          byte b = data[0];
 
-         for(int ires = 0; ires < res.Count; ires++)
+         for(int ires = 0; ires < count; ires++)
          {
             if (ibit == 8)
             {
@@ -137,7 +137,7 @@ namespace Parquet.File
             }
 
             bool set = ((b >> ibit++) & 1) == 1;
-            res[ires] = set;
+            res.Add(set);
          }
 
          return res;

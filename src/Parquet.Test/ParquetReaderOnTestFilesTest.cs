@@ -69,6 +69,18 @@ namespace Parquet.Test
                Assert.Equal(1, tinyintCol.Values[5]);
                Assert.Equal(0, tinyintCol.Values[6]);
                Assert.Equal(1, tinyintCol.Values[7]);
+
+               ParquetColumn smallintCol = ds.Columns[3];
+               Assert.Equal("smallint_col", smallintCol.Name);
+               Assert.Equal(0, smallintCol.Values[0]);
+               Assert.Equal(1, smallintCol.Values[1]);
+               Assert.Equal(0, smallintCol.Values[2]);
+               Assert.Equal(1, smallintCol.Values[3]);
+               Assert.Equal(0, smallintCol.Values[4]);
+               Assert.Equal(1, smallintCol.Values[5]);
+               Assert.Equal(0, smallintCol.Values[6]);
+               Assert.Equal(1, smallintCol.Values[7]);
+
             }
          }
 
