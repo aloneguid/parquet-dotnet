@@ -59,7 +59,7 @@ namespace Parquet
        public static DateTime FromUnixTime(this int unixTime)
        {
           var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-          return epoch.AddSeconds(unixTime);
+          return epoch.AddDays(unixTime);
        }
 
        public static DateTime FromUnixTime(this long unixTime)
@@ -74,6 +74,15 @@ namespace Parquet
           return Convert.ToInt64((date - epoch).TotalSeconds);
        }
 
+       public static DateTime JulianToDateTime(this int julianDate)
+       {
+          double unixTime = julianDate - 2440587;
+
+          DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+          dtDateTime = dtDateTime.AddDays(unixTime).ToLocalTime();
+
+          return dtDateTime;
+       }
 
    }
 

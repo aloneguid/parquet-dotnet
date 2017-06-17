@@ -78,6 +78,19 @@ namespace Parquet
                col.Add(kv.Value);
             }
          }
-      }
+      } 
    }
+
+   /*public class ParquetRow
+   {
+      public ParquetRow(IEnumerable<object> row)
+      {
+                  
+      }
+      public Get()
+      {
+         foreach (var kv in source._columns)
+         {
+         }
+   }*/
 }

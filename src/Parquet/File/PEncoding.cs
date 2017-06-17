@@ -1,12 +1,16 @@
-﻿using Parquet.Thrift;
+﻿#define SPARK_TYPES
+
+using Parquet.Thrift;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using TType = Parquet.Thrift.Type;
+using TConvertedType = Parquet.Thrift.ConvertedType;
 
 namespace Parquet.File
 {
@@ -69,6 +73,11 @@ namespace Parquet.File
                   int iv = BitConverter.ToInt32(data, i);
                   r32.Add(iv);
                }
+               // Do the Date conversion 
+               if (schemaElement.Converted_type == ConvertedType.DATE)
+               {
+                  return r32.Select(dateThing => dateThing.FromUnixTime()).ToList();
+               }
                return r32;
             case TType.FLOAT:
                var rf32 = new List<float>(data.Length / 4);
@@ -96,12 +105,30 @@ namespace Parquet.File
                return f64;
             case TType.INT96:
                //todo: this is a sample how to read int96, not tested this yet
-               var r96 = new List<BigInteger>(data.Length / 12);
-               byte[] v96 = new byte[12];
+               // todo: need to work this out because Spark is not encoding per spec - working with the Spark encoding instead
+#if !SPARK_TYPES
+     var r96 = new List<BigInteger>(data.Length / 12);          
+#else
+     var r96 = new List<DateTime>(data.Length / 12);
+#endif
+               
                for(int i = 0; i < data.Length; i+= 12)
                {
+
+#if !SPARK_TYPES
+                  byte[] v96 = new byte[12];
                   Array.Copy(data, i, v96, 0, 12);
                   var bi = new BigInteger(v96);
+#else
+                  // for the time being we can discard the nanos 
+                  var utils = new NumericUtils();
+                  byte[] v96 = new byte[4];
+                  byte[] nanos = new byte[8];
+                  Array.Copy(data, i + 8, v96, 0, 4);
+                  Array.Copy(data, i, nanos, 0, 8);
+                  var bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
+                  bi.AddMilliseconds((double) (BitConverter.ToInt64(nanos, 0) / 1000));
+#endif
                   r96.Add(bi);
                }
                return r96;
