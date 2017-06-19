@@ -14,6 +14,7 @@ namespace Parquet
    {
       private readonly Stream _input;
       private readonly BinaryReader _reader;
+      private readonly ThriftStream _thrift;
       private readonly FileMetaData _meta;
       private readonly Schema _schema;
 
@@ -21,6 +22,7 @@ namespace Parquet
       {
          _input = input;
          _reader = new BinaryReader(input);
+         _thrift = new ThriftStream(input);
 
          _meta = ReadMetadata();
          _schema = new Schema(_meta);
@@ -37,7 +39,7 @@ namespace Parquet
          {
             foreach(ColumnChunk cc in rg.Columns)
             {
-               var p = new PColumn(cc, _schema, _input);
+               var p = new PColumn(cc, _schema, _input, _thrift);
                ParquetColumn column = p.Read();
                result.Add(column);
             }
@@ -57,7 +59,7 @@ namespace Parquet
 
          //go to footer data and deserialize it
          _input.Seek(-8 - footerLength, SeekOrigin.End);
-         return _input.ThriftRead<FileMetaData>();
+         return _thrift.Read<FileMetaData>();
       }
 
       public void Dispose()

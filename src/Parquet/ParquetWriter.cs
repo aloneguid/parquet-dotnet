@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using Parquet.Thrift;
+using Parquet.File;
 
 namespace Parquet
 {
@@ -12,6 +13,7 @@ namespace Parquet
    {
       private readonly Stream _output;
       private readonly BinaryWriter _writer;
+      private readonly ThriftStream _thrift;
       private static readonly byte[] Magic = System.Text.Encoding.ASCII.GetBytes("PAR1");
       private readonly FileMetaData _meta = new FileMetaData();
 
@@ -43,7 +45,7 @@ namespace Parquet
 
          //write thrift metadata
          long pos = _output.Position;
-         _output.ThriftWrite(_meta);
+         //_output.ThriftWrite(_meta);
          long size = _output.Position - pos;
 
          //metadata size

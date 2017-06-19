@@ -15,15 +15,17 @@ namespace Parquet.File
    {
       private readonly ColumnChunk _thriftChunk;
       private readonly Stream _inputStream;
+      private readonly ThriftStream _thrift;
       private readonly Schema _schema;
       private readonly SchemaElement _schemaElement;
 
-      public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream)
+      public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream, ThriftStream thriftStream)
       {
          if (thriftChunk.Meta_data.Path_in_schema.Count != 1)
             throw new NotImplementedException("path in scheme is not flat");
 
          _thriftChunk = thriftChunk;
+         _thrift = thriftStream;
          _schema = schema;
          _inputStream = inputStream;
          _schemaElement = _schema[_thriftChunk];
@@ -38,14 +40,14 @@ namespace Parquet.File
 
          _inputStream.Seek(offset, SeekOrigin.Begin);
 
-         PageHeader ph = _inputStream.ThriftRead<PageHeader>();
+         PageHeader ph = _thrift.Read<PageHeader>();
 
          IList dictionaryPage = null;
          if (ph.Type == PageType.DICTIONARY_PAGE)
          {
             dictionaryPage = ReadDictionaryPage(ph);
 
-            ph = _inputStream.ThriftRead<PageHeader>(); //get next page
+            ph = _thrift.Read<PageHeader>(); //get next page
          }
 
          long num = 0;
@@ -78,7 +80,7 @@ namespace Parquet.File
                //all data pages read
                break;
             }
-            ph = _inputStream.ThriftRead<PageHeader>(); //get next page
+            ph = _thrift.Read<PageHeader>(); //get next page
          }
 
          return new ParquetColumn(
