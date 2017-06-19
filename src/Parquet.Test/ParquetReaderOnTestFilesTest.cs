@@ -173,6 +173,18 @@ namespace Parquet.Test
          }
       }
 
+      [Fact]
+      public void Datetypes_all()
+      {
+         using (Stream s = File.OpenRead(GetDataFilePath("dates.parquet")))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               ParquetDataSet ds = r.Read();
+            }
+         }
+      }
+
       //[Fact]
       public void Postcodes()
       {
