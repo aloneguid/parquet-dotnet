@@ -188,7 +188,7 @@ namespace Parquet.Test
       //[Fact]
       public void Postcodes()
       {
-         using (Stream s = File.OpenRead(GetDataFilePath("postcodes.parquet")))
+         using (Stream s = File.OpenRead("c:\\tmp\\postcodes.plain.parquet"))
          {
             using (var r = new ParquetReader(s))
             {

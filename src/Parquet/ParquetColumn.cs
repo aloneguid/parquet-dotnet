@@ -31,14 +31,27 @@ namespace Parquet
    /// </summary>
    public class ParquetColumn : IEquatable<ParquetColumn>
    {
+      /// <summary>
+      /// Creates a new instance of Parquet column from name and values
+      /// </summary>
+      /// <param name="name"></param>
+      /// <param name="values"></param>
       public ParquetColumn(string name, IList values)
       {
-         Name = name;
-         Values = values;
+         Name = name ?? throw new ArgumentNullException(nameof(name));
+         Values = values ?? throw new ArgumentNullException(nameof(values));
       }
 
+      /// <summary>
+      /// Column name
+      /// </summary>
       public string Name { get; }
 
+      public string ParquetRawType { get; internal set; }
+
+      /// <summary>
+      /// List of values
+      /// </summary>
       public IList Values { get; }
 
       public void Add(ParquetColumn col)
@@ -49,7 +62,10 @@ namespace Parquet
          }
       }
 
-
+      /// <summary>
+      /// Returns column name
+      /// </summary>
+      /// <returns></returns>
       public override string ToString()
       {
          return Name;

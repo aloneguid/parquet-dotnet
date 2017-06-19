@@ -43,18 +43,28 @@ namespace Parquet.File
       public static List<int> ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length)
       {
          if (length == 0) length = reader.ReadInt32();
+         var result = new List<int>();
 
-         //todo: use length to read continuously up to "length" bytes
-         //there might be one page after another in RLE/Bitpacking following each other
-         //all the code below is repeatable
 
-         int header = ReadUnsignedVarInt(reader);
-         bool isRle = (header & 1) == 0;
+         long start = reader.BaseStream.Position;
+         while (reader.BaseStream.Position - start < length)
+         {
+            int header = ReadUnsignedVarInt(reader);
+            bool isRle = (header & 1) == 0;
 
-         if (isRle)
-            return ReadRle(header, reader, bitWidth);
-         else
-            return ReadBitpacked(header, reader, bitWidth);
+            if (isRle)
+            {
+               List<int> chunk = ReadRle(header, reader, bitWidth);
+               result.AddRange(chunk);
+            }
+            else
+            {
+               List<int> chunk = ReadBitpacked(header, reader, bitWidth);
+               result.AddRange(chunk);
+            }
+         }
+
+         return result;
       }
 
       public static IList ReadPlain(BinaryReader reader, SchemaElement schemaElement)

@@ -33,6 +33,7 @@ namespace Parquet.File
 
       public ParquetColumn Read()
       {
+         string columnName = string.Join(".", _thriftChunk.Meta_data.Path_in_schema);
          IList result = null;
 
          //get the minimum offset, we'll just read pages in sequence
@@ -51,9 +52,11 @@ namespace Parquet.File
          }
 
          long num = 0;
+         int dataPageCount = 0;
          while(true)
          {
             var page = ReadDataPage(ph);
+            dataPageCount++;
 
             if (page.definitions != null) throw new NotImplementedException();
             if (page.repetitions != null) throw new NotImplementedException();
@@ -83,11 +86,13 @@ namespace Parquet.File
             ph = _thrift.Read<PageHeader>(); //get next page
          }
 
-         return new ParquetColumn(
-            string.Join(".", _thriftChunk.Meta_data.Path_in_schema),
+         var resultColumn = new ParquetColumn(
+            columnName,
             dictionaryPage == null
                ? result
                : MergeDictionaryEncoding(dictionaryPage, result));
+         resultColumn.ParquetRawType = _schemaElement.Type.ToString();
+         return resultColumn;
       }
 
       private static IList MergeDictionaryEncoding(IList dictionary, IList values)
