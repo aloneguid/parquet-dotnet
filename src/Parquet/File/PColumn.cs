@@ -7,7 +7,8 @@ using System.Numerics;
 using System.Text;
 using Parquet.Thrift;
 using Encoding = Parquet.Thrift.Encoding;
-using Type = Parquet.Thrift.Type;
+using Type = System.Type;
+using TType = Parquet.Thrift.Type;
 using Parquet.File.Values;
 
 namespace Parquet.File
@@ -143,7 +144,7 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               IList result = ParquetColumn.CreateValuesList(_schemaElement);
+               IList result = ParquetColumn.CreateValuesList(_schemaElement, out Type systemType);
                _plainReader.Read(dataReader, _schemaElement, result);
                return result;
             }

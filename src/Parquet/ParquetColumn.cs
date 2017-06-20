@@ -27,6 +27,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Type = System.Type;
 using TType = Parquet.Thrift.Type;
 
 namespace Parquet
@@ -34,24 +35,35 @@ namespace Parquet
    /// <summary>
    /// Represents a column
    /// </summary>
+   /// <typeparam name="T"></typeparam>
+   public class ParquetColumn<T> : ParquetColumn
+   {
+      public ParquetColumn(string name) : base(name, typeof(T))
+      {
+
+      }
+   }
+
+   /// <summary>
+   /// Represents a column
+   /// </summary>
    public class ParquetColumn : IEquatable<ParquetColumn>
    {
-      /// <summary>
-      /// Creates a new instance of Parquet column from name and values
-      /// </summary>
-      /// <param name="name"></param>
-      /// <param name="values"></param>
-      public ParquetColumn(string name, IList values)
+      public ParquetColumn(string name, Type systemType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-         Values = values ?? throw new ArgumentNullException(nameof(values));
+         //todo: ParquetRawType
+         Values = CreateValuesList(systemType);
+         //todo: SystemType
+         throw new NotImplementedException();
       }
 
       internal ParquetColumn(string name, SchemaElement schema)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          ParquetRawType = schema.Type.ToString();
-         Values = CreateValuesList(schema);
+         Values = CreateValuesList(schema, out Type systemType);
+         SystemType = systemType;
       }
 
       /// <summary>
@@ -59,6 +71,14 @@ namespace Parquet
       /// </summary>
       public string Name { get; }
 
+      /// <summary>
+      /// System type representing items in the list
+      /// </summary>
+      public Type SystemType { get; }
+
+      /// <summary>
+      /// Parquet type as read from schema
+      /// </summary>
       public string ParquetRawType { get; internal set; }
 
       /// <summary>
@@ -66,11 +86,19 @@ namespace Parquet
       /// </summary>
       public IList Values { get; private set; }
 
+      /// <summary>
+      /// Merges values into this column from the passed column
+      /// </summary>
+      /// <param name="col"></param>
       public void Add(ParquetColumn col)
       {
          Add(col.Values);
       }
 
+      /// <summary>
+      /// Merges values from the passed list into this column
+      /// </summary>
+      /// <param name="values"></param>
       public void Add(IList values)
       {
          //todo: if properly casted speed will increase
@@ -120,31 +148,55 @@ namespace Parquet
          return Name.GetHashCode();
       }
 
-      internal static IList CreateValuesList(SchemaElement schema)
+      internal static IList CreateValuesList(SchemaElement schema, out Type systemType)
       {
          switch(schema.Type)
          {
             case TType.BOOLEAN:
+               systemType = typeof(bool);
                return new List<bool>();
             case TType.INT32:
-               return schema.Converted_type == ConvertedType.DATE
-                  ? (IList)(new List<DateTime>())
-                  : (IList)(new List<int>());
+               if(schema.Converted_type == ConvertedType.DATE)
+               {
+                  systemType = typeof(DateTime);
+                  return new List<DateTime>();
+               }
+               else
+               {
+                  systemType = typeof(int);
+                  return new List<int>();
+               }
             case TType.FLOAT:
+               systemType = typeof(float);
                return new List<float>();
             case TType.INT64:
+               systemType = typeof(long);
                return new List<long>();
             case TType.DOUBLE:
+               systemType = typeof(double);
                return new List<double>();
             case TType.INT96:
+               systemType = typeof(BigInteger);
                return new List<BigInteger>();
             case TType.BYTE_ARRAY:
-               return schema.Converted_type == ConvertedType.UTF8
-                  ? (IList)(new List<string>())
-                  : (IList)(new List<byte[]>());
+               if(schema.Converted_type == ConvertedType.UTF8)
+               {
+                  systemType = typeof(string);
+                  return new List<string>();
+               }
+               else
+               {
+                  systemType = typeof(bool);
+                  return new List<bool>();
+               }
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");
          }
+      }
+
+      internal static IList CreateValuesList(Type systemType)
+      {
+         throw new NotImplementedException();
       }
    }
 }
