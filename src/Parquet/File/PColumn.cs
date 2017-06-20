@@ -21,6 +21,8 @@ namespace Parquet.File
       private readonly SchemaElement _schemaElement;
 
       private static readonly IValuesReader _plainReader = new PlainValuesReader();
+      private static readonly IValuesReader _rleReader = new RunLengthBitPackingHybridValuesReader();
+      private static readonly IValuesReader _dictionaryReader = new PlainDictionaryValuesReader();
 
       public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream, ThriftStream thriftStream)
       {
@@ -148,7 +150,8 @@ namespace Parquet.File
       {
          const int maxDefinitionLevel = 1;   //todo: for nested columns this needs to be calculated properly
          int bitWidth = PEncoding.GetWidthFromMaxInt(maxDefinitionLevel);
-         List<int> result = PEncoding.ReadRleBitpackedHybrid(reader, bitWidth, 0);  //todo: there might be more data on larger files
+         var result = new List<int>();
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result);  //todo: there might be more data on larger files
 
          int maxLevel = _schema.GetMaxDefinitionLevel(_thriftChunk);
          int nullCount = valueCount - result.Count(r => r == maxLevel);
@@ -168,25 +171,18 @@ namespace Parquet.File
                return null;
 
             case Encoding.RLE:
+               var rleIndexes = new List<int>();
+               _rleReader.Read(reader, _schemaElement, rleIndexes);
+               return rleIndexes;
+
             case Encoding.PLAIN_DICTIONARY:
-
-               int bitWidth;
-               if (encoding == Encoding.RLE)
-                  bitWidth = _schemaElement.Type_length;
-               else
-                  bitWidth = reader.ReadByte();
-
-               int length = GetRemainingLength(reader);
-               return PEncoding.ReadRleBitpackedHybrid(reader, bitWidth, length);
+               var dicIndexes = new List<int>();
+               _dictionaryReader.Read(reader, _schemaElement, dicIndexes);
+               return dicIndexes;
 
             default:
                throw new Exception($"encoding {encoding} is not supported.");  //todo: replace with own exception type
          }
-      }
-
-      private int GetRemainingLength(BinaryReader reader)
-      {
-         return (int)(reader.BaseStream.Length - reader.BaseStream.Position);
       }
 
       private static byte[] ReadRawBytes(PageHeader ph, Stream inputStream)
