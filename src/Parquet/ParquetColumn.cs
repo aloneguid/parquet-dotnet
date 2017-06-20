@@ -21,8 +21,13 @@
  * SOFTWARE.
  */
 
+using Parquet.Thrift;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using TType = Parquet.Thrift.Type;
 
 namespace Parquet
 {
@@ -42,6 +47,13 @@ namespace Parquet
          Values = values ?? throw new ArgumentNullException(nameof(values));
       }
 
+      internal ParquetColumn(string name, SchemaElement schema)
+      {
+         Name = name ?? throw new ArgumentNullException(nameof(name));
+         ParquetRawType = schema.Type.ToString();
+         Values = CreateValuesList(schema);
+      }
+
       /// <summary>
       /// Column name
       /// </summary>
@@ -52,14 +64,27 @@ namespace Parquet
       /// <summary>
       /// List of values
       /// </summary>
-      public IList Values { get; }
+      public IList Values { get; private set; }
 
       public void Add(ParquetColumn col)
       {
-         foreach(var value in col.Values)
+         Add(col.Values);
+      }
+
+      public void Add(IList values)
+      {
+         //todo: if properly casted speed will increase
+         foreach (var value in values)
          {
             Values.Add(value);
          }
+      }
+
+      internal void SetDictionary(IList dictionary, List<int> indexes)
+      {
+         Values = indexes
+            .Select(index => dictionary[index])
+            .ToList();
       }
 
       /// <summary>
@@ -88,6 +113,33 @@ namespace Parquet
       public override int GetHashCode()
       {
          return Name.GetHashCode();
+      }
+
+      internal static IList CreateValuesList(SchemaElement schema)
+      {
+         switch(schema.Type)
+         {
+            case TType.BOOLEAN:
+               return new List<bool>();
+            case TType.INT32:
+               return schema.Converted_type == ConvertedType.DATE
+                  ? (IList)(new List<DateTime>())
+                  : (IList)(new List<int>());
+            case TType.FLOAT:
+               return new List<float>();
+            case TType.INT64:
+               return new List<long>();
+            case TType.DOUBLE:
+               return new List<double>();
+            case TType.INT96:
+               return new List<BigInteger>();
+            case TType.BYTE_ARRAY:
+               return schema.Converted_type == ConvertedType.UTF8
+                  ? (IList)(new List<string>())
+                  : (IList)(new List<byte[]>());
+            default:
+               throw new NotImplementedException($"type {schema.Type} not implemented");
+         }
       }
    }
 }

@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.Test", "Parquet.Test\Parquet.Test.csproj", "{8B0A6566-6722-4550-8EF2-1D91DF188F9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.Test", "Parquet.Test\Parquet.Test.csproj", "{8B0A6566-6722-4550-8EF2-1D91DF188F9B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{9B670DE1-D2C6-4F18-81C8-EC0E6A583E53}"
 	ProjectSection(SolutionItems) = preProject
@@ -21,6 +21,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{60294E19-6F8D-4D78-9A62-C50489095484}"
 	ProjectSection(SolutionItems) = preProject
 		..\build.ps1 = ..\build.ps1
+		PreCommit.ps1 = PreCommit.ps1
 	EndProjectSection
 EndProject
 Global

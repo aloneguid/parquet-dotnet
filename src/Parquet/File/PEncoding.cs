@@ -45,7 +45,6 @@ namespace Parquet.File
          if (length == 0) length = reader.ReadInt32();
          var result = new List<int>();
 
-
          long start = reader.BaseStream.Position;
          while (reader.BaseStream.Position - start < length)
          {
@@ -65,143 +64,6 @@ namespace Parquet.File
          }
 
          return result;
-      }
-
-      public static IList ReadPlain(BinaryReader reader, SchemaElement schemaElement)
-      {
-         long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
-         byte[] data = reader.ReadBytes((int)byteCount);
-
-         switch (schemaElement.Type)
-         {
-            case TType.BOOLEAN:
-               return ReadPlainBoolean(data, 8);
-            case TType.INT32:
-               var r32 = new List<int>(data.Length / 4);
-               for(int i = 0; i < data.Length; i += 4)
-               {
-                  int iv = BitConverter.ToInt32(data, i);
-                  r32.Add(iv);
-               }
-               // Do the Date conversion 
-               if (schemaElement.Converted_type == ConvertedType.DATE)
-               {
-                  return r32.Select(dateThing => dateThing.FromUnixTime()).ToList();
-               }
-               return r32;
-            case TType.FLOAT:
-               var rf32 = new List<float>(data.Length / 4);
-               for (int i = 0; i < data.Length; i += 4)
-               {
-                  float iv = BitConverter.ToSingle(data, i);
-                  rf32.Add(iv);
-               }
-               return rf32;
-            case TType.INT64:
-               var r64 = new List<long>(data.Length / 8);
-               for(int i = 0; i < data.Length; i+= 8)
-               {
-                  long lv = BitConverter.ToInt64(data, i);
-                  r64.Add(lv);
-               }
-               return r64;
-            case TType.DOUBLE:
-               var f64 = new List<double>(data.Length / 8);
-               for (int i = 0; i < data.Length; i += 8)
-               {
-                  double lv = BitConverter.ToDouble(data, i);
-                  f64.Add(lv);
-               }
-               return f64;
-            case TType.INT96:
-               //todo: this is a sample how to read int96, not tested this yet
-               // todo: need to work this out because Spark is not encoding per spec - working with the Spark encoding instead
-#if !SPARK_TYPES
-     var r96 = new List<BigInteger>(data.Length / 12);          
-#else
-     var r96 = new List<DateTime>(data.Length / 12);
-#endif
-               
-               for(int i = 0; i < data.Length; i+= 12)
-               {
-
-#if !SPARK_TYPES
-                  byte[] v96 = new byte[12];
-                  Array.Copy(data, i, v96, 0, 12);
-                  var bi = new BigInteger(v96);
-#else
-                  // for the time being we can discard the nanos 
-                  var utils = new NumericUtils();
-                  byte[] v96 = new byte[4];
-                  byte[] nanos = new byte[8];
-                  Array.Copy(data, i + 8, v96, 0, 4);
-                  Array.Copy(data, i, nanos, 0, 8);
-                  var bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
-                  bi.AddMilliseconds((double) (BitConverter.ToInt64(nanos, 0) / 1000));
-#endif
-                  r96.Add(bi);
-               }
-               return r96;
-            case TType.BYTE_ARRAY:
-               return ReadByteArray(data, schemaElement);
-            default:
-               throw new NotImplementedException($"type {schemaElement.Type} not implemented");
-         }
-
-      }
-
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static List<bool> ReadPlainBoolean(byte[] data, int count)
-      {
-         var res = new List<bool>(count);
-         int ibit = 0;
-         int ibyte = 0;
-         byte b = data[0];
-
-         for(int ires = 0; ires < count; ires++)
-         {
-            if (ibit == 8)
-            {
-               b = data[++ibyte];
-               ibit = 0;
-            }
-
-            bool set = ((b >> ibit++) & 1) == 1;
-            res.Add(set);
-         }
-
-         return res;
-      }
-
-      private static IList ReadByteArray(byte[] data, SchemaElement schemaElement)
-      {
-         if (schemaElement.Converted_type == ConvertedType.UTF8)
-         {
-            var result = new List<string>();
-            for (int i = 0; i < data.Length;)
-            {
-               int length = BitConverter.ToInt32(data, i);
-               i += 4;        //fast-forward to data
-               string s = UTF8.GetString(data, i, length);
-               i += length;   //fast-forward to the next element
-               result.Add(s);
-            }
-            return result;
-         }
-         else
-         {
-            var result = new List<byte[]>();
-            for (int i = 0; i < data.Length;)
-            {
-               int length = BitConverter.ToInt32(data, i);
-               i += 4;        //fast-forward to data
-               byte[] ar = new byte[length];
-               Array.Copy(data, i, ar, 0, length);
-               i += length;   //fast-forward to the next element
-               result.Add(ar);
-            }
-            return result;
-         }
       }
 
       /// <summary>
@@ -233,11 +95,10 @@ namespace Parquet.File
          // value that's repeated. Yields the value repeated count times.
 
          int count = header >> 1;
-         int width = bitWidth + 7 / 8; //round up to next byte
+         int width = (bitWidth + 7) / 8; //round up to next byte
          byte[] data = reader.ReadBytes(width);
-         if (data.Length > 1) throw new NotImplementedException();
-         int value = (int)data[0];
-         return Enumerable.Repeat(value, count).ToList();   //todo: not sure how fast it is
+         int value = ReadIntOnBytes(data);
+         return Enumerable.Repeat(value, count).ToList();
       }
 
       public static List<int> ReadBitpacked(int header, BinaryReader reader, int bitWidth)
@@ -278,6 +139,25 @@ namespace Parquet.File
             }
          }
          return result;
+      }
+
+      private static int ReadIntOnBytes(byte[] data)
+      {
+         switch(data.Length)
+         {
+            case 0:
+               return 0;
+            case 1:
+               return data[0];
+            case 2:
+               return data[1] << 8 + data[0];
+            case 3:
+               return data[2] << 16 + data[1] << 8 + data[0];
+            case 4:
+               return BitConverter.ToInt32(data, 0);
+            default:
+               throw new IOException($"encountered bit width ({data.Length}) that requires more than 4 bytes.");
+         }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
