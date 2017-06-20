@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Parquet.Thrift;
+using Enc = System.Text.Encoding;
 
 namespace Parquet
 {
@@ -74,6 +75,20 @@ namespace Parquet
       private FileMetaData ReadMetadata()
       {
          //todo: validation that it's a parquet format indeed
+
+         if (_input.Length <= 8)
+            throw new IOException("not a Parquet file (size too small)");
+
+         _input.Seek(0, SeekOrigin.Begin);
+         char[] head = _reader.ReadChars(4);
+         string shead = new string(head);
+         _input.Seek(-4, SeekOrigin.End);
+         char[] tail = _reader.ReadChars(4);
+         string stail = new string(tail);
+         if (shead != "PAR1")
+            throw new IOException($"not a Parquet file(head is '{shead}')");
+         if (stail != "PAR1")
+            throw new IOException($"not a Parquet file(head is '{stail}')");
 
          //go to -4 bytes (PAR1) -4 bytes (footer length number)
          _input.Seek(-8, SeekOrigin.End);
