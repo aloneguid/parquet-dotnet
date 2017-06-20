@@ -5,6 +5,7 @@ using System.IO;
 using Parquet.Thrift;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace Parquet.File.Values
 {
@@ -141,11 +142,11 @@ namespace Parquet.File.Values
             case 0:
                return 0;
             case 1:
-               return data[0];
+               return (data[0]);
             case 2:
-               return data[1] << 8 + data[0];
+               return (data[1] << 8) + (data[0]);
             case 3:
-               return data[2] << 16 + data[1] << 8 + data[0];
+               return (data[2] << 16) + (data[1] << 8) + (data[0]);
             case 4:
                return BitConverter.ToInt32(data, 0);
             default:

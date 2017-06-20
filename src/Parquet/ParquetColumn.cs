@@ -80,11 +80,16 @@ namespace Parquet
          }
       }
 
-      internal void SetDictionary(IList dictionary, List<int> indexes)
+      internal void Add(IList dictionary, List<int> indexes)
       {
-         Values = indexes
+         IList values = indexes
             .Select(index => dictionary[index])
             .ToList();
+
+         foreach(var value in values)
+         {
+            Values.Add(value);
+         }
       }
 
       /// <summary>

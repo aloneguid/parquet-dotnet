@@ -49,49 +49,72 @@ namespace Parquet.File
 
          PageHeader ph = _thrift.Read<PageHeader>();
 
+         bool finished = false;
          IList dictionaryPage = null;
          List<int> indexes = null;
-         if (ph.Type == PageType.DICTIONARY_PAGE)
+
+         while (!finished)
          {
-            dictionaryPage = ReadDictionaryPage(ph);
-
-            ph = _thrift.Read<PageHeader>(); //get next page
-         }
-
-         int dataPageCount = 0;
-         while(true)
-         {
-            var page = ReadDataPage(ph, result.Values);
-
-            //merge indexes
-            if(page.indexes != null)
+            if (ph.Type == PageType.DICTIONARY_PAGE)
             {
-               if(indexes == null)
+               IList dictionaryPagePage = ReadDictionaryPage(ph);
+               if(dictionaryPage == null)
                {
-                  indexes = page.indexes;
+                  dictionaryPage = dictionaryPagePage;
                }
                else
                {
-                  indexes.AddRange(page.indexes);
+                  foreach(var item in dictionaryPagePage)
+                  {
+                     dictionaryPage.Add(item);
+                  }
+               }
+
+               ph = _thrift.Read<PageHeader>(); //get next page
+            }
+
+            int dataPageCount = 0;
+            while (true)
+            {
+               var page = ReadDataPage(ph, result.Values);
+
+               //merge indexes
+               if (page.indexes != null)
+               {
+                  if (indexes == null)
+                  {
+                     indexes = page.indexes;
+                  }
+                  else
+                  {
+                     indexes.AddRange(page.indexes);
+                  }
+               }
+
+               dataPageCount++;
+
+               if (page.definitions != null) throw new NotImplementedException();
+               if (page.repetitions != null) throw new NotImplementedException();
+
+               //todo: combine tuple into real values
+
+               if (result.Values.Count >= maxValues || (indexes != null && indexes.Count >= maxValues))
+               {
+                  //all data pages read
+                  finished = true;
+                  break;
+               }
+
+               ph = _thrift.Read<PageHeader>(); //get next page
+               if (ph.Type != PageType.DATA_PAGE)
+               {
+                  break;
                }
             }
-
-            dataPageCount++;
-
-            if (page.definitions != null) throw new NotImplementedException();
-            if (page.repetitions != null) throw new NotImplementedException();
-
-            //todo: combine tuple into real values
-
-            if (result.Values.Count >= maxValues || indexes.Count >= maxValues)
-            {
-               //all data pages read
-               break;
-            }
-            ph = _thrift.Read<PageHeader>(); //get next page
          }
 
-         if (dictionaryPage != null) result.SetDictionary(dictionaryPage, indexes);
+         if (dictionaryPage != null) result.Add(dictionaryPage, indexes);
+
          return result;
       }
 
