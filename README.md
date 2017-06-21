@@ -20,6 +20,16 @@ We have just started to work on this library, contributors are welcome.
 |4|Support GZIP decompression/compression|planning|
 |5|Support nested columns|planning|
 
+## Tools
+
+### parq
+
+This tools gives a simple schema inspector which lists out the columns found in a Parquet data set. 
+
+To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet```
+
+![Parq](docs/img/parq.jpg)
+
 ## License
 
 .NET Core (including the corefx repo) is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
