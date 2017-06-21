@@ -1,5 +1,7 @@
 # parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet)
 
+![Icon](doc/img/icon.png)
+
 A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files.
 
 ## Why
