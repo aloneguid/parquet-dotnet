@@ -28,7 +28,7 @@ This tools gives a simple schema inspector which lists out the columns found in 
 
 To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet```
 
-![Parq](docs/img/parq.jpg)
+![Parq](doc/img/parq.JPG)
 
 ## License
 
