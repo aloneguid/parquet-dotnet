@@ -24,6 +24,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Parquet
@@ -74,7 +75,13 @@ namespace Parquet
           return Convert.ToInt64((date - epoch).TotalSeconds);
        }
 
-       public static DateTime JulianToDateTime(this int julianDate)
+       public static long GetUnixUnixTimeDays(this DateTime date)
+       {
+          var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+          return Convert.ToInt64((date - epoch).TotalDays);
+       }
+
+      public static DateTime JulianToDateTime(this int julianDate)
        {
           double unixTime = julianDate - 2440587;
 

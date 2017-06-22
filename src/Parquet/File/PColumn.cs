@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Text;
 using Parquet.Thrift;
 using Encoding = Parquet.Thrift.Encoding;
@@ -51,14 +52,15 @@ namespace Parquet.File
          PageHeader ph = _thrift.Read<PageHeader>();
 
          bool finished = false;
-         IList dictionaryPage = null;
+         IList dictionaryPage = null, copyPage = null;
          List<int> indexes = null;
+         List<int> definitions = null;
 
          while (!finished)
          {
             if (ph.Type == PageType.DICTIONARY_PAGE)
             {
-               IList dictionaryPagePage = ReadDictionaryPage(ph);
+               (IList dictionaryPagePage, IList copyPagePage) = ReadDictionaryPage(ph);
                if(dictionaryPage == null)
                {
                   dictionaryPage = dictionaryPagePage;
@@ -70,6 +72,7 @@ namespace Parquet.File
                      dictionaryPage.Add(item);
                   }
                }
+               copyPage = copyPagePage;
 
                ph = _thrift.Read<PageHeader>(); //get next page
             }
@@ -77,7 +80,7 @@ namespace Parquet.File
             int dataPageCount = 0;
             while (true)
             {
-               var page = ReadDataPage(ph, result.Values);
+               var page = ReadDataPage(ph, result.ValuesFinal);
 
                //merge indexes
                if (page.indexes != null)
@@ -92,14 +95,26 @@ namespace Parquet.File
                   }
                }
 
+               if (page.definitions != null)
+               {
+                  if (definitions == null)
+                  {
+                     definitions = (List<int>) page.definitions;
+                  }
+                  else
+                  {
+                     definitions.AddRange((List<int>) page.definitions);
+                  }
+               }
+
                dataPageCount++;
 
-               if (page.definitions != null) throw new NotImplementedException();
-               if (page.repetitions != null) throw new NotImplementedException();
+               //if (page.definitions != null) throw new NotImplementedException();
+               //if (page.repetitions != null) throw new NotImplementedException();
 
                //todo: combine tuple into real values
 
-               if (result.Values.Count >= maxValues || (indexes != null && indexes.Count >= maxValues))
+               if (result.ValuesFinal.Count >= maxValues || (indexes != null && indexes.Count >= maxValues))
                {
                   //all data pages read
                   finished = true;
@@ -114,7 +129,13 @@ namespace Parquet.File
             }
          }
 
-         if (dictionaryPage != null) result.Add(dictionaryPage, indexes);
+         // add the definitions into the result and the merge afterwards
+         var indexesMod = indexes.Take(ph.Data_page_header.Num_values).ToList();
+         var definitionsMod = definitions.Take(ph.Data_page_header.Num_values).ToList();
+
+         var valuesList = new ParquetValueStructure(dictionaryPage, copyPage, indexesMod, definitionsMod);
+
+         if (dictionaryPage != null) result.Add(valuesList);
 
          return result;
       }
@@ -134,7 +155,7 @@ namespace Parquet.File
             .ToList();
       }
 
-      private IList ReadDictionaryPage(PageHeader ph)
+      private (IList, IList) ReadDictionaryPage(PageHeader ph)
       {
          //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain enncoding.
 
@@ -144,9 +165,9 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               IList result = ParquetColumn.CreateValuesList(_schemaElement, out Type systemType);
+               (IList result, IList copy) = ParquetColumn.CreateValuesList(_schemaElement, out Type systemType);
                _plainReader.Read(dataReader, _schemaElement, result);
-               return result;
+               return (result, copy);
             }
          }
       }
@@ -163,6 +184,7 @@ namespace Parquet.File
 
                List<int> definitions = ReadDefinitionLevels(reader, ph.Data_page_header.Num_values);
 
+               // these are pointers back to the Values table - lookup on values 
                List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination);
 
                return (definitions, null, indexes);

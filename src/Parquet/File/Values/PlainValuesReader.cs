@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define SPARK_TYPES 
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -72,7 +74,7 @@ namespace Parquet.File.Values
       {
          if(schema.Converted_type == ConvertedType.DATE)
          {
-            List<DateTime> destinationTyped = (List<DateTime>)destination;
+            List<DateTime?> destinationTyped = (List<DateTime?>)destination;
             for (int i = 0; i < data.Length; i += 4)
             {
                int iv = BitConverter.ToInt32(data, i);
@@ -126,14 +128,18 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadInt96(byte[] data, SchemaElement schema, IList destination)
       {
-         List<BigInteger> destinationTyped = (List<BigInteger>)destination;
+#if !SPARK_TYPES
+         List<BigInteger?> destinationTyped = (List<BigInteger?>)destination;
+#else
+         List<DateTime?> destinationTyped = (List<DateTime?>)destination;
+#endif
 
          //todo: this is a sample how to read int96, not tested this yet
          // todo: need to work this out because Spark is not encoding per spec - working with the Spark encoding instead
 #if !SPARK_TYPES
          //var r96 = new List<BigInteger>(data.Length / 12);
 #else
-     var r96 = new List<DateTime>(data.Length / 12);
+         var r96 = new List<DateTime?>(data.Length / 12);
 #endif
 
          for (int i = 0; i < data.Length; i += 12)

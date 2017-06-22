@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+ #pragma SPARKTYPE 
+
 using Parquet.Thrift;
 using System;
 using System.Collections;
@@ -44,6 +46,22 @@ namespace Parquet
       }
    }
 
+   public class ParquetValueStructure
+   {
+      public ParquetValueStructure(IList uniqueValuesList, IList valuesList, List<int> indexes, List<int> definitions)
+      {
+         UniqueValuesList = uniqueValuesList;
+         ValuesList = valuesList;
+         Indexes = indexes;
+         Definitions = definitions;
+      }
+
+      public IList UniqueValuesList { get; private set; }
+      public IList ValuesList { get; private set; }
+      public List<int> Indexes { get; private set; }
+      public  List<int> Definitions { get; private set; }
+   }
+
    /// <summary>
    /// Represents a column
    /// </summary>
@@ -53,7 +71,7 @@ namespace Parquet
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          //todo: ParquetRawType
-         Values = CreateValuesList(systemType);
+         ValuesFinal = CreateValuesList(systemType);
          //todo: SystemType
          throw new NotImplementedException();
       }
@@ -62,7 +80,9 @@ namespace Parquet
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          ParquetRawType = schema.Type.ToString();
-         Values = CreateValuesList(schema, out Type systemType);
+         (IList a, IList b) = CreateValuesList(schema, out Type systemType);
+         ValuesInitial = a;
+         ValuesFinal = b;
          SystemType = systemType;
       }
 
@@ -84,7 +104,8 @@ namespace Parquet
       /// <summary>
       /// List of values
       /// </summary>
-      public IList Values { get; private set; }
+      public IList ValuesInitial { get; private set; }
+      public IList ValuesFinal { get; private set; }
 
       /// <summary>
       /// Merges values into this column from the passed column
@@ -92,7 +113,7 @@ namespace Parquet
       /// <param name="col"></param>
       public void Add(ParquetColumn col)
       {
-         Add(col.Values);
+         Add(col.ValuesInitial);
       }
 
       /// <summary>
@@ -104,20 +125,29 @@ namespace Parquet
          //todo: if properly casted speed will increase
          foreach (var value in values)
          {
-            Values.Add(value);
+            ValuesFinal.Add(value);
          }
       }
 
-      internal void Add(IList dictionary, List<int> indexes)
+      internal void Add(ParquetValueStructure parquetValues)
       {
-         IList values = indexes
-            .Select(index => dictionary[index])
-            .ToList();
-
-         foreach(var value in values)
+         /* 0  1
+          * 1  1
+          * 1  0
+          * 0  1 */
+         ValuesInitial = parquetValues.UniqueValuesList;
+         int iIndex = 0;
+         foreach (int iDefinition in parquetValues.Definitions)
          {
-            Values.Add(value);
+            if (iDefinition == 1)
+            {
+               parquetValues.ValuesList.Add(parquetValues.UniqueValuesList[parquetValues.Indexes[iIndex]]);
+               iIndex++;
+               continue;
+            }
+            parquetValues.ValuesList.Add(null);
          }
+         ValuesFinal = parquetValues.ValuesList;
       }
 
       /// <summary>
@@ -148,46 +178,51 @@ namespace Parquet
          return Name.GetHashCode();
       }
 
-      internal static IList CreateValuesList(SchemaElement schema, out Type systemType)
+      internal static (IList, IList) CreateValuesList(SchemaElement schema, out Type systemType)
       {
          switch(schema.Type)
          {
             case TType.BOOLEAN:
-               systemType = typeof(bool);
-               return new List<bool>();
+               systemType = typeof(bool?);
+               return (new List<bool?>(), new List<bool?>());
             case TType.INT32:
                if(schema.Converted_type == ConvertedType.DATE)
                {
-                  systemType = typeof(DateTime);
-                  return new List<DateTime>();
+                  systemType = typeof(DateTime?);
+                  return (new List<DateTime?>(), new List<DateTime?>());
                }
                else
                {
-                  systemType = typeof(int);
-                  return new List<int>();
+                  systemType = typeof(int?);
+                  return (new List<int?>(), new List<int?>());
                }
             case TType.FLOAT:
-               systemType = typeof(float);
-               return new List<float>();
+               systemType = typeof(float?);
+               return (new List<float?>(), new List<float?>());
             case TType.INT64:
-               systemType = typeof(long);
-               return new List<long>();
+               systemType = typeof(long?);
+               return (new List<long?>(), new List<long?>());
             case TType.DOUBLE:
-               systemType = typeof(double);
-               return new List<double>();
+               systemType = typeof(double?);
+               return (new List<double?>(), new List<double?>());
             case TType.INT96:
-               systemType = typeof(BigInteger);
-               return new List<BigInteger>();
+#if !SPARK_TYPES
+               systemType = typeof(DateTime?);
+               return (new List<DateTime?>(), new List<DateTime?>());
+#else
+               systemType = typeof(BigInteger?);
+               return (new List<BigInteger?>(), new List<BigInteger?>());
+#endif
             case TType.BYTE_ARRAY:
                if(schema.Converted_type == ConvertedType.UTF8)
                {
                   systemType = typeof(string);
-                  return new List<string>();
+                  return (new List<string>(), new List<string>());
                }
                else
                {
-                  systemType = typeof(bool);
-                  return new List<bool>();
+                  systemType = typeof(bool?);
+                  return (new List<bool?>(), new List<bool?>());
                }
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");

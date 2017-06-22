@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Xunit;
 
 namespace Parquet.Test
@@ -74,7 +75,7 @@ namespace Parquet.Test
        {
           var utils = new NumericUtils();
           var dateTime = DateTime.Parse("2017-01-01");
-          byte[] input = utils.IntToLittleEndian(Convert.ToInt32(dateTime.ToUnixTime()));
+          byte[] input = utils.IntToLittleEndian(Convert.ToInt32(dateTime.GetUnixUnixTimeDays()));
 
           var encoding = new ParquetEncoding();
           var output = encoding.ReadPlain<DateTime>(input, Thrift.Type.INT32, Thrift.ConvertedType.DATE);
