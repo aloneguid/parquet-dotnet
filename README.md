@@ -1,4 +1,4 @@
-# parquet-dotnet [![Visual Studio Team services](https://img.shields.io/vso/build/elastacloud/bad95de3-58b5-428f-96a5-1b28793d0a5f/13.svg?style=plastic)]()
+# parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet)
 
 ![Icon](doc/img/icon.png)
 
@@ -21,6 +21,16 @@ We have just started to work on this library, contributors are welcome.
 |3|Implement writer which can do the same types as in phase 1 and 2.|planning|
 |4|Support GZIP decompression/compression|planning|
 |5|Support nested columns|planning|
+
+## Tools
+
+### parq
+
+This tools gives a simple schema inspector which lists out the columns found in a Parquet data set. 
+
+To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet```
+
+![Parq](doc/img/parq.JPG)
 
 ## License
 

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+VisualStudioVersion = 15.0.26403.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A0507D42-940E-4EF9-BD33-46BB6561A2F5}"
 EndProject
@@ -24,6 +24,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		PreCommit.ps1 = PreCommit.ps1
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{77D1B95E-D2FD-4C41-9458-3A5DAC7C77E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "parq", "parq\parq.csproj", "{D8B93026-36CE-4CBB-8260-7821239108E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,8 +42,15 @@ Global
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8B93026-36CE-4CBB-8260-7821239108E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8B93026-36CE-4CBB-8260-7821239108E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8B93026-36CE-4CBB-8260-7821239108E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8B93026-36CE-4CBB-8260-7821239108E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D8B93026-36CE-4CBB-8260-7821239108E2} = {77D1B95E-D2FD-4C41-9458-3A5DAC7C77E9}
 	EndGlobalSection
 EndGlobal
