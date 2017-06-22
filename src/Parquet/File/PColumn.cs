@@ -130,12 +130,21 @@ namespace Parquet.File
          }
 
          // add the definitions into the result and the merge afterwards
-         var indexesMod = indexes.Take(ph.Data_page_header.Num_values).ToList();
-         var definitionsMod = definitions.Take(ph.Data_page_header.Num_values).ToList();
+         List<int> indexesMod = new List<int>();
+         indexesMod = indexes != null
+            ? indexes.Take(ph.Data_page_header.Num_values).ToList()
+            : result.ValuesFinal.Cast<bool>().Select(item => item ? 1 : 0).ToList();
+
+
+         var definitionsMod = definitions != null
+            ? definitions.Take(ph.Data_page_header.Num_values).ToList()
+            : new List<int>(Enumerable.Repeat(1, ph.Data_page_header.Num_values));
+
+         if (copyPage == null) copyPage = result.ValuesFinal;
 
          var valuesList = new ParquetValueStructure(dictionaryPage, copyPage, indexesMod, definitionsMod);
 
-         if (dictionaryPage != null) result.Add(valuesList);
+         result.Add(valuesList);
 
          return result;
       }

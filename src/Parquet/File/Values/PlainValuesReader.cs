@@ -54,7 +54,7 @@ namespace Parquet.File.Values
          int ibit = 0;
          int ibyte = 0;
          byte b = data[0];
-         var destinationTyped = (List<bool>)destination;
+         var destinationTyped = (List<bool?>)destination;
 
          for (int ires = 0; ires < count; ires++)
          {
@@ -83,7 +83,7 @@ namespace Parquet.File.Values
          }
          else
          {
-            List<int> destinationTyped = (List<int>)destination;
+            List<int?> destinationTyped = (List<int?>)destination;
             for (int i = 0; i < data.Length; i += 4)
             {
                int iv = BitConverter.ToInt32(data, i);
@@ -95,7 +95,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadFloat(byte[] data, SchemaElement schema, IList destination)
       {
-         List<float> destinationTyped = (List<float>)destination;
+         List<float?> destinationTyped = (List<float?>)destination;
          for (int i = 0; i < data.Length; i += 4)
          {
             float iv = BitConverter.ToSingle(data, i);
@@ -106,7 +106,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadLong(byte[] data, SchemaElement schema, IList destination)
       {
-         List<long> destinationTyped = (List<long>)destination;
+         List<long?> destinationTyped = (List<long?>)destination;
          for (int i = 0; i < data.Length; i += 8)
          {
             long lv = BitConverter.ToInt64(data, i);
@@ -117,7 +117,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadDouble(byte[] data, SchemaElement schema, IList destination)
       {
-         List<double> destinationTyped = (List<double>)destination;
+         List<double?> destinationTyped = (List<double?>)destination;
          for (int i = 0; i < data.Length; i += 8)
          {
             double lv = BitConverter.ToDouble(data, i);

@@ -135,6 +135,12 @@ namespace Parquet
           * 1  1
           * 1  0
           * 0  1 */
+         if (parquetValues.UniqueValuesList == null)
+         {
+            ValuesFinal = parquetValues.ValuesList;
+            return;
+         }
+
          ValuesInitial = parquetValues.UniqueValuesList;
          int iIndex = 0;
          foreach (int iDefinition in parquetValues.Definitions)
