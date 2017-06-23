@@ -80,7 +80,7 @@ namespace Parquet.File
             int dataPageCount = 0;
             while (true)
             {
-               var page = ReadDataPage(ph, result.ValuesFinal);
+               var page = ReadDataPage(ph, result.Values);
 
                //merge indexes
                if (page.indexes != null)
@@ -114,7 +114,7 @@ namespace Parquet.File
 
                //todo: combine tuple into real values
 
-               if (result.ValuesFinal.Count >= maxValues || (indexes != null && indexes.Count >= maxValues))
+               if (result.Values.Count >= maxValues || (indexes != null && indexes.Count >= maxValues))
                {
                   //all data pages read
                   finished = true;
@@ -133,14 +133,14 @@ namespace Parquet.File
          List<int> indexesMod = new List<int>();
          indexesMod = indexes != null
             ? indexes.Take(ph.Data_page_header.Num_values).ToList()
-            : result.ValuesFinal.Cast<bool>().Select(item => item ? 1 : 0).ToList();
+            : result.Values.Cast<bool>().Select(item => item ? 1 : 0).ToList();
 
 
          var definitionsMod = definitions != null
             ? definitions.Take(ph.Data_page_header.Num_values).ToList()
             : new List<int>(Enumerable.Repeat(1, ph.Data_page_header.Num_values));
 
-         if (copyPage == null) copyPage = result.ValuesFinal;
+         if (copyPage == null) copyPage = result.Values;
 
          var valuesList = new ParquetValueStructure(dictionaryPage, copyPage, indexesMod, definitionsMod);
 

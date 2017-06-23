@@ -9,12 +9,14 @@ namespace Parquet.File
    /// </summary>
    class ThriftStream
    {
+      private readonly Stream _s;
       private readonly TTransport _transport;
       private readonly TProtocol _protocol;
 
-      public ThriftStream(Stream input)
+      public ThriftStream(Stream s)
       {
-         _transport = new TStreamTransport(input, null);
+         _s = s;
+         _transport = new TStreamTransport(s, s);
          _protocol = new TCompactProtocol(_transport);
       }
 
@@ -28,6 +30,19 @@ namespace Parquet.File
          var res = new T();
          res.Read(_protocol);
          return res;
+      }
+
+      /// <summary>
+      /// Writes types structure to the destination stream
+      /// </summary>
+      /// <typeparam name="T"></typeparam>
+      /// <param name="obj"></param>
+      /// <returns>Actual size of the object written</returns>
+      public long Write<T>(T obj) where T : TBase, new()
+      {
+         long startPos = _s.Position;
+         obj.Write(_protocol);
+         return _s.Position - startPos;
       }
    }
 }

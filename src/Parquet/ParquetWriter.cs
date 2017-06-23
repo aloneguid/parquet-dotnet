@@ -26,6 +26,10 @@ using System.IO;
 using System.Text;
 using Parquet.Thrift;
 using Parquet.File;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Parquet.File.Values;
 
 namespace Parquet
 {
@@ -39,22 +43,67 @@ namespace Parquet
       private readonly ThriftStream _thrift;
       private static readonly byte[] Magic = System.Text.Encoding.ASCII.GetBytes("PAR1");
       private readonly FileMetaData _meta = new FileMetaData();
+      private readonly IValuesWriter _plainWriter = new PlainValuesWriter();
 
       public ParquetWriter(Stream output)
       {
          _output = output ?? throw new ArgumentNullException(nameof(output));
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
+         _thrift = new ThriftStream(output);
+         _writer = new BinaryWriter(_output);
 
          //file starts with magic
          WriteMagic();
 
          _meta.Created_by = "parquet-dotnet";
          _meta.Version = 1;
+         _meta.Row_groups = new List<RowGroup>();
       }
 
-      public void Write(ParquetDataSet frame)
+      public void Write(ParquetDataSet dataSet, int rowGroupSize = 5000)
       {
-         //todo: detect frame schema
+         long totalCount = dataSet.Count;
+
+         _meta.Schema = new List<SchemaElement>(dataSet.Columns.Select(c => c.Schema));
+         _meta.Num_rows = totalCount;
+
+         //write in row groups
+
+         for(long rowIdx = 0; rowIdx < totalCount; rowIdx += rowGroupSize)
+         {
+            var thriftRowGroup = new RowGroup();
+            thriftRowGroup.Columns = new List<ColumnChunk>();
+
+            foreach (ParquetColumn column in dataSet.Columns)
+            {
+               ColumnChunk thriftChunk = Write(column, rowIdx, rowGroupSize);
+               thriftRowGroup.Columns.Add(thriftChunk);
+            }
+
+            _meta.Row_groups.Add(thriftRowGroup);
+         }
+
+         _thrift.Write(_meta);
+      }
+
+      private ColumnChunk Write(ParquetColumn column, long rowIdx, long groupSize)
+      {
+         var chunk = new ColumnChunk();
+         long startPos = _output.Position;
+         chunk.File_offset = startPos;
+         chunk.Meta_data = new ColumnMetaData();
+         chunk.Meta_data.Type = column.Type;
+         chunk.Meta_data.Codec = CompressionCodec.UNCOMPRESSED;   //todo: compression should be passed as parameter
+         chunk.Meta_data.Data_page_offset = startPos;
+
+         /*_plainWriter.Write(_writer, column.Schema,
+            column.Values.OfType<object>().Skip((int)rowIdx).Take((int)groupSize).ToList()); //todo: heavy, must be rewritten
+
+         long endPos = _output.Position;
+         chunk.Meta_data.Total_compressed_size = chunk.Meta_data.Total_uncompressed_size = endPos - startPos;
+         */
+
+         return chunk;
       }
 
       private void WriteMagic()

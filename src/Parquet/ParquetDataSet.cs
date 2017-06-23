@@ -22,6 +22,7 @@
  */
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet
 {
@@ -43,6 +44,11 @@ namespace Parquet
          {
             _columns.Add(column.Name, column);
          }
+      }
+
+      public ParquetDataSet(params ParquetColumn[] columns) : this((IEnumerable<ParquetColumn>)columns)
+      {
+
       }
 
       /// <summary>
@@ -78,19 +84,11 @@ namespace Parquet
                col.Add(kv.Value);
             }
          }
-      } 
-   }
-
-   /*public class ParquetRow
-   {
-      public ParquetRow(IEnumerable<object> row)
-      {
-                  
       }
-      public Get()
-      {
-         foreach (var kv in source._columns)
-         {
-         }
-   }*/
+
+      /// <summary>
+      /// Returns total number of rows
+      /// </summary>
+      public long Count => _columns.FirstOrDefault().Value.Values.Count;
+   }
 }

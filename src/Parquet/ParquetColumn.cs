@@ -44,22 +44,11 @@ namespace Parquet
       {
 
       }
-   }
 
-   public class ParquetValueStructure
-   {
-      public ParquetValueStructure(IList uniqueValuesList, IList valuesList, List<int> indexes, List<int> definitions)
+      public void Add(params T[] values)
       {
-         UniqueValuesList = uniqueValuesList;
-         ValuesList = valuesList;
-         Indexes = indexes;
-         Definitions = definitions;
+         base.Add(values);
       }
-
-      public IList UniqueValuesList { get; private set; }
-      public IList ValuesList { get; private set; }
-      public List<int> Indexes { get; private set; }
-      public  List<int> Definitions { get; private set; }
    }
 
    /// <summary>
@@ -67,13 +56,15 @@ namespace Parquet
    /// </summary>
    public class ParquetColumn : IEquatable<ParquetColumn>
    {
+      private SchemaElement _schema;
+
       public ParquetColumn(string name, Type systemType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-         //todo: ParquetRawType
-         ValuesFinal = CreateValuesList(systemType);
-         //todo: SystemType
-         throw new NotImplementedException();
+         _schema = new SchemaElement(name);
+         ValuesInitial = CreateValuesList(systemType, _schema);
+         ValuesInitial = CreateValuesList(systemType, _schema);
+         SystemType = systemType;
       }
 
       internal ParquetColumn(string name, SchemaElement schema)
@@ -82,7 +73,7 @@ namespace Parquet
          ParquetRawType = schema.Type.ToString();
          (IList a, IList b) = CreateValuesList(schema, out Type systemType);
          ValuesInitial = a;
-         ValuesFinal = b;
+         Values = b;
          SystemType = systemType;
       }
 
@@ -99,13 +90,27 @@ namespace Parquet
       /// <summary>
       /// Parquet type as read from schema
       /// </summary>
-      public string ParquetRawType { get; internal set; }
+      public string ParquetRawType { get; }
+
+      internal TType Type => _schema.Type;
+
+      internal IList ValuesInitial { get; private set; }
 
       /// <summary>
       /// List of values
       /// </summary>
-      public IList ValuesInitial { get; private set; }
-      public IList ValuesFinal { get; private set; }
+      public IList Values { get; private set; }
+
+      internal SchemaElement Schema => _schema;
+
+      /// <summary>
+      /// Adds values
+      /// </summary>
+      /// <param name="values"></param>
+      public void Add(params object[] values)
+      {
+         Add(values);
+      }
 
       /// <summary>
       /// Merges values into this column from the passed column
@@ -125,7 +130,7 @@ namespace Parquet
          //todo: if properly casted speed will increase
          foreach (var value in values)
          {
-            ValuesFinal.Add(value);
+            Values.Add(value);
          }
       }
 
@@ -137,7 +142,7 @@ namespace Parquet
           * 0  1 */
          if (parquetValues.UniqueValuesList == null)
          {
-            ValuesFinal = parquetValues.ValuesList;
+            Values = parquetValues.ValuesList;
             return;
          }
 
@@ -153,7 +158,7 @@ namespace Parquet
             }
             parquetValues.ValuesList.Add(null);
          }
-         ValuesFinal = parquetValues.ValuesList;
+         Values = parquetValues.ValuesList;
       }
 
       /// <summary>
@@ -235,9 +240,32 @@ namespace Parquet
          }
       }
 
-      internal static IList CreateValuesList(Type systemType)
+      private static IList CreateValuesList(Type systemType, SchemaElement schema)
       {
-         throw new NotImplementedException();
+         if (systemType == typeof(int))
+         {
+            schema.Type = TType.INT32;
+            return new List<int>();
+         }
+
+         throw new NotImplementedException($"type {systemType} not implemented");
       }
    }
+
+   class ParquetValueStructure
+   {
+      public ParquetValueStructure(IList uniqueValuesList, IList valuesList, List<int> indexes, List<int> definitions)
+      {
+         UniqueValuesList = uniqueValuesList;
+         ValuesList = valuesList;
+         Indexes = indexes;
+         Definitions = definitions;
+      }
+
+      public IList UniqueValuesList { get; private set; }
+      public IList ValuesList { get; private set; }
+      public List<int> Indexes { get; private set; }
+      public List<int> Definitions { get; private set; }
+   }
+
 }
