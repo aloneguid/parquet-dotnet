@@ -11,12 +11,12 @@ namespace Parquet.File.Values
 {
    class RunLengthBitPackingHybridValuesReader : IValuesReader
    {
-      public void Read(BinaryReader reader, SchemaElement schema, IList destination)
+      public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
          int bitWidth = schema.Type_length;
          List<int> destinationTyped = (List<int>)destination;
          int length = GetRemainingLength(reader);
-         ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped);
+         ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped, maxValues);
       }
 
       /* from specs:
@@ -34,7 +34,7 @@ namespace Parquet.File.Values
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
 
-      public static void ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, List<int> destination)
+      public static void ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, List<int> destination, long maxValues)
       {
          if (length == 0) length = reader.ReadInt32();
 
@@ -46,13 +46,11 @@ namespace Parquet.File.Values
 
             if (isRle)
             {
-               List<int> chunk = ReadRle(header, reader, bitWidth);
-               destination.AddRange(chunk);
+               ReadRle(header, reader, bitWidth, destination);
             }
             else
             {
-               List<int> chunk = ReadBitpacked(header, reader, bitWidth);
-               destination.AddRange(chunk);
+               ReadBitpacked(header, reader, bitWidth, destination, maxValues);
             }
          }
       }
@@ -61,7 +59,7 @@ namespace Parquet.File.Values
       /// Read run-length encoded run from the given header and bit length.
       /// </summary>
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static List<int> ReadRle(int header, BinaryReader reader, int bitWidth)
+      private static void ReadRle(int header, BinaryReader reader, int bitWidth, List<int> destination)
       {
          // The count is determined from the header and the width is used to grab the
          // value that's repeated. Yields the value repeated count times.
@@ -70,11 +68,11 @@ namespace Parquet.File.Values
          int width = (bitWidth + 7) / 8; //round up to next byte
          byte[] data = reader.ReadBytes(width);
          int value = ReadIntOnBytes(data);
-         return Enumerable.Repeat(value, count).ToList();
+         destination.AddRange(Enumerable.Repeat(value, count));
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static List<int> ReadBitpacked(int header, BinaryReader reader, int bitWidth)
+      private static void ReadBitpacked(int header, BinaryReader reader, int bitWidth, List<int> destination, long maxValues)
       {
          int groupCount = header >> 1;
          int count = groupCount * 8;
@@ -88,7 +86,7 @@ namespace Parquet.File.Values
          int total = byteCount * 8;
          int bwl = 8;
          int bwr = 0;
-         var result = new List<int>(total);
+         long read = 0;
          while (total >= bitWidth)
          {
             if (bwr >= 8)
@@ -102,7 +100,9 @@ namespace Parquet.File.Values
                int r = ((b >> bwr) & mask);
                total -= bitWidth;
                bwr += bitWidth;
-               result.Add(r);
+
+               destination.Add(r);
+               if (++read >= maxValues) break;
             }
             else if (i + 1 < byteCount)
             {
@@ -111,7 +111,6 @@ namespace Parquet.File.Values
                bwl += 8;
             }
          }
-         return result;
       }
 
       /// <summary>

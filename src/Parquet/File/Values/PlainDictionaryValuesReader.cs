@@ -8,12 +8,12 @@ namespace Parquet.File.Values
 {
    class PlainDictionaryValuesReader : IValuesReader
    {
-      public void Read(BinaryReader reader, SchemaElement schema, IList destination)
+      public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
          int bitWidth = reader.ReadByte();
          int length = GetRemainingLength(reader);
 
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, (List<int>)destination);
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, (List<int>)destination, maxValues);
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
