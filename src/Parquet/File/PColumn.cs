@@ -80,7 +80,7 @@ namespace Parquet.File
             int dataPageCount = 0;
             while (true)
             {
-               var page = ReadDataPage(ph, result.Values);
+               var page = ReadDataPage(ph, result.Values, maxValues);
 
                //merge indexes
                if (page.indexes != null)
@@ -175,13 +175,13 @@ namespace Parquet.File
             using (var dataReader = new BinaryReader(dataStream))
             {
                (IList result, IList copy) = ParquetColumn.CreateValuesList(_schemaElement, out Type systemType);
-               _plainReader.Read(dataReader, _schemaElement, result);
+               _plainReader.Read(dataReader, _schemaElement, result, int.MaxValue);
                return (result, copy);
             }
          }
       }
 
-      private (ICollection definitions, ICollection repetitions, List<int> indexes) ReadDataPage(PageHeader ph, IList destination)
+      private (ICollection definitions, ICollection repetitions, List<int> indexes) ReadDataPage(PageHeader ph, IList destination, long maxValues)
       {
          byte[] data = ReadRawBytes(ph, _inputStream);
 
@@ -194,7 +194,7 @@ namespace Parquet.File
                List<int> definitions = ReadDefinitionLevels(reader, ph.Data_page_header.Num_values);
 
                // these are pointers back to the Values table - lookup on values 
-               List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination);
+               List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination, maxValues);
 
                return (definitions, null, indexes);
             }
@@ -206,7 +206,7 @@ namespace Parquet.File
          const int maxDefinitionLevel = 1;   //todo: for nested columns this needs to be calculated properly
          int bitWidth = PEncoding.GetWidthFromMaxInt(maxDefinitionLevel);
          var result = new List<int>();
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result);  //todo: there might be more data on larger files
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);  //todo: there might be more data on larger files
 
          int maxLevel = _schema.GetMaxDefinitionLevel(_thriftChunk);
          int nullCount = valueCount - result.Count(r => r == maxLevel);
@@ -215,24 +215,24 @@ namespace Parquet.File
          return result;
       }
 
-      private List<int> ReadColumnValues(BinaryReader reader, Encoding encoding, IList destination)
+      private List<int> ReadColumnValues(BinaryReader reader, Encoding encoding, IList destination, long maxValues)
       {
          //dictionary encoding uses RLE to encode data
 
          switch(encoding)
          {
             case Encoding.PLAIN:
-               _plainReader.Read(reader, _schemaElement, destination);
+               _plainReader.Read(reader, _schemaElement, destination, maxValues);
                return null;
 
             case Encoding.RLE:
                var rleIndexes = new List<int>();
-               _rleReader.Read(reader, _schemaElement, rleIndexes);
+               _rleReader.Read(reader, _schemaElement, rleIndexes, maxValues);
                return rleIndexes;
 
             case Encoding.PLAIN_DICTIONARY:
                var dicIndexes = new List<int>();
-               _dictionaryReader.Read(reader, _schemaElement, dicIndexes);
+               _dictionaryReader.Read(reader, _schemaElement, dicIndexes, maxValues);
                return dicIndexes;
 
             default:

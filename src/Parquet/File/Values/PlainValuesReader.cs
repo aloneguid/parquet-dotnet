@@ -15,7 +15,7 @@ namespace Parquet.File.Values
    {
       private static readonly System.Text.Encoding UTF8 = System.Text.Encoding.UTF8;
 
-      public void Read(BinaryReader reader, SchemaElement schema, IList destination)
+      public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
          long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
          byte[] data = reader.ReadBytes((int)byteCount);
@@ -23,7 +23,7 @@ namespace Parquet.File.Values
          switch (schema.Type)
          {
             case TType.BOOLEAN:
-               ReadPlainBoolean(data, 8, destination);
+               ReadPlainBoolean(data, maxValues, destination);
                break;
             case TType.INT32:
                ReadInt32(data, schema, destination);
@@ -49,7 +49,7 @@ namespace Parquet.File.Values
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static void ReadPlainBoolean(byte[] data, int count, IList destination)
+      private static void ReadPlainBoolean(byte[] data, long count, IList destination)
       {
          int ibit = 0;
          int ibyte = 0;
