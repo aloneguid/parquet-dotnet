@@ -171,14 +171,16 @@ namespace Parquet.File.Values
             Array.Copy(data, i, v96, 0, 12);
             var bi = new BigInteger(v96);
 #else
-                  // for the time being we can discard the nanos 
-                  var utils = new NumericUtils();
-                  byte[] v96 = new byte[4];
-                  byte[] nanos = new byte[8];
-                  Array.Copy(data, i + 8, v96, 0, 4);
-                  Array.Copy(data, i, nanos, 0, 8);
-                  var bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
-                  bi.AddMilliseconds((double) (BitConverter.ToInt64(nanos, 0) / 1000));
+            // for the time being we can discard the nanos 
+            var utils = new NumericUtils();
+            byte[] v96 = new byte[4];
+            byte[] nanos = new byte[8];
+            Array.Copy(data, i + 8, v96, 0, 4);
+            Array.Copy(data, i, nanos, 0, 8);
+            var bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
+            long nanosToInt64 = BitConverter.ToInt64(nanos, 0);
+            double millis = (double) nanosToInt64 / 1000000D;
+            bi = bi.AddMilliseconds(millis);
 #endif
             destinationTyped.Add(bi);
          }
