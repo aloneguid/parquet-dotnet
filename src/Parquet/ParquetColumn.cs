@@ -235,6 +235,18 @@ namespace Parquet
                   systemType = typeof(bool?);
                   return (new List<bool?>(), new List<bool?>());
                }
+            case TType.FIXED_LEN_BYTE_ARRAY:
+               // TODO: Converted type should work differently shouldn't inline in this way
+               if (schema.Converted_type == ConvertedType.DECIMAL)
+               {
+                  systemType = typeof(decimal);
+                  return (new List<decimal?>(), new List<decimal?>());
+               }
+               else
+               {
+                  systemType = typeof(byte?[]);
+                  return (new List<byte?[]>(), new List<byte?[]>());
+               }
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");
          }

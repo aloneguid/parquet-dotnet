@@ -174,6 +174,18 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void FixedLenByteArray_dictionary()
+      {
+         using (Stream s = File.OpenRead(GetDataFilePath("fixedlenbytearray.parquet")))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               ParquetDataSet ds = r.Read();
+            }
+         }
+      }
+
+      [Fact]
       public void Datetypes_all()
       {
          using (Stream s = File.OpenRead(GetDataFilePath("dates.parquet")))

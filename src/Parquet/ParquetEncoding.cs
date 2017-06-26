@@ -59,8 +59,10 @@ namespace Parquet
              case Thrift.Type.BYTE_ARRAY:
                 int elementCount = ParquetUtils.GetByteArrayLELength(parquetBlock.Take(4).ToArray());
                 return (T) (object) parquetBlock.Skip(4).Take(elementCount).ToArray();
+             case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                return (T)(object) parquetBlock.ToArray();
 
-             default:
+            default:
                 return default(T);
           }
        }

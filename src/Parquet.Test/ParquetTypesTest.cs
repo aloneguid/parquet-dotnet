@@ -120,6 +120,17 @@ namespace Parquet.Test
           Assert.Equal(new byte[] { 67 }, output);
        }
 
+       [Fact]
+       public void TestFixedLenByteArray()
+       {
+          byte[] parquetBlock = new byte[] { 67, 68, 69, 70 };
+
+          var encoding = new ParquetEncoding();
+          var output = encoding.ReadPlain<byte[]>(parquetBlock, Thrift.Type.FIXED_LEN_BYTE_ARRAY);
+
+          Assert.Equal(new byte[] { 67, 68, 69, 70 }, output);
+       }
+
       private string GetDataFilePath(string name)
         {
             string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
