@@ -2,7 +2,7 @@
 
 ![Icon](doc/img/icon.png)
 
-A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files.
+A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files. Supports .NET 4.5.1 and .NET Standard 1.6.
 
 ## Why
 
@@ -34,6 +34,10 @@ To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet```
 ## License
 
 parquet-dotnet is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
+
+## Contributing
+
+All contributions are welcome. For details on how to start see [this guide](CONTRIBUTING.md)
 
 ## Useful links
 
