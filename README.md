@@ -38,10 +38,3 @@ parquet-dotnet is licensed under the [MIT license](https://github.com/elastaclou
 ## Contributing
 
 All contributions are welcome. For details on how to start see [this guide](CONTRIBUTING.md)
-
-## Useful links
-
-- [List of Parquet encodings](https://github.com/Parquet/parquet-format/blob/master/Encodings.md)
-- [Parquet Logical Types](https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md)
-- [The striping and assembly algorithms from the Dremel paper](https://github.com/Parquet/parquet-mr/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) (what Parquet is based on)
-- To better understand Parquet, especially what repetition and definition levels are - [Dremel made simple with Parquet](https://blog.twitter.com/engineering/en_us/a/2013/dremel-made-simple-with-parquet.html)
