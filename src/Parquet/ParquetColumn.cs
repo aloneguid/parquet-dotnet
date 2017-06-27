@@ -61,9 +61,12 @@ namespace Parquet
       public ParquetColumn(string name, Type systemType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-         _schema = new SchemaElement(name);
+         _schema = new SchemaElement(name)
+         {
+            Repetition_type = FieldRepetitionType.REQUIRED
+         };
          ValuesInitial = CreateValuesList(systemType, _schema);
-         ValuesInitial = CreateValuesList(systemType, _schema);
+         Values = CreateValuesList(systemType, _schema);
          SystemType = systemType;
       }
 

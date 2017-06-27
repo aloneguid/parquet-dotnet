@@ -41,7 +41,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\fixedlenbytearray.parquet">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\gzip-nation.impala.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

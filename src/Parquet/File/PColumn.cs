@@ -133,6 +133,7 @@ namespace Parquet.File
          List<int> indexesMod = new List<int>();
          indexesMod = indexes != null
             ? indexes.Take(ph.Data_page_header.Num_values).ToList()
+            //: ((List<int?>)(result.Values)).Select(i => i.Value).ToList();
             : result.Values.Cast<bool>().Select(item => item ? 1 : 0).ToList();
 
 
@@ -206,7 +207,8 @@ namespace Parquet.File
          const int maxDefinitionLevel = 1;   //todo: for nested columns this needs to be calculated properly
          int bitWidth = PEncoding.GetWidthFromMaxInt(maxDefinitionLevel);
          var result = new List<int>();
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);  //todo: there might be more data on larger files
+         //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
 
          int maxLevel = _schema.GetMaxDefinitionLevel(_thriftChunk);
          int nullCount = valueCount - result.Count(r => r == maxLevel);
@@ -236,14 +238,14 @@ namespace Parquet.File
                return dicIndexes;
 
             default:
-               throw new Exception($"encoding {encoding} is not supported.");  //todo: replace with own exception type
+               throw new ParquetException($"encoding {encoding} is not supported.");  //todo: replace with own exception type
          }
       }
 
       private static byte[] ReadRawBytes(PageHeader ph, Stream inputStream)
       {
          if (ph.Compressed_page_size != ph.Uncompressed_page_size)
-            throw new NotImplementedException("compressed pages not supported");
+            throw new ParquetException("compressed pages not supported");
 
          byte[] data = new byte[ph.Compressed_page_size];
          inputStream.Read(data, 0, data.Length);

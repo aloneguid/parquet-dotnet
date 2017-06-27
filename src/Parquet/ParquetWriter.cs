@@ -30,6 +30,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Parquet.File.Values;
+using TEncoding = Parquet.Thrift.Encoding;
 
 namespace Parquet
 {
@@ -60,48 +61,65 @@ namespace Parquet
          _meta.Row_groups = new List<RowGroup>();
       }
 
-      public void Write(ParquetDataSet dataSet, int rowGroupSize = 5000)
+      public void Write(ParquetDataSet dataSet)
       {
          long totalCount = dataSet.Count;
 
-         _meta.Schema = new List<SchemaElement>(dataSet.Columns.Select(c => c.Schema));
+         _meta.Schema = new List<SchemaElement> { new SchemaElement("schema") { Num_children = dataSet.Columns.Count } };
+         _meta.Schema.AddRange(dataSet.Columns.Select(c => c.Schema));
          _meta.Num_rows = totalCount;
 
-         //write in row groups
+         var rg = new RowGroup();
+         long rgStartPos = _output.Position;
+         _meta.Row_groups.Add(rg);
+         rg.Columns = dataSet.Columns.Select(c => Write(c)).ToList();
 
-         for(long rowIdx = 0; rowIdx < totalCount; rowIdx += rowGroupSize)
-         {
-            var thriftRowGroup = new RowGroup();
-            thriftRowGroup.Columns = new List<ColumnChunk>();
-
-            foreach (ParquetColumn column in dataSet.Columns)
-            {
-               ColumnChunk thriftChunk = Write(column, rowIdx, rowGroupSize);
-               thriftRowGroup.Columns.Add(thriftChunk);
-            }
-
-            _meta.Row_groups.Add(thriftRowGroup);
-         }
-
-         _thrift.Write(_meta);
+         //row group's size is a sum of _uncompressed_ sizes of all columns in it
+         rg.Total_byte_size = rg.Columns.Sum(c => c.Meta_data.Total_uncompressed_size);
+         rg.Num_rows = dataSet.Count;
       }
 
-      private ColumnChunk Write(ParquetColumn column, long rowIdx, long groupSize)
+      private ColumnChunk Write(ParquetColumn column)
       {
          var chunk = new ColumnChunk();
          long startPos = _output.Position;
          chunk.File_offset = startPos;
          chunk.Meta_data = new ColumnMetaData();
+         chunk.Meta_data.Num_values = column.Values.Count;
          chunk.Meta_data.Type = column.Type;
          chunk.Meta_data.Codec = CompressionCodec.UNCOMPRESSED;   //todo: compression should be passed as parameter
          chunk.Meta_data.Data_page_offset = startPos;
+         chunk.Meta_data.Encodings = new List<TEncoding>
+         {
+            TEncoding.PLAIN
+         };
+         chunk.Meta_data.Path_in_schema = new List<string> { column.Name };
 
-         /*_plainWriter.Write(_writer, column.Schema,
-            column.Values.OfType<object>().Skip((int)rowIdx).Take((int)groupSize).ToList()); //todo: heavy, must be rewritten
+         var ph = new PageHeader(PageType.DATA_PAGE, 0, 0);
+         ph.Data_page_header = new DataPageHeader
+         {
+            Encoding = TEncoding.PLAIN,
+            Definition_level_encoding = TEncoding.RLE,
+            Repetition_level_encoding = TEncoding.BIT_PACKED,
+            Num_values = column.Values.Count
+         };
 
-         long endPos = _output.Position;
-         chunk.Meta_data.Total_compressed_size = chunk.Meta_data.Total_uncompressed_size = endPos - startPos;
-         */
+
+         using (var ms = new MemoryStream())
+         {
+            using (var columnWriter = new BinaryWriter(ms))
+            {
+               //columnWriter.Write((int)0);   //definition levels, only for nullable columns
+               _plainWriter.Write(columnWriter, column.Schema, column.Values);
+
+               //
+
+               ph.Compressed_page_size = ph.Uncompressed_page_size = (int)ms.Length;
+               byte[] data = ms.ToArray();
+               _thrift.Write(ph);
+               _output.Write(data, 0, data.Length);
+            }
+         }
 
          return chunk;
       }
@@ -114,17 +132,16 @@ namespace Parquet
       public void Dispose()
       {
          //finalize file
-
-         //write thrift metadata
-         long pos = _output.Position;
-         //_output.ThriftWrite(_meta);
-         long size = _output.Position - pos;
+         long size = _thrift.Write(_meta);
 
          //metadata size
          _writer.Write((int)size);  //4 bytes
 
          //end magic
          WriteMagic();              //4 bytes
+
+         _writer.Flush();
+         _output.Flush();
       }
    }
 }

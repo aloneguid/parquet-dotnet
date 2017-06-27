@@ -42,6 +42,10 @@ namespace Parquet
       private readonly FileMetaData _meta;
       private readonly Schema _schema;
 
+      /// <summary>
+      /// Creates an instance from input stream
+      /// </summary>
+      /// <param name="input"></param>
       public ParquetReader(Stream input)
       {
          _input = input;
