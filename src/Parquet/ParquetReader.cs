@@ -37,8 +37,10 @@ namespace Parquet
       private readonly Stream _input;
       private readonly BinaryReader _reader;
       private readonly ThriftStream _thrift;
-      private readonly FileMetaData _meta;
-      private readonly Schema _schema;
+
+      private FileMetaData _meta;
+      private Schema _schema;
+      
       private readonly ParquetOptions _options = new ParquetOptions();
 
       /// <summary>
@@ -47,12 +49,14 @@ namespace Parquet
       /// <param name="input"></param>
       public ParquetReader(Stream input)
       {
-         _input = input;
-         _reader = new BinaryReader(input);
-         _thrift = new ThriftStream(input);
+         _input = input ?? throw new ArgumentNullException(nameof(input));
+         if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
+         if (_input.Length <= 8) throw new IOException("not a Parquet file (size too small)");
 
-         _meta = ReadMetadata();
-         _schema = new Schema(_meta);
+         _reader = new BinaryReader(input);
+         ValidateFile();
+
+         _thrift = new ThriftStream(input);
       }
 
       public ParquetOptions Options => _options;
@@ -62,6 +66,9 @@ namespace Parquet
       /// </summary>
       public ParquetDataSet Read()
       {
+         _meta = ReadMetadata();
+         _schema = new Schema(_meta);
+
          var result = new List<ParquetColumn>();
 
          foreach(RowGroup rg in _meta.Row_groups)
@@ -86,13 +93,8 @@ namespace Parquet
          return new ParquetDataSet(result);
       }
 
-      private FileMetaData ReadMetadata()
+      private void ValidateFile()
       {
-         //todo: validation that it's a parquet format indeed
-
-         if (_input.Length <= 8)
-            throw new IOException("not a Parquet file (size too small)");
-
          _input.Seek(0, SeekOrigin.Begin);
          char[] head = _reader.ReadChars(4);
          string shead = new string(head);
@@ -103,7 +105,10 @@ namespace Parquet
             throw new IOException($"not a Parquet file(head is '{shead}')");
          if (stail != "PAR1")
             throw new IOException($"not a Parquet file(head is '{stail}')");
+      }
 
+      private FileMetaData ReadMetadata()
+      {
          //go to -4 bytes (PAR1) -4 bytes (footer length number)
          _input.Seek(-8, SeekOrigin.End);
          int footerLength = _reader.ReadInt32();
