@@ -37,10 +37,8 @@ namespace Parquet
       private readonly Stream _input;
       private readonly BinaryReader _reader;
       private readonly ThriftStream _thrift;
-
       private FileMetaData _meta;
       private Schema _schema;
-      
       private readonly ParquetOptions _options = new ParquetOptions();
 
       /// <summary>

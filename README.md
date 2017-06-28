@@ -1,4 +1,4 @@
-# parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet)
+# parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 
 ![Icon](doc/img/icon.png)
 
@@ -21,6 +21,31 @@ We have just started to work on this library, contributors are welcome.
 |3|Support GZIP and SNAPPY decompression/compression|planning|
 |4|Integrate with popular products like Azure Data Lakes|planning|
 
+## Getting started
+
+**parquet-dotnet** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net) for `.NET 4.5.1` and `.NET Standard 1.6`. All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
+
+### Reading files
+
+In order to read a parquet file you need to open a stream first. Due to the fact that Parquet utilises file seeking extensively, the input stream must be *readable and seekable*.
+
+For instance, to read a file `c:\test.parquet` you woudl normally write the following code
+
+```csharp
+using System.IO;
+using Parquet;
+
+using(Stream fs = File.OpenRead("c:\\test.parquet"))
+{
+	using(var reader = new ParquetReader(fs))
+	{
+		ParquetDataSet ds = reader.Read();
+	}
+}
+```
+
+this will read entire file in memory as a set of columns inside `ParquetDataSet` class.
+
 ## Tools
 
 ### parq
@@ -37,4 +62,4 @@ parquet-dotnet is licensed under the [MIT license](https://github.com/elastaclou
 
 ## Contributing
 
-All contributions are welcome. For details on how to start see [this guide](CONTRIBUTING.md)
+All contributions are welcome. For details on how to start see [this guide](CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started)

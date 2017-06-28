@@ -50,16 +50,14 @@ namespace Parquet.File
 
          PageHeader ph = _thrift.Read<PageHeader>();
 
-         IList dictionaryPage = null, copyPage = null;
+         IList dictionaryPage = null;
          List<int> indexes = null;
          List<int> definitions = null;
 
          //there can be only one dictionary page in column
          if (ph.Type == PageType.DICTIONARY_PAGE)
          {
-            (IList dictionaryPagePage, IList copyPagePage) = ReadDictionaryPage(ph);
-            dictionaryPage = dictionaryPagePage;
-            copyPage = copyPagePage;
+            dictionaryPage = ReadDictionaryPage(ph);
             ph = _thrift.Read<PageHeader>(); //get next page after dictionary
          }
 
@@ -110,35 +108,12 @@ namespace Parquet.File
             }
          }
 
-         var definitionsMod = definitions != null
-            ? definitions.Take((int)maxValues).ToList()
-            : new List<int>(Enumerable.Repeat(1, (int)maxValues));
-
-         if (copyPage == null) copyPage = result.Values;
-
-         var valuesList = new ParquetValueStructure(dictionaryPage, copyPage, indexes, definitionsMod);
-
-         result.Add(valuesList);
+         new ValueMerger(result).Apply(dictionaryPage, definitions, indexes, maxValues);
 
          return result;
       }
 
-      private static IList MergeDictionaryEncoding(IList dictionary, IList values)
-      {
-         //values will be ints if dictionary encoding is present
-         int[] indexes = new int[values.Count];
-         int i = 0;
-         foreach(var value in values)
-         {
-            indexes[i++] = (int)value;
-         }
-
-         return indexes
-            .Select(index => dictionary[index])
-            .ToList();
-      }
-
-      private (IList, IList) ReadDictionaryPage(PageHeader ph)
+      private IList ReadDictionaryPage(PageHeader ph)
       {
          //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain enncoding.
 
@@ -148,9 +123,9 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               (IList result, IList copy) = ParquetColumn.CreateValuesList(_schemaElement, out Type systemType);
+               IList result = ParquetColumn.CreateValuesList(_schemaElement, out Type systemType);
                _plainReader.Read(dataReader, _schemaElement, result, int.MaxValue);
-               return (result, copy);
+               return result;
             }
          }
       }

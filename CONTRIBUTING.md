@@ -10,8 +10,10 @@ If not, go ahead and [make one](https://github.com/elastacloud/parquet-dotnet/is
 ## 2. Fork & create a branch
 
 If this is something you think you can fix, then
-[fork Active Admin](https://help.github.com/articles/fork-a-repo)
+[fork parquet-dotnet](https://help.github.com/articles/fork-a-repo)
 and create a branch with a descriptive name.
+
+If you need a started guide to understand Parquet format please read [this guide](doc/parquet-getting-started.md)
 
 A good branch name would be (where issue #325 is the ticket you're working on):
 
@@ -78,10 +80,3 @@ A PR can only be merged into master by a maintainer if:
 
 Any maintainer is allowed to merge a PR if all of these conditions are
 met.
-
-## Useful links
-
-- [List of Parquet encodings](https://github.com/Parquet/parquet-format/blob/master/Encodings.md)
-- [Parquet Logical Types](https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md)
-- [The striping and assembly algorithms from the Dremel paper](https://github.com/Parquet/parquet-mr/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) (what Parquet is based on)
-- To better understand Parquet, especially what repetition and definition levels are - [Dremel made simple with Parquet](https://blog.twitter.com/engineering/en_us/a/2013/dremel-made-simple-with-parquet.html)
