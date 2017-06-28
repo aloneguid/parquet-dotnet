@@ -21,8 +21,6 @@
  * SOFTWARE.
  */
 
- #pragma SPARKTYPE 
-
 using Parquet.Thrift;
 using System;
 using System.Collections;

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
 using Xunit;
 
 namespace Parquet.Test.Reader
@@ -25,7 +22,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_plain_no_compression()
       {
-         CompareFiles("alltypes_plain",
+         CompareFiles("alltypes", "plain",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -50,7 +47,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression()
       {
-         CompareFiles("alltypes_dictionary",
+         CompareFiles("alltypes_dictionary", "plain",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -62,6 +59,41 @@ namespace Parquet.Test.Reader
             typeof(string),
             typeof(string),
             typeof(DateTime?));
+      }
+
+      [Fact]
+      public void Postcodes_sample_no_compression()
+      {
+         CompareFiles("postcodes", "plain",
+            typeof(string),   //Postcode
+            typeof(string),   //
+            typeof(double?),
+            typeof(double?),
+            typeof(int?),     //Easting
+            typeof(int?),     //Northing
+            typeof(string),   
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),   //Constituency
+            typeof(DateTime?),
+            typeof(DateTime?),
+            typeof(string),   //Parish
+            typeof(string),   //NationalPark
+            typeof(int?),     //Population
+            typeof(int?),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(string),
+            typeof(int?),
+            typeof(int?),
+            typeof(string));
       }
    }
 }

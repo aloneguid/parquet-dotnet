@@ -1,22 +1,25 @@
-﻿using System.IO;
+﻿using NetBox;
+using NetBox.FileFormats;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-using Path = System.IO.Path;
-using F = System.IO.File;
-using Type = System.Type;
-using NetBox.FileFormats;
-using System.Collections.Generic;
 using Xunit;
-using System;
+using F = System.IO.File;
+using Path = System.IO.Path;
+using Type = System.Type;
 
 namespace Parquet.Test.Reader
 {
    public class ParquetCsvComparison
    {
-      protected void CompareFiles(string baseName, params Type[] columnTypes)
+      protected void CompareFiles(string baseName, string encoding, params Type[] columnTypes)
       {
-         ParquetDataSet parquet = ReadParquet(baseName + ".parquet");
-         var csv = ReadCsv(baseName + ".csv");
+         ParquetDataSet parquet = ReadParquet($"{baseName}.{encoding}.parquet");
+         var csv = ReadCsv($"{baseName}.csv");
          Compare(parquet, csv, columnTypes);
       }
 
@@ -32,23 +35,32 @@ namespace Parquet.Test.Reader
          }
 
          //compare column values one by one
-         Assert.True(columnTypes.Length == csv.Count, $"incorrect type count, expected {csv.Count} but found {columnTypes.Length}");
+         Assert.True(columnTypes.Length == csv.Count,
+            $"incorrect type count, expected {csv.Count} but found {columnTypes.Length}");
 
          //compare individual columns
          int i = 0;
          foreach(ParquetColumn pc in parquet.Columns)
          {
+            if (pc.Name == "Parish")
+            {
+               i += 1;
+               continue;
+            }
+
             List<string> cc = csv[pc.Name];
-            Type expectedColumnType = columnTypes[i++];
+            Type expectedColumnType = columnTypes[i];
 
             //validate column type
-            Assert.True(expectedColumnType == pc.SystemType, $"expected {expectedColumnType} for column {pc.Name} but found {pc.SystemType}");
+            Assert.True(expectedColumnType == pc.SystemType, $"expected {expectedColumnType} for column {pc.Name}#{i} but found {pc.SystemType}");
 
             //validate number of values
-            Assert.Equal(cc.Count, pc.Values.Count);
+            Assert.True(cc.Count == pc.Values.Count, $"expected {cc.Count} values in column {pc.Name} but found {pc.Values.Count}");
 
             //validate actual values
-            Compare(pc, cc);   
+            Compare(pc, cc);
+
+            i += 1;
          }
       }
 
@@ -61,8 +73,28 @@ namespace Parquet.Test.Reader
             object pv = pc.Values[i];
             object cv = ChangeType(cc[i], pc.SystemType);
 
-            Assert.True(pv.Equals(cv),
-               $"expected {cv} but was {pv} in column {pc.Name}, value #{i}");
+            if (pv == null)
+            {
+               bool isCsvNull =
+                  cv == null ||
+                  (cv is string s && s == string.Empty);
+
+               Assert.True(isCsvNull,
+                  $"expected null value in column {pc.Name}, value #{i}");
+            }
+            else
+            {
+               if (pc.SystemType == typeof(string))
+               {
+                  Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
+                     $"expected {cv} but was {pv} in column {pc.Name}, value #{i}");
+               }
+               else
+               {
+                  Assert.True(pv.Equals(cv),
+                     $"expected {cv} but was {pv} in column {pc.Name}, value #{i}");
+               }
+            }
          }
       }
 
@@ -81,7 +113,19 @@ namespace Parquet.Test.Reader
 
          if (gt != null && gt == typeof(Nullable<>))
          {
-            return Convert.ChangeType(v, t.GenericTypeArguments[0]);
+            Type tt = t.GenericTypeArguments[0];
+
+            try
+            {
+               if (tt == typeof(DateTime)) return v == string.Empty ? null : new DateTime?(DateTime.Parse(v));
+
+               return Convert.ChangeType(v, tt);
+            }
+            catch(FormatException)
+            {
+               var dv = new DynamicValue(v);
+               return dv.GetValue(tt);
+            }
          }
 
          return Convert.ChangeType(v, t);
@@ -94,6 +138,8 @@ namespace Parquet.Test.Reader
          {
             using (ParquetReader reader = new ParquetReader(fs))
             {
+               reader.Options.TreatByteArrayAsString = true;
+
                parquet = reader.Read();
             }
          }

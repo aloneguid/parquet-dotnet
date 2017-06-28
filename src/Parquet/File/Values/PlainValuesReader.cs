@@ -11,9 +11,16 @@ using System.Numerics;
 
 namespace Parquet.File.Values
 {
+   //see https://github.com/Parquet/parquet-format/blob/master/Encodings.md#plain-plain--0
    class PlainValuesReader : IValuesReader
    {
       private static readonly System.Text.Encoding UTF8 = System.Text.Encoding.UTF8;
+      private readonly ParquetOptions _options;
+
+      public PlainValuesReader(ParquetOptions options)
+      {
+         _options = options;
+      }
 
       public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
@@ -23,7 +30,7 @@ namespace Parquet.File.Values
          switch (schema.Type)
          {
             case TType.BOOLEAN:
-               ReadPlainBoolean(data, maxValues, destination);
+               ReadPlainBoolean(data, destination, maxValues);
                break;
             case TType.INT32:
                ReadInt32(data, schema, destination);
@@ -52,14 +59,14 @@ namespace Parquet.File.Values
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static void ReadPlainBoolean(byte[] data, long count, IList destination)
+      private static void ReadPlainBoolean(byte[] data, IList destination, long maxValues)
       {
          int ibit = 0;
          int ibyte = 0;
          byte b = data[0];
          var destinationTyped = (List<bool?>)destination;
 
-         for (int ires = 0; ires < count; ires++)
+         for(int ires = 0; ires < maxValues; ires++)
          {
             if (ibit == 8)
             {
@@ -187,9 +194,12 @@ namespace Parquet.File.Values
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static void ReadByteArray(byte[] data, SchemaElement schemaElement, IList destination)
+      private void ReadByteArray(byte[] data, SchemaElement schemaElement, IList destination)
       {
-         if (schemaElement.Converted_type == ConvertedType.UTF8)
+         if (
+               (schemaElement.__isset.converted_type && schemaElement.Converted_type == ConvertedType.UTF8) ||
+               (_options.TreatByteArrayAsString)
+            )
          {
             List<string> destinationTyped = (List<string>)destination;
             for (int i = 0; i < data.Length;)

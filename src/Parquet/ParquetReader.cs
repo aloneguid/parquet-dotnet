@@ -25,9 +25,7 @@ using Parquet.File;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Parquet.Thrift;
-using Enc = System.Text.Encoding;
 
 namespace Parquet
 {
@@ -41,6 +39,7 @@ namespace Parquet
       private readonly ThriftStream _thrift;
       private readonly FileMetaData _meta;
       private readonly Schema _schema;
+      private readonly ParquetOptions _options = new ParquetOptions();
 
       /// <summary>
       /// Creates an instance from input stream
@@ -56,6 +55,8 @@ namespace Parquet
          _schema = new Schema(_meta);
       }
 
+      public ParquetOptions Options => _options;
+
       /// <summary>
       /// Test read, to be defined
       /// </summary>
@@ -67,9 +68,18 @@ namespace Parquet
          {
             foreach(ColumnChunk cc in rg.Columns)
             {
-               var p = new PColumn(cc, _schema, _input, _thrift);
-               ParquetColumn column = p.Read();
-               result.Add(column);
+               var p = new PColumn(cc, _schema, _input, _thrift, _options);
+               string columnName = string.Join(".", cc.Meta_data.Path_in_schema);
+
+               try
+               {
+                  ParquetColumn column = p.Read(columnName);
+                  result.Add(column);
+               }
+               catch(Exception ex)
+               {
+                  throw new ParquetException($"fatal error reading column '{columnName}'", ex);
+               }
             }
          }
 

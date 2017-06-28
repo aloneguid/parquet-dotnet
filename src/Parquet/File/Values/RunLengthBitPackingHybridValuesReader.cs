@@ -50,7 +50,7 @@ namespace Parquet.File.Values
             }
             else
             {
-               ReadBitpacked(header, reader, bitWidth, destination, maxValues);
+               ReadBitpacked(header, reader, bitWidth, destination);
             }
          }
       }
@@ -72,7 +72,7 @@ namespace Parquet.File.Values
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static void ReadBitpacked(int header, BinaryReader reader, int bitWidth, List<int> destination, long maxValues)
+      private static void ReadBitpacked(int header, BinaryReader reader, int bitWidth, List<int> destination)
       {
          int groupCount = header >> 1;
          int count = groupCount * 8;
@@ -86,7 +86,6 @@ namespace Parquet.File.Values
          int total = byteCount * 8;
          int bwl = 8;
          int bwr = 0;
-         long read = 0;
          while (total >= bitWidth)
          {
             if (bwr >= 8)
@@ -102,7 +101,6 @@ namespace Parquet.File.Values
                bwr += bitWidth;
 
                destination.Add(r);
-               if (++read >= maxValues) break;
             }
             else if (i + 1 < byteCount)
             {

@@ -3,13 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Reflection;
-using System.Text;
 using Parquet.Thrift;
 using Encoding = Parquet.Thrift.Encoding;
 using Type = System.Type;
-using TType = Parquet.Thrift.Type;
 using Parquet.File.Values;
 
 namespace Parquet.File
@@ -21,12 +17,13 @@ namespace Parquet.File
       private readonly ThriftStream _thrift;
       private readonly Schema _schema;
       private readonly SchemaElement _schemaElement;
+      private readonly ParquetOptions _options;
 
-      private static readonly IValuesReader _plainReader = new PlainValuesReader();
+      private readonly IValuesReader _plainReader;
       private static readonly IValuesReader _rleReader = new RunLengthBitPackingHybridValuesReader();
       private static readonly IValuesReader _dictionaryReader = new PlainDictionaryValuesReader();
 
-      public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream, ThriftStream thriftStream)
+      public PColumn(ColumnChunk thriftChunk, Schema schema, Stream inputStream, ThriftStream thriftStream, ParquetOptions options)
       {
          if (thriftChunk.Meta_data.Path_in_schema.Count != 1)
             throw new NotImplementedException("path in scheme is not flat");
@@ -36,11 +33,13 @@ namespace Parquet.File
          _schema = schema;
          _inputStream = inputStream;
          _schemaElement = _schema[_thriftChunk];
+         _options = options;
+
+         _plainReader = new PlainValuesReader(options);
       }
 
-      public ParquetColumn Read()
+      public ParquetColumn Read(string columnName)
       {
-         string columnName = string.Join(".", _thriftChunk.Meta_data.Path_in_schema);
          var result = new ParquetColumn(columnName, _schemaElement);
 
          //get the minimum offset, we'll just read pages in sequence
@@ -51,99 +50,73 @@ namespace Parquet.File
 
          PageHeader ph = _thrift.Read<PageHeader>();
 
-         bool finished = false;
          IList dictionaryPage = null, copyPage = null;
          List<int> indexes = null;
          List<int> definitions = null;
 
-         while (!finished)
+         //there can be only one dictionary page in column
+         if (ph.Type == PageType.DICTIONARY_PAGE)
          {
-            if (ph.Type == PageType.DICTIONARY_PAGE)
+            (IList dictionaryPagePage, IList copyPagePage) = ReadDictionaryPage(ph);
+            dictionaryPage = dictionaryPagePage;
+            copyPage = copyPagePage;
+            ph = _thrift.Read<PageHeader>(); //get next page after dictionary
+         }
+
+         int dataPageCount = 0;
+         while (true)
+         {
+            int valuesSoFar = Math.Max(indexes == null ? 0 : indexes.Count, result.Values.Count);
+            var page = ReadDataPage(ph, result.Values, maxValues - valuesSoFar);
+
+            //merge indexes
+            if (page.indexes != null)
             {
-               (IList dictionaryPagePage, IList copyPagePage) = ReadDictionaryPage(ph);
-               if(dictionaryPage == null)
+               if (indexes == null)
                {
-                  dictionaryPage = dictionaryPagePage;
+                  indexes = page.indexes;
                }
                else
                {
-                  foreach(var item in dictionaryPagePage)
-                  {
-                     dictionaryPage.Add(item);
-                  }
+                  indexes.AddRange(page.indexes);
                }
-               copyPage = copyPagePage;
-
-               ph = _thrift.Read<PageHeader>(); //get next page
             }
 
-            int dataPageCount = 0;
-            while (true)
+            if (page.definitions != null)
             {
-               var page = ReadDataPage(ph, result.Values, maxValues);
-
-               //merge indexes
-               if (page.indexes != null)
+               if (definitions == null)
                {
-                  if (indexes == null)
-                  {
-                     indexes = page.indexes;
-                  }
-                  else
-                  {
-                     indexes.AddRange(page.indexes);
-                  }
+                  definitions = (List<int>) page.definitions;
                }
-
-               if (page.definitions != null)
+               else
                {
-                  if (definitions == null)
-                  {
-                     definitions = (List<int>) page.definitions;
-                  }
-                  else
-                  {
-                     definitions.AddRange((List<int>) page.definitions);
-                  }
+                  definitions.AddRange((List<int>) page.definitions);
                }
+            }
 
-               dataPageCount++;
+            dataPageCount++;
 
-               //if (page.definitions != null) throw new NotImplementedException();
-               //if (page.repetitions != null) throw new NotImplementedException();
+            if (page.repetitions != null) throw new NotImplementedException();
 
-               //todo: combine tuple into real values
+            if((result.Values.Count >= maxValues) || (indexes != null && indexes.Count >= maxValues) || (definitions != null && definitions.Count >= maxValues))
+            {
+               break;   //limit reached
+            }
 
-               if (result.Values.Count >= maxValues || (indexes != null && indexes.Count >= maxValues))
-               {
-                  //all data pages read
-                  finished = true;
-                  break;
-               }
-
-               ph = _thrift.Read<PageHeader>(); //get next page
-               if (ph.Type != PageType.DATA_PAGE)
-               {
-                  break;
-               }
+            ph = _thrift.Read<PageHeader>(); //get next page
+            if (ph.Type != PageType.DATA_PAGE)
+            {
+               break;
             }
          }
 
-         // add the definitions into the result and the merge afterwards
-         List<int> indexesMod = new List<int>();
-         indexesMod = indexes != null
-            ? indexes.Take(ph.Data_page_header.Num_values).ToList()
-            //: ((List<int?>)(result.Values)).Select(i => i.Value).ToList();
-            : result.Values.Cast<bool>().Select(item => item ? 1 : 0).ToList();
-
-
          var definitionsMod = definitions != null
-            ? definitions.Take(ph.Data_page_header.Num_values).ToList()
-            : new List<int>(Enumerable.Repeat(1, ph.Data_page_header.Num_values));
+            ? definitions.Take((int)maxValues).ToList()
+            : new List<int>(Enumerable.Repeat(1, (int)maxValues));
 
          if (copyPage == null) copyPage = result.Values;
 
-         var valuesList = new ParquetValueStructure(dictionaryPage, copyPage, indexesMod, definitionsMod);
+         var valuesList = new ParquetValueStructure(dictionaryPage, copyPage, indexes, definitionsMod);
 
          result.Add(valuesList);
 
@@ -192,7 +165,7 @@ namespace Parquet.File
             {
                //todo: read repetition levels (only relevant for nested columns)
 
-               List<int> definitions = ReadDefinitionLevels(reader, ph.Data_page_header.Num_values);
+               List<int> definitions = ReadDefinitionLevels(reader, (int)maxValues);
 
                // these are pointers back to the Values table - lookup on values 
                List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination, maxValues);
