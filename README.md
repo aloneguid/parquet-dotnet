@@ -1,8 +1,8 @@
-# parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet)
+# parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 
 ![Icon](doc/img/icon.png)
 
-A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files.
+A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files. Supports .NET 4.5.1 and .NET Standard 1.6.
 
 ## Why
 
@@ -16,11 +16,35 @@ We have just started to work on this library, contributors are welcome.
 
 |Phase|Description|State|
 |-----|-----------|-----|
-|1|Implement reader which can understand the first test file (alltypes_plain.parquet). This is using a variety of encodings an no compression. Inline columns are not supported. Understand how to return results with minimum of boxing/unboxing. Support NULL values.|finishing|
-|2|Implement readers for any types not mentioned in phase 1. Implement writer for all types that reader supports. Publish alpha version on NuGet.|planning|
-|3|Implement writer which can do the same types as in phase 1 and 2.|planning|
-|4|Support GZIP decompression/compression|planning|
-|5|Support nested columns|planning|
+|1|Implement reader which can understand the first test file (alltypes_plain.parquet). This is using a variety of encodings an no compression. Inline columns are not supported. Understand how to return results with minimum of boxing/unboxing. Support NULL values.|complete|
+|2|Implement readers for any types not mentioned in phase 1. Implement writer for all types that reader supports. Publish alpha version on NuGet.|in progress|
+|3|Support GZIP and SNAPPY decompression/compression|planning|
+|4|Integrate with popular products like Azure Data Lakes|planning|
+
+## Getting started
+
+**parquet-dotnet** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net) for `.NET 4.5.1` and `.NET Standard 1.6`. All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
+
+### Reading files
+
+In order to read a parquet file you need to open a stream first. Due to the fact that Parquet utilises file seeking extensively, the input stream must be *readable and seekable*.
+
+For instance, to read a file `c:\test.parquet` you woudl normally write the following code
+
+```csharp
+using System.IO;
+using Parquet;
+
+using(Stream fs = File.OpenRead("c:\\test.parquet"))
+{
+	using(var reader = new ParquetReader(fs))
+	{
+		ParquetDataSet ds = reader.Read();
+	}
+}
+```
+
+this will read entire file in memory as a set of columns inside `ParquetDataSet` class.
 
 ## Tools
 
@@ -34,20 +58,8 @@ To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet```
 
 ## License
 
-.NET Core (including the corefx repo) is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
+parquet-dotnet is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
 
+## Contributing
 
-## Notes
-
-We use [Thrift for .NET Core](https://github.com/apache/thrift/tree/master/lib/netcore) project to read Thrift specification which is take from the official [parquet-format](https://github.com/Parquet/parquet-format) repository as is. This depends on .NET Standard 1.6 which makes it a requirement for this project as well.
-
-To regenerate thrift classes use `scripts\thriftgen.ps1`. Project is set to define `SILVERLIGHT` constant as .NET Standard is not fully compatible with this generator, but tested to be working in silverlight compatibility mode.
-
-Parquet compatibility samples: https://github.com/Parquet/parquet-compatibility
-
-## Useful links
-
-- [List of Parquet encodings](https://github.com/Parquet/parquet-format/blob/master/Encodings.md)
-- [Parquet Logical Types](https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md)
-- [The striping and assembly algorithms from the Dremel paper](https://github.com/Parquet/parquet-mr/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) (what Parquet is based on)
-- To better understand Parquet, especially what repetition and definition levels are - [Dremel made simple with Parquet](https://blog.twitter.com/engineering/en_us/a/2013/dremel-made-simple-with-parquet.html)
+All contributions are welcome. For details on how to start see [this guide](CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)

@@ -64,29 +64,6 @@ namespace Parquet
       public ParquetColumn this[string name] => _columns[name];
 
       /// <summary>
-      /// Merges data into this dataset
-      /// </summary>
-      /// <param name="source"></param>
-      public void Merge(ParquetDataSet source)
-      {
-         if (source == null) return;
-
-         foreach(var kv in source._columns)
-         {
-            if(!_columns.TryGetValue(kv.Key, out ParquetColumn col))
-            {
-               _columns[kv.Key] = kv.Value;
-
-               //todo: zero values
-            }
-            else
-            {
-               col.Add(kv.Value);
-            }
-         }
-      }
-
-      /// <summary>
       /// Returns total number of rows
       /// </summary>
       public long Count => _columns.FirstOrDefault().Value.Values.Count;

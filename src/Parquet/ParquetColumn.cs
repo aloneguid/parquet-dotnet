@@ -21,8 +21,6 @@
  * SOFTWARE.
  */
 
- #pragma SPARKTYPE 
-
 using Parquet.Thrift;
 using System;
 using System.Collections;
@@ -56,24 +54,29 @@ namespace Parquet
    /// </summary>
    public class ParquetColumn : IEquatable<ParquetColumn>
    {
-      private SchemaElement _schema;
+      private readonly SchemaElement _schema;
 
+      /// <summary>
+      /// Creates a column from name and type
+      /// </summary>
+      /// <param name="name">Column name</param>
+      /// <param name="systemType">Data type to be held in this column, can be nullable</param>
       public ParquetColumn(string name, Type systemType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-         _schema = new SchemaElement(name);
-         ValuesInitial = CreateValuesList(systemType, _schema);
-         ValuesInitial = CreateValuesList(systemType, _schema);
+         _schema = new SchemaElement(name)
+         {
+            Repetition_type = FieldRepetitionType.REQUIRED
+         };
+         Values = CreateValuesList(systemType, _schema);
          SystemType = systemType;
       }
 
       internal ParquetColumn(string name, SchemaElement schema)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-         ParquetRawType = schema.Type.ToString();
-         (IList a, IList b) = CreateValuesList(schema, out Type systemType);
-         ValuesInitial = a;
-         Values = b;
+         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+         Values = CreateValuesList(schema, out Type systemType);
          SystemType = systemType;
       }
 
@@ -90,11 +93,9 @@ namespace Parquet
       /// <summary>
       /// Parquet type as read from schema
       /// </summary>
-      public string ParquetRawType { get; }
+      public string ParquetRawType => _schema.Type.ToString();
 
       internal TType Type => _schema.Type;
-
-      internal IList ValuesInitial { get; private set; }
 
       /// <summary>
       /// List of values
@@ -113,15 +114,6 @@ namespace Parquet
       }
 
       /// <summary>
-      /// Merges values into this column from the passed column
-      /// </summary>
-      /// <param name="col"></param>
-      public void Add(ParquetColumn col)
-      {
-         Add(col.ValuesInitial);
-      }
-
-      /// <summary>
       /// Merges values from the passed list into this column
       /// </summary>
       /// <param name="values"></param>
@@ -134,31 +126,16 @@ namespace Parquet
          }
       }
 
-      internal void Add(ParquetValueStructure parquetValues)
+      internal void Assign(IList values)
       {
-         /* 0  1
-          * 1  1
-          * 1  0
-          * 0  1 */
-         if (parquetValues.UniqueValuesList == null)
-         {
-            Values = parquetValues.ValuesList;
-            return;
-         }
+         Values.Clear();
+         if (values == null) return;
 
-         ValuesInitial = parquetValues.UniqueValuesList;
-         int iIndex = 0;
-         foreach (int iDefinition in parquetValues.Definitions)
+         //todo: can we improve this unboxing somehow?
+         foreach(object value in values)
          {
-            if (iDefinition == 1)
-            {
-               parquetValues.ValuesList.Add(parquetValues.UniqueValuesList[parquetValues.Indexes[iIndex]]);
-               iIndex++;
-               continue;
-            }
-            parquetValues.ValuesList.Add(null);
+            Values.Add(value);
          }
-         Values = parquetValues.ValuesList;
       }
 
       /// <summary>
@@ -170,6 +147,9 @@ namespace Parquet
          return Name;
       }
 
+      /// <summary>
+      /// Equals override
+      /// </summary>
       public bool Equals(ParquetColumn other)
       {
          if (ReferenceEquals(other, null)) return false;
@@ -177,6 +157,9 @@ namespace Parquet
          return other.Name == this.Name;
       }
 
+      /// <summary>
+      /// Equals override
+      /// </summary>
       public override bool Equals(object obj)
       {
          if (ReferenceEquals(obj, null)) return false;
@@ -184,42 +167,45 @@ namespace Parquet
          return Equals((ParquetColumn)obj);
       }
 
+      /// <summary>
+      /// GetHashCode override
+      /// </summary>
       public override int GetHashCode()
       {
          return Name.GetHashCode();
       }
 
-      internal static (IList, IList) CreateValuesList(SchemaElement schema, out Type systemType)
+      internal static IList CreateValuesList(SchemaElement schema, out Type systemType)
       {
          switch(schema.Type)
          {
             case TType.BOOLEAN:
                systemType = typeof(bool?);
-               return (new List<bool?>(), new List<bool?>());
+               return new List<bool?>();
             case TType.INT32:
                if(schema.Converted_type == ConvertedType.DATE)
                {
                   systemType = typeof(DateTime?);
-                  return (new List<DateTime?>(), new List<DateTime?>());
+                  return new List<DateTime?>();
                }
                else
                {
                   systemType = typeof(int?);
-                  return (new List<int?>(), new List<int?>());
+                  return new List<int?>();
                }
             case TType.FLOAT:
                systemType = typeof(float?);
-               return (new List<float?>(), new List<float?>());
+               return new List<float?>();
             case TType.INT64:
                systemType = typeof(long?);
-               return (new List<long?>(), new List<long?>());
+               return new List<long?>();
             case TType.DOUBLE:
                systemType = typeof(double?);
-               return (new List<double?>(), new List<double?>());
+               return new List<double?>();
             case TType.INT96:
 #if !SPARK_TYPES
                systemType = typeof(DateTime?);
-               return (new List<DateTime?>(), new List<DateTime?>());
+               return new List<DateTime?>();
 #else
                systemType = typeof(BigInteger?);
                return (new List<BigInteger?>(), new List<BigInteger?>());
@@ -228,24 +214,24 @@ namespace Parquet
                if(schema.Converted_type == ConvertedType.UTF8)
                {
                   systemType = typeof(string);
-                  return (new List<string>(), new List<string>());
+                  return new List<string>();
                }
                else
                {
                   systemType = typeof(bool?);
-                  return (new List<bool?>(), new List<bool?>());
+                  return new List<bool?>();
                }
             case TType.FIXED_LEN_BYTE_ARRAY:
                // TODO: Converted type should work differently shouldn't inline in this way
                if (schema.Converted_type == ConvertedType.DECIMAL)
                {
                   systemType = typeof(decimal);
-                  return (new List<decimal?>(), new List<decimal?>());
+                  return new List<decimal?>();
                }
                else
                {
                   systemType = typeof(byte?[]);
-                  return (new List<byte?[]>(), new List<byte?[]>());
+                  return new List<byte?[]>();
                }
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");
@@ -263,21 +249,4 @@ namespace Parquet
          throw new NotImplementedException($"type {systemType} not implemented");
       }
    }
-
-   class ParquetValueStructure
-   {
-      public ParquetValueStructure(IList uniqueValuesList, IList valuesList, List<int> indexes, List<int> definitions)
-      {
-         UniqueValuesList = uniqueValuesList;
-         ValuesList = valuesList;
-         Indexes = indexes;
-         Definitions = definitions;
-      }
-
-      public IList UniqueValuesList { get; private set; }
-      public IList ValuesList { get; private set; }
-      public List<int> Indexes { get; private set; }
-      public List<int> Definitions { get; private set; }
-   }
-
 }

@@ -1,11 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard1.6;net451</TargetFrameworks>
-    <Version>1.0.0.0</Version>
+    <Version>1.0.0</Version>
     <FileVersion>1.0.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-  </PropertyGroup>
-  <PropertyGroup>
     <DefineConstants>DEBUG</DefineConstants>
     <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>
@@ -13,8 +11,13 @@
     <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
     <Company>Elastacloud</Company>
     <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
-    <RepositoryType>Git</RepositoryType>
+    <RepositoryType>GitHub</RepositoryType>
     <PackageProjectUrl>https://github.com/elastacloud/parquet-dotnet</PackageProjectUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>Parquet.Net</PackageId>
+    <PackageIconUrl>http://i.isolineltd.com/nuget/parquet.png</PackageIconUrl>
+    <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.6|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.6\Parquet.xml</DocumentationFile>

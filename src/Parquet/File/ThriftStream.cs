@@ -40,8 +40,10 @@ namespace Parquet.File
       /// <returns>Actual size of the object written</returns>
       public long Write<T>(T obj) where T : TBase, new()
       {
+         _s.Flush();
          long startPos = _s.Position;
          obj.Write(_protocol);
+         _s.Flush();
          return _s.Position - startPos;
       }
    }
