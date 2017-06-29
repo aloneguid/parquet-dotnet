@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Parquet.Thrift;
 using TType = Parquet.Thrift.Type;
 using System.Runtime.CompilerServices;
@@ -131,8 +132,6 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadFixedLenByteArray(byte[] data, SchemaElement schema, IList destination)
       {
-         // TODO: This is only used in Spark to store a decimal type we need to ensure we can use things 
-         // other than converted types for example, fixed length may be a SHA1
          List<decimal?> destinationTyped = (List<decimal?>) destination;
          for (int i = 0; i < data.Length; i += schema.Type_length)
          {
@@ -140,8 +139,9 @@ namespace Parquet.File.Values
             // go from data - decimal needs to be 16 bytes but not from Spark - variable fixed nonsense
             byte[] dataNew = new byte[schema.Type_length];
             Array.Copy(data, i, dataNew, 0, schema.Type_length);
-            long output = BitconverterExt.BinaryToUnscaledLong(dataNew);
-            decimal dc = BitconverterExt.ToDecimal(dataNew);
+            var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Scale, schema.Precision);
+
+            decimal dc = (decimal) bigInt;
             destinationTyped.Add(dc);
          }
       }
@@ -218,60 +218,35 @@ namespace Parquet.File.Values
 
    }
 
-   public class BitconverterExt
+
+   public struct BigDecimal
    {
-      public static byte[] GetBytes(decimal dec)
+      public decimal Integer { get; set; }
+      public int Scale { get; set; }
+      public int Precision { get; set; }
+
+      public BigDecimal(BigInteger integer, int scale, int precision) : this()
       {
-         //Load four 32 bit integers from the Decimal.GetBits function 
-         Int32[] bits = decimal.GetBits(dec);
-         //Create a temporary list to hold the bytes 
-         List<byte> bytes = new List<byte>();
-         //iterate each 32 bit integer 
-         foreach (Int32 i in bits)
+         Integer = (decimal) integer;
+         Scale = scale;
+         Precision = precision;
+         while (Scale > 0)
          {
-            //add the bytes of the current 32bit integer 
-            //to the bytes list 
-            bytes.AddRange(BitConverter.GetBytes(i));
+            Integer /= 10;
+            Scale -= 1;
          }
-         //return the bytes list as an array 
-         return bytes.ToArray();
+         Scale = scale;
       }
-      public static decimal ToDecimal(byte[] bytes)
+
+      public static explicit operator decimal(BigDecimal bd)
       {
-         //make an array to convert back to int32's 
-         Int32[] bits = new Int32[4];
-         for (int i = 0; i <= 15; i += 4)
-         {
-            //convert every 4 bytes into an int32 
-            bits[i / 4] = BitConverter.ToInt32(bytes, i);
-         }
-         //Use the decimal's new constructor to 
-         //create an instance of decimal 
-         return new decimal(bits);
+         return bd.Integer;
       }
 
-      private static void PadToMultipleOf(ref byte[] src, int pad)
-      {
-         int len = (src.Length + pad - 1) / pad * pad;
-         Array.Resize(ref src, len);
-      }
+      // TODO: Add to byte array for writer
 
-      public static long BinaryToUnscaledLong(byte[] input)
-      {
-         int start = 0;
-         int end = input.Length;
 
-         long unscaled = 0L;
-         int i = start;
 
-         while (i < end)
-         {
-            unscaled = (unscaled << 8) | (input[i] & 0xff);
-            i += 1;
-         }
 
-         int bits = 8 * (end - start);
-         return (unscaled << (64 - bits)) >> (64 - bits);
-      }
    }
 }
