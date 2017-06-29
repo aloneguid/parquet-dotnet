@@ -12,7 +12,7 @@ namespace Parquet.Test
    /// </summary>
    public class ParquetReaderOnTestFilesTest
    {
-      //[Fact]
+      [Fact]
       public void FixedLenByteArray_dictionary()
       {
          using (Stream s = File.OpenRead(GetDataFilePath("fixedlenbytearray.parquet")))
