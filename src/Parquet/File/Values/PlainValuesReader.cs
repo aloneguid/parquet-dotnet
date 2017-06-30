@@ -189,7 +189,9 @@ namespace Parquet.File.Values
             bi = bi.AddMilliseconds(millis);
 #endif
             destinationTyped.Add(new DateTimeOffset(bi));
-         } 
+
+         }
+
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
