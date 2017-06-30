@@ -33,7 +33,7 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTime?));
+            typeof(DateTimeOffset?));
       }
 
       /// <summary>
@@ -58,7 +58,7 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTime?));
+            typeof(DateTimeOffset?));
       }
 
       [Fact]
@@ -80,8 +80,8 @@ namespace Parquet.Test.Reader
             typeof(string),
             typeof(string),
             typeof(string),   //Constituency
-            typeof(DateTime?),
-            typeof(DateTime?),
+            typeof(DateTimeOffset?),
+            typeof(DateTimeOffset?),
             typeof(string),   //Parish
             typeof(string),   //NationalPark
             typeof(int?),     //Population

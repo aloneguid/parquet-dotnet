@@ -67,5 +67,13 @@ namespace Parquet
       /// Returns total number of rows
       /// </summary>
       public long Count => _columns.FirstOrDefault().Value.Values.Count;
+
+      public object[] this[int row]
+      {
+         get
+         {
+            return Columns.Select(column => column.Values[row]).ToArray();
+         }
+      }
    }
 }

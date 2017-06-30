@@ -76,7 +76,7 @@ namespace Parquet.File.Values
             }
 
             bool set = ((b >> ibit++) & 1) == 1;
-            destination.Add(set);
+            destinationTyped.Add(set);
          }
       }
 
@@ -85,11 +85,11 @@ namespace Parquet.File.Values
       {
          if(schema.Converted_type == ConvertedType.DATE)
          {
-            List<DateTime?> destinationTyped = (List<DateTime?>)destination;
+            List<DateTimeOffset?> destinationTyped = (List<DateTimeOffset?>)destination;
             for (int i = 0; i < data.Length; i += 4)
             {
                int iv = BitConverter.ToInt32(data, i);
-               destinationTyped.Add(iv.FromUnixTime());
+               destinationTyped.Add(new DateTimeOffset(iv.FromUnixTime(), TimeSpan.Zero));
             }
          }
          else
@@ -98,7 +98,7 @@ namespace Parquet.File.Values
             for (int i = 0; i < data.Length; i += 4)
             {
                int iv = BitConverter.ToInt32(data, i);
-               destination.Add(iv);
+               destinationTyped.Add(iv);
             }
          }
       }
@@ -132,7 +132,7 @@ namespace Parquet.File.Values
          for (int i = 0; i < data.Length; i += 8)
          {
             double lv = BitConverter.ToDouble(data, i);
-            destination.Add(lv);
+            destinationTyped.Add(lv);
          }
       }
 
@@ -159,7 +159,7 @@ namespace Parquet.File.Values
 #if !SPARK_TYPES
          List<BigInteger?> destinationTyped = (List<BigInteger?>)destination;
 #else
-         List<DateTime?> destinationTyped = (List<DateTime?>)destination;
+         List<DateTimeOffset?> destinationTyped = (List<DateTimeOffset?>)destination;
 #endif
 
          //todo: this is a sample how to read int96, not tested this yet
@@ -167,7 +167,7 @@ namespace Parquet.File.Values
 #if !SPARK_TYPES
          //var r96 = new List<BigInteger>(data.Length / 12);
 #else
-         var r96 = new List<DateTime?>(data.Length / 12);
+         //var r96 = new List<DateTimeOffset?>(data.Length / 12);
 #endif
 
          for (int i = 0; i < data.Length; i += 12)
@@ -179,7 +179,6 @@ namespace Parquet.File.Values
             var bi = new BigInteger(v96);
 #else
             // for the time being we can discard the nanos 
-            var utils = new NumericUtils();
             byte[] v96 = new byte[4];
             byte[] nanos = new byte[8];
             Array.Copy(data, i + 8, v96, 0, 4);
@@ -189,17 +188,19 @@ namespace Parquet.File.Values
             double millis = (double) nanosToInt64 / 1000000D;
             bi = bi.AddMilliseconds(millis);
 #endif
-            destinationTyped.Add(bi);
-         }
+            destinationTyped.Add(new DateTimeOffset(bi));
+         } 
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private void ReadByteArray(byte[] data, SchemaElement schemaElement, IList destination)
       {
+         // Both UTF8 and JSON are stored as binary data (byte_array) which allows annotations to be used either UTF8 and JSON 
+         // They should be treated in the same way as Strings
          if (
-               (schemaElement.__isset.converted_type && schemaElement.Converted_type == ConvertedType.UTF8) ||
+               (schemaElement.__isset.converted_type && (schemaElement.Converted_type == ConvertedType.UTF8 || schemaElement.Converted_type == ConvertedType.JSON) ||
                (_options.TreatByteArrayAsString)
-            )
+            ))
          {
             List<string> destinationTyped = (List<string>)destination;
             for (int i = 0; i < data.Length;)

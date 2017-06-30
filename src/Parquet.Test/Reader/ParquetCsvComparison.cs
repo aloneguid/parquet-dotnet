@@ -117,7 +117,7 @@ namespace Parquet.Test.Reader
 
             try
             {
-               if (tt == typeof(DateTime)) return v == string.Empty ? null : new DateTime?(DateTime.Parse(v));
+               if (tt == typeof(DateTimeOffset)) return v == string.Empty ? null : new DateTimeOffset?(new DateTimeOffset(DateTime.Parse(v)));
 
                return Convert.ChangeType(v, tt);
             }
