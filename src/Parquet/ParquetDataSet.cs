@@ -21,7 +21,9 @@
  * SOFTWARE.
  */
 
+using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 
 namespace Parquet
@@ -40,13 +42,13 @@ namespace Parquet
 
       public ParquetDataSet(IEnumerable<ParquetColumn> columns)
       {
-         foreach(ParquetColumn column in columns)
+         foreach (ParquetColumn column in columns)
          {
             _columns.Add(column.Name, column);
          }
       }
 
-      public ParquetDataSet(params ParquetColumn[] columns) : this((IEnumerable<ParquetColumn>)columns)
+      public ParquetDataSet(params ParquetColumn[] columns) : this((IEnumerable<ParquetColumn>) columns)
       {
 
       }
@@ -68,12 +70,18 @@ namespace Parquet
       /// </summary>
       public long Count => _columns.FirstOrDefault().Value.Values.Count;
 
-      public object[] this[int row]
-      {
-         get
-         {
-            return Columns.Select(column => column.Values[row]).ToArray();
-         }
-      }
+      /// <summary>
+      /// Used to get the row values
+      /// </summary>
+      /// <param name="row">The index of the row beginning with zero</param>
+      /// <returns>An object array</returns>
+      public object[] this[int row] => Columns.Select(column => column.Values[row]).ToArray();
+      
+
+      /// <summary>
+      /// Returns a list of columns names 
+      /// </summary>
+      public string[] ColumnNames => Columns.Select(column => column.Name).ToArray();
    }
 }
+

@@ -190,8 +190,7 @@ namespace Parquet.File.Values
 #endif
             destinationTyped.Add(new DateTimeOffset(bi));
 
-         }
-
+         } 
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -199,10 +198,10 @@ namespace Parquet.File.Values
       {
          // Both UTF8 and JSON are stored as binary data (byte_array) which allows annotations to be used either UTF8 and JSON 
          // They should be treated in the same way as Strings
-         if (
-               (schemaElement.__isset.converted_type && (schemaElement.Converted_type == ConvertedType.UTF8 || schemaElement.Converted_type == ConvertedType.JSON) ||
-               (_options.TreatByteArrayAsString)
-            ))
+         // need to find a better implementation for this but date strings are always broken here because of the type mismatch 
+         if (schemaElement.__isset.converted_type ||
+            schemaElement.Converted_type == ConvertedType.UTF8 || schemaElement.Converted_type == ConvertedType.JSON ||
+            _options.TreatByteArrayAsString)
          {
             List<string> destinationTyped = (List<string>)destination;
             for (int i = 0; i < data.Length;)
