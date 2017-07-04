@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Linq;
 using LogMagic;
 using Parquet;
+using parq.Display;
 
 namespace parq
 {
+
     class Program
     {
       static ILog _log = L.G<Program>();
@@ -38,24 +39,19 @@ namespace parq
                {
                   _log.I("{0} - {1}", column.Name, column.ParquetRawType);
                }
-                
 
-                // After reading the column types give a printed list of the layout of the columns 
-                
-               string columnNames = dataSet.ColumnNames.Aggregate("", (current, columnName) => current + (columnName + "\t"));
-               _log.I(columnNames);
-               for (int i = 0; i < dataSet.Count; i++)
-               {
-                  string values = dataSet[i]
-                     .Aggregate("", (current, value) => current + Convert.ToString(value) + "\t");
-                  _log.I(values);
-               }
-                   
-             }
+
+               // After reading the column types give a printed list of the layout of the columns 
+               var display = new DisplayController();
+               display.Draw(dataSet);
+
+               Console.ReadLine();
+
+            }
           }
        }
 
-       public static ParquetDataSet ReadFromParquetFile(string path, out long fileLen)
+      public static ParquetDataSet ReadFromParquetFile(string path, out long fileLen)
        {
           var fileInfo = new System.IO.FileInfo(path);
           fileLen = fileInfo.Length;
@@ -73,7 +69,7 @@ namespace parq
        private static void WriteHelp()
       { 
          _log.I("dotnet parq.dll\t-\tParquet File Inspector for .net");
-         _log.I("Usage\t-\tparq.exe InputFilePath=[relativeStringPath]");
+         _log.I("Usage\t-\tparq.exe InputFilePath=[relativeStringPath] DisplayMinWidth=[10]");
       }
    }
 }

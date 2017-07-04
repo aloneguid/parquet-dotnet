@@ -9,6 +9,8 @@ namespace parq
    {
       public readonly Option<string> InputFilePath = new Option<string>();
 
+      public readonly Option<int> DisplayMinWidth = new Option<int>(10);
+
       //singleton
       private static AppSettings instance;
       public static AppSettings Instance => instance ?? (instance = new AppSettings());
