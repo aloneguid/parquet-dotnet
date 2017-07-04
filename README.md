@@ -1,6 +1,6 @@
-# parquet-dotnet [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+# Parquet.Net [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/Parquet.Net) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 
-![Icon](doc/img/icon.png)
+![Icon](doc/img/dotnetlovesparquet.png)
 
 A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files. Supports .NET 4.5.1 and .NET Standard 1.6.
 
@@ -23,9 +23,13 @@ We have just started to work on this library, [contributors are welcome](CONTRIB
 
 You can track the amount of features we have [implemented so far](doc/features.md).
 
+## Related Projects
+
+Watch [this space](https://github.com/elastacloud/datalake-extractor-parquet) for [Azure Data Lake Analytics](https://azure.microsoft.com/en-us/services/data-lake-analytics/) Parquet extractor.
+
 ## Getting started
 
-**parquet-dotnet** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net) for `.NET 4.5.1` and `.NET Standard 1.6`. All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
+**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net) for `.NET 4.5.1` and `.NET Standard 1.6`. All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
 
 ### Reading files
 
@@ -87,7 +91,7 @@ To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet DisplayMinWidt
 
 ## License
 
-parquet-dotnet is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
+Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
 
 ## Contributing
 
