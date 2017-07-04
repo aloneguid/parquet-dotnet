@@ -185,8 +185,8 @@ namespace Parquet
             case TType.INT32:
                if(schema.Converted_type == ConvertedType.DATE)
                {
-                  systemType = typeof(DateTime?);
-                  return new List<DateTime?>();
+                  systemType = typeof(DateTimeOffset?);
+                  return new List<DateTimeOffset?>();
                }
                else
                {
@@ -204,8 +204,8 @@ namespace Parquet
                return new List<double?>();
             case TType.INT96:
 #if !SPARK_TYPES
-               systemType = typeof(DateTime?);
-               return new List<DateTime?>();
+               systemType = typeof(DateTimeOffset?);
+               return new List<DateTimeOffset?>();
 #else
                systemType = typeof(BigInteger?);
                return (new List<BigInteger?>(), new List<BigInteger?>());

@@ -50,11 +50,11 @@ this will read entire file in memory as a set of columns inside `ParquetDataSet`
 
 ### parq
 
-This tools gives a simple schema inspector which lists out the columns found in a Parquet data set. 
+This tools gives a simple data inspector which lists out the columns found in a Parquet data set and the data values for those columns. 
 
-To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet```
+To use, run ```dotnet parq.dll InputFilePath=path/to/file.parquet DisplayMinWidth=10```
 
-![Parq](doc/img/parq.JPG)
+![Parq](doc/img/parq.png)
 
 ## License
 
