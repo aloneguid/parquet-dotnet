@@ -140,7 +140,11 @@ namespace Parquet.File
             {
                //todo: read repetition levels (only relevant for nested columns)
 
-               List<int> definitions = ReadDefinitionLevels(reader, (int)maxValues);
+               //check if there are definitions at all
+               bool hasDefinitions = _schemaElement.Repetition_type == FieldRepetitionType.OPTIONAL;
+               List<int> definitions = hasDefinitions
+                  ? ReadDefinitionLevels(reader, (int)maxValues)
+                  : null;
 
                // these are pointers back to the Values table - lookup on values 
                List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination, maxValues);

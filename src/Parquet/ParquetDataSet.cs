@@ -35,11 +35,18 @@ namespace Parquet
    {
       private readonly Dictionary<string, ParquetColumn> _columns = new Dictionary<string, ParquetColumn>();
 
+      /// <summary>
+      /// Creates an empty dataset
+      /// </summary>
       public ParquetDataSet()
       {
 
       }
 
+      /// <summary>
+      /// Creates a dataset from existing columns
+      /// </summary>
+      /// <param name="columns"></param>
       public ParquetDataSet(IEnumerable<ParquetColumn> columns)
       {
          foreach (ParquetColumn column in columns)
@@ -48,6 +55,10 @@ namespace Parquet
          }
       }
 
+      /// <summary>
+      /// Creates a dataset from existing columns
+      /// </summary>
+      /// <param name="columns"></param>
       public ParquetDataSet(params ParquetColumn[] columns) : this((IEnumerable<ParquetColumn>) columns)
       {
 

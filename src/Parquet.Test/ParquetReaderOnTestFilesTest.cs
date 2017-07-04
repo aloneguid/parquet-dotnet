@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Parquet.Test
 {
-   using File = System.IO.File;
+   using F = System.IO.File;
 
    /// <summary>
    /// Tests a set of predefined test files that they read back correct
@@ -15,7 +15,7 @@ namespace Parquet.Test
       [Fact]
       public void FixedLenByteArray_dictionary()
       {
-         using (Stream s = File.OpenRead(GetDataFilePath("fixedlenbytearray.parquet")))
+         using (Stream s = F.OpenRead(GetDataFilePath("fixedlenbytearray.parquet")))
          {
             using (var r = new ParquetReader(s))
             {
@@ -27,7 +27,7 @@ namespace Parquet.Test
       [Fact]
       public void Datetypes_all()
       {
-         using (Stream s = File.OpenRead(GetDataFilePath("dates.parquet")))
+         using (Stream s = F.OpenRead(GetDataFilePath("dates.parquet")))
          {
             using (var r = new ParquetReader(s))
             {

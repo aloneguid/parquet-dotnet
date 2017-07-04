@@ -29,7 +29,7 @@ using System.Text;
 
 namespace Parquet
 {
-    public static class ParquetUtils
+    static class ParquetUtils
     {
        public static bool[] ConvertToBoolArray(this BitArray bits, int bitCount)
        {
@@ -92,7 +92,7 @@ namespace Parquet
 
    }
 
-   public class NumericUtils
+   class NumericUtils
    {
       public byte[] IntToLittleEndian(int data)
       {

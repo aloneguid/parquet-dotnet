@@ -42,12 +42,6 @@ namespace Parquet.Test.Reader
          int i = 0;
          foreach(ParquetColumn pc in parquet.Columns)
          {
-            /*if (pc.Name == "Parish")
-            {
-               i += 1;
-               continue;
-            }*/
-
             List<string> cc = csv[pc.Name];
             Type expectedColumnType = columnTypes[i];
 

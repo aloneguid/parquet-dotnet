@@ -29,6 +29,7 @@ using System.Linq;
 using System.Numerics;
 using Type = System.Type;
 using TType = Parquet.Thrift.Type;
+using Parquet.File;
 
 namespace Parquet
 {
@@ -38,11 +39,19 @@ namespace Parquet
    /// <typeparam name="T"></typeparam>
    public class ParquetColumn<T> : ParquetColumn
    {
+      /// <summary>
+      /// Creates an instance of the column by name
+      /// </summary>
+      /// <param name="name">Column name</param>
       public ParquetColumn(string name) : base(name, typeof(T))
       {
 
       }
 
+      /// <summary>
+      /// Adds values to this column
+      /// </summary>
+      /// <param name="values"></param>
       public void Add(params T[] values)
       {
          base.Add(values);
@@ -68,7 +77,7 @@ namespace Parquet
          {
             Repetition_type = FieldRepetitionType.REQUIRED
          };
-         Values = CreateValuesList(systemType, _schema);
+         Values = ListFactory.Create(systemType, _schema);
          SystemType = systemType;
       }
 
@@ -236,17 +245,6 @@ namespace Parquet
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");
          }
-      }
-
-      private static IList CreateValuesList(Type systemType, SchemaElement schema)
-      {
-         if (systemType == typeof(int))
-         {
-            schema.Type = TType.INT32;
-            return new List<int>();
-         }
-
-         throw new NotImplementedException($"type {systemType} not implemented");
       }
    }
 }
