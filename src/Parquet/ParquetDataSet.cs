@@ -71,18 +71,15 @@ namespace Parquet
       public long Count => _columns.FirstOrDefault().Value.Values.Count;
 
       /// <summary>
-      /// Used to get the row values
-      /// </summary>
-      /// <param name="row">The index of the row beginning with zero</param>
-      /// <returns>An object array</returns>
-      public object[] this[int row] => Columns.Select(column => column.Values[row]).ToArray();
-      
-
-      /// <summary>
       /// Returns a list of columns names 
       /// </summary>
       public string[] ColumnNames => Columns.Select(column => column.Name).ToArray();
 
+      /// <summary>
+      /// Used to get the row values
+      /// </summary>
+      /// <param name="row">The index of the row beginning with zero</param>
+      /// <returns>An object array</returns>
       public object[] this[int row]
       {
          get
