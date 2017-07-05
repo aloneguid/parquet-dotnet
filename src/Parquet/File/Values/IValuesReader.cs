@@ -1,4 +1,4 @@
-﻿using Parquet.Thrift;
+﻿using Parquet.Data;
 using System.Collections;
 using System.IO;
 

@@ -1,12 +1,11 @@
-﻿using Parquet.Thrift;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using TType = Parquet.Thrift.Type;
 using SType = System.Type;
+using Parquet.Data;
 
 namespace Parquet.File.Values
 {
@@ -23,7 +22,7 @@ namespace Parquet.File.Values
 
       public void Write(BinaryWriter writer, SchemaElement schema, IList data)
       {
-         switch (schema.Type)
+         switch (schema.Thrift.Type)
          {
             case TType.BOOLEAN:
                WriteBoolean(writer, schema, data);
@@ -54,7 +53,7 @@ namespace Parquet.File.Values
 
 
             default:
-               throw new NotImplementedException($"type {schema.Type} not implemented");
+               throw new NotImplementedException($"type {schema.Thrift.Type} not implemented");
          }
       }
 

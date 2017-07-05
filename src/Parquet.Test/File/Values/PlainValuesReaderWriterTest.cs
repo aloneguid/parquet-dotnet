@@ -1,10 +1,8 @@
-﻿using Parquet.File.Values;
-using Parquet.Thrift;
-using System;
+﻿using Parquet.Data;
+using Parquet.File.Values;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace Parquet.Test.File.Values
@@ -36,8 +34,7 @@ namespace Parquet.Test.File.Values
          var bools = new List<bool>();
          bools.AddRange(new[] { true, false, true });
 
-         var schema = new SchemaElement();
-         schema.Type = Thrift.Type.BOOLEAN;
+         var schema = new SchemaElement<bool>("bool", false);
 
          _writer.Write(_bw, schema, bools);
 

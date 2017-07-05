@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.IO;
 
 namespace Parquet.File.Data
 {
    interface IDataWriter
    {
-      void Write(byte[] buffer);
+      void Write(byte[] buffer, Stream destination);
    }
 }

@@ -1,3 +1,4 @@
+using Parquet.Data;
 using System;
 using System.IO;
 using System.Reflection;
@@ -19,7 +20,7 @@ namespace Parquet.Test
          {
             using (var r = new ParquetReader(s))
             {
-               ParquetDataSet ds = r.Read();
+               DataSet ds = r.Read();
             }
          }
       }
@@ -31,9 +32,15 @@ namespace Parquet.Test
          {
             using (var r = new ParquetReader(s))
             {
-               ParquetDataSet ds = r.Read();
+               DataSet ds = r.Read();
             }
          }
+      }
+
+      //[Fact]
+      public void Delete_me_manual_test()
+      {
+         var ds = ParquetReader.ReadFile("C:\\tmp\\postcodes.plain.parquet");
       }
 
       private string GetDataFilePath(string name)

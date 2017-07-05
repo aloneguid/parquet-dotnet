@@ -1,5 +1,6 @@
 ﻿using NetBox;
 using NetBox.FileFormats;
+using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,54 +19,47 @@ namespace Parquet.Test.Reader
    {
       protected void CompareFiles(string baseName, string encoding, params Type[] columnTypes)
       {
-         ParquetDataSet parquet = ReadParquet($"{baseName}.{encoding}.parquet");
-         var csv = ReadCsv($"{baseName}.csv");
+         DataSet parquet = ReadParquet($"{baseName}.{encoding}.parquet");
+         DataSet csv = ReadCsv($"{baseName}.csv");
          Compare(parquet, csv, columnTypes);
       }
 
-      private void Compare(ParquetDataSet parquet, Dictionary<string, List<string>> csv, Type[] columnTypes)
+      private void Compare(DataSet parquet, DataSet csv, Type[] columnTypes)
       {
          //compar number of columns is the same
-         Assert.Equal(parquet.Columns.Count, csv.Count);
+         Assert.Equal(parquet.ColumnCount, csv.ColumnCount);
 
          //compare column names
-         foreach(ParquetColumn pq in parquet.Columns)
+         foreach(string pq in parquet.Schema.ColumnNames)
          {
-            Assert.True(csv.ContainsKey(pq.Name));
+            Assert.True(csv.Schema.ColumnNames.Contains(pq));
          }
 
          //compare column values one by one
          Assert.True(columnTypes.Length == csv.Count,
             $"incorrect type count, expected {csv.Count} but found {columnTypes.Length}");
 
-         //compare individual columns
-         int i = 0;
-         foreach(ParquetColumn pc in parquet.Columns)
+         //compare individual rows
+         for(int i = 0; i < parquet.RowCount; i++)
          {
-            List<string> cc = csv[pc.Name];
-            Type expectedColumnType = columnTypes[i];
-
-            //validate column type
-            Assert.True(expectedColumnType == pc.SystemType, $"expected {expectedColumnType} for column {pc.Name}#{i} but found {pc.SystemType}");
-
-            //validate number of values
-            Assert.True(cc.Count == pc.Values.Count, $"expected {cc.Count} values in column {pc.Name} but found {pc.Values.Count}");
+            Row pr = parquet[i];
+            Row cr = csv[i];
 
             //validate actual values
-            Compare(pc, cc);
-
-            i += 1;
+            Compare(parquet.Schema, pr, cr);
          }
       }
 
-      private void Compare(ParquetColumn pc, List<string> cc)
+      private void Compare(Schema schema, Row pc, Row cc)
       {
-         for(int i = 0; i < pc.Values.Count; i++)
+         for(int i = 0; i < pc.Length; i++)
          {
             //todo: this comparison needs to be improved, probably doesn't handle nulls etc.
 
-            object pv = pc.Values[i];
-            object cv = ChangeType(cc[i], pc.SystemType);
+            SchemaElement se = schema.Elements[i];
+
+            object pv = pc[i];
+            object cv = ChangeType(cc[i], se.ElementType);
 
             if (pv == null)
             {
@@ -74,91 +68,63 @@ namespace Parquet.Test.Reader
                   (cv is string s && s == string.Empty);
 
                Assert.True(isCsvNull,
-                  $"expected null value in column {pc.Name}, value #{i}");
+                  $"expected null value in column {se.Name}, value #{i}");
             }
             else
             {
-               if (pc.SystemType == typeof(string))
+               if (se.ElementType == typeof(string))
                {
                   Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
-                     $"expected {cv} but was {pv} in column {pc.Name}, value #{i}");
+                     $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
                }
                else
                {
                   Assert.True(pv.Equals(cv),
-                     $"expected {cv} but was {pv} in column {pc.Name}, value #{i}");
+                     $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
                }
             }
          }
       }
 
-      private object ChangeType(string v, Type t)
+      private object ChangeType(object v, Type t)
       {
-         Type gt = null;
+         if (v == null) return null;
+         if (v.GetType() == t) return v;
+         if (v is string s && string.IsNullOrEmpty(s)) return null;
 
-         try
+         if(t == typeof(DateTimeOffset))
          {
-            gt = t.GetGenericTypeDefinition();
-         }
-         catch(InvalidOperationException)
-         {
-            //when type is not generic
-         }
-
-         if (gt != null && gt == typeof(Nullable<>))
-         {
-            Type tt = t.GenericTypeArguments[0];
-
-            try
-            {
-               if (tt == typeof(DateTimeOffset)) return v == string.Empty ? null : new DateTimeOffset?(new DateTimeOffset(DateTime.Parse(v)));
-
-               return Convert.ChangeType(v, tt);
-            }
-            catch(FormatException)
-            {
-               var dv = new DynamicValue(v);
-               return dv.GetValue(tt);
-            }
+            string so = (string)v;
+            return new DateTimeOffset(DateTime.Parse(so));
          }
 
          return Convert.ChangeType(v, t);
       }
 
-      private ParquetDataSet ReadParquet(string name)
+      private DataSet ReadParquet(string name)
       {
-         ParquetDataSet parquet;
-         using (Stream fs = F.OpenRead(GetDataFilePath(name)))
-         {
-            using (ParquetReader reader = new ParquetReader(fs))
-            {
-               reader.Options.TreatByteArrayAsString = true;
-
-               parquet = reader.Read();
-            }
-         }
-         return parquet;
+         string path = GetDataFilePath(name);
+         return ParquetReader.ReadFile(path);
       }
 
-      private Dictionary<string, List<string>> ReadCsv(string name)
+      private DataSet ReadCsv(string name)
       {
-         var result = new Dictionary<string, List<string>>();
+         DataSet result;
+
          using (Stream fs = F.OpenRead(GetDataFilePath(name)))
          {
             var reader = new CsvReader(fs, Encoding.UTF8);
 
             //header
             string[] columnNames = reader.ReadNextRow();
-            foreach (string columnName in columnNames) result[columnName] = new List<string>();
+            result = new DataSet(new Schema(columnNames.Select(n => new SchemaElement(n, typeof(string), false))));
 
             //values
             string[] values;
             while((values = reader.ReadNextRow()) != null)
             {
-               for(int i = 0; i < values.Length; i++)
-               {
-                  result[columnNames[i]].Add(values[i]);
-               }
+               var row = new Row(values);
+               result.Add(row);
             }
          }
          return result;

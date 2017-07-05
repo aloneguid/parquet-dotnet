@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Parquet.File.Values
 {
-   public struct BigDecimal
+   struct BigDecimal
    {
       public decimal Integer { get; set; }
       public int Scale { get; set; }

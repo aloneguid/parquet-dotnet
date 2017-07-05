@@ -1,5 +1,6 @@
 ﻿using parq.Display.Models;
 using Parquet;
+using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace parq.Display
 {
     internal class DisplayController
     {
-      public ViewModel Get(ParquetDataSet dataSet)
+      public ViewModel Get(DataSet dataSet)
       {
          var viewModel = new ViewModel();
          var columns = GenerateColumnList(dataSet);
@@ -18,16 +19,16 @@ namespace parq.Display
 
          for (int i = 0; i < dataSet.Count; i++)
          {
-            var row = dataSet[i];
-            viewModel.Rows.Add(row);
+            Row row = dataSet[i];
+            viewModel.Rows.Add(row.RawValues);
          }
          viewModel.RowCount = dataSet.Count;
          return viewModel;
       }
-      private IEnumerable<ColumnDetails> GenerateColumnList(ParquetDataSet dataSet)
+      private IEnumerable<ColumnDetails> GenerateColumnList(DataSet dataSet)
       {
-         var columnDetails = dataSet.ColumnNames.Select(column =>
-            new ColumnDetails { columnWidth = column.Length, columnName = column });
+         var columnDetails = dataSet.Schema.Elements.Select(column =>
+            new ColumnDetails { columnWidth = column.Name.Length, columnName = column.Name });
          var parsedSet = new List<ColumnDetails>();
          foreach (var column in columnDetails)
          {

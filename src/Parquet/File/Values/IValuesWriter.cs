@@ -1,9 +1,6 @@
-﻿using Parquet.Thrift;
-using System;
+﻿using Parquet.Data;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Parquet.File.Values
 {

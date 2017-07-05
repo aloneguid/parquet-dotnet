@@ -8,6 +8,11 @@
       /// <summary>
       /// No compression
       /// </summary>
-      None
+      None,
+
+      /// <summary>
+      /// Gzip compression
+      /// </summary>
+      Gzip
    }
 }

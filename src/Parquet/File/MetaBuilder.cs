@@ -1,8 +1,11 @@
-﻿using Parquet.Thrift;
+﻿using Parquet.Data;
+using Parquet.Thrift;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DSchema = Parquet.Data.Schema;
+using TSchemaElement = Parquet.Thrift.SchemaElement;
 
 namespace Parquet.File
 {
@@ -21,13 +24,11 @@ namespace Parquet.File
 
       public FileMetaData ThriftMeta => _meta;
 
-      public void AddSchema(ParquetDataSet dataSet)
+      public void AddSchema(DataSet ds)
       {
-         long totalCount = dataSet.Count;
-
-         _meta.Schema = new List<SchemaElement> { new SchemaElement("schema") { Num_children = dataSet.Columns.Count } };
-         _meta.Schema.AddRange(dataSet.Columns.Select(c => c.Schema));
-         _meta.Num_rows = totalCount;
+         _meta.Schema = new List<TSchemaElement> { new TSchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
+         _meta.Schema.AddRange(ds.Schema.Elements.Select(c => c.Thrift));
+         _meta.Num_rows = ds.Count;
       }
 
       public RowGroup AddRowGroup()

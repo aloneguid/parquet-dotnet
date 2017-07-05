@@ -2,14 +2,12 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Parquet.Thrift;
 using TType = Parquet.Thrift.Type;
 using System.Runtime.CompilerServices;
 using System.Numerics;
-using System.Reflection;
+using Parquet.Data;
 
 namespace Parquet.File.Values
 {
@@ -29,7 +27,7 @@ namespace Parquet.File.Values
          long byteCount = reader.BaseStream.Length - reader.BaseStream.Position;
          byte[] data = reader.ReadBytes((int)byteCount);
 
-         switch (schema.Type)
+         switch (schema.Thrift.Type)
          {
             case TType.BOOLEAN:
                ReadPlainBoolean(data, destination, maxValues);
@@ -56,7 +54,7 @@ namespace Parquet.File.Values
                ReadFixedLenByteArray(data, schema, destination);
                break;
             default:
-               throw new NotImplementedException($"type {schema.Type} not implemented");
+               throw new NotImplementedException($"type {schema.Thrift.Type} not implemented");
          }
       }
 
@@ -83,7 +81,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadInt32(byte[] data, SchemaElement schema, IList destination)
       {
-         if (schema.Converted_type == ConvertedType.DATE)
+         if (schema.Thrift.Converted_type == Thrift.ConvertedType.DATE)
          {
             for (int i = 0; i < data.Length; i += 4)
             {
@@ -134,13 +132,13 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadFixedLenByteArray(byte[] data, SchemaElement schema, IList destination)
       {
-         for (int i = 0; i < data.Length; i += schema.Type_length)
+         for (int i = 0; i < data.Length; i += schema.Thrift.Type_length)
          {
-            if (schema.Converted_type != ConvertedType.DECIMAL) continue;
+            if (schema.Thrift.Converted_type != Thrift.ConvertedType.DECIMAL) continue;
             // go from data - decimal needs to be 16 bytes but not from Spark - variable fixed nonsense
-            byte[] dataNew = new byte[schema.Type_length];
-            Array.Copy(data, i, dataNew, 0, schema.Type_length);
-            var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Scale, schema.Precision);
+            byte[] dataNew = new byte[schema.Thrift.Type_length];
+            Array.Copy(data, i, dataNew, 0, schema.Thrift.Type_length);
+            var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Thrift.Scale, schema.Thrift.Precision);
 
             decimal dc = (decimal) bigInt;
             destination.Add(dc);
@@ -187,8 +185,8 @@ namespace Parquet.File.Values
          // Both UTF8 and JSON are stored as binary data (byte_array) which allows annotations to be used either UTF8 and JSON 
          // They should be treated in the same way as Strings
          // need to find a better implementation for this but date strings are always broken here because of the type mismatch 
-         if (schemaElement.__isset.converted_type ||
-            schemaElement.Converted_type == ConvertedType.UTF8 || schemaElement.Converted_type == ConvertedType.JSON ||
+         if (schemaElement.Thrift.__isset.converted_type ||
+            schemaElement.Thrift.Converted_type == Thrift.ConvertedType.UTF8 || schemaElement.Thrift.Converted_type == Thrift.ConvertedType.JSON ||
             _options.TreatByteArrayAsString)
          {
             for (int i = 0; i < data.Length;)

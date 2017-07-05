@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Parquet.Data;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Thrift;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
 
 namespace Parquet.File.Values
 {
@@ -13,7 +12,7 @@ namespace Parquet.File.Values
    {
       public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
-         int bitWidth = schema.Type_length;
+         int bitWidth = schema.Thrift.Type_length;
          List<int> destinationTyped = (List<int>)destination;
          int length = GetRemainingLength(reader);
          ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped, maxValues);
