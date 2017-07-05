@@ -189,28 +189,58 @@ namespace Parquet
          switch(schema.Type)
          {
             case TType.BOOLEAN:
-               systemType = typeof(bool?);
-               return new List<bool?>();
+               if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+               {
+                  systemType = typeof(bool?);
+                  return new List<bool?>();
+               }
+               systemType = typeof(bool);
+               return new List<bool>();
             case TType.INT32:
                if(schema.Converted_type == ConvertedType.DATE)
                {
-                  systemType = typeof(DateTimeOffset?);
-                  return new List<DateTimeOffset?>();
+                  if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+                  {
+                     systemType = typeof(DateTimeOffset?);
+                     return new List<DateTimeOffset?>();
+                  }
+                  systemType = typeof(DateTimeOffset);
+                  return new List<DateTimeOffset>();
                }
                else
                {
-                  systemType = typeof(int?);
-                  return new List<int?>();
+                  if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+                  {
+                     systemType = typeof(int?);
+                     return new List<int?>();
+                  }
+                  systemType = typeof(int);
+                  return new List<int>();
                }
             case TType.FLOAT:
-               systemType = typeof(float?);
-               return new List<float?>();
+               if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+               {
+                  systemType = typeof(float?);
+                  return new List<float?>();
+               }
+               systemType = typeof(float);
+               return new List<float>();
             case TType.INT64:
-               systemType = typeof(long?);
-               return new List<long?>();
+               if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+               {
+                  systemType = typeof(long?);
+                  return new List<long?>();
+               }
+               systemType = typeof(long);
+               return new List<long>();
             case TType.DOUBLE:
-               systemType = typeof(double?);
-               return new List<double?>();
+               if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+               {
+                  systemType = typeof(double?);
+                  return new List<double?>();
+               }
+               systemType = typeof(double);
+               return new List<double>();
             case TType.INT96:
 #if !SPARK_TYPES
                systemType = typeof(DateTimeOffset?);
@@ -227,20 +257,35 @@ namespace Parquet
                }
                else
                {
-                  systemType = typeof(bool?);
-                  return new List<bool?>();
+                  if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+                  {
+                     systemType = typeof(bool?);
+                     return new List<bool?>();
+                  }
+                  systemType = typeof(bool);
+                  return new List<bool>();
                }
             case TType.FIXED_LEN_BYTE_ARRAY:
                // TODO: Converted type should work differently shouldn't inline in this way
                if (schema.Converted_type == ConvertedType.DECIMAL)
                {
+                  if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+                  {
+                     systemType = typeof(decimal?);
+                     return new List<decimal?>();
+                  }
                   systemType = typeof(decimal);
-                  return new List<decimal?>();
+                  return new List<decimal>();
                }
                else
                {
-                  systemType = typeof(byte?[]);
-                  return new List<byte?[]>();
+                  if (schema.Repetition_type == FieldRepetitionType.OPTIONAL)
+                  {
+                     systemType = typeof(byte?[]);
+                     return new List<byte?[]>();
+                  }
+                  systemType = typeof(byte[]);
+                  return new List<byte[]>();
                }
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");

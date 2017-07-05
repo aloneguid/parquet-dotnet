@@ -9,6 +9,7 @@ using Parquet.Thrift;
 using TType = Parquet.Thrift.Type;
 using System.Runtime.CompilerServices;
 using System.Numerics;
+using System.Reflection;
 
 namespace Parquet.File.Values
 {
@@ -65,7 +66,6 @@ namespace Parquet.File.Values
          int ibit = 0;
          int ibyte = 0;
          byte b = data[0];
-         var destinationTyped = (List<bool?>)destination;
 
          for(int ires = 0; ires < maxValues; ires++)
          {
@@ -76,29 +76,27 @@ namespace Parquet.File.Values
             }
 
             bool set = ((b >> ibit++) & 1) == 1;
-            destinationTyped.Add(set);
+            destination.Add(set);
          }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadInt32(byte[] data, SchemaElement schema, IList destination)
       {
-         if(schema.Converted_type == ConvertedType.DATE)
+         if (schema.Converted_type == ConvertedType.DATE)
          {
-            List<DateTimeOffset?> destinationTyped = (List<DateTimeOffset?>)destination;
             for (int i = 0; i < data.Length; i += 4)
             {
                int iv = BitConverter.ToInt32(data, i);
-               destinationTyped.Add(new DateTimeOffset(iv.FromUnixTime(), TimeSpan.Zero));
+               destination.Add(new DateTimeOffset(iv.FromUnixTime(), TimeSpan.Zero));
             }
          }
          else
          {
-            List<int?> destinationTyped = (List<int?>)destination;
             for (int i = 0; i < data.Length; i += 4)
             {
                int iv = BitConverter.ToInt32(data, i);
-               destinationTyped.Add(iv);
+               destination.Add(iv);
             }
          }
       }
@@ -106,40 +104,36 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadFloat(byte[] data, SchemaElement schema, IList destination)
       {
-         List<float?> destinationTyped = (List<float?>)destination;
          for (int i = 0; i < data.Length; i += 4)
          {
             float iv = BitConverter.ToSingle(data, i);
-            destinationTyped.Add(iv);
+            destination.Add(iv);
          }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadLong(byte[] data, SchemaElement schema, IList destination)
       {
-         List<long?> destinationTyped = (List<long?>)destination;
          for (int i = 0; i < data.Length; i += 8)
          {
             long lv = BitConverter.ToInt64(data, i);
-            destinationTyped.Add(lv);
+            destination.Add(lv);
          }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadDouble(byte[] data, SchemaElement schema, IList destination)
       {
-         List<double?> destinationTyped = (List<double?>)destination;
          for (int i = 0; i < data.Length; i += 8)
          {
             double lv = BitConverter.ToDouble(data, i);
-            destinationTyped.Add(lv);
+            destination.Add(lv);
          }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadFixedLenByteArray(byte[] data, SchemaElement schema, IList destination)
       {
-         List<decimal?> destinationTyped = (List<decimal?>) destination;
          for (int i = 0; i < data.Length; i += schema.Type_length)
          {
             if (schema.Converted_type != ConvertedType.DECIMAL) continue;
@@ -149,21 +143,15 @@ namespace Parquet.File.Values
             var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Scale, schema.Precision);
 
             decimal dc = (decimal) bigInt;
-            destinationTyped.Add(dc);
+            destination.Add(dc);
          }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadInt96(byte[] data, SchemaElement schema, IList destination)
       {
-#if !SPARK_TYPES
-         List<BigInteger?> destinationTyped = (List<BigInteger?>)destination;
-#else
-         List<DateTimeOffset?> destinationTyped = (List<DateTimeOffset?>)destination;
-#endif
 
-         //todo: this is a sample how to read int96, not tested this yet
-         // todo: need to work this out because Spark is not encoding per spec - working with the Spark encoding instead
+
 #if !SPARK_TYPES
          //var r96 = new List<BigInteger>(data.Length / 12);
 #else
@@ -188,7 +176,7 @@ namespace Parquet.File.Values
             double millis = (double) nanosToInt64 / 1000000D;
             bi = bi.AddMilliseconds(millis);
 #endif
-            destinationTyped.Add(new DateTimeOffset(bi));
+            destination.Add(new DateTimeOffset(bi));
 
          } 
       }
@@ -203,19 +191,17 @@ namespace Parquet.File.Values
             schemaElement.Converted_type == ConvertedType.UTF8 || schemaElement.Converted_type == ConvertedType.JSON ||
             _options.TreatByteArrayAsString)
          {
-            List<string> destinationTyped = (List<string>)destination;
             for (int i = 0; i < data.Length;)
             {
                int length = BitConverter.ToInt32(data, i);
                i += 4;        //fast-forward to data
                string s = UTF8.GetString(data, i, length);
                i += length;   //fast-forward to the next element
-               destinationTyped.Add(s);
+               destination.Add(s);
             }
          }
          else
          {
-            List<byte[]> destinationTyped = (List<byte[]>)destination;
             for (int i = 0; i < data.Length;)
             {
                int length = BitConverter.ToInt32(data, i);
@@ -223,42 +209,10 @@ namespace Parquet.File.Values
                byte[] ar = new byte[length];
                Array.Copy(data, i, ar, 0, length);
                i += length;   //fast-forward to the next element
-               destinationTyped.Add(ar);
+               destination.Add(ar);
             }
          }
       }
-
-   }
-
-
-   struct BigDecimal
-   {
-      public decimal Integer { get; set; }
-      public int Scale { get; set; }
-      public int Precision { get; set; }
-
-      public BigDecimal(BigInteger integer, int scale, int precision) : this()
-      {
-         Integer = (decimal) integer;
-         Scale = scale;
-         Precision = precision;
-         while (Scale > 0)
-         {
-            Integer /= 10;
-            Scale -= 1;
-         }
-         Scale = scale;
-      }
-
-      public static explicit operator decimal(BigDecimal bd)
-      {
-         return bd.Integer;
-      }
-
-      // TODO: Add to byte array for writer
-
-
-
 
    }
 }
