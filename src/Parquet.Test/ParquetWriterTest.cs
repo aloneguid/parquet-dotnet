@@ -46,7 +46,7 @@ namespace Parquet.Test
 
       }
 
-      [Fact]
+      //[Fact]
       public void Write_large_gzip()
       {
          var ds = new DataSet(
