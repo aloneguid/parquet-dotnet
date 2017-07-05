@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace parq.Display
+namespace parq.Display.Models
 {
     public class ViewModel
     {

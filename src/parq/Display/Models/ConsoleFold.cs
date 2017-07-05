@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace parq.Display
+namespace parq.Display.Models
 {
-    public class ConsoleSheet
+    class ConsoleFold
     {
-      public IEnumerable<ColumnDetails> Columns { get; set; }
+      public IEnumerable<object[]> Rows { get; set; }
       public int IndexStart { get; set; }
       public int IndexEnd { get; set; }
    }

@@ -4,7 +4,9 @@
    {
         NoOp,
         Quit,
-        NextPage,
-        PrevPage
+        NextSheet,
+        PrevSheet,
+        NextFold,
+        PrevFold
    }
 }
