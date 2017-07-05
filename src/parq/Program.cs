@@ -2,6 +2,7 @@
 using LogMagic;
 using Parquet;
 using parq.Display;
+using parq.Display.Views;
 
 namespace parq
 {
@@ -43,9 +44,8 @@ namespace parq
 
                // After reading the column types give a printed list of the layout of the columns 
                var display = new DisplayController();
-               display.Draw(dataSet);
-
-               Console.ReadLine();
+               var viewModel = display.Get(dataSet);
+               new ConsoleView().Draw(viewModel);
 
             }
           }
