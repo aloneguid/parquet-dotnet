@@ -36,7 +36,7 @@ namespace Parquet.Test.Reader
          }
 
          //compare column values one by one
-         Assert.True(columnTypes.Length == csv.Count,
+         Assert.True(columnTypes.Length == csv.ColumnCount,
             $"incorrect type count, expected {csv.Count} but found {columnTypes.Length}");
 
          //compare individual rows
