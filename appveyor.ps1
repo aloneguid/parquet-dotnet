@@ -58,7 +58,7 @@ function Update-ProjectVersion($File)
 Invoke-Expression "nuget restore src/Parquet.sln"
 
 # Update versioning information
-Get-ChildItem *.csproj -Recurse | Where-Object {-not(($_.Name -like "*test*") -or ($_.Name -like "*parq.csproj*")) } | % {
+Get-ChildItem *.csproj -Recurse | Where-Object {-not(($_.Name -like "*test*") -or ($_.Name -like "*parq.csproj*") -or ($_.Name -like "*Runner.csproj*") ) } | % {
    #Write-Host $_
    Update-ProjectVersion $_
 }
