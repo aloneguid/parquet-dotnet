@@ -1,5 +1,6 @@
 ﻿using Parquet.Data;
 using Parquet.File.Values;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace Parquet.Test.File.Values
       }
 
       [Fact]
-      public void Booleans()
+      public void Array_of_booleans_writes_and_reads()
       {
          var bools = new List<bool>();
          bools.AddRange(new[] { true, false, true });
@@ -44,6 +45,22 @@ namespace Parquet.Test.File.Values
          _reader.Read(_br, schema, boolsRead, 3);
 
          Assert.Equal(bools, boolsRead.Cast<bool>().ToList());
+      }
+
+      [Fact]
+      public void DateTimeOffset_writes_and_reads()
+      {
+         var dates = new List<DateTimeOffset> { DateTime.UtcNow.RoundToSecond() };  //this version doesn't store milliseconds
+         var schema = new SchemaElement<DateTimeOffset>("dto", false);
+
+         _writer.Write(_bw, schema, dates);
+
+         _ms.Position = 0;
+
+         var datesRead = new List<DateTimeOffset>();
+         _reader.Read(_br, schema, datesRead, 1);
+
+         Assert.Equal(datesRead[0], dates[0]);
       }
    }
 }

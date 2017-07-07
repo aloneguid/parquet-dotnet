@@ -8,6 +8,7 @@ using TType = Parquet.Thrift.Type;
 using System.Runtime.CompilerServices;
 using System.Numerics;
 using Parquet.Data;
+using System.Collections.Generic;
 
 namespace Parquet.File.Values
 {
@@ -81,7 +82,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadInt32(byte[] data, SchemaElement schema, IList destination)
       {
-         if (schema.Thrift.Converted_type == Thrift.ConvertedType.DATE)
+         if (schema.IsAnnotatedWith(Thrift.ConvertedType.DATE))
          {
             for (int i = 0; i < data.Length; i += 4)
             {
@@ -112,10 +113,23 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadLong(byte[] data, SchemaElement schema, IList destination)
       {
-         for (int i = 0; i < data.Length; i += 8)
+         if (schema.IsAnnotatedWith(Thrift.ConvertedType.TIMESTAMP_MILLIS))
          {
-            long lv = BitConverter.ToInt64(data, i);
-            destination.Add(lv);
+            var lst = (List<DateTimeOffset>)destination;
+
+            for (int i = 0; i < data.Length; i += 8)
+            {
+               long lv = BitConverter.ToInt64(data, i);
+               lst.Add(lv.FromUnixTime());
+            }
+         }
+         else
+         {
+            for (int i = 0; i < data.Length; i += 8)
+            {
+               long lv = BitConverter.ToInt64(data, i);
+               destination.Add(lv);
+            }
          }
       }
 
@@ -134,7 +148,7 @@ namespace Parquet.File.Values
       {
          for (int i = 0; i < data.Length; i += schema.Thrift.Type_length)
          {
-            if (schema.Thrift.Converted_type != Thrift.ConvertedType.DECIMAL) continue;
+            if (!schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL)) continue;
             // go from data - decimal needs to be 16 bytes but not from Spark - variable fixed nonsense
             byte[] dataNew = new byte[schema.Thrift.Type_length];
             Array.Copy(data, i, dataNew, 0, schema.Thrift.Type_length);
@@ -169,7 +183,7 @@ namespace Parquet.File.Values
             byte[] nanos = new byte[8];
             Array.Copy(data, i + 8, v96, 0, 4);
             Array.Copy(data, i, nanos, 0, 8);
-            var bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
+            DateTime bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
             long nanosToInt64 = BitConverter.ToInt64(nanos, 0);
             double millis = (double) nanosToInt64 / 1000000D;
             bi = bi.AddMilliseconds(millis);
@@ -185,8 +199,8 @@ namespace Parquet.File.Values
          // Both UTF8 and JSON are stored as binary data (byte_array) which allows annotations to be used either UTF8 and JSON 
          // They should be treated in the same way as Strings
          // need to find a better implementation for this but date strings are always broken here because of the type mismatch 
-         if (schemaElement.Thrift.__isset.converted_type ||
-            schemaElement.Thrift.Converted_type == Thrift.ConvertedType.UTF8 || schemaElement.Thrift.Converted_type == Thrift.ConvertedType.JSON ||
+         if (schemaElement.IsAnnotatedWith(Thrift.ConvertedType.UTF8) ||
+            schemaElement.IsAnnotatedWith(Thrift.ConvertedType.JSON) ||
             _options.TreatByteArrayAsString)
          {
             for (int i = 0; i < data.Length;)

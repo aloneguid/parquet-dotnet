@@ -72,6 +72,12 @@ namespace Parquet.Data
 
       internal PSE Thrift { get; set; }
 
+      internal bool IsAnnotatedWith(Thrift.ConvertedType ct)
+      {
+         //checking __isset is important, this is a way of Thrift to tell whether the variable is set at all
+         return Thrift.__isset.converted_type && Thrift.Converted_type == ct;
+      }
+
       /// <summary>
       /// Pretty prints
       /// </summary>

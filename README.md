@@ -39,17 +39,18 @@ For instance, to read a file `c:\test.parquet` you woudl normally write the foll
 ```csharp
 using System.IO;
 using Parquet;
+using Parquet.Data;
 
 using(Stream fs = File.OpenRead("c:\\test.parquet"))
 {
 	using(var reader = new ParquetReader(fs))
 	{
-		ParquetDataSet ds = reader.Read();
+		DataSet ds = reader.Read();
 	}
 }
 ```
 
-this will read entire file in memory as a set of columns inside `ParquetDataSet` class.
+this will read entire file in memory as a set of rows inside `DataSet` class.
 
 ### Writing files
 
@@ -58,20 +59,21 @@ Parquet.Net operates on streams, therefore you need to create it first. The foll
 ```csharp
 using System.IO;
 using Parquet;
+using Parquet.Data;
 
-var idColumn = new ParquetColumn<int>("id");
-idColumn.Add(1, 2);
+var ds = new DataSet(
+	new SchemaElement<int>("id", false),
+	new SchemaElement<string>("city", false)
+);
 
-var cityColumn = new ParquetColumn<string>("city");
-cityColumn.Add("London", "Derby");
-
-var dataSet = new ParquetDataSet(idColumn, cityColumn);
+ds.Add(1, "London");
+ds.Add(2, "Derby");
 
 using(Stream fileStream = File.OpenWrite("c:\\test.parquet"))
 {
 	using(var writer = new ParquetWriter(fileStream))
 	{
-		writer.Write(dataSet);
+		writer.Write(ds);
 	}
 }
 

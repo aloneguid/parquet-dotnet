@@ -39,13 +39,14 @@ namespace Parquet
       private readonly BinaryReader _reader;
       private readonly ThriftStream _thrift;
       private Thrift.FileMetaData _meta;
-      private readonly ParquetOptions _options = new ParquetOptions();
+      private readonly ParquetOptions _options;
 
       /// <summary>
       /// Creates an instance from input stream
       /// </summary>
-      /// <param name="input"></param>
-      public ParquetReader(Stream input)
+      /// <param name="input">Input stream, must be readable and seekable</param>
+      /// <param name="options">Optional reader options</param>
+      public ParquetReader(Stream input, ParquetOptions options = null)
       {
          _input = input ?? throw new ArgumentNullException(nameof(input));
          if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
@@ -54,13 +55,20 @@ namespace Parquet
          _reader = new BinaryReader(input);
          ValidateFile();
          _thrift = new ThriftStream(input);
+         _options = options ?? new ParquetOptions();
       }
 
-      public static DataSet ReadFile(string fullPath)
+      /// <summary>
+      /// Reads the file
+      /// </summary>
+      /// <param name="fullPath">The full path.</param>
+      /// <param name="options">Optional reader options.</param>
+      /// <returns>DataSet</returns>
+      public static DataSet ReadFile(string fullPath, ParquetOptions options = null)
       {
          using (Stream fs = System.IO.File.OpenRead(fullPath))
          {
-            using (var reader = new ParquetReader(fs))
+            using (var reader = new ParquetReader(fs, options))
             {
                return reader.Read();
             }

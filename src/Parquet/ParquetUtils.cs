@@ -29,66 +29,72 @@ using System.Text;
 
 namespace Parquet
 {
-    static class ParquetUtils
-    {
-       public static bool[] ConvertToBoolArray(this BitArray bits, int bitCount)
-       {
-          var boolList = new List<bool>();
-          for (int index = 0; index < bitCount; index++)
-          {
-             boolList.Add(bits.Get(index));
-          }
+   static class ParquetUtils
+   {
+      private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-          return boolList.ToArray();
-       }
+      public static bool[] ConvertToBoolArray(this BitArray bits, int bitCount)
+      {
+         var boolList = new List<bool>();
+         for (int index = 0; index < bitCount; index++)
+         {
+            boolList.Add(bits.Get(index));
+         }
 
-       public static Byte GetByte(this BitArray array)
-       {
-          Byte byt = 0;
-          for (int i = array.Length - 1; i >= 0; i--)
-             byt = (byte)((byt << 1) | (array[i] ? 1 : 0));
-          return byt;
-       }
+         return boolList.ToArray();
+      }
 
-       // ReSharper disable once InconsistentNaming
-       public static int GetByteArrayLELength(byte[] len)
-       {
-          int output = BitConverter.ToInt32(len, 0);
-          return output;
-       }
+      public static Byte GetByte(this BitArray array)
+      {
+         Byte byt = 0;
+         for (int i = array.Length - 1; i >= 0; i--)
+            byt = (byte)((byt << 1) | (array[i] ? 1 : 0));
+         return byt;
+      }
 
-       public static DateTime FromUnixTime(this int unixTime)
-       {
-          var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-          return epoch.AddDays(unixTime);
-       }
+      // ReSharper disable once InconsistentNaming
+      public static int GetByteArrayLELength(byte[] len)
+      {
+         int output = BitConverter.ToInt32(len, 0);
+         return output;
+      }
 
-       public static DateTime FromUnixTime(this long unixTime)
-       {
-          var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-          return epoch.AddSeconds(unixTime);
-       }
+      public static DateTime FromUnixTime(this int unixTime)
+      {
+         var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+         return epoch.AddDays(unixTime);
+      }
 
-      public static long ToUnixTime(this DateTime date)
-       {
-          var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-          return Convert.ToInt64((date - epoch).TotalSeconds);
-       }
+      public static DateTime FromUnixTime(this long unixTime)
+      {
+         return UnixEpoch.AddSeconds(unixTime);
+      }
 
-       public static long GetUnixUnixTimeDays(this DateTime date)
-       {
-          var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-          return Convert.ToInt64((date - epoch).TotalDays);
-       }
+      public static long ToUnixTime(this DateTimeOffset date)
+      {
+         return Convert.ToInt64((date - UnixEpoch).TotalSeconds);
+      }
+
+      public static double ToUnixDays(this DateTimeOffset dto)
+      {
+         TimeSpan diff = dto - UnixEpoch;
+         return diff.TotalDays;
+      }
+
+      public static long GetUnixUnixTimeDays(this DateTime date)
+      {
+         var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+         return Convert.ToInt64((date - epoch).TotalDays);
+      }
 
       public static DateTime JulianToDateTime(this int julianDate)
-       {
+      {
          double unixTime = julianDate - 2440587;
          DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
          dtDateTime = dtDateTime.AddDays(unixTime - 1).ToLocalTime();
 
-          return dtDateTime;
-       }
+         return dtDateTime;
+      }
 
    }
 
@@ -97,10 +103,10 @@ namespace Parquet
       public byte[] IntToLittleEndian(int data)
       {
          byte[] b = new byte[4];
-         b[0] = (byte) data;
-         b[1] = (byte) (((uint) data >> 8) & 0xFF);
-         b[2] = (byte) (((uint) data >> 16) & 0xFF);
-         b[3] = (byte) (((uint) data >> 24) & 0xFF);
+         b[0] = (byte)data;
+         b[1] = (byte)(((uint)data >> 8) & 0xFF);
+         b[2] = (byte)(((uint)data >> 16) & 0xFF);
+         b[3] = (byte)(((uint)data >> 24) & 0xFF);
 
          return b;
       }
@@ -112,13 +118,13 @@ namespace Parquet
 
          for (int i = 0; i < 8; i++)
          {
-            b[i] = (byte) (data & 0xFF);
+            b[i] = (byte)(data & 0xFF);
             data >>= 8;
          }
 
          return b;
       }
-      
+
 
       public byte[] DoubleToLittleEndian(double data)
       {

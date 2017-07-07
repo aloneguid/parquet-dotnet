@@ -44,8 +44,9 @@ namespace Parquet.File.Values
                WriteDouble(writer, schema, data);
                break;
 
-            //case TType.INT96:
-            //   break;
+            case TType.INT96:
+               WriteInt96(writer, schema, data);
+               break;
 
             case TType.BYTE_ARRAY:
                WriteByteArray(writer, schema, data);
@@ -91,10 +92,22 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteInt32(BinaryWriter writer, SchemaElement schema, IList data)
       {
-         var dataTyped = (List<int>)data;
-         foreach (int el in dataTyped)
+         if (schema.IsAnnotatedWith(Thrift.ConvertedType.DATE))
          {
-            writer.Write(el);
+            var dataTyped = (List<DateTimeOffset>)data;
+            foreach(DateTimeOffset el in dataTyped)
+            {
+               int days = (int)el.ToUnixDays();
+               writer.Write(days);
+            }
+         }
+         else
+         {
+            var dataTyped = (List<int>)data;
+            foreach (int el in dataTyped)
+            {
+               writer.Write(el);
+            }
          }
       }
 
@@ -111,11 +124,29 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteLong(BinaryWriter writer, SchemaElement schema, IList data)
       {
-         var lst = (List<long>)data;
-         foreach (long l in lst)
+         if (schema.IsAnnotatedWith(Thrift.ConvertedType.TIMESTAMP_MILLIS))
          {
-            writer.Write(l);
+            var lst = (List<DateTimeOffset>)data;
+            foreach(DateTimeOffset dto in lst)
+            {
+               long unixTime = dto.ToUnixTime();
+               writer.Write(unixTime);
+            }
          }
+         else
+         {
+            var lst = (List<long>)data;
+            foreach (long l in lst)
+            {
+               writer.Write(l);
+            }
+         }
+      }
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      private void WriteInt96(BinaryWriter writer, SchemaElement schema, IList data)
+      {
+         throw new NotImplementedException();
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -127,6 +158,7 @@ namespace Parquet.File.Values
             writer.Write(d);
          }
       }
+
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private void WriteByteArray(BinaryWriter writer, SchemaElement schema, IList data)
       {

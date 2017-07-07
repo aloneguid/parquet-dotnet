@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
 using Parquet.Data;
+using System.Linq;
 
 namespace Parquet.File
 {
@@ -25,13 +26,18 @@ namespace Parquet.File
       {
          { typeof(int), new TypeTag(Thrift.Type.INT32, null) },
          { typeof(bool), new TypeTag(Thrift.Type.BOOLEAN, null) },
-         { typeof(string), new TypeTag(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8) }
+         { typeof(string), new TypeTag(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8) },
+         { typeof(DateTimeOffset), new TypeTag(Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS) }
       };
 
       public static void AdjustSchema(Thrift.SchemaElement schema, Type systemType)
       {
          if (!TypeToTag.TryGetValue(systemType, out TypeTag tag))
-            throw new NotSupportedException($"system type {systemType} is not supported");
+         {
+            string supportedTypes = string.Join(", ", TypeToTag.Keys.Select(t => t.ToString()));
+
+            throw new NotSupportedException($"system type {systemType} is not supported, we currently support only these types: '{supportedTypes}'");
+         }
 
          schema.Type = tag.PType;
 
@@ -64,6 +70,7 @@ namespace Parquet.File
          return Create(t, nullable);
       }
 
+      //todo: this can be rewritten by looking up in TypeToTag
       public static Type ToSystemType(Thrift.SchemaElement schema)
       {
          switch (schema.Type)

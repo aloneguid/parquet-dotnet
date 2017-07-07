@@ -104,7 +104,7 @@ namespace Parquet.Test.Reader
       private DataSet ReadParquet(string name)
       {
          string path = GetDataFilePath(name);
-         return ParquetReader.ReadFile(path);
+         return ParquetReader.ReadFile(path, new ParquetOptions { TreatByteArrayAsString = true });
       }
 
       private DataSet ReadCsv(string name)
