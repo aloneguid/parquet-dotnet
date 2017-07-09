@@ -46,7 +46,19 @@ namespace parq
                // After reading the column types give a printed list of the layout of the columns 
                var display = new DisplayController();
                var viewModel = display.Get(dataSet);
-               new ConsoleView().Draw(viewModel);
+
+               if (string.Compare(AppSettings.Instance.Mode, "interactive", true) == 0)
+               {
+                  new InteractiveConsoleView().Draw(viewModel);
+               }
+               else if (string.Compare(AppSettings.Instance.Mode, "full", true) == 0)
+               {
+                  new FullConsoleView().Draw(viewModel);
+               }
+               else if (string.Compare(AppSettings.Instance.Mode, "schema", true) == 0)
+               {
+
+               }
 
             }
          }
