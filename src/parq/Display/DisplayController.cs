@@ -23,6 +23,7 @@ namespace parq.Display
             viewModel.Rows.Add(row.RawValues);
          }
          viewModel.RowCount = dataSet.Count;
+         viewModel.Schema = dataSet.Schema;
          return viewModel;
       }
       private IEnumerable<ColumnDetails> GenerateColumnList(DataSet dataSet)

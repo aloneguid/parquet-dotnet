@@ -34,14 +34,6 @@ namespace parq
             {
                long fileLen = 0;
                var dataSet = ReadFromParquetFile(path, out fileLen);
-               _log.I("The file has a length of {0}", fileLen);
-
-
-               foreach (SchemaElement column in dataSet.Schema.Elements)
-               {
-                  _log.I("{0} - {1}", column.Name, column.ElementType);
-               }
-
 
                // After reading the column types give a printed list of the layout of the columns 
                var display = new DisplayController();
@@ -57,7 +49,7 @@ namespace parq
                }
                else if (string.Compare(AppSettings.Instance.Mode, "schema", true) == 0)
                {
-
+                  new SchemaView().Draw(viewModel);
                }
 
             }
