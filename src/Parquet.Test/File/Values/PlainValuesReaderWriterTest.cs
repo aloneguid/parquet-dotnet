@@ -60,7 +60,7 @@ namespace Parquet.Test.File.Values
          var datesRead = new List<DateTimeOffset>();
          _reader.Read(_br, schema, datesRead, 1);
 
-         Assert.Equal(datesRead[0], dates[0]);
+         Assert.True((dates[0] - datesRead[0]).TotalDays <= 1);
       }
    }
 }

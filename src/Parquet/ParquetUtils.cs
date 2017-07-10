@@ -90,10 +90,10 @@ namespace Parquet
       public static DateTime JulianToDateTime(this int julianDate)
       {
          double unixTime = julianDate - 2440587;
-         DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-         dtDateTime = dtDateTime.AddDays(unixTime - 1).ToLocalTime();
-
+         DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+         dtDateTime = dtDateTime.AddDays(unixTime - 1);
          return dtDateTime;
+
       }
 
       public static int DateTimeToJulian(this DateTime inDate)
