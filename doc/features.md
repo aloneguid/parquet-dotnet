@@ -4,11 +4,13 @@ We are implementing Parquet features gradually, and the table below outlines the
 
 |Feature|Reader|Writer|
 |-------|------|------|
-|Plain encoding|supported|partially supported|
-|Bit Packed encoding|not supported|not supported|
-|RLE/Bitpacked Hybrid encoding|supported|not supported|
-|Plain Dictionary encoding|supported|not supported|
-|Delta encoding|not supported|not supported|
-|Data-length byte array encoding|not supported|not supported|
-|Delta strings encoding|not supported|not supported|
+|Plain encoding|yes|partial|
+|Bit Packed encoding|yes|no|
+|RLE/Bitpacked Hybrid encoding|yes|no|
+|Plain Dictionary encoding|yes|no|
+|Delta encoding|no|no|
+|Data-length byte array encoding|no|no|
+|Delta strings encoding|no|no|
+|GZIP Compression|yes|yes|
+|SNAPPY Compression|no|no|
 

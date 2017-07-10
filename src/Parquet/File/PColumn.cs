@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Parquet.File.Values;
 using Parquet.Data;
+using Parquet.File.Data;
 
 namespace Parquet.File
 {
@@ -204,17 +205,12 @@ namespace Parquet.File
          }
       }
 
-      private static byte[] ReadRawBytes(Thrift.PageHeader ph, Stream inputStream)
+      private byte[] ReadRawBytes(Thrift.PageHeader ph, Stream inputStream)
       {
-         if (ph.Compressed_page_size != ph.Uncompressed_page_size)
-            throw new ParquetException("compressed pages not supported");
+         Thrift.CompressionCodec thriftCodec = _thriftChunk.Meta_data.Codec;
+         IDataReader reader = DataFactory.GetReader(thriftCodec);
 
-         byte[] data = new byte[ph.Compressed_page_size];
-         inputStream.Read(data, 0, data.Length);
-
-         //todo: uncompress page
-
-         return data;
+         return reader.Read(inputStream, ph.Compressed_page_size);
       }
    }
 }

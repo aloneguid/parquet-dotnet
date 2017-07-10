@@ -45,16 +45,6 @@ namespace Parquet
       private readonly MetaBuilder _meta = new MetaBuilder();
       private readonly ParquetOptions _options = new ParquetOptions();
       private readonly IValuesWriter _plainWriter;
-      private static readonly Dictionary<CompressionMethod, IDataWriter> CompressionMethodToWriter = new Dictionary<CompressionMethod, IDataWriter>()
-      {
-         { CompressionMethod.None, new UncompressedDataWriter() },
-         { CompressionMethod.Gzip, new GzipDataWriter() }
-      };
-      private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> CompressionMethodToCodec = new Dictionary<CompressionMethod, Thrift.CompressionCodec>
-      {
-         { CompressionMethod.None, Thrift.CompressionCodec.UNCOMPRESSED },
-         { CompressionMethod.Gzip, Thrift.CompressionCodec.GZIP }
-      };
 
       /// <summary>
       /// Creates an instance of parquet writer on top of a stream
@@ -95,7 +85,7 @@ namespace Parquet
 
       private Thrift.ColumnChunk Write(SchemaElement schema, IList values, CompressionMethod compression)
       {
-         Thrift.CompressionCodec codec = CompressionMethodToCodec[compression];
+         Thrift.CompressionCodec codec = DataFactory.GetThriftCompression(compression);
 
          var chunk = new Thrift.ColumnChunk();
          long startPos = _output.Position;
@@ -144,7 +134,7 @@ namespace Parquet
 
          if(compression != CompressionMethod.None)
          {
-            IDataWriter writer = CompressionMethodToWriter[compression];
+            IDataWriter writer = DataFactory.GetWriter(compression);
             using (var ms = new MemoryStream())
             {
                writer.Write(data, ms);

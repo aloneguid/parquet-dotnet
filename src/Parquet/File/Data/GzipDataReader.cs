@@ -1,24 +1,15 @@
 ﻿using System;
+using System.IO;
 
 namespace Parquet.File.Data
 {
    class GzipDataReader : IDataReader
    {
-      public byte[] Read(byte[] buffer, int offset, int count)
+      public byte[] Read(Stream source, int count)
       {
-         byte[] source;
-
-         if(offset == 0 && count == buffer.Length)
-         {
-            source = buffer;
-         }
-         else
-         {
-            source = new byte[count];
-            Array.Copy(buffer, offset, source, 0, count);
-         }
-
-         return source.Ungzip();
+         var srcBytes = new byte[count];
+         source.Read(srcBytes, 0, srcBytes.Length);
+         return srcBytes.Ungzip();
       }
    }
 }
