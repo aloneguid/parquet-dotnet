@@ -27,7 +27,8 @@ namespace Parquet.File
          { typeof(int), new TypeTag(Thrift.Type.INT32, null) },
          { typeof(bool), new TypeTag(Thrift.Type.BOOLEAN, null) },
          { typeof(string), new TypeTag(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8) },
-         { typeof(DateTimeOffset), new TypeTag(Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS) }
+         // is the coerced type TIMESTAMP_MILLS but holds backward-compatilibility with Impala and HIVE
+         { typeof(DateTimeOffset), new TypeTag(Thrift.Type.INT96, null) }
       };
 
       public static void AdjustSchema(Thrift.SchemaElement schema, Type systemType)
@@ -78,40 +79,19 @@ namespace Parquet.File
             case Thrift.Type.BOOLEAN:
                return typeof(bool);
             case Thrift.Type.INT32:
-               if (schema.Converted_type == Thrift.ConvertedType.DATE)
-               {
-                  return typeof(DateTimeOffset);
-               }
-               else
-               {
-                  return typeof(int);
-               }
+               return schema.Converted_type == Thrift.ConvertedType.DATE ? typeof(DateTimeOffset) : typeof(int);
             case Thrift.Type.FLOAT:
                return typeof(float);
             case Thrift.Type.INT64:
-               return typeof(long);
+               return schema.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS ? typeof(DateTimeOffset) : typeof(long);
             case Thrift.Type.DOUBLE:
                return typeof(double);
             case Thrift.Type.INT96:
                return typeof(DateTimeOffset);
             case Thrift.Type.BYTE_ARRAY:
-               if (schema.Converted_type == Thrift.ConvertedType.UTF8)
-               {
-                  return typeof(string);
-               }
-               else
-               {
-                  return typeof(byte[]);
-               }
+               return schema.Converted_type == Thrift.ConvertedType.UTF8 ? typeof(string) : typeof(byte[]);
             case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
-               if (schema.Converted_type == Thrift.ConvertedType.DECIMAL)
-               {
-                  return typeof(decimal);
-               }
-               else
-               {
-                  return typeof(byte[]);
-               }
+               return schema.Converted_type == Thrift.ConvertedType.DECIMAL ? typeof(decimal) : typeof(byte[]);
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");
          }

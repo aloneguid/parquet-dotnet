@@ -96,6 +96,11 @@ namespace Parquet
          return dtDateTime;
       }
 
+      public static int DateTimeToJulian(this DateTime inDate)
+      {
+         return (int) inDate.GetUnixUnixTimeDays() + 2440587;
+      }
+
    }
 
    class NumericUtils

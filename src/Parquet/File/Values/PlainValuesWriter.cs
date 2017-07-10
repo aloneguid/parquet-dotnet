@@ -52,6 +52,10 @@ namespace Parquet.File.Values
                WriteByteArray(writer, schema, data);
                break;
 
+            case TType.FIXED_LEN_BYTE_ARRAY:
+               WriteByteArray(writer, schema, data);
+               break;
+
 
             default:
                throw new NotImplementedException($"type {schema.Thrift.Type} not implemented");
@@ -146,7 +150,30 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private void WriteInt96(BinaryWriter writer, SchemaElement schema, IList data)
       {
-         throw new NotImplementedException();
+         foreach (DateTimeOffset dto in data)
+         {
+            int unixTime = (int) dto.DateTime.DateTimeToJulian();
+            // need to fill in the blanks here at the moment there is no day precision 
+            // need to get the offset from midday from the date and add these as nanos
+            // written as a long across 8 bytes
+            double nanos = dto.TimeOfDay.TotalMilliseconds * 1000000D;
+            writer.Write((long) nanos);
+            writer.Write(unixTime);
+
+#if DEBUG 
+            // this is the writer to spit out byte arrays of what Spark would see 
+            var bytes = new byte[12];
+            using (var memoryStream = new MemoryStream(bytes))
+            {
+               using (var bWriter = new BinaryWriter(memoryStream))
+               {
+                  bWriter.Write(0L);
+                  bWriter.Write(unixTime);
+               }
+            }
+#endif
+         }
+         
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
