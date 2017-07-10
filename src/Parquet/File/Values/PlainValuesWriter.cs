@@ -230,12 +230,17 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void Write(BinaryWriter writer, string s)
       {
-         int length = s == null ? 0 : s.Length;
-         writer.Write(length);
-
-         if (length == 0) return;
-         byte[] data = UTF8.GetBytes(s);
-         writer.Write(data);
+         if(s.Length == 0)
+         {
+            writer.Write((int)0);
+         }
+         else
+         {
+            //transofrm to byte array first, as we need the length of the byte buffer, not string length
+            byte[] data = UTF8.GetBytes(s);
+            writer.Write((int)data.Length);
+            writer.Write(data);
+         }
       }
    }
 }

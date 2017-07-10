@@ -75,6 +75,12 @@ namespace Parquet.Test
       }
 
       //[Fact]
+      public void Delete_me()
+      {
+         DataSet ds = ParquetReader.ReadFile("c:\\tmp\\test.parquet");
+      }
+
+      //[Fact]
       public void Write_large_gzip()
       {
          var ds = new DataSet(
