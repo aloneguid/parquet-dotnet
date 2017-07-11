@@ -30,6 +30,9 @@
     <TreatSpecificWarningsAsErrors></TreatSpecificWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="ParquetDataSet.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="apache-thrift-netcore">
       <Version>0.9.3</Version>
     </PackageReference>
