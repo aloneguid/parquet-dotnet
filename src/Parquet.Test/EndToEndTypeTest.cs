@@ -14,7 +14,7 @@ namespace Parquet.Test
       [InlineData("L'Oréal Paris")]
       public void Strings(string input)
       {
-         var ds = new DataSet(new SchemaElement<string>("s", false));
+         var ds = new DataSet(new SchemaElement<string>("s"));
          ds.Add(input);
 
          var ms = new MemoryStream();

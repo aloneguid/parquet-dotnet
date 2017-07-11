@@ -35,7 +35,7 @@ namespace Parquet.Test.File.Values
          var bools = new List<bool>();
          bools.AddRange(new[] { true, false, true });
 
-         var schema = new SchemaElement<bool>("bool", false);
+         var schema = new SchemaElement<bool>("bool");
 
          _writer.Write(_bw, schema, bools);
 
@@ -51,7 +51,7 @@ namespace Parquet.Test.File.Values
       public void DateTimeOffset_writes_and_reads()
       {
          var dates = new List<DateTimeOffset> { DateTime.UtcNow.RoundToSecond() };  //this version doesn't store milliseconds
-         var schema = new SchemaElement<DateTimeOffset>("dto", false);
+         var schema = new SchemaElement<DateTimeOffset>("dto");
 
          _writer.Write(_bw, schema, dates);
 

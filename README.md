@@ -62,8 +62,8 @@ using Parquet;
 using Parquet.Data;
 
 var ds = new DataSet(
-	new SchemaElement<int>("id", false),
-	new SchemaElement<string>("city", false)
+	new SchemaElement<int>("id"),
+	new SchemaElement<string>("city")
 );
 
 ds.Add(1, "London");

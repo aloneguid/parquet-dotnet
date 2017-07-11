@@ -146,7 +146,7 @@ namespace Parquet.File.Values
             case 4:
                return BitConverter.ToInt32(data, 0);
             default:
-               throw new IOException($"encountered bit width ({data.Length}) that requires more than 4 bytes.");
+               throw new IOException($"encountered byte width ({data.Length}) that requires more than 4 bytes.");
          }
       }
 

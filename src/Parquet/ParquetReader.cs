@@ -75,6 +75,14 @@ namespace Parquet
          }
       }
 
+      public static DataSet Read(Stream source, ParquetOptions options = null)
+      {
+         using (var reader = new ParquetReader(source, options))
+         {
+            return reader.Read();
+         }
+      }
+
       /// <summary>
       /// Options
       /// </summary>

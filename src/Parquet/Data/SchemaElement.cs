@@ -14,8 +14,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      /// <param name="isNullable">When true, column can have null values</param>
-      public SchemaElement(string name, bool isNullable) : base(name, typeof(T), isNullable)
+      public SchemaElement(string name) : base(name, typeof(T))
       {
 
       }
@@ -32,17 +31,17 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Column name</param>
       /// <param name="elementType">Type of the element in this column</param>
-      /// <param name="isNullable">When true, column can have null values</param>
-      public SchemaElement(string name, Type elementType, bool isNullable)
+      public SchemaElement(string name, Type elementType)
       {
+         if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("cannot be null or empty", nameof(name));
+
          Name = name;
          ElementType = elementType;
-         IsNullable = isNullable;
          Thrift = new PSE(name)
          {
-            Repetition_type = isNullable
-               ? Parquet.Thrift.FieldRepetitionType.OPTIONAL
-               : Parquet.Thrift.FieldRepetitionType.REQUIRED,
+            //this must be changed later or if column has nulls (on write)
+            Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
          };
          TypeFactory.AdjustSchema(Thrift, elementType);
       }
@@ -52,7 +51,6 @@ namespace Parquet.Data
          Name = thriftSchema.Name;
          Thrift = thriftSchema;
          ElementType = TypeFactory.ToSystemType(thriftSchema);
-         IsNullable = thriftSchema.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
       /// <summary>
@@ -68,7 +66,11 @@ namespace Parquet.Data
       /// <summary>
       /// Returns true if element can have null values
       /// </summary>
-      public bool IsNullable { get; }
+      public bool IsNullable
+      {
+         get { return Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED; }
+         set { Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED; }
+      }
 
       internal PSE Thrift { get; set; }
 

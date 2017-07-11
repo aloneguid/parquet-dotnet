@@ -13,7 +13,7 @@ namespace Parquet.Test
       public void I_can_write_in_gzip_and_read_back()
       {
          var ms = new MemoryStream();
-         DataSet ds1 = new DataSet(new SchemaElement<int>("id", false));
+         DataSet ds1 = new DataSet(new SchemaElement<int>("id"));
          DataSet ds2;
          ds1.Add(5);
 

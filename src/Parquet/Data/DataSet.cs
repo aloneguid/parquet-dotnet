@@ -92,6 +92,32 @@ namespace Parquet.Data
          }
       }
 
+      private void Validate(Row row)
+      {
+         if (row == null)
+            throw new ArgumentNullException(nameof(row));
+
+         if (row.Length != _schema.Length)
+            throw new ArgumentException($"the row has {row.Length} values but schema expects {_schema.Length}", nameof(row));
+
+         for(int i = 0; i < row.Length; i++)
+         {
+            object rowValue = row[i];
+            SchemaElement se = _schema.Elements[i];
+            Type elementType = se.ElementType;
+
+            if (rowValue == null)
+            {
+               se.IsNullable = true;
+            }
+            else
+            {
+               if (rowValue.GetType() != elementType)
+                  throw new ArgumentException($"column '{se.Name}' expects '{elementType}' but {rowValue.GetType()} passed");
+            }
+         }
+      }
+
       #region [ IList members ]
 
       /// <summary>
@@ -122,12 +148,12 @@ namespace Parquet.Data
       /// <summary>
       /// Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.
       /// </summary>
-      /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
-      public void Add(Row item)
+      /// <param name="row">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+      public void Add(Row row)
       {
-         //todo: validate schema
+         Validate(row);
 
-         _rows.Add(item);
+         _rows.Add(row);
       }
 
       /// <summary>
@@ -186,13 +212,13 @@ namespace Parquet.Data
       /// <summary>
       /// Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.
       /// </summary>
-      /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
-      /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
-      public void Insert(int index, Row item)
+      /// <param name="index">The zero-based index at which <paramref name="row" /> should be inserted.</param>
+      /// <param name="row">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
+      public void Insert(int index, Row row)
       {
-         //todo: validate schema
+         Validate(row);
 
-         _rows.Insert(index, item);
+         _rows.Insert(index, row);
       }
 
       /// <summary>
