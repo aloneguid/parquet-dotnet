@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.Thrift;
 
 namespace Parquet.File.Data
 {
@@ -10,13 +11,15 @@ namespace Parquet.File.Data
       private static readonly Dictionary<CompressionMethod, (IDataWriter, IDataReader)> CompressionMethodToWorker = new Dictionary<CompressionMethod, (IDataWriter, IDataReader)>()
       {
          { CompressionMethod.None, (new UncompressedDataWriter(), new UncompressedDataReader()) },
-         { CompressionMethod.Gzip, (new GzipDataWriter(), new GzipDataReader()) }
+         { CompressionMethod.Gzip, (new GzipDataWriter(), new GzipDataReader()) },
+         { CompressionMethod.Snappy, (new SnappyDataWriter(), new SnappyDataReader()) }
       };
 
       private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> CompressionMethodToCodec = new Dictionary<CompressionMethod, Thrift.CompressionCodec>
       {
          { CompressionMethod.None, Thrift.CompressionCodec.UNCOMPRESSED },
-         { CompressionMethod.Gzip, Thrift.CompressionCodec.GZIP }
+         { CompressionMethod.Gzip, Thrift.CompressionCodec.GZIP },
+         { CompressionMethod.Snappy, CompressionCodec.SNAPPY }
       };
 
       public static Thrift.CompressionCodec GetThriftCompression(CompressionMethod method)

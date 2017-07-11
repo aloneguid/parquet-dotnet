@@ -40,8 +40,14 @@ namespace Parquet.Test
             writer.Write(ds, CompressionMethod.Gzip);
          }
 
+         var compressedSnappy = new MemoryStream();
+         using (var writer = new ParquetWriter(compressedSnappy))
+         {
+            writer.Write(ds, CompressionMethod.Snappy);
+         }
+
 #if DEBUG
-            const string path = "c:\\tmp\\first.parquet";
+         const string path = "c:\\tmp\\first.parquet";
          F.WriteAllBytes(path, uncompressed.ToArray());
 #endif
 

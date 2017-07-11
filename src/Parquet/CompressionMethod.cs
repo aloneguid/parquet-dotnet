@@ -13,6 +13,11 @@
       /// <summary>
       /// Gzip compression
       /// </summary>
-      Gzip
+      Gzip,
+
+      /// <summary>
+      /// Snappy compression 
+      /// </summary>
+      Snappy
    }
 }

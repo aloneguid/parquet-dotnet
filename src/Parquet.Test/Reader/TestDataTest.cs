@@ -37,9 +37,26 @@ namespace Parquet.Test.Reader
       }
 
       [Fact]
-      public void Alltypes_gzip()
+      public void Alltypes_gzip_compression()
       {
          CompareFiles("alltypes", "gzip",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_snappy_compression()
+      {
+         CompareFiles("alltypes", "snappy",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -65,6 +82,40 @@ namespace Parquet.Test.Reader
       public void Alltypes_dictionary_no_compression()
       {
          CompareFiles("alltypes_dictionary", "plain",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      //[Fact]
+      public void Alltypes_dictionary_gzip_compression()
+      {
+         CompareFiles("alltypes_dictionary", "gzip",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      //[Fact]
+      public void Alltypes_dictionary_snappy_compression()
+      {
+         CompareFiles("alltypes_dictionary", "snappyS",
             typeof(int?),
             typeof(bool?),
             typeof(int?),

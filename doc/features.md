@@ -12,5 +12,5 @@ We are implementing Parquet features gradually, and the table below outlines the
 |Data-length byte array encoding|no|no|
 |Delta strings encoding|no|no|
 |GZIP Compression|yes|yes|
-|SNAPPY Compression|no|no|
+|SNAPPY Compression|yes|yes|
 

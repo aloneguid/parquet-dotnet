@@ -28,7 +28,13 @@
     <None Update="data\alltypes.plain.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="data\alltypes.snappy.parquet">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="data\alltypes_dictionary.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="data\alltypes_dictionary.gzip.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\alltypes_dictionary.plain.parquet">
@@ -40,7 +46,7 @@
     <None Update="data\alltypes_plain.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="data\alltypes_plain.snappy.parquet">
+    <None Update="data\alltypes_dictionary.snappy.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\customer.impala.parquet">
