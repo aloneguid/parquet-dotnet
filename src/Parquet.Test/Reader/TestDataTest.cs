@@ -36,6 +36,23 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
+      [Fact]
+      public void Alltypes_gzip()
+      {
+         CompareFiles("alltypes", "gzip",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
       /// <summary>
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// |id |bool_col|tinyint_col|smallint_col|int_col|bigint_col|float_col|double_col|date_string_col          |string_col|timestamp_col        |
