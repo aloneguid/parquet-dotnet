@@ -27,6 +27,8 @@ namespace Parquet.File
          { typeof(int), new TypeTag(Thrift.Type.INT32, null) },
          { typeof(bool), new TypeTag(Thrift.Type.BOOLEAN, null) },
          { typeof(string), new TypeTag(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8) },
+         { typeof(float), new TypeTag(Thrift.Type.FLOAT, null) },
+         { typeof(double), new TypeTag(Thrift.Type.DOUBLE, null) },
          // is the coerced type TIMESTAMP_MILLS but holds backward-compatilibility with Impala and HIVE
          { typeof(DateTimeOffset), new TypeTag(Thrift.Type.INT96, null) }
       };
@@ -37,7 +39,7 @@ namespace Parquet.File
          {
             string supportedTypes = string.Join(", ", TypeToTag.Keys.Select(t => t.ToString()));
 
-            throw new NotSupportedException($"system type {systemType} is not supported, we currently support only these types: '{supportedTypes}'");
+            throw new NotSupportedException($"system type {systemType} is not supported, list of supported types: '{supportedTypes}'");
          }
 
          schema.Type = tag.PType;

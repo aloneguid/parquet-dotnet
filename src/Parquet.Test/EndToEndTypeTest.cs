@@ -34,5 +34,36 @@ namespace Parquet.Test
 
          Assert.Equal(ds[0].GetString(0), ds1[0].GetString(0));
       }
+
+      [Fact]
+      public void Floats()
+      {
+         var ds = new DataSet(new SchemaElement<float>("f"));
+         ds.Add((float)1.23);
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms);
+
+         Assert.Equal(ds[0].GetFloat(0), ds1[0].GetFloat(0));
+      }
+
+      [Fact]
+      public void Doubles()
+      {
+         var ds = new DataSet(new SchemaElement<double>("d"));
+         ds.Add((double)12.34);
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms);
+
+         Assert.Equal(ds[0].GetDouble(0), ds1[0].GetDouble(0));
+      }
+
    }
 }

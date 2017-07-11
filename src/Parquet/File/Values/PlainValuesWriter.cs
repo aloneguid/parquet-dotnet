@@ -180,7 +180,7 @@ namespace Parquet.File.Values
       private static void WriteDouble(BinaryWriter writer, SchemaElement schema, IList data)
       {
          var lst = (List<double>)data;
-         foreach (float d in lst)
+         foreach (double d in lst)
          {
             writer.Write(d);
          }
