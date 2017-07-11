@@ -15,8 +15,11 @@ namespace parq.Display
       }
       public ViewPort(int width, int height)
       {
-         _width = width;
-         _height = height;
+         Width = width;
+         Height = height;
       }
+
+      public int Width { get => _width; set => _width = value; }
+      public int Height { get => _height; set => _height = value; }
    }
 }

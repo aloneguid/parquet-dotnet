@@ -11,6 +11,8 @@ namespace parq
 
       public readonly Option<int> DisplayMinWidth = new Option<int>(10);
 
+      public readonly Option<string> Mode = new Option<string>("interactive");
+
       //singleton
       private static AppSettings instance;
       public static AppSettings Instance => instance ?? (instance = new AppSettings());

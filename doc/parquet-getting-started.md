@@ -23,4 +23,7 @@ There are already working implementations in other languages we find useful to c
 
 [parquet-cpp](https://github.com/Parquet/parquet-cpp) is an *awful* implementation in C++ language, struggling both with code quality and compatibility and I wouldn't recommend looking at it if you're new to parquet.
 
+## 3rd Party Libraies
+[Snappy Sharp](https://github.com/jeffesp/Snappy.Sharp) is used to compress and decompress via Snappy Algorithm
+
 

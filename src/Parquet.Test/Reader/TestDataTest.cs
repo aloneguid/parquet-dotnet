@@ -36,6 +36,40 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
+      [Fact]
+      public void Alltypes_gzip_compression()
+      {
+         CompareFiles("alltypes", "gzip",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_snappy_compression()
+      {
+         CompareFiles("alltypes", "snappy",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
       /// <summary>
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// |id |bool_col|tinyint_col|smallint_col|int_col|bigint_col|float_col|double_col|date_string_col          |string_col|timestamp_col        |
@@ -48,6 +82,40 @@ namespace Parquet.Test.Reader
       public void Alltypes_dictionary_no_compression()
       {
          CompareFiles("alltypes_dictionary", "plain",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      //[Fact]
+      public void Alltypes_dictionary_gzip_compression()
+      {
+         CompareFiles("alltypes_dictionary", "gzip",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      //[Fact]
+      public void Alltypes_dictionary_snappy_compression()
+      {
+         CompareFiles("alltypes_dictionary", "snappyS",
             typeof(int?),
             typeof(bool?),
             typeof(int?),

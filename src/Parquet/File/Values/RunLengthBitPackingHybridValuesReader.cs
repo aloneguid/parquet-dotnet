@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Parquet.Data;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Thrift;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
 
 namespace Parquet.File.Values
 {
@@ -13,7 +12,7 @@ namespace Parquet.File.Values
    {
       public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
-         int bitWidth = schema.Type_length;
+         int bitWidth = schema.Thrift.Type_length;
          List<int> destinationTyped = (List<int>)destination;
          int length = GetRemainingLength(reader);
          ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped, maxValues);
@@ -147,7 +146,7 @@ namespace Parquet.File.Values
             case 4:
                return BitConverter.ToInt32(data, 0);
             default:
-               throw new IOException($"encountered bit width ({data.Length}) that requires more than 4 bytes.");
+               throw new IOException($"encountered byte width ({data.Length}) that requires more than 4 bytes.");
          }
       }
 

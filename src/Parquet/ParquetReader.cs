@@ -25,7 +25,8 @@ using Parquet.File;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Thrift;
+using Parquet.Data;
+using System.Collections;
 
 namespace Parquet
 {
@@ -37,15 +38,15 @@ namespace Parquet
       private readonly Stream _input;
       private readonly BinaryReader _reader;
       private readonly ThriftStream _thrift;
-      private FileMetaData _meta;
-      private Schema _schema;
-      private readonly ParquetOptions _options = new ParquetOptions();
+      private Thrift.FileMetaData _meta;
+      private readonly ParquetOptions _options;
 
       /// <summary>
       /// Creates an instance from input stream
       /// </summary>
-      /// <param name="input"></param>
-      public ParquetReader(Stream input)
+      /// <param name="input">Input stream, must be readable and seekable</param>
+      /// <param name="options">Optional reader options</param>
+      public ParquetReader(Stream input, ParquetOptions options = null)
       {
          _input = input ?? throw new ArgumentNullException(nameof(input));
          if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
@@ -53,33 +54,65 @@ namespace Parquet
 
          _reader = new BinaryReader(input);
          ValidateFile();
-
          _thrift = new ThriftStream(input);
+         _options = options ?? new ParquetOptions();
       }
 
+      /// <summary>
+      /// Reads the file
+      /// </summary>
+      /// <param name="fullPath">The full path.</param>
+      /// <param name="options">Optional reader options.</param>
+      /// <returns>DataSet</returns>
+      public static DataSet ReadFile(string fullPath, ParquetOptions options = null)
+      {
+         using (Stream fs = System.IO.File.OpenRead(fullPath))
+         {
+            using (var reader = new ParquetReader(fs, options))
+            {
+               return reader.Read();
+            }
+         }
+      }
+
+      public static DataSet Read(Stream source, ParquetOptions options = null)
+      {
+         using (var reader = new ParquetReader(source, options))
+         {
+            return reader.Read();
+         }
+      }
+
+      /// <summary>
+      /// Options
+      /// </summary>
       public ParquetOptions Options => _options;
+
+      /// <summary>
+      /// Total number of rows in this file
+      /// </summary>
+      public long RowCount => _meta.Num_rows;
 
       /// <summary>
       /// Test read, to be defined
       /// </summary>
-      public ParquetDataSet Read()
+      public DataSet Read()
       {
          _meta = ReadMetadata();
-         _schema = new Schema(_meta);
+         var ds = new DataSet(new Schema(_meta));
+         var cols = new List<IList>();
 
-         var result = new List<ParquetColumn>();
-
-         foreach(RowGroup rg in _meta.Row_groups)
+         foreach(Thrift.RowGroup rg in _meta.Row_groups)
          {
-            foreach(ColumnChunk cc in rg.Columns)
+            foreach(Thrift.ColumnChunk cc in rg.Columns)
             {
-               var p = new PColumn(cc, _schema, _input, _thrift, _options);
+               var p = new PColumn(cc, ds.Schema, _input, _thrift, _options);
                string columnName = string.Join(".", cc.Meta_data.Path_in_schema);
 
                try
                {
-                  ParquetColumn column = p.Read(columnName);
-                  result.Add(column);
+                  IList column = p.Read(columnName);
+                  cols.Add(column);
                }
                catch(Exception ex)
                {
@@ -88,7 +121,9 @@ namespace Parquet
             }
          }
 
-         return new ParquetDataSet(result);
+         ds.AddColumnar(cols);
+
+         return ds;
       }
 
       private void ValidateFile()
@@ -105,7 +140,7 @@ namespace Parquet
             throw new IOException($"not a Parquet file(head is '{stail}')");
       }
 
-      private FileMetaData ReadMetadata()
+      private Thrift.FileMetaData ReadMetadata()
       {
          //go to -4 bytes (PAR1) -4 bytes (footer length number)
          _input.Seek(-8, SeekOrigin.End);
@@ -114,9 +149,12 @@ namespace Parquet
 
          //go to footer data and deserialize it
          _input.Seek(-8 - footerLength, SeekOrigin.End);
-         return _thrift.Read<FileMetaData>();
+         return _thrift.Read<Thrift.FileMetaData>();
       }
 
+      /// <summary>
+      /// Disposes 
+      /// </summary>
       public void Dispose()
       {
       }

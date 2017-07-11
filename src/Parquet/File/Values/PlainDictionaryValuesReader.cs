@@ -1,7 +1,7 @@
-﻿using System.Collections;
+﻿using Parquet.Data;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Thrift;
 using System.Runtime.CompilerServices;
 
 namespace Parquet.File.Values

@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.IO;
 
 namespace Parquet.File.Data
 {
    class UncompressedDataWriter : IDataWriter
    {
-      public void Write(byte[] buffer)
+      public void Write(byte[] buffer, Stream destination)
       {
-         throw new NotImplementedException();
+         destination.Write(buffer, 0, buffer.Length);
       }
    }
 }

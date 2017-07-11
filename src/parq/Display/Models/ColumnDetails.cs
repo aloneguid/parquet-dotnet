@@ -2,17 +2,18 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace parq.Display
+namespace parq.Display.Models
 {
-    internal class ViewModel
-    {
-      public ColumnDetails Column { get; set; }
-      public object RawValue { get; set; }
-      public string GetFormattedValue()
+   public class ColumnDetails
+   {
+      public string columnName { get; set; }
+      public int columnWidth { get; set; }
+
+      public string GetFormattedValue(object rawValue)
       {
-         var value = Convert.ToString(RawValue);
+         var value = Convert.ToString(rawValue);
          var formatted = new StringBuilder();
-         var padReq = Column.columnWidth - value.Length;
+         var padReq = columnWidth - value.Length;
 
          if (padReq > 0)
          {
@@ -24,14 +25,14 @@ namespace parq.Display
          }
          else if (padReq < 0)
          {
-            if (Column.columnWidth > 3)
+            if (columnWidth > 3)
             {
-               formatted.Append(value.Substring(0, Column.columnWidth - 3));
+               formatted.Append(value.Substring(0, columnWidth - 3));
                formatted.Append("...");
             }
             else
             {
-               formatted.Append(value.Substring(0, Column.columnWidth));
+               formatted.Append(value.Substring(0, columnWidth));
             }
          }
          else
