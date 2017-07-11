@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Config.Net" Version="3.2.0" />
-    <PackageReference Include="LogMagic" Version="2.3.0" />
+    <PackageReference Include="Config.Net" Version="3.2.5" />
+    <PackageReference Include="LogMagic" Version="2.4.12" />
   </ItemGroup>
 
   <ItemGroup>

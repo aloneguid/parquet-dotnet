@@ -2,7 +2,7 @@
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
-A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files. Supports .NET 4.5.1 and .NET Standard 1.6.
+A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files. Supports `.NET 4.5.1`, `.NET Standard 1.4` and `.NET Standard 1.6`.
 
 ## Why
 
