@@ -15,7 +15,7 @@ namespace Parquet.Runner
          DataSet ds;
          using (var time = new TimeMeasure())
          {
-            ds = ParquetReader.ReadFile("C:\\tmp\\postcodes.plain.parquet");
+            ds = ParquetReader.ReadFile(args[0]);
 
             Console.WriteLine("read in {0}", time.Elapsed);
          }
