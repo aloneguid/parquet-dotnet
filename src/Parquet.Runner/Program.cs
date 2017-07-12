@@ -15,7 +15,7 @@ namespace Parquet.Runner
          DataSet ds;
          using (var time = new TimeMeasure())
          {
-            ds = ParquetReader.ReadFile(args[0]);
+            ds = ParquetReader.ReadFile(args[0], new ParquetOptions { TreatByteArrayAsString = true });
 
             Console.WriteLine("read in {0}", time.Elapsed);
          }
