@@ -147,7 +147,7 @@ namespace Parquet.File
                //todo: read repetition levels (only relevant for nested columns)
 
                //check if there are definitions at all
-               bool hasDefinitions = _schemaElement.Thrift.Repetition_type == Thrift.FieldRepetitionType.OPTIONAL;
+               bool hasDefinitions = _schemaElement.HasDefinitionLevelsPage(ph);
                List<int> definitions = hasDefinitions
                   ? ReadDefinitionLevels(reader, (int)maxValues)
                   : null;
@@ -174,6 +174,7 @@ namespace Parquet.File
          RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
 
          int maxLevel = _schema.GetMaxDefinitionLevel(_thriftChunk);
+         ValueMerger.Trim(result, valueCount);  //trim result so null count procudes correct value
          int nullCount = valueCount - result.Count(r => r == maxLevel);
          if (nullCount == 0) return null;
 

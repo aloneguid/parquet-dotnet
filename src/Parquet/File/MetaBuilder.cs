@@ -25,7 +25,7 @@ namespace Parquet.File
          CustomAttributeTypedArgument varg = fva.ConstructorArguments[0];
          string fileVersion = varg.Value.ToString();
 
-         CreatedBy = $"parquet-dotnet v{fileVersion} (build {fileVersion.GetHash(HashType.Sha1)})";
+         CreatedBy = $"parquet-dotnet version {fileVersion} (build {fileVersion.GetHash(HashType.Sha1)})";
       }
 
       public MetaBuilder()

@@ -25,7 +25,7 @@ namespace Parquet.File
          }
       }
 
-      private static readonly List<TypeTag> TypeToTag = new List<TypeTag>
+      private static readonly List<TypeTag> AllTags = new List<TypeTag>
       {
          new TypeTag(typeof(int), Thrift.Type.INT32, null),
          new TypeTag(typeof(bool), Thrift.Type.BOOLEAN, null),
@@ -37,13 +37,23 @@ namespace Parquet.File
          new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS)
       };
 
+      static TypeFactory()
+      {
+         //todo: cache tags by key, do not enumerate
+      }
+
       private static readonly TypeTag DefaultTypeTag = new TypeTag(typeof(int), Thrift.Type.INT32, null);
 
       public static void AdjustSchema(Thrift.SchemaElement schema, Type systemType)
       {
+         if(IsPrimitiveNullable(systemType))
+         {
+            throw new ArgumentException($"Type '{systemType}' in column '{schema.Name}' is a nullable type. Please pass either a class or a primitive type.", nameof(systemType));
+         }
+
          bool flag = false;
          TypeTag tag = DefaultTypeTag;
-         foreach (var type in TypeToTag)
+         foreach (var type in AllTags)
          {
             if (type.ConcreteType == systemType &&
                 ((type.ConvertedType != null && type.ConvertedType == schema.Converted_type)
@@ -57,7 +67,7 @@ namespace Parquet.File
       
          if (!flag)
          {
-            string supportedTypes = string.Join(", ", TypeToTag.Select(t => t.ConcreteType.ToString()));
+            string supportedTypes = string.Join(", ", AllTags.Select(t => t.ConcreteType.ToString()));
 
             throw new NotSupportedException($"system type {systemType} is not supported, list of supported types: '{supportedTypes}'");
          }
@@ -68,6 +78,15 @@ namespace Parquet.File
          {
             schema.Converted_type = tag.ConvertedType.Value;
          }
+      }
+
+      private static bool IsPrimitiveNullable(Type t)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         if (ti.IsClass) return false;
+
+         return ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>);
       }
 
       public static IList Create(Type systemType, bool nullable = false)

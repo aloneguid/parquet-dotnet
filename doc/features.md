@@ -4,9 +4,9 @@ We are implementing Parquet features gradually, and the table below outlines the
 
 |Feature|Reader|Writer|
 |-------|------|------|
-|Plain encoding|yes|partial|
-|Bit Packed encoding|yes|no|
-|RLE/Bitpacked Hybrid encoding|yes|no|
+|Plain encoding|yes|yes|
+|Bit Packed encoding|yes|yes|
+|RLE/Bitpacked Hybrid encoding|yes|partial|
 |Plain Dictionary encoding|yes|no|
 |Delta encoding|no|no|
 |Data-length byte array encoding|no|no|
