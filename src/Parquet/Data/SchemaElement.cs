@@ -1,8 +1,5 @@
 ﻿using Parquet.File;
 using System;
-using Parquet.Thrift;
-using PSE = Parquet.Thrift.SchemaElement;
-using Type = System.Type;
 
 namespace Parquet.Data
 {
@@ -20,13 +17,15 @@ namespace Parquet.Data
       {
          
       }
+
       /// <summary>
       /// If the converted type is known then set it here otherwise it's lost and will need to be inferred
       /// </summary>
-      public ConvertedType ThriftConvertedType
+      public Thrift.ConvertedType ThriftConvertedType
       {
          set => Thrift.Converted_type = value;
       }
+
       /// <summary>
       /// Used to coerce the original type - rather than infer from the .NET type sometimes this needs to be overriden e.g. Dates
       /// </summary>
@@ -54,7 +53,7 @@ namespace Parquet.Data
 
          Name = name;
          ElementType = elementType;
-         Thrift = new PSE(name)
+         Thrift = new Thrift.SchemaElement(name)
          {
             //this must be changed later or if column has nulls (on write)
             Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
@@ -62,7 +61,7 @@ namespace Parquet.Data
          TypeFactory.AdjustSchema(Thrift, elementType);
       }
 
-      internal SchemaElement(PSE thriftSchema)
+      internal SchemaElement(Thrift.SchemaElement thriftSchema)
       {
          Name = thriftSchema.Name;
          Thrift = thriftSchema;
@@ -88,12 +87,23 @@ namespace Parquet.Data
          set { Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED; }
       }
 
-      internal PSE Thrift { get; set; }
+      internal Thrift.SchemaElement Thrift { get; set; }
 
       internal bool IsAnnotatedWith(Thrift.ConvertedType ct)
       {
          //checking __isset is important, this is a way of Thrift to tell whether the variable is set at all
          return Thrift.__isset.converted_type && Thrift.Converted_type == ct;
+      }
+
+      /// <summary>
+      /// Detect if data page has definition levels written.
+      /// </summary>
+      internal bool HasDefinitionLevelsPage(Thrift.PageHeader ph)
+      {
+         if (!Thrift.__isset.repetition_type)
+            throw new ParquetException("repetiton type is missing");
+
+         return Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
       /// <summary>

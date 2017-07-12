@@ -10,6 +10,12 @@ Parquet library is mostly available for Java, C++ and Python, which somewhat lim
 
 This project is aimed to fix this problem.
 
+## Index
+
+- [Supported features](doc/features.md)
+- Programming guide
+  - [Working with DataSets](doc/dataset.md) 
+
 ## Roadmap
 
 This library is almost ready for production use and [contributors are welcome](CONTRIBUTING.md).

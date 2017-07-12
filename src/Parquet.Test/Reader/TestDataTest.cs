@@ -130,6 +130,41 @@ namespace Parquet.Test.Reader
       }
 
       [Fact]
+      public void Alltypes_dictionary_no_compression_by_spark()
+      {
+         CompareFiles("alltypes_dictionary", "plain-spark21",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_dictionary_gzipped()
+      {
+         CompareFiles("alltypes_dictionary", "gzip",
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(string),
+            typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+
+      [Fact]
       public void Postcodes_sample_no_compression()
       {
          CompareFiles("postcodes", "plain",
