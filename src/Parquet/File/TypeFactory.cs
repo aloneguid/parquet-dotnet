@@ -45,11 +45,16 @@ namespace Parquet.File
          TypeTag tag = DefaultTypeTag;
          foreach (var type in TypeToTag)
          {
-            if (type.ConcreteType != systemType && type.ConvertedType != schema.Converted_type) continue;
-            tag = type;
-            flag = true;
-            break;
+            if (type.ConcreteType == systemType &&
+                ((type.ConvertedType != null && type.ConvertedType == schema.Converted_type)
+                 || type.ConvertedType == null))
+            {
+               tag = type;
+               flag = true;
+               break;
+            }
          }
+      
          if (!flag)
          {
             string supportedTypes = string.Join(", ", TypeToTag.Select(t => t.ConcreteType.ToString()));
@@ -104,7 +109,8 @@ namespace Parquet.File
             case Thrift.Type.DOUBLE:
                return typeof(double);
             case Thrift.Type.INT96:
-               return schema.Converted_type == Thrift.ConvertedType.INTERVAL ? typeof(DateTimeOffset) : typeof(byte[]);
+               return typeof(DateTimeOffset);
+            //return schema.Converted_type == Thrift.ConvertedType.INTERVAL ? typeof(DateTimeOffset) : typeof(byte[]);
             case Thrift.Type.BYTE_ARRAY:
                return schema.Converted_type == Thrift.ConvertedType.UTF8 ? typeof(string) : typeof(byte[]);
             case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
