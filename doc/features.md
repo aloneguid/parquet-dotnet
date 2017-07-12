@@ -1,4 +1,4 @@
-# Supported features
+|# Supported features
 
 We are implementing Parquet features gradually, and the table below outlines the current status. If the feature is not listed here it's not supported yet.
 
@@ -13,4 +13,5 @@ We are implementing Parquet features gradually, and the table below outlines the
 |Delta strings encoding|no|no|
 |GZIP Compression|yes|yes|
 |SNAPPY Compression|yes|yes|
-
+|Row groups|yes|no|
+|Data pages|yes|no|
