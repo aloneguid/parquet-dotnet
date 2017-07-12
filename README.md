@@ -23,8 +23,7 @@ This library is almost ready for production use and [contributors are welcome](C
 |Phase|Description|State|
 |-----|-----------|-----|
 |1|Implement reader which can understand the first test file (alltypes_plain.parquet). This is using a variety of encodings an no compression. Inline columns are not supported. Understand how to return results with minimum of boxing/unboxing. Support NULL values.|complete|
-|2|Implement readers for any types not mentioned in phase 1. Implement writer for all types that reader supports. Support GZIP compression/decompression. Migrate to row-based data model. Publish first stable version on NuGet.|nearly there|
-|3|Support filters i.e. reading a subset of parquet file by offset/count, and limited amount of columns. Support SNAPPY decompression/compression. |in progress|
+|2|Implement readers for any types not mentioned in phase 1. Implement writer for all types that reader supports. Support GZIP and SNAPPY  compression/decompression. Migrate to row-based data model. Publish first stable version on NuGet.|nearly there|
 
 You can track the amount of features we have [implemented so far](doc/features.md).
 
