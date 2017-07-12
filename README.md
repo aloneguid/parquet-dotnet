@@ -35,7 +35,7 @@ You can track the amount of features we have [implemented so far](doc/features.m
 
 ## Getting started
 
-**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net) for `.NET 4.5.1` and `.NET Standard 1.6`. All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
+**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net). All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
 
 ### Reading files
 
