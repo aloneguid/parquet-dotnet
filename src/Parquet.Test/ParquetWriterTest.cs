@@ -97,7 +97,7 @@ namespace Parquet.Test
          )
          {
             new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),
-            new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 23))
+            new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 24))
          };
 
          //8 values for each column
