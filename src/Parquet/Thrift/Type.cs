@@ -13,7 +13,7 @@ namespace Parquet.Thrift
   /// For example INT16 is not included as a type since a good encoding of INT32
   /// would handle this.
   /// </summary>
-  enum Type
+  public enum Type
   {
     BOOLEAN = 0,
     INT32 = 1,

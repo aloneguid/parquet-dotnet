@@ -1,8 +1,10 @@
 ﻿using System;
 using Parquet.Data;
 using System.IO;
+using Parquet.Thrift;
 using Xunit;
 using F = System.IO.File;
+using Type = Parquet.Thrift.Type;
 
 namespace Parquet.Test
 {
@@ -58,6 +60,40 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<DateTimeOffset>("timestamp_col")
+         )
+         {
+            new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),
+            new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 23))
+         };
+
+         //8 values for each column
+
+
+         var uncompressed = new MemoryStream();
+         using (var writer = new ParquetWriter(uncompressed))
+         {
+            writer.Write(ds, CompressionMethod.None);
+         }
+
+#if DEBUG
+         const string path = "c:\\tmp\\first.parquet";
+         F.WriteAllBytes(path, uncompressed.ToArray());
+#endif
+
+      }
+
+
+      [Fact]
+      public void Write_int64datetimeoffset()
+      {
+         var element = new SchemaElement<DateTimeOffset>("timestamp_col")
+         {
+            ThriftConvertedType = ConvertedType.TIMESTAMP_MILLIS,
+            ThriftOriginalType = Type.INT64
+         };
+
+         var ds = new DataSet(
+            element  
          )
          {
             new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),

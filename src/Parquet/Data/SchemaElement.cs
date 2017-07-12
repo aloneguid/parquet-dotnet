@@ -1,6 +1,8 @@
 ﻿using Parquet.File;
 using System;
+using Parquet.Thrift;
 using PSE = Parquet.Thrift.SchemaElement;
+using Type = System.Type;
 
 namespace Parquet.Data
 {
@@ -16,7 +18,21 @@ namespace Parquet.Data
       /// <param name="name">Column name</param>
       public SchemaElement(string name) : base(name, typeof(T))
       {
-
+         
+      }
+      /// <summary>
+      /// If the converted type is known then set it here otherwise it's lost and will need to be inferred
+      /// </summary>
+      public ConvertedType ThriftConvertedType
+      {
+         set => Thrift.Converted_type = value;
+      }
+      /// <summary>
+      /// Used to coerce the original type - rather than infer from the .NET type sometimes this needs to be overriden e.g. Dates
+      /// </summary>
+      public Thrift.Type ThriftOriginalType
+      {
+         set => Thrift.Type = value;
       }
    }
 

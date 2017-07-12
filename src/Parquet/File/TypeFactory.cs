@@ -9,35 +9,50 @@ namespace Parquet.File
 {
    static class TypeFactory
    {
-      struct TypeTag
+      public struct TypeTag
       {
          public Thrift.Type PType;
 
          public Thrift.ConvertedType? ConvertedType;
 
-         public TypeTag(Thrift.Type ptype, Thrift.ConvertedType? convertedType)
+         public Type ConcreteType;
+
+         public TypeTag(Type concreteType, Thrift.Type ptype, Thrift.ConvertedType? convertedType)
          {
             PType = ptype;
             ConvertedType = convertedType;
+            ConcreteType = concreteType;
          }
       }
 
-      private static readonly Dictionary<Type, TypeTag> TypeToTag = new Dictionary<Type, TypeTag>
+      private static readonly List<TypeTag> TypeToTag = new List<TypeTag>
       {
-         { typeof(int), new TypeTag(Thrift.Type.INT32, null) },
-         { typeof(bool), new TypeTag(Thrift.Type.BOOLEAN, null) },
-         { typeof(string), new TypeTag(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8) },
-         { typeof(float), new TypeTag(Thrift.Type.FLOAT, null) },
-         { typeof(double), new TypeTag(Thrift.Type.DOUBLE, null) },
+         new TypeTag(typeof(int), Thrift.Type.INT32, null),
+         new TypeTag(typeof(bool), Thrift.Type.BOOLEAN, null),
+         new TypeTag(typeof(string), Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8),
+         new TypeTag(typeof(float), Thrift.Type.FLOAT, null),
+         new TypeTag(typeof(double), Thrift.Type.DOUBLE, null),
          // is the coerced type TIMESTAMP_MILLS but holds backward-compatilibility with Impala and HIVE
-         { typeof(DateTimeOffset), new TypeTag(Thrift.Type.INT96, null) }
+         new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT96, null),
+         new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS)
       };
+
+      private static readonly TypeTag DefaultTypeTag = new TypeTag(typeof(int), Thrift.Type.INT32, null);
 
       public static void AdjustSchema(Thrift.SchemaElement schema, Type systemType)
       {
-         if (!TypeToTag.TryGetValue(systemType, out TypeTag tag))
+         bool flag = false;
+         TypeTag tag = DefaultTypeTag;
+         foreach (var type in TypeToTag)
          {
-            string supportedTypes = string.Join(", ", TypeToTag.Keys.Select(t => t.ToString()));
+            if (type.ConcreteType != systemType && type.ConvertedType != schema.Converted_type) continue;
+            tag = type;
+            flag = true;
+            break;
+         }
+         if (!flag)
+         {
+            string supportedTypes = string.Join(", ", TypeToTag.Select(t => t.ConcreteType.ToString()));
 
             throw new NotSupportedException($"system type {systemType} is not supported, list of supported types: '{supportedTypes}'");
          }
@@ -89,7 +104,7 @@ namespace Parquet.File
             case Thrift.Type.DOUBLE:
                return typeof(double);
             case Thrift.Type.INT96:
-               return typeof(DateTimeOffset);
+               return schema.Converted_type == Thrift.ConvertedType.INTERVAL ? typeof(DateTimeOffset) : typeof(byte[]);
             case Thrift.Type.BYTE_ARRAY:
                return schema.Converted_type == Thrift.ConvertedType.UTF8 ? typeof(string) : typeof(byte[]);
             case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
