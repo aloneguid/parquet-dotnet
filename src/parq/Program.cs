@@ -1,5 +1,4 @@
 ﻿using System;
-using LogMagic;
 using Parquet;
 using parq.Display;
 using parq.Display.Views;
@@ -10,12 +9,8 @@ namespace parq
 
    class Program
    {
-      static ILog _log = L.G<Program>();
-
       static void Main(string[] args)
       {
-         L.Config.WriteTo.PoshConsole();
-
          if (string.IsNullOrEmpty(AppSettings.Instance.InputFilePath))
          {
             WriteHelp();
@@ -23,11 +18,11 @@ namespace parq
          else
          {
             var path = System.IO.Path.Combine(AppContext.BaseDirectory, AppSettings.Instance.InputFilePath);
-            _log.D("Input file chosen as {0}", path);
+            Verbose("Input file chosen as {0}", path);
 
             if (!System.IO.File.Exists(path))
             {
-               _log.E("The path {0} does not exist", path);
+               Console.Error.WriteLine("The path {0} does not exist", path);
                return;
             }
             else
@@ -56,6 +51,11 @@ namespace parq
          }
       }
 
+      private static void Verbose(string format, params string[] path)
+      {
+         Console.WriteLine(format, path);
+      }
+
       public static DataSet ReadFromParquetFile(string path, out long fileLen)
       {
          var fileInfo = new System.IO.FileInfo(path);
@@ -65,8 +65,9 @@ namespace parq
 
       private static void WriteHelp()
       {
-         _log.I("dotnet parq.dll\t-\tParquet File Inspector for .net");
-         _log.I("Usage\t-\tparq.exe InputFilePath=[relativeStringPath] DisplayMinWidth=[10]");
+         Console.WriteLine("dotnet parq.dll\t-\tParquet File Inspector for .net\n");
+         Console.WriteLine("Usage\t\t-\tparq.exe operation InputFilePath=[relativeStringPath] DisplayMinWidth=[10]");
+         Console.WriteLine("\t\t\tOperation one of: interactive (default), full, schema");
       }
    }
 }
