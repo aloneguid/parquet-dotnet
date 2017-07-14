@@ -102,7 +102,7 @@ namespace Parquet.File.Values
             foreach(DateTimeOffset el in dataTyped)
             {
                int days = (int)el.ToUnixDays();
-               writer.Write(days);
+               writer.Write(days + 1);
             }
          }
          else

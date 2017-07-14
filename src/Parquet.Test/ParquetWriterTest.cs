@@ -17,80 +17,37 @@ namespace Parquet.Test
             new SchemaElement<int>("id"),
             new SchemaElement<bool>("bool_col"),
             new SchemaElement<string>("string_col")
-         );
-
-         //8 values for each column
-
-         ds.Add(4, true, "0");
-         ds.Add(5, false, "1");
-         ds.Add(6, true, "0");
-         ds.Add(7, false, "1");
-         ds.Add(2, true, "0");
-         ds.Add(3, false, "1");
-         ds.Add(0, true, "0");
-         ds.Add(1, false, "0");
-
-         var uncompressed = new MemoryStream();
-         using (var writer = new ParquetWriter(uncompressed))
-         {
-            writer.Write(ds, CompressionMethod.None);
-         }
-
-         var compressed = new MemoryStream();
-         using (var writer = new ParquetWriter(compressed))
-         {
-            writer.Write(ds, CompressionMethod.Gzip);
-         }
-
-         var compressedSnappy = new MemoryStream();
-         using (var writer = new ParquetWriter(compressedSnappy))
-         {
-            writer.Write(ds, CompressionMethod.Snappy);
-         }
-
-#if DEBUG
-         const string path = "c:\\tmp\\first.parquet";
-         F.WriteAllBytes(path, uncompressed.ToArray());
-#endif
-
-      }
-
-      [Fact]
-      public void Write_datetimeoffset()
-      {
-         var ds = new DataSet(
-            new SchemaElement<DateTimeOffset>("timestamp_col")
          )
          {
-            new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),
-            new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 23))
+            //8 values for each column
+
+            { 4, true, "0" },
+            { 5, false, "1" },
+            { 6, true, "0" },
+            { 7, false, "1" },
+            { 2, true, "0" },
+            { 3, false, "1" },
+            { 0, true, "0" },
+            { 1, false, "0" }
          };
-
-         //8 values for each column
-
-
          var uncompressed = new MemoryStream();
-         using (var writer = new ParquetWriter(uncompressed))
-         {
-            writer.Write(ds, CompressionMethod.None);
-         }
+         ParquetWriter.Write(ds, uncompressed, CompressionMethod.None);
 
-#if DEBUG
-         const string path = "c:\\tmp\\first.parquet";
-         F.WriteAllBytes(path, uncompressed.ToArray());
-#endif
+         var compressed = new MemoryStream();
+         ParquetWriter.Write(ds, compressed, CompressionMethod.Gzip);
 
+         var compressedSnappy = new MemoryStream();
+         ParquetWriter.Write(ds, compressedSnappy, CompressionMethod.Snappy);
       }
-
 
       [Fact]
       public void Write_int64datetimeoffset()
       {
-         var element = new SchemaElement<DateTimeOffset>("timestamp_col")
-         {
+         var element = new SchemaElement<DateTimeOffset>("timestamp_col");
+         /*{
             ThriftConvertedType = ConvertedType.TIMESTAMP_MILLIS,
             ThriftOriginalType = Type.INT64
-         };
+         };*/
 
          var ds = new DataSet(
             element  
@@ -108,27 +65,21 @@ namespace Parquet.Test
          {
             writer.Write(ds, CompressionMethod.None);
          }
-
-#if DEBUG
-         const string path = "c:\\tmp\\first.parquet";
-         F.WriteAllBytes(path, uncompressed.ToArray());
-#endif
-
       }
 
       [Fact]
       public void Write_and_read_nullable_integers()
       {
-         var ds = new DataSet(new SchemaElement<int>("id"));
-
-         ds.Add(1);
-         ds.Add(2);
-         ds.Add(3);
-         ds.Add((object)null);
-         ds.Add(4);
-         ds.Add((object)null);
-         ds.Add(5);
-
+         var ds = new DataSet(new SchemaElement<int>("id"))
+         {
+            1,
+            2,
+            3,
+            (object)null,
+            4,
+            (object)null,
+            5
+         };
          var ms = new MemoryStream();
          ParquetWriter.Write(ds, ms);
 

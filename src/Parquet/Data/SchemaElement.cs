@@ -17,21 +17,38 @@ namespace Parquet.Data
       {
          
       }
+   }
 
+   /// <summary>
+   /// Schema element for <see cref="DateTimeOffset"/> which allows to specify precision
+   /// </summary>
+   public class DateTimeSchemaElement : SchemaElement
+   {
       /// <summary>
-      /// If the converted type is known then set it here otherwise it's lost and will need to be inferred
+      /// Initializes a new instance of the <see cref="DateTimeSchemaElement"/> class.
       /// </summary>
-      public Thrift.ConvertedType ThriftConvertedType
+      /// <param name="name">The name.</param>
+      /// <param name="format">The format.</param>
+      /// <exception cref="ArgumentException">format</exception>
+      public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name, typeof(DateTimeOffset))
       {
-         set => Thrift.Converted_type = value;
-      }
-
-      /// <summary>
-      /// Used to coerce the original type - rather than infer from the .NET type sometimes this needs to be overriden e.g. Dates
-      /// </summary>
-      public Thrift.Type ThriftOriginalType
-      {
-         set => Thrift.Type = value;
+         switch(format)
+         {
+            case DateTimeFormat.Impala:
+               Thrift.Type = Parquet.Thrift.Type.INT96;
+               Thrift.Converted_type = Parquet.Thrift.ConvertedType.TIMESTAMP_MILLIS;
+               break;
+            case DateTimeFormat.DateAndTime:
+               Thrift.Type = Parquet.Thrift.Type.INT64;
+               Thrift.Converted_type = Parquet.Thrift.ConvertedType.TIMESTAMP_MILLIS;
+               break;
+            case DateTimeFormat.Date:
+               Thrift.Type = Parquet.Thrift.Type.INT32;
+               Thrift.Converted_type = Parquet.Thrift.ConvertedType.DATE;
+               break;
+            default:
+               throw new ArgumentException($"unknown date format '{format}'", nameof(format));
+         }
       }
    }
 

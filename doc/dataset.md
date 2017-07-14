@@ -4,7 +4,34 @@ Internally Parquet represents data in columnar format, however most of the inter
 
 ## Creating a DataSet
 
-> todo
+The `DataSet` can be created by passing schema to it's constructor either as `Schema` object or a list of `SchemaElement`:
+
+
+```csharp
+
+using Parquet;
+using Parquet.Data;
+
+var ds1 = new DataSet(
+	new Schema()
+	{
+		new SchemaElement<int>("id"),
+		new SchemaElement<string>("city"
+	});
+
+var ds2 = new DataSet(
+	new SchemaElement<int>("id"),
+	new SchemaElement<string>("city"));
+```
+
+As `DataSet` implements `IList<Row>` interface you can keep adding `Row` objects to it:
+
+```csharp
+var row = new Row(1, "London");
+ds1.Add(row);
+```
+
+The row object contains a list of untyped elements (`System.Object`), however `DataSet` will validate the types according to it's schema when adding elements and throw an appropriate exception.
 
 ## Schema
 
@@ -25,3 +52,16 @@ A type can be one of the supported types:
 - `DateTimeOffset`
 
 Note that you cannot pass nullable types as a schema specification, because any column value is allowed to accept nulls.
+
+### A special note on dates
+
+In the old times Parquet format didn't support dates, therefore people used to store dates as `int96` number. Because of backward compatibility issues we use this as the default date storage format.
+
+If you need to override date format storage you can use `DateTimeSchemaElement` instead of `SchemaElement<DateTimeOffset>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
+
+```csharp
+new DateTimeSchemaElement("date_col", DateTimeFormat.Date);
+```
+
+see `DateTimeFormat` enumeration for detailed explanation of available options.
+

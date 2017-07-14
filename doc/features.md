@@ -11,6 +11,9 @@ We are implementing Parquet features gradually, and the table below outlines the
 |Delta encoding|no|no|
 |Data-length byte array encoding|no|no|
 |Delta strings encoding|no|no|
+|Impala dates|yes|yes|
+|Date with different precision|yes|yes|
+|Time period|no|no|
 |GZIP Compression|yes|yes|
 |SNAPPY Compression|yes|yes|
 |Row groups|yes|no|

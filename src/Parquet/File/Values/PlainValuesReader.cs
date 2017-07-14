@@ -183,7 +183,8 @@ namespace Parquet.File.Values
             byte[] nanos = new byte[8];
             Array.Copy(data, i + 8, v96, 0, 4);
             Array.Copy(data, i, nanos, 0, 8);
-            DateTime bi = BitConverter.ToInt32(v96, 0).JulianToDateTime();
+            int jDate = BitConverter.ToInt32(v96, 0) - 1;
+            DateTime bi = jDate.JulianToDateTime();
             long nanosToInt64 = BitConverter.ToInt64(nanos, 0);
             double millis = (double) nanosToInt64 / 1000000D;
             bi = bi.AddMilliseconds(millis);

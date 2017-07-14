@@ -12,7 +12,7 @@ namespace Parquet.Thrift
   /// between types in those frameworks to the base types in parquet.  This is only
   /// metadata and not needed to read or write the data.
   /// </summary>
-  public enum ConvertedType
+  enum ConvertedType
   {
     /// <summary>
     /// a BYTE_ARRAY actually contains UTF8 encoded chars

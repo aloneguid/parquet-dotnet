@@ -51,13 +51,18 @@ namespace Parquet.Test
       [Fact]
       public void Datetypes_all()
       {
+         DateTimeOffset offset, offset2;
          using (Stream s = F.OpenRead(GetDataFilePath("dates.parquet")))
          {
             using (var r = new ParquetReader(s))
             {
                DataSet ds = r.Read();
+               offset = (DateTimeOffset)ds[0][1];
+               offset2 = (DateTimeOffset)ds[1][1];
             }
          }
+         Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
+         Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
       }
 
       //[Fact]
