@@ -12,9 +12,11 @@ namespace Parquet.File.Data
        public void Write(byte[] buffer, Stream destination)
        {
           var uncompressedLength = buffer.Length;
-          var compressed = new byte[_snappyCompressor.MaxCompressedLength(uncompressedLength)];
-          _snappyCompressor.Compress(buffer, 0, uncompressedLength, compressed);
-          destination.Write(compressed, 0, compressed.Length);
+          int compressedSize = _snappyCompressor.MaxCompressedLength(uncompressedLength);
+          var compressed = new byte[compressedSize];
+          var length = _snappyCompressor.Compress(buffer, 0, uncompressedLength, compressed);
+
+          destination.Write(compressed, 0, length);
        }
     }
 }
