@@ -1,5 +1,6 @@
 ﻿using Parquet.File;
 using System;
+using Parquet.File.Values;
 
 namespace Parquet.Data
 {
@@ -30,9 +31,10 @@ namespace Parquet.Data
       /// <param name="name">The name.</param>
       /// <param name="format">The format.</param>
       /// <exception cref="ArgumentException">format</exception>
-      public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name, typeof(DateTimeOffset))
+      public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name)
       {
-         switch(format)
+         ElementType = typeof(DateTimeOffset);
+         switch (format)
          {
             case DateTimeFormat.Impala:
                Thrift.Type = Parquet.Thrift.Type.INT96;
@@ -52,6 +54,24 @@ namespace Parquet.Data
       }
    }
 
+   /// <summary>
+   /// Maps onto Parquet Interval type 
+   /// </summary>
+   public class IntervalSchemaElement : SchemaElement
+   {
+      /// <summary>
+      /// Constructs a parquet interval type
+      /// </summary>
+      /// <param name="name">The name of the column</param>
+      public IntervalSchemaElement(string name) : base(name)
+      {
+         Thrift.Type = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+         Thrift.Converted_type = Parquet.Thrift.ConvertedType.INTERVAL;
+         Thrift.Type_length = 12;
+         ElementType = typeof(Interval);
+      }
+   }
+
 
    /// <summary>
    /// Element of dataset's schema
@@ -59,11 +79,30 @@ namespace Parquet.Data
    public class SchemaElement
    {
       /// <summary>
+      /// Used by derived classes to invoke 
+      /// </summary>
+      /// <param name="name"></param>
+      protected SchemaElement(string name)
+      {
+         Thrift = new Thrift.SchemaElement(name)
+         {
+            //this must be changed later or if column has nulls (on write)
+            Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
+         };
+         Name = name;
+      }
+      /// <summary>
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
       /// <param name="elementType">Type of the element in this column</param>
       public SchemaElement(string name, Type elementType)
+      {
+         SetProperties(name, elementType);
+         TypeFactory.AdjustSchema(Thrift, elementType);
+      }
+
+      private void SetProperties(string name, Type elementType)
       {
          if (string.IsNullOrEmpty(name))
             throw new ArgumentException("cannot be null or empty", nameof(name));
@@ -75,7 +114,6 @@ namespace Parquet.Data
             //this must be changed later or if column has nulls (on write)
             Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
          };
-         TypeFactory.AdjustSchema(Thrift, elementType);
       }
 
       internal SchemaElement(Thrift.SchemaElement thriftSchema)
@@ -88,12 +126,12 @@ namespace Parquet.Data
       /// <summary>
       /// Column name
       /// </summary>
-      public string Name { get; }
+      public string Name { get; private set; }
 
       /// <summary>
       /// Element type
       /// </summary>
-      public Type ElementType { get; }
+      public Type ElementType { get; internal set; }
 
       /// <summary>
       /// Returns true if element can have null values

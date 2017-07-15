@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using Parquet.Data;
 using System.Linq;
+using Parquet.File.Values;
 
 namespace Parquet.File
 {
@@ -34,7 +36,8 @@ namespace Parquet.File
          new TypeTag(typeof(double), Thrift.Type.DOUBLE, null),
          // is the coerced type TIMESTAMP_MILLS but holds backward-compatilibility with Impala and HIVE
          new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT96, null),
-         new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS)
+         new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS),
+         new TypeTag(typeof(Interval), Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL)
       };
 
       static TypeFactory()
@@ -55,9 +58,7 @@ namespace Parquet.File
          TypeTag tag = DefaultTypeTag;
          foreach (var type in AllTags)
          {
-            if (type.ConcreteType == systemType &&
-                ((type.ConvertedType != null && type.ConvertedType == schema.Converted_type)
-                 || type.ConvertedType == null))
+            if (type.ConcreteType == systemType)
             {
                tag = type;
                flag = true;
@@ -128,12 +129,15 @@ namespace Parquet.File
             case Thrift.Type.DOUBLE:
                return typeof(double);
             case Thrift.Type.INT96:
-               return typeof(DateTimeOffset);
-            //return schema.Converted_type == Thrift.ConvertedType.INTERVAL ? typeof(DateTimeOffset) : typeof(byte[]);
+               // Need to look at this as default type is used here which is skewing this test - UTF8 + INT96 is an impossible siutation 
+               return (schema.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS || schema.Converted_type == Thrift.ConvertedType.UTF8) 
+                  ? typeof(DateTimeOffset) 
+                  : typeof(byte[]);
             case Thrift.Type.BYTE_ARRAY:
                return schema.Converted_type == Thrift.ConvertedType.UTF8 ? typeof(string) : typeof(byte[]);
             case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
-               return schema.Converted_type == Thrift.ConvertedType.DECIMAL ? typeof(decimal) : typeof(byte[]);
+               // currently supports either fixed len Decimal types or 12-byte intervals
+               return schema.Converted_type == Thrift.ConvertedType.DECIMAL ? typeof(decimal) : typeof(Interval);
             default:
                throw new NotImplementedException($"type {schema.Type} not implemented");
          }

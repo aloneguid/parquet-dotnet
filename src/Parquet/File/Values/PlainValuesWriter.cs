@@ -196,6 +196,16 @@ namespace Parquet.File.Values
                Write(writer, s);
             }
          }
+         else if (elementType == typeof(Interval))
+         {
+            var src = (List<Interval>) data;
+            foreach (var interval in src)
+            {
+               writer.Write(BitConverter.GetBytes(interval.Months));
+               writer.Write(BitConverter.GetBytes(interval.Days));
+               writer.Write(BitConverter.GetBytes(interval.Millis));
+            }
+         }
          else if(elementType == typeof(byte[]))
          {
             var src = (List<byte[]>)data;

@@ -148,14 +148,31 @@ namespace Parquet.File.Values
       {
          for (int i = 0; i < data.Length; i += schema.Thrift.Type_length)
          {
-            if (!schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL)) continue;
-            // go from data - decimal needs to be 16 bytes but not from Spark - variable fixed nonsense
-            byte[] dataNew = new byte[schema.Thrift.Type_length];
-            Array.Copy(data, i, dataNew, 0, schema.Thrift.Type_length);
-            var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Thrift.Scale, schema.Thrift.Precision);
+            if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
+            {
+               // go from data - decimal needs to be 16 bytes but not from Spark - variable fixed nonsense
+               byte[] dataNew = new byte[schema.Thrift.Type_length];
+               Array.Copy(data, i, dataNew, 0, schema.Thrift.Type_length);
+               var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Thrift.Scale,
+                  schema.Thrift.Precision);
 
-            decimal dc = (decimal) bigInt;
-            destination.Add(dc);
+               decimal dc = (decimal) bigInt;
+               destination.Add(dc);
+            }
+            else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INTERVAL))
+            {
+               // assume this is the number of months / days / millis offset from the Julian calendar
+               byte[] months = new byte[4];
+               byte[] days = new byte[4];
+               byte[] millis = new byte[4];
+               Array.Copy(data, i, months, 0, 4);
+               Array.Copy(data, i + 4, days, 0, 4);
+               Array.Copy(data, i + 8, millis, 0, 4);
+               destination.Add(new Interval(
+                  BitConverter.ToInt32(months, 0),
+                  BitConverter.ToInt32(days, 0),
+                  BitConverter.ToInt32(millis, 0)));
+            }
          }
       }
 

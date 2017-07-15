@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Parquet.File.Values;
 using Xunit;
 using Xunit.Extensions;
 
@@ -14,8 +15,8 @@ namespace Parquet.Test
       {
          new object[] {  new SchemaElement<string>("s"), "plain string" },
          new object[] {  new SchemaElement<string>("s"), "L'Oréal Paris" },
-         new object[] {  new SchemaElement<float>("f"), (float)1.23 },
-         new object[] {  new SchemaElement<double>("d"), (double)10.44 },
+         new object[] {  new SchemaElement<float>("f"), 1.23f },
+         new object[] {  new SchemaElement<double>("d"), 10.44D },
 
          //loses precision slightly, i.e.
          //Expected: 2017-07-13T10:58:44.3767154+00:00
@@ -25,7 +26,8 @@ namespace Parquet.Test
 
          new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()) },
          // don't want any excess info in the offset INT32 doesn't contain or care about this data 
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero) }
+         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero) },
+         new object[] {  new IntervalSchemaElement("interval"), new Interval(3, 2, 1) }
       };
 
       [Theory]
