@@ -160,37 +160,30 @@ namespace Parquet.File.Values
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private static void ReadInt96(byte[] data, SchemaElement schema, IList destination)
+      private void ReadInt96(byte[] data, SchemaElement schema, IList destination)
       {
-
-
-#if !SPARK_TYPES
-         //var r96 = new List<BigInteger>(data.Length / 12);
-#else
-         //var r96 = new List<DateTimeOffset?>(data.Length / 12);
-#endif
-
          for (int i = 0; i < data.Length; i += 12)
          {
 
-#if !SPARK_TYPES
-            byte[] v96 = new byte[12];
-            Array.Copy(data, i, v96, 0, 12);
-            var bi = new BigInteger(v96);
-#else
-            // for the time being we can discard the nanos 
-            byte[] v96 = new byte[4];
-            byte[] nanos = new byte[8];
-            Array.Copy(data, i + 8, v96, 0, 4);
-            Array.Copy(data, i, nanos, 0, 8);
-            int jDate = BitConverter.ToInt32(v96, 0) - 1;
-            DateTime bi = jDate.JulianToDateTime();
-            long nanosToInt64 = BitConverter.ToInt64(nanos, 0);
-            double millis = (double) nanosToInt64 / 1000000D;
-            bi = bi.AddMilliseconds(millis);
-#endif
-            destination.Add(new DateTimeOffset(bi));
-
+            if (!_options.TreatBigIntegersAsDates)
+            {
+               byte[] v96 = new byte[12];
+               Array.Copy(data, i, v96, 0, 12);;
+               destination.Add(new BigInteger(v96));
+            }
+            else
+            {
+               // for the time being we can discard the nanos 
+               byte[] v96 = new byte[4];
+               byte[] nanos = new byte[8];
+               Array.Copy(data, i + 8, v96, 0, 4);
+               Array.Copy(data, i, nanos, 0, 8);
+               DateTime bi = (BitConverter.ToInt32(v96, 0) - 1).JulianToDateTime();
+               long nanosToInt64 = BitConverter.ToInt64(nanos, 0);
+               double millis = (double) nanosToInt64 / 1000000D;
+               bi = bi.AddMilliseconds(millis);
+               destination.Add(new DateTimeOffset(bi));
+            }
          } 
       }
 

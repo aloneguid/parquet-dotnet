@@ -100,8 +100,8 @@ namespace Parquet.Data
       /// </summary>
       public bool IsNullable
       {
-         get { return Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED; }
-         set { Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED; }
+         get => Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
+         set => Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
       internal Thrift.SchemaElement Thrift { get; set; }
