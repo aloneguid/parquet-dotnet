@@ -13,8 +13,19 @@ namespace parq.Display.Models
       {
          var value = Convert.ToString(rawValue);
          var formatted = new StringBuilder();
-         var padReq = columnWidth - value.Length;
 
+         if (AppSettings.Instance.DisplayNulls && rawValue == null)
+         {
+            for (int k = 0; k < columnWidth - 6; k++)
+            {
+               formatted.Append(" ");
+            }
+            formatted.Append("[null]");
+
+            return formatted.ToString();
+         }
+
+         var padReq = columnWidth - value.Length;
          if (padReq > 0)
          {
             for (int k = 0; k < padReq; k++)

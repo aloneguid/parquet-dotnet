@@ -236,7 +236,19 @@ namespace parq.Display.Views
                var header = viewModel.Columns.ElementAt(j);
                if (columnsFitToScreen.Columns.Contains(header))
                {
-                  Console.Write(header.GetFormattedValue(row[j]));
+                  var data = header.GetFormattedValue(row[j]);
+
+                  if (data.Contains("[null]"))
+                  {
+                     Console.ForegroundColor = ConsoleColor.DarkGray;
+                     Console.Write(data);
+                     Console.ResetColor();
+                  }
+                  else
+                  {
+                     Console.Write(data);
+                  }
+
                   Console.Write(verticalSeparator);
                }
             }
