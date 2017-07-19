@@ -212,16 +212,14 @@ namespace parq.Display.Views
       private void WriteHeaderLine(ConsoleSheet columnDetails)
       {
          Console.Write(verticalSeparator);
-         foreach (string name in columnDetails.Columns.Select(cd => cd.columnName))
+         foreach (var column in columnDetails.Columns)
          {
-            if (name.Length < AppSettings.Instance.DisplayMinWidth.Value)
+            for (int i = 0; i < column.columnWidth - column.columnName.Length; i++)
             {
-               for (int i = 0; i < AppSettings.Instance.DisplayMinWidth.Value - name.Length; i++)
-               {
-                  Console.Write(" ");
-               }
+               Console.Write(" ");
             }
-            Console.Write(name);
+
+            Console.Write(column.columnName);
             Console.Write(verticalSeparator);
          }
          Console.Write(Environment.NewLine);

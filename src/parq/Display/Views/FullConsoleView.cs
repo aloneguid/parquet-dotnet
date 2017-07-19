@@ -1,4 +1,5 @@
 ﻿using parq.Display.Models;
+using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace parq.Display.Views
       {
          Console.Clear();
          DrawLine(viewModel.Columns);
-         WriteHeaderLine(viewModel.Columns);
+         WriteHeaderLine(viewModel);
          DrawLine(viewModel.Columns);
          WriteValues(viewModel);
          DrawLine(viewModel.Columns);
@@ -37,19 +38,17 @@ namespace parq.Display.Views
       {
          Console.WriteLine("Showing {0} Columns with {1} Rows.", viewModel.Columns.Count(), viewModel.RowCount);
       }
-      private void WriteHeaderLine(IEnumerable<ColumnDetails> columnDetails)
+      private void WriteHeaderLine(ViewModel columnDetails)
       {
          Console.Write(verticalSeparator);
-         foreach (string name in columnDetails.Select(cd => cd.columnName))
+         foreach (var column in columnDetails.Columns)
          {
-            if (name.Length < AppSettings.Instance.DisplayMinWidth.Value)
+            for (int i = 0; i < column.columnWidth - column.columnName.Length; i++)
             {
-               for (int i = 0; i < AppSettings.Instance.DisplayMinWidth.Value - name.Length; i++)
-               {
-                  Console.Write(" ");
-               }
+               Console.Write(" ");
             }
-            Console.Write(name);
+
+            Console.Write(column.columnName);
             Console.Write(verticalSeparator);
          }
          Console.Write(Environment.NewLine);

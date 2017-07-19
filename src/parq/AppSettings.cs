@@ -13,6 +13,8 @@ namespace parq
 
       public readonly Option<string> Mode = new Option<string>("interactive");
 
+      public readonly Option<bool> Expanded = new Option<bool>(true);
+
       //singleton
       private static AppSettings instance;
       public static AppSettings Instance => instance ?? (instance = new AppSettings());

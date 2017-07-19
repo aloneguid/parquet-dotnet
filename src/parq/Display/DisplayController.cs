@@ -31,8 +31,25 @@ namespace parq.Display
          var columnDetails = dataSet.Schema.Elements.Select(column =>
             new ColumnDetails { columnWidth = column.Name.Length, columnName = column.Name });
          var parsedSet = new List<ColumnDetails>();
-         foreach (var column in columnDetails)
+         for (var i = 0; i<columnDetails.Count(); i++)
          {
+            var column = columnDetails.ElementAt(i);
+
+            if (AppSettings.Instance.Expanded)
+            {
+               column.columnWidth = dataSet.Max(row => {
+                  var rawVal = row.RawValues.ElementAt(i);
+                  if (rawVal == null)
+                     return column.columnName.Length;
+
+                  var rawStr = rawVal.ToString();
+                  if (rawStr.Length > column.columnName.Length)
+                     return rawStr.Length;
+
+                  return column.columnName.Length;
+                  });
+            }
+
             if (column.columnWidth < AppSettings.Instance.DisplayMinWidth.Value)
             {
                column.columnWidth = AppSettings.Instance.DisplayMinWidth.Value;
