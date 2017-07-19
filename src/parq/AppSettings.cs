@@ -13,6 +13,7 @@ namespace parq
 
       public readonly Option<string> Mode = new Option<string>("interactive");
 
+      public readonly Option<bool> Expanded = new Option<bool>(false);
 
       public readonly Option<bool> DisplayNulls = new Option<bool>(true);
 
