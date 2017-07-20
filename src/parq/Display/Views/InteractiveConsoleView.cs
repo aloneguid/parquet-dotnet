@@ -62,11 +62,11 @@ namespace parq.Display.Views
       private void DrawSheet(ViewModel viewModel, ConsoleSheet currentSheet, ConsoleFold currentFold,  ViewPort viewPort)
       {
          Console.Clear();
-         DrawLine(currentSheet);
-         WriteHeaderLine(currentSheet);
-         DrawLine(currentSheet);
-         WriteValues(viewModel, currentSheet, currentFold);
-         DrawLine(currentSheet);
+         DrawLine(currentSheet, viewPort);
+         WriteHeaderLine(currentSheet, viewPort);
+         DrawLine(currentSheet, viewPort);
+         WriteValues(viewModel, currentSheet, currentFold, viewPort);
+         DrawLine(currentSheet, viewPort);
          WriteSummary(viewModel, currentSheet, currentFold);
 
          var input = AwaitInput();
@@ -194,7 +194,10 @@ namespace parq.Display.Views
             {
                if (runningTotal  + column.columnWidth + verticalSeparator.Length > viewPort.Width)
                {
-                  return chosenColumns;
+                  if (!IsSingleOverlyLargeColumn(chosenColumns, column, viewPort))
+                  {
+                     return chosenColumns;
+                  }
                }
                runningTotal += column.columnWidth + verticalSeparator.Length;
                chosenColumns.Add(column);
@@ -204,19 +207,39 @@ namespace parq.Display.Views
          return columns;
       }
 
+      private bool IsSingleOverlyLargeColumn(List<ColumnDetails> chosenColumns, ColumnDetails column, ViewPort viewPort)
+      {
+         return !chosenColumns.Any() && column.columnWidth + verticalSeparator.Length > viewPort.Width;
+      }
+
+      private bool IsOverlyLargeColumn(ColumnDetails column, ViewPort viewPort)
+      {
+         return column.columnWidth + verticalSeparator.Length > viewPort.Width;
+      }
+
       private void WriteSummary(ViewModel viewModel, ConsoleSheet currentSheet, ConsoleFold currentFold)
       {
          Console.WriteLine("Showing {0} to {1} of {2} Columns. Use Arrow Keys to Navigate.", currentSheet.IndexStart, currentSheet.IndexEnd, viewModel.Columns.Count());
          Console.WriteLine("Showing {0} to {1} of {2} Rows Total. Press ENTER to quit;", currentFold.IndexStart, currentFold.IndexEnd, viewModel.RowCount);
       }
-      private void WriteHeaderLine(ConsoleSheet columnDetails)
+      private void WriteHeaderLine(ConsoleSheet sheet, ViewPort viewPort)
       {
          Console.Write(verticalSeparator);
-         foreach (var column in columnDetails.Columns)
+         foreach (var column in sheet.Columns)
          {
-            for (int i = 0; i < column.columnWidth - column.columnName.Length; i++)
+            if (IsOverlyLargeColumn(column, viewPort))
             {
-               Console.Write(" ");
+               for (int i = 0; i < viewPort.Width - column.columnName.Length - (verticalSeparator.Length*2) - Environment.NewLine.Length; i++)
+               {
+                  Console.Write(" ");
+               }
+            }
+            else
+            {
+               for (int i = 0; i < column.columnWidth - column.columnName.Length; i++)
+               {
+                  Console.Write(" ");
+               }
             }
 
             Console.Write(column.columnName);
@@ -225,7 +248,7 @@ namespace parq.Display.Views
          Console.Write(Environment.NewLine);
       }
 
-      private void WriteValues(ViewModel viewModel, ConsoleSheet columnsFitToScreen, ConsoleFold foldedRows)
+      private void WriteValues(ViewModel viewModel, ConsoleSheet columnsFitToScreen, ConsoleFold foldedRows, ViewPort viewPort)
       {
          for (int i = 0; i < foldedRows.Rows.Count(); i++)
          {
@@ -238,7 +261,19 @@ namespace parq.Display.Views
                {
                   var data = header.GetFormattedValue(row[j]);
 
-                  if (data.Contains("[null]"))
+                  if (IsOverlyLargeColumn(header, viewPort))
+                  {
+                     if (data.Length > viewPort.Width)
+                     {
+                        Console.Write(data.Substring(0, viewPort.Width - (verticalSeparator.Length*2) - Environment.NewLine.Length - AppSettings.Instance.TruncationIdentifier.Value.Length));
+
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.BackgroundColor = ConsoleColor.Black;
+                        Console.Write(AppSettings.Instance.TruncationIdentifier);
+                        Console.ResetColor();
+                     }
+                  }
+                  else if (data.Contains("[null]"))
                   {
                      Console.ForegroundColor = ConsoleColor.DarkGray;
                      Console.Write(data);
@@ -255,14 +290,24 @@ namespace parq.Display.Views
             Console.WriteLine();
          }
       }
-      private void DrawLine(ConsoleSheet columnHeaderSizes)
+      private void DrawLine(ConsoleSheet consoleSheet, ViewPort viewPort)
       {
          Console.Write(verticalSeparator);
-         foreach (int item in columnHeaderSizes.Columns.Select(d => d.columnWidth))
+         foreach (var column in consoleSheet.Columns)
          {
-            for (int i = 0; i < item; i++)
+            if (IsOverlyLargeColumn(column, viewPort))
             {
-               Console.Write(horizontalSeparator);
+               for (int i = 0; i < viewPort.Width - (verticalSeparator.Length*2) - Environment.NewLine.Length; i++)
+               {
+                  Console.Write(horizontalSeparator);
+               }
+            }
+            else
+            {
+               for (int i = 0; i < column.columnWidth; i++)
+               {
+                  Console.Write(horizontalSeparator);
+               }
             }
             Console.Write(verticalSeparator);
          }
