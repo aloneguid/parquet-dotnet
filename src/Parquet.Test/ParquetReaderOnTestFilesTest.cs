@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Parquet.Test
 {
@@ -63,6 +64,18 @@ namespace Parquet.Test
          }
          Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
          Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
+      }
+
+      [Fact]
+      public void NestedColumns_Exception()
+      {
+         using (Stream s = F.OpenRead(GetDataFilePath("nested.parquet")))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               Assert.Throws<NotImplementedException>(() => r.Read());
+            }
+         }
       }
 
       //[Fact]
