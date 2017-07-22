@@ -19,6 +19,8 @@ namespace parq
 
       public readonly Option<string> TruncationIdentifier = new Option<string>("*");
 
+      public readonly Option<bool> ShowVersion = new Option<bool>(false);
+
       //singleton
       private static AppSettings instance;
       public static AppSettings Instance => instance ?? (instance = new AppSettings());

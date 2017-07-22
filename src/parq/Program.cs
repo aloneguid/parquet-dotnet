@@ -11,6 +11,12 @@ namespace parq
    {
       static void Main(string[] args)
       {
+         if (AppSettings.Instance.ShowVersion)
+         {
+            Console.WriteLine(GetVersionNumber(typeof(Program).AssemblyQualifiedName));
+            return;
+         }
+
          if (string.IsNullOrEmpty(AppSettings.Instance.InputFilePath))
          {
             WriteHelp();
@@ -49,6 +55,12 @@ namespace parq
 
             }
          }
+      }
+
+      private static string GetVersionNumber(string assemblyQualifiedName)
+      {
+         var fromVersion = (assemblyQualifiedName.Substring(assemblyQualifiedName.IndexOf("Version=") + 8));
+         return fromVersion.Substring(0, fromVersion.IndexOf(','));
       }
 
       private static void Verbose(string format, params string[] path)
