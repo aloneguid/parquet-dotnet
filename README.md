@@ -1,4 +1,4 @@
-# Parquet.Net [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/Parquet.Net) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+# Parquet.Net [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet/branch/master) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
