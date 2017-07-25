@@ -155,7 +155,7 @@ namespace Parquet.File.Values
          {
             foreach (DateTimeOffset dto in data)
             {
-               int unixTime = (int) dto.DateTime.DateTimeToJulian();
+               int unixTime = (int) dto.DateTime.DateTimeToJulian() + 1;
                // need to fill in the blanks here at the moment there is no day precision 
                // need to get the offset from midday from the date and add these as nanos
                // written as a long across 8 bytes

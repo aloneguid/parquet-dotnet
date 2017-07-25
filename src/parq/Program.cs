@@ -52,6 +52,10 @@ namespace parq
                {
                   new SchemaView().Draw(viewModel);
                }
+               else if (string.Compare(AppSettings.Instance.Mode, "rowcount", true) == 0)
+               {
+                  new RowCountView().Draw(viewModel);
+               }
 
             }
          }
@@ -79,7 +83,7 @@ namespace parq
       {
          Console.WriteLine("dotnet parq.dll\t-\tParquet File Inspector for .net\n");
          Console.WriteLine("Usage\t\t-\tparq.exe operation InputFilePath=[relativeStringPath] DisplayMinWidth=[10]");
-         Console.WriteLine("\t\t\tOperation one of: interactive (default), full, schema");
+         Console.WriteLine("\t\t\tOperation one of: interactive (default), full, schema, rowcount");
       }
    }
 }
