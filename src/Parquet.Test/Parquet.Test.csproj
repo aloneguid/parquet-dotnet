@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\parquet-utils\parquet-utils.csproj" />
     <ProjectReference Include="..\Parquet\Parquet.csproj" />
   </ItemGroup>
 
