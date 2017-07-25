@@ -1,5 +1,6 @@
 ﻿using NetBox;
 using NetBox.IO;
+using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,6 +51,77 @@ namespace Parquet.Test
       public void Opening_readable_and_seekable_stream_succeeds()
       {
          new ParquetReader(new ReadableAndSeekableStream(new NonReadableSeekableStream("PAR1DATAPAR1".ToMemoryStream())));
+      }
+
+      [Fact]
+      public void Read_from_offset_in_first_chunk()
+      {
+         DataSet ds = DataSetGenerator.Generate(30);
+         var wo = new WriterOptions { RowGroupsSize = 5 };
+         var ro = new ReaderOptions { Offset = 0, Count = 2 };
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms, null, ro);
+
+         Assert.Equal(ds1.TotalRowCount, 30);
+         Assert.Equal(2, ds1.RowCount);
+         Assert.Equal(0, ds[0][0]);
+         Assert.Equal(1, ds[1][0]);
+      }
+
+      [Fact]
+      public void Read_from_offset_in_second_chunk()
+      {
+         DataSet ds = DataSetGenerator.Generate(15);
+         var wo = new WriterOptions { RowGroupsSize = 5 };
+         var ro = new ReaderOptions { Offset = 5, Count = 2 };
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms, null, ro);
+
+         Assert.Equal(ds1.TotalRowCount, 15);
+         Assert.Equal(2, ds1.RowCount);
+         Assert.Equal(5, ds1[0][0]);
+         Assert.Equal(6, ds1[1][0]);
+      }
+
+      [Fact]
+      public void Read_from_offset_across_chunks()
+      {
+         DataSet ds = DataSetGenerator.Generate(15);
+         var wo = new WriterOptions { RowGroupsSize = 5 };
+         var ro = new ReaderOptions { Offset = 4, Count = 2 };
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms, null, ro);
+
+         Assert.Equal(ds1.TotalRowCount, 15);
+         Assert.Equal(2, ds1.RowCount);
+         Assert.Equal(4, ds1[0][0]);
+         Assert.Equal(5, ds1[1][0]);
+      }
+
+      [Fact]
+      public void Read_from_negative_offset_fails()
+      {
+         DataSet ds = DataSetGenerator.Generate(15);
+         var wo = new WriterOptions { RowGroupsSize = 5 };
+         var ro = new ReaderOptions { Offset = -4, Count = 2 };
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+
+         ms.Position = 0;
+         Assert.Throws<ParquetException>(() => ParquetReader.Read(ms, null, ro));
       }
 
       class ReadableNonSeekableStream : DelegatedStream

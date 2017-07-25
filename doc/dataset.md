@@ -65,3 +65,10 @@ new DateTimeSchemaElement("date_col", DateTimeFormat.Date);
 
 see `DateTimeFormat` enumeration for detailed explanation of available options.
 
+## Counts
+
+DataSet contains a few `Count` properties which carry a different meaning:
+
+- **Count** is an alias to **RowCount** and returns the number of rows dataset physically contains.
+- **TotalRowCount** represetns the number of rows in the source file the DataSet was read from. It's only filled by `ParquetDataReader`.
+- **ColumnCount** is number of columns in this dataset and is just an alias property which reads number of columns from the schema.

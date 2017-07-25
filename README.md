@@ -14,6 +14,8 @@ This project is aimed to fix this problem.
 
 - [Supported features](doc/features.md)
 - Programming guide
+  - [Reading Data](doc/reading.md) 
+  - [Writing Data](doc/writing.md)
   - [Working with DataSets](doc/dataset.md) 
 
 ## Roadmap

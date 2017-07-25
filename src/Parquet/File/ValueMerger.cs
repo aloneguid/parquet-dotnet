@@ -41,13 +41,13 @@ namespace Parquet.File
 
          if (indexes == null) throw new ParquetException("dictionary has no attached index");
 
-         Trim(indexes, maxValues);
+         TrimTail(indexes, maxValues);
 
          IList values = indexes
             .Select(i => dictionary[i])
             .ToList();
 
-         Trim(values, maxValues);
+         TrimTail(values, maxValues);
 
          foreach (var el in values) _values.Add(el);
       }
@@ -56,7 +56,7 @@ namespace Parquet.File
       {
          if (definitions == null) return;
 
-         Trim(definitions, maxValues);
+         TrimTail(definitions, maxValues);
 
          int valueIdx = 0;
          IList values = TypeFactory.Create(_schema, true);
@@ -75,17 +75,31 @@ namespace Parquet.File
             }
          }
 
-         Trim(values, maxValues);
+         TrimTail(values, maxValues);
          _values = values;
       }
 
-      public static void Trim(IList list, long maxValues)
+      public static void TrimTail(IList list, long maxValues)
       {
          if (list.Count > maxValues)
          {
             int diffCount = list.Count - (int)maxValues;
             while (--diffCount >= 0) list.RemoveAt(list.Count - 1); //more effective than copying the list again
          }
+      }
+
+      public static void TrimHead(IList list, long maxValues)
+      {
+         while(list.Count > maxValues)
+         {
+            list.RemoveAt(0);
+         }
+      }
+
+      public static void Trim(IList list, long offset, long count)
+      {
+         TrimHead(list, list.Count - offset);
+         TrimTail(list, count);
       }
 
    }

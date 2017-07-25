@@ -94,5 +94,25 @@ namespace Parquet.Test
          Assert.True(ds1[5].IsNullAt(0));
          Assert.Equal(ds1[6].GetInt(0), 5);
       }
+
+      [Fact]
+      public void Write_in_small_row_groups()
+      {
+         var options = new WriterOptions { RowGroupsSize = 5 };
+
+         var ds = new DataSet(new SchemaElement<int>("index"));
+         for(int i = 0; i < 103; i++)
+         {
+            ds.Add(new Row(i));
+         }
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, options);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms);
+         Assert.Equal(1, ds1.ColumnCount);
+         Assert.Equal(103, ds1.RowCount);
+      }
    }
 }

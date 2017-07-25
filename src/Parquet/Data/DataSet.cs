@@ -42,14 +42,19 @@ namespace Parquet.Data
       /// Slices rows and returns list of all values in a particular column.
       /// </summary>
       /// <param name="i">Column index</param>
-      /// <returns>Column values</returns>
-      public IList GetColumn(int i)
+      /// <param name="offset">The offset.</param>
+      /// <param name="count">The count.</param>
+      /// <returns>
+      /// Column values
+      /// </returns>
+      public IList GetColumn(int i, int offset = 0, int count = -1)
       {
          SchemaElement schema = Schema.Elements[i];
          IList result = TypeFactory.Create(schema.ElementType, schema.IsNullable);
 
-         foreach(Row row in _rows)
+         for(int irow = offset; (count == -1 || result.Count < count) && (irow < _rows.Count); irow++)
          {
+            Row row = _rows[irow];
             result.Add(row[i]);
          }
 
@@ -60,12 +65,17 @@ namespace Parquet.Data
       /// Slices rows and returns list of all values in a particular column.
       /// </summary>
       /// <param name="name">Column name</param>
-      /// <returns>Column values</returns>
-      public IList GetColumn(string name)
+      /// <param name="offset">The offset.</param>
+      /// <param name="count">The count.</param>
+      /// <returns>
+      /// Column values
+      /// </returns>
+      /// <exception cref="ArgumentException"></exception>
+      public IList GetColumn(string name, int offset = 0, int count = -1)
       {
          for(int i = 0; i < _schema.Elements.Count; i++)
          {
-            if (_schema.Elements[i].Name == name) return GetColumn(i);
+            if (_schema.Elements[i].Name == name) return GetColumn(i, offset, count);
          }
 
          throw new ArgumentException($"cannot find column {name}");
@@ -129,6 +139,11 @@ namespace Parquet.Data
       /// Gets the number of rows contained in this dataset.
       /// </summary>
       public int RowCount => _rows.Count;
+
+      /// <summary>
+      /// Gets the total row count in the source file this dataset was read from
+      /// </summary>
+      public long TotalRowCount { get; internal set; }
 
       /// <summary>
       /// Gets the number of columns contained in this dataset

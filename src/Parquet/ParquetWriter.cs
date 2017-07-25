@@ -43,7 +43,8 @@ namespace Parquet
       private readonly ThriftStream _thrift;
       private static readonly byte[] Magic = System.Text.Encoding.ASCII.GetBytes("PAR1");
       private readonly MetaBuilder _meta = new MetaBuilder();
-      private readonly ParquetOptions _options;
+      private readonly ParquetOptions _formatOptions;
+      private readonly WriterOptions _writerOptions;
       private readonly IValuesWriter _plainWriter;
       private readonly IValuesWriter _rleWriter;
       private bool _dataWritten;
@@ -52,16 +53,20 @@ namespace Parquet
       /// Creates an instance of parquet writer on top of a stream
       /// </summary>
       /// <param name="output">Writeable, seekable stream</param>
-      /// <param name="options">Additional options</param>
-      public ParquetWriter(Stream output, ParquetOptions options = null)
+      /// <param name="formatOptions">Additional options</param>
+      /// <param name="writerOptions">The writer options.</param>
+      /// <exception cref="ArgumentNullException">Output is null.</exception>
+      /// <exception cref="ArgumentException">Output stream is not writeable</exception>
+      public ParquetWriter(Stream output, ParquetOptions formatOptions = null, WriterOptions writerOptions = null)
       {
          _output = output ?? throw new ArgumentNullException(nameof(output));
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
          _thrift = new ThriftStream(output);
          _writer = new BinaryWriter(_output);
-         _options = options ?? new ParquetOptions();
+         _formatOptions = formatOptions ?? new ParquetOptions();
+         _writerOptions = writerOptions ?? new WriterOptions();
 
-         _plainWriter = new PlainValuesWriter(_options);
+         _plainWriter = new PlainValuesWriter(_formatOptions);
          _rleWriter = new RunLengthBitPackingHybridValuesWriter();
 
          //file starts with magic
@@ -79,25 +84,34 @@ namespace Parquet
 
          var stats = new DataSetStats(dataSet);
 
-         long totalCount = dataSet.Count;
+         //long totalCount = dataSet.Count;
 
-         Thrift.RowGroup rg = _meta.AddRowGroup();
-         long rgStartPos = _output.Position;
-         rg.Columns = dataSet.Schema.Elements
-            .Select(c => 
-               Write(c, dataSet.GetColumn(c.Name), compression, stats.GetColumnStats(c)))
-            .ToList();
+         int offset = 0;
+         int count;
+         do
+         {
+            count = Math.Min(_writerOptions.RowGroupsSize, dataSet.Count - offset);
+            Thrift.RowGroup rg = _meta.AddRowGroup();
+            long rgStartPos = _output.Position;
+            rg.Columns = dataSet.Schema.Elements
+               .Select(c =>
+                  Write(c, dataSet.GetColumn(c.Name, offset, count), compression, stats.GetColumnStats(c)))
+               .ToList();
 
-         //row group's size is a sum of _uncompressed_ sizes of all columns in it
-         rg.Total_byte_size = rg.Columns.Sum(c => c.Meta_data.Total_uncompressed_size);
-         rg.Num_rows = dataSet.Count;
+            //row group's size is a sum of _uncompressed_ sizes of all columns in it
+            rg.Total_byte_size = rg.Columns.Sum(c => c.Meta_data.Total_uncompressed_size);
+            rg.Num_rows = count;
+
+            offset += _writerOptions.RowGroupsSize;
+         }
+         while (offset < dataSet.Count);
 
          _dataWritten = true;
       }
 
-      public static void Write(DataSet dataSet, Stream destination, CompressionMethod compression = CompressionMethod.Gzip, ParquetOptions options = null)
+      public static void Write(DataSet dataSet, Stream destination, CompressionMethod compression = CompressionMethod.Gzip, ParquetOptions formatOptions = null, WriterOptions writerOptions = null)
       {
-         using (var writer = new ParquetWriter(destination, options))
+         using (var writer = new ParquetWriter(destination, formatOptions, writerOptions))
          {
             writer.Write(dataSet, compression);
          }

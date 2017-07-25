@@ -37,15 +37,15 @@ namespace Parquet.File
          _plainReader = new PlainValuesReader(options);
       }
 
-      public IList Read(string columnName)
+      public IList Read(string columnName, long offset, long count)
       {
          IList values = TypeFactory.Create(_schemaElement);
 
          //get the minimum offset, we'll just read pages in sequence
-         long offset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
+         long fileOffset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
          long maxValues = _thriftChunk.Meta_data.Num_values;
 
-         _inputStream.Seek(offset, SeekOrigin.Begin);
+         _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
          Thrift.PageHeader ph = _thrift.Read<Thrift.PageHeader>();
 
@@ -100,13 +100,6 @@ namespace Parquet.File
                break;   //limit reached
             }
 
-            /*IList acc1 = new ValueMerger(_schemaElement, values).Apply(dictionaryPage, definitions, indexes, maxValues);
-            dictionaryPage = null;
-            definitions = null;
-            indexes = null;
-            values.Clear();
-            foreach (var el in acc1) acc.Add(el);*/
-
             ph = _thrift.Read<Thrift.PageHeader>(); //get next page
             if (ph.Type != Thrift.PageType.DATA_PAGE)
             {
@@ -115,6 +108,8 @@ namespace Parquet.File
          }
 
          IList mergedValues = new ValueMerger(_schemaElement, values).Apply(dictionaryPage, definitions, indexes, maxValues);
+
+         ValueMerger.Trim(mergedValues, offset, count);
 
          return mergedValues;
       }
@@ -157,8 +152,8 @@ namespace Parquet.File
 
                //trim output if it exceeds max number of values
                int numValues = ph.Data_page_header.Num_values;
-               if(definitions != null) ValueMerger.Trim(definitions, numValues);
-               if(indexes != null) ValueMerger.Trim(indexes, numValues);
+               if(definitions != null) ValueMerger.TrimTail(definitions, numValues);
+               if(indexes != null) ValueMerger.TrimTail(indexes, numValues);
 
                return (definitions, null, indexes);
             }
@@ -174,7 +169,7 @@ namespace Parquet.File
          RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
 
          int maxLevel = _schema.GetMaxDefinitionLevel(_thriftChunk);
-         ValueMerger.Trim(result, valueCount);  //trim result so null count procudes correct value
+         ValueMerger.TrimTail(result, valueCount);  //trim result so null count procudes correct value
          int nullCount = valueCount - result.Count(r => r == maxLevel);
          if (nullCount == 0) return null;
 
