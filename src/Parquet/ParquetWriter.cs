@@ -117,6 +117,17 @@ namespace Parquet
          }
       }
 
+      public static void WriteFile(DataSet ds, string fileName, CompressionMethod compression = CompressionMethod.Gzip, ParquetOptions formatOptions = null, WriterOptions writerOptions = null)
+      {
+         using (Stream fs = System.IO.File.Create(fileName))
+         {
+            using (var writer = new ParquetWriter(fs, formatOptions, writerOptions))
+            {
+               writer.Write(ds, compression);
+            }
+         }
+      }
+
       private Thrift.ColumnChunk Write(SchemaElement schema, IList values,
          CompressionMethod compression,
          ColumnStats stats)

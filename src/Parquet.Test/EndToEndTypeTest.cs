@@ -21,18 +21,18 @@ namespace Parquet.Test
          //loses precision slightly, i.e.
          //Expected: 2017-07-13T10:58:44.3767154+00:00
          //Actual:   2017-07-12T10:58:44.3770000+00:00
-         new object[] {  new SchemaElement<DateTimeOffset>("d"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()) },
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Impala), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()) },
+         new object[] {  new SchemaElement<DateTimeOffset>("d"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "default" },
+         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Impala), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "impala" },
 
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()) },
+         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "dateandtime" },
          // don't want any excess info in the offset INT32 doesn't contain or care about this data 
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero) },
+         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero), "date" },
          new object[] {  new IntervalSchemaElement("interval"), new Interval(3, 2, 1) }
       };
 
       [Theory]
       [MemberData(nameof(TypeData))]
-      public void Type_writes_and_reads_end_to_end(SchemaElement schema, object value)
+      public void Type_writes_and_reads_end_to_end(SchemaElement schema, object value, string name = null)
       {
          var ds = new DataSet(schema) { new Row(value) };
          var ms = new MemoryStream();
@@ -41,7 +41,10 @@ namespace Parquet.Test
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms);
 
-         Assert.Equal(ds[0][0], ds1[0][0]);
+         object expectedValue = ds[0][0];
+         object actualValue = ds1[0][0];
+         Assert.True(expectedValue.Equals(actualValue),
+            $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
       }
    }
 }

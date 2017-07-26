@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Numerics;
 using Parquet.Data;
 using System.Collections.Generic;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.File.Values
 {
@@ -181,7 +182,6 @@ namespace Parquet.File.Values
       {
          for (int i = 0; i < data.Length; i += 12)
          {
-
             if (!_options.TreatBigIntegersAsDates)
             {
                byte[] v96 = new byte[12];
@@ -190,16 +190,9 @@ namespace Parquet.File.Values
             }
             else
             {
-               // for the time being we can discard the nanos 
-               byte[] v96 = new byte[4];
-               byte[] nanos = new byte[8];
-               Array.Copy(data, i + 8, v96, 0, 4);
-               Array.Copy(data, i, nanos, 0, 8);
-               DateTime bi = (BitConverter.ToInt32(v96, 0) - 1).JulianToDateTime();
-               long nanosToInt64 = BitConverter.ToInt64(nanos, 0);
-               double millis = (double) nanosToInt64 / 1000000D;
-               bi = bi.AddMilliseconds(millis);
-               destination.Add(new DateTimeOffset(bi));
+               var nano = new NanoTime(data, i);
+               DateTimeOffset dt = nano;
+               destination.Add(dt);
             }
          } 
       }

@@ -45,4 +45,8 @@
     <PackageReference Include="Snappy.Sharp" Version="1.0.0-b20170602007" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Primitives\Values\File\" />
+  </ItemGroup>
 </Project>
