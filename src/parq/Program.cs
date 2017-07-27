@@ -33,28 +33,42 @@ namespace parq
             }
             else
             {
-               long fileLen = 0;
-               var dataSet = ReadFromParquetFile(path, out fileLen);
-
                // After reading the column types give a printed list of the layout of the columns 
                var display = new DisplayController();
-               var viewModel = display.Get(dataSet);
+
 
                if (string.Compare(AppSettings.Instance.Mode, "interactive", true) == 0)
                {
-                  new InteractiveConsoleView().Draw(viewModel);
+                  long fileLen = 0;
+                  var view = new InteractiveConsoleView();
+                  view.FoldRequested += (object sender, Display.Models.ConsoleFold cf) =>
+                  {
+                     var nextDataSet = ReadFromParquetFileOffset(path, cf.IndexStart, cf.IndexEnd-cf.IndexStart, out fileLen);
+                     var updatedViewModel = display.Get(nextDataSet);
+                     view.Update(updatedViewModel);
+                  };
+
+                  var dataSet = ReadFromParquetFileOffset(path, 0, view.GetRowCount(), out fileLen);
+                  var viewModel = display.Get(dataSet);
+                  view.Draw(viewModel);
                }
-               else if (string.Compare(AppSettings.Instance.Mode, "full", true) == 0)
+               else
                {
-                  new FullConsoleView().Draw(viewModel);
-               }
-               else if (string.Compare(AppSettings.Instance.Mode, "schema", true) == 0)
-               {
-                  new SchemaView().Draw(viewModel);
-               }
-               else if (string.Compare(AppSettings.Instance.Mode, "rowcount", true) == 0)
-               {
-                  new RowCountView().Draw(viewModel);
+                  long fileLen = 0;
+                  var dataSet = ReadFromParquetFile(path, out fileLen);
+                  var viewModel = display.Get(dataSet);
+                  if (string.Compare(AppSettings.Instance.Mode, "full", true) == 0)
+                  {
+                     new FullConsoleView().Draw(viewModel);
+                  }
+                  else if (string.Compare(AppSettings.Instance.Mode, "schema", true) == 0)
+                  {
+                     new SchemaView().Draw(viewModel);
+                  }
+                  else if (string.Compare(AppSettings.Instance.Mode, "rowcount", true) == 0)
+                  {
+                     new RowCountView().Draw(viewModel);
+                  }
                }
 
             }
@@ -70,6 +84,13 @@ namespace parq
       private static void Verbose(string format, params string[] path)
       {
          Console.WriteLine(format, path);
+      }
+
+      public static DataSet ReadFromParquetFileOffset(string path, long skip, long take, out long fileLen)
+      {
+         var fileInfo = new System.IO.FileInfo(path);
+         fileLen = fileInfo.Length;
+         return ParquetReader.ReadFile(path, null, new ReaderOptions() { Count = (int)take, Offset = (int)skip });
       }
 
       public static DataSet ReadFromParquetFile(string path, out long fileLen)

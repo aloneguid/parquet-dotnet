@@ -16,38 +16,51 @@ namespace parq.Display.Views
       private Stack<ConsoleSheet> readSheets = new Stack<ConsoleSheet>();
       private Stack<ConsoleFold> unreadFolds;
       private Stack<ConsoleFold> readFolds = new Stack<ConsoleFold>();
+      private ViewPort viewPort;
+      private ConsoleSheet _currentSheet;
+      private ConsoleFold _currentFold;
+
+      internal event EventHandler<ConsoleFold> FoldRequested;
+
+      public InteractiveConsoleView()
+      {
+          viewPort = new ViewPort();
+      }
 
       public void Draw(ViewModel viewModel)
       { 
          Console.Clear();
-         var viewPort = new ViewPort();
 
          unreadSheets = GenerateSheets(viewPort, viewModel.Columns);
-         unreadFolds = GenerateFolds(viewPort, viewModel.Rows);
+         unreadFolds = GenerateFolds(viewPort, viewModel.RowCount);
 
-         var currentSheet = unreadSheets.Pop();
-         var currentFold = unreadFolds.Pop();
-         DrawSheet(viewModel, currentSheet, currentFold, viewPort);
+         _currentSheet = unreadSheets.Pop();
+         _currentFold = unreadFolds.Pop();
+         DrawSheet(viewModel, _currentSheet, _currentFold, viewPort);
          
       }
 
-      private Stack<ConsoleFold> GenerateFolds(ViewPort viewPort, List<object[]> rows)
+      public void Update(ViewModel viewModel)
       {
-         var foldLength = viewPort.Height - 7;
+         Console.Clear();
+         DrawSheet(viewModel, _currentSheet, _currentFold, viewPort);
+      }
+
+      private Stack<ConsoleFold> GenerateFolds(ViewPort viewPort, long totalRowCount)
+      {
+         var foldLength = GetRowCount();
 
          var folds = new Stack<ConsoleFold>();
-         var firstFoldPoint = (rows.Count > foldLength) ? foldLength : rows.Count;
+         var firstFoldPoint = (totalRowCount > foldLength) ? foldLength : totalRowCount;
          var runningTotal = firstFoldPoint;
-         var firstFold = rows.Take(firstFoldPoint);
 
-         folds.Push(new ConsoleFold { Rows = firstFold, IndexStart = 0, IndexEnd = firstFold.Count() });
+         folds.Push(new ConsoleFold { IndexStart = 0, IndexEnd = firstFoldPoint });
 
-         while (runningTotal != rows.Count)
+         while (runningTotal != totalRowCount)
          {
-            var nextFoldPoint = (rows.Count > runningTotal + foldLength) ? foldLength : rows.Count - runningTotal;
-            var nextFold = rows.Skip(runningTotal).Take(nextFoldPoint);
-            folds.Push(new ConsoleFold { Rows = nextFold, IndexStart = runningTotal, IndexEnd = runningTotal + nextFold.Count() });
-            runningTotal += nextFold.Count();
+            var nextFoldPoint = (totalRowCount > runningTotal + foldLength) ? foldLength : totalRowCount - runningTotal;
+            folds.Push(new ConsoleFold { IndexStart = runningTotal, IndexEnd = runningTotal + nextFoldPoint });
+            runningTotal += nextFoldPoint;
          }
 
          var originalFoldCount = folds.Count;
@@ -57,6 +70,11 @@ namespace parq.Display.Views
             unReadFolds.Push(folds.Pop());
          }
          return unReadFolds;
+      }
+
+      internal int GetRowCount()
+      {
+         return viewPort.Height - 7;
       }
 
       private void DrawSheet(ViewModel viewModel, ConsoleSheet currentSheet, ConsoleFold currentFold,  ViewPort viewPort)
@@ -86,7 +104,7 @@ namespace parq.Display.Views
                }
                else
                {
-                  DrawSheet(viewModel, currentSheet, currentFold, viewPort);
+                 DrawSheet(viewModel, currentSheet, currentFold, viewPort);
                }
                break;
             case Input.PrevSheet:
@@ -106,7 +124,9 @@ namespace parq.Display.Views
                {
                   readFolds.Push(currentFold);
                   var nextFold = unreadFolds.Pop();
-                  DrawSheet(viewModel, currentSheet, nextFold, viewPort);
+                  _currentFold = nextFold;
+
+                  this.FoldRequested?.Invoke(this, nextFold);
                }
                else
                {
@@ -118,7 +138,9 @@ namespace parq.Display.Views
                {
                   unreadFolds.Push(currentFold);
                   var lastFold = readFolds.Pop();
-                  DrawSheet(viewModel, currentSheet, lastFold, viewPort);
+                  _currentFold = lastFold;
+
+                  this.FoldRequested?.Invoke(this, lastFold);
                }
                else
                {
@@ -250,18 +272,19 @@ namespace parq.Display.Views
 
       private void WriteValues(ViewModel viewModel, ConsoleSheet columnsFitToScreen, ConsoleFold foldedRows, ViewPort viewPort)
       {
-         for (int i = 0; i < foldedRows.Rows.Count(); i++)
+         for (int i = 0; i < viewModel.Rows.Count(); i++)
          {
-            var row = foldedRows.Rows.ElementAt(i);
+            var row = viewModel.Rows.ElementAt(i);
             Console.Write(verticalSeparator);
             for (int j = 0; j < row.Length; j++)
             {
                var header = viewModel.Columns.ElementAt(j);
-               if (columnsFitToScreen.Columns.Contains(header))
+               if (columnsFitToScreen.Columns.Any(x => x.columnName == header.columnName))
                {
-                  var data = header.GetFormattedValue(row[j]);
+                  var persistedFit = columnsFitToScreen.Columns.First(x => x.columnName == header.columnName);
+                  var data = persistedFit.GetFormattedValue(row[j]);
 
-                  if (IsOverlyLargeColumn(header, viewPort))
+                  if (IsOverlyLargeColumn(persistedFit, viewPort))
                   {
                      if (data.Length > viewPort.Width)
                      {

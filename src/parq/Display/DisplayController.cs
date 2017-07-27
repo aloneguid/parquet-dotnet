@@ -22,7 +22,7 @@ namespace parq.Display
             Row row = dataSet[i];
             viewModel.Rows.Add(row.RawValues);
          }
-         viewModel.RowCount = dataSet.Count;
+         viewModel.RowCount = dataSet.TotalRowCount;
          viewModel.Schema = dataSet.Schema;
          return viewModel;
       }
