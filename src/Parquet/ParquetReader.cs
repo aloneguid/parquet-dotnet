@@ -112,6 +112,7 @@ namespace Parquet
          _meta = ReadMetadata();
          var ds = new DataSet(new Schema(_meta));
          ds.TotalRowCount = _meta.Num_rows;
+         ds.Metadata.CreatedBy = _meta.Created_by;
          var cols = new List<IList>();
          long pos = 0;
          long rowsRead = 0;

@@ -124,6 +124,19 @@ namespace Parquet.Test
          Assert.Throws<ParquetException>(() => ParquetReader.Read(ms, null, ro));
       }
 
+      [Fact]
+      public void Reads_created_by_metadata()
+      {
+         DataSet ds = DataSetGenerator.Generate(10);
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms);
+         Assert.True(ds1.Metadata.CreatedBy.StartsWith("parquet-dotnet"));
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)

@@ -14,11 +14,17 @@ namespace Parquet.Data
    {
       private readonly Schema _schema;
       private readonly List<Row> _rows = new List<Row>();
+      private readonly DataSetMetadata _metadata = new DataSetMetadata();
 
       /// <summary>
       /// Gets dataset schema
       /// </summary>
       public Schema Schema => _schema;
+
+      /// <summary>
+      /// Gets the public metadata
+      /// </summary>
+      public DataSetMetadata Metadata => _metadata;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="DataSet"/> class.
