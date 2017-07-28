@@ -1,6 +1,7 @@
 ﻿using Parquet.Data;
 using Parquet.File.Values;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace Parquet.Test.File.Values
 
          var schema = new SchemaElement<bool>("bool");
 
-         _writer.Write(_bw, schema, bools);
+         _writer.Write(_bw, schema, bools, out IList extra);
 
          _ms.Position = 0;
 
@@ -53,7 +54,7 @@ namespace Parquet.Test.File.Values
          var dates = new List<DateTimeOffset> { DateTime.UtcNow.RoundToSecond() };  //this version doesn't store milliseconds
          var schema = new SchemaElement<DateTimeOffset>("dto");
 
-         _writer.Write(_bw, schema, dates);
+         _writer.Write(_bw, schema, dates, out IList extra);
 
          _ms.Position = 0;
 

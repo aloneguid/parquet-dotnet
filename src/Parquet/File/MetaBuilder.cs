@@ -74,5 +74,31 @@ namespace Parquet.File
 
          return chunk;
       }
+
+      public Thrift.PageHeader CreateDataPage(int valueCount)
+      {
+         var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
+         ph.Data_page_header = new Thrift.DataPageHeader
+         {
+            Encoding = Thrift.Encoding.PLAIN,
+            Definition_level_encoding = Thrift.Encoding.RLE,
+            Repetition_level_encoding = Thrift.Encoding.BIT_PACKED,
+            Num_values = valueCount
+         };
+
+         return ph;
+      }
+
+      public Thrift.PageHeader CreateDictionaryPage(int valueCount)
+      {
+         var ph = new Thrift.PageHeader(Thrift.PageType.DICTIONARY_PAGE, 0, 0);
+         ph.Dictionary_page_header = new Thrift.DictionaryPageHeader
+         {
+            Encoding = Thrift.Encoding.PLAIN,
+            Is_sorted = false,
+            Num_values = valueCount
+         };
+         return ph;
+      }
    }
 }

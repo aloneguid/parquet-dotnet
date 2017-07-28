@@ -24,5 +24,13 @@
       /// Gets or sets a value indicating whether big integers are always treated as dates
       /// </summary>
       public bool TreatBigIntegersAsDates { get; set; }
+
+      /// <summary>
+      /// Gets or sets the flag whether to use dictionary encoding when writing.
+      /// Default value is null meaning that dictionary ecnoding will be used when appropriate.
+      /// True enforces using it as much as possible.
+      /// False completely disables dictionary encoding.
+      /// </summary>
+      public bool? UseDictionaryEncoding { get; set; }
    }
 }

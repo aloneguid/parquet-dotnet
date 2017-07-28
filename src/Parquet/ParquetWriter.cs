@@ -45,8 +45,10 @@ namespace Parquet
       private readonly MetaBuilder _meta = new MetaBuilder();
       private readonly ParquetOptions _formatOptions;
       private readonly WriterOptions _writerOptions;
+      private readonly SchemaElement _definitionsSchema = new SchemaElement<bool>("definitions");
       private readonly IValuesWriter _plainWriter;
       private readonly IValuesWriter _rleWriter;
+      private readonly IValuesWriter _dicWriter;
       private bool _dataWritten;
 
       /// <summary>
@@ -68,6 +70,7 @@ namespace Parquet
 
          _plainWriter = new PlainValuesWriter(_formatOptions);
          _rleWriter = new RunLengthBitPackingHybridValuesWriter();
+         _dicWriter = new PlainDictionaryValuesWriter();
 
          //file starts with magic
          WriteMagic();
@@ -133,15 +136,7 @@ namespace Parquet
          ColumnStats stats)
       {
          Thrift.ColumnChunk chunk = _meta.AddColumnChunk(compression, _output, schema, values.Count);
-
-         var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
-         ph.Data_page_header = new Thrift.DataPageHeader
-         {
-            Encoding = Thrift.Encoding.PLAIN,
-            Definition_level_encoding = Thrift.Encoding.RLE,
-            Repetition_level_encoding = Thrift.Encoding.BIT_PACKED,
-            Num_values = values.Count
-         };
+         Thrift.PageHeader ph = _meta.CreateDataPage(values.Count);
 
          WriteValues(schema, values, ph, compression, stats);
 
@@ -150,45 +145,51 @@ namespace Parquet
 
       private void WriteValues(SchemaElement schema, IList values, Thrift.PageHeader ph, CompressionMethod compression, ColumnStats stats)
       {
-         byte[] data;
+         byte[] dictionaryPageBytes = null;
+         byte[] dataPageBytes;
 
          using (var ms = new MemoryStream())
          {
             using (var writer = new BinaryWriter(ms))
             {
+               //write definitions
                if(stats.NullCount > 0)
                {
                   CreateDefinitions(values, schema, out IList newValues, out List<int> definitions);
                   values = newValues;
 
-                  _rleWriter.Write(writer, schema, definitions);
+                  _rleWriter.Write(writer, _definitionsSchema, definitions, out IList nullExtra);
                }
 
-               _plainWriter.Write(writer, schema, values);
+               //write data
+               if (!_dicWriter.Write(writer, schema, values, out IList dicValues))
+               {
+                  _plainWriter.Write(writer, schema, values, out IList plainExtra);
+               }
+               else
+               {
+                  ph.Data_page_header.Encoding = Thrift.Encoding.PLAIN_DICTIONARY;
+                  using (var dms = new MemoryStream())
+                     using(var dwriter = new BinaryWriter(dms))
+                  {
+                     _plainWriter.Write(dwriter, schema, dicValues, out IList t0);
+                     dictionaryPageBytes = dms.ToArray();
+                  }
+               }
 
-               data = ms.ToArray();
+               dataPageBytes = ms.ToArray();
             }
          }
 
-         ph.Uncompressed_page_size = data.Length;
-
-         if(compression != CompressionMethod.None)
+         if(dictionaryPageBytes != null)
          {
-            IDataWriter writer = DataFactory.GetWriter(compression);
-            using (var ms = new MemoryStream())
-            {
-               writer.Write(data, ms);
-               data = ms.ToArray();
-            }
-            ph.Compressed_page_size = data.Length;
-         }
-         else
-         {
-            ph.Compressed_page_size = ph.Uncompressed_page_size;
+            Thrift.PageHeader dph = _meta.CreateDictionaryPage(values.Count);
+            dictionaryPageBytes = Compress(dph, dictionaryPageBytes, compression);
+            Write(dph, dictionaryPageBytes);
          }
 
-         _thrift.Write(ph);
-         _output.Write(data, 0, data.Length);
+         dataPageBytes = Compress(ph, dataPageBytes, compression);
+         Write(ph, dataPageBytes);
       }
 
       private static void CreateDefinitions(IList values, SchemaElement schema, out IList nonNullableValues, out List<int> definitions)
@@ -208,6 +209,36 @@ namespace Parquet
                nonNullableValues.Add(value);
             }
          }
+      }
+
+      private void Write(Thrift.PageHeader ph, byte[] data)
+      {
+         _thrift.Write(ph);
+         _output.Write(data, 0, data.Length);
+      }
+
+      private byte[] Compress(Thrift.PageHeader ph, byte[] data, CompressionMethod compression)
+      {
+         ph.Uncompressed_page_size = data.Length;
+         byte[] result;
+
+         if (compression != CompressionMethod.None)
+         {
+            IDataWriter writer = DataFactory.GetWriter(compression);
+            using (var ms = new MemoryStream())
+            {
+               writer.Write(data, ms);
+               result = ms.ToArray();
+            }
+            ph.Compressed_page_size = result.Length;
+         }
+         else
+         {
+            ph.Compressed_page_size = ph.Uncompressed_page_size;
+            result = data;
+         }
+
+         return result;
       }
 
       private void WriteMagic()

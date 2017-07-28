@@ -1,4 +1,5 @@
 ﻿using Parquet.Data;
+using System.IO;
 
 namespace Parquet.Test
 {
@@ -13,6 +14,16 @@ namespace Parquet.Test
             ds.Add(row);
          }
          return ds;
+      }
+
+      public static DataSet WriteRead(DataSet original)
+      {
+         var ms = new MemoryStream();
+
+         ParquetWriter.Write(original, ms);
+
+         ms.Position = 0;
+         return ParquetReader.Read(ms);
       }
    }
 }

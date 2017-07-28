@@ -9,14 +9,14 @@ namespace Parquet.File.Values
 {
    class RunLengthBitPackingHybridValuesWriter : IValuesWriter
    {
-      public void Write(BinaryWriter writer, SchemaElement schema, IList data)
+      public bool Write(BinaryWriter writer, SchemaElement schema, IList data, out IList extraValues)
       {
          //int32 - length of data (we'll come back here so let's just write a zero)
          long dataLengthOffset = writer.BaseStream.Position;
          writer.Write((int)0);
 
          //write actual data
-         WriteData(writer, (List<int>)data);
+         WriteData(writer, (List<int>)data, GetBitWidth(schema));
 
          //come back to write data length
          long dataLength = writer.BaseStream.Position - dataLengthOffset - sizeof(int);
@@ -25,10 +25,29 @@ namespace Parquet.File.Values
 
          //and jump back to the end again
          writer.BaseStream.Seek(0, SeekOrigin.End);
+
+         extraValues = null;
+         return true;
+      }
+
+      private int GetBitWidth(SchemaElement schema)
+      {
+         int bitWidth = TypeFactory.GetBitWidth(schema.ElementType);
+
+         if (bitWidth == 0) throw new ParquetException($"cannot find bit width for type '{schema.ElementType}'");
+
+         return bitWidth;
+      }
+
+      //todo: write without length envelope
+      public static void Write(BinaryWriter writer, IList data, int bitWidth)
+      {
+         //write actual data
+         WriteData(writer, (List<int>)data, bitWidth);
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private void WriteData(BinaryWriter writer, List<int> data)
+      private static void WriteData(BinaryWriter writer, List<int> data, int bitWidth)
       {
          //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
@@ -48,7 +67,7 @@ namespace Parquet.File.Values
             {
                if(item != lastValue || chunkCount == maxCount)
                {
-                  WriteRle(writer, chunkCount, lastValue);
+                  WriteRle(writer, chunkCount, lastValue, bitWidth);
 
                   chunkCount = 1;
                   lastValue = item;
@@ -62,16 +81,15 @@ namespace Parquet.File.Values
 
          if(chunkCount > 0)
          {
-            WriteRle(writer, chunkCount, lastValue);
+            WriteRle(writer, chunkCount, lastValue, bitWidth);
          }
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private void WriteRle(BinaryWriter writer, int chunkCount, int value)
+      private static void WriteRle(BinaryWriter writer, int chunkCount, int value, int bitWidth)
       {
          int header = 0x0; // the last bit for RLE is 0
          header = chunkCount << 1;
-         const int bitWidth = 1; //todo: set to 1 as we only write booleans, however this won't work if you try doing anything else
          int byteWidth = (bitWidth + 7) / 8; //number of whole bytes for this bit width
 
          WriteUnsignedVarInt(writer, header);
@@ -86,7 +104,7 @@ namespace Parquet.File.Values
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      private void WriteIntBytes(BinaryWriter writer, int value, int byteWidth)
+      private static void WriteIntBytes(BinaryWriter writer, int value, int byteWidth)
       {
          byte[] dataBytes = BitConverter.GetBytes(value);
 

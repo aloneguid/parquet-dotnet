@@ -115,6 +115,23 @@ namespace Parquet.Test
          Assert.Equal(103, ds1.RowCount);
       }
 
+      [Fact]
+      public void Write_supposably_in_dictionary_encoding()
+      {
+         var ds = new DataSet(new SchemaElement<int>("id"), new SchemaElement<string>("dic_col"));
+         ds.Add(1, "one");
+         ds.Add(2, "one");
+         ds.Add(3, "one");
+         ds.Add(4, "one");
+         ds.Add(5, "one");
+         ds.Add(6, "two");
+         ds.Add(7, "two");
+
+         ds = DataSetGenerator.WriteRead(ds);
+
+
+      }
+
       //[Fact]
       public void delete_me()
       {
