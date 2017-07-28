@@ -21,6 +21,10 @@ namespace parq
 
       public readonly Option<bool> ShowVersion = new Option<bool>(false);
 
+      public readonly Option<int> Head = new Option<int>();
+      public readonly Option<int> Tail = new Option<int>();
+
+
       //singleton
       private static AppSettings instance;
       public static AppSettings Instance => instance ?? (instance = new AppSettings());

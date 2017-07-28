@@ -5,7 +5,7 @@
     <!-- Read this before publishing packages to chocolatey.org: https://github.com/chocolatey/chocolatey/wiki/CreatePackages -->
     <id>parq</id>
     <title>parq (Install)</title>
-    <version>1.0.1.0</version>
+    <version>1.1.2.0</version>
     <authors>Andy Cross, Richard Conway, Ivan Gavryliuk</authors>
     <owners>Andy Cross</owners>
     <summary>Parq is a .NET runtime (written for Windows but will run elsewhere) that brings tooling for inspecting Parquet files to developers.</summary>
