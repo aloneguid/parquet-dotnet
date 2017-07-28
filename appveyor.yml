@@ -1,0 +1,28 @@
+version: 1.0.0-beta-{build}
+pull_requests:
+  do_not_increment_build_number: true
+branches:
+  only:
+  - master
+image: Visual Studio 2017
+configuration: Release
+platform: Any CPU
+before_build:
+- ps: .\appveyor.ps1
+build:
+  project: src/Parquet.sln
+  verbosity: minimal
+test_script:
+- cmd: >-
+    cd src\Parquet.Test
+
+    dotnet test
+
+    cd ..
+
+    cd ..
+artifacts:
+- path: src/Parquet/bin/**/*.nupkg
+deploy:
+- provider: Environment
+  name: aloneguid NuGet
