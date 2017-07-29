@@ -92,7 +92,9 @@ using(Stream fileStream = File.OpenWrite("c:\\test.parquet"))
 
 ### parq
 
-Parq is a .NET runtime (written for Windows but will run elsewhere) that brings tooling for inspecting Parquet files to developers. It is a command line utility, for which you can find out more by [reading this guide](doc/parq.md).
+Parq is a .NET runtime (written for Windows but will run elsewhere) that brings tooling for inspecting Parquet files to developers. 
+
+It is a command line utility held in a different repository, for which you can find out more by [reading this guide](https://github.com/elastacloud/parq).
 
 ## License
 
