@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A0507D42-940E-4EF9-BD33-46BB6561A2F5}"
 EndProject
@@ -33,13 +33,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{77D1B95E-D2FD-4C41-9458-3A5DAC7C77E9}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{3F47B841-9074-4317-8ACA-0F2EEA34FA62}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.Runner", "Parquet.Runner\Parquet.Runner.csproj", "{CBF02EBF-EB36-42AA-8557-B95CEF5FD175}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "parquet-utils", "parquet-utils\parquet-utils.csproj", "{5C81C1DB-EE29-41B7-8AC8-7730C03FEB06}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,10 +55,6 @@ Global
 		{CBF02EBF-EB36-42AA-8557-B95CEF5FD175}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBF02EBF-EB36-42AA-8557-B95CEF5FD175}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBF02EBF-EB36-42AA-8557-B95CEF5FD175}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5C81C1DB-EE29-41B7-8AC8-7730C03FEB06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5C81C1DB-EE29-41B7-8AC8-7730C03FEB06}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5C81C1DB-EE29-41B7-8AC8-7730C03FEB06}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5C81C1DB-EE29-41B7-8AC8-7730C03FEB06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,6 +62,5 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 		{CBF02EBF-EB36-42AA-8557-B95CEF5FD175} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
-		{5C81C1DB-EE29-41B7-8AC8-7730C03FEB06} = {77D1B95E-D2FD-4C41-9458-3A5DAC7C77E9}
 	EndGlobalSection
 EndGlobal
