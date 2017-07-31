@@ -1,9 +1,10 @@
-version: 1.0.0-beta-{build}
+version: 1.1.0-alpha-{build}
 pull_requests:
   do_not_increment_build_number: true
 branches:
   only:
   - master
+  - /stable\/.*/
 image: Visual Studio 2017
 configuration: Release
 platform: Any CPU

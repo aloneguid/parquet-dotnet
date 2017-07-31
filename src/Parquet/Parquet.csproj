@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard1.4;netstandard1.6;net451</TargetFrameworks>
     <Version>1.0.0</Version>
@@ -19,7 +19,6 @@
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
   </PropertyGroup>
-  
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.6|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.6\Parquet.xml</DocumentationFile>
   </PropertyGroup>
@@ -38,14 +37,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net451|AnyCPU'">
     <DocumentationFile>bin\Release\net451\Parquet.xml</DocumentationFile>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="apache-thrift-netcore" Version="0.9.3.1" />
     <PackageReference Include="NetBox" Version="1.4.13" />
     <PackageReference Include="Snappy.Sharp" Version="1.0.0-b20170602007" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Primitives\Values\File\" />
   </ItemGroup>

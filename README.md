@@ -1,6 +1,13 @@
-# Parquet.Net [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet/branch/master) [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+# Parquet.Net 
 
 ![Icon](doc/img/dotnetlovesparquet.png)
+
+## Status
+
+|Stable|Pre-release|
+|------|----------|
+|[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)|[![NuGet Pre Release](https://img.shields.io/nuget/vpre/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)|
+|![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/stable/1.0.0?svg=true)|![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)|
 
 A .NET library to read and write [Apache Parquet](https://github.com/Parquet) files. Supports `.NET 4.5.1`, `.NET Standard 1.4` and `.NET Standard 1.6`.
 
@@ -17,15 +24,6 @@ This project is aimed to fix this problem.
   - [Reading Data](doc/reading.md) 
   - [Writing Data](doc/writing.md)
   - [Working with DataSets](doc/dataset.md) 
-
-## Roadmap
-
-This library is almost ready for production use and [contributors are welcome](CONTRIBUTING.md).
-
-|Phase|Description|State|
-|-----|-----------|-----|
-|1|Implement reader which can understand the first test file (alltypes_plain.parquet). This is using a variety of encodings an no compression. Inline columns are not supported. Understand how to return results with minimum of boxing/unboxing. Support NULL values.|complete|
-|2|Implement readers for any types not mentioned in phase 1. Implement writer for all types that reader supports. Support GZIP and SNAPPY  compression/decompression. Migrate to row-based data model. Publish first stable version on NuGet.|nearly there|
 
 You can track the amount of features we have [implemented so far](doc/features.md).
 
