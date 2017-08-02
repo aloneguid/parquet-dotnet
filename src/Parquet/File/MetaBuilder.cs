@@ -37,9 +37,9 @@ namespace Parquet.File
 
       public Thrift.FileMetaData ThriftMeta => _meta;
 
-      public Schema CreateSchema()
+      public Schema CreateSchema(ParquetOptions formatOptions)
       {
-         return new Schema(_meta);
+         return new Schema(_meta, formatOptions);
       }
 
       public void AddSchema(DataSet ds)

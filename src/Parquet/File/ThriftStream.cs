@@ -36,14 +36,17 @@ namespace Parquet.File
       /// </summary>
       /// <typeparam name="T"></typeparam>
       /// <param name="obj"></param>
+      /// <param name="rewind">When true, rewinds to the original position before writing</param>
       /// <returns>Actual size of the object written</returns>
-      public long Write<T>(T obj) where T : TBase, new()
+      public int Write<T>(T obj, bool rewind = false) where T : TBase, new()
       {
          _s.Flush();
          long startPos = _s.Position;
          obj.Write(_protocol);
          _s.Flush();
-         return _s.Position - startPos;
+         long size = _s.Position - startPos;
+         if (rewind) _s.Seek(startPos, SeekOrigin.Begin);
+         return (int)size;
       }
    }
 }

@@ -171,14 +171,5 @@ namespace Parquet.Test
          ds2.Add(4d);
          Assert.Throws<ParquetException>(() => ParquetWriter.Write(ds2, ms, CompressionMethod.Gzip, null, null, true));
       }
-
-      //[Fact]
-      public void delete_me()
-      {
-         var ds = new DataSet(new SchemaElement<int>("id"), new SchemaElement<DateTimeOffset>("date"));
-         ds.Add(1, new DateTimeOffset(DateTime.UtcNow));
-
-         ParquetWriter.WriteFile(ds, "c:\\tmp\\richdates.parquet");
-      }
    }
 }
