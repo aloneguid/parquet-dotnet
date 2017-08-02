@@ -2,29 +2,44 @@
 using Parquet;
 using Parquet.Data;
 using LogMagic;
+using NetBox;
 
 namespace Parquet.Runner
 {
    class Program
    {
+      private static readonly LogMagic.ILog log = LogMagic.L.G(typeof(Program));
+
       static void Main(string[] args)
       {
          L.Config
             .WriteTo.PoshConsole();
 
-         DataSet ds;
          using (var time = new TimeMeasure())
          {
-            ds = ParquetReader.ReadFile(args[0], new ParquetOptions { TreatByteArrayAsString = true });
+            var ds = new DataSet(
+               new SchemaElement<int>("id"),
+               new SchemaElement<string>("name"),
+               new SchemaElement<double>("lat"),
+               new SchemaElement<double>("lon"));
 
-            Console.WriteLine("read in {0}", time.Elapsed);
+            log.D(ds.Schema.Show());
+
+            for (int i = 0; i < 10; i++)
+            {
+               ds.Add(
+                  i,
+                  NameGenerator.GeneratePersonFullName(),
+                  Generator.RandomDouble,
+                  Generator.RandomDouble);
+            }
+
+            ParquetWriter.WriteFile(ds, "c:\\tmp\\perf.parquet");
+
+
+            log.D("written in {0}", time.Elapsed);
          }
 
-         Console.WriteLine("has {0} rows", ds.RowCount);
-
-         //postcodes.plain.parquet - 137Mb
-         //debug: 26 seconds.
-         //release: 25 seconds.
       }
    }
 }

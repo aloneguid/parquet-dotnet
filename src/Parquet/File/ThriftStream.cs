@@ -10,14 +10,13 @@ namespace Parquet.File
    class ThriftStream
    {
       private readonly Stream _s;
-      private readonly TTransport _transport;
       private readonly TProtocol _protocol;
 
       public ThriftStream(Stream s)
       {
          _s = s;
-         _transport = new TStreamTransport(s, s);
-         _protocol = new TCompactProtocol(_transport);
+         TTransport transport = new TStreamTransport(s, s);
+         _protocol = new TCompactProtocol(transport);
       }
 
       /// <summary>

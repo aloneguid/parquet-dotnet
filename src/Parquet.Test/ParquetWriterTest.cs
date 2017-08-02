@@ -132,6 +132,46 @@ namespace Parquet.Test
 
       }
 
+      [Fact]
+      public void Append_to_file_reads_all_dataset()
+      {
+         var ms = new MemoryStream();
+
+         var ds1 = new DataSet(new SchemaElement<int>("id"));
+         ds1.Add(1);
+         ds1.Add(2);
+         ParquetWriter.Write(ds1, ms);
+
+         //append to file
+         var ds2 = new DataSet(new SchemaElement<int>("id"));
+         ds2.Add(3);
+         ds2.Add(4);
+         ParquetWriter.Write(ds2, ms, CompressionMethod.Gzip, null, null, true);
+
+         ms.Position = 0;
+         DataSet dsAll = ParquetReader.Read(ms);
+
+         Assert.Equal(4, dsAll.RowCount);
+         Assert.Equal(new[] {1, 2, 3, 4}, dsAll.GetColumn(0));
+      }
+
+      [Fact]
+      public void Append_to_file_with_different_schema_fails()
+      {
+         var ms = new MemoryStream();
+
+         var ds1 = new DataSet(new SchemaElement<int>("id"));
+         ds1.Add(1);
+         ds1.Add(2);
+         ParquetWriter.Write(ds1, ms);
+
+         //append to file
+         var ds2 = new DataSet(new SchemaElement<double>("id"));
+         ds2.Add(3d);
+         ds2.Add(4d);
+         Assert.Throws<ParquetException>(() => ParquetWriter.Write(ds2, ms, CompressionMethod.Gzip, null, null, true));
+      }
+
       //[Fact]
       public void delete_me()
       {
