@@ -122,39 +122,41 @@ namespace Parquet.File
          return (IList)Activator.CreateInstance(listGType);
       }
 
-      public static IList Create(SchemaElement schema, bool nullable = false)
+      public static IList Create(SchemaElement schema, ParquetOptions options, bool nullable = false)
       {
-         Type t = ToSystemType(schema.Thrift);
+         Type t = ToSystemType(schema, options);
          return Create(t, nullable);
       }
 
       //todo: this can be rewritten by looking up in TypeToTag
-      public static Type ToSystemType(Thrift.SchemaElement schema)
+      public static Type ToSystemType(SchemaElement schema, ParquetOptions options)
       {
-         switch (schema.Type)
+         switch (schema.Thrift.Type)
          {
             case Thrift.Type.BOOLEAN:
                return typeof(bool);
             case Thrift.Type.INT32:
-               return schema.Converted_type == Thrift.ConvertedType.DATE ? typeof(DateTimeOffset) : typeof(int);
+               return schema.IsAnnotatedWith(Thrift.ConvertedType.DATE) ? typeof(DateTimeOffset) : typeof(int);
             case Thrift.Type.FLOAT:
                return typeof(float);
             case Thrift.Type.INT64:
-               return schema.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS ? typeof(DateTimeOffset) : typeof(long);
+               return schema.IsAnnotatedWith(Thrift.ConvertedType.TIMESTAMP_MILLIS) ? typeof(DateTimeOffset) : typeof(long);
             case Thrift.Type.DOUBLE:
                return typeof(double);
             case Thrift.Type.INT96:
                // Need to look at this as default type is used here which is skewing this test - UTF8 + INT96 is an impossible siutation 
-               return (schema.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS || schema.Converted_type == Thrift.ConvertedType.UTF8) 
+               return (schema.IsAnnotatedWith(Thrift.ConvertedType.TIMESTAMP_MILLIS) || schema.IsAnnotatedWith(Thrift.ConvertedType.UTF8) || options.TreatBigIntegersAsDates)
                   ? typeof(DateTimeOffset) 
                   : typeof(byte[]);
             case Thrift.Type.BYTE_ARRAY:
-               return schema.Converted_type == Thrift.ConvertedType.UTF8 ? typeof(string) : typeof(byte[]);
+               return (schema.IsAnnotatedWith(Thrift.ConvertedType.UTF8) || schema.IsAnnotatedWith(Thrift.ConvertedType.JSON) || options.TreatByteArrayAsString)
+                  ? typeof(string)
+                  : typeof(byte[]);
             case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
                // currently supports either fixed len Decimal types or 12-byte intervals
-               return schema.Converted_type == Thrift.ConvertedType.DECIMAL ? typeof(decimal) : typeof(Interval);
+               return schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL) ? typeof(decimal) : typeof(Interval);
             default:
-               throw new NotImplementedException($"type {schema.Type} not implemented");
+               throw new NotImplementedException($"type {schema.Thrift.Type} not implemented");
          }
 
       }

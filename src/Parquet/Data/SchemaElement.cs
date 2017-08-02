@@ -116,11 +116,11 @@ namespace Parquet.Data
          };
       }
 
-      internal SchemaElement(Thrift.SchemaElement thriftSchema)
+      internal SchemaElement(Thrift.SchemaElement thriftSchema, ParquetOptions formatOptions)
       {
          Name = thriftSchema.Name;
          Thrift = thriftSchema;
-         ElementType = TypeFactory.ToSystemType(thriftSchema);
+         ElementType = TypeFactory.ToSystemType(this, formatOptions);
       }
 
       /// <summary>

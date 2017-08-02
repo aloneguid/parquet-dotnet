@@ -210,9 +210,9 @@ namespace Parquet
          Write(ph, dataPageBytes);
       }
 
-      private static void CreateDefinitions(IList values, SchemaElement schema, out IList nonNullableValues, out List<int> definitions)
+      private void CreateDefinitions(IList values, SchemaElement schema, out IList nonNullableValues, out List<int> definitions)
       {
-         nonNullableValues = TypeFactory.Create(schema, false);
+         nonNullableValues = TypeFactory.Create(schema, _formatOptions, false);
          definitions = new List<int>();
 
          foreach(var value in values)

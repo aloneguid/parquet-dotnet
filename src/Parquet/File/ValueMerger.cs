@@ -12,11 +12,13 @@ namespace Parquet.File
    class ValueMerger
    {
       private readonly SchemaElement _schema;
+      private readonly ParquetOptions _formatOptions;
       private IList _values;
 
-      public ValueMerger(SchemaElement schema, IList values)
+      public ValueMerger(SchemaElement schema, ParquetOptions formatOptions, IList values)
       {
          _schema = schema;
+         _formatOptions = formatOptions;
          _values = values;
       }
 
@@ -59,7 +61,7 @@ namespace Parquet.File
          TrimTail(definitions, maxValues);
 
          int valueIdx = 0;
-         IList values = TypeFactory.Create(_schema, true);
+         IList values = TypeFactory.Create(_schema, _formatOptions, true);
 
          foreach (int isDefinedInt in definitions)
          {

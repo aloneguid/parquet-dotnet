@@ -39,7 +39,7 @@ namespace Parquet.File
 
       public IList Read(string columnName, long offset, long count)
       {
-         IList values = TypeFactory.Create(_schemaElement);
+         IList values = TypeFactory.Create(_schemaElement, _options);
 
          //get the minimum offset, we'll just read pages in sequence
          long fileOffset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
@@ -107,7 +107,7 @@ namespace Parquet.File
             }
          }
 
-         IList mergedValues = new ValueMerger(_schemaElement, values).Apply(dictionaryPage, definitions, indexes, maxValues);
+         IList mergedValues = new ValueMerger(_schemaElement, _options, values).Apply(dictionaryPage, definitions, indexes, maxValues);
 
          ValueMerger.Trim(mergedValues, offset, count);
 
@@ -124,7 +124,7 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               IList result = TypeFactory.Create(_schemaElement);
+               IList result = TypeFactory.Create(_schemaElement, _options);
                _plainReader.Read(dataReader, _schemaElement, result, int.MaxValue);
                return result;
             }

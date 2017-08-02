@@ -22,21 +22,13 @@ namespace Parquet.Data
          _elements = elements.ToList();
       }
 
-      /// <summary>
-      /// Initializes a new instance of the <see cref="Schema"/> class.
-      /// </summary>
-      /// <param name="elements">The elements.</param>
-      public Schema(params SchemaElement[] elements)
-      {
-         _elements = elements.ToList();
-      }
 
-      internal Schema(Thrift.FileMetaData fm)
+      internal Schema(Thrift.FileMetaData fm, ParquetOptions formatOptions)
       {
-         _elements = fm.Schema.Skip(1).Select(se => new SchemaElement(se)).ToList();
+         _elements = fm.Schema.Skip(1).Select(se => new SchemaElement(se, formatOptions)).ToList();
          foreach (Thrift.SchemaElement se in fm.Schema)
          {
-            _pathToElement[se.Name] = new SchemaElement(se);
+            _pathToElement[se.Name] = new SchemaElement(se, formatOptions);
          }
       }
 
