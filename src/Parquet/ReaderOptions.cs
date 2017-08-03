@@ -22,7 +22,7 @@ namespace Parquet
       /// <value>
       /// The offset.
       /// </value>
-      public int Offset { get; set; }
+      public long Offset { get; set; }
 
       /// <summary>
       /// Gets or sets the count.
@@ -30,7 +30,7 @@ namespace Parquet
       /// <value>
       /// The count.
       /// </value>
-      public int Count { get; set; }
+      public long Count { get; set; }
 
       internal void Validate()
       {
