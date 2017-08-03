@@ -56,6 +56,16 @@ namespace Parquet.Data
       public string[] ColumnNames => _elements.Select(e => e.Name).ToArray();
 
       /// <summary>
+      /// Get schema element by index
+      /// </summary>
+      /// <param name="i">Index of schema element</param>
+      /// <returns></returns>
+      public SchemaElement this[int i]
+      {
+         get { return _elements[i]; }
+      }
+
+      /// <summary>
       /// Gets the column index by schema element
       /// </summary>
       /// <returns>Element index or -1 if not found</returns>

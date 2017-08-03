@@ -9,7 +9,7 @@ namespace Parquet.Test
       [Fact]
       public void Validate_cant_add_null_row()
       {
-         var ds = new DataSet();
+         var ds = new DataSet(new SchemaElement<int>("id"));
          Assert.Throws<ArgumentNullException>(() => ds.Add((Row)null));
       }
 

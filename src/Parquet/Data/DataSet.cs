@@ -40,8 +40,25 @@ namespace Parquet.Data
       /// <param name="schema">The schema.</param>
       public DataSet(params SchemaElement[] schema)
       {
+         if (schema == null) throw new ArgumentNullException(nameof(schema));
+         if (schema.Length == 0) throw new ArgumentException("schema must not be empty", nameof(schema));
+
          _schema = new Schema(schema);
       }
+
+      /// <summary>
+      /// Initializes a new instance of the <see cref="DataSet"/> class.
+      /// </summary>
+      /// <param name="schema">The schema.</param>
+      public DataSet(IEnumerable<SchemaElement> schema)
+      {
+         if (schema == null) throw new ArgumentNullException(nameof(schema));
+
+         _schema = new Schema(schema);
+
+         if(_schema.Length == 0) throw new ArgumentException("schema must not be empty", nameof(schema));
+      }
+
 
       /// <summary>
       /// Slices rows and returns list of all values in a particular column.
@@ -95,7 +112,7 @@ namespace Parquet.Data
          Add(new Row(values));
       }
 
-      internal void AddColumnar(List<IList> columnsList)
+      internal void AddColumnar(IEnumerable<IList> columnsList)
       {
          IEnumerator[] iear = columnsList.Select(c => c.GetEnumerator()).ToArray();
          iear.ForEach(ie => ie.Reset());

@@ -54,3 +54,21 @@ For example, to force the reader to treat byte arrays as strings use the followi
 var options = new ParquetOptions { TreatByteArrayAsString = true };
 DataSet ds = ParquetReader.ReadFile("c:\\data\\input.parquet", options, null);
 ```
+
+# Other formats
+
+## CSV
+
+Parquet includes support for reading CSV files, optionally with type inferring.
+
+For isntance, to read a CSV from a file and infer types use:
+
+```csharp
+using (var csvStream = System.IO.File.OpenRead("c:\\tmp\\my.csv"))
+{
+	ds = CsvFormat.ReadToDataSet(csvStream, new CsvOptions { InferSchema = true, HasHeaders = true });
+}
+
+```
+
+Look at `CsvOptions` for customisation flags.
