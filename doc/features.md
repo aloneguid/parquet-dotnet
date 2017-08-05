@@ -18,4 +18,4 @@ We are implementing Parquet features gradually, and the table below outlines the
 |SNAPPY Compression|yes|yes|
 |Row groups|yes|yes|
 |Data pages|yes|yes|
-|Append to files||no|
+|Append to files||yes|
