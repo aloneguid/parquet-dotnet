@@ -1,5 +1,6 @@
 ﻿using NetBox.FileFormats;
 using Parquet.Data;
+using Parquet.File;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -84,7 +85,16 @@ namespace Parquet.Formats
 
          //assign values
          result.AddColumnar(columnValues.Values);
+
+         PopulateMetadata(result);
+
          return result;
+      }
+
+      private static void PopulateMetadata(DataSet ds)
+      {
+         ds.TotalRowCount = ds.Count;
+         ds.Metadata.CreatedBy = MetaBuilder.CreatedBy;
       }
 
       /// <summary>

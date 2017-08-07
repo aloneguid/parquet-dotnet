@@ -67,6 +67,18 @@ namespace Parquet.Test.Formats
          Assert.True(ds.Schema.Elements.All(se => se.ElementType == typeof(string)));
       }
 
+      [Fact]
+      public void Reads_csv_and_populates_metadata()
+      {
+         DataSet ds = CsvFormat.ReadToDataSet(GetDataFilePath("alltypes_no_headers.csv"), new CsvOptions { InferSchema = false, HasHeaders = false });
+
+         Assert.Equal(8, ds.RowCount);
+         Assert.Equal(8, ds.TotalRowCount);
+         Assert.Equal(11, ds.ColumnCount);
+         Assert.NotNull(ds.Metadata.CreatedBy);
+      }
+
+
       private string GetDataFilePath(string name)
       {
          string thisPath = typeof(CsvFormatTest).GetTypeInfo().Assembly.Location;

@@ -13,7 +13,6 @@ namespace Parquet.File
    class MetaBuilder
    {
       private Thrift.FileMetaData _meta;
-      private static readonly string CreatedBy;
 
       static MetaBuilder()
       {
@@ -25,6 +24,8 @@ namespace Parquet.File
 
          CreatedBy = $"parquet-dotnet version {fileVersion} (build {fileVersion.GetHash(HashType.Sha1)})";
       }
+
+      public static string CreatedBy { internal get; set; }
 
       public MetaBuilder()
       {
