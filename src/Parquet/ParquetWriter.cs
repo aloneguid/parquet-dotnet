@@ -183,7 +183,7 @@ namespace Parquet
             using (var writer = new BinaryWriter(ms))
             {
                //write definitions
-               if(stats.NullCount > 0)
+               if(schema.IsNullable)
                {
                   CreateDefinitions(values, schema, out IList newValues, out List<int> definitions);
                   values = newValues;

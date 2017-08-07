@@ -77,6 +77,8 @@ namespace Parquet.File
          chunk.Meta_data.Data_page_offset = startPos;
          chunk.Meta_data.Encodings = new List<Thrift.Encoding>
          {
+            Thrift.Encoding.RLE,
+            Thrift.Encoding.BIT_PACKED,
             Thrift.Encoding.PLAIN
          };
          chunk.Meta_data.Path_in_schema = new List<string> { schema.Name };
