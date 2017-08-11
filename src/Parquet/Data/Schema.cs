@@ -59,10 +59,27 @@ namespace Parquet.Data
       /// Get schema element by index
       /// </summary>
       /// <param name="i">Index of schema element</param>
-      /// <returns></returns>
+      /// <returns>Schema element</returns>
       public SchemaElement this[int i]
       {
          get { return _elements[i]; }
+      }
+
+      /// <summary>
+      /// Get schema element by name
+      /// </summary>
+      /// <param name="name">Schema element name</param>
+      /// <returns>Schema element</returns>
+      public SchemaElement this[string name]
+      {
+         get
+         {
+            SchemaElement result = _elements.FirstOrDefault(e => e.Name == name);
+
+            if (result == null) throw new ArgumentException($"schema element '{name}' not found", nameof(name));
+
+            return result;
+         }
       }
 
       /// <summary>
