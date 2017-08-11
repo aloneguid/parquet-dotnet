@@ -4,6 +4,7 @@ using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Xunit;
 
@@ -136,6 +137,26 @@ namespace Parquet.Test
          DataSet ds1 = ParquetReader.Read(ms);
          Assert.True(ds1.Metadata.CreatedBy.StartsWith("parquet-dotnet"));
       }
+
+      [Fact]
+      public void Reads_compat_nation_impala_file()
+      {
+         DataSet nation = ParquetReader.ReadFile(GetDataFilePath("nation.impala.parquet"));
+      }
+
+      [Fact]
+      public void Reads_compat_customer_impala_file()
+      {
+         DataSet customer = ParquetReader.ReadFile(GetDataFilePath("customer.impala.parquet"));
+      }
+
+
+      private string GetDataFilePath(string name)
+      {
+         string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
+         return Path.Combine(Path.GetDirectoryName(thisPath), "data", name);
+      }
+
 
       class ReadableNonSeekableStream : DelegatedStream
       {
