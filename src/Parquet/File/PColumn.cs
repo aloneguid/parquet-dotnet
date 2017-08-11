@@ -100,7 +100,9 @@ namespace Parquet.File
                break;   //limit reached
             }
 
-            ph = _thrift.Read<Thrift.PageHeader>(); //get next page
+            ph = ReadDataPageHeader(dataPageCount); //get next page
+
+
             if (ph.Type != Thrift.PageType.DATA_PAGE)
             {
                break;
@@ -112,6 +114,18 @@ namespace Parquet.File
          ValueMerger.Trim(mergedValues, (int)offset, (int)count);
 
          return mergedValues;
+      }
+
+      private Thrift.PageHeader ReadDataPageHeader(int pageNo)
+      {
+         try
+         {
+            return _thrift.Read<Thrift.PageHeader>();
+         }
+         catch (Exception ex)
+         {
+            throw new IOException($"failed to read data page header after page #{pageNo}", ex);
+         }
       }
 
       private IList ReadDictionaryPage(Thrift.PageHeader ph)
