@@ -107,9 +107,9 @@ namespace Parquet.File
             }
          }
 
-         IList mergedValues = new ValueMerger(_schemaElement, _options, values).Apply(dictionaryPage, definitions, indexes, maxValues);
+         IList mergedValues = new ValueMerger(_schemaElement, _options, values).Apply(dictionaryPage, definitions, indexes, (int)maxValues);
 
-         ValueMerger.Trim(mergedValues, offset, count);
+         ValueMerger.Trim(mergedValues, (int)offset, (int)count);
 
          return mergedValues;
       }
@@ -134,6 +134,7 @@ namespace Parquet.File
       private (ICollection definitions, ICollection repetitions, List<int> indexes) ReadDataPage(Thrift.PageHeader ph, IList destination, long maxValues)
       {
          byte[] data = ReadRawBytes(ph, _inputStream);
+         int max = ph.Data_page_header.Num_values;
 
          using (var dataStream = new MemoryStream(data))
          {
@@ -144,16 +145,15 @@ namespace Parquet.File
                //check if there are definitions at all
                bool hasDefinitions = _schemaElement.HasDefinitionLevelsPage(ph);
                List<int> definitions = hasDefinitions
-                  ? ReadDefinitionLevels(reader, (int)maxValues)
+                  ? ReadDefinitionLevels(reader, max)
                   : null;
 
                // these are pointers back to the Values table - lookup on values 
-               List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination, maxValues);
+               List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination, max);
 
                //trim output if it exceeds max number of values
-               int numValues = ph.Data_page_header.Num_values;
-               if(definitions != null) ValueMerger.TrimTail(definitions, numValues);
-               if(indexes != null) ValueMerger.TrimTail(indexes, numValues);
+               if(definitions != null) ValueMerger.TrimTail(definitions, max);
+               if(indexes != null) ValueMerger.TrimTail(indexes, max);
 
                return (definitions, null, indexes);
             }

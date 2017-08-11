@@ -25,7 +25,7 @@ namespace Parquet.File
       /// <summary>
       /// Applies dictionary with indexes and definition levels directly over the column
       /// </summary>
-      public IList Apply(IList dictionary, List<int> definitions, List<int> indexes, long maxValues)
+      public IList Apply(IList dictionary, List<int> definitions, List<int> indexes, int maxValues)
       {
          if (dictionary == null && definitions == null && indexes == null) return _values;  //values are just values
 
@@ -36,7 +36,7 @@ namespace Parquet.File
          return _values;
       }
 
-      private void ApplyDictionary(IList dictionary, List<int> indexes, long maxValues)
+      private void ApplyDictionary(IList dictionary, List<int> indexes, int maxValues)
       {
          //merge with dictionary if present
          if (dictionary == null) return;
@@ -54,7 +54,7 @@ namespace Parquet.File
          foreach (var el in values) _values.Add(el);
       }
 
-      private void ApplyDefinitions(List<int> definitions, long maxValues)
+      private void ApplyDefinitions(List<int> definitions, int maxValues)
       {
          if (definitions == null) return;
 
@@ -81,16 +81,16 @@ namespace Parquet.File
          _values = values;
       }
 
-      public static void TrimTail(IList list, long maxValues)
+      public static void TrimTail(IList list, int maxValues)
       {
          if (list.Count > maxValues)
          {
-            int diffCount = list.Count - (int)maxValues;
+            int diffCount = list.Count - maxValues;
             while (--diffCount >= 0) list.RemoveAt(list.Count - 1); //more effective than copying the list again
          }
       }
 
-      public static void TrimHead(IList list, long maxValues)
+      public static void TrimHead(IList list, int maxValues)
       {
          while(list.Count > maxValues)
          {
@@ -98,7 +98,7 @@ namespace Parquet.File
          }
       }
 
-      public static void Trim(IList list, long offset, long count)
+      public static void Trim(IList list, int offset, int count)
       {
          TrimHead(list, list.Count - offset);
          TrimTail(list, count);
