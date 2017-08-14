@@ -24,9 +24,6 @@ namespace Parquet.File
 
       public PColumn(Thrift.ColumnChunk thriftChunk, Schema schema, Stream inputStream, ThriftStream thriftStream, ParquetOptions options)
       {
-         if (thriftChunk.Meta_data.Path_in_schema.Count != 1)
-            throw new NotImplementedException("path in scheme is not flat");
-
          _thriftChunk = thriftChunk;
          _thrift = thriftStream;
          _schema = schema;
@@ -104,6 +101,8 @@ namespace Parquet.File
 
                definitions == null ? 0 : definitions.Count);
 
+            Console.WriteLine("page: {0}, count: {1}", dataPageCount, totalCount);
+
             if(totalCount >= maxValues)
             {
                break;   //limit reached
@@ -172,38 +171,51 @@ namespace Parquet.File
          {
             using (var reader = new BinaryReader(dataStream))
             {
-               //todo: read repetition levels (only relevant for nested columns)
+               /*List<int> repetitions = _schemaElement.HasRepetitionLevelsPage
+                  ? ReadRepetitionLevels(reader, (int)maxValues)
+                  : null;*/
+               List<int> repetitions = null;
 
-               //check if there are definitions at all
-               bool hasDefinitions = _schemaElement.HasDefinitionLevelsPage(ph);
-               List<int> definitions = hasDefinitions
-                  ? ReadDefinitionLevels(reader, max)
+               List<int> definitions = _schemaElement.HasDefinitionLevelsPage
+                  ? ReadDefinitionLevels(reader, (int)maxValues)
                   : null;
 
                // these are pointers back to the Values table - lookup on values 
                List<int> indexes = ReadColumnValues(reader, ph.Data_page_header.Encoding, destination, max);
 
                //trim output if it exceeds max number of values
-               if(definitions != null) ValueMerger.TrimTail(definitions, max);
-               if(indexes != null) ValueMerger.TrimTail(indexes, max);
+               int numValues = ph.Data_page_header.Num_values;
+               if (repetitions != null) ValueMerger.TrimTail(repetitions, numValues);
+               if(definitions != null) ValueMerger.TrimTail(definitions, numValues);
+               if(indexes != null) ValueMerger.TrimTail(indexes, numValues);
 
-               return (definitions, null, indexes);
+               return (definitions, repetitions, indexes);
             }
          }
       }
 
-      private List<int> ReadDefinitionLevels(BinaryReader reader, int valueCount)
+      private List<int> ReadRepetitionLevels(BinaryReader reader, int valueCount)
       {
-         const int maxDefinitionLevel = 1;   //todo: for nested columns this needs to be calculated properly
-         int bitWidth = PEncoding.GetWidthFromMaxInt(maxDefinitionLevel);
+         int maxLevel = _schemaElement.MaxRepetitionLevel;
+         int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
          var result = new List<int>();
          //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
          RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
 
-         int maxLevel = _schema.GetMaxDefinitionLevel(_thriftChunk);
          ValueMerger.TrimTail(result, valueCount);  //trim result so null count procudes correct value
-         int nullCount = valueCount - result.Count(r => r == maxLevel);
-         if (nullCount == 0) return null;
+
+         return result;
+      }
+
+      private List<int> ReadDefinitionLevels(BinaryReader reader, int valueCount)
+      {
+         int maxLevel = _schemaElement.MaxDefinitionLevel;
+         int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
+         var result = new List<int>();
+         //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
+
+         ValueMerger.TrimTail(result, valueCount);  //trim result so null count procudes correct value
 
          return result;
       }

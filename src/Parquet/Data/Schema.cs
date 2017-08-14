@@ -33,11 +33,34 @@ namespace Parquet.Data
 
       internal Schema(Thrift.FileMetaData fm, ParquetOptions formatOptions)
       {
-         _elements = fm.Schema.Skip(1).Select(se => new SchemaElement(se, formatOptions)).ToList();
-         foreach (Thrift.SchemaElement se in fm.Schema)
+         void Build(SchemaElement node, int i, int count, bool isRoot)
          {
-            _pathToElement[se.Name] = new SchemaElement(se, formatOptions);
+            while (node.Children.Count < count)
+            {
+               Thrift.SchemaElement tse = fm.Schema[i];
+               int childCount = tse.Num_children;
+               bool isContainer = childCount > 0;
+
+               SchemaElement parent = isRoot ? null : node;
+               var mse = new SchemaElement(tse, parent, formatOptions, isContainer ? typeof(Row) : null);
+               _pathToElement[mse.Path] = mse;
+               node.Children.Add(mse);
+
+               if (tse.Num_children > 0)
+               {
+                  Build(mse, i + 1, childCount, false);
+               }
+
+               i += childCount;
+               i += 1;
+            }
          }
+
+         //extract schema tree
+         var root = new SchemaElement<int>("root");
+         Build(root, 1, fm.Schema[0].Num_children, true);
+
+         _elements = root.Children.ToList();
       }
 
       /// <summary>
@@ -94,20 +117,15 @@ namespace Parquet.Data
          return -1;
       }
 
-      internal int GetMaxDefinitionLevel(Thrift.ColumnChunk cc)
+      internal SchemaElement this[Thrift.ColumnChunk value]
       {
-         int max = 0;
-
-         foreach (string part in cc.Meta_data.Path_in_schema)
+         get
          {
-            SchemaElement element = _pathToElement[part];
-            if (element.Thrift.Repetition_type != Thrift.FieldRepetitionType.REQUIRED) max += 1;
+            string path = string.Join(".", value.Meta_data.Path_in_schema);
+
+            return _pathToElement[path];
          }
-
-         return max;
       }
-
-      internal SchemaElement this[Thrift.ColumnChunk value] => _pathToElement[value.Meta_data.Path_in_schema[0]];
 
       /// <summary>
       /// Indicates whether the current object is equal to another object of the same type.

@@ -162,7 +162,7 @@ namespace Parquet
             pos += rg.Num_rows;
          }
 
-         ds.AddColumnar(cols);
+         ds.AddFromFlatColumns(cols);
 
          return ds;
       }

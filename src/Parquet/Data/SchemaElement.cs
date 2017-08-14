@@ -1,6 +1,7 @@
 ﻿using Parquet.File;
 using System;
 using Parquet.File.Values;
+using System.Collections.Generic;
 
 namespace Parquet.Data
 {
@@ -14,7 +15,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      public SchemaElement(string name) : base(name, typeof(T))
+      public SchemaElement(string name, SchemaElement parent = null) : base(name, typeof(T), parent)
       {
          
       }
@@ -78,6 +79,15 @@ namespace Parquet.Data
    /// </summary>
    public class SchemaElement : IEquatable<SchemaElement>
    {
+      private readonly List<SchemaElement> _children = new List<SchemaElement>();
+
+      /// <summary>
+      /// Gets the children schemas
+      /// </summary>
+      public IList<SchemaElement> Children => _children;
+
+      public SchemaElement Parent { get; private set; }
+
       /// <summary>
       /// Used by derived classes to invoke 
       /// </summary>
@@ -96,10 +106,11 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Column name</param>
       /// <param name="elementType">Type of the element in this column</param>
-      public SchemaElement(string name, Type elementType)
+      public SchemaElement(string name, Type elementType, SchemaElement parent = null)
       {
          SetProperties(name, elementType);
          TypeFactory.AdjustSchema(Thrift, elementType);
+         Parent = parent;
       }
 
       private void SetProperties(string name, Type elementType)
@@ -116,11 +127,12 @@ namespace Parquet.Data
          };
       }
 
-      internal SchemaElement(Thrift.SchemaElement thriftSchema, ParquetOptions formatOptions)
+      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType)
       {
          Name = thriftSchema.Name;
          Thrift = thriftSchema;
-         ElementType = TypeFactory.ToSystemType(this, formatOptions);
+         Parent = parent;
+         ElementType = elementType ?? TypeFactory.ToSystemType(this, formatOptions);
       }
 
       /// <summary>
@@ -132,6 +144,24 @@ namespace Parquet.Data
       /// Element type
       /// </summary>
       public Type ElementType { get; internal set; }
+
+      public string Path
+      {
+         get
+         {
+            var parts = new List<string>();
+            SchemaElement current = this;
+
+            while (current != null)
+            {
+               parts.Add(current.Name);
+               current = current.Parent;
+            }
+
+            parts.Reverse();
+            return string.Join(".", parts);
+         }
+      }
 
       /// <summary>
       /// Returns true if element can have null values
@@ -153,12 +183,56 @@ namespace Parquet.Data
       /// <summary>
       /// Detect if data page has definition levels written.
       /// </summary>
-      internal bool HasDefinitionLevelsPage(Thrift.PageHeader ph)
+      internal bool HasDefinitionLevelsPage
       {
-         if (!Thrift.__isset.repetition_type)
-            throw new ParquetException("repetiton type is missing");
+         get
+         {
+            if (!Thrift.__isset.repetition_type)
+               throw new ParquetException("repetiton type is missing");
 
-         return Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
+            return Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
+         }
+      }
+
+      internal int MaxDefinitionLevel
+      {
+         get
+         {
+            int maxLevel = 0;
+
+            //detect max repetition level for the given path
+            SchemaElement se = this;
+            while (se != null)
+            {
+               if (se.Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED) maxLevel += 1;
+
+               se = se.Parent;
+            }
+
+            return maxLevel;
+         }
+      }
+
+
+      internal bool HasRepetitionLevelsPage => MaxRepetitionLevel > 0;
+
+      internal int MaxRepetitionLevel
+      {
+         get
+         {
+            int maxLevel = 0;
+
+            //detect max repetition level for the given path
+            SchemaElement se = this;
+            while (se != null)
+            {
+               if (se.Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED) maxLevel += 1;
+
+               se = se.Parent;
+            }
+
+            return maxLevel;
+         }
       }
 
       /// <summary>

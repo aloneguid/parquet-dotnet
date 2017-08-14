@@ -1,10 +1,7 @@
 using Parquet.Data;
 using System;
 using System.IO;
-using System.IO.Compression;
-using System.Reflection;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Parquet.Test
 {
@@ -13,7 +10,7 @@ namespace Parquet.Test
    /// <summary>
    /// Tests a set of predefined test files that they read back correct
    /// </summary>
-   public class ParquetReaderOnTestFilesTest
+   public class ParquetReaderOnTestFilesTest : TestBase
    {
       private byte[] vals = new byte[18]
       {
@@ -64,30 +61,6 @@ namespace Parquet.Test
          }
          Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
          Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
-      }
-
-      [Fact]
-      public void NestedColumns_Exception()
-      {
-         using (Stream s = F.OpenRead(GetDataFilePath("nested.parquet")))
-         {
-            using (var r = new ParquetReader(s))
-            {
-               Assert.Throws<NotImplementedException>(() => r.Read());
-            }
-         }
-      }
-
-      //[Fact]
-      public void Delete_me_manual_test()
-      {
-         var ds = ParquetReader.ReadFile("C:\\tmp\\postcodes.plain.parquet");
-      }
-
-      private string GetDataFilePath(string name)
-      {
-         string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
-         return Path.Combine(Path.GetDirectoryName(thisPath), "data", name);
       }
    }
 }

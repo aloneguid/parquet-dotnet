@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Parquet.Test
 {
-   public class ParquetReaderTest
+   public class ParquetReaderTest : TestBase
    {
       [Fact]
       public void Opening_null_stream_fails()
@@ -159,6 +159,20 @@ namespace Parquet.Test
          DataSet customer = ParquetReader.ReadFile(GetDataFilePath("customer.impala.parquet"));
 
          Assert.Equal(150000, customer.RowCount);
+      }
+
+      [Fact]
+      public void Reads_nested_struct()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested-struct.parquet"));
+
+         Assert.Equal(2, ds.Count);
+
+         Assert.Equal(typeof(string), ds.Schema[0].ElementType);
+         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
+         Assert.Equal(typeof(Row), ds.Schema[2].ElementType);
+         Assert.Equal(typeof(long), ds.Schema[3].ElementType);
+         Assert.Equal(typeof(Row), ds.Schema[4].ElementType);
       }
 
 

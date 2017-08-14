@@ -124,6 +124,45 @@ namespace Parquet.Data
          }
       }
 
+      internal void AddFromFlatColumns(IEnumerable<IList> columnValues)
+      {
+         IEnumerator[] iear = columnValues.Select(c => c.GetEnumerator()).ToArray();
+         iear.ForEach(ie => ie.Reset());
+
+         while (iear.All(ie => ie.MoveNext()))
+         {
+            int vi = 0;
+            Row row = CreateRow(Schema.Elements, iear, ref vi);
+
+            _rows.Add(row);
+         }
+
+      }
+
+      internal Row CreateRow(IList<SchemaElement> schema, IEnumerator[] flatValues, ref int vi)
+      {
+         var values = new List<object>();
+
+         for (int i = 0; i < schema.Count; i++)
+         {
+            SchemaElement se = schema[i];
+            object value;
+
+            if (se.Children.Count > 0)
+            {
+               value = CreateRow(se.Children, flatValues, ref vi);
+            }
+            else
+            {
+               value = flatValues[vi++].Current;
+            }
+
+            values.Add(value);
+         }
+
+         return new Row(values);
+      }
+
       private void Validate(Row row)
       {
          if (row == null)
