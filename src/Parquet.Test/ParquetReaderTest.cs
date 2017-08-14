@@ -147,6 +147,11 @@ namespace Parquet.Test
       [Fact]
       public void Reads_compat_customer_impala_file()
       {
+         /*
+          * c_name:
+          *    45 pages (0-44)
+          */
+
          DataSet customer = ParquetReader.ReadFile(GetDataFilePath("customer.impala.parquet"));
       }
 

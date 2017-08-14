@@ -95,7 +95,16 @@ namespace Parquet.File
 
             if (page.repetitions != null) throw new NotImplementedException();
 
-            if((values.Count >= maxValues) || (indexes != null && indexes.Count >= maxValues) || (definitions != null && definitions.Count >= maxValues))
+            int totalCount = Math.Max(
+
+               values.Count +
+               (indexes == null
+                  ? 0
+                  : indexes.Count),
+
+               definitions == null ? 0 : definitions.Count);
+
+            if(totalCount >= maxValues)
             {
                break;   //limit reached
             }
@@ -118,14 +127,23 @@ namespace Parquet.File
 
       private Thrift.PageHeader ReadDataPageHeader(int pageNo)
       {
+         Thrift.PageHeader ph;
+
          try
          {
-            return _thrift.Read<Thrift.PageHeader>();
+            ph = _thrift.Read<Thrift.PageHeader>();
          }
          catch (Exception ex)
          {
             throw new IOException($"failed to read data page header after page #{pageNo}", ex);
          }
+
+         if (ph.Type != Thrift.PageType.DATA_PAGE)
+         {
+            throw new IOException($"expected data page but read {ph.Type}");
+         }
+
+         return ph;
       }
 
       private IList ReadDictionaryPage(Thrift.PageHeader ph)
