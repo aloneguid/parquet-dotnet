@@ -38,7 +38,6 @@ namespace Parquet.File.Values
          if (length == 0) length = reader.ReadInt32();
 
          long start = reader.BaseStream.Position;
-         int pagesNo = 0;
          while (reader.BaseStream.Position - start < length)
          {
             int header = ReadUnsignedVarInt(reader);
@@ -52,8 +51,6 @@ namespace Parquet.File.Values
             {
                ReadBitpacked(header, reader, bitWidth, destination);
             }
-
-            pagesNo++;
          }
       }
 

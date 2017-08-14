@@ -138,12 +138,16 @@ namespace Parquet.Test
          Assert.True(ds1.Metadata.CreatedBy.StartsWith("parquet-dotnet"));
       }
 
+      //this only tests that the file is readable as it used to completely crash before
       [Fact]
       public void Reads_compat_nation_impala_file()
       {
          DataSet nation = ParquetReader.ReadFile(GetDataFilePath("nation.impala.parquet"));
+
+         Assert.Equal(25, nation.RowCount);
       }
 
+      //this only tests that the file is readable as it used to completely crash before
       [Fact]
       public void Reads_compat_customer_impala_file()
       {
@@ -153,6 +157,8 @@ namespace Parquet.Test
           */
 
          DataSet customer = ParquetReader.ReadFile(GetDataFilePath("customer.impala.parquet"));
+
+         Assert.Equal(150000, customer.RowCount);
       }
 
 
