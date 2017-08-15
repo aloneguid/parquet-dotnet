@@ -18,6 +18,19 @@
     <PackageIconUrl>http://i.isolineltd.com/nuget/parquet.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
+    <PackageReleaseNotes>v1.1
+new features:
+- Reader supports nested structures.
+- Parquet output is now compatible with AWS Athena
+- Writer can append data to existing file
+
+improvements:
+- Parquet metadata sets page sizes according to standard
+- Schema and SchemaElement has Show method allowing to get user readable representation 
+
+bug fixes:
+- some files mix encodings between data pages resulting in wrong count of rows and occasional crashes (#183)
+- some string encoded fields not annotated properly were crashing Parquet.Net reader (#138)</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.6|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.6\Parquet.xml</DocumentationFile>
