@@ -101,7 +101,7 @@ namespace Parquet.File
 
                definitions == null ? 0 : definitions.Count);
 
-            Console.WriteLine("page: {0}, count: {1}", dataPageCount, totalCount);
+            //Console.WriteLine("page: {0}, count: {1}", dataPageCount, totalCount);
 
             if(totalCount >= maxValues)
             {
