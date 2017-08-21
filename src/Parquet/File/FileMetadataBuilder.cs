@@ -10,15 +10,18 @@ using TSchemaElement = Parquet.Thrift.SchemaElement;
 
 namespace Parquet.File
 {
-   class MetaBuilder
+   /// <summary>
+   /// Responsible for building Thrift file metadata when writing files
+   /// </summary>
+   class FileMetadataBuilder
    {
       private Thrift.FileMetaData _meta;
 
-      static MetaBuilder()
+      static FileMetadataBuilder()
       {
          //get file version
-         Assembly asm = typeof(MetaBuilder).GetTypeInfo().Assembly;
-         var fva = asm.CustomAttributes.First(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
+         Assembly asm = typeof(FileMetadataBuilder).GetTypeInfo().Assembly;
+         CustomAttributeData fva = asm.CustomAttributes.First(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
          CustomAttributeTypedArgument varg = fva.ConstructorArguments[0];
          string fileVersion = varg.Value.ToString();
 
@@ -27,7 +30,7 @@ namespace Parquet.File
 
       public static string CreatedBy { internal get; set; }
 
-      public MetaBuilder()
+      public FileMetadataBuilder()
       {
          _meta = new Thrift.FileMetaData();
 
@@ -37,11 +40,6 @@ namespace Parquet.File
       }
 
       public Thrift.FileMetaData ThriftMeta => _meta;
-
-      public Schema CreateSchema(ParquetOptions formatOptions)
-      {
-         return new Schema(_meta, formatOptions);
-      }
 
       public void AddSchema(DataSet ds)
       {

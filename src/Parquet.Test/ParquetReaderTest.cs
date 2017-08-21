@@ -162,24 +162,43 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Reads_nested_struct()
+      public void Reads_really_mad_nested_file()
       {
-         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested-struct.parquet"));
+         /* Spark schema:
+root
+|-- addresses: array (nullable = true)
+|    |-- element: struct (containsNull = true)
+|    |    |-- line1: string (nullable = true)
+|    |    |-- name: string (nullable = true)
+|    |    |-- openingHours: array (nullable = true)
+|    |    |    |-- element: long (containsNull = true)
+|    |    |-- postcode: string (nullable = true)
+|-- cities: array (nullable = true)
+|    |-- element: string (containsNull = true)
+|-- comment: string (nullable = true)
+|-- id: long (nullable = true)
+|-- location: struct (nullable = true)
+|    |-- latitude: double (nullable = true)
+|    |-- longitude: double (nullable = true)
+|-- price: struct (nullable = true)
+|    |-- lunch: struct (nullable = true)
+|    |    |-- max: long (nullable = true)
+|    |    |-- min: long (nullable = true) 
+         */
 
-         Assert.Equal(2, ds.Count);
 
-         Assert.Equal(typeof(string), ds.Schema[0].ElementType);
+         Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("nested.parquet")));
+
+         //DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested.parquet"));
+
+         //Assert.Equal(2, ds.Count);
+         //Assert.Equal(6, ds.Schema.Length);
+
+         /*Assert.Equal(typeof(string), ds.Schema[0].ElementType);
          Assert.Equal(typeof(long), ds.Schema[1].ElementType);
          Assert.Equal(typeof(Row), ds.Schema[2].ElementType);
          Assert.Equal(typeof(long), ds.Schema[3].ElementType);
-         Assert.Equal(typeof(Row), ds.Schema[4].ElementType);
-      }
-
-
-      private string GetDataFilePath(string name)
-      {
-         string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
-         return Path.Combine(Path.GetDirectoryName(thisPath), "data", name);
+         Assert.Equal(typeof(Row), ds.Schema[4].ElementType);*/
       }
 
 

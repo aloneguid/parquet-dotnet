@@ -1,0 +1,29 @@
+{
+   "comment": "this file contains all the permunations for nested structures and arrays to test Parquet parser",
+   "id": 1,
+   "cities": [ "London", "Derby" ],
+   "location": {
+      "latitude": 51.2,
+      "longitude": 66.3
+   },
+   "price": {
+      "lunch": {
+         "min": 1,
+         "max": 2
+      }
+   },
+   "addresses": [
+      {
+         "name": "Head Office",
+         "line1": "Dante Road",
+         "postcode": "SE11",
+         "openingHours": [ 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
+      },
+      {
+         "name": "Small Office",
+         "line1": "Somewhere Else",
+         "postcode": "TN19",
+         "openingHours":  [6, 7, 19, 20, 21, 22, 23]
+      }
+   ]
+}

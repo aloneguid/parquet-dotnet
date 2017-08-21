@@ -8,6 +8,8 @@ val spark = SparkSession.builder()
 import spark.implicits._
 val sc = spark.sparkContext
 
+val root = "C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\"
+
 def write(df: DataFrame, path: String): Unit = {
   df
     .repartition(1)
@@ -17,10 +19,29 @@ def write(df: DataFrame, path: String): Unit = {
     .parquet(path)
 }
 
-val df = spark.read.json("C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\nested-struct.json")
+def convert(name: String, writeFile: Boolean): DataFrame = {
+  val df = spark
+     .read
+     .option("wholeFile", true)
+     .option("mode", "PERMISSIVE")
+     .json(root + name + ".json")
+  if(writeFile) {
+    write(df, root + name + ".dir.parquet")
+  }
+  df
+}
 
-write(df, "C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\nested-struct.parquet")
+def convertFromFormattedJson(name: String, writeFile: Boolean): DataFrame = {
+   val df = spark
+      .read
+      .json(sc.wholeTextFiles(root + name + "*.json").values)
 
-df.show()
+   if(writeFile) {
+      write(df, root + name + ".dir.parquet")
+   }
+   df
+}
 
+val df = convertFromFormattedJson("nested", true)
 
+df.printSchema()

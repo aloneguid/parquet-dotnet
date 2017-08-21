@@ -98,9 +98,9 @@ namespace Parquet.File.Values
 
       private void WriteBitpacked()
       {
-         int header = 0x1;
+         //int header = 0x1;
 
-         //todo: implement this
+         throw new NotImplementedException();
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
-using System.Diagnostics;
 using System.Reflection;
 using Parquet.Data;
 using System.Linq;
@@ -71,7 +70,7 @@ namespace Parquet.File
 
          bool flag = false;
          TypeTag tag = DefaultTypeTag;
-         foreach (var type in AllTags)
+         foreach (TypeTag type in AllTags)
          {
             if (type.ConcreteType == systemType)
             {
@@ -83,7 +82,7 @@ namespace Parquet.File
       
          if (!flag)
          {
-            string supportedTypes = string.Join(", ", AllTags.Select(t => t.ConcreteType.ToString()));
+            string supportedTypes = string.Join(", ", AllTags.Select(t => t.ConcreteType.ToString()).Distinct());
 
             throw new NotSupportedException($"system type {systemType} is not supported, list of supported types: '{supportedTypes}'");
          }

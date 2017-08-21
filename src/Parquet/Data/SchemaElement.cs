@@ -2,6 +2,7 @@
 using System;
 using Parquet.File.Values;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace Parquet.Data
 {
@@ -15,6 +16,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
+      /// <param name="parent">Parent schema element</param>
       public SchemaElement(string name, SchemaElement parent = null) : base(name, typeof(T), parent)
       {
          
@@ -80,12 +82,16 @@ namespace Parquet.Data
    public class SchemaElement : IEquatable<SchemaElement>
    {
       private readonly List<SchemaElement> _children = new List<SchemaElement>();
+      private string _path;
 
       /// <summary>
-      /// Gets the children schemas
+      /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.
       /// </summary>
-      public IList<SchemaElement> Children => _children;
+      internal IList<SchemaElement> Children => _children;
 
+      /// <summary>
+      /// Gets parent schema element, if present. Null for root schema elements.
+      /// </summary>
       public SchemaElement Parent { get; private set; }
 
       /// <summary>
@@ -106,6 +112,7 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Column name</param>
       /// <param name="elementType">Type of the element in this column</param>
+      /// <param name="parent">Parent element, or null when this element belongs to a root.</param>
       public SchemaElement(string name, Type elementType, SchemaElement parent = null)
       {
          SetProperties(name, elementType);
@@ -132,7 +139,23 @@ namespace Parquet.Data
          Name = thriftSchema.Name;
          Thrift = thriftSchema;
          Parent = parent;
-         ElementType = elementType ?? TypeFactory.ToSystemType(this, formatOptions);
+
+         if(elementType != null)
+         {
+            ElementType = elementType;
+
+            if (elementType == typeof(IEnumerable))
+            {
+               Type itemType = TypeFactory.ToSystemType(this, formatOptions);
+               Type ienumType = typeof(IEnumerable<>);
+               Type ienumGenericType = ienumType.MakeGenericType(itemType);
+               ElementType = ienumGenericType;
+            }
+         }
+         else
+         {
+            ElementType = TypeFactory.ToSystemType(this, formatOptions);
+         }
       }
 
       /// <summary>
@@ -145,28 +168,30 @@ namespace Parquet.Data
       /// </summary>
       public Type ElementType { get; internal set; }
 
+      /// <summary>
+      /// Element path, separated by dots (.)
+      /// </summary>
       public string Path
       {
          get
          {
-            var parts = new List<string>();
-            SchemaElement current = this;
+            if (_path != null) return _path;
 
-            while (current != null)
-            {
-               parts.Add(current.Name);
-               current = current.Parent;
-            }
+            if (Parent == null) return Name;
 
-            parts.Reverse();
-            return string.Join(".", parts);
+            return Parent.Path + Schema.PathSeparator + Name;
+
+         }
+         internal set
+         {
+            _path = value;
          }
       }
 
       /// <summary>
       /// Returns true if element can have null values
       /// </summary>
-      public bool IsNullable
+      internal bool IsNullable
       {
          get => Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
          set => Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED;
@@ -180,67 +205,20 @@ namespace Parquet.Data
          return Thrift.__isset.converted_type && Thrift.Converted_type == ct;
       }
 
-      /// <summary>
-      /// Detect if data page has definition levels written.
-      /// </summary>
-      internal bool HasDefinitionLevelsPage
-      {
-         get
-         {
-            if (!Thrift.__isset.repetition_type)
-               throw new ParquetException("repetiton type is missing");
+      internal bool HasDefinitionLevelsPage => MaxDefinitionLevel > 0;
 
-            return Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
-         }
-      }
-
-      internal int MaxDefinitionLevel
-      {
-         get
-         {
-            int maxLevel = 0;
-
-            //detect max repetition level for the given path
-            SchemaElement se = this;
-            while (se != null)
-            {
-               if (se.Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED) maxLevel += 1;
-
-               se = se.Parent;
-            }
-
-            return maxLevel;
-         }
-      }
-
+      internal int MaxDefinitionLevel { get; set; }
 
       internal bool HasRepetitionLevelsPage => MaxRepetitionLevel > 0;
 
-      internal int MaxRepetitionLevel
-      {
-         get
-         {
-            int maxLevel = 0;
-
-            //detect max repetition level for the given path
-            SchemaElement se = this;
-            while (se != null)
-            {
-               if (se.Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED) maxLevel += 1;
-
-               se = se.Parent;
-            }
-
-            return maxLevel;
-         }
-      }
+      internal int MaxRepetitionLevel { get; set; }
 
       /// <summary>
       /// Pretty prints
       /// </summary>
       public override string ToString()
       {
-         return $"{Name} ({ElementType}), nullable: {IsNullable}";
+         return $"{Name}: {ElementType} (nullable = {IsNullable})";
       }
 
       /// <summary>
@@ -254,6 +232,8 @@ namespace Parquet.Data
       {
          if (ReferenceEquals(null, other)) return false;
          if (ReferenceEquals(this, other)) return true;
+
+         //todo: check equality for child elements
 
          return string.Equals(Name, other.Name) &&
                 ElementType == other.ElementType &&
@@ -288,7 +268,7 @@ namespace Parquet.Data
       {
          unchecked
          {
-            var hashCode = (Name != null ? Name.GetHashCode() : 0);
+            int hashCode = (Name != null ? Name.GetHashCode() : 0);
             hashCode = (hashCode * 397) ^ (ElementType != null ? ElementType.GetHashCode() : 0);
             hashCode = (hashCode * 397) ^ (Thrift != null ? Thrift.GetHashCode() : 0);
             return hashCode;

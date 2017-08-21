@@ -18,6 +18,7 @@ We are implementing Parquet features gradually, and the table below outlines the
 |SNAPPY Compression|yes|yes|
 |Row groups|yes|yes|
 |Data pages|yes|yes|
-|Append to files||yes|
+|Append to files|-|yes|
 |Nested structures|yes|no|
-|Repeated structures|no|no|
+|Nested structures|no|no|
+|Nested arrays|no|no|

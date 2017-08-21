@@ -23,7 +23,7 @@ namespace Parquet.Runner
                new SchemaElement<double>("lat"),
                new SchemaElement<double>("lon"));
 
-            log.D(ds.Schema.Show());
+            log.D(ds.Schema.ToString());
 
             for (int i = 0; i < 10; i++)
             {

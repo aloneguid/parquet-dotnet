@@ -1,2 +1,0 @@
-{ "id": 1, "city": "London", "location": { "latitude": 51.2, "longitude": 66.3 }, "price": { "lunch": { "min": 1, "max": 2 } }, "population": 12  }
-{ "id": 2, "city": "Derby", "location": { "latitude": 41.2, "longitude": 46.3 }, "price": { "lunch": { "min": 1, "max": 1 } }, "population": 1  }

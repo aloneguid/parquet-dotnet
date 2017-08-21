@@ -25,13 +25,15 @@ namespace Parquet.File
       /// <summary>
       /// Applies dictionary with indexes and definition levels directly over the column
       /// </summary>
-      public IList Apply(IList dictionary, List<int> definitions, List<int> indexes, int maxValues)
+      public IList Apply(IList dictionary, List<int> definitions, List<int> repetitions, List<int> indexes, int maxValues)
       {
-         if (dictionary == null && definitions == null && indexes == null) return _values;  //values are just values
+         if (dictionary == null && definitions == null && indexes == null && repetitions == null) return _values;  //values are just values
 
          ApplyDictionary(dictionary, indexes, maxValues);
 
          ApplyDefinitions(definitions, maxValues);
+
+         ApplyRepetitions(repetitions);
 
          return _values;
       }
@@ -51,7 +53,7 @@ namespace Parquet.File
 
          TrimTail(values, maxValues);
 
-         foreach (var el in values) _values.Add(el);
+         foreach (object el in values) _values.Add(el);
       }
 
       private void ApplyDefinitions(List<int> definitions, int maxValues)
@@ -77,7 +79,33 @@ namespace Parquet.File
             }
          }
 
-         TrimTail(values, maxValues);
+         _values = values;
+      }
+
+      private void ApplyRepetitions(List<int> repetitions)
+      {
+         if (repetitions == null) return;
+
+         var values = new List<IList>();
+         IList chunk = null;
+         int rep = int.MaxValue;
+
+         for(int i = 0; i < _values.Count; i++)
+         {
+            int cr = repetitions[i];
+
+            if (cr < rep)
+            {
+               if (chunk != null) values.Add(chunk);
+               chunk = TypeFactory.Create(_schema, _formatOptions, true);
+            }
+
+            rep = cr;
+            chunk.Add(_values[i]);
+         }
+
+         if (chunk.Count > 0) values.Add(chunk);
+
          _values = values;
       }
 

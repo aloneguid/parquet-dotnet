@@ -10,8 +10,13 @@ namespace Parquet.Data
    /// </summary>
    public class Schema : IEquatable<Schema>
    {
+      /// <summary>
+      /// Symbol used to separate path parts in schema element path
+      /// </summary>
+      public const string PathSeparator = ".";
+
       private readonly List<SchemaElement> _elements;
-      private readonly Dictionary<string, SchemaElement> _pathToElement = new Dictionary<string, SchemaElement>();
+      private Dictionary<string, SchemaElement> _pathToElement;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="Schema"/> class from schema elements.
@@ -29,38 +34,6 @@ namespace Parquet.Data
       public Schema(params SchemaElement[] elements)
       {
          _elements = elements.ToList();
-      }
-
-      internal Schema(Thrift.FileMetaData fm, ParquetOptions formatOptions)
-      {
-         void Build(SchemaElement node, int i, int count, bool isRoot)
-         {
-            while (node.Children.Count < count)
-            {
-               Thrift.SchemaElement tse = fm.Schema[i];
-               int childCount = tse.Num_children;
-               bool isContainer = childCount > 0;
-
-               SchemaElement parent = isRoot ? null : node;
-               var mse = new SchemaElement(tse, parent, formatOptions, isContainer ? typeof(Row) : null);
-               _pathToElement[mse.Path] = mse;
-               node.Children.Add(mse);
-
-               if (tse.Num_children > 0)
-               {
-                  Build(mse, i + 1, childCount, false);
-               }
-
-               i += childCount;
-               i += 1;
-            }
-         }
-
-         //extract schema tree
-         var root = new SchemaElement<int>("root");
-         Build(root, 1, fm.Schema[0].Num_children, true);
-
-         _elements = root.Children.ToList();
       }
 
       /// <summary>
@@ -121,9 +94,36 @@ namespace Parquet.Data
       {
          get
          {
-            string path = string.Join(".", value.Meta_data.Path_in_schema);
+            string path = string.Join(PathSeparator, value.Meta_data.Path_in_schema);
 
-            return _pathToElement[path];
+            if (_pathToElement == null) BuildPathCache();
+
+            if (!_pathToElement.TryGetValue(path, out SchemaElement result))
+               throw new ArgumentException($"cannot find schema element by path '{path}'", nameof(value));
+
+            return result;
+         }
+      }
+
+      /// <summary>
+      /// Returns true if schema contains any nested structures declarations, false otherwise
+      /// </summary>
+      public bool HasNestedElements => _elements.Any(e => e.Children.Count > 0);
+
+      private void BuildPathCache()
+      {
+         _pathToElement = new Dictionary<string, SchemaElement>();
+
+         CachePath(Elements);
+      }
+
+      private void CachePath(IEnumerable<SchemaElement> elements)
+      {
+         foreach(SchemaElement element in elements)
+         {
+            _pathToElement[element.Path] = element;
+
+            if (element.Children.Count > 0) CachePath(element.Children);
          }
       }
 
@@ -141,7 +141,12 @@ namespace Parquet.Data
 
          if (_elements.Count != other._elements.Count) return false;
 
-         return !_elements.Where((t, i) => !t.Equals(other.Elements[i])).Any();
+         foreach(Tuple<SchemaElement, SchemaElement> pair in EnumerableEx.MultiIterate(_elements, other.Elements))
+         {
+            if (!pair.Item1.Equals(pair.Item2)) return false;
+         }
+
+         return true;
       }
 
       /// <summary>
@@ -175,16 +180,34 @@ namespace Parquet.Data
       /// Shows schema in human readable form
       /// </summary>
       /// <returns></returns>
-      public string Show()
+      public override string ToString()
       {
          var sb = new StringBuilder();
 
+         int level = 0;
+         sb.AppendLine("root");
          foreach (SchemaElement se in _elements)
          {
-            sb.AppendLine($"- name: '{se.Name}', type: {se.ElementType}, nullable: {se.IsNullable}");
+            ToString(sb, se, level);
          }
 
          return sb.ToString();
+      }
+
+      private void ToString(StringBuilder sb, SchemaElement se, int level)
+      {
+         sb.Append("|");
+         for(int i = 0; i < level; i++)
+         {
+            sb.Append("    |");
+         }
+         sb.Append("-- ");
+         sb.AppendLine(se.ToString());
+
+         foreach(SchemaElement child in se.Children)
+         {
+            ToString(sb, child, level + 1);
+         }
       }
    }
 }

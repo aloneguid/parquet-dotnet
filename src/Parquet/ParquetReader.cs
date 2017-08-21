@@ -66,9 +66,7 @@ namespace Parquet
       /// <param name="fullPath">The full path.</param>
       /// <param name="formatOptions">Optional reader options.</param>
       /// <param name="readerOptions">The reader options.</param>
-      /// <returns>
-      /// DataSet
-      /// </returns>
+      /// <returns><see cref="DataSet"/></returns>
       public static DataSet ReadFile(string fullPath, ParquetOptions formatOptions = null, ReaderOptions readerOptions = null)
       {
          using (Stream fs = System.IO.File.OpenRead(fullPath))
@@ -80,6 +78,13 @@ namespace Parquet
          }
       }
 
+      /// <summary>
+      /// Reads <see cref="DataSet"/> from an open stream
+      /// </summary>
+      /// <param name="source">Input stream</param>
+      /// <param name="formatOptions">Parquet options, optional.</param>
+      /// <param name="readerOptions">Reader options, optional</param>
+      /// <returns><see cref="DataSet"/></returns>
       public static DataSet Read(Stream source, ParquetOptions formatOptions = null, ReaderOptions readerOptions = null)
       {
          using (var reader = new ParquetReader(source, formatOptions, readerOptions))
@@ -107,11 +112,12 @@ namespace Parquet
 
          _meta = ReadMetadata();
 
-         var ds = new DataSet(new Schema(_meta, _formatOptions));
+         var metaParser = new FileMetadataParser(_meta);
+         Schema schema = metaParser.ParseSchema(_formatOptions);
 
-         ds.TotalRowCount = _meta.Num_rows;
-         ds.Metadata.CreatedBy = _meta.Created_by;
-         var cols = new List<IList>();
+         if (schema.HasNestedElements) throw new NotSupportedException("nested structures are not yet supported");
+
+         var pathToValues = new Dictionary<string, IList>();
          long pos = 0;
          long rowsRead = 0;
 
@@ -131,38 +137,43 @@ namespace Parquet
             for(int icol = 0; icol < rg.Columns.Count; icol++)
             {
                Thrift.ColumnChunk cc = rg.Columns[icol];
+               SchemaElement se = schema[cc];
 
-               var p = new PColumn(cc, ds.Schema, _input, ThriftStream, _formatOptions);
-               string columnName = string.Join(".", cc.Meta_data.Path_in_schema);
+               var p = new PColumn(cc, se, _input, ThriftStream, _formatOptions);
 
                try
                {
-                  IList column = p.Read(columnName, offset, count);
-                  if (icol == cols.Count)
+                  IList chunkValues = p.Read(offset, count);
+
+                  if(!pathToValues.TryGetValue(se.Path, out IList allValues))
                   {
-                     cols.Add(column);
+                     pathToValues[se.Path] = chunkValues;
                   }
                   else
                   {
-                     IList col = cols[icol];
-                     col.AddRange(column);
+                     allValues.AddRange(chunkValues);
                   }
 
                   if(icol == 0)
                   {
-                     rowsRead += column.Count;
+                     //todo: this may not work
+                     rowsRead += chunkValues.Count;
                   }
                }
                catch(Exception ex)
                {
-                  throw new ParquetException($"fatal error reading column '{columnName}'", ex);
+                  throw new ParquetException($"fatal error reading column '{se}'", ex);
                }
             }
 
             pos += rg.Num_rows;
          }
 
-         ds.AddFromFlatColumns(cols);
+         var merger = new RecursiveMerge(schema);
+         DataSet ds = merger.Merge(pathToValues);
+
+         ds.TotalRowCount = _meta.Num_rows;
+         ds.Metadata.CreatedBy = _meta.Created_by;
 
          return ds;
       }

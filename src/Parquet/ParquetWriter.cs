@@ -39,7 +39,7 @@ namespace Parquet
    public class ParquetWriter : ParquetActor, IDisposable
    {
       private readonly Stream _output;
-      private readonly MetaBuilder _meta = new MetaBuilder();
+      private readonly FileMetadataBuilder _meta = new FileMetadataBuilder();
       private readonly ParquetOptions _formatOptions;
       private readonly WriterOptions _writerOptions;
       private readonly SchemaElement _definitionsSchema = new SchemaElement<bool>("definitions");
@@ -121,7 +121,9 @@ namespace Parquet
             Thrift.FileMetaData fileMeta = ReadMetadata();
             _meta.SetMeta(fileMeta);
 
-            if (!ds.Schema.Equals(_meta.CreateSchema(_formatOptions)))
+            Schema existingSchema = new FileMetadataParser(fileMeta).ParseSchema(_formatOptions);
+
+            if (!ds.Schema.Equals(existingSchema))
             {
                throw new ParquetException($"{nameof(DataSet)} schema does not match existing file schema");
             }
@@ -137,6 +139,15 @@ namespace Parquet
          }
       }
 
+      /// <summary>
+      /// Writes <see cref="DataSet"/> to a target stream
+      /// </summary>
+      /// <param name="dataSet"><see cref="DataSet"/> to write</param>
+      /// <param name="destination">Destination stream</param>
+      /// <param name="compression">Compression method</param>
+      /// <param name="formatOptions">Parquet options, optional.</param>
+      /// <param name="writerOptions">Writer options, optional.</param>
+      /// <param name="append">When true, assumes that this stream contains existing file and appends data to it, otherwise writes a new Parquet file.</param>
       public static void Write(DataSet dataSet, Stream destination, CompressionMethod compression = CompressionMethod.Gzip, ParquetOptions formatOptions = null, WriterOptions writerOptions = null, bool append = false)
       {
          using (var writer = new ParquetWriter(destination, formatOptions, writerOptions))
@@ -145,13 +156,22 @@ namespace Parquet
          }
       }
 
-      public static void WriteFile(DataSet ds, string fileName, CompressionMethod compression = CompressionMethod.Gzip, ParquetOptions formatOptions = null, WriterOptions writerOptions = null)
+      /// <summary>
+      /// Writes <see cref="DataSet"/> to a target file
+      /// </summary>
+      /// <param name="dataSet"><see cref="DataSet"/> to write</param>
+      /// <param name="fileName">Path to a file to write to.</param>
+      /// <param name="compression">Compression method</param>
+      /// <param name="formatOptions">Parquet options, optional.</param>
+      /// <param name="writerOptions">Writer options, optional.</param>
+      /// <param name="append">When true, assumes that this stream contains existing file and appends data to it, otherwise writes a new Parquet file.</param>
+      public static void WriteFile(DataSet dataSet, string fileName, CompressionMethod compression = CompressionMethod.Gzip, ParquetOptions formatOptions = null, WriterOptions writerOptions = null, bool append = false)
       {
          using (Stream fs = System.IO.File.Create(fileName))
          {
             using (var writer = new ParquetWriter(fs, formatOptions, writerOptions))
             {
-               writer.Write(ds, compression);
+               writer.Write(dataSet, compression);
             }
          }
       }
@@ -231,7 +251,7 @@ namespace Parquet
          nonNullableValues = TypeFactory.Create(schema, _formatOptions, false);
          definitions = new List<int>();
 
-         foreach(var value in values)
+         foreach(object value in values)
          {
             if(value == null)
             {

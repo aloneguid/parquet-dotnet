@@ -19,18 +19,12 @@ namespace Parquet
       /// <summary>
       /// Gets or sets the offset.
       /// </summary>
-      /// <value>
-      /// The offset.
-      /// </value>
       public long Offset { get; set; }
 
       /// <summary>
       /// Gets or sets the count.
       /// </summary>
-      /// <value>
-      /// The count.
-      /// </value>
-      public long Count { get; set; }
+      public int Count { get; set; }
 
       internal void Validate()
       {
