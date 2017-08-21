@@ -36,7 +36,7 @@ namespace Parquet.File.Values
          dictionary = null;
          indexes = null;
 
-         if (data.Count == 0) return true;
+         if (data.Count == 0) return false;
 
          if (schema.ElementType != typeof(string)) return false; //only support strings in dictionaries for now
 
