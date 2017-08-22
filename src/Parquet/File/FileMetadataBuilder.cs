@@ -16,23 +16,21 @@ namespace Parquet.File
    class FileMetadataBuilder
    {
       private Thrift.FileMetaData _meta;
+      private readonly WriterOptions _writerOptions;
 
       static FileMetadataBuilder()
       {
          //get file version
-         Assembly asm = typeof(FileMetadataBuilder).GetTypeInfo().Assembly;
-         CustomAttributeData fva = asm.CustomAttributes.First(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
-         CustomAttributeTypedArgument varg = fva.ConstructorArguments[0];
-         string fileVersion = varg.Value.ToString();
-
-         CreatedBy = $"parquet-dotnet version {fileVersion} (build {fileVersion.GetHash(HashType.Sha1)})";
+         Version fileVersion = typeof(FileMetadataBuilder).FileVersion();
+         CreatedBy = $"parquet-dotnet version {fileVersion} (build {fileVersion.ToString().GetHash(HashType.Sha1)})";
       }
 
       public static string CreatedBy { internal get; set; }
 
-      public FileMetadataBuilder()
+      public FileMetadataBuilder(WriterOptions writerOptions)
       {
          _meta = new Thrift.FileMetaData();
+         this._writerOptions = writerOptions;
 
          _meta.Created_by = CreatedBy;
          _meta.Version = 1;

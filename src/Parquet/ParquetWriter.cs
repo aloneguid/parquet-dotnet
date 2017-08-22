@@ -39,7 +39,7 @@ namespace Parquet
    public class ParquetWriter : ParquetActor, IDisposable
    {
       private readonly Stream _output;
-      private readonly FileMetadataBuilder _meta = new FileMetadataBuilder();
+      private readonly FileMetadataBuilder _meta;
       private readonly ParquetOptions _formatOptions;
       private readonly WriterOptions _writerOptions;
       private readonly SchemaElement _definitionsSchema = new SchemaElement<bool>("definitions");
@@ -68,10 +68,11 @@ namespace Parquet
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
          _formatOptions = formatOptions ?? new ParquetOptions();
          _writerOptions = writerOptions ?? new WriterOptions();
+         _meta = new FileMetadataBuilder(_writerOptions);
 
          _plainWriter = new PlainValuesWriter(_formatOptions);
          _rleWriter = new RunLengthBitPackingHybridValuesWriter();
-         _dicWriter = new PlainDictionaryValuesWriter();
+         _dicWriter = new PlainDictionaryValuesWriter(_rleWriter);
 
          GoToBeginning();
       }
@@ -196,6 +197,7 @@ namespace Parquet
       {
          var result = new List<PageTag>();
          byte[] dictionaryPageBytes = null;
+         int dictionaryPageCount = 0;
          byte[] dataPageBytes;
 
          using (var ms = new MemoryStream())
@@ -212,12 +214,13 @@ namespace Parquet
                }
 
                //write data
-               if (!_dicWriter.Write(writer, schema, values, out IList dicValues))
+               if (!_writerOptions.UseDictionaryEncoding || !_dicWriter.Write(writer, schema, values, out IList dicValues))
                {
                   _plainWriter.Write(writer, schema, values, out IList plainExtra);
                }
                else
                {
+                  dictionaryPageCount = dicValues.Count;
                   ph.Data_page_header.Encoding = Thrift.Encoding.PLAIN_DICTIONARY;
                   using (var dms = new MemoryStream())
                      using(var dwriter = new BinaryWriter(dms))
@@ -233,7 +236,7 @@ namespace Parquet
 
          if(dictionaryPageBytes != null)
          {
-            Thrift.PageHeader dph = _meta.CreateDictionaryPage(values.Count);
+            Thrift.PageHeader dph = _meta.CreateDictionaryPage(dictionaryPageCount);
             dictionaryPageBytes = Compress(dph, dictionaryPageBytes, compression);
             int dictionaryHeaderSize = Write(dph, dictionaryPageBytes);
             result.Add(new PageTag { HeaderSize = dictionaryHeaderSize, HeaderMeta = dph });

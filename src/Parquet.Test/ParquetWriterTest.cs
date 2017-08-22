@@ -8,7 +8,7 @@ using Type = Parquet.Thrift.Type;
 
 namespace Parquet.Test
 {
-   public class ParquetWriterTest
+   public class ParquetWriterTest : TestBase
    {
       [Fact]
       public void Write_different_compressions()

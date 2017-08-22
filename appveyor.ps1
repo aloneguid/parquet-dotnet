@@ -55,13 +55,13 @@ function Update-ProjectVersion($File)
    $xml.Save($File.FullName)
 }
 
-function Remove-AllNuGetPackagePreviews($PackageId, $ApiKey, $Keyword, $PreviewsToKeep)
+function Remove-AllNuGetPackagePreviews($PackageId, $ApiKey, $Keyword, $PreviewsToKeep, $VersionsToMaintain)
 {
     $lower = $PackageId.ToLowerInvariant();
 
     $json = Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/$lower/index.json" | ConvertFrom-Json
 
-    $filteredVersions = $json.versions | Where-Object { $_ -like "*$Keyword*"}
+    $filteredVersions = $json.versions | Where-Object { $_ -like "*$Keyword*"} | Select-Object -Last $VersionsToMaintain
     $count = $filteredVersions.Count
     $removed = 0
 
@@ -92,4 +92,4 @@ Get-ChildItem *.csproj -Recurse | Where-Object {-not(($_.Name -like "*test*") -o
    Update-ProjectVersion $_
 }
 
-Remove-AllNuGetPackagePreviews -PackageId "Parquet.Net" -ApiKey $env:NUGET_KEY -Keyword "alpha" -PreviewsToKeep 3
+Remove-AllNuGetPackagePreviews -PackageId "Parquet.Net" -ApiKey $env:NUGET_KEY -Keyword "alpha" -PreviewsToKeep 3 -VersionsToMaintain 6

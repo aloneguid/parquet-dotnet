@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard1.4;netstandard1.6;net451</TargetFrameworks>
-    <Version>1.0.0</Version>
-    <FileVersion>1.0.0.0</FileVersion>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Version>1.2.0.0</Version>
+    <FileVersion>1.2.3.4</FileVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <DefineConstants>DEBUG</DefineConstants>
     <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>

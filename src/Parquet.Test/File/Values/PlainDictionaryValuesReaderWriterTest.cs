@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Xunit;
 using Parquet.File.Values;
 using Parquet.Data;
@@ -12,9 +10,9 @@ namespace Parquet.Test.File.Values
    public class PlainDictionaryValuesReaderWriterTest
    {
       [Fact]
-      public void Smoke()
+      public void Dictionary_detects_uniqueue_values()
       {
-         var writer = new PlainDictionaryValuesWriter();
+         var writer = new PlainDictionaryValuesWriter(new RunLengthBitPackingHybridValuesWriter());
          var schema = new SchemaElement<string>("s");
 
          var ms = new MemoryStream();
@@ -31,6 +29,8 @@ namespace Parquet.Test.File.Values
                "one"
             },
             out IList dictionary);
+
+         Assert.Equal(2, dictionary.Count);
       }
    }
 }
