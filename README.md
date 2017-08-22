@@ -24,6 +24,7 @@ This project is aimed to fix this problem.
   - [Reading Data](doc/reading.md) 
   - [Writing Data](doc/writing.md)
   - [Working with DataSets](doc/dataset.md) 
+  - [Supported Types](doc/types.md)
 
 You can track the amount of features we have [implemented so far](doc/features.md).
 

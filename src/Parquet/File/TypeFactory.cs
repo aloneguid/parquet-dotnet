@@ -10,57 +10,6 @@ namespace Parquet.File
 {
    static class TypeFactory
    {
-      public struct TypeTag
-      {
-         public Thrift.Type PType;
-
-         public Thrift.ConvertedType? ConvertedType;
-
-         public Type ConcreteType;
-
-         public int BitWidth;
-
-         public TypeTag(Type concreteType, Thrift.Type ptype, Thrift.ConvertedType? convertedType, int bitWidth)
-         {
-            PType = ptype;
-            ConvertedType = convertedType;
-            ConcreteType = concreteType;
-            BitWidth = bitWidth;
-         }
-      }
-
-      private static readonly List<TypeTag> AllTags = new List<TypeTag>
-      {
-         new TypeTag(typeof(int), Thrift.Type.INT32, null, 32),
-         new TypeTag(typeof(bool), Thrift.Type.BOOLEAN, null, 1),
-         new TypeTag(typeof(string), Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8, 0),
-         new TypeTag(typeof(float), Thrift.Type.FLOAT, null, 0),
-         new TypeTag(typeof(double), Thrift.Type.DOUBLE, null, 0),
-         // is the coerced type TIMESTAMP_MILLS but holds backward-compatilibility with Impala and HIVE
-         new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT96, null, 0),
-         new TypeTag(typeof(DateTimeOffset), Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS, 0),
-         new TypeTag(typeof(Interval), Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL, 0)
-      };
-
-      private static readonly Dictionary<Type, TypeTag> SystemTypeToTag = new Dictionary<Type, TypeTag>();
-
-      static TypeFactory()
-      {
-         foreach(TypeTag tt in AllTags)
-         {
-            if (!SystemTypeToTag.ContainsKey(tt.ConcreteType)) SystemTypeToTag[tt.ConcreteType] = tt; 
-         }
-      }
-
-      private static readonly TypeTag DefaultTypeTag = new TypeTag(typeof(int), Thrift.Type.INT32, null, 32);
-
-      public static int GetBitWidth(Type t)
-      {
-         if (!SystemTypeToTag.TryGetValue(t, out TypeTag tt)) return 0;
-
-         return tt.BitWidth;
-      }
-
       public static void AdjustSchema(Thrift.SchemaElement schema, Type systemType)
       {
          if(IsPrimitiveNullable(systemType))
@@ -68,30 +17,13 @@ namespace Parquet.File
             throw new ArgumentException($"Type '{systemType}' in column '{schema.Name}' is a nullable type. Please pass either a class or a primitive type.", nameof(systemType));
          }
 
-         bool flag = false;
-         TypeTag tag = DefaultTypeTag;
-         foreach (TypeTag type in AllTags)
-         {
-            if (type.ConcreteType == systemType)
-            {
-               tag = type;
-               flag = true;
-               break;
-            }
-         }
-      
-         if (!flag)
-         {
-            string supportedTypes = string.Join(", ", AllTags.Select(t => t.ConcreteType.ToString()).Distinct());
+         TypePrimitive tp = TypePrimitive.Find(systemType);
 
-            throw new NotSupportedException($"system type {systemType} is not supported, list of supported types: '{supportedTypes}'");
-         }
+         schema.Type = tp.ThriftType;
 
-         schema.Type = tag.PType;
-
-         if (tag.ConvertedType != null)
+         if (tp.ThriftAnnotation != null)
          {
-            schema.Converted_type = tag.ConvertedType.Value;
+            schema.Converted_type = tp.ThriftAnnotation.Value;
          }
       }
 

@@ -133,7 +133,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteLong(BinaryWriter writer, SchemaElement schema, IList data)
       {
-         if (schema.IsAnnotatedWith(Thrift.ConvertedType.TIMESTAMP_MILLIS))
+         if (schema.ElementType == typeof(DateTimeOffset))
          {
             var lst = (List<DateTimeOffset>)data;
             foreach(DateTimeOffset dto in lst)
@@ -155,7 +155,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private void WriteInt96(BinaryWriter writer, SchemaElement schema, IList data)
       {
-         if (_options.TreatBigIntegersAsDates)
+         if(schema.ElementType == typeof(DateTimeOffset))
          {
             foreach (DateTimeOffset dto in data)
             {
@@ -163,9 +163,16 @@ namespace Parquet.File.Values
                nano.Write(writer);
             }
          }
+         else if (schema.ElementType == typeof(DateTime))
+         {
+            foreach (DateTime dtm in data)
+            {
+               var nano = new NanoTime(dtm.ToUniversalTime());
+               nano.Write(writer);
+            }
+         }
          else
          {
-            // assume that this is an a 12 byte decimal form
             foreach (byte[] dto in data)
             {
                writer.Write(dto);
@@ -188,7 +195,7 @@ namespace Parquet.File.Values
       {
          if (data.Count == 0) return;
 
-         SType elementType = data[0].GetType();
+         SType elementType = schema.ElementType;
          if(elementType == typeof(string))
          {
             var src = (List<string>)data;
@@ -200,11 +207,19 @@ namespace Parquet.File.Values
          else if (elementType == typeof(Interval))
          {
             var src = (List<Interval>) data;
-            foreach (var interval in src)
+            foreach (Interval interval in src)
             {
                writer.Write(BitConverter.GetBytes(interval.Months));
                writer.Write(BitConverter.GetBytes(interval.Days));
                writer.Write(BitConverter.GetBytes(interval.Millis));
+            }
+         }
+         else if (elementType == typeof(long))
+         {
+            var src = (List<long>)data;
+            foreach (long l in src)
+            {
+               writer.Write(BitConverter.GetBytes(l));
             }
          }
          else if(elementType == typeof(byte[]))
@@ -227,6 +242,10 @@ namespace Parquet.File.Values
                   writer.Write(b);
                }
             }
+         }
+         else if (elementType == typeof(decimal))
+         {
+            decimal d;
          }
          else
          {

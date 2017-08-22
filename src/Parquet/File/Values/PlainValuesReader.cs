@@ -114,7 +114,7 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadLong(byte[] data, SchemaElement schema, IList destination)
       {
-         if (schema.IsAnnotatedWith(Thrift.ConvertedType.TIMESTAMP_MILLIS))
+         if (schema.ElementType == typeof(DateTimeOffset))
          {
             var lst = (List<DateTimeOffset>)destination;
 

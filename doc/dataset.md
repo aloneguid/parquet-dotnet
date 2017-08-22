@@ -38,7 +38,7 @@ The row object contains a list of untyped elements (`System.Object`), however `D
 Schema can be expressed as a set of `SchemaElement` instances. `SchemaElement` describes a column and has only two required attributes
 
 - column name
-- column type
+- [column type](types.md)
 
 ### Column type
 
