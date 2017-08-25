@@ -195,8 +195,7 @@ namespace Parquet.File.Values
       {
          if (data.Count == 0) return;
 
-         SType elementType = schema.ElementType;
-         if(elementType == typeof(string))
+         if(schema.ElementType == typeof(string))
          {
             var src = (List<string>)data;
             foreach(string s in src)
@@ -204,7 +203,7 @@ namespace Parquet.File.Values
                Write(writer, s);
             }
          }
-         else if (elementType == typeof(Interval))
+         else if (schema.ElementType == typeof(Interval))
          {
             var src = (List<Interval>) data;
             foreach (Interval interval in src)
@@ -214,7 +213,7 @@ namespace Parquet.File.Values
                writer.Write(BitConverter.GetBytes(interval.Millis));
             }
          }
-         else if (elementType == typeof(long))
+         else if (schema.ElementType == typeof(long))
          {
             var src = (List<long>)data;
             foreach (long l in src)
@@ -222,7 +221,7 @@ namespace Parquet.File.Values
                writer.Write(BitConverter.GetBytes(l));
             }
          }
-         else if(elementType == typeof(byte[]))
+         else if(schema.ElementType == typeof(byte[]))
          {
             var src = (List<byte[]>)data;
 
@@ -243,13 +242,27 @@ namespace Parquet.File.Values
                }
             }
          }
-         else if (elementType == typeof(decimal))
+         else if (schema.ElementType == typeof(decimal))
          {
-            decimal d;
+            var src = (List<decimal>)data;
+            foreach (decimal d in src)
+            {
+               var bd = new BigDecimal(d, 38, 18);
+               byte[] itemData = bd.ToByteArray(16);
+
+               if (!schema.Thrift.__isset.type_length)
+               {
+                  schema.Thrift.Precision = bd.Precision;
+                  schema.Thrift.Scale = bd.Scale;
+                  schema.Thrift.Type_length = 16;
+               }
+
+               writer.Write(itemData);
+            }
          }
          else
          {
-            throw new ParquetException($"byte array type can be either byte or string but {elementType} found");
+            throw new ParquetException($"byte array type can be either byte or string but {schema.ElementType} found");
          }
       }
 

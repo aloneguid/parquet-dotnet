@@ -3,6 +3,7 @@ using System;
 using Parquet.File.Values;
 using System.Collections.Generic;
 using System.Collections;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data
 {

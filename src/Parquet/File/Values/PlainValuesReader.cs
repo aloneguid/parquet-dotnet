@@ -147,22 +147,24 @@ namespace Parquet.File.Values
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadFixedLenByteArray(byte[] data, SchemaElement schema, IList destination)
       {
-         for (int i = 0; i < data.Length; i += schema.Thrift.Type_length)
+         if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
          {
-            if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
+            int typeLength = schema.Thrift.Type_length;
+            byte[] itemData = ByteGarbage.GetByteArray(typeLength);
+            for (int i = 0; i < data.Length; i += typeLength)
             {
-               // go from data - decimal needs to be 16 bytes but not from Spark - variable fixed nonsense
-               byte[] dataNew = new byte[schema.Thrift.Type_length];
-               Array.Copy(data, i, dataNew, 0, schema.Thrift.Type_length);
-               var bigInt = new BigDecimal(new BigInteger(dataNew.Reverse().ToArray()), schema.Thrift.Scale,
-                  schema.Thrift.Precision);
+               Array.Copy(data, i, itemData, 0, typeLength);
 
-               decimal dc = (decimal) bigInt;
+               decimal dc = new BigDecimal(itemData, schema.Thrift);
                destination.Add(dc);
             }
-            else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INTERVAL))
+         }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INTERVAL))
+         {
+            for (int i = 0; i < data.Length; i += schema.Thrift.Type_length)
             {
                // assume this is the number of months / days / millis offset from the Julian calendar
+               //todo: optimize allocations
                byte[] months = new byte[4];
                byte[] days = new byte[4];
                byte[] millis = new byte[4];

@@ -5,6 +5,7 @@ using System.Reflection;
 using Parquet.Data;
 using System.Linq;
 using Parquet.File.Values;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.File
 {

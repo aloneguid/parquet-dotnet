@@ -25,6 +25,7 @@ This project is aimed to fix this problem.
   - [Writing Data](doc/writing.md)
   - [Working with DataSets](doc/dataset.md) 
   - [Supported Types](doc/types.md)
+    - [Working with Floating Point Data](doc/types/floating.md)
 
 You can track the amount of features we have [implemented so far](doc/features.md).
 

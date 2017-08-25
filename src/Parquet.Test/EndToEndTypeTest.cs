@@ -6,6 +6,7 @@ using System.Text;
 using Parquet.File.Values;
 using Xunit;
 using Xunit.Extensions;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.Test
 {
@@ -18,7 +19,7 @@ namespace Parquet.Test
          new object[] {  new SchemaElement<float>("f"), 1.23f },
          new object[] {  new SchemaElement<double>("d"), 10.44D },
          new object[] { new SchemaElement<DateTime>("datetime"), DateTime.UtcNow.RoundToSecond()},
-         //new object[] { new SchemaElement<decimal>("dec"), (decimal)123.4 },
+         new object[] { new SchemaElement<decimal>("dec"), (decimal)123.4 },
          new object[] { new SchemaElement<long>("long"), (long)1234 },
 
          //loses precision slightly, i.e.
@@ -52,6 +53,8 @@ namespace Parquet.Test
 
          Assert.True(expectedValue.Equals(actualValue),
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
+
+         //if (schema.ElementType == typeof(decimal)) ParquetWriter.WriteFile(ds1, "c:\\tmp\\decimals.parquet");
       }
    }
 }

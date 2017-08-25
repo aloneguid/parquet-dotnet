@@ -13,3 +13,7 @@ Parquet.Net tries to fit natively into .NET environment and map built-in CLR typ
 |System.Decimal (decimal)|BYTE_ARRAY|DECIMAL||
 |System.DateTimeOffset (DateTimeOffset)|INT96||
 |System.DateTime (DateTime)|INT96|||
+
+For a detailed guidance check out these parts of the documentation:
+
+- [Working with floating point data](types/floating.md)

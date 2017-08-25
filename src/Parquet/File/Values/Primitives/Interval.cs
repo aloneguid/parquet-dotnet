@@ -1,4 +1,4 @@
-namespace Parquet.File.Values
+namespace Parquet.File.Values.Primitives
 {
    /// <summary>
    /// A parquet interval type compatible with a Spark INTERVAL type
@@ -22,10 +22,12 @@ namespace Parquet.File.Values
       /// Returns the number of milliseconds in the type
       /// </summary>
       public int Millis { get; set; }
+
       /// <summary>
       /// Returns the number of days in the type
       /// </summary>
       public int Days { get; set; }
+
       /// <summary>
       /// Returns the number of months in type
       /// </summary>
