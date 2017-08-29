@@ -14,3 +14,14 @@ Parquet.Net supports the following types to represent floating point data:
 
 128-bit precise decimal values with 28-29 significant digits. Value range: (-7.9 x 10<sup>28</sup> to 7.9 x 10<sup>28</sup>) / 10<sup>0 to 28</sup>
 
+> When using this schema element the default precision and scale will be 38,18 but this may change in future releases.
+
+### Specifying other than default precision and schema
+
+In order to specify different precision / schema for decimal type use `DecimalSchemaElement` type:
+
+```csharp
+var element = new DecimalSchemaElement("column name", precision, scale);
+```
+
+this element accepts `decimal` as column values. Note that reading back this column produces a schema element `SchemaElement<decimal>`.

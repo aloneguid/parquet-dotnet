@@ -91,6 +91,16 @@ namespace Parquet.File.Values
                destination.Add(new DateTimeOffset(iv.FromUnixTime(), TimeSpan.Zero));
             }
          }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
+         {
+            decimal scaleFactor = (decimal) Math.Pow(10, -schema.Thrift.Scale);
+            for (int i = 0; i < data.Length; i += 4)
+            {
+               int iv = BitConverter.ToInt32(data, i);
+               decimal dv = iv * scaleFactor;
+               destination.Add(dv);
+            }
+         }
          else
          {
             for (int i = 0; i < data.Length; i += 4)
@@ -122,6 +132,16 @@ namespace Parquet.File.Values
             {
                long lv = BitConverter.ToInt64(data, i);
                lst.Add(lv.FromUnixTime());
+            }
+         }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
+         {
+            decimal scaleFactor = (decimal)Math.Pow(10, -schema.Thrift.Scale);
+            for (int i = 0; i < data.Length; i += 8)
+            {
+               long lv = BitConverter.ToInt64(data, i);
+               decimal dv = lv * scaleFactor;
+               destination.Add(dv);
             }
          }
          else

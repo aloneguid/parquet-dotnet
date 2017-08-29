@@ -19,8 +19,13 @@ namespace Parquet.Test
          new object[] {  new SchemaElement<float>("f"), 1.23f },
          new object[] {  new SchemaElement<double>("d"), 10.44D },
          new object[] { new SchemaElement<DateTime>("datetime"), DateTime.UtcNow.RoundToSecond()},
-         new object[] { new SchemaElement<decimal>("dec"), (decimal)123.4 },
          new object[] { new SchemaElement<long>("long"), (long)1234 },
+
+         //difference cases of decimals
+         new object[] { new SchemaElement<decimal>("decDefault"), 123.4m },
+         new object[] { new DecimalSchemaElement("decInt32", 4, 1), 12.4m},
+         new object[] { new DecimalSchemaElement("decInt64", 17, 12), 1234567.88m},
+         new object[] { new DecimalSchemaElement("decFixedByteArray", 48, 12), 34434.5m},
 
          //loses precision slightly, i.e.
          //Expected: 2017-07-13T10:58:44.3767154+00:00

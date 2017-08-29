@@ -110,6 +110,24 @@ namespace Parquet.File.Values
                writer.Write(days + 1);
             }
          }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
+         {
+            var dataTyped = (List<decimal>)data;
+            double scaleFactor = Math.Pow(10, schema.Thrift.Scale);
+            foreach (decimal d in dataTyped)
+            {
+               try
+               {
+                  int i = (int) (d * (decimal) scaleFactor);
+                  writer.Write(i);
+               }
+               catch (OverflowException)
+               {
+                  throw new ParquetException(
+                     $"value '{d}' is too large to fit into scale {schema.Thrift.Scale} and precision {schema.Thrift.Precision}");
+               }
+            }
+         }
          else
          {
             var dataTyped = (List<int>)data;
@@ -140,6 +158,25 @@ namespace Parquet.File.Values
             {
                long unixTime = dto.ToUnixTime();
                writer.Write(unixTime);
+            }
+         }
+         else if (schema.ElementType == typeof(decimal))
+         {
+            var dataTyped = (List<decimal>)data;
+            double scaleFactor = Math.Pow(10, schema.Thrift.Scale);
+
+            foreach (decimal d in dataTyped)
+            {
+               try
+               {
+                  long l = (long) (d * (decimal) scaleFactor);
+                  writer.Write(l);
+               }
+               catch (OverflowException)
+               {
+                  throw new ParquetException(
+                     $"value '{d}' is too large to fit into scale {schema.Thrift.Scale} and precision {schema.Thrift.Precision}");
+               }
             }
          }
          else

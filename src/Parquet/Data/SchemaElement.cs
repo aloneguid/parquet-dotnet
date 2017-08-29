@@ -76,6 +76,39 @@ namespace Parquet.Data
       }
    }
 
+   /// <summary>
+   /// Maps to Parquet decimal type, allowing to specify custom scale and precision
+   /// </summary>
+   public class DecimalSchemaElement : SchemaElement
+   {
+      /// <summary>
+      /// Constructs class instance
+      /// </summary>
+      /// <param name="name">The name of the column</param>
+      /// <param name="precision">Cusom precision</param>
+      /// <param name="scale">Custom scale</param>
+      public DecimalSchemaElement(string name, int precision, int scale) : base(name)
+      {
+         if (precision < 1) throw new ArgumentException("precision cannot be less than 1", nameof(precision));
+         if (scale < 1) throw new ArgumentException("scale cannot be less than 1", nameof(scale));
+
+         Thrift.Type tt;
+
+         if (precision <= 9)
+            tt = Parquet.Thrift.Type.INT32;
+         else if (precision <= 18)
+            tt = Parquet.Thrift.Type.INT64;
+         else
+            tt = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+
+         Thrift.Type = tt;
+         Thrift.Converted_type = Parquet.Thrift.ConvertedType.DECIMAL;
+         Thrift.Precision = precision;
+         Thrift.Scale = scale;
+         ElementType = typeof(decimal);
+      }
+   }
+
 
    /// <summary>
    /// Element of dataset's schema
@@ -147,7 +180,7 @@ namespace Parquet.Data
 
             if (elementType == typeof(IEnumerable))
             {
-               Type itemType = TypeFactory.ToSystemType(this, formatOptions);
+               Type itemType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
                Type ienumType = typeof(IEnumerable<>);
                Type ienumGenericType = ienumType.MakeGenericType(itemType);
                ElementType = ienumGenericType;
@@ -155,7 +188,7 @@ namespace Parquet.Data
          }
          else
          {
-            ElementType = TypeFactory.ToSystemType(this, formatOptions);
+            ElementType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
          }
       }
 

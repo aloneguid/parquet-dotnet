@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.Data;
 using Parquet.File.Values;
 using Parquet.File.Values.Primitives;
 
@@ -43,21 +44,29 @@ namespace Parquet.File
 
       private static readonly List<TypePrimitive> allTypePrimitives = new List<TypePrimitive>
       {
+         new TypePrimitive<byte[]>(Thrift.Type.BYTE_ARRAY),
          new TypePrimitive<int>(Thrift.Type.INT32, null, 32),
          new TypePrimitive<bool>(Thrift.Type.BOOLEAN, null, 1),
          new TypePrimitive<string>(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8),
          new TypePrimitive<float>(Thrift.Type.FLOAT),
          new TypePrimitive<decimal>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL),
+         new TypePrimitive<decimal>(Thrift.Type.INT32, Thrift.ConvertedType.DECIMAL),
+         new TypePrimitive<decimal>(Thrift.Type.INT64, Thrift.ConvertedType.DECIMAL),
          new TypePrimitive<long>(Thrift.Type.INT64),
          new TypePrimitive<double>(Thrift.Type.DOUBLE),
          new TypePrimitive<DateTimeOffset>(Thrift.Type.INT96),
          new TypePrimitive<DateTimeOffset>(Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS),
+         new TypePrimitive<DateTimeOffset>(Thrift.Type.INT32, Thrift.ConvertedType.DATE),
          new TypePrimitive<Interval>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL),
          new TypePrimitive<DateTime>(Thrift.Type.INT96)
       };
 
       private static readonly Dictionary<Type, TypePrimitive> systemTypeToPrimitive =
          new Dictionary<Type, TypePrimitive>();
+
+      private static readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType?>, TypePrimitive>
+         thriftTypeAndAnnotationToPrimitive =
+            new Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType?>, TypePrimitive>();
 
       static TypePrimitive()
       {
@@ -66,6 +75,12 @@ namespace Parquet.File
             if (!systemTypeToPrimitive.ContainsKey(tt.SystemType))
             {
                systemTypeToPrimitive[tt.SystemType] = tt;
+            }
+
+            var ttan = new KeyValuePair<Thrift.Type, Thrift.ConvertedType?>(tt.ThriftType, tt.ThriftAnnotation);
+            if (!thriftTypeAndAnnotationToPrimitive.ContainsKey(ttan))
+            {
+               thriftTypeAndAnnotationToPrimitive[ttan] = tt;
             }
          }
       }
@@ -87,6 +102,36 @@ namespace Parquet.File
          }
 
          return tp;
+      }
+
+      internal static Type GetSystemTypeBySchema(SchemaElement schema, ParquetOptions options)
+      {
+         //edge cases
+
+         switch (schema.Thrift.Type)
+         {
+            case Thrift.Type.INT96:
+               if (options.TreatBigIntegersAsDates) return typeof(DateTimeOffset);
+               break;
+            case Thrift.Type.BYTE_ARRAY:
+               if (options.TreatByteArrayAsString) return typeof(string);
+               break;
+         }
+
+         //end of edge cases
+
+         var kvp = new KeyValuePair<Thrift.Type, Thrift.ConvertedType?>(schema.Thrift.Type,
+            schema.Thrift.__isset.converted_type
+               ? new Thrift.ConvertedType?(schema.Thrift.Converted_type)
+               : null);
+
+         if (!thriftTypeAndAnnotationToPrimitive.TryGetValue(kvp, out TypePrimitive tp))
+         {
+            throw new NotSupportedException(
+               $"cannot find primitive by type '{schema.Thrift.Type}' and annotation '{schema.Thrift.Converted_type}'");
+         }
+
+         return tp.SystemType;
       }
 
       #endregion
