@@ -24,4 +24,7 @@ In order to specify different precision / schema for decimal type use `DecimalSc
 var element = new DecimalSchemaElement("column name", precision, scale);
 ```
 
-this element accepts `decimal` as column values. Note that reading back this column produces a schema element `SchemaElement<decimal>`.
+this element accepts `decimal` as column values.
+This class accepts last optional parameter `bool forceByteArrayEncoding` which tells whether to force legacy decimal encoding on decimals. This flag is false by default, but needs to be set to true for legacy compatibility with Hive and Impala.
+
+Note that reading back this column produces a schema element `SchemaElement<decimal>`.

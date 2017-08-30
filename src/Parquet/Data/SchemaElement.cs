@@ -87,19 +87,27 @@ namespace Parquet.Data
       /// <param name="name">The name of the column</param>
       /// <param name="precision">Cusom precision</param>
       /// <param name="scale">Custom scale</param>
-      public DecimalSchemaElement(string name, int precision, int scale) : base(name)
+      /// <param name="forceByteArrayEncoding">Whether to force decimal type encoding as fixed bytes. Hive and Impala only understands decimals when forced to true.</param>
+      public DecimalSchemaElement(string name, int precision, int scale, bool forceByteArrayEncoding = false) : base(name)
       {
          if (precision < 1) throw new ArgumentException("precision cannot be less than 1", nameof(precision));
          if (scale < 1) throw new ArgumentException("scale cannot be less than 1", nameof(scale));
 
          Thrift.Type tt;
 
-         if (precision <= 9)
-            tt = Parquet.Thrift.Type.INT32;
-         else if (precision <= 18)
-            tt = Parquet.Thrift.Type.INT64;
-         else
+         if (forceByteArrayEncoding)
+         {
             tt = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+         }
+         else
+         {
+            if (precision <= 9)
+               tt = Parquet.Thrift.Type.INT32;
+            else if (precision <= 18)
+               tt = Parquet.Thrift.Type.INT64;
+            else
+               tt = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+         }
 
          Thrift.Type = tt;
          Thrift.Converted_type = Parquet.Thrift.ConvertedType.DECIMAL;
