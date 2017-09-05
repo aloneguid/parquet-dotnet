@@ -102,12 +102,31 @@ namespace Parquet.File.Values.Primitives
          return bd.Value;
       }
 
-      public byte[] ToByteArray(int count)
+      private byte[] AllocateResult()
       {
-         byte[] result = new byte[count];
+         int size;
+
+         //according to impala: https://www.cloudera.com/documentation/enterprise/5-6-x/topics/impala_decimal.html
+
+         if (Precision <= 9)
+            size = 4;
+         else if (Precision <= 18)
+            size = 8;
+         else
+            size = 16;
+
+         return new byte[size];
+      }
+
+      public byte[] ToByteArray()
+      {
+         byte[] result = AllocateResult();
 
          var bi = new BigInteger(Value);
          byte[] data = bi.ToByteArray();
+
+         if (data.Length > result.Length) throw new NotSupportedException($"decimal data buffer is {data.Length} but result must fit into {result.Length} bytes");
+
          Array.Copy(data, result, data.Length);
 
          result = result.Reverse().ToArray();

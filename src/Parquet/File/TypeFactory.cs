@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
 using Parquet.Data;
-using System.Linq;
-using Parquet.File.Values;
-using Parquet.File.Values.Primitives;
 
 namespace Parquet.File
 {
@@ -25,6 +22,13 @@ namespace Parquet.File
          if (tp.ThriftAnnotation != null)
          {
             schema.Converted_type = tp.ThriftAnnotation.Value;
+         }
+
+         //todo: not the best place for it, but it's a special case at the moment
+         if(systemType == typeof(decimal))
+         {
+            schema.Precision = 38;
+            schema.Scale = 18;
          }
       }
 

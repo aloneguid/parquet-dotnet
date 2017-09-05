@@ -284,14 +284,12 @@ namespace Parquet.File.Values
             var src = (List<decimal>)data;
             foreach (decimal d in src)
             {
-               var bd = new BigDecimal(d, 38, 18);
-               byte[] itemData = bd.ToByteArray(16);
+               var bd = new BigDecimal(d, schema.Thrift.Precision, schema.Thrift.Scale);
+               byte[] itemData = bd.ToByteArray();
 
                if (!schema.Thrift.__isset.type_length)
                {
-                  schema.Thrift.Precision = bd.Precision;
-                  schema.Thrift.Scale = bd.Scale;
-                  schema.Thrift.Type_length = 16;
+                  schema.Thrift.Type_length = itemData.Length;
                }
 
                writer.Write(itemData);
