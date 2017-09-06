@@ -18,7 +18,16 @@
     <PackageIconUrl>http://i.isolineltd.com/nuget/parquet.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
-    <PackageReleaseNotes>v1.1
+    <PackageReleaseNotes>v1.2
+new features:
+- INT64 (C# long) type is supported (#194)
+- Decimal datatype is fully supported (#209). This includes support for simple System.Decimal, and decimal types with different scales and precisions. Decimals are encoded by utilising all three encodings from parquet specs, however this can be switched off for compatibility with older system. Decimals are fully compatible with Hive and Impala which have some edge cases not complying with parquet specifications. Thanks to @dmitryPavliv and @nzapolski for making this possible
+
+bugs fixed:
+- fixed a flaw in dictionary encoding implementation affecting files written for AWS Impala (#193)
+- when a column contains only single value and it's null Parquet.Net was crashing (#198)
+
+v1.1
 new features:
 - Reader supports nested structures.
 - Parquet output is now compatible with AWS Athena
