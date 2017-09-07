@@ -1,8 +1,8 @@
-﻿using Parquet.File;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.File;
 
 namespace Parquet.Data
 {
@@ -110,6 +110,15 @@ namespace Parquet.Data
       public void Add(params object[] values)
       {
          Add(new Row(values));
+      }
+
+      /// <summary>
+      /// Used to merge and add columns to a dataset 
+      /// </summary>
+      /// <param name="ds">A second dataset to merge this one with</param>
+      public DataSet Merge(DataSet ds)
+      {
+         return new DataSetMerge().Merge(this, ds);
       }
 
       private void Validate(Row row)
