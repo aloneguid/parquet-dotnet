@@ -18,6 +18,7 @@
     <PackageIconUrl>http://i.isolineltd.com/nuget/parquet.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageReleaseNotes>v1.2
 new features:
 - INT64 (C# long) type is supported (#194)
@@ -60,14 +61,7 @@ bug fixes:
     <DocumentationFile>bin\Release\net451\Parquet.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Primitives\**" />
-    <EmbeddedResource Remove="Primitives\**" />
-    <None Remove="Primitives\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="apache-thrift-netcore" Version="0.9.3.1" />
-    <PackageReference Include="NetBox" Version="1.4.20" />
-    <PackageReference Include="Snappy.Sharp" Version="1.0.0-b20170602007" />
-    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
+    <PackageReference Include="Apache.Thrift" Version="1.0.2" />
+    <PackageReference Include="NetBox" Version="1.4.22" />
   </ItemGroup>
 </Project>

@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LogMagic" Version="2.4.19" />
+    <PackageReference Include="LogMagic" Version="2.4.29" />
   </ItemGroup>
 
   <ItemGroup>

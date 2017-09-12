@@ -8,11 +8,11 @@ namespace Parquet.File.Data
 {
    static class DataFactory
    {
-      private static readonly Dictionary<CompressionMethod, (IDataWriter, IDataReader)> CompressionMethodToWorker = new Dictionary<CompressionMethod, (IDataWriter, IDataReader)>()
+      private static readonly Dictionary<CompressionMethod, KeyValuePair<IDataWriter, IDataReader>> CompressionMethodToWorker = new Dictionary<CompressionMethod, KeyValuePair<IDataWriter, IDataReader>>()
       {
-         { CompressionMethod.None, (new UncompressedDataWriter(), new UncompressedDataReader()) },
-         { CompressionMethod.Gzip, (new GzipDataWriter(), new GzipDataReader()) },
-         { CompressionMethod.Snappy, (new SnappyDataWriter(), new SnappyDataReader()) }
+         { CompressionMethod.None, new KeyValuePair<IDataWriter, IDataReader>(new UncompressedDataWriter(), new UncompressedDataReader()) },
+         { CompressionMethod.Gzip, new KeyValuePair<IDataWriter, IDataReader>(new GzipDataWriter(), new GzipDataReader()) },
+         { CompressionMethod.Snappy, new KeyValuePair<IDataWriter, IDataReader>(new SnappyDataWriter(), new SnappyDataReader()) }
       };
 
       private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> CompressionMethodToCodec = new Dictionary<CompressionMethod, Thrift.CompressionCodec>
@@ -32,12 +32,12 @@ namespace Parquet.File.Data
 
       public static IDataWriter GetWriter(CompressionMethod method)
       {
-         return CompressionMethodToWorker[method].Item1;
+         return CompressionMethodToWorker[method].Key;
       }
 
       public static IDataReader GetReader(CompressionMethod method)
       {
-         return CompressionMethodToWorker[method].Item2;
+         return CompressionMethodToWorker[method].Value;
       }
 
       public static IDataReader GetReader(Thrift.CompressionCodec thriftCodec)

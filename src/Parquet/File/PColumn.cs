@@ -21,6 +21,13 @@ namespace Parquet.File
       private static readonly IValuesReader _rleReader = new RunLengthBitPackingHybridValuesReader();
       private static readonly IValuesReader _dictionaryReader = new PlainDictionaryValuesReader();
 
+      private class PageData
+      {
+         public List<int> definitions;
+         public List<int> repetitions;
+         public List<int> indexes;
+      }
+
       public PColumn(Thrift.ColumnChunk thriftChunk, SchemaElement schema, Stream inputStream, ThriftStream thriftStream, ParquetOptions options)
       {
          _thriftChunk = thriftChunk;
@@ -60,7 +67,7 @@ namespace Parquet.File
          while (true)
          {
             int valuesSoFar = Math.Max(indexes == null ? 0 : indexes.Count, values.Count);
-            (List<int> definitions, List<int> repetitions, List<int> indexes) page = ReadDataPage(ph, values, maxValues - valuesSoFar);
+            PageData page = ReadDataPage(ph, values, maxValues - valuesSoFar);
 
             indexes = AssignOrAdd(indexes, page.indexes);
             definitions = AssignOrAdd(definitions, page.definitions);
@@ -149,7 +156,7 @@ namespace Parquet.File
          }
       }
 
-      private (List<int> definitions, List<int> repetitions, List<int> indexes) ReadDataPage(Thrift.PageHeader ph, IList destination, long maxValues)
+      private PageData ReadDataPage(Thrift.PageHeader ph, IList destination, long maxValues)
       {
          byte[] data = ReadRawBytes(ph, _inputStream);
          int max = ph.Data_page_header.Num_values;
@@ -175,7 +182,7 @@ namespace Parquet.File
                if (definitions != null) ValueMerger.TrimTail(definitions, numValues);
                if (indexes != null) ValueMerger.TrimTail(indexes, numValues);
 
-               return (definitions, repetitions, indexes);
+               return new PageData { definitions = definitions, repetitions = repetitions, indexes = indexes };
             }
          }
       }
