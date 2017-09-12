@@ -19,7 +19,17 @@
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>v1.2
+    <PackageReleaseNotes>v1.3
+new features:
+- .NET byte and sbyte type is supported
+- DataSet has got a new .Merge method that allows to merge two datasets, even if rows and columns are incompatible
+
+improvements:
+- we have removed a dependency on Snappy.Sharp completely which conflicted with projects targeting .NET 4.5
+- dependency on System.ValueTuple is removed
+- Apache Thrift dependency was replaced by a custom build which has zero downstream dependencies now. This was causing problems for projects using ASP.NET Core and specific Kestrel version, as stupidly enough Apache Thrift was referencing web hosting framework!
+
+v1.2
 new features:
 - INT64 (C# long) type is supported (#194)
 - Decimal datatype is fully supported (#209). This includes support for simple System.Decimal, and decimal types with different scales and precisions. Decimals are encoded by utilising all three encodings from parquet specs, however this can be switched off for compatibility with older system. Decimals are fully compatible with Hive and Impala which have some edge cases not complying with parquet specifications. Thanks to @dmitryPavliv and @nzapolski for making this possible
