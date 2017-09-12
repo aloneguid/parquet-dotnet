@@ -61,5 +61,24 @@ namespace Parquet.Test
 
          //if (schema.ElementType == typeof(decimal)) ParquetWriter.WriteFile(ds1, "c:\\tmp\\decimals.parquet");
       }
+
+      [Fact]
+      public void Type_write_byte_and_short_byte()
+      {
+         var schema = new Schema(new SchemaElement<sbyte>("sbyte"), new SchemaElement<byte>("byte"));
+         var ds = new DataSet(schema)
+         {
+            {(sbyte) 121, (byte) 122}
+         };
+
+         var ms = new MemoryStream();
+         ParquetWriter.Write(ds, ms);
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms);
+
+         Assert.Equal(121, (sbyte) ds1[0][0]);
+         Assert.Equal(122, (byte) ds1[0][1]);
+      }
    }
 }

@@ -22,6 +22,6 @@ namespace Parquet.Thrift
     FLOAT = 4,
     DOUBLE = 5,
     BYTE_ARRAY = 6,
-    FIXED_LEN_BYTE_ARRAY = 7,
+    FIXED_LEN_BYTE_ARRAY = 7
   }
 }

@@ -101,6 +101,20 @@ namespace Parquet.File.Values
                destination.Add(dv);
             }
          }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INT_8))
+         {
+            foreach (byte byteValue in data)
+            {
+               destination.Add(byteValue);
+            }
+         }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.UINT_8))
+         {
+            foreach (byte byteValue in data)
+            {
+               destination.Add(Convert.ToSByte(byteValue));
+            }
+         }
          else
          {
             for (int i = 0; i < data.Length; i += 4)

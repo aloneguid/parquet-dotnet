@@ -128,6 +128,22 @@ namespace Parquet.File.Values
                }
             }
          }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INT_8))
+         {
+            var dataTyped = (List<byte>)data;
+            foreach (byte byteValue in dataTyped)
+            {
+               writer.Write(byteValue);
+            }
+         }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.UINT_8))
+         {
+            var dataTyped = (List<sbyte>)data;
+            foreach (sbyte byteValue in dataTyped)
+            {
+               writer.Write(byteValue);
+            }
+         }
          else
          {
             var dataTyped = (List<int>)data;

@@ -58,7 +58,9 @@ namespace Parquet.File
          new TypePrimitive<DateTimeOffset>(Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS),
          new TypePrimitive<DateTimeOffset>(Thrift.Type.INT32, Thrift.ConvertedType.DATE),
          new TypePrimitive<Interval>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL),
-         new TypePrimitive<DateTime>(Thrift.Type.INT96)
+         new TypePrimitive<DateTime>(Thrift.Type.INT96),
+         new TypePrimitive<byte>(Thrift.Type.INT32, Thrift.ConvertedType.INT_8, 8),
+         new TypePrimitive<sbyte>(Thrift.Type.INT32, Thrift.ConvertedType.UINT_8, 8)
       };
 
       private static readonly Dictionary<Type, TypePrimitive> systemTypeToPrimitive =
