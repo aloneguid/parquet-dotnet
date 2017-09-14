@@ -19,6 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="data\all_nulls.parquet">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="data\complex-primitives.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

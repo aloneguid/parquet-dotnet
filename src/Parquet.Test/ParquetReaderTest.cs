@@ -209,6 +209,24 @@ root
          Assert.Equal((decimal)1.2, ds[0][1]);
       }
 
+      [Fact]
+      public void Read_column_with_all_nulls()
+      {
+         var ds = new DataSet(new SchemaElement<int>("id"))
+         {
+            new object[] {null},
+            new object[] {null}
+         };
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+      }
+
+      [Fact]
+      public void Read_all_nulls_file()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("all_nulls.parquet"));
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)
