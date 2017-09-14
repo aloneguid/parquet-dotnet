@@ -43,7 +43,8 @@ namespace Parquet.File
          //merge with dictionary if present
          if (dictionary == null) return;
 
-         if (indexes == null) throw new ParquetException("dictionary has no attached index");
+         //when dictionary has no indexes
+         if (indexes == null) return;
 
          TrimTail(indexes, maxValues);
 
@@ -111,6 +112,8 @@ namespace Parquet.File
 
       public static void TrimTail(IList list, int maxValues)
       {
+         if (list == null) return;
+
          if (list.Count > maxValues)
          {
             int diffCount = list.Count - maxValues;
@@ -120,7 +123,9 @@ namespace Parquet.File
 
       public static void TrimHead(IList list, int maxValues)
       {
-         while(list.Count > maxValues)
+         if (list == null) return;
+
+         while (list.Count > maxValues)
          {
             list.RemoveAt(0);
          }

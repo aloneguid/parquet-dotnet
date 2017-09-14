@@ -225,6 +225,11 @@ root
       public void Read_all_nulls_file()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("all_nulls.parquet"));
+
+         Assert.Equal(1, ds.Schema.Length);
+         Assert.Equal("lognumber", ds.Schema[0].Name);
+         Assert.Equal(1, ds.RowCount);
+         Assert.Null(ds[0][0]);
       }
 
       class ReadableNonSeekableStream : DelegatedStream
