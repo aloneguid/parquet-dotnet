@@ -146,7 +146,7 @@ namespace Parquet.Data
             {
                Type valueType = rowValue.GetType();
 
-               if (valueType != elementType && valueType.GetTypeInfo().IsAssignableFrom(elementType.GetTypeInfo()))
+               if (valueType != elementType && !elementType.GetTypeInfo().IsAssignableFrom(valueType.GetTypeInfo()))
                   throw new ArgumentException($"column '{se.Name}' expects '{elementType}' but {rowValue.GetType()} passed");
             }
          }
