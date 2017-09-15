@@ -5,6 +5,7 @@ using Parquet.Thrift;
 using Xunit;
 using F = System.IO.File;
 using Type = Parquet.Thrift.Type;
+using System.Collections.Generic;
 
 namespace Parquet.Test
 {
@@ -192,6 +193,18 @@ namespace Parquet.Test
          Assert.Equal(0, ds1[0][0]);
          Assert.Null(ds1[0][1]);
 
+      }
+
+      [Fact]
+      public void Write_simple_repeated_field()
+      {
+         var ds = new DataSet(
+            new SchemaElement<int>("id"),
+            new SchemaElement<IEnumerable<string>>("cities"));
+
+         ds.Add(1, new[] { "London", "Derby" });
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
       }
    }
 }

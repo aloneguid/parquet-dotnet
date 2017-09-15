@@ -213,6 +213,13 @@ namespace Parquet
                   _rleWriter.Write(writer, _definitionsSchema, definitions, out IList nullExtra);
                }
 
+               //write repetitions
+               if(schema.IsRepeated)
+               {
+                  List<int> repetitions = CreateRepetitions(values, schema);
+                  _rleWriter.Write(writer, _definitionsSchema, repetitions, out IList nullExtra);
+               }
+
                //write data
                if (!_writerOptions.UseDictionaryEncoding || !_dicWriter.Write(writer, schema, values, out IList dicValues))
                {
@@ -266,6 +273,16 @@ namespace Parquet
                nonNullableValues.Add(value);
             }
          }
+      }
+
+      private List<int> CreateRepetitions(IList values, SchemaElement schema)
+      {
+         var result = new List<int>();
+
+         result.Add(0);
+         result.AddRange(Enumerable.Repeat(1, values.Count - 1));
+
+         return result;
       }
 
       private int Write(Thrift.PageHeader ph, byte[] data)

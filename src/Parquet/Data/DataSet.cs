@@ -73,7 +73,7 @@ namespace Parquet.Data
       public IList GetColumn(int i, int offset = 0, int count = -1)
       {
          SchemaElement schema = Schema.Elements[i];
-         IList result = TypeFactory.Create(schema.ElementType, schema.IsNullable);
+         IList result = TypeFactory.Create(schema.ColumnType, schema.IsNullable, schema.IsRepeated);
 
          for(int irow = offset; (count == -1 || result.Count < count) && (irow < _rows.Count); irow++)
          {
@@ -136,7 +136,7 @@ namespace Parquet.Data
          {
             object rowValue = row[i];
             SchemaElement se = _schema.Elements[i];
-            Type elementType = se.ElementType;
+            Type elementType = se.ColumnType;
 
             if (rowValue == null)
             {

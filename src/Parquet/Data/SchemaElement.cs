@@ -157,7 +157,7 @@ namespace Parquet.Data
       public SchemaElement(string name, Type elementType, SchemaElement parent = null)
       {
          SetProperties(name, elementType);
-         TypeFactory.AdjustSchema(Thrift, elementType);
+         TypeFactory.AdjustSchema(Thrift, ElementType);
          Parent = parent;
       }
 
@@ -167,12 +167,29 @@ namespace Parquet.Data
             throw new ArgumentException("cannot be null or empty", nameof(name));
 
          Name = name;
-         ElementType = elementType;
-         Thrift = new Thrift.SchemaElement(name)
+
+         if (TypeFactory.TryExtractEnumerableType(elementType, out Type baseType))
          {
-            //this must be changed later or if column has nulls (on write)
-            Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
-         };
+            ElementType = baseType;
+
+            Thrift = new Thrift.SchemaElement(name)
+            {
+               Repetition_type = Parquet.Thrift.FieldRepetitionType.REPEATED
+            };
+         }
+         else
+         {
+
+            ElementType = elementType;
+
+            Thrift = new Thrift.SchemaElement(name)
+            {
+               //this must be changed later or if column has nulls (on write)
+               Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
+            };
+         }
+
+         ColumnType = elementType;
       }
 
       internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType)
@@ -184,18 +201,21 @@ namespace Parquet.Data
          if(elementType != null)
          {
             ElementType = elementType;
+            ColumnType = elementType;
 
             if (elementType == typeof(IEnumerable))
             {
                Type itemType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
                Type ienumType = typeof(IEnumerable<>);
                Type ienumGenericType = ienumType.MakeGenericType(itemType);
-               ElementType = ienumGenericType;
+               ElementType = itemType;
+               ColumnType = ienumGenericType;
             }
          }
          else
          {
             ElementType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
+            ColumnType = ElementType;
          }
       }
 
@@ -205,9 +225,15 @@ namespace Parquet.Data
       public string Name { get; private set; }
 
       /// <summary>
-      /// Element type
+      /// Element type. For simple types it's the type of the value stored in the column.
+      /// For IEnumerableT it returns the T.
       /// </summary>
       public Type ElementType { get; internal set; }
+
+      /// <summary>
+      /// Type of the column.
+      /// </summary>
+      public Type ColumnType { get; internal set; }
 
       /// <summary>
       /// Element path, separated by dots (.)
@@ -236,6 +262,11 @@ namespace Parquet.Data
       {
          get => Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
          set => Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED;
+      }
+
+      internal bool IsRepeated
+      {
+         get => Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
       }
 
       internal Thrift.SchemaElement Thrift { get; set; }

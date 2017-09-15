@@ -41,10 +41,10 @@ namespace Parquet.File
          return ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>);
       }
 
-      public static IList Create(Type systemType, bool nullable = false)
+      public static IList Create(Type systemType, bool nullable = false, bool repeated = false)
       {
          //make the type nullable if it's not a class
-         if(nullable)
+         if(nullable && !repeated)
          {
             if(!systemType.GetTypeInfo().IsClass)
             {
@@ -62,6 +62,20 @@ namespace Parquet.File
       {
          Type t = TypePrimitive.GetSystemTypeBySchema(schema, options);
          return Create(t, nullable);
+      }
+
+      public static bool TryExtractEnumerableType(Type t, out Type baseType)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         if(ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+         {
+            baseType = ti.GenericTypeArguments[0];
+            return true;
+         }
+
+         baseType = null;
+         return false;
       }
    }
 }

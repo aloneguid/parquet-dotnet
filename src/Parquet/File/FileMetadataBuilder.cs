@@ -43,8 +43,44 @@ namespace Parquet.File
       {
          ds.Metadata.CreatedBy = CreatedBy;
          _meta.Schema = new List<TSchemaElement> { new TSchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
-         _meta.Schema.AddRange(ds.Schema.Elements.Select(c => c.Thrift));
+
+         foreach(SchemaElement se in ds.Schema.Elements)
+         {
+            AddSchema(_meta.Schema, se);
+         }
+         
          _meta.Num_rows = ds.Count;
+      }
+
+      private static void AddSchema(List<TSchemaElement> container, SchemaElement se)
+      {
+         if (se.IsRepeated)
+         {
+            var root = new TSchemaElement(se.Name)
+            {
+               Converted_type = Thrift.ConvertedType.LIST,
+               Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+               Num_children = 1
+            };
+
+            var list = new TSchemaElement("list")
+            {
+               Repetition_type = Thrift.FieldRepetitionType.REPEATED,
+               Num_children = 1
+            };
+
+            TSchemaElement element = se.Thrift;
+            element.Name = "element";
+            element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+
+            container.Add(root);
+            container.Add(list);
+            container.Add(element);
+         }
+         else
+         {
+            container.Add(se.Thrift);
+         }
       }
 
       public void SetMeta(Thrift.FileMetaData meta)

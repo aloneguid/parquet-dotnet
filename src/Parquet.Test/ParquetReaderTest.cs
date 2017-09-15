@@ -214,7 +214,8 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
 
          Assert.Equal(2, ds.Schema.Length);
-         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[0].ElementType);
+         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[0].ColumnType);
+         Assert.Equal(typeof(string), ds.Schema[0].ElementType);
          Assert.Equal(typeof(long), ds.Schema[1].ElementType);
 
          Assert.Equal(ds[0][1], 1L);
