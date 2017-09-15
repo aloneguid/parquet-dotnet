@@ -215,7 +215,10 @@ root
 
          Assert.Equal(2, ds.Schema.Length);
          Assert.Equal(typeof(IEnumerable<string>), ds.Schema[0].ElementType);
-         Assert.Equal(typeof(int), ds.Schema[1].ElementType);
+         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
+
+         Assert.Equal(ds[0][1], 1L);
+         Assert.Equal(ds[0][0], new[] { "London", "Derby", "Paris", "New York" });
       }
 
       [Fact]

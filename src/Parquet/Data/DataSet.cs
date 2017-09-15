@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Parquet.File;
 
 namespace Parquet.Data
@@ -143,7 +144,9 @@ namespace Parquet.Data
             }
             else
             {
-               if (rowValue.GetType() != elementType)
+               Type valueType = rowValue.GetType();
+
+               if (valueType != elementType && valueType.GetTypeInfo().IsAssignableFrom(elementType.GetTypeInfo()))
                   throw new ArgumentException($"column '{se.Name}' expects '{elementType}' but {rowValue.GetType()} passed");
             }
          }
