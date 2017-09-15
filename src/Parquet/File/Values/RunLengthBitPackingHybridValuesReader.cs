@@ -64,6 +64,7 @@ namespace Parquet.File.Values
          // value that's repeated. Yields the value repeated count times.
 
          int count = header >> 1;
+         if (count == 0) return; //important not to continue reading as will result in data corruption in data page further
          int width = (bitWidth + 7) / 8; //round up to next byte
          byte[] data = reader.ReadBytes(width);
          int value = ReadIntOnBytes(data);

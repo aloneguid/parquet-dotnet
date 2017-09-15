@@ -202,6 +202,23 @@ root
       }
 
       [Fact]
+      public void Read_simple_repeated_field()
+      {
+         /*
+root
+|-- cities: array (nullable = true)
+|    |-- element: string (containsNull = true)
+|-- id: long (nullable = true)
+          */
+
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
+
+         Assert.Equal(2, ds.Schema.Length);
+         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[0].ElementType);
+         Assert.Equal(typeof(int), ds.Schema[1].ElementType);
+      }
+
+      [Fact]
       public void Read_hardcoded_decimal()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("complex-primitives.parquet"));
