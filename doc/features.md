@@ -19,6 +19,5 @@ We are implementing Parquet features gradually, and the table below outlines the
 |Row groups|yes|yes|
 |Data pages|yes|yes|
 |Append to files|-|yes|
-|Nested structures|yes|no|
-|Nested structures|no|no|
-|Nested arrays|no|no|
+|Simple repeatable fields|yes|yes|
+|Nested structures|planned|planned|

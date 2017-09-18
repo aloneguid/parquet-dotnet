@@ -39,8 +39,10 @@ namespace Parquet.File
                      formatOptions,
                      tseElement.Num_children == 0
                      ? typeof(IEnumerable)   //augmented to generic IEnumerable in constructor
-                     : typeof(IEnumerable<Row>));
+                     : typeof(IEnumerable<Row>),
+                     tseTop.Name);
                   mse.Path = string.Join(Schema.PathSeparator, tseTop.Name, tseList.Name, tseElement.Name);
+                  mse.IsRepeated = true;
                   if (!isRoot) mse.Path = node.Path + Schema.PathSeparator + mse.Path;
 
                   mse.MaxDefinitionLevel = CountRepetitions(Thrift.FieldRepetitionType.OPTIONAL, mse, tseList);

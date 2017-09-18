@@ -192,7 +192,6 @@ namespace Parquet.Test
          Assert.Equal(1, ds1.RowCount);
          Assert.Equal(0, ds1[0][0]);
          Assert.Null(ds1[0][1]);
-
       }
 
       [Fact]
@@ -205,6 +204,9 @@ namespace Parquet.Test
          ds.Add(1, new[] { "London", "Derby" });
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal("id", ds.Schema[0].Name);
+         Assert.Equal("cities", ds.Schema[1].Name);
       }
    }
 }

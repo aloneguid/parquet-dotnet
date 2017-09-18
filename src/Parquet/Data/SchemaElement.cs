@@ -197,9 +197,9 @@ namespace Parquet.Data
          ColumnType = elementType;
       }
 
-      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType)
+      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null)
       {
-         Name = thriftSchema.Name;
+         Name = name ?? thriftSchema.Name;
          Thrift = thriftSchema;
          Parent = parent;
 
@@ -240,6 +240,9 @@ namespace Parquet.Data
       /// </summary>
       public Type ColumnType { get; internal set; }
 
+      /// <summary>
+      /// When true, this fields is repeated i.e. has multiple value
+      /// </summary>
       public bool IsRepeated { get; internal set; }
 
       /// <summary>
@@ -314,10 +317,11 @@ namespace Parquet.Data
          //todo: check equality for child elements
 
          return string.Equals(Name, other.Name) &&
-                ElementType == other.ElementType &&
-                Thrift.Type.Equals(other.Thrift.Type) &&
-                Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
-                Thrift.Converted_type.Equals(other.Thrift.Converted_type);
+               ColumnType == other.ColumnType &&
+               ElementType == other.ElementType &&
+               Thrift.Type.Equals(other.Thrift.Type) &&
+               Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
+               Thrift.Converted_type.Equals(other.Thrift.Converted_type);
       }
 
       /// <summary>

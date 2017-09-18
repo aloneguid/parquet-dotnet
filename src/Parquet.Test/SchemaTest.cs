@@ -1,6 +1,7 @@
 ﻿using Parquet.Data;
 using System;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Parquet.Test
 {
@@ -50,6 +51,15 @@ namespace Parquet.Test
       {
          var schema1 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("city"));
          var schema2 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("city2"));
+
+         Assert.NotEqual(schema1, schema2);
+      }
+
+      [Fact]
+      public void Schemas_differ_only_in_repeated_fields_not_equal()
+      {
+         var schema1 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("cities"));
+         var schema2 = new Schema(new SchemaElement<int>("id"), new SchemaElement<IEnumerable<string>>("cities"));
 
          Assert.NotEqual(schema1, schema2);
       }

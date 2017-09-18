@@ -45,6 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "types", "types", "{A1B0E810
 	ProjectSection(SolutionItems) = preProject
 		..\doc\types\dates.md = ..\doc\types\dates.md
 		..\doc\types\floating.md = ..\doc\types\floating.md
+		..\doc\types\repeatable.md = ..\doc\types\repeatable.md
 	EndProjectSection
 EndProject
 Global
