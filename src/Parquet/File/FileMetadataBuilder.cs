@@ -83,6 +83,11 @@ namespace Parquet.File
          }
       }
 
+      public static string BuildRepeatablePath(SchemaElement se)
+      {
+         return $"{se.Name}.list.element";
+      }
+
       public void SetMeta(Thrift.FileMetaData meta)
       {
          _meta = meta;

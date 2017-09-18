@@ -141,6 +141,7 @@ namespace Parquet.Data
             if (rowValue == null)
             {
                se.IsNullable = true;
+               se.Stats.NullCount += 1;
             }
             else
             {

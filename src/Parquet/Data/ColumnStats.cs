@@ -3,11 +3,11 @@
    /// <summary>
    /// General column statistics
    /// </summary>
-   public struct ColumnStats
+   public class ColumnStats
    {
       /// <summary>
       /// Number of null values
       /// </summary>
-      public int NullCount;
+      public int NullCount { get; set; }
    }
 }

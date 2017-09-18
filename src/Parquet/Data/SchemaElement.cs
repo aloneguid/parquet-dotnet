@@ -124,6 +124,7 @@ namespace Parquet.Data
    {
       private readonly List<SchemaElement> _children = new List<SchemaElement>();
       private string _path;
+      private readonly ColumnStats _stats = new ColumnStats();
 
       /// <summary>
       /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.
@@ -171,6 +172,8 @@ namespace Parquet.Data
          if (TypeFactory.TryExtractEnumerableType(elementType, out Type baseType))
          {
             ElementType = baseType;
+            Path = FileMetadataBuilder.BuildRepeatablePath(this);
+            IsRepeated = true;
 
             Thrift = new Thrift.SchemaElement(name)
             {
@@ -235,6 +238,8 @@ namespace Parquet.Data
       /// </summary>
       public Type ColumnType { get; internal set; }
 
+      public bool IsRepeated { get; internal set; }
+
       /// <summary>
       /// Element path, separated by dots (.)
       /// </summary>
@@ -264,10 +269,7 @@ namespace Parquet.Data
          set => Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
-      internal bool IsRepeated
-      {
-         get => Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
-      }
+      internal bool HasNulls => _stats.NullCount > 0;
 
       internal Thrift.SchemaElement Thrift { get; set; }
 
@@ -284,6 +286,8 @@ namespace Parquet.Data
       internal bool HasRepetitionLevelsPage => MaxRepetitionLevel > 0;
 
       internal int MaxRepetitionLevel { get; set; }
+
+      internal ColumnStats Stats => _stats;
 
       /// <summary>
       /// Pretty prints
