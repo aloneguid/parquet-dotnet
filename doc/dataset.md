@@ -40,19 +40,6 @@ Schema can be expressed as a set of `SchemaElement` instances. `SchemaElement` d
 - column name
 - [column type](types.md)
 
-### Column type
-
-A type can be one of the supported types:
-
-- `int`
-- `bool`
-- `string`
-- `float`
-- `double`
-- `DateTimeOffset`
-
-Note that you cannot pass nullable types as a schema specification, because any column value is allowed to accept nulls.
-
 ### A special note on dates
 
 In the old times Parquet format didn't support dates, therefore people used to store dates as `int96` number. Because of backward compatibility issues we use this as the default date storage format.

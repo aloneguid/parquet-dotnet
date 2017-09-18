@@ -22,7 +22,7 @@ namespace Parquet.File.Values
 
          int length = GetRemainingLength(reader);
 
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, (List<int>)destination, maxValues);
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, (List<int>)destination);
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]

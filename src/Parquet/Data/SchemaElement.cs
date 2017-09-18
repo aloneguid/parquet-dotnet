@@ -1,6 +1,5 @@
 ﻿using Parquet.File;
 using System;
-using Parquet.File.Values;
 using System.Collections.Generic;
 using System.Collections;
 using Parquet.File.Values.Primitives;
@@ -37,7 +36,7 @@ namespace Parquet.Data
       /// <exception cref="ArgumentException">format</exception>
       public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name)
       {
-         ElementType = typeof(DateTimeOffset);
+         ElementType = ColumnType = typeof(DateTimeOffset);
          switch (format)
          {
             case DateTimeFormat.Impala:
@@ -72,7 +71,7 @@ namespace Parquet.Data
          Thrift.Type = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
          Thrift.Converted_type = Parquet.Thrift.ConvertedType.INTERVAL;
          Thrift.Type_length = 12;
-         ElementType = typeof(Interval);
+         ElementType = ColumnType = typeof(Interval);
       }
    }
 
@@ -113,7 +112,7 @@ namespace Parquet.Data
          Thrift.Converted_type = Parquet.Thrift.ConvertedType.DECIMAL;
          Thrift.Precision = precision;
          Thrift.Scale = scale;
-         ElementType = typeof(decimal);
+         ElementType = ColumnType = typeof(decimal);
       }
    }
 
@@ -125,6 +124,7 @@ namespace Parquet.Data
    {
       private readonly List<SchemaElement> _children = new List<SchemaElement>();
       private string _path;
+      private readonly ColumnStats _stats = new ColumnStats();
 
       /// <summary>
       /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.
@@ -158,7 +158,7 @@ namespace Parquet.Data
       public SchemaElement(string name, Type elementType, SchemaElement parent = null)
       {
          SetProperties(name, elementType);
-         TypeFactory.AdjustSchema(Thrift, elementType);
+         TypeFactory.AdjustSchema(Thrift, ElementType);
          Parent = parent;
       }
 
@@ -167,36 +167,60 @@ namespace Parquet.Data
          if (string.IsNullOrEmpty(name))
             throw new ArgumentException("cannot be null or empty", nameof(name));
 
+         //todo: a lot of this stuff has to move out to schema parser
+
          Name = name;
-         ElementType = elementType;
-         Thrift = new Thrift.SchemaElement(name)
+
+         if (TypeFactory.TryExtractEnumerableType(elementType, out Type baseType))
          {
-            //this must be changed later or if column has nulls (on write)
-            Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
-         };
+            ElementType = baseType;
+            Path = FileMetadataBuilder.BuildRepeatablePath(this);
+            IsRepeated = true;
+
+            Thrift = new Thrift.SchemaElement(name)
+            {
+               Repetition_type = Parquet.Thrift.FieldRepetitionType.REPEATED
+            };
+         }
+         else
+         {
+
+            ElementType = elementType;
+
+            Thrift = new Thrift.SchemaElement(name)
+            {
+               //this must be changed later or if column has nulls (on write)
+               Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
+            };
+         }
+
+         ColumnType = elementType;
       }
 
-      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType)
+      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null)
       {
-         Name = thriftSchema.Name;
+         Name = name ?? thriftSchema.Name;
          Thrift = thriftSchema;
          Parent = parent;
 
          if(elementType != null)
          {
             ElementType = elementType;
+            ColumnType = elementType;
 
             if (elementType == typeof(IEnumerable))
             {
                Type itemType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
                Type ienumType = typeof(IEnumerable<>);
                Type ienumGenericType = ienumType.MakeGenericType(itemType);
-               ElementType = ienumGenericType;
+               ElementType = itemType;
+               ColumnType = ienumGenericType;
             }
          }
          else
          {
             ElementType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
+            ColumnType = ElementType;
          }
       }
 
@@ -206,9 +230,20 @@ namespace Parquet.Data
       public string Name { get; private set; }
 
       /// <summary>
-      /// Element type
+      /// Element type. For simple types it's the type of the value stored in the column.
+      /// For IEnumerableT it returns the T.
       /// </summary>
       public Type ElementType { get; internal set; }
+
+      /// <summary>
+      /// Type of the column.
+      /// </summary>
+      public Type ColumnType { get; internal set; }
+
+      /// <summary>
+      /// When true, this fields is repeated i.e. has multiple value
+      /// </summary>
+      public bool IsRepeated { get; internal set; }
 
       /// <summary>
       /// Element path, separated by dots (.)
@@ -239,6 +274,8 @@ namespace Parquet.Data
          set => Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
+      internal bool HasNulls => _stats.NullCount > 0;
+
       internal Thrift.SchemaElement Thrift { get; set; }
 
       internal bool IsAnnotatedWith(Thrift.ConvertedType ct)
@@ -254,6 +291,8 @@ namespace Parquet.Data
       internal bool HasRepetitionLevelsPage => MaxRepetitionLevel > 0;
 
       internal int MaxRepetitionLevel { get; set; }
+
+      internal ColumnStats Stats => _stats;
 
       /// <summary>
       /// Pretty prints
@@ -278,10 +317,11 @@ namespace Parquet.Data
          //todo: check equality for child elements
 
          return string.Equals(Name, other.Name) &&
-                ElementType == other.ElementType &&
-                Thrift.Type.Equals(other.Thrift.Type) &&
-                Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
-                Thrift.Converted_type.Equals(other.Thrift.Converted_type);
+               ColumnType == other.ColumnType &&
+               ElementType == other.ElementType &&
+               Thrift.Type.Equals(other.Thrift.Type) &&
+               Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
+               Thrift.Converted_type.Equals(other.Thrift.Converted_type);
       }
 
       /// <summary>

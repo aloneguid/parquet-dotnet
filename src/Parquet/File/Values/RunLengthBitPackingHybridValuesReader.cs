@@ -13,9 +13,9 @@ namespace Parquet.File.Values
       public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
       {
          int bitWidth = schema.Thrift.Type_length;
-         List<int> destinationTyped = (List<int>)destination;
+         var destinationTyped = (List<int>)destination;
          int length = GetRemainingLength(reader);
-         ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped, maxValues);
+         ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped);
       }
 
       /* from specs:
@@ -33,7 +33,7 @@ namespace Parquet.File.Values
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
 
-      public static void ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, List<int> destination, long maxValues)
+      public static void ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, List<int> destination)
       {
          if (length == 0) length = reader.ReadInt32();
 
@@ -64,6 +64,7 @@ namespace Parquet.File.Values
          // value that's repeated. Yields the value repeated count times.
 
          int count = header >> 1;
+         if (count == 0) return; //important not to continue reading as will result in data corruption in data page further
          int width = (bitWidth + 7) / 8; //round up to next byte
          byte[] data = reader.ReadBytes(width);
          int value = ReadIntOnBytes(data);

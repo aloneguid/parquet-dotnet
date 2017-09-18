@@ -202,6 +202,33 @@ root
       }
 
       [Fact]
+      public void Read_simple_repeated_field()
+      {
+         /*
+root
+|-- cities: array (nullable = true)
+|    |-- element: string (containsNull = true)
+|-- id: long (nullable = true)
+          */
+
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
+
+         Assert.Equal(2, ds.Schema.Length);
+         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[0].ColumnType);
+         Assert.Equal(typeof(string), ds.Schema[0].ElementType);
+         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
+
+         Assert.Equal("cities", ds.Schema[0].Name);
+         Assert.Equal("id", ds.Schema[1].Name);
+
+         Assert.True(ds.Schema[0].IsRepeated);
+         Assert.False(ds.Schema[1].IsRepeated);
+
+         Assert.Equal(ds[0][1], 1L);
+         Assert.Equal(ds[0][0], new[] { "London", "Derby", "Paris", "New York" });
+      }
+
+      [Fact]
       public void Read_hardcoded_decimal()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("complex-primitives.parquet"));

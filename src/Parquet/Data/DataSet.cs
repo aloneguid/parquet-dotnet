@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Parquet.File;
 
 namespace Parquet.Data
@@ -72,7 +73,7 @@ namespace Parquet.Data
       public IList GetColumn(int i, int offset = 0, int count = -1)
       {
          SchemaElement schema = Schema.Elements[i];
-         IList result = TypeFactory.Create(schema.ElementType, schema.IsNullable);
+         IList result = TypeFactory.Create(schema.ColumnType, schema.IsNullable, schema.IsRepeated);
 
          for(int irow = offset; (count == -1 || result.Count < count) && (irow < _rows.Count); irow++)
          {
@@ -135,15 +136,18 @@ namespace Parquet.Data
          {
             object rowValue = row[i];
             SchemaElement se = _schema.Elements[i];
-            Type elementType = se.ElementType;
+            Type elementType = se.ColumnType;
 
             if (rowValue == null)
             {
                se.IsNullable = true;
+               se.Stats.NullCount += 1;
             }
             else
             {
-               if (rowValue.GetType() != elementType)
+               Type valueType = rowValue.GetType();
+
+               if (valueType != elementType && !elementType.GetTypeInfo().IsAssignableFrom(valueType.GetTypeInfo()))
                   throw new ArgumentException($"column '{se.Name}' expects '{elementType}' but {rowValue.GetType()} passed");
             }
          }

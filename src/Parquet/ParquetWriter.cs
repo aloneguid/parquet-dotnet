@@ -213,12 +213,25 @@ namespace Parquet
          int dictionaryPageCount = 0;
          byte[] dataPageBytes;
 
+         //flatten values if the field is repeatable
+         if (schema.IsRepeated)
+         {
+            values = FlattenRepeatables(values, schema);
+         }
+
          using (var ms = new MemoryStream())
          {
             using (var writer = new BinaryWriter(ms))
             {
+               //write repetitions
+               if (schema.IsRepeated)
+               {
+                  List<int> repetitions = CreateRepetitions(values, schema);
+                  _rleWriter.Write(writer, _definitionsSchema, repetitions, out IList nullExtra);
+               }
+
                //write definitions
-               if(schema.IsNullable)
+               if (schema.HasNulls || schema.IsRepeated)
                {
                   CreateDefinitions(values, schema, out IList newValues, out List<int> definitions);
                   values = newValues;
@@ -279,6 +292,28 @@ namespace Parquet
                nonNullableValues.Add(value);
             }
          }
+      }
+
+      private List<int> CreateRepetitions(IList values, SchemaElement schema)
+      {
+         var result = new List<int>();
+
+         result.Add(0);
+         result.AddRange(Enumerable.Repeat(1, values.Count - 1));
+
+         return result;
+      }
+
+      private IList FlattenRepeatables(IList values, SchemaElement se)
+      {
+         IList result = TypeFactory.Create(se.ElementType, se.IsNullable);
+
+         foreach(IEnumerable elementValues in values)
+         {
+            result.AddRange(elementValues);
+         }
+
+         return result;
       }
 
       private int Write(Thrift.PageHeader ph, byte[] data)
