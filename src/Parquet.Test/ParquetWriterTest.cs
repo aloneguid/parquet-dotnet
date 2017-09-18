@@ -5,6 +5,8 @@ using Parquet.Thrift;
 using Xunit;
 using F = System.IO.File;
 using Type = Parquet.Thrift.Type;
+using NetBox.IO;
+using NetBox;
 
 namespace Parquet.Test
 {
@@ -192,6 +194,71 @@ namespace Parquet.Test
          Assert.Equal(0, ds1[0][0]);
          Assert.Null(ds1[0][1]);
 
+      }
+
+      [Fact]
+      public void Write_in_small_chunks_to_forward_only_stream()
+      {
+         var ms = new MemoryStream();
+         var forwardOnly = new WriteableNonSeekableStream(ms);
+
+         var ds = new DataSet(
+            new SchemaElement<int>("id"),
+            new SchemaElement<string>("nonsense"));
+         ds.Add(1, Generator.RandomString);
+
+         using (var writer = new ParquetWriter(forwardOnly))
+         {
+            writer.Write(ds);
+            writer.Write(ds);
+            writer.Write(ds);
+         }
+
+         ms.Position = 0;
+         DataSet ds1 = ParquetReader.Read(ms);
+
+         Assert.Equal(3, ds1.RowCount);
+
+      }
+
+      [Fact]
+      public void Writing_another_chunk_validates_schema()
+      {
+
+         var ds1 = new DataSet(new SchemaElement<int>("id"));
+         var ds2 = new DataSet(new SchemaElement<int>("id1"));
+
+         using (var ms = new MemoryStream())
+         {
+            using (var ps = new ParquetWriter(ms))
+            {
+               ps.Write(ds1);
+
+               Assert.Throws<ParquetException>(() => ps.Write(ds2));
+            }
+         }
+      }
+
+      public class WriteableNonSeekableStream : DelegatedStream
+      {
+         public WriteableNonSeekableStream(Stream master) : base(master)
+         {
+         }
+
+         public override bool CanSeek => false;
+
+         public override bool CanRead => true;
+
+         public override long Seek(long offset, SeekOrigin origin)
+         {
+            throw new NotSupportedException();
+         }
+
+         public override long Position
+         {
+            get => base.Position;
+            set => throw new NotSupportedException();
+         }
       }
    }
 }
