@@ -36,7 +36,7 @@ namespace Parquet.Data
       /// <exception cref="ArgumentException">format</exception>
       public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name)
       {
-         ElementType = typeof(DateTimeOffset);
+         ElementType = ColumnType = typeof(DateTimeOffset);
          switch (format)
          {
             case DateTimeFormat.Impala:
@@ -71,7 +71,7 @@ namespace Parquet.Data
          Thrift.Type = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
          Thrift.Converted_type = Parquet.Thrift.ConvertedType.INTERVAL;
          Thrift.Type_length = 12;
-         ElementType = typeof(Interval);
+         ElementType = ColumnType = typeof(Interval);
       }
    }
 
@@ -112,7 +112,7 @@ namespace Parquet.Data
          Thrift.Converted_type = Parquet.Thrift.ConvertedType.DECIMAL;
          Thrift.Precision = precision;
          Thrift.Scale = scale;
-         ElementType = typeof(decimal);
+         ElementType = ColumnType = typeof(decimal);
       }
    }
 
@@ -166,6 +166,8 @@ namespace Parquet.Data
       {
          if (string.IsNullOrEmpty(name))
             throw new ArgumentException("cannot be null or empty", nameof(name));
+
+         //todo: a lot of this stuff has to move out to schema parser
 
          Name = name;
 

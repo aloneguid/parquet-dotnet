@@ -15,6 +15,11 @@ namespace Parquet.Data
       /// </summary>
       public const string PathSeparator = ".";
 
+      /// <summary>
+      /// Character used to separate path parts in schema element path
+      /// </summary>
+      public const char PathSeparatorChar = '.';
+
       private readonly List<SchemaElement> _elements;
       private Dictionary<string, SchemaElement> _pathToElement;
 

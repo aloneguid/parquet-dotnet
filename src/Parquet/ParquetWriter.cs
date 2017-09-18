@@ -200,27 +200,30 @@ namespace Parquet
          int dictionaryPageCount = 0;
          byte[] dataPageBytes;
 
+         //flatten values if the field is repeatable
+         if (schema.IsRepeated)
+         {
+            values = FlattenRepeatables(values, schema);
+         }
+
          using (var ms = new MemoryStream())
          {
             using (var writer = new BinaryWriter(ms))
             {
+               //write repetitions
+               if (schema.IsRepeated)
+               {
+                  List<int> repetitions = CreateRepetitions(values, schema);
+                  _rleWriter.Write(writer, _definitionsSchema, repetitions, out IList nullExtra);
+               }
+
                //write definitions
-               if(schema.HasNulls)
+               if (schema.HasNulls || schema.IsRepeated)
                {
                   CreateDefinitions(values, schema, out IList newValues, out List<int> definitions);
                   values = newValues;
 
                   _rleWriter.Write(writer, _definitionsSchema, definitions, out IList nullExtra);
-               }
-
-               //write repetitions
-               if(schema.IsRepeated)
-               {
-                  List<int> repetitions = CreateRepetitions(values, schema);
-                  _rleWriter.Write(writer, _definitionsSchema, repetitions, out IList nullExtra);
-
-                  //flatten values
-                  values = FlattenRepeatables(values, schema);
                }
 
                //write data

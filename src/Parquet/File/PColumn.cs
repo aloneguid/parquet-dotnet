@@ -166,11 +166,11 @@ namespace Parquet.File
             using (var reader = new BinaryReader(dataStream))
             {
                List<int> repetitions = _schema.HasRepetitionLevelsPage
-                  ? ReadRepetitionLevels(reader, (int)maxValues)
+                  ? ReadRepetitionLevels(reader)
                   : null;
 
                List<int> definitions = _schema.HasDefinitionLevelsPage
-                  ? ReadDefinitionLevels(reader, (int)maxValues)
+                  ? ReadDefinitionLevels(reader)
                   : null;
 
                // these are pointers back to the Values table - lookup on values 
@@ -178,39 +178,39 @@ namespace Parquet.File
 
                //trim output if it exceeds max number of values
                int numValues = ph.Data_page_header.Num_values;
-               if (repetitions != null) ValueMerger.TrimTail(repetitions, numValues);
-               if (definitions != null) ValueMerger.TrimTail(definitions, numValues);
-               if (indexes != null) ValueMerger.TrimTail(indexes, numValues);
+
+               if (!_schema.IsRepeated)
+               {
+                  if (repetitions != null) ValueMerger.TrimTail(repetitions, numValues);
+                  if (definitions != null) ValueMerger.TrimTail(definitions, numValues);
+                  if (indexes != null) ValueMerger.TrimTail(indexes, numValues);
+               }
 
                return new PageData { definitions = definitions, repetitions = repetitions, indexes = indexes };
             }
          }
       }
 
-      private List<int> ReadRepetitionLevels(BinaryReader reader, int valueCount)
+      private List<int> ReadRepetitionLevels(BinaryReader reader)
       {
          int maxLevel = _schema.MaxRepetitionLevel;
          int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
          var result = new List<int>();
 
          //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
-
-         ValueMerger.TrimTail(result, valueCount);
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result);
 
          return result;
       }
 
-      private List<int> ReadDefinitionLevels(BinaryReader reader, int valueCount)
+      private List<int> ReadDefinitionLevels(BinaryReader reader)
       {
          int maxLevel = _schema.MaxDefinitionLevel;
          int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
          var result = new List<int>();
 
          //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result, valueCount);
-
-         ValueMerger.TrimTail(result, valueCount);
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result);
 
          return result;
       }

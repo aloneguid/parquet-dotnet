@@ -85,7 +85,7 @@ namespace Parquet.File
 
       public static string BuildRepeatablePath(SchemaElement se)
       {
-         return $"{se.Name}.list.element";
+         return $"{se.Name}{Schema.PathSeparator}list{Schema.PathSeparator}element";
       }
 
       public void SetMeta(Thrift.FileMetaData meta)
@@ -118,7 +118,7 @@ namespace Parquet.File
             Thrift.Encoding.BIT_PACKED,
             Thrift.Encoding.PLAIN
          };
-         chunk.Meta_data.Path_in_schema = new List<string> { schema.Name };
+         chunk.Meta_data.Path_in_schema = new List<string>(schema.Path.Split(Schema.PathSeparatorChar));
 
          return chunk;
       }
