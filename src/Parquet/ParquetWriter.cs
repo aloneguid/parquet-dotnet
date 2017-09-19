@@ -46,6 +46,7 @@ namespace Parquet
       private readonly IValuesWriter _plainWriter;
       private readonly IValuesWriter _rleWriter;
       private readonly IValuesWriter _dicWriter;
+      private Schema _existingSchema;
       private bool _dataWritten;
 
       private struct PageTag
@@ -73,8 +74,6 @@ namespace Parquet
          _plainWriter = new PlainValuesWriter(_formatOptions);
          _rleWriter = new RunLengthBitPackingHybridValuesWriter();
          _dicWriter = new PlainDictionaryValuesWriter(_rleWriter);
-
-         GoToBeginning();
       }
 
       /// <summary>
@@ -117,6 +116,8 @@ namespace Parquet
       {
          if (append)
          {
+            if (!_output.CanSeek) throw new IOException("destination stream must be seekable for append operations.");
+
             ValidateFile();
 
             Thrift.FileMetaData fileMeta = ReadMetadata();
@@ -133,10 +134,22 @@ namespace Parquet
          }
          else
          {
-            //file starts with magic
-            WriteMagic();
+            if (_existingSchema == null)
+            {
+               _existingSchema = ds.Schema;
 
-            _meta.AddSchema(ds);
+               //file starts with magic
+               WriteMagic();
+
+               _meta.AddSchema(ds);
+            }
+            else
+            {
+               if(!_existingSchema.Equals(ds.Schema))
+               {
+                  throw new ParquetException($"expeted schema {_existingSchema} but found {ds.Schema}.");
+               }
+            }
          }
       }
 
@@ -349,7 +362,6 @@ namespace Parquet
          if (!_dataWritten) return;
 
          //finalize file
-         _output.Seek(0, SeekOrigin.End);
          long size = ThriftStream.Write(_meta.ThriftMeta);
 
          //metadata size
