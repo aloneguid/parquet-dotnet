@@ -103,4 +103,4 @@ Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/p
 
 ## Contributing
 
-All contributions are welcome. For details on how to start see [this guide](CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
+All contributions are welcome. For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
