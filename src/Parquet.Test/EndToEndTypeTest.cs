@@ -36,7 +36,17 @@ namespace Parquet.Test
          new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "dateandtime" },
          // don't want any excess info in the offset INT32 doesn't contain or care about this data 
          new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero), "date" },
-         new object[] {  new IntervalSchemaElement("interval"), new Interval(3, 2, 1) }
+         new object[] {  new IntervalSchemaElement("interval"), new Interval(3, 2, 1) },
+
+         new object[] {  new SchemaElement<byte>("byte"), byte.MinValue },
+         new object[] {  new SchemaElement<byte>("byte"), byte.MaxValue },
+         new object[] {  new SchemaElement<sbyte>("sbyte"), sbyte.MinValue },
+         new object[] {  new SchemaElement<sbyte>("sbyte"), sbyte.MaxValue },
+
+         new object[] {  new SchemaElement<short>("short"), short.MinValue },
+         new object[] {  new SchemaElement<short>("short"), short.MaxValue },
+         new object[] {  new SchemaElement<ushort>("ushort"), ushort.MinValue },
+         new object[] {  new SchemaElement<ushort>("ushort"), ushort.MaxValue }
       };
 
       [Theory]
@@ -60,25 +70,6 @@ namespace Parquet.Test
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
 
          //if (schema.ElementType == typeof(decimal)) ParquetWriter.WriteFile(ds1, "c:\\tmp\\decimals.parquet");
-      }
-
-      [Fact]
-      public void Type_write_byte_and_short_byte()
-      {
-         var schema = new Schema(new SchemaElement<sbyte>("sbyte"), new SchemaElement<byte>("byte"));
-         var ds = new DataSet(schema)
-         {
-            {(sbyte) 121, (byte) 122}
-         };
-
-         var ms = new MemoryStream();
-         ParquetWriter.Write(ds, ms);
-
-         ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms);
-
-         Assert.Equal(121, (sbyte) ds1[0][0]);
-         Assert.Equal(122, (byte) ds1[0][1]);
       }
    }
 }

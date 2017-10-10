@@ -128,7 +128,7 @@ namespace Parquet.File.Values
                }
             }
          }
-         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INT_8))
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.UINT_8))
          {
             var dataTyped = (List<byte>)data;
             foreach (byte byteValue in dataTyped)
@@ -136,10 +136,26 @@ namespace Parquet.File.Values
                writer.Write(byteValue);
             }
          }
-         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.UINT_8))
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INT_8))
          {
             var dataTyped = (List<sbyte>)data;
             foreach (sbyte byteValue in dataTyped)
+            {
+               writer.Write(byteValue);
+            }
+         }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.UINT_16))
+         {
+            var dataTyped = (List<ushort>)data;
+            foreach (ushort byteValue in dataTyped)
+            {
+               writer.Write(byteValue);
+            }
+         }
+         else if (schema.IsAnnotatedWith(Thrift.ConvertedType.INT_16))
+         {
+            var dataTyped = (List<short>)data;
+            foreach (short byteValue in dataTyped)
             {
                writer.Write(byteValue);
             }
