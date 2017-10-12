@@ -34,7 +34,7 @@ namespace Parquet.File
          return ds;
       }
 
-      internal Row CreateRow(IEnumerable<SchemaElement> schema, int rowIdx, Dictionary<string, IList> pathToValues)
+      private Row CreateRow(IEnumerable<SchemaElement> schema, int rowIdx, Dictionary<string, IList> pathToValues)
       {
          var values = new List<object>();
 
@@ -44,7 +44,14 @@ namespace Parquet.File
 
             if (se.IsNestedStructure)
             {
-               value = CreateRow(se.Children, rowIdx, pathToValues);
+               if (se.IsRepeated)
+               {
+                  value = null;
+               }
+               else
+               {
+                  value = CreateRow(se.Children, rowIdx, pathToValues);
+               }
             }
             else
             {
@@ -57,6 +64,13 @@ namespace Parquet.File
 
          return new Row(values);
       }
+
+      private object CreateElement(IEnumerable<SchemaElement> schema, int rowIdx, Dictionary<string, IList> pathToValues)
+      {
+         return null;
+      }
+
+
    
    }
 }

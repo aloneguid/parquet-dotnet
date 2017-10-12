@@ -187,18 +187,18 @@ root
          */
 
 
-         Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("nested.parquet")));
+         //Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("nested.parquet")));
 
-         //DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested.parquet"));
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested.parquet"));
 
-         //Assert.Equal(2, ds.Count);
-         //Assert.Equal(6, ds.Schema.Length);
+         Assert.Equal(2, ds.Count);
+         Assert.Equal(6, ds.Schema.Length);
 
-         /*Assert.Equal(typeof(string), ds.Schema[0].ElementType);
+         Assert.Equal(typeof(IEnumerable<Row>), ds.Schema[0].ElementType);
          Assert.Equal(typeof(long), ds.Schema[1].ElementType);
          Assert.Equal(typeof(Row), ds.Schema[2].ElementType);
          Assert.Equal(typeof(long), ds.Schema[3].ElementType);
-         Assert.Equal(typeof(Row), ds.Schema[4].ElementType);*/
+         Assert.Equal(typeof(Row), ds.Schema[4].ElementType);
       }
 
       [Fact]

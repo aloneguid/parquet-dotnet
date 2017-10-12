@@ -45,22 +45,20 @@ namespace Parquet.File
                   mse.IsRepeated = true;
                   if (!isRoot) mse.Path = node.Path + Schema.PathSeparator + mse.Path;
 
-                  mse.MaxDefinitionLevel = CountRepetitions(Thrift.FieldRepetitionType.OPTIONAL, mse, tseList);
-                  mse.MaxRepetitionLevel = CountRepetitions(Thrift.FieldRepetitionType.REPEATED, mse, tseList, tseTop);
+                  AddFlags(mse, tseTop, tseList, tseElement);
 
                   tse = tseElement;
                }
                else
                {
-
                   Type containerType = tse.Num_children > 0
                      ? typeof(Row)
                      : null;
 
                   SchemaElement parent = isRoot ? null : node;
                   mse = new SchemaElement(tse, parent, formatOptions, containerType);
-                  mse.MaxDefinitionLevel = CountRepetitions(Thrift.FieldRepetitionType.OPTIONAL, mse);
-                  mse.MaxRepetitionLevel = CountRepetitions(Thrift.FieldRepetitionType.REPEATED, mse);
+
+                  AddFlags(mse, tse);
                }
 
                node.Children.Add(mse);
@@ -82,18 +80,29 @@ namespace Parquet.File
          return new Schema(root.Children);
       }
 
-      private int CountRepetitions(Thrift.FieldRepetitionType repetitionType, SchemaElement schema, params Thrift.SchemaElement[] extra)
+      private void AddFlags(SchemaElement node, params Thrift.SchemaElement[] tses)
       {
-         var elements = new List<Thrift.SchemaElement>();
-         while(schema != null)
+         if (node.Parent != null)
          {
-            elements.Add(schema.Thrift);
-            schema = schema.Parent;
+            node.MaxRepetitionLevel = node.Parent.MaxRepetitionLevel;
+            node.MaxDefinitionLevel = node.Parent.MaxDefinitionLevel;
          }
 
-         if (extra != null) elements.AddRange(extra);
-
-         return elements.Count(e => e.__isset.repetition_type && e.Repetition_type == repetitionType);
+         foreach (Thrift.SchemaElement tse in tses)
+         {
+            if (tse.__isset.repetition_type)
+            {
+               switch (tse.Repetition_type)
+               {
+                  case Thrift.FieldRepetitionType.OPTIONAL:
+                     node.MaxDefinitionLevel += 1;
+                     break;
+                  case Thrift.FieldRepetitionType.REPEATED:
+                     node.MaxRepetitionLevel += 1;
+                     break;
+               }
+            }
+         }
       }
    }
 }
