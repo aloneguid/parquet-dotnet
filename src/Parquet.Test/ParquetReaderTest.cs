@@ -242,7 +242,23 @@ root
 
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet"));
 
-         throw new NotImplementedException();
+         Assert.Equal(1, ds.RowCount);
+         Assert.Equal(2, ds.ColumnCount);
+
+         Assert.Equal(typeof(Row), ds.Schema[0].ElementType);
+         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
+
+         Assert.Equal("city", ds.Schema.ColumnNames[0]);
+         Assert.Equal("id", ds.Schema.ColumnNames[1]);
+
+         Row mr = ds[0];
+
+         Row city = mr.Get<Row>(0);
+         Assert.Equal(city[0], "United Kingdom");
+         Assert.Equal(city[1], true);
+         Assert.Equal(city[2], "London");
+
+         Assert.Equal(1L, mr[1]);
       }
 
       [Fact]

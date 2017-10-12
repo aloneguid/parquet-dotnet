@@ -115,8 +115,6 @@ namespace Parquet
          var metaParser = new FileMetadataParser(_meta);
          Schema schema = metaParser.ParseSchema(_formatOptions);
 
-         if (schema.HasNestedElements) throw new NotSupportedException("nested structures are not yet supported");
-
          var pathToValues = new Dictionary<string, IList>();
          long pos = 0;
          long rowsRead = 0;

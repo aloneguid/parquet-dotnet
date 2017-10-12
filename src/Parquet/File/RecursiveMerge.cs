@@ -27,21 +27,31 @@ namespace Parquet.File
 
          for(int i = 0; i < count; i++)
          {
-            Row row = CreateRow(i, pathToValues);
+            Row row = CreateRow(_schema.Elements, i, pathToValues);
             ds.Add(row);
          }
 
          return ds;
       }
 
-      internal Row CreateRow(int rowIdx, Dictionary<string, IList> pathToValues)
+      internal Row CreateRow(IEnumerable<SchemaElement> schema, int rowIdx, Dictionary<string, IList> pathToValues)
       {
          var values = new List<object>();
 
-         foreach(SchemaElement se in _schema.Elements)
+         foreach(SchemaElement se in schema)
          {
-            IList column = pathToValues[se.Path];
-            object value = column[rowIdx];
+            object value;
+
+            if (se.IsNestedStructure)
+            {
+               value = CreateRow(se.Children, rowIdx, pathToValues);
+            }
+            else
+            {
+               IList column = pathToValues[se.Path];
+               value = column[rowIdx];
+            }
+
             values.Add(value);
          }
 

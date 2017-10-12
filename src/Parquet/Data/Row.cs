@@ -135,7 +135,7 @@ namespace Parquet.Data
       }
 
       /// <summary>
-      /// Gets the value trying to case to <typeparamref name="T"/>
+      /// Gets the value trying to cast to <typeparamref name="T"/>
       /// </summary>
       /// <param name="i">Value index</param>
       /// <exception cref="ArgumentException">Cannot cast <typeparamref name="T"/></exception>

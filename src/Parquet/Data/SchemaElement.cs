@@ -131,6 +131,8 @@ namespace Parquet.Data
       /// </summary>
       internal IList<SchemaElement> Children => _children;
 
+      internal bool IsNestedStructure => _children.Count != 0;
+
       /// <summary>
       /// Gets parent schema element, if present. Null for root schema elements.
       /// </summary>

@@ -47,6 +47,36 @@ namespace Parquet.Data
       public IList<SchemaElement> Elements => _elements;
 
       /// <summary>
+      /// Gets the elements in flat list without hierarchy
+      /// </summary>
+      internal ICollection<SchemaElement> FlatElements
+      {
+         get
+         {
+            var flatList = new List<SchemaElement>();
+
+            void Walk(SchemaElement node, List<SchemaElement> list)
+            {
+               if(node.Children.Count > 0)
+               {
+                  foreach(SchemaElement child in node.Children)
+                  {
+                     Walk(child, list);
+                  }
+               }
+               else
+               {
+                  list.Add(node);
+               }
+            }
+
+            _elements.ForEach(e => Walk(e, flatList));
+
+            return flatList;
+         }
+      }
+
+      /// <summary>
       /// Gets the number of elements in the schema
       /// </summary>
       public int Length => _elements.Count;
