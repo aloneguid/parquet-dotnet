@@ -9,7 +9,7 @@ using Parquet.File.Data;
 
 namespace Parquet.File
 {
-   class PColumn
+   class ColumnReader
    {
       private readonly Thrift.ColumnChunk _thriftChunk;
       private readonly Stream _inputStream;
@@ -28,7 +28,7 @@ namespace Parquet.File
          public List<int> indexes;
       }
 
-      public PColumn(Thrift.ColumnChunk thriftChunk, SchemaElement schema, Stream inputStream, ThriftStream thriftStream, ParquetOptions options)
+      public ColumnReader(Thrift.ColumnChunk thriftChunk, SchemaElement schema, Stream inputStream, ThriftStream thriftStream, ParquetOptions options)
       {
          _thriftChunk = thriftChunk;
          _thrift = thriftStream;

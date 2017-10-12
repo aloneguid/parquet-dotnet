@@ -229,6 +229,23 @@ root
       }
 
       [Fact]
+      public void Read_simple_nested_field()
+      {
+         /*
+          * root
+|-- city: struct (nullable = true)
+|    |-- country: string (nullable = true)
+|    |-- isCapital: boolean (nullable = true)
+|    |-- name: string (nullable = true)
+|-- id: long (nullable = true)
+          */
+
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet"));
+
+         throw new NotImplementedException();
+      }
+
+      [Fact]
       public void Read_hardcoded_decimal()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("complex-primitives.parquet"));

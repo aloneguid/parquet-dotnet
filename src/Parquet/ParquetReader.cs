@@ -139,7 +139,7 @@ namespace Parquet
                Thrift.ColumnChunk cc = rg.Columns[icol];
                SchemaElement se = schema[cc];
 
-               var p = new PColumn(cc, se, _input, ThriftStream, _formatOptions);
+               var p = new ColumnReader(cc, se, _input, ThriftStream, _formatOptions);
 
                try
                {

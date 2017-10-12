@@ -43,6 +43,6 @@ def convertFromFormattedJson(name: String, writeFile: Boolean): DataFrame = {
 }
 
 //val df = convertFromFormattedJson("nested", true)
-val df = convertFromFormattedJson("simplerepeated", true)
+val df = convertFromFormattedJson("simplenested", true)
 
 df.printSchema()
