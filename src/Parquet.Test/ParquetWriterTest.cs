@@ -254,6 +254,39 @@ namespace Parquet.Test
          }
       }
 
+      [Fact]
+      public void Datetime_as_null_writes()
+      {
+         var schemaElements = new List<Data.SchemaElement>();
+         schemaElements.Add(new SchemaElement<string>("primary-key"));
+         schemaElements.Add(new SchemaElement<DateTime>("as-at-date"));
+
+         var ds = new DataSet(schemaElements);
+
+         // row 1
+         var row1 = new List<object>(schemaElements.Count);
+         row1.Add(Guid.NewGuid().ToString());
+         row1.Add(DateTime.UtcNow.AddDays(-5));
+         ds.Add(new Row(row1));
+
+         // row 2
+         var row2 = new List<object>(schemaElements.Count);
+         row2.Add(Guid.NewGuid().ToString());
+         row2.Add(DateTime.UtcNow);
+         ds.Add(new Row(row2));
+
+         // row 3
+         var row3 = new List<object>(schemaElements.Count);
+         row3.Add(Guid.NewGuid().ToString());
+         row3.Add(null);
+         //objData3.Add(DateTime.UtcNow);
+         ds.Add(new Row(row3));
+
+         DataSet dsRead = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal(3, dsRead.RowCount);
+      }
+
       public class WriteableNonSeekableStream : DelegatedStream
       {
          public WriteableNonSeekableStream(Stream master) : base(master)
@@ -275,5 +308,7 @@ namespace Parquet.Test
             set => throw new NotSupportedException();
          }
       }
+
+
    }
 }

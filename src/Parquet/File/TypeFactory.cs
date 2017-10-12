@@ -60,7 +60,8 @@ namespace Parquet.File
 
       public static IList Create(SchemaElement schema, ParquetOptions options, bool nullable = false)
       {
-         Type t = TypePrimitive.GetSystemTypeBySchema(schema, options);
+         //Type t = TypePrimitive.GetSystemTypeBySchema(schema, options);
+         Type t = schema.ElementType;  //use ElementType as it's properly pre-calculated
          return Create(t, nullable);
       }
 
