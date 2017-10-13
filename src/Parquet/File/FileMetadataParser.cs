@@ -90,17 +90,15 @@ namespace Parquet.File
 
          foreach (Thrift.SchemaElement tse in tses)
          {
-            if (tse.__isset.repetition_type)
+            if (tse.__isset.repetition_type && tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
             {
-               switch (tse.Repetition_type)
-               {
-                  case Thrift.FieldRepetitionType.OPTIONAL:
-                     node.MaxDefinitionLevel += 1;
-                     break;
-                  case Thrift.FieldRepetitionType.REPEATED:
-                     node.MaxRepetitionLevel += 1;
-                     break;
-               }
+               node.MaxRepetitionLevel += 1;
+            }
+
+            //definition level increases for anything that _required_ (not just OPTIONAL)
+            if(tse.Repetition_type != Thrift.FieldRepetitionType.REQUIRED)
+            {
+               node.MaxDefinitionLevel += 1;
             }
          }
       }

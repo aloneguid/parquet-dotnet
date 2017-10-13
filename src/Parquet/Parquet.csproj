@@ -13,7 +13,6 @@
     <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageProjectUrl>https://github.com/elastacloud/parquet-dotnet</PackageProjectUrl>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>Parquet.Net</PackageId>
     <PackageIconUrl>http://i.isolineltd.com/nuget/parquet.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
@@ -51,6 +50,9 @@ improvements:
 bug fixes:
 - some files mix encodings between data pages resulting in wrong count of rows and occasional crashes (#183)
 - some string encoded fields not annotated properly were crashing Parquet.Net reader (#138)</PackageReleaseNotes>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.6|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.6\Parquet.xml</DocumentationFile>
