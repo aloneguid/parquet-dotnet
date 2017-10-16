@@ -293,6 +293,12 @@ root
       }
 
       [Fact]
+      public void Read_all_nulls_no_booleans()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("all_nulls_no_booleans.parquet"));
+      }
+
+      [Fact]
       public void Read_all_nulls_file()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("all_nulls.parquet"));

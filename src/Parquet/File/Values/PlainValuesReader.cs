@@ -71,6 +71,10 @@ namespace Parquet.File.Values
          {
             if (ibit == 8)
             {
+               if (ibyte + 1 >= data.Length)
+               {
+                  break;
+               }
                b = data[++ibyte];
                ibit = 0;
             }
