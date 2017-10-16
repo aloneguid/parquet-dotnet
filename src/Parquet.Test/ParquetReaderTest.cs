@@ -207,8 +207,9 @@ root
          Assert.Equal(2, addresses.Count);
 
          Row addr = addresses.First();
-         Assert.Equal("London", addr[0]);
-         Assert.Equal("Derby", addr[1]);
+         List<string> line1 = addr.Get<IEnumerable<string>>(1).ToList();
+         Assert.Equal("Head Office", line1[0]);
+         Assert.Equal("Small Office", line1[1]);
       }
 
       [Fact]

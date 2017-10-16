@@ -44,7 +44,9 @@ namespace Parquet.File
 
             if (se.IsNestedStructure)
             {
-               value = CreateRow(se.Children, rowIdx, pathToValues);
+               value = se.IsRepeated
+                  ? (object)CreateRows(se.Children, rowIdx, pathToValues)
+                  : (object)CreateRow(se.Children, rowIdx, pathToValues);
             }
             else
             {
@@ -58,9 +60,22 @@ namespace Parquet.File
          return new Row(values);
       }
 
-      private object CreateElement(IEnumerable<SchemaElement> schema, int rowIdx, Dictionary<string, IList> pathToValues)
+      private ICollection<Row> CreateRows(IEnumerable<SchemaElement> schema, int rowIdx, Dictionary<string, IList> pathToValues)
       {
-         return null;
+         var list = new List<Row>();
+
+         var nestedPathToValues = schema
+            .ToDictionary(se => se.Path, se => pathToValues[se.Path] as IList);
+
+         int count = nestedPathToValues.Min(e => e.Value.Count);
+
+         for (int i = 0; i < count; i++)
+         {
+            Row row = CreateRow(schema, i, nestedPathToValues);
+            list.Add(row);
+         }
+
+         return list;
       }
    
    }
