@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Xunit;
+using System.Linq;
 
 namespace Parquet.Test
 {
@@ -187,18 +188,27 @@ root
          */
 
 
-         //Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("nested.parquet")));
-
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested.parquet"));
 
+         //basic counts
          Assert.Equal(2, ds.Count);
          Assert.Equal(6, ds.Schema.Length);
 
-         Assert.Equal(typeof(IEnumerable<Row>), ds.Schema[0].ElementType);
-         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
-         Assert.Equal(typeof(Row), ds.Schema[2].ElementType);
-         Assert.Equal(typeof(long), ds.Schema[3].ElementType);
-         Assert.Equal(typeof(Row), ds.Schema[4].ElementType);
+         //validate schema
+         Assert.Equal(typeof(IEnumerable<Row>), ds.Schema[0].ColumnType);
+         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[1].ColumnType);
+         Assert.Equal(typeof(string), ds.Schema[2].ColumnType);
+         Assert.Equal(typeof(long), ds.Schema[3].ColumnType);
+         Assert.Equal(typeof(Row), ds.Schema[4].ColumnType);
+         Assert.Equal(typeof(Row), ds.Schema[5].ColumnType);
+
+         //validate address
+         List<Row> addresses = ds[0].Get<IEnumerable<Row>>(0).ToList();
+         Assert.Equal(2, addresses.Count);
+
+         Row addr = addresses.First();
+         Assert.Equal("London", addr[0]);
+         Assert.Equal("Derby", addr[1]);
       }
 
       [Fact]

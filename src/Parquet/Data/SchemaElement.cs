@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using Parquet.File.Values.Primitives;
+using System.Diagnostics;
 
 namespace Parquet.Data
 {
@@ -120,6 +121,7 @@ namespace Parquet.Data
    /// <summary>
    /// Element of dataset's schema
    /// </summary>
+   [DebuggerDisplay("{Name}: {ElementType} (nullable = {IsNullable}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}")]
    public class SchemaElement : IEquatable<SchemaElement>
    {
       private readonly List<SchemaElement> _children = new List<SchemaElement>();

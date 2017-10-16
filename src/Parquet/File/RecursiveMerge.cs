@@ -44,14 +44,7 @@ namespace Parquet.File
 
             if (se.IsNestedStructure)
             {
-               if (se.IsRepeated)
-               {
-                  value = null;
-               }
-               else
-               {
-                  value = CreateRow(se.Children, rowIdx, pathToValues);
-               }
+               value = CreateRow(se.Children, rowIdx, pathToValues);
             }
             else
             {
@@ -69,8 +62,6 @@ namespace Parquet.File
       {
          return null;
       }
-
-
    
    }
 }

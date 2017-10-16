@@ -85,29 +85,65 @@ namespace Parquet.File
 
       private void ApplyRepetitions(List<int> repetitions)
       {
-         if (repetitions == null) return;
+         if (repetitions == null || _schema.MaxRepetitionLevel == 0) return;
 
+         //horizontal list split
          var values = new List<IList>();
+         IList[] hl = new IList[_schema.MaxRepetitionLevel];
+
+         //repetition level indicates where to start to create new lists
+
          IList chunk = null;
-         int rep = int.MaxValue;
+         int lrl = -1;
 
          for(int i = 0; i < _values.Count; i++)
          {
-            int cr = repetitions[i];
+            int rl = repetitions[i];
 
-            if (cr < rep)
+            if (lrl != rl)
             {
-               if (chunk != null) values.Add(chunk);
-               chunk = TypeFactory.Create(_schema, _formatOptions, true);
+               CreateLists(hl, rl);
+               lrl = rl;
+               chunk = hl[hl.Length - 1];
+
+               if(rl == 0)
+               {
+                  //list at level 0 will be a new element
+                  values.Add(hl[0]);
+               }
             }
 
-            rep = cr;
             chunk.Add(_values[i]);
          }
 
-         if (chunk.Count > 0) values.Add(chunk);
-
          _values = values;
+      }
+
+      private void CreateLists(IList[] hl, int rl)
+      {
+         int maxIdx = _schema.MaxRepetitionLevel - 1;
+
+         //replace lists in chain with new instances
+         for(int i = maxIdx; i >= rl; i--)
+         {
+            IList nl = (i == maxIdx)
+               ? TypeFactory.Create(_schema, _formatOptions)
+               : new List<IList>();
+
+            hl[i] = nl;
+         }
+
+         //rightest old list now should point to leftest new list
+         if(rl > 0 && rl <= maxIdx)
+         {
+            hl[rl - 1].Add(hl[rl]);
+         }
+
+         //chain new lists together
+         for(int i = maxIdx - 1; i>= rl; i--)
+         {
+            hl[i].Add(hl[i + 1]);
+         }
       }
 
       public static void TrimTail(IList list, int maxValues)
