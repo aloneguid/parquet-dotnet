@@ -158,6 +158,53 @@ namespace Parquet.Test
          Assert.Equal(new[] {1, 2, 3, 4}, dsAll.GetColumn(0));
       }
 
+
+        [Fact]
+        public void Append_shoud_work()
+        {
+            var schema = new Schema();
+            schema.Elements.Add(new SchemaElement<int>("id"));
+            schema.Elements.Add(new SchemaElement<DateTime>("Timestamp"));
+            schema.Elements.Add(new SchemaElement<string>("Message"));
+            var ds1 = new DataSet(schema);
+
+            ds1.Add(1, DateTime.Now, "Record1");
+            ds1.Add(2, DateTime.Now, "Record2");
+            ds1.Add(3, DateTime.Now, "Record3");
+            ds1.Add(4, DateTime.Now, "Record4");
+            ds1.Add(5, DateTime.Now, "Record5");
+
+
+            var filePath = $"/tmp/AppentTest{DateTime.Now.ToString("yyyyMMddHHmmss")}.parquet";
+
+            //Write part of the file (use actual file stream)
+            using (var file = System.IO.File.OpenWrite(filePath))
+            {
+                ParquetWriter.Write(ds1, file, CompressionMethod.Snappy, null, null, false);
+            }
+
+
+            var ds2 = new DataSet(schema);
+
+            ds2.Add(6, DateTime.Now, "Record6");
+            ds2.Add(7, DateTime.Now, "Record7");
+            ds2.Add(8, DateTime.Now, "Record8");
+            ds2.Add(9, DateTime.Now, "Record9");
+
+            using (var file = System.IO.File.Open(filePath, FileMode.Open, FileAccess.ReadWrite)){
+                file.Seek(0, SeekOrigin.End);
+
+                ParquetWriter.Write(ds2, file, CompressionMethod.Snappy, null, null, true);
+            }
+
+
+            //Open file for append and write to the same stream
+
+
+
+
+        }
+
       [Fact]
       public void Append_to_file_with_different_schema_fails()
       {
