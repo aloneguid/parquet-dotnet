@@ -20,7 +20,7 @@ namespace Parquet.Data
       /// <param name="parent">Parent schema element</param>
       public SchemaElement(string name, SchemaElement parent = null) : base(name, typeof(T), parent)
       {
-         
+
       }
    }
 
@@ -59,7 +59,7 @@ namespace Parquet.Data
    }
 
    /// <summary>
-   /// Maps onto Parquet Interval type 
+   /// Maps onto Parquet Interval type
    /// </summary>
    public class IntervalSchemaElement : SchemaElement
    {
@@ -143,7 +143,7 @@ namespace Parquet.Data
       public SchemaElement Parent { get; private set; }
 
       /// <summary>
-      /// Used by derived classes to invoke 
+      /// Used by derived classes to invoke
       /// </summary>
       /// <param name="name"></param>
       protected SchemaElement(string name)
@@ -209,7 +209,7 @@ namespace Parquet.Data
          Thrift = thriftSchema;
          Parent = parent;
 
-         if(elementType != null)
+         if (elementType != null)
          {
             ElementType = elementType;
             ColumnType = elementType;
@@ -323,8 +323,12 @@ namespace Parquet.Data
          //todo: check equality for child elements
 
          return string.Equals(Name, other.Name) &&
-               ColumnType == other.ColumnType &&
-               ElementType == other.ElementType &&
+               (ColumnType == other.ColumnType
+                  || (ColumnType == typeof(DateTime) && other.ColumnType == typeof(DateTimeOffset))
+                  || (ColumnType == typeof(DateTimeOffset) && other.ColumnType == typeof(DateTime))) &&
+               (ElementType == other.ElementType
+                  || (ElementType == typeof(DateTime) && other.ElementType == typeof(DateTimeOffset))
+                  || (ElementType == typeof(DateTimeOffset) && other.ElementType == typeof(DateTime))) &&
                Thrift.Type.Equals(other.Thrift.Type) &&
                Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
                Thrift.Converted_type.Equals(other.Thrift.Converted_type);
@@ -350,7 +354,7 @@ namespace Parquet.Data
       /// Returns a hash code for this instance.
       /// </summary>
       /// <returns>
-      /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+      /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
       /// </returns>
       public override int GetHashCode()
       {

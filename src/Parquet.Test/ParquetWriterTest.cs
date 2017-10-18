@@ -53,7 +53,7 @@ namespace Parquet.Test
          };*/
 
          var ds = new DataSet(
-            element  
+            element
          )
          {
             new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),
@@ -159,51 +159,40 @@ namespace Parquet.Test
       }
 
 
-        [Fact]
-        public void Append_shoud_work()
-        {
-            var schema = new Schema();
-            schema.Elements.Add(new SchemaElement<int>("id"));
-            schema.Elements.Add(new SchemaElement<DateTime>("Timestamp"));
-            schema.Elements.Add(new SchemaElement<string>("Message"));
-            var ds1 = new DataSet(schema);
+      [Fact]
+      public void Append_to_file_works_for_all_data_types()
+      {
+         var ms = new MemoryStream();
 
-            ds1.Add(1, DateTime.Now, "Record1");
-            ds1.Add(2, DateTime.Now, "Record2");
-            ds1.Add(3, DateTime.Now, "Record3");
-            ds1.Add(4, DateTime.Now, "Record4");
-            ds1.Add(5, DateTime.Now, "Record5");
+         var schema = new Schema();
+         schema.Elements.Add(new SchemaElement<int>("Id"));
+         schema.Elements.Add(new SchemaElement<DateTime>("Timestamp"));
+         schema.Elements.Add(new SchemaElement<DateTimeOffset>("Timestamp2"));
+         schema.Elements.Add(new SchemaElement<string>("Message"));
+         schema.Elements.Add(new SchemaElement<byte[]>("Data"));
+         schema.Elements.Add(new SchemaElement<bool>("IsDeleted"));
+         schema.Elements.Add(new SchemaElement<float>("Amount"));
+         schema.Elements.Add(new SchemaElement<decimal>("TotalAmount"));
+         schema.Elements.Add(new SchemaElement<long>("Counter"));
+         schema.Elements.Add(new SchemaElement<double>("Amount2"));
+         schema.Elements.Add(new SchemaElement<byte>("Flag"));
+         schema.Elements.Add(new SchemaElement<sbyte>("Flag2"));
+         schema.Elements.Add(new SchemaElement<short>("Flag3"));
+         schema.Elements.Add(new SchemaElement<ushort>("Flag4"));
 
+         var ds1 = new DataSet(schema);
 
-            var filePath = $"/tmp/AppentTest{DateTime.Now.ToString("yyyyMMddHHmmss")}.parquet";
+         ds1.Add(1, DateTime.Now, DateTimeOffset.Now, "Record1", System.Text.Encoding.ASCII.GetBytes("SomeData"), false, 123.4f, 200M, 100000L, 1331313D, (byte)1, (sbyte)-1, (short)-500, (ushort)500);
+         ds1.Add(1, DateTime.Now, DateTimeOffset.Now, "Record2", System.Text.Encoding.ASCII.GetBytes("SomeData2"), false, 124.4f, 300M, 200000L, 2331313D, (byte)2, (sbyte)-2, (short)-400, (ushort)400);
 
-            //Write part of the file (use actual file stream)
-            using (var file = System.IO.File.OpenWrite(filePath))
-            {
-                ParquetWriter.Write(ds1, file, CompressionMethod.Snappy, null, null, false);
-            }
+         ParquetWriter.Write(ds1, ms, CompressionMethod.Snappy, null, null, false);
 
+         var ds2 = new DataSet(schema);
+         ds2.Add(1, DateTime.Now, DateTimeOffset.Now, "Record3", System.Text.Encoding.ASCII.GetBytes("SomeData3"), false, 125.4f, 400M, 300000L, 3331313D, (byte)3, (sbyte)-3, (short)-600, (ushort)600);
+         ds2.Add(1, DateTime.Now, DateTimeOffset.Now, "Record4", System.Text.Encoding.ASCII.GetBytes("SomeData4"), false, 126.4f, 500M, 400000L, 4331313D, (byte)4, (sbyte)-4, (short)-700, (ushort)700);
 
-            var ds2 = new DataSet(schema);
-
-            ds2.Add(6, DateTime.Now, "Record6");
-            ds2.Add(7, DateTime.Now, "Record7");
-            ds2.Add(8, DateTime.Now, "Record8");
-            ds2.Add(9, DateTime.Now, "Record9");
-
-            using (var file = System.IO.File.Open(filePath, FileMode.Open, FileAccess.ReadWrite)){
-                file.Seek(0, SeekOrigin.End);
-
-                ParquetWriter.Write(ds2, file, CompressionMethod.Snappy, null, null, true);
-            }
-
-
-            //Open file for append and write to the same stream
-
-
-
-
-        }
+         ParquetWriter.Write(ds2, ms, CompressionMethod.Snappy, null, null, true);
+      }
 
       [Fact]
       public void Append_to_file_with_different_schema_fails()
