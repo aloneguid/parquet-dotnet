@@ -287,6 +287,21 @@ namespace Parquet.Test
          Assert.Equal(3, dsRead.RowCount);
       }
 
+      [Fact]
+      public void Column_with_all_null_decimals_has_type_length()
+      {
+         var ds = new DataSet(new SchemaElement<int>("id"), new SchemaElement<decimal>("nulls"))
+         {
+            { 1, null },
+            { 2, null }
+         };
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Null(ds1[0][1]);
+         Assert.Null(ds1[1][1]);
+      }
+
       public class WriteableNonSeekableStream : DelegatedStream
       {
          public WriteableNonSeekableStream(Stream master) : base(master)
@@ -308,7 +323,5 @@ namespace Parquet.Test
             set => throw new NotSupportedException();
          }
       }
-
-
    }
 }

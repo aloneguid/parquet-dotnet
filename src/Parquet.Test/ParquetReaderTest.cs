@@ -309,6 +309,12 @@ root
          Assert.Null(ds[0][0]);
       }
 
+      [Fact]
+      public void Read_all_nulls_decimal_column()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("decimalnulls.parquet"));
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)

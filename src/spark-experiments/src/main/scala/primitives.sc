@@ -1,7 +1,7 @@
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 val spark = SparkSession.builder()
-   .appName("nested-records")
+   .appName("primitives")
    .master("local[2]")
    .getOrCreate()
 
@@ -19,18 +19,18 @@ def write(df: DataFrame, path: String): Unit = {
       .parquet(path)
 }
 
-//create new dataset with primitives
-
-val decimalSample: BigDecimal = 1.2
+val validDecimal: BigDecimal = 1.2
+val nullDecimal: BigDecimal = null
 
 val df = sc.parallelize(Seq(
-   (1, decimalSample)
-)).toDF("id", "decimal")
+   (1, validDecimal, nullDecimal)
+)).toDF("id", "validDecimal", "nullDecimal")
 
 df.show
 df.printSchema
 df.schema.prettyJson
 
-write(df, root + "complex-primitives.folder.parquet")
+write(df, root + "decimalnulls.folder.parquet")
+
 
 

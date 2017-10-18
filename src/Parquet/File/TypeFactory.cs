@@ -29,6 +29,7 @@ namespace Parquet.File
          {
             schema.Precision = 38;
             schema.Scale = 18;
+            schema.Type_length = 16;   //set to default type length to be used when no elements are added
          }
       }
 

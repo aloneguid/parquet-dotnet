@@ -318,11 +318,7 @@ namespace Parquet.File.Values
             {
                var bd = new BigDecimal(d, schema.Thrift.Precision, schema.Thrift.Scale);
                byte[] itemData = bd.ToByteArray();
-
-               if (!schema.Thrift.__isset.type_length)
-               {
-                  schema.Thrift.Type_length = itemData.Length;
-               }
+               schema.Thrift.Type_length = itemData.Length; //always re-set type length as it can differ from default type length
 
                writer.Write(itemData);
             }

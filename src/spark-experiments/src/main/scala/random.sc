@@ -8,9 +8,10 @@ val spark = SparkSession.builder()
 import spark.implicits._
 val sc = spark.sparkContext
 
-val ds = spark.read.parquet("c:\\tmp\\decimals.parquet")
+val ds = spark.read.parquet("c:\\tmp\\decnulls.parquet")
 ds.printSchema()
 ds.show()
+
 
 
 

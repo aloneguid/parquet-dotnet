@@ -113,6 +113,8 @@ namespace Parquet.Data
          Thrift.Converted_type = Parquet.Thrift.ConvertedType.DECIMAL;
          Thrift.Precision = precision;
          Thrift.Scale = scale;
+         //set default type length to 16, to be used when a file has no elements
+         Thrift.Type_length = 16;
          ElementType = ColumnType = typeof(decimal);
       }
    }
