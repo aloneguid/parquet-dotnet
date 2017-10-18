@@ -99,6 +99,8 @@ namespace Parquet.Data
                if (se != null)
                {
                   se.Parent = this;
+                  _children.Add(se);
+                  se.Parent.Thrift.Num_children += 1;
                }
             }
          }

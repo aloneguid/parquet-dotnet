@@ -166,6 +166,13 @@ namespace Parquet.File
             path = BuildRepeatablePath(name);
             th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
          }
+         else if(typeof(Row) == systemType)
+         {
+            //this is a hierarchy, therefore can be a fake type
+            elementType = typeof(int);
+            path = null;
+            th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+         }
          else
          {
             Type t;

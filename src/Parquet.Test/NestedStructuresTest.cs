@@ -13,10 +13,10 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<int>("id"),
-            new SchemaElement<Row>("address"),
+            new SchemaElement<Row>("address",
                new SchemaElement<string>("line1"),
                new SchemaElement<string>("postcode")
-            );
+            ));
 
          ds.Add(1, new Row("flat 4", "se11"));
 
