@@ -19,7 +19,7 @@ namespace Parquet.Data
       /// <param name="name">Column name</param>
       public SchemaElement(string name) : base(name, typeof(T))
       {
-         
+
       }
 
       /// <summary>
@@ -117,7 +117,7 @@ namespace Parquet.Data
          Thrift = thriftSchema;
          Parent = parent;
 
-         if(elementType != null)
+         if (elementType != null)
          {
             ElementType = elementType;
             ColumnType = elementType;
@@ -243,8 +243,10 @@ namespace Parquet.Data
          //todo: check equality for child elements
 
          return string.Equals(Name, other.Name) &&
-               ColumnType == other.ColumnType &&
-               ElementType == other.ElementType &&
+               (ColumnType == other.ColumnType
+                  || (ColumnType == typeof(DateTime) && other.ColumnType == typeof(DateTimeOffset))) &&
+               (ElementType == other.ElementType
+                  || (ElementType == typeof(DateTime) && other.ElementType == typeof(DateTimeOffset))) &&
                Thrift.Type.Equals(other.Thrift.Type) &&
                Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
                Thrift.Converted_type.Equals(other.Thrift.Converted_type) &&
@@ -276,7 +278,7 @@ namespace Parquet.Data
       /// Returns a hash code for this instance.
       /// </summary>
       /// <returns>
-      /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+      /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
       /// </returns>
       public override int GetHashCode()
       {

@@ -53,7 +53,7 @@ namespace Parquet.Test
          };*/
 
          var ds = new DataSet(
-            element  
+            element
          )
          {
             new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),
@@ -156,6 +156,41 @@ namespace Parquet.Test
 
          Assert.Equal(4, dsAll.RowCount);
          Assert.Equal(new[] {1, 2, 3, 4}, dsAll.GetColumn(0));
+      }
+
+      [Fact]
+      public void Append_to_file_works_for_all_data_types()
+      {
+         var ms = new MemoryStream();
+
+         var schema = new Schema();
+         schema.Elements.Add(new SchemaElement<int>("Id"));
+         schema.Elements.Add(new SchemaElement<DateTime>("Timestamp"));
+         schema.Elements.Add(new SchemaElement<DateTimeOffset>("Timestamp2"));
+         schema.Elements.Add(new SchemaElement<string>("Message"));
+         schema.Elements.Add(new SchemaElement<byte[]>("Data"));
+         schema.Elements.Add(new SchemaElement<bool>("IsDeleted"));
+         schema.Elements.Add(new SchemaElement<float>("Amount"));
+         schema.Elements.Add(new SchemaElement<decimal>("TotalAmount"));
+         schema.Elements.Add(new SchemaElement<long>("Counter"));
+         schema.Elements.Add(new SchemaElement<double>("Amount2"));
+         schema.Elements.Add(new SchemaElement<byte>("Flag"));
+         schema.Elements.Add(new SchemaElement<sbyte>("Flag2"));
+         schema.Elements.Add(new SchemaElement<short>("Flag3"));
+         schema.Elements.Add(new SchemaElement<ushort>("Flag4"));
+
+         var ds1 = new DataSet(schema);
+
+         ds1.Add(1, DateTime.Now, DateTimeOffset.Now, "Record1", System.Text.Encoding.ASCII.GetBytes("SomeData"), false, 123.4f, 200M, 100000L, 1331313D, (byte)1, (sbyte)-1, (short)-500, (ushort)500);
+         ds1.Add(1, DateTime.Now, DateTimeOffset.Now, "Record2", System.Text.Encoding.ASCII.GetBytes("SomeData2"), false, 124.4f, 300M, 200000L, 2331313D, (byte)2, (sbyte)-2, (short)-400, (ushort)400);
+
+         ParquetWriter.Write(ds1, ms, CompressionMethod.Snappy, null, null, false);
+
+         var ds2 = new DataSet(schema);
+         ds2.Add(1, DateTime.Now, DateTimeOffset.Now, "Record3", System.Text.Encoding.ASCII.GetBytes("SomeData3"), false, 125.4f, 400M, 300000L, 3331313D, (byte)3, (sbyte)-3, (short)-600, (ushort)600);
+         ds2.Add(1, DateTime.Now, DateTimeOffset.Now, "Record4", System.Text.Encoding.ASCII.GetBytes("SomeData4"), false, 126.4f, 500M, 400000L, 4331313D, (byte)4, (sbyte)-4, (short)-700, (ushort)700);
+
+         ParquetWriter.Write(ds2, ms, CompressionMethod.Snappy, null, null, true);
       }
 
       [Fact]
