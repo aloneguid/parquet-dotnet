@@ -20,7 +20,7 @@ namespace Parquet.Test
 
          ds.Add(1, new Row("flat 4", "se11"));
 
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+         Assert.Throws<NotSupportedException>(() => DataSetGenerator.WriteRead(ds));
       }
    }
 }

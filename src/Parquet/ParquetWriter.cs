@@ -61,16 +61,11 @@ namespace Parquet
             foreach(SchemaElement se in dataSet.Schema.Flatten())
             {
                var cw = new ColumnWriter(_output, ThriftStream, _meta, se, compression, _formatOptions, _writerOptions);
-               IList values = dataSet.GetColumn(se.Name, offset, count);
+               IList values = dataSet.GetColumn(se, offset, count);
                ColumnStats cs = stats.GetColumnStats(se);
                Thrift.ColumnChunk chunk = cw.Write(offset, count, values, cs);
                rg.Columns.Add(chunk);
             }
-
-            /*rg.Columns = dataSet.Schema.Elements
-               .Select(c =>
-                  Write(c, dataSet.GetColumn(c.Name, offset, count), compression, stats.GetColumnStats(c)))
-               .ToList();*/
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
             //luckily ColumnChunk already contains sizes of page+header in it's meta
