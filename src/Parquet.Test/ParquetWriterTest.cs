@@ -158,7 +158,6 @@ namespace Parquet.Test
          Assert.Equal(new[] {1, 2, 3, 4}, dsAll.GetColumn(0));
       }
 
-
       [Fact]
       public void Append_to_file_works_for_all_data_types()
       {
