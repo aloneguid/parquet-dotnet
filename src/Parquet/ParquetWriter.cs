@@ -69,7 +69,7 @@ namespace Parquet
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
          _formatOptions = formatOptions ?? new ParquetOptions();
          _writerOptions = writerOptions ?? new WriterOptions();
-         _meta = new FileMetadataBuilder(_writerOptions);
+         _meta = new FileMetadataBuilder();
 
          _plainWriter = new PlainValuesWriter(_formatOptions);
          _rleWriter = new RunLengthBitPackingHybridValuesWriter();

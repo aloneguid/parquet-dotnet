@@ -197,21 +197,6 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Write_simple_repeated_field()
-      {
-         var ds = new DataSet(
-            new SchemaElement<int>("id"),
-            new SchemaElement<IEnumerable<string>>("cities"));
-
-         ds.Add(1, new[] { "London", "Derby" });
-
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
-
-         Assert.Equal("id", ds.Schema[0].Name);
-         Assert.Equal("cities", ds.Schema[1].Name);
-      }
-
-      [Fact]
       public void Write_in_small_chunks_to_forward_only_stream()
       {
          var ms = new MemoryStream();

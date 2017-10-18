@@ -14,9 +14,12 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Creating_schema_with_nullable_primitive_fails()
+      public void Creating_schema_with_nullable_primitive_succeds_and_converts_to_non_nullable_element_type()
       {
-         Assert.Throws<ArgumentException>(() => new SchemaElement<int?>("fail!"));
+         var se = new SchemaElement<int?>("ok!");
+
+         Assert.Equal(typeof(int?), se.ColumnType);
+         Assert.Equal(typeof(int), se.ElementType);
       }
 
       [Fact]

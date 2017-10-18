@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
-using Parquet.File.Values.Primitives;
 using System.Diagnostics;
 
 namespace Parquet.Data
@@ -17,118 +16,32 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      /// <param name="parent">Parent schema element</param>
-      public SchemaElement(string name, SchemaElement parent = null) : base(name, typeof(T), parent)
+      public SchemaElement(string name) : base(name, typeof(T))
       {
          
       }
-   }
 
-   /// <summary>
-   /// Schema element for <see cref="DateTimeOffset"/> which allows to specify precision
-   /// </summary>
-   public class DateTimeSchemaElement : SchemaElement
-   {
       /// <summary>
-      /// Initializes a new instance of the <see cref="DateTimeSchemaElement"/> class.
+      /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
-      /// <param name="name">The name.</param>
-      /// <param name="format">The format.</param>
-      /// <exception cref="ArgumentException">format</exception>
-      public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name)
+      /// <param name="name">Column name</param>
+      /// <param name="children"></param>
+      public SchemaElement(string name, params SchemaElement[] children) : base(name, typeof(T), children)
       {
-         ElementType = ColumnType = typeof(DateTimeOffset);
-         switch (format)
-         {
-            case DateTimeFormat.Impala:
-               Thrift.Type = Parquet.Thrift.Type.INT96;
-               Thrift.Converted_type = Parquet.Thrift.ConvertedType.TIMESTAMP_MILLIS;
-               break;
-            case DateTimeFormat.DateAndTime:
-               Thrift.Type = Parquet.Thrift.Type.INT64;
-               Thrift.Converted_type = Parquet.Thrift.ConvertedType.TIMESTAMP_MILLIS;
-               break;
-            case DateTimeFormat.Date:
-               Thrift.Type = Parquet.Thrift.Type.INT32;
-               Thrift.Converted_type = Parquet.Thrift.ConvertedType.DATE;
-               break;
-            default:
-               throw new ArgumentException($"unknown date format '{format}'", nameof(format));
-         }
+
       }
    }
-
-   /// <summary>
-   /// Maps onto Parquet Interval type 
-   /// </summary>
-   public class IntervalSchemaElement : SchemaElement
-   {
-      /// <summary>
-      /// Constructs a parquet interval type
-      /// </summary>
-      /// <param name="name">The name of the column</param>
-      public IntervalSchemaElement(string name) : base(name)
-      {
-         Thrift.Type = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-         Thrift.Converted_type = Parquet.Thrift.ConvertedType.INTERVAL;
-         Thrift.Type_length = 12;
-         ElementType = ColumnType = typeof(Interval);
-      }
-   }
-
-   /// <summary>
-   /// Maps to Parquet decimal type, allowing to specify custom scale and precision
-   /// </summary>
-   public class DecimalSchemaElement : SchemaElement
-   {
-      /// <summary>
-      /// Constructs class instance
-      /// </summary>
-      /// <param name="name">The name of the column</param>
-      /// <param name="precision">Cusom precision</param>
-      /// <param name="scale">Custom scale</param>
-      /// <param name="forceByteArrayEncoding">Whether to force decimal type encoding as fixed bytes. Hive and Impala only understands decimals when forced to true.</param>
-      public DecimalSchemaElement(string name, int precision, int scale, bool forceByteArrayEncoding = false) : base(name)
-      {
-         if (precision < 1) throw new ArgumentException("precision cannot be less than 1", nameof(precision));
-         if (scale < 1) throw new ArgumentException("scale cannot be less than 1", nameof(scale));
-
-         Thrift.Type tt;
-
-         if (forceByteArrayEncoding)
-         {
-            tt = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-         }
-         else
-         {
-            if (precision <= 9)
-               tt = Parquet.Thrift.Type.INT32;
-            else if (precision <= 18)
-               tt = Parquet.Thrift.Type.INT64;
-            else
-               tt = Parquet.Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-         }
-
-         Thrift.Type = tt;
-         Thrift.Converted_type = Parquet.Thrift.ConvertedType.DECIMAL;
-         Thrift.Precision = precision;
-         Thrift.Scale = scale;
-         //set default type length to 16, to be used when a file has no elements
-         Thrift.Type_length = 16;
-         ElementType = ColumnType = typeof(decimal);
-      }
-   }
-
 
    /// <summary>
    /// Element of dataset's schema
    /// </summary>
-   [DebuggerDisplay("{Name}: {ElementType} (nullable = {IsNullable}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}")]
+   [DebuggerDisplay("{Name}: {ElementType} (nullable = {IsNullable}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}, P: {Path}")]
    public class SchemaElement : IEquatable<SchemaElement>
    {
       private readonly List<SchemaElement> _children = new List<SchemaElement>();
       private string _path;
       private readonly ColumnStats _stats = new ColumnStats();
+      private static readonly FileMetadataBuilder Builder = new FileMetadataBuilder();
 
       /// <summary>
       /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.
@@ -143,66 +56,55 @@ namespace Parquet.Data
       public SchemaElement Parent { get; private set; }
 
       /// <summary>
-      /// Used by derived classes to invoke 
+      /// Used only by derived classes implementing an edge case type
       /// </summary>
       /// <param name="name"></param>
       protected SchemaElement(string name)
       {
-         Thrift = new Thrift.SchemaElement(name)
-         {
-            //this must be changed later or if column has nulls (on write)
-            Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
-         };
-         Name = name;
+         Name = name ?? throw new ArgumentNullException(nameof(name));
+         Thrift = Builder.CreateSimpleSchemaElement(name);
       }
+
       /// <summary>
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
       /// <param name="elementType">Type of the element in this column</param>
-      /// <param name="parent">Parent element, or null when this element belongs to a root.</param>
-      public SchemaElement(string name, Type elementType, SchemaElement parent = null)
+      public SchemaElement(string name, Type elementType)
       {
-         SetProperties(name, elementType);
-         TypeFactory.AdjustSchema(Thrift, ElementType);
-         Parent = parent;
-      }
-
-      private void SetProperties(string name, Type elementType)
-      {
-         if (string.IsNullOrEmpty(name))
-            throw new ArgumentException("cannot be null or empty", nameof(name));
-
-         //todo: a lot of this stuff has to move out to schema parser
-
-         Name = name;
-
-         if (TypeFactory.TryExtractEnumerableType(elementType, out Type baseType))
-         {
-            ElementType = baseType;
-            Path = FileMetadataBuilder.BuildRepeatablePath(this);
-            IsRepeated = true;
-
-            Thrift = new Thrift.SchemaElement(name)
-            {
-               Repetition_type = Parquet.Thrift.FieldRepetitionType.REPEATED
-            };
-         }
-         else
-         {
-
-            ElementType = elementType;
-
-            Thrift = new Thrift.SchemaElement(name)
-            {
-               //this must be changed later or if column has nulls (on write)
-               Repetition_type = Parquet.Thrift.FieldRepetitionType.REQUIRED
-            };
-         }
-
+         Name = name ?? throw new ArgumentNullException(nameof(name));
          ColumnType = elementType;
+
+         Thrift = Builder
+            .CreateSchemaElement(name, elementType,
+               out Type resultElementType,
+               out string resultPath);
+
+         ElementType = resultElementType;
+         Path = resultPath;
       }
 
+      /// <summary>
+      /// Initializes a new instance of the <see cref="SchemaElement"/> class.
+      /// </summary>
+      /// <param name="name">Column name</param>
+      /// <param name="elementType">Type of the element in this column</param>
+      /// <param name="children">Child elements</param>
+      public SchemaElement(string name, Type elementType, IEnumerable<SchemaElement> children = null) : this(name, elementType)
+      {
+         if(children != null)
+         {
+            foreach(SchemaElement se in children)
+            {
+               if (se != null)
+               {
+                  se.Parent = this;
+               }
+            }
+         }
+      }
+
+      //todo: move this out completely into FileMetadataParser
       internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null)
       {
          Name = name ?? thriftSchema.Name;
@@ -327,7 +229,13 @@ namespace Parquet.Data
                ElementType == other.ElementType &&
                Thrift.Type.Equals(other.Thrift.Type) &&
                Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
-               Thrift.Converted_type.Equals(other.Thrift.Converted_type);
+               Thrift.Converted_type.Equals(other.Thrift.Converted_type) &&
+               Thrift.__isset.type_length == other.Thrift.__isset.type_length &&
+               Thrift.Type_length == other.Thrift.Type_length &&
+               Thrift.__isset.scale == other.Thrift.__isset.scale &&
+               Thrift.Scale == other.Thrift.Scale &&
+               Thrift.__isset.precision == other.Thrift.__isset.precision &&
+               Thrift.Precision == other.Thrift.Precision;
       }
 
       /// <summary>
