@@ -87,21 +87,26 @@ namespace Parquet.Data
       /// <summary>
       /// Slices rows and returns list of all values in a particular column.
       /// </summary>
-      /// <param name="name">Column name</param>
+      /// <param name="se">Schema element</param>
       /// <param name="offset">The offset.</param>
       /// <param name="count">The count.</param>
       /// <returns>
       /// Column values
       /// </returns>
       /// <exception cref="ArgumentException"></exception>
-      public IList GetColumn(string name, int offset = 0, int count = -1)
+      public IList GetColumn(SchemaElement se, int offset = 0, int count = -1)
       {
-         for(int i = 0; i < _schema.Elements.Count; i++)
+         if(se.Parent != null)
          {
-            if (_schema.Elements[i].Name == name) return GetColumn(i, offset, count);
+            throw new NotSupportedException("nested columns are not supported yet");
          }
 
-         throw new ArgumentException($"cannot find column {name}");
+         for(int i = 0; i < _schema.Elements.Count; i++)
+         {
+            if (_schema.Elements[i].Name == se.Name) return GetColumn(i, offset, count);
+         }
+
+         throw new ArgumentException($"unable to find column {se.Name}");
       }
 
       /// <summary>

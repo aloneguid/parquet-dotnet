@@ -74,6 +74,6 @@ bug fixes:
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Apache.Thrift" Version="1.0.2" />
-    <PackageReference Include="NetBox" Version="1.4.22" />
+    <PackageReference Include="NetBox" Version="1.4.31" />
   </ItemGroup>
 </Project>

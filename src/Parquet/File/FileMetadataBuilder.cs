@@ -16,7 +16,6 @@ namespace Parquet.File
    class FileMetadataBuilder
    {
       private Thrift.FileMetaData _meta;
-      private readonly WriterOptions _writerOptions;
 
       static FileMetadataBuilder()
       {
@@ -27,10 +26,9 @@ namespace Parquet.File
 
       public static string CreatedBy { internal get; set; }
 
-      public FileMetadataBuilder(WriterOptions writerOptions)
+      public FileMetadataBuilder()
       {
          _meta = new Thrift.FileMetaData();
-         this._writerOptions = writerOptions;
 
          _meta.Created_by = CreatedBy;
          _meta.Version = 1;
@@ -83,9 +81,9 @@ namespace Parquet.File
          }
       }
 
-      public static string BuildRepeatablePath(SchemaElement se)
+      public static string BuildRepeatablePath(string name)
       {
-         return $"{se.Name}{Schema.PathSeparator}list{Schema.PathSeparator}element";
+         return $"{name}{Schema.PathSeparator}list{Schema.PathSeparator}element";
       }
 
       public void SetMeta(Thrift.FileMetaData meta)
@@ -147,6 +145,88 @@ namespace Parquet.File
             Num_values = valueCount
          };
          return ph;
+      }
+
+      public TSchemaElement CreateSimpleSchemaElement(string name)
+      {
+         var th = new TSchemaElement(name);
+         th.Repetition_type = Thrift.FieldRepetitionType.REQUIRED;
+         return th;
+      }
+
+      public TSchemaElement CreateSchemaElement(string name, Type systemType,
+         out Type elementType,
+         out string path)
+      {
+         var th = new TSchemaElement(name);
+
+         if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
+         {
+            elementType = baseType;
+            path = BuildRepeatablePath(name);
+            th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
+         }
+         else if(typeof(Row) == systemType)
+         {
+            //this is a hierarchy, therefore can be a fake type
+            elementType = typeof(int);
+            path = null;
+            th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+         }
+         else
+         {
+            Type t;
+
+            if(TryGetNonNullableType(systemType, out Type nonNullableSystemType))
+            {
+               elementType = nonNullableSystemType;
+               th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+
+            }
+            else
+            {
+               elementType = systemType;
+               //this might be changed later or if column has nulls (on write)
+               th.Repetition_type = Thrift.FieldRepetitionType.REQUIRED;
+            }
+
+            path = null;
+         }
+
+         //adjust schema
+
+         TypePrimitive tp = TypePrimitive.Find(elementType);
+
+         th.Type = tp.ThriftType;
+
+         if (tp.ThriftAnnotation != null)
+         {
+            th.Converted_type = tp.ThriftAnnotation.Value;
+         }
+
+         //todo: not the best place for it, but it's a special case at the moment
+         if (systemType == typeof(decimal))
+         {
+            th.Precision = 38;
+            th.Scale = 18;
+            th.Type_length = 16;   //set to default type length to be used when no elements are added
+         }
+
+         return th;
+      }
+
+      private static bool TryGetNonNullableType(Type t, out Type nonNullable)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         if (!ti.IsClass && ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>))
+         {
+            nonNullable = ti.GenericTypeArguments[0];
+            return true;
+         }
+
+         nonNullable = t;
+         return false;
       }
    }
 }

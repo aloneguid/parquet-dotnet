@@ -23,7 +23,7 @@ namespace Parquet.Runner
                new SchemaElement<double>("lat"),
                new SchemaElement<double>("lon"));
 
-            log.D(ds.Schema.ToString());
+            log.Trace(ds.Schema.ToString());
 
             for (int i = 0; i < 10; i++)
             {
@@ -37,7 +37,7 @@ namespace Parquet.Runner
             ParquetWriter.WriteFile(ds, "c:\\tmp\\perf.parquet");
 
 
-            log.D("written in {0}", time.Elapsed);
+            log.Trace("written in {0}", time.Elapsed);
          }
 
       }

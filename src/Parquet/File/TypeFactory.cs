@@ -8,40 +8,6 @@ namespace Parquet.File
 {
    static class TypeFactory
    {
-      public static void AdjustSchema(Thrift.SchemaElement schema, Type systemType)
-      {
-         if(IsPrimitiveNullable(systemType))
-         {
-            throw new ArgumentException($"Type '{systemType}' in column '{schema.Name}' is a nullable type. Please pass either a class or a primitive type.", nameof(systemType));
-         }
-
-         TypePrimitive tp = TypePrimitive.Find(systemType);
-
-         schema.Type = tp.ThriftType;
-
-         if (tp.ThriftAnnotation != null)
-         {
-            schema.Converted_type = tp.ThriftAnnotation.Value;
-         }
-
-         //todo: not the best place for it, but it's a special case at the moment
-         if(systemType == typeof(decimal))
-         {
-            schema.Precision = 38;
-            schema.Scale = 18;
-            schema.Type_length = 16;   //set to default type length to be used when no elements are added
-         }
-      }
-
-      private static bool IsPrimitiveNullable(Type t)
-      {
-         TypeInfo ti = t.GetTypeInfo();
-
-         if (ti.IsClass) return false;
-
-         return ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>);
-      }
-
       public static IList Create(Type systemType, bool nullable = false, bool repeated = false)
       {
          //make the type nullable if it's not a class

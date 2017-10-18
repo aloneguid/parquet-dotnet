@@ -49,31 +49,28 @@ namespace Parquet.Data
       /// <summary>
       /// Gets the elements in flat list without hierarchy
       /// </summary>
-      internal ICollection<SchemaElement> FlatElements
+      internal ICollection<SchemaElement> Flatten()
       {
-         get
-         {
-            var flatList = new List<SchemaElement>();
+         var flatList = new List<SchemaElement>();
 
-            void Walk(SchemaElement node, List<SchemaElement> list)
+         void Walk(SchemaElement node, List<SchemaElement> list)
+         {
+            if(node.Children.Count > 0)
             {
-               if(node.Children.Count > 0)
+               foreach(SchemaElement child in node.Children)
                {
-                  foreach(SchemaElement child in node.Children)
-                  {
-                     Walk(child, list);
-                  }
-               }
-               else
-               {
-                  list.Add(node);
+                  Walk(child, list);
                }
             }
-
-            _elements.ForEach(e => Walk(e, flatList));
-
-            return flatList;
+            else
+            {
+               list.Add(node);
+            }
          }
+
+         _elements.ForEach(e => Walk(e, flatList));
+
+         return flatList;
       }
 
       /// <summary>
@@ -134,7 +131,7 @@ namespace Parquet.Data
             if (_pathToElement == null) BuildPathCache();
 
             if (!_pathToElement.TryGetValue(path, out SchemaElement result))
-               throw new ArgumentException($"cannot find schema element by path '{path}'", nameof(value));
+               throw new ArgumentException($"unable to find schema element by path '{path}'", nameof(value));
 
             return result;
          }
