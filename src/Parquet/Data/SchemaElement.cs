@@ -324,11 +324,9 @@ namespace Parquet.Data
 
          return string.Equals(Name, other.Name) &&
                (ColumnType == other.ColumnType
-                  || (ColumnType == typeof(DateTime) && other.ColumnType == typeof(DateTimeOffset))
-                  || (ColumnType == typeof(DateTimeOffset) && other.ColumnType == typeof(DateTime))) &&
+                  || (ColumnType == typeof(DateTime) && other.ColumnType == typeof(DateTimeOffset))) &&
                (ElementType == other.ElementType
-                  || (ElementType == typeof(DateTime) && other.ElementType == typeof(DateTimeOffset))
-                  || (ElementType == typeof(DateTimeOffset) && other.ElementType == typeof(DateTime))) &&
+                  || (ElementType == typeof(DateTime) && other.ElementType == typeof(DateTimeOffset))) &&
                Thrift.Type.Equals(other.Thrift.Type) &&
                Thrift.__isset.converted_type == other.Thrift.__isset.converted_type &&
                Thrift.Converted_type.Equals(other.Thrift.Converted_type);

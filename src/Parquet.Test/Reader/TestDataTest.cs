@@ -7,6 +7,11 @@ namespace Parquet.Test.Reader
 {
    public class TestDataTest : ParquetCsvComparison
    {
+      public TestDataTest()
+      {
+         System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+      }
+
       /// <summary>
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// |id |bool_col|tinyint_col|smallint_col|int_col|bigint_col|float_col|double_col|date_string_col          |string_col|timestamp_col        |
@@ -183,7 +188,7 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(int?),     //Easting
             typeof(int?),     //Northing
-            typeof(string),   
+            typeof(string),
             typeof(string),
             typeof(string),
             typeof(string),
