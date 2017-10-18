@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics;
+using NetBox.Collections;
 
 namespace Parquet.Data
 {
@@ -38,7 +39,7 @@ namespace Parquet.Data
    [DebuggerDisplay("{Name}: {ElementType} (nullable = {IsNullable}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}, P: {Path}")]
    public class SchemaElement : IEquatable<SchemaElement>
    {
-      private readonly List<SchemaElement> _children = new List<SchemaElement>();
+      private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
       private string _path;
       private readonly ColumnStats _stats = new ColumnStats();
       private static readonly FileMetadataBuilder Builder = new FileMetadataBuilder();
@@ -46,7 +47,12 @@ namespace Parquet.Data
       /// <summary>
       /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.
       /// </summary>
-      internal IList<SchemaElement> Children => _children;
+      public IList<SchemaElement> Children => _children;
+
+      internal void Detach()
+      {
+         Parent = null;
+      }
 
       internal bool IsNestedStructure => _children.Count != 0;
 
@@ -59,7 +65,7 @@ namespace Parquet.Data
       /// Used only by derived classes implementing an edge case type
       /// </summary>
       /// <param name="name"></param>
-      protected SchemaElement(string name)
+      protected SchemaElement(string name) : this()
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          Thrift = Builder.CreateSimpleSchemaElement(name);
@@ -70,7 +76,7 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Column name</param>
       /// <param name="elementType">Type of the element in this column</param>
-      public SchemaElement(string name, Type elementType)
+      public SchemaElement(string name, Type elementType) : this()
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          ColumnType = elementType;
@@ -98,16 +104,14 @@ namespace Parquet.Data
             {
                if (se != null)
                {
-                  se.Parent = this;
                   _children.Add(se);
-                  se.Parent.Thrift.Num_children += 1;
                }
             }
          }
       }
 
       //todo: move this out completely into FileMetadataParser
-      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null)
+      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null) : this()
       {
          Name = name ?? thriftSchema.Name;
          Thrift = thriftSchema;
@@ -132,6 +136,18 @@ namespace Parquet.Data
             ElementType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
             ColumnType = ElementType;
          }
+      }
+
+      private SchemaElement()
+      {
+         _children.OnAdd = OnAddChild;
+      }
+
+      private SchemaElement OnAddChild(SchemaElement se)
+      {
+         se.Parent = this;
+         se.Parent.Thrift.Num_children += 1;
+         return se;
       }
 
       /// <summary>
