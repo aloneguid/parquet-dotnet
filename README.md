@@ -23,10 +23,11 @@ This project is aimed to fix this problem.
 - Programming guide
   - [Reading Data](doc/reading.md) 
   - [Writing Data](doc/writing.md)
-  - [Working with DataSets](doc/dataset.md) 
+  - [DataSet](doc/dataset.md) 
   - [Supported Types](doc/types.md)
     - [Repeatable Fields](doc/types/repeatable.md) 
     - [Working with Floating Point Data](doc/types/floating.md)
+    - [Working with Dates](doc/types/dates.md)
 
 You can track the amount of features we have [implemented so far](doc/features.md).
 

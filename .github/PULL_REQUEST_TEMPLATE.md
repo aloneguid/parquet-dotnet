@@ -6,6 +6,4 @@ Issue #
 
 desctiption goes here
 
-### Todos
-- [ ] unit/integration tests
-- [ ] documentation
+<!-- I did not forget to add a unit test validating my fix -->

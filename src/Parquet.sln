@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A0507D42-940E-4EF9-BD33-46BB6561A2F5}"
 EndProject
@@ -30,10 +30,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\appveyor.ps1 = ..\appveyor.ps1
 		..\appveyor.yml = ..\appveyor.yml
 		..\build.ps1 = ..\build.ps1
-		..\CONTRIBUTING.md = ..\CONTRIBUTING.md
-		..\ISSUE_TEMPLATE.md = ..\ISSUE_TEMPLATE.md
 		PreCommit.ps1 = PreCommit.ps1
-		..\PULL_REQUEST_TEMPLATE.md = ..\PULL_REQUEST_TEMPLATE.md
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
@@ -46,6 +43,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "types", "types", "{A1B0E810
 		..\doc\types\dates.md = ..\doc\types\dates.md
 		..\doc\types\floating.md = ..\doc\types\floating.md
 		..\doc\types\repeatable.md = ..\doc\types\repeatable.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{AB829BBB-EF87-4038-8D32-E1C1629F357C}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\CONTRIBUTING.md = ..\.github\CONTRIBUTING.md
+		..\.github\ISSUE_TEMPLATE.md = ..\.github\ISSUE_TEMPLATE.md
+		..\.github\PULL_REQUEST_TEMPLATE.md = ..\.github\PULL_REQUEST_TEMPLATE.md
 	EndProjectSection
 EndProject
 Global
@@ -74,6 +78,7 @@ Global
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 		{CBF02EBF-EB36-42AA-8557-B95CEF5FD175} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 		{A1B0E810-98FB-459F-887A-734093FD6FE4} = {C2CC1962-DE4B-4489-9EE7-C609A2C1BFBB}
+		{AB829BBB-EF87-4038-8D32-E1C1629F357C} = {60294E19-6F8D-4D78-9A62-C50489095484}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B5C12140-A3BF-47C9-A4AD-91F7C4682804}
