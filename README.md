@@ -34,7 +34,7 @@ You can track the amount of features we have [implemented so far](doc/features.m
 ## Related Projects
 
 - [Azure Data Lake Analytics extractor](https://github.com/elastacloud/datalake-extractor-parquet)
-- [UWP Client for Windows 10](https://github.com/elastacloud/parquet-uwp)
+- [Apache Parquet viewer for Windows 10](https://github.com/aloneguid/parquet-viewer-uwp)
 
 ## Getting started
 

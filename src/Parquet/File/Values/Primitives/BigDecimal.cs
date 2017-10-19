@@ -102,60 +102,87 @@ namespace Parquet.File.Values.Primitives
          return bd.Value;
       }
 
-      private byte[] AllocateResult()
+      /// <summary>
+      /// Gets buffer size enough to be able to hold the decimal number of a specific precision
+      /// </summary>
+      /// <param name="precision">Precision value</param>
+      /// <returns>Length in bytes</returns>
+      public static int GetBufferSize(int precision)
       {
-         int size;
-
          //according to impala source: http://impala.io/doc/html/parquet-common_8h_source.html
 
-         switch (Precision)
+         int size;
+
+         switch (precision)
          {
-            case 1: case 2:
+            case 1:
+            case 2:
                size = 1;
                break;
-            case 3: case 4:
+            case 3:
+            case 4:
                size = 2;
                break;
-            case 5: case 6:
+            case 5:
+            case 6:
                size = 3;
                break;
-            case 7: case 8: case 9:
+            case 7:
+            case 8:
+            case 9:
                size = 4;
                break;
-            case 10: case 11:
+            case 10:
+            case 11:
                size = 5;
                break;
-            case 12: case 13: case 14:
+            case 12:
+            case 13:
+            case 14:
                size = 6;
                break;
-            case 15: case 16:
+            case 15:
+            case 16:
                size = 7;
                break;
-            case 17: case 18:
+            case 17:
+            case 18:
                size = 8;
                break;
-            case 19: case 20: case 21:
+            case 19:
+            case 20:
+            case 21:
                size = 9;
                break;
-            case 22: case 23:
+            case 22:
+            case 23:
                size = 10;
                break;
-            case 24: case 25: case 26:
+            case 24:
+            case 25:
+            case 26:
                size = 11;
                break;
-            case 27: case 28:
+            case 27:
+            case 28:
                size = 12;
                break;
-            case 29: case 30: case 31:
+            case 29:
+            case 30:
+            case 31:
                size = 13;
                break;
-            case 32: case 33:
+            case 32:
+            case 33:
                size = 14;
                break;
-            case 34: case 35:
+            case 34:
+            case 35:
                size = 15;
                break;
-            case 36: case 37: case 38:
+            case 36:
+            case 37:
+            case 38:
                size = 16;
                break;
             default:
@@ -163,6 +190,12 @@ namespace Parquet.File.Values.Primitives
                break;
          }
 
+         return size;
+      }
+
+      private byte[] AllocateResult()
+      {
+         int size = GetBufferSize(Precision);
          return new byte[size];
       }
 
