@@ -23,6 +23,7 @@ namespace Parquet.Test
 
          //difference cases of decimals
          new object[] { new SchemaElement<decimal>("decDefault"), 123.4m },
+         new object[] { new SchemaElement<decimal>("hugeDec"), 83086059037282.54m },
          new object[] { new DecimalSchemaElement("decInt32", 4, 1), 12.4m},
          new object[] { new DecimalSchemaElement("decInt64", 17, 12), 1234567.88m},
          new object[] { new DecimalSchemaElement("decFixedByteArray", 48, 12), 34434.5m},

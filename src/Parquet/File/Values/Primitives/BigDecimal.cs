@@ -12,9 +12,9 @@ namespace Parquet.File.Values.Primitives
       /// <summary>
       /// Contains a Decimal value that is the big integer
       /// </summary>
-      public decimal OriginalValue { get; set; }
+      public decimal DecimalValue { get; set; }
 
-      public decimal Value { get; set; }
+      public BigInteger UnscaledValue { get; set; }
 
       /// <summary>
       /// The scale of the decimal value
@@ -29,24 +29,22 @@ namespace Parquet.File.Values.Primitives
       public BigDecimal(byte[] data, Thrift.SchemaElement schema)
       {
          data = data.Reverse().ToArray();
-         OriginalValue = (decimal)(new BigInteger(data));
-         Scale = schema.Scale;
+
+         UnscaledValue = new BigInteger(data);
          Precision = schema.Precision;
+         Scale = schema.Scale;
 
-         decimal itv = OriginalValue;
-         int itsc = Scale;
-         while (itsc > 0)
-         {
-            itv /= 10;
-            itsc -= 1;
-         }
+         BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
+         BigInteger fpUnscaled = default(BigInteger);
+         decimal ipScaled = (decimal)BigInteger.DivRem(UnscaledValue, scaleMultiplier, out fpUnscaled);
+         decimal fpScaled = (decimal)fpUnscaled / (decimal)scaleMultiplier;
 
-         Value = itv;
+         DecimalValue = ipScaled + fpScaled;
       }
 
       public BigDecimal(decimal d)
       {
-         uint[] bits = (uint[]) (object) decimal.GetBits(d);
+         uint[] bits = (uint[])(object)decimal.GetBits(d);
 
          decimal mantissa =
             (bits[2] * 4294967296m * 4294967296m) +
@@ -69,28 +67,29 @@ namespace Parquet.File.Values.Primitives
             precision = scale + 1;
          }
 
-         Scale = (int)scale;
+         DecimalValue = d;
          Precision = (int)precision;
-         OriginalValue = d;
+         Scale = (int)scale;
 
-         Value = d;
-         int itsc = Scale;
-         while (itsc-- > 0)
-         {
-            Value *= 10m;
-         }
+         BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
+         BigInteger ipScaled = new BigInteger(DecimalValue);
+         decimal fpScaled = DecimalValue - (decimal)ipScaled;
+         decimal fpUnscaled = fpScaled * (decimal)scaleMultiplier;
 
+         UnscaledValue = (ipScaled * scaleMultiplier) + new BigInteger(fpUnscaled);
       }
 
       public BigDecimal(decimal d, int precision, int scale)
       {
-         OriginalValue = d;
+         DecimalValue = d;
          Precision = precision;
          Scale = scale;
 
-         decimal value = d;
-         while (scale-- > 0) value *= 10m;
-         Value = value;
+         BigInteger scaleMultiplier = BigInteger.Pow(10, scale);
+         BigInteger bscaled = new BigInteger(d);
+         decimal scaled = d - (decimal)bscaled;
+         decimal unscaled = scaled * (decimal)scaleMultiplier;
+         UnscaledValue = (bscaled * scaleMultiplier) + new BigInteger(unscaled);
       }
 
       /// <summary>
@@ -99,7 +98,7 @@ namespace Parquet.File.Values.Primitives
       /// <param name="bd">The BigDecimal value</param>
       public static implicit operator decimal(BigDecimal bd)
       {
-         return bd.Value;
+         return bd.DecimalValue;
       }
 
       /// <summary>
@@ -203,8 +202,7 @@ namespace Parquet.File.Values.Primitives
       {
          byte[] result = AllocateResult();
 
-         var bi = new BigInteger(Value);
-         byte[] data = bi.ToByteArray();
+         byte[] data = UnscaledValue.ToByteArray();
 
          if (data.Length > result.Length) throw new NotSupportedException($"decimal data buffer is {data.Length} but result must fit into {result.Length} bytes");
 

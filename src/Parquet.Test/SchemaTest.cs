@@ -80,7 +80,7 @@ namespace Parquet.Test
       {
          var se = new SchemaElement<string>("id");
 
-         Assert.False(se.IsNullable);
+         Assert.True(se.IsNullable);
       }
 
       [Fact]
@@ -88,7 +88,7 @@ namespace Parquet.Test
       {
          var se = new SchemaElement<DateTime>("id");
 
-         Assert.True(se.IsNullable);
+         Assert.False(se.IsNullable);
       }
    }
 }
