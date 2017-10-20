@@ -4,6 +4,11 @@ Parquet.Net tries to fit natively into .NET environment and map built-in CLR typ
 
 | CLR Type |  Parquet Type | Parquet Annotation | Notes |
 |----------|---------------|--------------------|-------|
+|System.Byte (byte)|INT32|UNIT_8||
+|System.SByte (sbyte)|INT32|UINT_8||
+|byte[]|BYTE_ARRAY|||
+|System.Int16 (short)|INT_32|INT_16||
+|System.UInt16 (ushort)|INT_32|UINT_16||
 |System.Int32 (int)|INT32|||
 |System.Boolean (bool)|BOOLEAN|||
 |System.String (string)|BYTE_ARRAY|UTF8||

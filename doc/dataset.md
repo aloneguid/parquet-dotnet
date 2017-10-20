@@ -4,7 +4,7 @@ Internally Parquet represents data in columnar format, however most of the inter
 
 ## Creating a DataSet
 
-The `DataSet` can be created by passing schema to it's constructor either as `Schema` object or a list of `SchemaElement`:
+The `DataSet` can be created by passing schema to it's constructor either as `Schema` object or a list of `SchemaElement` (see [declaring schema](schema.md) for more details):
 
 
 ```csharp

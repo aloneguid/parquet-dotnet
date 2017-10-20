@@ -24,6 +24,7 @@ This project is aimed to fix this problem.
   - [Reading Data](doc/reading.md) 
   - [Writing Data](doc/writing.md)
   - [DataSet](doc/dataset.md) 
+  - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
     - [Repeatable Fields](doc/types/repeatable.md) 
     - [Working with Floating Point Data](doc/types/floating.md)

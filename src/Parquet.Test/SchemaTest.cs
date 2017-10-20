@@ -66,5 +66,29 @@ namespace Parquet.Test
 
          Assert.NotEqual(schema1, schema2);
       }
+
+      [Fact]
+      public void Schemas_differ_by_nullability()
+      {
+         Assert.NotEqual<SchemaElement>(
+            new SchemaElement<int>("id"),
+            new SchemaElement<int?>("id"));
+      }
+
+      [Fact]
+      public void String_is_always_nullable()
+      {
+         var se = new SchemaElement<string>("id");
+
+         Assert.False(se.IsNullable);
+      }
+
+      [Fact]
+      public void Datetime_is_not_nullable_by_default()
+      {
+         var se = new SchemaElement<DateTime>("id");
+
+         Assert.True(se.IsNullable);
+      }
    }
 }

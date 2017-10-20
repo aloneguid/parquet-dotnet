@@ -180,6 +180,12 @@ namespace Parquet.File
                elementType = nonNullableSystemType;
                th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
             }
+            else if(systemType.GetTypeInfo().IsClass)
+            {
+               //reference types are always nullable
+               elementType = systemType;
+               th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+            }
             else
             {
                elementType = systemType;
