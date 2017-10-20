@@ -66,6 +66,7 @@ namespace Parquet.Data
          _pathToValues = pathToValues;
          _rowCount = pathToValues.Min(pv => pv.Value.Count);
          TotalRowCount = totalRowCount;
+         _metadata.CreatedBy = createdBy;
       }
 
 
@@ -167,7 +168,7 @@ namespace Parquet.Data
          {
             SchemaElement se = _schema[i];
 
-            if(!_pathToValues.TryGetValue(se.Path, out IList values));
+            if(!_pathToValues.TryGetValue(se.Path, out IList values))
             {
                values = TypeFactory.Create(se.ElementType, se.IsNullable, se.IsRepeated);
                _pathToValues[se.Path] = values;

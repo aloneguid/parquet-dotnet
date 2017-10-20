@@ -47,8 +47,6 @@ namespace Parquet
       {
          PrepareFile(dataSet, append);
 
-         var stats = new DataSetStats(dataSet);
-
          int offset = 0;
          int count;
          do
@@ -62,8 +60,7 @@ namespace Parquet
             {
                var cw = new ColumnWriter(_output, ThriftStream, _meta, se, compression, _formatOptions, _writerOptions);
                IList values = dataSet.GetColumn(se, offset, count);
-               ColumnStats cs = stats.GetColumnStats(se);
-               Thrift.ColumnChunk chunk = cw.Write(offset, count, values, cs);
+               Thrift.ColumnChunk chunk = cw.Write(offset, count, values);
                rg.Columns.Add(chunk);
             }
 

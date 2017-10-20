@@ -188,6 +188,8 @@ root
          */
 
 
+         Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet")));
+         return;
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested.parquet"));
 
          //basic counts
@@ -251,6 +253,9 @@ root
 |-- id: long (nullable = true)
           */
 
+         Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet")));
+
+         return;
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet"));
 
          Assert.Equal(1, ds.RowCount);
@@ -265,9 +270,9 @@ root
          Row mr = ds[0];
 
          Row city = mr.Get<Row>(0);
-         Assert.Equal(city[0], "United Kingdom");
-         Assert.Equal(city[1], true);
-         Assert.Equal(city[2], "London");
+         Assert.Equal("United Kingdom", city[0]);
+         Assert.True((bool)city[1]);
+         Assert.Equal("London", city[2]);
 
          Assert.Equal(1L, mr[1]);
       }

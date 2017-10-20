@@ -41,7 +41,6 @@ namespace Parquet.Data
    {
       private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
       private string _path;
-      private readonly ColumnStats _stats = new ColumnStats();
       private static readonly FileMetadataBuilder Builder = new FileMetadataBuilder();
 
       /// <summary>
@@ -199,8 +198,6 @@ namespace Parquet.Data
          get => Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
-      internal bool HasNulls => _stats.NullCount > 0;
-
       internal Thrift.SchemaElement Thrift { get; set; }
 
       internal bool IsAnnotatedWith(Thrift.ConvertedType ct)
@@ -216,8 +213,6 @@ namespace Parquet.Data
       internal bool HasRepetitionLevelsPage => MaxRepetitionLevel > 0;
 
       internal int MaxRepetitionLevel { get; set; }
-
-      internal ColumnStats Stats => _stats;
 
       /// <summary>
       /// Pretty prints

@@ -46,12 +46,12 @@ namespace Parquet.File
          _dicWriter = new PlainDictionaryValuesWriter(_rleWriter);
       }
 
-      public Thrift.ColumnChunk Write(int offset, int count, IList values, ColumnStats stats)
+      public Thrift.ColumnChunk Write(int offset, int count, IList values)
       {
          Thrift.ColumnChunk chunk = _meta.AddColumnChunk(_compressionMethod, _output, _schema, values.Count);
          Thrift.PageHeader ph = _meta.CreateDataPage(values.Count);
 
-         List<PageTag> pages = WriteValues(_schema, values, ph, _compressionMethod, stats);
+         List<PageTag> pages = WriteValues(_schema, values, ph, _compressionMethod);
 
          //the following counters must include both data size and header size
          chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
@@ -60,7 +60,7 @@ namespace Parquet.File
          return chunk;
       }
 
-      private List<PageTag> WriteValues(SchemaElement schema, IList values, Thrift.PageHeader ph, CompressionMethod compression, ColumnStats stats)
+      private List<PageTag> WriteValues(SchemaElement schema, IList values, Thrift.PageHeader ph, CompressionMethod compression)
       {
          var result = new List<PageTag>();
          byte[] dictionaryPageBytes = null;

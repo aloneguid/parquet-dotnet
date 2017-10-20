@@ -161,7 +161,7 @@ namespace Parquet.File
       {
          if (list == null) return;
 
-         while (list.Count > maxValues)
+         while (list.Count > maxValues && list.Count > 0)
          {
             list.RemoveAt(0);
          }
