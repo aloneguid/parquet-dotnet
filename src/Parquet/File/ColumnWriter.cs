@@ -85,7 +85,7 @@ namespace Parquet.File
                }
 
                //write definitions
-               if (schema.HasNulls || schema.IsRepeated)
+               if (schema.IsNullable || schema.IsRepeated)
                {
                   CreateDefinitions(values, schema, out IList newValues, out List<int> definitions);
                   values = newValues;

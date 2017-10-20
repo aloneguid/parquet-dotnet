@@ -68,7 +68,7 @@ namespace Parquet.Test
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms, null, ro);
 
-         Assert.Equal(ds1.TotalRowCount, 30);
+         Assert.Equal(30, ds1.TotalRowCount);
          Assert.Equal(2, ds1.RowCount);
          Assert.Equal(0, ds[0][0]);
          Assert.Equal(1, ds[1][0]);
@@ -87,7 +87,7 @@ namespace Parquet.Test
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms, null, ro);
 
-         Assert.Equal(ds1.TotalRowCount, 15);
+         Assert.Equal(15, ds1.TotalRowCount);
          Assert.Equal(2, ds1.RowCount);
          Assert.Equal(5, ds1[0][0]);
          Assert.Equal(6, ds1[1][0]);
@@ -106,7 +106,7 @@ namespace Parquet.Test
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms, null, ro);
 
-         Assert.Equal(ds1.TotalRowCount, 15);
+         Assert.Equal(15, ds1.TotalRowCount);
          Assert.Equal(2, ds1.RowCount);
          Assert.Equal(4, ds1[0][0]);
          Assert.Equal(5, ds1[1][0]);
@@ -136,7 +136,7 @@ namespace Parquet.Test
 
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms);
-         Assert.True(ds1.Metadata.CreatedBy.StartsWith("parquet-dotnet"));
+         Assert.StartsWith("parquet-dotnet", ds1.Metadata.CreatedBy);
       }
 
       //this only tests that the file is readable as it used to completely crash before
@@ -235,7 +235,7 @@ root
          Assert.True(ds.Schema[0].IsRepeated);
          Assert.False(ds.Schema[1].IsRepeated);
 
-         Assert.Equal(ds[0][1], 1L);
+         Assert.Equal(1L, ds[0][1]);
          Assert.Equal(ds[0][0], new[] { "London", "Derby", "Paris", "New York" });
       }
 
@@ -283,7 +283,7 @@ root
       [Fact]
       public void Read_column_with_all_nulls()
       {
-         var ds = new DataSet(new SchemaElement<int>("id"))
+         var ds = new DataSet(new SchemaElement<int?>("id"))
          {
             new object[] {null},
             new object[] {null}

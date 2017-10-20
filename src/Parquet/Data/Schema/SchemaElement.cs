@@ -59,7 +59,7 @@ namespace Parquet.Data
       /// <summary>
       /// Gets parent schema element, if present. Null for root schema elements.
       /// </summary>
-      public SchemaElement Parent { get; private set; }
+      internal SchemaElement Parent { get; private set; }
 
       /// <summary>
       /// Used only by derived classes implementing an edge case type
@@ -197,7 +197,6 @@ namespace Parquet.Data
       internal bool IsNullable
       {
          get => Thrift.Repetition_type != Parquet.Thrift.FieldRepetitionType.REQUIRED;
-         set => Thrift.Repetition_type = value ? Parquet.Thrift.FieldRepetitionType.OPTIONAL : Parquet.Thrift.FieldRepetitionType.REQUIRED;
       }
 
       internal bool HasNulls => _stats.NullCount > 0;

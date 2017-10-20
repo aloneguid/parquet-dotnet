@@ -155,7 +155,7 @@ namespace Parquet.Test
          DataSet dsAll = ParquetReader.Read(ms);
 
          Assert.Equal(4, dsAll.RowCount);
-         Assert.Equal(new[] {1, 2, 3, 4}, dsAll.GetColumn(0));
+         Assert.Equal(new[] {1, 2, 3, 4}, dsAll.GetColumn(ds1.Schema[0]));
       }
 
       [Fact]

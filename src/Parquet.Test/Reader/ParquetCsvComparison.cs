@@ -32,7 +32,7 @@ namespace Parquet.Test.Reader
          //compare column names
          foreach(string pq in parquet.Schema.ColumnNames)
          {
-            Assert.True(csv.Schema.ColumnNames.Contains(pq));
+            Assert.Contains(pq, csv.Schema.ColumnNames);
          }
 
          //compare column values one by one

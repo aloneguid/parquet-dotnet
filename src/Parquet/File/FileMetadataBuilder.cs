@@ -175,13 +175,10 @@ namespace Parquet.File
          }
          else
          {
-            Type t;
-
             if(TryGetNonNullableType(systemType, out Type nonNullableSystemType))
             {
                elementType = nonNullableSystemType;
                th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-
             }
             else
             {
