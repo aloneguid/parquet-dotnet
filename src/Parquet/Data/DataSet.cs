@@ -118,15 +118,6 @@ namespace Parquet.Data
       }
 
       /// <summary>
-      /// Used to merge and add columns to a dataset 
-      /// </summary>
-      /// <param name="ds">A second dataset to merge this one with</param>
-      public DataSet Merge(DataSet ds)
-      {
-         return new DataSetMerge().Merge(this, ds);
-      }
-
-      /// <summary>
       /// Adds the specified values.
       /// </summary>
       /// <param name="values">The values.</param>

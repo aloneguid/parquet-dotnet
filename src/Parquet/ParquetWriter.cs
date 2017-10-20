@@ -13,7 +13,6 @@ namespace Parquet
    /// </summary>
    public class ParquetWriter : ParquetActor, IDisposable
    {
-      private readonly Stream _output;
       private readonly FileMetadataBuilder _meta;
       private readonly ParquetOptions _formatOptions;
       private readonly WriterOptions _writerOptions;
@@ -28,9 +27,11 @@ namespace Parquet
       /// <param name="writerOptions">The writer options.</param>
       /// <exception cref="ArgumentNullException">Output is null.</exception>
       /// <exception cref="ArgumentException">Output stream is not writeable</exception>
-      public ParquetWriter(Stream output, ParquetOptions formatOptions = null, WriterOptions writerOptions = null) : base(output)
+      public ParquetWriter(Stream output, ParquetOptions formatOptions = null, WriterOptions writerOptions = null) 
+         : base(new PositionTrackingStream(output))
       {
-         _output = output ?? throw new ArgumentNullException(nameof(output));
+         if (output == null) throw new ArgumentNullException(nameof(output));
+
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
          _formatOptions = formatOptions ?? new ParquetOptions();
          _writerOptions = writerOptions ?? new WriterOptions();
@@ -53,12 +54,12 @@ namespace Parquet
          {
             count = Math.Min(_writerOptions.RowGroupsSize, dataSet.Count - offset);
             Thrift.RowGroup rg = _meta.AddRowGroup();
-            long rgStartPos = _output.Position;
+            long rgStartPos = Stream.Position;
 
             rg.Columns = new List<Thrift.ColumnChunk>();
             foreach(SchemaElement se in dataSet.Schema.Flatten())
             {
-               var cw = new ColumnWriter(_output, ThriftStream, _meta, se, compression, _formatOptions, _writerOptions);
+               var cw = new ColumnWriter(Stream, ThriftStream, _meta, se, compression, _formatOptions, _writerOptions);
                IList values = dataSet.GetColumn(se, offset, count);
                Thrift.ColumnChunk chunk = cw.Write(offset, count, values);
                rg.Columns.Add(chunk);
@@ -80,7 +81,7 @@ namespace Parquet
       {
          if (append)
          {
-            if (!_output.CanSeek) throw new IOException("destination stream must be seekable for append operations.");
+            if (!Stream.CanSeek) throw new IOException("destination stream must be seekable for append operations.");
 
             ValidateFile();
 
@@ -156,7 +157,7 @@ namespace Parquet
 
       private void WriteMagic()
       {
-         _output.Write(MagicBytes, 0, MagicBytes.Length);
+         Stream.Write(MagicBytes, 0, MagicBytes.Length);
       }
 
       /// <summary>
@@ -176,7 +177,7 @@ namespace Parquet
          WriteMagic();              //4 bytes
 
          Writer.Flush();
-         _output.Flush();
+         Stream.Flush();
       }
    }
 }

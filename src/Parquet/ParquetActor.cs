@@ -23,6 +23,8 @@ namespace Parquet
          _fileStream = fileStream ?? throw new ArgumentNullException(nameof(_fileStream));
       }
 
+      protected Stream Stream => _fileStream;
+
       internal BinaryReader Reader => _binaryReader ?? (_binaryReader = new BinaryReader(_fileStream));
 
       internal BinaryWriter Writer => _binaryWriter ?? (_binaryWriter = new BinaryWriter(_fileStream));
