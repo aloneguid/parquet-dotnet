@@ -48,6 +48,8 @@ namespace Parquet.File
 
       public Thrift.ColumnChunk Write(int offset, int count, IList values)
       {
+         if (values == null) values = TypeFactory.Create(_schema.ElementType, _schema.IsNullable, _schema.IsRepeated);
+
          Thrift.ColumnChunk chunk = _meta.AddColumnChunk(_compressionMethod, _output, _schema, values.Count);
          Thrift.PageHeader ph = _meta.CreateDataPage(values.Count);
 
@@ -66,9 +68,9 @@ namespace Parquet.File
          byte[] dictionaryPageBytes = null;
          int dictionaryPageCount = 0;
          byte[] dataPageBytes;
-
+         
          //flatten values if the field is repeatable
-         if (schema.IsRepeated)
+         if (values != null && schema.IsRepeated)
          {
             values = FlattenRepeatables(values, schema);
          }
@@ -153,6 +155,8 @@ namespace Parquet.File
          nonNullableValues = TypeFactory.Create(schema, _formatOptions, false);
          definitions = new List<int>();
 
+         if (values == null) return;
+
          foreach (object value in values)
          {
             if (value == null)
@@ -172,7 +176,10 @@ namespace Parquet.File
          var result = new List<int>();
 
          result.Add(0);
-         result.AddRange(Enumerable.Repeat(1, values.Count - 1));
+         if (values != null)
+         {
+            result.AddRange(Enumerable.Repeat(1, values.Count - 1));
+         }
 
          return result;
       }

@@ -89,7 +89,7 @@ namespace Parquet.Data
 
          if (!_pathToValues.TryGetValue(schemaElement.Path, out IList values))
          {
-            throw new ArgumentException($"unable to find column by path '{schemaElement.Path}'", nameof(schemaElement));
+            return null;
          }
 
          //optimise for performance by not instantiating another list if you want all the column values
@@ -167,17 +167,29 @@ namespace Parquet.Data
          for(int i = 0; i < _schema.Length; i++)
          {
             SchemaElement se = _schema[i];
-
-            if(!_pathToValues.TryGetValue(se.Path, out IList values))
-            {
-               values = TypeFactory.Create(se.ElementType, se.IsNullable, se.IsRepeated);
-               _pathToValues[se.Path] = values;
-            }
-
+            IList values = GetValues(se, true);
             values.Add(row[i]);
          }
 
          _rowCount += 1;
+      }
+
+      private IList GetValues(SchemaElement schema, bool createIfMissing)
+      {
+         if (!_pathToValues.TryGetValue(schema.Path, out IList values))
+         {
+            if (createIfMissing)
+            {
+               values = TypeFactory.Create(schema.ElementType, schema.IsNullable, schema.IsRepeated);
+               _pathToValues[schema.Path] = values;
+            }
+            else
+            {
+               throw new ArgumentException($"column '{schema.Name}' does not exist by path '{schema.Parent}'", nameof(schema));
+            }
+         }
+
+         return values;
       }
 
       private void ValidateIndex(int index)

@@ -18,8 +18,6 @@ namespace Parquet
       private BinaryWriter _binaryWriter;
       private ThriftStream _thriftStream;
 
-      //todo: comparer for Schema
-
       internal ParquetActor(Stream fileStream)
       {
          _fileStream = fileStream ?? throw new ArgumentNullException(nameof(_fileStream));

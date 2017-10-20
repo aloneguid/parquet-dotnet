@@ -73,7 +73,7 @@ namespace Parquet.Test
       [Fact]
       public void Write_and_read_nullable_integers()
       {
-         var ds = new DataSet(new SchemaElement<int>("id"))
+         var ds = new DataSet(new SchemaElement<int?>("id"))
          {
             1,
             2,
@@ -89,13 +89,13 @@ namespace Parquet.Test
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms);
 
-         Assert.Equal(ds1[0].GetInt(0), 1);
-         Assert.Equal(ds1[1].GetInt(0), 2);
-         Assert.Equal(ds1[2].GetInt(0), 3);
+         Assert.Equal(1, ds1[0].GetInt(0));
+         Assert.Equal(2, ds1[1].GetInt(0));
+         Assert.Equal(3, ds1[2].GetInt(0));
          Assert.True(ds1[3].IsNullAt(0));
-         Assert.Equal(ds1[4].GetInt(0), 4);
+         Assert.Equal(4, ds1[4].GetInt(0));
          Assert.True(ds1[5].IsNullAt(0));
-         Assert.Equal(ds1[6].GetInt(0), 5);
+         Assert.Equal(5, ds1[6].GetInt(0));
       }
 
       [Fact]
@@ -215,7 +215,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
            new SchemaElement<int>("id"),
-           new SchemaElement<int>("city")
+           new SchemaElement<int?>("city")
        );
 
          ds.Add(0, null);
@@ -229,31 +229,6 @@ namespace Parquet.Test
          Assert.Equal(1, ds1.RowCount);
          Assert.Equal(0, ds1[0][0]);
          Assert.Null(ds1[0][1]);
-      }
-
-      [Fact]
-      public void Write_in_small_chunks_to_forward_only_stream()
-      {
-         var ms = new MemoryStream();
-         var forwardOnly = new WriteableNonSeekableStream(ms);
-
-         var ds = new DataSet(
-            new SchemaElement<int>("id"),
-            new SchemaElement<string>("nonsense"));
-         ds.Add(1, Generator.RandomString);
-
-         using (var writer = new ParquetWriter(forwardOnly))
-         {
-            writer.Write(ds);
-            writer.Write(ds);
-            writer.Write(ds);
-         }
-
-         ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms);
-
-         Assert.Equal(3, ds1.RowCount);
-
       }
 
       [Fact]
@@ -279,7 +254,7 @@ namespace Parquet.Test
       {
          var schemaElements = new List<Data.SchemaElement>();
          schemaElements.Add(new SchemaElement<string>("primary-key"));
-         schemaElements.Add(new SchemaElement<DateTime>("as-at-date"));
+         schemaElements.Add(new SchemaElement<DateTime?>("as-at-date"));
 
          var ds = new DataSet(schemaElements);
 
@@ -310,7 +285,7 @@ namespace Parquet.Test
       [Fact]
       public void Column_with_all_null_decimals_has_type_length()
       {
-         var ds = new DataSet(new SchemaElement<int>("id"), new SchemaElement<decimal>("nulls"))
+         var ds = new DataSet(new SchemaElement<int>("id"), new SchemaElement<decimal?>("nulls"))
          {
             { 1, null },
             { 2, null }
@@ -320,28 +295,6 @@ namespace Parquet.Test
 
          Assert.Null(ds1[0][1]);
          Assert.Null(ds1[1][1]);
-      }
-
-      public class WriteableNonSeekableStream : DelegatedStream
-      {
-         public WriteableNonSeekableStream(Stream master) : base(master)
-         {
-         }
-
-         public override bool CanSeek => false;
-
-         public override bool CanRead => true;
-
-         public override long Seek(long offset, SeekOrigin origin)
-         {
-            throw new NotSupportedException();
-         }
-
-         public override long Position
-         {
-            get => base.Position;
-            set => throw new NotSupportedException();
-         }
       }
    }
 }
