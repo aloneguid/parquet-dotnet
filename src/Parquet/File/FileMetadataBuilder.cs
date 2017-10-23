@@ -75,6 +75,20 @@ namespace Parquet.File
             container.Add(list);
             container.Add(element);
          }
+         else if(se.IsNestedStructure)
+         {
+            var structure = new TSchemaElement(se.Name)
+            {
+               Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+               Num_children = se.Children.Count
+            };
+            container.Add(structure);
+
+            foreach(SchemaElement child in se.Children)
+            {
+               AddSchema(container, child);
+            }
+         }
          else
          {
             container.Add(se.Thrift);

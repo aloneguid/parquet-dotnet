@@ -92,11 +92,6 @@ namespace Parquet
          var metaParser = new FileMetadataParser(_meta);
          Schema schema = metaParser.ParseSchema(_formatOptions);
 
-         if(schema.HasNestedElements)
-         {
-            throw new NotSupportedException("this file contains nested columns which is not supported yet.");
-         }
-
          var pathToValues = new Dictionary<string, IList>();
          long pos = 0;
          long rowsRead = 0;

@@ -253,9 +253,9 @@ root
 |-- id: long (nullable = true)
           */
 
-         Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet")));
+         //Assert.Throws<NotSupportedException>(() => ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet")));
+         //return;
 
-         return;
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet"));
 
          Assert.Equal(1, ds.RowCount);

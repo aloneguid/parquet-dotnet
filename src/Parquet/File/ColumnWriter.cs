@@ -156,6 +156,7 @@ namespace Parquet.File
          definitions = new List<int>();
 
          if (values == null) return;
+         int maxDef = schema.MaxDefinitionLevel;
 
          foreach (object value in values)
          {
@@ -165,7 +166,7 @@ namespace Parquet.File
             }
             else
             {
-               definitions.Add(1);
+               definitions.Add(maxDef);
                nonNullableValues.Add(value);
             }
          }

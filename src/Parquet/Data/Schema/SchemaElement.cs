@@ -68,6 +68,8 @@ namespace Parquet.Data
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          Thrift = Builder.CreateSimpleSchemaElement(name);
+
+         UpdateFlags();
       }
 
       /// <summary>
@@ -87,6 +89,8 @@ namespace Parquet.Data
 
          ElementType = resultElementType;
          Path = resultPath;
+
+         UpdateFlags();
       }
 
       /// <summary>
@@ -107,6 +111,20 @@ namespace Parquet.Data
                }
             }
          }
+      }
+
+      private void UpdateFlags()
+      {
+         if (IsNullable)
+         {
+            MaxDefinitionLevel = 1;
+         }
+
+         if(IsRepeated)
+         {
+            MaxRepetitionLevel = 1;
+         }
+
       }
 
       //todo: move this out completely into FileMetadataParser
@@ -146,6 +164,10 @@ namespace Parquet.Data
       {
          se.Parent = this;
          se.Parent.Thrift.Num_children += 1;
+
+         se.MaxDefinitionLevel = se.Parent.MaxDefinitionLevel + (se.IsNullable ? 1 : 0);
+         se.MaxRepetitionLevel = se.Parent.MaxRepetitionLevel + (se.IsRepeated ? 1 : 0);
+
          return se;
       }
 

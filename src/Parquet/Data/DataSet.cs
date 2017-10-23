@@ -153,16 +153,35 @@ namespace Parquet.Data
 
       private void AddRow(Row row)
       {
+         AddRow(row, _schema.Elements, true);
+      }
+
+      private void AddRow(Row row, IList<SchemaElement> schema, bool updateCount)
+      {
          ValidateRow(row);
 
-         for(int i = 0; i < _schema.Length; i++)
+         for(int i = 0; i < schema.Count; i++)
          {
-            SchemaElement se = _schema[i];
-            IList values = GetValues(se, true);
-            values.Add(row[i]);
+            SchemaElement se = schema[i];
+            object value = row[i];
+
+            if (se.IsNestedStructure)
+            {
+               Row valueRow = (Row)value;
+
+               AddRow(valueRow, se.Children, false);
+            }
+            else
+            {
+               IList values = GetValues(se, true);
+               values.Add(value);
+            }
          }
 
-         _rowCount += 1;
+         if (updateCount)
+         {
+            _rowCount += 1;
+         }
       }
 
       private IList GetValues(SchemaElement schema, bool createIfMissing)

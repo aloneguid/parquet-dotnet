@@ -47,7 +47,8 @@ namespace Parquet.Data
       public IList<SchemaElement> Elements => _elements;
 
       /// <summary>
-      /// Gets the elements in flat list without hierarchy
+      /// Gets the elements in flat list without hierarchy. Containers are not included in this list, 
+      /// but only actual value schema elements.
       /// </summary>
       internal ICollection<SchemaElement> Flatten()
       {
