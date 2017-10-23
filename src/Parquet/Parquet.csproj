@@ -18,7 +18,23 @@
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>v1.3
+    <PackageReleaseNotes>v1.4
+
+new features:
+- data representation internally changed to columnar format, resulting in much smaller memory footprint and better performance (#238)
+- added support for short/ushort CLR type (#235)
+- breaking change: nullable columns are easier to define, parquet.net doesn't try to guess the nullability anymore and gives full control to the user
+
+improvements:
+- BigDecimal type supports much bigger numbers (scale and precision) (#239)
+- Writer was failing on some forward-only streams like GZipStream as they don't track stream position, now parquet.net supports all kinds of non-seekable streams for write operations (#252)
+- Decimal number format is now compatible with Impala (#243)
+
+bug fixes
+- Writer was failing on columns consisting of only null values (#222)
+- When appending to file and using DateTime for one of your columns, subsequent appends would fail on schema validation (#247)
+- Failure when deserialising Impala generated file with all nulls in a column (#240)
+v1.3
 new features:
 - .NET byte and sbyte type is supported
 - DataSet has got a new .Merge method that allows to merge two datasets, even if rows and columns are incompatible

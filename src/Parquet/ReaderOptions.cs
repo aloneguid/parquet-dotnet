@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using Parquet.Data;
 
 namespace Parquet
 {
@@ -25,6 +27,11 @@ namespace Parquet
       /// Gets or sets the count.
       /// </summary>
       public int Count { get; set; }
+
+      /// <summary>
+      /// Gets or sets the collection of columns to read. If not set (default) all the columns will be read. 
+      /// </summary>
+      //public ICollection<SchemaElement> Columns { get; set; }
 
       internal void Validate()
       {
