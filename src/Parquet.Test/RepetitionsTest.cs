@@ -28,5 +28,60 @@ namespace Parquet.Test
          Assert.Equal(3, ((IList)r[1])[0]);
          Assert.Equal(4, ((IList)r[1])[1]);
       }
+
+      [Fact]
+      public void Level2_repetitions_packed()
+      {
+         var levels = new List<int>
+         {
+            0, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            1, 2, 2, 2, 2, 2, 2,
+            0, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            1, 2, 2, 2, 2, 2, 2
+         };
+         var flat = new List<int>
+         {
+            9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+            6, 7, 19, 20, 21, 22, 23,
+            9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+            6, 7, 19, 20, 21, 22, 23
+         };
+         var schema = new SchemaElement<int>("hours") { MaxRepetitionLevel = 2 };
+
+         var packer = new RepetitionPack(schema);
+         IList r = packer.Pack(flat, levels);
+
+         Assert.Equal(2, r.Count);
+
+         //first struct
+         IList s1 = GetList(r, 0);
+         Assert.Equal(2, s1.Count);
+         IList s11 = GetList(r, 0, 0);
+         Assert.Equal(10, s11.Count);
+         Assert.Equal(new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 }, s11);
+         IList s12 = GetList(r, 0, 1);
+         Assert.Equal(7, s12.Count);
+         Assert.Equal(new int[] { 6, 7, 19, 20, 21, 22, 23 }, s12);
+
+         //second struct
+         IList s2 = GetList(r, 1);
+         Assert.Equal(2, s2.Count);
+         IList s21 = GetList(r, 1, 0);
+         Assert.Equal(10, s21.Count);
+         Assert.Equal(new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 }, s21);
+         IList s22 = GetList(r, 1, 1);
+         Assert.Equal(7, s22.Count);
+         Assert.Equal(new int[] { 6, 7, 19, 20, 21, 22, 23 }, s22);
+      }
+
+      private static IList GetList(IList root, params int[] levels)
+      {
+         foreach(int l in levels)
+         {
+            root = (IList)root[l];
+         }
+
+         return root;
+      }
    }
 }
