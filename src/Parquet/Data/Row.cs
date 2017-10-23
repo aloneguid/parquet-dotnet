@@ -166,7 +166,7 @@ namespace Parquet.Data
       /// </returns>
       public override string ToString()
       {
-         return string.Join("; ", _values);
+         return "[" + string.Join("; ", _values) + "]";
       }
    }
 }
