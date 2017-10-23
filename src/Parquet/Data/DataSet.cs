@@ -132,11 +132,25 @@ namespace Parquet.Data
       {
          ValidateIndex(index);
 
-         return new Row(
-            _schema.Elements
-               .Select(se => se.Path)
-               .Select(path => _pathToValues[path])
-               .Select(values => values[index]));
+         return CreateRow(_schema.Elements, index);
+      }
+
+      private Row CreateRow(IEnumerable<SchemaElement> schema, int index)
+      {
+         return new Row(schema.Select(se => CreateElement(se, index)));
+      }
+
+      private object CreateElement(SchemaElement se, int index)
+      {
+         if(se.IsNestedStructure)
+         {
+            return CreateRow(se.Children, index);
+         }
+         else
+         {
+            IList values = _pathToValues[se.Path];
+            return values[index];
+         }
       }
 
       private void RemoveRow(int index)

@@ -24,7 +24,7 @@ namespace Parquet.Test
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
-         ParquetWriter.WriteFile(ds, "c:\\tmp\\firstnested.parquet");
+         //ParquetWriter.WriteFile(ds, "c:\\tmp\\firstnested.parquet");
       }
    }
 }
