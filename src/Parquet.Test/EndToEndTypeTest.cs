@@ -70,13 +70,8 @@ namespace Parquet.Test
          if(schema.ElementType == typeof(DateTime))
             actualValue = ((DateTimeOffset) actualValue).DateTime;
 
-         Assert.True(expectedValue == null && actualValue == null,
+         Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
-
-         Assert.True(expectedValue == null || expectedValue.Equals(actualValue),
-            $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
-
-         //if (schema.ElementType == typeof(decimal)) ParquetWriter.WriteFile(ds1, "c:\\tmp\\decimals.parquet");
       }
    }
 }
