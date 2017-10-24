@@ -64,10 +64,11 @@ namespace Parquet.Data
       /// Used only by derived classes implementing an edge case type
       /// </summary>
       /// <param name="name"></param>
-      protected SchemaElement(string name) : this()
+      /// <param name="nullable"></param>
+      protected SchemaElement(string name, bool nullable = false) : this()
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-         Thrift = Builder.CreateSimpleSchemaElement(name);
+         Thrift = Builder.CreateSimpleSchemaElement(name, nullable);
 
          UpdateFlags();
       }

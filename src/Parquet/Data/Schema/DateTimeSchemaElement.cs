@@ -12,8 +12,9 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">The name.</param>
       /// <param name="format">The format.</param>
+      /// <param name="nullable">Is 'DateTime?'</param>
       /// <exception cref="ArgumentException">format</exception>
-      public DateTimeSchemaElement(string name, DateTimeFormat format) : base(name)
+      public DateTimeSchemaElement(string name, DateTimeFormat format, bool nullable = false) : base(name, nullable)
       {
          ElementType = ColumnType = typeof(DateTimeOffset);
          switch (format)

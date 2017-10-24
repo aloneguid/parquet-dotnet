@@ -15,7 +15,8 @@ namespace Parquet.Data
       /// <param name="precision">Cusom precision</param>
       /// <param name="scale">Custom scale</param>
       /// <param name="forceByteArrayEncoding">Whether to force decimal type encoding as fixed bytes. Hive and Impala only understands decimals when forced to true.</param>
-      public DecimalSchemaElement(string name, int precision, int scale, bool forceByteArrayEncoding = false) : base(name)
+      /// <param name="nullable">Is 'decimal?'</param>
+      public DecimalSchemaElement(string name, int precision, int scale, bool forceByteArrayEncoding = false, bool nullable = false) : base(name, nullable)
       {
          if (precision < 1) throw new ArgumentException("precision cannot be less than 1", nameof(precision));
          if (scale < 1) throw new ArgumentException("scale cannot be less than 1", nameof(scale));
