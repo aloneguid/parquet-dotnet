@@ -61,7 +61,11 @@ namespace Parquet.File
                   AddFlags(mse, tse);
                }
 
+               int mrl = mse.MaxRepetitionLevel;
+               int mdl = mse.MaxDefinitionLevel;
                node.Children.Add(mse);
+               mse.MaxRepetitionLevel = mrl;
+               mse.MaxDefinitionLevel = mdl;
 
                i += 1;
 

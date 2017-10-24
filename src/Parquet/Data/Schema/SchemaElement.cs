@@ -163,7 +163,7 @@ namespace Parquet.Data
       private SchemaElement OnAddChild(SchemaElement se)
       {
          se.Parent = this;
-         se.Parent.Thrift.Num_children += 1;
+         se.Parent.Thrift.Num_children = se.Parent.Children.Count + 1;
 
          se.MaxDefinitionLevel = se.Parent.MaxDefinitionLevel + (se.IsNullable ? 1 : 0);
          se.MaxRepetitionLevel = se.Parent.MaxRepetitionLevel + (se.IsRepeated ? 1 : 0);
@@ -188,7 +188,7 @@ namespace Parquet.Data
       public Type ColumnType { get; internal set; }
 
       /// <summary>
-      /// When true, this fields is repeated i.e. has multiple value
+      /// When true, this fields is repeated i.e. has multiple values
       /// </summary>
       public bool IsRepeated { get; internal set; }
 

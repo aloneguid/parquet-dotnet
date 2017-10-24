@@ -59,28 +59,8 @@ namespace Parquet.File
 
       private void ApplyDefinitions(List<int> definitions, int maxValues)
       {
-         if (definitions == null) return;
-
-         TrimTail(definitions, maxValues);
-
-         int valueIdx = 0;
-         IList values = TypeFactory.Create(_schema, _formatOptions, true);
-
-         foreach (int isDefinedInt in definitions)
-         {
-            bool isDefined = isDefinedInt != 0;
-
-            if (isDefined)
-            {
-               values.Add(_values[valueIdx++]);
-            }
-            else
-            {
-               values.Add(null);
-            }
-         }
-
-         _values = values;
+         var packer = new DefinitionPack(_schema, _formatOptions);
+         _values = packer.Pack(_values, definitions);
       }
 
       private void ApplyRepetitions(List<int> repetitions)

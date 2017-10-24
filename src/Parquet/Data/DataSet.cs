@@ -144,7 +144,14 @@ namespace Parquet.Data
       {
          if(se.IsNestedStructure)
          {
-            return CreateRow(se.Children, index);
+            if (se.IsRepeated)
+            {
+               throw new NotImplementedException("still trying to figure out how to unpack nested repeated structures into a Row");
+            }
+            else
+            {
+               return CreateRow(se.Children, index);
+            }
          }
          else
          {

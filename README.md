@@ -9,37 +9,41 @@
 |[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)|[![NuGet Pre Release](https://img.shields.io/nuget/vpre/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)|
 |![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/stable/1.0.0?svg=true)|![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)|
 
-A .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports `.NET 4.5.1`, `.NET Standard 1.4` and `.NET Standard 1.6`.
+**Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
+- `.NET 4.5.1` and up.
+- `.NET Standard 1.4` and up.
 
 ## Why
 
-Parquet library is mostly available for Java, C++ and Python, which somewhat limits .NET/C# platform in big data applications. Whereas C# is a great language we still don't have anything good in this area.
+Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language working on all platforms and devices, we still don't have anything good in this area.
 
-This project is aimed to fix this problem.
+This project is aimed to fix this problem. We support all the popular server and client operating systems, mobile devices, gaming consoles and everything that can run `.NET` which is quite a lot!
 
 ## Index
 
-- [Supported features](doc/features.md)
-- Programming guide
-  - [Reading Data](doc/reading.md) 
-  - [Writing Data](doc/writing.md)
-  - [DataSet](doc/dataset.md) 
-  - [Declaring Schema](doc/schema.md)
-  - [Supported Types](doc/types.md)
-    - [Repeatable Fields](doc/types/repeatable.md) 
-    - [Working with Floating Point Data](doc/types/floating.md)
-    - [Working with Dates](doc/types/dates.md)
+- [Reading Data](doc/reading.md) 
+- [Writing Data](doc/writing.md)
+- [DataSet](doc/dataset.md) 
+- [Declaring Schema](doc/schema.md)
+- [Supported Types](doc/types.md)
+  - [Repeatable Fields](doc/types/repeatable.md) 
+  - [Working with Floating Point Data](doc/types/floating.md)
+- [Working with Dates](doc/types/dates.md)
 
-You can track the amount of features we have [implemented so far](doc/features.md).
+You can track the [amount of features we have implemented so far](doc/features.md).
 
 ## Related Projects
 
-- [Azure Data Lake Analytics extractor](https://github.com/elastacloud/datalake-extractor-parquet)
-- [Apache Parquet viewer for Windows 10](https://github.com/aloneguid/parquet-viewer-uwp)
+- [Apache Parquet viewer for Windows 10](https://github.com/aloneguid/parquet-viewer-uwp).
+- [Azure Data Lake Analytics Integration](https://github.com/elastacloud/datalake-extractor-parquet).
+
+Download Parquet Viewer from Windows 10 store:
+
+<a href="https://www.microsoft.com/store/apps/9pgb0m8z4j2t?ocid=badge"><img src="https://assets.windowsphone.com/f2f77ec7-9ba9-4850-9ebe-77e366d08adc/English_Get_it_Win_10_InvariantCulture_Default.png" alt="Get it on Windows 10" width="200" /></a>
 
 ## Getting started
 
-**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net). All code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package.
+**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net). All the code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package. This also means the library works on **Windows**, **Linux** and **MacOS X**.
 
 ### Reading files
 
@@ -89,7 +93,6 @@ using(Stream fileStream = File.OpenWrite("c:\\test.parquet"))
 }
 
 ```
-
 
 ## Tools
 
