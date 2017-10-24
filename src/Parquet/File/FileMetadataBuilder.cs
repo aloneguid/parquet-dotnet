@@ -161,10 +161,10 @@ namespace Parquet.File
          return ph;
       }
 
-      public TSchemaElement CreateSimpleSchemaElement(string name)
+      public TSchemaElement CreateSimpleSchemaElement(string name, bool nullable)
       {
          var th = new TSchemaElement(name);
-         th.Repetition_type = Thrift.FieldRepetitionType.REQUIRED;
+         th.Repetition_type = nullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED;
          return th;
       }
 

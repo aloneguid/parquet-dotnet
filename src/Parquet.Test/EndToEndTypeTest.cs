@@ -47,7 +47,10 @@ namespace Parquet.Test
          new object[] {  new SchemaElement<short>("short"), short.MinValue },
          new object[] {  new SchemaElement<short>("short"), short.MaxValue },
          new object[] {  new SchemaElement<ushort>("ushort"), ushort.MinValue },
-         new object[] {  new SchemaElement<ushort>("ushort"), ushort.MaxValue }
+         new object[] {  new SchemaElement<ushort>("ushort"), ushort.MaxValue },
+
+         new object[] {  new DecimalSchemaElement("decimal?", 4, 1, true, true), null},
+         new object[] {  new DateTimeSchemaElement("DateTime?", DateTimeFormat.DateAndTime, true), null },
       };
 
       [Theory]
@@ -67,7 +70,10 @@ namespace Parquet.Test
          if(schema.ElementType == typeof(DateTime))
             actualValue = ((DateTimeOffset) actualValue).DateTime;
 
-         Assert.True(expectedValue.Equals(actualValue),
+         Assert.True(expectedValue == null && actualValue == null,
+            $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
+
+         Assert.True(expectedValue == null || expectedValue.Equals(actualValue),
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
 
          //if (schema.ElementType == typeof(decimal)) ParquetWriter.WriteFile(ds1, "c:\\tmp\\decimals.parquet");
