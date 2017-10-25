@@ -28,7 +28,8 @@ This project is aimed to fix this problem. We support all the popular server and
 - [Supported Types](doc/types.md)
   - [Repeatable Fields](doc/types/repeatable.md) 
   - [Working with Floating Point Data](doc/types/floating.md)
-- [Working with Dates](doc/types/dates.md)
+  - [Working with Dates](doc/types/dates.md)
+- [Performance Tuning](doc/performance.md)
 
 You can track the [amount of features we have implemented so far](doc/features.md).
 

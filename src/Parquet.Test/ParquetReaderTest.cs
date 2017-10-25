@@ -190,26 +190,9 @@ root
 
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nested.parquet"));
 
-         //basic counts
-         Assert.Equal(2, ds.Count);
-         Assert.Equal(6, ds.Schema.Length);
-
-         //validate schema
-         Assert.Equal(typeof(IEnumerable<Row>), ds.Schema[0].ColumnType);
-         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[1].ColumnType);
-         Assert.Equal(typeof(string), ds.Schema[2].ColumnType);
-         Assert.Equal(typeof(long), ds.Schema[3].ColumnType);
-         Assert.Equal(typeof(Row), ds.Schema[4].ColumnType);
-         Assert.Equal(typeof(Row), ds.Schema[5].ColumnType);
-
-         //validate address
-         List<Row> addresses = ds[0].Get<IEnumerable<Row>>(0).ToList();
-         Assert.Equal(2, addresses.Count);
-
-         Row addr = addresses.First();
-         List<string> line1 = addr.Get<IEnumerable<string>>(1).ToList();
-         Assert.Equal("Head Office", line1[0]);
-         Assert.Equal("Small Office", line1[1]);
+         //much easier to compare mad nestness with .ToString(), but will break when it changes
+         Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", ds[0].ToString());
+         Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", ds[1].ToString());
       }
 
       [Fact]

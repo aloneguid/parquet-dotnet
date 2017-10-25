@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 namespace Parquet.Data
 {
@@ -166,7 +168,62 @@ namespace Parquet.Data
       /// </returns>
       public override string ToString()
       {
-         return "[" + string.Join("; ", _values) + "]";
+         var sb = new StringBuilder();
+
+         bool isFirst = true;
+         sb.Append("{");
+         foreach (object v in _values)
+         {
+            if(isFirst)
+            {
+               isFirst = false;
+            }
+            else
+            {
+               sb.Append(";");
+            }
+
+            FormatValue(v, sb);
+         }
+         sb.Append("}");
+
+         return sb.ToString();
+      }
+
+      private static void FormatValue(object v, StringBuilder sb)
+      {
+         if (v == null)
+         {
+            sb.Append("<null>");
+         }
+         else if (v is Row row)
+         {
+            sb.Append(row.ToString());
+         }
+         else if ((!v.GetType().IsSimple()) && v is IEnumerable ien)
+         {
+            sb.Append("[");
+            bool first = true;
+            foreach (object cv in ien)
+            {
+               if(first)
+               {
+                  first = false;
+               }
+               else
+               {
+                  sb.Append(";");
+               }
+
+               FormatValue(cv, sb);
+            }
+            sb.Append("]");
+         }
+         else
+         {
+            sb.Append(v.ToString());
+         }
+
       }
    }
 }

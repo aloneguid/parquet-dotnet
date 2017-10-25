@@ -59,7 +59,11 @@ namespace Parquet.Data
       /// </summary>
       public void CopyTo(Row[] array, int arrayIndex)
       {
-         throw new NotSupportedException();
+         for(int i = 0; i < Count; i++)
+         {
+            Row row = CreateRow(i);
+            array[arrayIndex++] = row;
+         }
       }
 
       public IEnumerator<Row> GetEnumerator()

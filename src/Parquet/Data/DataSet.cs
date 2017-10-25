@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Parquet.File;
 
 namespace Parquet.Data
@@ -132,32 +133,60 @@ namespace Parquet.Data
       {
          ValidateIndex(index);
 
-         return CreateRow(_schema.Elements, index);
+         return CreateRow(_schema.Elements, index, _pathToValues);
       }
 
-      private Row CreateRow(IEnumerable<SchemaElement> schema, int index)
+      private Row CreateRow(IEnumerable<SchemaElement> schema, int index, Dictionary<string, IList> pathToValues)
       {
-         return new Row(schema.Select(se => CreateElement(se, index)));
+         return new Row(schema.Select(se => CreateElement(se, index, pathToValues)));
       }
 
-      private object CreateElement(SchemaElement se, int index)
+      private object CreateElement(SchemaElement se, int index, Dictionary<string, IList> pathToValues)
       {
          if(se.IsNestedStructure)
          {
             if (se.IsRepeated)
             {
-               throw new NotImplementedException("still trying to figure out how to unpack nested repeated structures into a Row");
+               Dictionary<string, IList> elementPathToValues = CreateElementPathToValue(se, index, pathToValues, out int count);
+               var rows = new List<Row>(count);
+
+               for(int ci = 0; ci < count; ci++)
+               {
+                  Row row = CreateRow(se.Children, ci, elementPathToValues);
+                  rows.Add(row);
+               }
+
+               return rows;
             }
             else
             {
-               return CreateRow(se.Children, index);
+               return CreateRow(se.Children, index, pathToValues);
             }
          }
          else
          {
-            IList values = _pathToValues[se.Path];
+            IList values = pathToValues[se.Path];
             return values[index];
          }
+      }
+
+      private Dictionary<string, IList> CreateElementPathToValue(
+         SchemaElement root, int index,
+         Dictionary<string, IList> pathToValues,
+         out int count)
+      {
+         var elementPathToValues = new Dictionary<string, IList>();
+         count = int.MaxValue;
+
+         foreach(SchemaElement child in root.Children)
+         {
+            string key = child.Path;
+            IList value = pathToValues[key][index] as IList;
+            elementPathToValues[key] = value;
+            if (value.Count < count) count = value.Count;
+         }
+
+         return elementPathToValues;
       }
 
       private void RemoveRow(int index)
@@ -244,5 +273,27 @@ namespace Parquet.Data
       }
 
       #endregion
+
+      /// <summary>
+      /// Displays some DataSet rows
+      /// </summary>
+      /// <returns></returns>
+      public override string ToString()
+      {
+         var sb = new StringBuilder();
+         int count = Math.Min(Count, 10);
+
+         sb.AppendFormat("first {0} rows:", count);
+         sb.AppendLine();
+
+         for(int i = 0; i < count; i++)
+         {
+            Row row = CreateRow(i);
+            sb.AppendFormat("{0,5}: ");
+            sb.AppendLine(row.ToString());
+         }
+
+         return sb.ToString();
+      }
    }
 }
