@@ -8,12 +8,6 @@ val spark = SparkSession.builder()
 import spark.implicits._
 val sc = spark.sparkContext
 
-val ds = spark.read.parquet("c:\\tmp\\firstnested.parquet")
+val ds = spark.read.parquet("c:\\tmp\\nested.parquet")
 ds.printSchema()
 ds.show()
-ds.show()
-
-
-
-
-
