@@ -23,7 +23,7 @@ var schema = new Schema(
    new SchemaElement<string>("addressPostcode"));
 ```
 
-Although that's not pretty it works perfectly fine. However, another way to express this data would be to have a separate **address** entity:
+Although that's not pretty, it works perfectly fine. However, another way to express this data would be to have a separate **address** entity:
 
 ```json
 {
@@ -55,7 +55,7 @@ var ds = new DataSet(schema);
 ds.Add("Ivan", new Row("Woods", "postcode"));
 
 //write to file
-ParquetWriter.WriteFile(ds, "c:\\tmp\\firstnested.parquet");
+ParquetWriter.WriteFile(ds, "c:\\tmp\\nested.parquet");
 ```
 
 **name** element is expressed as a simple value, whereas because **address** is a nested structure, you have to specify a `Row` with values corresponding to the rows in that structure.
