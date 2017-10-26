@@ -91,7 +91,4 @@ bug fixes:
   <ItemGroup>
     
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="3rdparty\Thrift\" />
-  </ItemGroup>
 </Project>
