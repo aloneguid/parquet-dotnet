@@ -4,27 +4,19 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-using System.Runtime.Serialization;
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// New page format alowing reading levels without decompressing the data
-  /// Repetition and definition levels are uncompressed
-  /// The remaining section containing the data is compressed if is_compressed is true
-  /// 
-  /// </summary>
-  class DataPageHeaderV2 : TBase
+   /// <summary>
+   /// New page format alowing reading levels without decompressing the data
+   /// Repetition and definition levels are uncompressed
+   /// The remaining section containing the data is compressed if is_compressed is true
+   /// 
+   /// </summary>
+   class DataPageHeaderV2 : TBase
   {
     private bool _is_compressed;
     private Statistics _statistics;

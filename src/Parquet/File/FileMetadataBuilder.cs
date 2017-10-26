@@ -1,12 +1,11 @@
-﻿using NetBox.Model;
-using Parquet.Data;
+﻿using Parquet.Data;
 using Parquet.File.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using TSchemaElement = Parquet.Thrift.SchemaElement;
+using System.Linq;
 
 namespace Parquet.File
 {
@@ -20,8 +19,21 @@ namespace Parquet.File
       static FileMetadataBuilder()
       {
          //get file version
-         Version fileVersion = typeof(FileMetadataBuilder).FileVersion();
-         CreatedBy = $"parquet-dotnet version {fileVersion} (build {fileVersion.ToString().GetHash(HashType.Sha1)})";
+         Version fileVersion = FileVersion(typeof(FileMetadataBuilder));
+         CreatedBy = $"parquet-dotnet version {fileVersion}";
+      }
+
+      private static Version FileVersion(Type t)
+      {
+         CustomAttributeData fva = GetAssembly(t).CustomAttributes.First(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
+         CustomAttributeTypedArgument varg = fva.ConstructorArguments[0];
+         string fileVersion = (string)varg.Value;
+         return new Version(fileVersion);
+      }
+
+      private static Assembly GetAssembly(Type t)
+      {
+         return t.GetTypeInfo().Assembly;
       }
 
       public static string CreatedBy { internal get; set; }

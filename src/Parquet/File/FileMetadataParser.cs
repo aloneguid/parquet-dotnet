@@ -81,7 +81,12 @@ namespace Parquet.File
          int start = 1;
          Build(root, ref start, _fileMeta.Schema[0].Num_children, true);
 
-         return new Schema(root.Children.ForEach(c => c.Detach()));
+         foreach(SchemaElement se in root.Children)
+         {
+            se.Detach();
+         }
+
+         return new Schema(root.Children);
       }
 
       private void AddFlags(SchemaElement node, params Thrift.SchemaElement[] tses)

@@ -4,24 +4,17 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-using System.Runtime.Serialization;
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Description for file metadata
-  /// </summary>
-  class FileMetaData : TBase
+   /// <summary>
+   /// Description for file metadata
+   /// </summary>
+   class FileMetaData : TBase
   {
     private List<KeyValue> _key_value_metadata;
     private string _created_by;

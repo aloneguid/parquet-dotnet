@@ -138,6 +138,30 @@ namespace Parquet.File
          return tp.SystemType;
       }
 
+      public static bool IsSimple(Type t)
+      {
+         if (t == null) return true;
+
+         return
+            t == typeof(bool) ||
+            t == typeof(byte) ||
+            t == typeof(sbyte) ||
+            t == typeof(char) ||
+            t == typeof(decimal) ||
+            t == typeof(double) ||
+            t == typeof(float) ||
+            t == typeof(int) ||
+            t == typeof(uint) ||
+            t == typeof(long) ||
+            t == typeof(ulong) ||
+            t == typeof(short) ||
+            t == typeof(ushort) ||
+            t == typeof(TimeSpan) ||
+            t == typeof(DateTime) ||
+            t == typeof(Guid) ||
+            t == typeof(string);
+      }
+
       #endregion
    }
 }

@@ -4,20 +4,12 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-using System.Runtime.Serialization;
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
-  class ColumnChunk : TBase
+   class ColumnChunk : TBase
   {
     private string _file_path;
     private ColumnMetaData _meta_data;

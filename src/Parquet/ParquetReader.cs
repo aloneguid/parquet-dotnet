@@ -126,7 +126,10 @@ namespace Parquet
                   }
                   else
                   {
-                     allValues.AddRange(chunkValues);
+                     foreach(object v in chunkValues)
+                     {
+                        allValues.Add(v);
+                     }
                   }
 
                   if(icol == 0)

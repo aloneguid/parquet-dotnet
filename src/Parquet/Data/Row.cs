@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Parquet.File;
 
 namespace Parquet.Data
 {
@@ -200,7 +201,7 @@ namespace Parquet.Data
          {
             sb.Append(row.ToString());
          }
-         else if ((!v.GetType().IsSimple()) && v is IEnumerable ien)
+         else if ((!TypePrimitive.IsSimple(v.GetType())) && v is IEnumerable ien)
          {
             sb.Append("[");
             bool first = true;

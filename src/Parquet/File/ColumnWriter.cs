@@ -144,7 +144,10 @@ namespace Parquet.File
 
          foreach (IEnumerable elementValues in values)
          {
-            result.AddRange(elementValues);
+            foreach(object add in elementValues)
+            {
+               result.Add(add);
+            }
          }
 
          return result;

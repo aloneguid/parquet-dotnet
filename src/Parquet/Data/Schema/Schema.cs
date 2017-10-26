@@ -174,9 +174,9 @@ namespace Parquet.Data
 
          if (_elements.Count != other._elements.Count) return false;
 
-         foreach(Tuple<SchemaElement, SchemaElement> pair in EnumerableEx.MultiIterate(_elements, other.Elements))
+         for(int i = 0; i < _elements.Count; i++)
          {
-            if (!pair.Item1.Equals(pair.Item2)) return false;
+            if (!_elements[i].Equals(other._elements[i])) return false;
          }
 
          return true;

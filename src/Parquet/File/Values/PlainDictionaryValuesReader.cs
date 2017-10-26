@@ -16,7 +16,10 @@ namespace Parquet.File.Values
          //when bit width is zero reader must stop and just repeat zero maxValue number of times
          if(bitWidth == 0)
          {
-            destination.AddRange(Enumerable.Repeat(0, (int)maxValues));
+            for(int i = 0; i < maxValues; i++)
+            {
+               destination.Add(0);
+            }
             return;
          }
 

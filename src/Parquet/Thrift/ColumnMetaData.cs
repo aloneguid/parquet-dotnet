@@ -4,24 +4,17 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-using System.Runtime.Serialization;
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Description for column metadata
-  /// </summary>
-  class ColumnMetaData : TBase
+   /// <summary>
+   /// Description for column metadata
+   /// </summary>
+   class ColumnMetaData : TBase
   {
     private List<KeyValue> _key_value_metadata;
     private long _index_page_offset;

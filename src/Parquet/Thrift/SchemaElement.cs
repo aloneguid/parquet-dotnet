@@ -4,27 +4,19 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-using System.Runtime.Serialization;
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Represents a element inside a schema definition.
-  ///  - if it is a group (inner node) then type is undefined and num_children is defined
-  ///  - if it is a primitive type (leaf) then type is defined and num_children is undefined
-  /// the nodes are listed in depth first traversal order.
-  /// </summary>
-  class SchemaElement : TBase
+   /// <summary>
+   /// Represents a element inside a schema definition.
+   ///  - if it is a group (inner node) then type is undefined and num_children is defined
+   ///  - if it is a primitive type (leaf) then type is defined and num_children is undefined
+   /// the nodes are listed in depth first traversal order.
+   /// </summary>
+   class SchemaElement : TBase
   {
     private Type _type;
     private int _type_length;
