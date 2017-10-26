@@ -8,6 +8,8 @@ val spark = SparkSession.builder()
 import spark.implicits._
 val sc = spark.sparkContext
 
-val ds = spark.read.parquet("c:\\tmp\\nested.parquet")
+//val ds = spark.read.parquet("c:\\tmp\\nested.parquet")
+val ds = spark.read.json("c:\\tmp\\typediff.json")
 ds.printSchema()
+ds.show()
 ds.show()
