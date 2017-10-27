@@ -8,6 +8,10 @@ All tests are performed using v1.5 alpha
 
 **File:** customer.impala.parquet
 
+**Size:** 25Mb
+
+**Rows**: 150'000
+
 ||Read|Write|
 |-|-|-|
 |fastparquet|729 ms||
@@ -16,5 +20,5 @@ All tests are performed using v1.5 alpha
 ![Perf00](img/perf00.png)
 
 
-other tests are still pending
+performance tests are pending
 
