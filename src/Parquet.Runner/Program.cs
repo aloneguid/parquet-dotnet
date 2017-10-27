@@ -3,6 +3,8 @@ using Parquet;
 using Parquet.Data;
 using LogMagic;
 using NetBox;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet.Runner
 {
@@ -15,30 +17,22 @@ namespace Parquet.Runner
          L.Config
             .WriteTo.PoshConsole();
 
-         using (var time = new TimeMeasure())
+         var times = new List<TimeSpan>();
+
+         for (int i = 0; i < 10; i++)
          {
-            var ds = new DataSet(
-               new SchemaElement<int>("id"),
-               new SchemaElement<string>("name"),
-               new SchemaElement<double>("lat"),
-               new SchemaElement<double>("lon"));
-
-            log.Trace(ds.Schema.ToString());
-
-            for (int i = 0; i < 10; i++)
+            using (var time = new TimeMeasure())
             {
-               ds.Add(
-                  i,
-                  NameGenerator.GeneratePersonFullName(),
-                  Generator.RandomDouble,
-                  Generator.RandomDouble);
+               ParquetReader.ReadFile("C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\customer.impala.parquet");
+               times.Add(time.Elapsed);
+
+               log.Trace("{0}", time.Elapsed);
             }
-
-            ParquetWriter.WriteFile(ds, "c:\\tmp\\perf.parquet");
-
-
-            log.Trace("written in {0}", time.Elapsed);
          }
+
+         double average = times.Skip(1).Average(t => t.TotalMilliseconds);
+
+         log.Trace("average: {0}", average);
 
       }
    }
