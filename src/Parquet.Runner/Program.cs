@@ -29,7 +29,7 @@ namespace Parquet.Runner
 
             using (var time = new TimeMeasure())
             {
-               ds = ParquetReader.ReadFile("C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\customer.impala.parquet");
+               ds = ParquetReader.ReadFile("C:\\tmp\\postcodes.parquet");
                readTimes.Add(time.Elapsed);
             }
 

@@ -17,8 +17,8 @@ def avg(name, times):
 
 
 if __name__ == "__main__":
-   ROOT_PATH = "C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\"
-   test_file = ROOT_PATH + "customer.impala.parquet"
+   ROOT_PATH = "C:\\tmp\\"
+   test_file = ROOT_PATH + "postcodes.parquet"
    write_file = "c:\\tmp\\write.test.parquet"
    REPEAT = 4
 
@@ -38,14 +38,17 @@ if __name__ == "__main__":
       start_time = time.time()
       write(write_file, df, compression="UNCOMPRESSED")
       write_uncompressed_times.append(time.time() - start_time)
+      print("written uncompressed")
 
       start_time = time.time()
       write(write_file, df, compression="GZIP")
       write_gzip_times.append(time.time() - start_time)
+      print("written gzip")
 
       start_time = time.time()
       write(write_file, df, compression="SNAPPY")
       write_snappy_times.append(time.time() - start_time)
+      print("written snappy")
 
       
 

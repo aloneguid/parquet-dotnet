@@ -23,24 +23,26 @@ def msFrom(start: Long) : Double = {
    ms
 }
 
-val path = root + "postcodes.csv"
+val path = root + "postcodes.parquet"
+val outPath = root + "write.test.parquet"
 
 val ds = spark.read.csv(path)
-ds.show()
 
-/*var msl = List[Double]()
+var msl = List[Double]()
 
-for(i <- 0 until 10) {
+for(i <- 0 until 4) {
    val start = System.nanoTime
-   val pqds = spark.read.parquet(path)
+   val ds = spark.read.parquet(path)
 
-   write(pqds, outPath)
+   val localCopy = ds.collectAsList()
+
+   //write(ds, outPath)
 
    val length = msFrom(start)
    msl = length :: msl
 }
 
-msl*/
+msl
 
 
 
