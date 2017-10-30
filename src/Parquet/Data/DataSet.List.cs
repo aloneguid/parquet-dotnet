@@ -35,15 +35,23 @@ namespace Parquet.Data
       /// <summary>
       /// Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.
       /// </summary>
-      /// <param name="row">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+      /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
       public void Add(Row item)
       {
          AddRow(item);
       }
 
+      /// <summary>
+      /// Clears data in the dataset
+      /// </summary>
       public void Clear()
       {
+         foreach(KeyValuePair<string, IList> kvp in _pathToValues)
+         {
+            kvp.Value.Clear();
+         }
 
+         _rowCount = 0;
       }
 
       /// <summary>

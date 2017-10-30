@@ -1,15 +1,11 @@
-import org.apache.spark.sql.{DataFrame, SparkSession}
+val s = System.nanoTime
 
-val spark = SparkSession.builder()
-   .appName("nested-records")
-   .master("local[2]")
-   .getOrCreate()
+def msFrom(start: Long) : Double = {
+   val diff = System.nanoTime - start
+   val ms = diff/1e6
+   ms
+}
 
-import spark.implicits._
-val sc = spark.sparkContext
+msFrom(s)
 
-//val ds = spark.read.parquet("c:\\tmp\\nested.parquet")
-val ds = spark.read.json("c:\\tmp\\typediff.json")
-ds.printSchema()
-ds.show()
-ds.show()
+
