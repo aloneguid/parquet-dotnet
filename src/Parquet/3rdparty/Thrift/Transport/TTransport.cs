@@ -26,7 +26,7 @@ using System.IO;
 
 namespace Thrift.Transport
 {
-    public abstract class TTransport : IDisposable
+    abstract class TTransport : IDisposable
     {
         public abstract bool IsOpen
         {

@@ -37,7 +37,7 @@ namespace Thrift.Protocol
     ///
     /// Adapted from the Java version.
     /// </summary>
-    public class TJSONProtocol : TProtocol
+    class TJSONProtocol : TProtocol
     {
         /// <summary>
         /// Factory for JSON protocol objects

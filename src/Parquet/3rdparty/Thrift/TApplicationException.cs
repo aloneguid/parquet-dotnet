@@ -26,7 +26,7 @@ using Thrift.Protocol;
 
 namespace Thrift
 {
-    public class TApplicationException : TException
+    class TApplicationException : TException
     {
         protected ExceptionType type;
 

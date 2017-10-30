@@ -50,7 +50,7 @@ namespace Thrift.Protocol
      *
      *     server.serve();
      */
-    public class TMultiplexedProcessor : TProcessor
+    class TMultiplexedProcessor : TProcessor
     {
         private Dictionary<String,TProcessor> ServiceProcessorMap = new Dictionary<String,TProcessor>();
 

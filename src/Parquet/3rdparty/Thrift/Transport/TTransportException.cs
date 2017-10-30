@@ -25,7 +25,7 @@ using System;
 
 namespace Thrift.Transport
 {
-    public class TTransportException : TException
+    class TTransportException : TException
     {
         protected ExceptionType type;
 

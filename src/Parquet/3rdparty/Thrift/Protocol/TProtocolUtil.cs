@@ -25,7 +25,7 @@ using System;
 
 namespace Thrift.Protocol
 {
-    public static class TProtocolUtil
+    static class TProtocolUtil
     {
         public static void Skip(TProtocol prot, TType type)
         {

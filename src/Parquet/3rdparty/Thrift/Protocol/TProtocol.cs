@@ -27,7 +27,7 @@ using Thrift.Transport;
 
 namespace Thrift.Protocol
 {
-    public abstract class TProtocol : IDisposable
+    abstract class TProtocol : IDisposable
     {
         private const int DEFAULT_RECURSION_DEPTH = 64;
 

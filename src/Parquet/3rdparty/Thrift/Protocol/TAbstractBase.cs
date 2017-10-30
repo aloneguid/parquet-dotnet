@@ -19,7 +19,7 @@
 
 namespace Thrift.Protocol
 {
-    public interface TAbstractBase
+    interface TAbstractBase
     {
         ///
         /// Writes the objects out to the protocol

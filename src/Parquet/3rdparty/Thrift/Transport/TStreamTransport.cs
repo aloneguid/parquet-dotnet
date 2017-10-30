@@ -26,7 +26,7 @@ using System.IO;
 
 namespace Thrift.Transport
 {
-    public class TStreamTransport : TTransport
+    class TStreamTransport : TTransport
     {
         protected Stream inputStream;
         protected Stream outputStream;

@@ -38,7 +38,7 @@ namespace Thrift.Protocol
      * See p.175 of Design Patterns (by Gamma et al.)
      * See TMultiplexedProtocol
      */
-    public abstract class TProtocolDecorator : TProtocol
+    abstract class TProtocolDecorator : TProtocol
     {
         private TProtocol WrappedProtocol;
 

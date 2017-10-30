@@ -26,7 +26,7 @@ using Thrift.Transport;
 
 namespace Thrift.Protocol
 {
-    public interface TProtocolFactory
+    interface TProtocolFactory
     {
         TProtocol GetProtocol(TTransport trans);
     }

@@ -23,7 +23,7 @@ using System.Collections.Generic;
 
 namespace Thrift.Collections
 {
-   public class THashSet<T> : ICollection<T>
+   class THashSet<T> : ICollection<T>
     {
         HashSet<T> set = new HashSet<T>();
 
