@@ -28,7 +28,7 @@ namespace Parquet.Runner
 
       private static void Debug()
       {
-         DataSet ds = ParquetReader.ReadFile("c:\\tmp\\customer.impala.parquet");
+         DataSet ds = ParquetReader.ReadFile("c:\\tmp\\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true });
       }
 
       private static void Perf()
