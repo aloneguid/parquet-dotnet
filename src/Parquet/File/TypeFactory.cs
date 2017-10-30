@@ -8,7 +8,7 @@ namespace Parquet.File
 {
    static class TypeFactory
    {
-      public static IList Create(Type systemType, bool nullable = false, bool repeated = false)
+      public static IList Create(Type systemType, bool nullable = false, bool repeated = false, int? capacity = null)
       {
          //make the type nullable if it's not a class
          if(nullable && !repeated)
@@ -22,14 +22,20 @@ namespace Parquet.File
          //create generic list instance
          Type listType = typeof(List<>);
          Type listGType = listType.MakeGenericType(systemType);
-         return (IList)Activator.CreateInstance(listGType);
+
+         if (capacity == null)
+         {
+            return (IList)Activator.CreateInstance(listGType);
+         }
+
+         return (IList)Activator.CreateInstance(listGType, capacity.Value);
       }
 
-      public static IList Create(SchemaElement schema, ParquetOptions options, bool nullable = false)
+      public static IList Create(SchemaElement schema, ParquetOptions options, bool nullable = false, int? capacity = null)
       {
          //Type t = TypePrimitive.GetSystemTypeBySchema(schema, options);
          Type t = schema.ElementType;  //use ElementType as it's properly pre-calculated
-         return Create(t, nullable);
+         return Create(t, nullable, false, capacity);
       }
 
       public static bool TryExtractEnumerableType(Type t, out Type baseType)

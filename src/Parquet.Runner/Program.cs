@@ -18,6 +18,21 @@ namespace Parquet.Runner
          L.Config
             .WriteTo.PoshConsole();
 
+
+#if DEBUG
+         Debug();
+#else
+         Perf();
+#endif
+      }
+
+      private static void Debug()
+      {
+         DataSet ds = ParquetReader.ReadFile("c:\\tmp\\customer.impala.parquet");
+      }
+
+      private static void Perf()
+      {
          var readTimes = new List<TimeSpan>();
          var writeUncompressedTimes = new List<TimeSpan>();
          var writeGzipTimes = new List<TimeSpan>();
@@ -29,7 +44,7 @@ namespace Parquet.Runner
 
             using (var time = new TimeMeasure())
             {
-               ds = ParquetReader.ReadFile("C:\\tmp\\postcodes.parquet");
+               ds = ParquetReader.ReadFile("C:\\tmp\\customer.impala.parquet");
                readTimes.Add(time.Elapsed);
             }
 
@@ -58,11 +73,13 @@ namespace Parquet.Runner
          }
 
          double avgRead = readTimes.Skip(1).Average(t => t.TotalMilliseconds);
-         double avgUncompressed = writeUncompressedTimes.Skip(1).Average(t => t.TotalMilliseconds);
+         log.Trace("avg: {0}", avgRead);
+
+         /*double avgUncompressed = writeUncompressedTimes.Skip(1).Average(t => t.TotalMilliseconds);
          double avgGzip = writeGzipTimes.Skip(1).Average(t => t.TotalMilliseconds);
          double avgSnappy = writeUncompressedTimes.Skip(1).Average(t => t.TotalMilliseconds);
 
-         log.Trace("averages => read: {0}, uncompressed: {1}, gzip: {2}, snappy: {3}", avgRead, avgUncompressed, avgGzip, avgSnappy);
+         log.Trace("averages => read: {0}, uncompressed: {1}, gzip: {2}, snappy: {3}", avgRead, avgUncompressed, avgGzip, avgSnappy);*/
 
       }
    }

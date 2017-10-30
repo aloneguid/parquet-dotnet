@@ -41,11 +41,11 @@ namespace Parquet.File
 
       public IList Read(long offset, long count)
       {
-         IList values = TypeFactory.Create(_schema, _options);
-
          //get the minimum offset, we'll just read pages in sequence
          long fileOffset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
          long maxValues = _thriftChunk.Meta_data.Num_values;
+
+         IList values = TypeFactory.Create(_schema, _options, false, (int)maxValues);
 
          _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
