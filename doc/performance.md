@@ -20,6 +20,7 @@ It's worth noting that parquet-dotnet has never been optimised for performance y
 |parquet-dotnet|354 ms|351 ms|1'317 ms|351 ms|
 |Scala (Spark)|-|-|-|-|
 
+
 ![Perf00](img/perf00.png)
 
 In this test Apache Spark cannot read the file due to an internal bug.
