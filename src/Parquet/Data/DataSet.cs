@@ -240,7 +240,7 @@ namespace Parquet.Data
          {
             if (createIfMissing)
             {
-               values = TypeFactory.Create(schema.ElementType, schema.IsNullable, schema.IsRepeated);
+               values = schema.CreateValuesList(0, true);
                _pathToValues[schema.Path] = values;
             }
             else

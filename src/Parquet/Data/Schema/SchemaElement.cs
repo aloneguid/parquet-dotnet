@@ -89,12 +89,18 @@ namespace Parquet.Data
 
          ElementType = resultElementType;
          Path = resultPath;
+         IsRepeated = Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
 
          UpdateFlags();
       }
 
-      internal IList CreateValuesList(int capacity)
+      internal IList CreateValuesList(int capacity, bool honorRepeatables = false)
       {
+         if(honorRepeatables && IsRepeated)
+         {
+            return new List<IEnumerable>();
+         }
+
          TypePrimitive tp = TypePrimitive.Find(ElementType);
 
          return tp.CreateList(capacity, IsNullable);

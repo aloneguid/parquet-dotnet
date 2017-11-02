@@ -20,6 +20,40 @@ namespace Parquet.File
          _formatOptions = formatOptions ?? new ParquetOptions();
       }
 
+      public IList Unpack(IList hierarchy, out List<int> levels)
+      {
+         levels = new List<int>();
+         IList flatValues = _schema.CreateValuesList(0);
+
+         Unpack(hierarchy, levels, flatValues, 0);
+
+         return flatValues;
+      }
+
+      private static void Unpack(IList list, List<int> levels, IList flatValues, int currentLevel)
+      {
+         for (int i = 0; i < list.Count; i++)
+         {
+            object item = list[i];
+
+            if (item is IList nestedList)
+            {
+               Unpack(nestedList, levels, flatValues, currentLevel);
+            }
+            else
+            {
+               levels.Add(currentLevel);
+
+               if (i == 0)
+               {
+                  currentLevel += 1;
+               }
+
+               flatValues.Add(item);
+            }
+         }
+      }
+
       public IList Pack(IList flatValues, List<int> levels)
       {
          if (levels == null || _schema.MaxRepetitionLevel == 0) return flatValues;
@@ -64,7 +98,7 @@ namespace Parquet.File
          for (int i = maxIdx; i >= rl; i--)
          {
             IList nl = (i == maxIdx)
-               ? TypeFactory.Create(_schema)
+               ? _schema.CreateValuesList(0)
                : new List<IList>();
 
             hl[i] = nl;

@@ -23,8 +23,18 @@ namespace Parquet.Test
          Assert.Equal(2, ds.ColumnCount);
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
+      }
 
-         //ParquetWriter.WriteFile(ds, "c:\\tmp\\nested.parquet");
+      [Fact]
+      public void Simple_repeated_field_write_read()
+      {
+         var ds = new DataSet(
+            new SchemaElement<int>("id"),
+            new SchemaElement<IEnumerable<string>>("items"));
+
+         ds.Add(1, new[] { "one", "two" });
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
       }
    }
 }

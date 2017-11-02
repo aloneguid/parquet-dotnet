@@ -30,6 +30,28 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void Level1_repetitions_unpacked()
+      {
+         var schema = new SchemaElement<int>("line1") { MaxRepetitionLevel = 1 };
+         var packer = new RepetitionPack(schema);
+
+         IList flatValues = packer.Unpack(
+            new List<List<int>>
+            {
+               new List<int>{ 1, 2 },
+               new List<int>{ 3, 4 }
+            },
+            out List<int> levels
+            );
+
+         Assert.Equal(4, flatValues.Count);
+         Assert.Equal(4, levels.Count);
+
+         Assert.Equal(new[] { 0, 1, 0, 1 }, levels);
+         Assert.Equal(new[] { 1, 2, 3, 4 }, flatValues);
+      }
+
+      [Fact]
       public void Level2_repetitions_packed()
       {
          var levels = new List<int>

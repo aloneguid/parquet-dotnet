@@ -142,7 +142,7 @@ namespace Parquet.File
 
       private IList ReadDictionaryPage(Thrift.PageHeader ph)
       {
-         //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain enncoding.
+         //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
 
          byte[] data = ReadRawBytes(ph, _inputStream);
 
@@ -150,7 +150,7 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               IList result = TypeFactory.Create(_schema);
+               IList result = _schema.CreateValuesList(ph.Dictionary_page_header.Num_values);
                _plainReader.Read(dataReader, _schema, result, int.MaxValue);
                return result;
             }
