@@ -72,20 +72,34 @@ namespace Parquet.File
                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
                Num_children = 1
             };
+            container.Add(root);
 
             var list = new TSchemaElement("list")
             {
                Repetition_type = Thrift.FieldRepetitionType.REPEATED,
                Num_children = 1
             };
-
-            TSchemaElement element = se.Thrift;
-            element.Name = "element";
-            element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-
-            container.Add(root);
             container.Add(list);
-            container.Add(element);
+
+            if (se.IsNestedStructure)
+            {
+               var element = new TSchemaElement("element");
+               element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+               element.Num_children = se.Children.Count;
+               container.Add(element);
+
+               foreach(SchemaElement child in se.Children)
+               {
+                  AddSchema(container, child);
+               }
+            }
+            else
+            {
+               TSchemaElement element = se.Thrift;
+               element.Name = "element";
+               element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+               container.Add(element);
+            }
          }
          else if(se.IsNestedStructure)
          {

@@ -42,11 +42,11 @@ def convertFromFormattedJson(name: String, writeFile: Boolean): DataFrame = {
    df
 }
 
-val df = convertFromFormattedJson("repeatedstruct", false)
+val dfSpark = convertFromFormattedJson("repeatedstruct", false)
+dfSpark.printSchema()
+dfSpark.show()
+
+val df = spark.read.parquet("c:\\tmp\\rep.parquet")
 df.printSchema()
+df.show()
 
-//val df = convertFromFormattedJson("simplenested", true)
-//df.printSchema()
-
-//val df = spark.read.parquet(root + "nested.parquet")
-//df.printSchema()

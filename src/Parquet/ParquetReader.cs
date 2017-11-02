@@ -147,7 +147,7 @@ namespace Parquet
             pos += rg.Num_rows;
          }
 
-         return new DataSet(schema, pathToValues, _meta.Num_rows, _meta.Created_by);
+         return new DataSet(schema, pathToValues, _meta.Num_rows, _meta.Created_by) { Thrift = _meta };
       }
 
       /// <summary>

@@ -161,6 +161,26 @@ namespace Parquet.Data
       /// </summary>
       public object[] RawValues => _values;
 
+      internal static Row Compress(IEnumerable<SchemaElement> schema, IEnumerable<Row> rows)
+      {
+         List<Row> rowsList = rows.ToList();
+         var rv = new List<object>();
+
+         int i = 0;
+         foreach(SchemaElement se in schema)
+         {
+            IList values = se.CreateValuesList(rowsList.Count);
+            foreach(Row row in rowsList)
+            {
+               values.Add(row[i]);
+            }
+            rv.Add(values);
+            i += 1;
+         }
+
+         return new Row(rv);
+      }
+
       /// <summary>
       /// Returns a <see cref="string" /> that represents this instance.
       /// </summary>

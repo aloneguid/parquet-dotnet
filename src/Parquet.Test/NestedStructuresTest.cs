@@ -45,11 +45,17 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<int>("id"),
-            new SchemaElement<IEnumerable<Row>>("addresses",
-               new SchemaElement<string>("line1"),
-               new SchemaElement<string>("line2")));
+            new SchemaElement<IEnumerable<Row>>("cities",
+               new SchemaElement<string>("name"),
+               new SchemaElement<string>("country")));
 
-         ds.Add(1, new[] { new Row("11", "12"), new Row("21", "22") });
+         ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
+
+         ParquetWriter.WriteFile(ds, "c:\\tmp\\rep.parquet");
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal("{1;[{London;UK};{New York;US}]}", ds1[0].ToString());
       }
 
       [Fact]

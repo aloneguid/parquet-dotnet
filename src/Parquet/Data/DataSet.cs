@@ -17,6 +17,8 @@ namespace Parquet.Data
       private int _rowCount;
       private readonly DataSetMetadata _metadata = new DataSetMetadata();
 
+      internal Thrift.FileMetaData Thrift { get; set; }
+
       /// <summary>
       /// Initializes a new instance of the <see cref="DataSet"/> class.
       /// </summary>
@@ -217,13 +219,16 @@ namespace Parquet.Data
 
             if (se.IsNestedStructure)
             {
-               Row valueRow = (Row)value;
+               Row valueRow = se.IsRepeated
+                  ? Row.Compress(se.Children, (IEnumerable<Row>)value)
+                  : (Row)value;
 
                AddRow(valueRow, se.Children, false);
             }
             else
             {
                IList values = GetValues(se, true);
+
                values.Add(value);
             }
          }
@@ -240,7 +245,15 @@ namespace Parquet.Data
          {
             if (createIfMissing)
             {
-               values = schema.CreateValuesList(0, true);
+               if (schema.MaxRepetitionLevel > 0)
+               {
+                  values = new List<IEnumerable>();
+               }
+               else
+               {
+                  values = schema.CreateValuesList(0, false);
+               }
+
                _pathToValues[schema.Path] = values;
             }
             else

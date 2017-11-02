@@ -55,6 +55,8 @@ namespace Parquet.File
 
          List<PageTag> pages = WriteValues(_schema, values, ph, _compressionMethod);
 
+         chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
+
          //the following counters must include both data size and header size
          chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
          chunk.Meta_data.Total_uncompressed_size = pages.Sum(p => p.HeaderMeta.Uncompressed_page_size + p.HeaderSize);
@@ -72,17 +74,19 @@ namespace Parquet.File
          List<int> definitions = null;
 
          //flatten values and create repetitions list if the field is repeatable
-         if (schema.IsRepeated)
+         if (schema.MaxRepetitionLevel > 0)
          {
             var rpack = new RepetitionPack(_schema, _formatOptions);
             values = rpack.Unpack(values, out repetitions);
+            ph.Data_page_header.Num_values = values.Count;
          }
 
-         if(schema.IsNullable || schema.IsRepeated)
+         if (schema.IsNullable || schema.MaxRepetitionLevel > 0)
          {
             var dpack = new DefinitionPack(_schema, _formatOptions);
             values = dpack.Unpack(values, out definitions);
          }
+
          
          using (var ms = new MemoryStream())
          {
