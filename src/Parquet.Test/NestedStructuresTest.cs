@@ -35,6 +35,9 @@ namespace Parquet.Test
          ds.Add(1, new[] { "one", "two" });
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal(1, ds1[0][0]);
+         Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
       }
    }
 }
