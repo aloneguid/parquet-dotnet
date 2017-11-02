@@ -69,12 +69,19 @@ namespace Parquet.File
          int dictionaryPageCount = 0;
          byte[] dataPageBytes;
          List<int> repetitions = null;
+         List<int> definitions = null;
 
          //flatten values and create repetitions list if the field is repeatable
          if (schema.IsRepeated)
          {
             var rpack = new RepetitionPack(_schema, _formatOptions);
             values = rpack.Unpack(values, out repetitions);
+         }
+
+         if(schema.IsNullable || schema.IsRepeated)
+         {
+            var dpack = new DefinitionPack(_schema, _formatOptions);
+            values = dpack.Unpack(values, out definitions);
          }
          
          using (var ms = new MemoryStream())
@@ -88,11 +95,8 @@ namespace Parquet.File
                }
 
                //write definitions
-               if (schema.IsNullable || schema.IsRepeated)
+               if (definitions != null)
                {
-                  CreateDefinitions(values, schema, out IList newValues, out List<int> definitions);
-                  values = newValues;
-
                   _rleWriter.Write(writer, _definitionsSchema, definitions, out IList nullExtra);
                }
 
@@ -137,28 +141,6 @@ namespace Parquet.File
          int headerSize = _thriftStream.Write(ph);
          _output.Write(data, 0, data.Length);
          return headerSize;
-      }
-
-      private void CreateDefinitions(IList values, SchemaElement schema, out IList nonNullableValues, out List<int> definitions)
-      {
-         nonNullableValues = TypeFactory.Create(schema, false);
-         definitions = new List<int>();
-
-         if (values == null) return;
-         int maxDef = schema.MaxDefinitionLevel;
-
-         foreach (object value in values)
-         {
-            if (value == null)
-            {
-               definitions.Add(0);
-            }
-            else
-            {
-               definitions.Add(maxDef);
-               nonNullableValues.Add(value);
-            }
-         }
       }
 
       private byte[] Compress(Thrift.PageHeader ph, byte[] data, CompressionMethod compression)

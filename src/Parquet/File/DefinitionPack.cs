@@ -20,6 +20,27 @@ namespace Parquet.File
          _formatOptions = formatOptions ?? new ParquetOptions();
       }
 
+      public IList Unpack(IList values, out List<int> definitions)
+      {
+         definitions = new List<int>(values.Count);
+         IList result = TypeFactory.Create(_schema, false);
+
+         foreach(object value in values)
+         {
+            if(value == null)
+            {
+               definitions.Add(0);
+            }
+            else
+            {
+               definitions.Add(_schema.MaxDefinitionLevel);
+               result.Add(value);
+            }
+         }
+
+         return result;
+      }
+
       public void Pack(IList values, List<int> definitions)
       {
          if (definitions == null) return;
