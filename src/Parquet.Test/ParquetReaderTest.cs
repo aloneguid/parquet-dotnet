@@ -196,6 +196,14 @@ root
       }
 
       [Fact]
+      public void Reads_repeated_struct()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("repeatedstruct.parquet"));
+
+         Assert.Equal("{[{UK;London};{US;New York}];1}", ds[0].ToString());
+      }
+
+      [Fact]
       public void Read_simple_repeated_field()
       {
          /*

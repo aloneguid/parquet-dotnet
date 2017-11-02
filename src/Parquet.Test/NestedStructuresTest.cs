@@ -41,6 +41,18 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void Repeated_structure_write_read()
+      {
+         var ds = new DataSet(
+            new SchemaElement<int>("id"),
+            new SchemaElement<IEnumerable<Row>>("addresses",
+               new SchemaElement<string>("line1"),
+               new SchemaElement<string>("line2")));
+
+         ds.Add(1, new[] { new Row("11", "12"), new Row("21", "22") });
+      }
+
+      [Fact]
       public void Structure_nested_into_structure_write_read()
       {
          var ds = new DataSet(

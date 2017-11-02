@@ -194,8 +194,7 @@ namespace Parquet.File
          }
          else if(typeof(Row) == systemType)
          {
-            //this is a hierarchy, therefore can be a fake type
-            elementType = typeof(int);
+            elementType = typeof(Row);
             pathName = null;
             th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
          }
@@ -224,21 +223,24 @@ namespace Parquet.File
 
          //adjust schema
 
-         TypePrimitive tp = TypePrimitive.Find(elementType);
-
-         th.Type = tp.ThriftType;
-
-         if (tp.ThriftAnnotation != null)
+         if (typeof(Row) != elementType)
          {
-            th.Converted_type = tp.ThriftAnnotation.Value;
-         }
+            TypePrimitive tp = TypePrimitive.Find(elementType);
 
-         //todo: not the best place for it, but it's a special case at the moment
-         if (systemType == typeof(decimal))
-         {
-            th.Precision = 38;
-            th.Scale = 18;
-            th.Type_length = 16;   //set to default type length to be used when no elements are added
+            th.Type = tp.ThriftType;
+
+            if (tp.ThriftAnnotation != null)
+            {
+               th.Converted_type = tp.ThriftAnnotation.Value;
+            }
+
+            //todo: not the best place for it, but it's a special case at the moment
+            if (systemType == typeof(decimal))
+            {
+               th.Precision = 38;
+               th.Scale = 18;
+               th.Type_length = 16;   //set to default type length to be used when no elements are added
+            }
          }
 
          return th;
