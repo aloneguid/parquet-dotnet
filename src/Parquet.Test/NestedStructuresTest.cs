@@ -55,7 +55,23 @@ namespace Parquet.Test
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
-         Assert.Equal("{Ivan;{Primary;{line1;line2}}}", ds[0].ToString());
+         Assert.Equal("{Ivan;{Primary;{line1;line2}}}", ds1[0].ToString());
+      }
+
+      [Fact]
+      public void Structure_with_repeated_field_writes_reads()
+      {
+         var ds = new DataSet(
+            new SchemaElement<string>("name"),
+            new SchemaElement<Row>("address",
+               new SchemaElement<string>("name"),
+               new SchemaElement<IEnumerable<string>>("lines")));
+
+         ds.Add("Ivan", new Row("Primary", new[] { "line1", "line2" }));
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal("{Ivan;{Primary;[line1;line2]}}", ds1[0].ToString());
       }
    }
 }

@@ -182,21 +182,21 @@ namespace Parquet.File
 
       public TSchemaElement CreateSchemaElement(string name, Type systemType,
          out Type elementType,
-         out string path)
+         out string pathName)
       {
          var th = new TSchemaElement(name);
 
          if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
          {
             elementType = baseType;
-            path = BuildRepeatablePath(name);
+            pathName = BuildRepeatablePath(name);
             th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
          }
          else if(typeof(Row) == systemType)
          {
             //this is a hierarchy, therefore can be a fake type
             elementType = typeof(int);
-            path = null;
+            pathName = null;
             th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
          }
          else
@@ -219,7 +219,7 @@ namespace Parquet.File
                th.Repetition_type = Thrift.FieldRepetitionType.REQUIRED;
             }
 
-            path = null;
+            pathName = null;
          }
 
          //adjust schema

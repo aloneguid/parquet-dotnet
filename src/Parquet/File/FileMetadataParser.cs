@@ -77,7 +77,7 @@ namespace Parquet.File
          }
 
          //extract schema tree
-         var root = new SchemaElement<int>("root");
+         var root = new SchemaElement<int>("root") { Path = string.Empty };
          int start = 1;
          Build(root, ref start, _fileMeta.Schema[0].Num_children, true);
 

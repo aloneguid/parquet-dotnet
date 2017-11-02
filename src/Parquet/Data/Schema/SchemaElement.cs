@@ -40,6 +40,7 @@ namespace Parquet.Data
    {
       private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
       private string _path;
+      private string _pathName;
       private static readonly FileMetadataBuilder Builder = new FileMetadataBuilder();
 
       /// <summary>
@@ -85,10 +86,10 @@ namespace Parquet.Data
          Thrift = Builder
             .CreateSchemaElement(name, elementType,
                out Type resultElementType,
-               out string resultPath);
+               out string pathName);
 
          ElementType = resultElementType;
-         Path = resultPath;
+         _pathName = pathName;
          IsRepeated = Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
 
          UpdateFlags();
@@ -214,9 +215,13 @@ namespace Parquet.Data
          {
             if (_path != null) return _path;
 
-            if (Parent == null) return Name;
+            string pp = _pathName ?? Name;
 
-            return Parent.Path + Schema.PathSeparator + Name;
+            if (Parent == null) return pp;
+
+            return (Parent.Path == string.Empty)
+               ? pp
+               : Parent.Path + Schema.PathSeparator + pp;
 
          }
          internal set
