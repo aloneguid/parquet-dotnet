@@ -39,5 +39,23 @@ namespace Parquet.Test
          Assert.Equal(1, ds1[0][0]);
          Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
       }
+
+      [Fact]
+      public void Structure_nested_into_structure_write_read()
+      {
+         var ds = new DataSet(
+            new SchemaElement<string>("name"),
+            new SchemaElement<Row>("address",
+               new SchemaElement<string>("name"),
+               new SchemaElement<Row>("lines",
+                  new SchemaElement<string>("line1"),
+                  new SchemaElement<string>("line2"))));
+
+         ds.Add("Ivan", new Row("Primary", new Row("line1", "line2")));
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal("{Ivan;{Primary;{line1;line2}}}", ds[0].ToString());
+      }
    }
 }
