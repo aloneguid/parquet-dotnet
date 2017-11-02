@@ -6,6 +6,7 @@ using NetBox;
 using System.Collections.Generic;
 using System.Linq;
 using F = System.IO.File;
+using System.Runtime;
 
 namespace Parquet.Runner
 {
@@ -18,7 +19,6 @@ namespace Parquet.Runner
          L.Config
             .WriteTo.PoshConsole();
 
-
 #if DEBUG
          Debug();
 #else
@@ -26,8 +26,10 @@ namespace Parquet.Runner
 #endif
       }
 
+
       private static void Debug()
       {
+         //GCSettings.LatencyMode = GCLatencyMode.LowLatency;
          DataSet ds = ParquetReader.ReadFile("c:\\tmp\\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true });
       }
 
@@ -45,10 +47,12 @@ namespace Parquet.Runner
             using (var time = new TimeMeasure())
             {
                ds = ParquetReader.ReadFile("C:\\tmp\\customer.impala.parquet");
-               readTimes.Add(time.Elapsed);
+               TimeSpan elapsed = time.Elapsed;
+               readTimes.Add(elapsed);
+               log.Trace("read in {0}", elapsed);
             }
 
-            string dest = "c:\\tmp\\write.test.parquet";
+            /*string dest = "c:\\tmp\\write.test.parquet";
             if (F.Exists(dest)) F.Delete(dest);
 
             using (var time = new TimeMeasure())
@@ -67,7 +71,7 @@ namespace Parquet.Runner
             {
                ParquetWriter.WriteFile(ds, dest, CompressionMethod.Snappy);
                writeSnappyTimes.Add(time.Elapsed);
-            }
+            }*/
 
             log.Trace("run finished: {0}", i);
          }

@@ -31,9 +31,8 @@ namespace Parquet.File
          return (IList)Activator.CreateInstance(listGType, capacity.Value);
       }
 
-      public static IList Create(SchemaElement schema, ParquetOptions options, bool nullable = false, int? capacity = null)
+      public static IList Create(SchemaElement schema, bool nullable = false, int? capacity = null)
       {
-         //Type t = TypePrimitive.GetSystemTypeBySchema(schema, options);
          Type t = schema.ElementType;  //use ElementType as it's properly pre-calculated
          return Create(t, nullable, false, capacity);
       }

@@ -93,6 +93,13 @@ namespace Parquet.Data
          UpdateFlags();
       }
 
+      internal IList CreateValuesList(int capacity)
+      {
+         TypePrimitive tp = TypePrimitive.Find(ElementType);
+
+         return tp.CreateList(capacity, IsNullable);
+      }
+
       /// <summary>
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>

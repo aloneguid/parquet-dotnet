@@ -31,7 +31,7 @@ namespace Parquet.File
 
          ApplyDictionary(dictionary, indexes, maxValues);
 
-         ApplyDefinitions(definitions, maxValues, maxValues);
+         ApplyDefinitions(definitions, maxValues);
 
          ApplyRepetitions(repetitions);
 
@@ -57,10 +57,10 @@ namespace Parquet.File
          foreach (object el in values) _values.Add(el);
       }
 
-      private void ApplyDefinitions(List<int> definitions, int maxValues, int capacity)
+      private void ApplyDefinitions(List<int> definitions, int maxValues)
       {
          var packer = new DefinitionPack(_schema, _formatOptions);
-         _values = packer.Pack(_values, definitions, capacity);
+         packer.Pack(_values, definitions);
       }
 
       private void ApplyRepetitions(List<int> repetitions)

@@ -45,7 +45,8 @@ namespace Parquet.File
          long fileOffset = new[] { _thriftChunk.Meta_data.Dictionary_page_offset, _thriftChunk.Meta_data.Data_page_offset }.Where(e => e != 0).Min();
          long maxValues = _thriftChunk.Meta_data.Num_values;
 
-         IList values = TypeFactory.Create(_schema, _options, false, (int)maxValues);
+         //IList values = TypeFactory.Create(_schema, false, (int)maxValues);
+         IList values = _schema.CreateValuesList((int)maxValues);
 
          _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
@@ -149,7 +150,7 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               IList result = TypeFactory.Create(_schema, _options);
+               IList result = TypeFactory.Create(_schema);
                _plainReader.Read(dataReader, _schema, result, int.MaxValue);
                return result;
             }

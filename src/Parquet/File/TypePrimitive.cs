@@ -1,24 +1,52 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Parquet.Data;
 using Parquet.File.Values;
 using Parquet.File.Values.Primitives;
 
 namespace Parquet.File
 {
-   class TypePrimitive<TSystemType> : TypePrimitive
+   class ValueTypePrimitive<TSystemType> : TypePrimitive
+      where TSystemType : struct
    {
-      public TypePrimitive(
+      public ValueTypePrimitive(
          Thrift.Type thriftType,
          Thrift.ConvertedType? thriftAnnotation = null,
          int? bitWidth = null) : 
          base(typeof(TSystemType), thriftType, thriftAnnotation, bitWidth)
       {
       }
+
+      public override IList CreateList(int capacity, bool nullable)
+      {
+         return nullable
+            ? (IList)new List<TSystemType?>(capacity)
+            : (IList)new List<TSystemType>(capacity);
+      }
    }
 
-   class TypePrimitive
+   class ReferenceTypePrimitive<TSystemType> : TypePrimitive
+      where TSystemType : class
+   {
+      public ReferenceTypePrimitive(
+         Thrift.Type thriftType,
+         Thrift.ConvertedType? thriftAnnotation = null,
+         int? bitWidth = null) :
+         base(typeof(TSystemType), thriftType, thriftAnnotation, bitWidth)
+      {
+      }
+
+      public override IList CreateList(int capacity, bool nullable)
+      {
+         return new List<TSystemType>(capacity);
+      }
+   }
+
+
+   abstract class TypePrimitive
    {
       public Type SystemType { get; private set; }
 
@@ -44,25 +72,25 @@ namespace Parquet.File
 
       private static readonly List<TypePrimitive> allTypePrimitives = new List<TypePrimitive>
       {
-         new TypePrimitive<byte[]>(Thrift.Type.BYTE_ARRAY),
-         new TypePrimitive<int>(Thrift.Type.INT32, null, 32),
-         new TypePrimitive<bool>(Thrift.Type.BOOLEAN, null, 1),
-         new TypePrimitive<string>(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8),
-         new TypePrimitive<float>(Thrift.Type.FLOAT),
-         new TypePrimitive<decimal>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL),
-         new TypePrimitive<decimal>(Thrift.Type.INT32, Thrift.ConvertedType.DECIMAL),
-         new TypePrimitive<decimal>(Thrift.Type.INT64, Thrift.ConvertedType.DECIMAL),
-         new TypePrimitive<long>(Thrift.Type.INT64),
-         new TypePrimitive<double>(Thrift.Type.DOUBLE),
-         new TypePrimitive<DateTimeOffset>(Thrift.Type.INT96),
-         new TypePrimitive<DateTimeOffset>(Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS),
-         new TypePrimitive<DateTimeOffset>(Thrift.Type.INT32, Thrift.ConvertedType.DATE),
-         new TypePrimitive<Interval>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL),
-         new TypePrimitive<DateTime>(Thrift.Type.INT96),
-         new TypePrimitive<byte>(Thrift.Type.INT32, Thrift.ConvertedType.UINT_8, 8),
-         new TypePrimitive<sbyte>(Thrift.Type.INT32, Thrift.ConvertedType.INT_8, 8),
-         new TypePrimitive<short>(Thrift.Type.INT32, Thrift.ConvertedType.INT_16, 16),
-         new TypePrimitive<ushort>(Thrift.Type.INT32, Thrift.ConvertedType.UINT_16, 16)
+         new ReferenceTypePrimitive<byte[]>(Thrift.Type.BYTE_ARRAY),
+         new ValueTypePrimitive<int>(Thrift.Type.INT32, null, 32),
+         new ValueTypePrimitive<bool>(Thrift.Type.BOOLEAN, null, 1),
+         new ReferenceTypePrimitive<string>(Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8),
+         new ValueTypePrimitive<float>(Thrift.Type.FLOAT),
+         new ValueTypePrimitive<decimal>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL),
+         new ValueTypePrimitive<decimal>(Thrift.Type.INT32, Thrift.ConvertedType.DECIMAL),
+         new ValueTypePrimitive<decimal>(Thrift.Type.INT64, Thrift.ConvertedType.DECIMAL),
+         new ValueTypePrimitive<long>(Thrift.Type.INT64),
+         new ValueTypePrimitive<double>(Thrift.Type.DOUBLE),
+         new ValueTypePrimitive<DateTimeOffset>(Thrift.Type.INT96),
+         new ValueTypePrimitive<DateTimeOffset>(Thrift.Type.INT64, Thrift.ConvertedType.TIMESTAMP_MILLIS),
+         new ValueTypePrimitive<DateTimeOffset>(Thrift.Type.INT32, Thrift.ConvertedType.DATE),
+         new ValueTypePrimitive<Interval>(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL),
+         new ValueTypePrimitive<DateTime>(Thrift.Type.INT96),
+         new ValueTypePrimitive<byte>(Thrift.Type.INT32, Thrift.ConvertedType.UINT_8, 8),
+         new ValueTypePrimitive<sbyte>(Thrift.Type.INT32, Thrift.ConvertedType.INT_8, 8),
+         new ValueTypePrimitive<short>(Thrift.Type.INT32, Thrift.ConvertedType.INT_16, 16),
+         new ValueTypePrimitive<ushort>(Thrift.Type.INT32, Thrift.ConvertedType.UINT_16, 16)
       };
 
       private static readonly Dictionary<Type, TypePrimitive> systemTypeToPrimitive =
@@ -161,6 +189,8 @@ namespace Parquet.File
             t == typeof(Guid) ||
             t == typeof(string);
       }
+
+      public abstract IList CreateList(int capacity, bool nullable);
 
       #endregion
    }

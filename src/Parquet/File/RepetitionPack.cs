@@ -64,7 +64,7 @@ namespace Parquet.File
          for (int i = maxIdx; i >= rl; i--)
          {
             IList nl = (i == maxIdx)
-               ? TypeFactory.Create(_schema, _formatOptions)
+               ? TypeFactory.Create(_schema)
                : new List<IList>();
 
             hl[i] = nl;

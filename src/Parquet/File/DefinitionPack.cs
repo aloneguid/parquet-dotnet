@@ -20,29 +20,23 @@ namespace Parquet.File
          _formatOptions = formatOptions ?? new ParquetOptions();
       }
 
-      public IList Pack(IList condensedValues, List<int> definitions, int? capacity = null)
+      public void Pack(IList values, List<int> definitions)
       {
-         if (definitions == null) return condensedValues;
+         if (definitions == null) return;
 
          int valueIdx = 0;
-         IList values = TypeFactory.Create(_schema, _formatOptions, true, capacity);
 
-         //todo: check condensedValues and definitions boundaries at the same time
          foreach (int isDefinedInt in definitions)
          {
             bool isDefined = isDefinedInt != 0;
 
-            if (isDefined)
+            if(!isDefined)
             {
-               values.Add(condensedValues[valueIdx++]);
+               values.Insert(valueIdx, null);
             }
-            else
-            {
-               values.Add(null);
-            }
-         }
 
-         return values;
+            valueIdx++;
+         }
       }
    }
 }

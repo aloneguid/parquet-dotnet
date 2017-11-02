@@ -11,19 +11,45 @@ namespace Parquet.Test
    public class DefinitionsTest
    {
       [Fact]
-      public void Level4_definitions_packed()
+      public void Level4_definitions_packed_when_none_are_null()
       {
-         var packer = new DefinitionPack(new SchemaElement<int>("cities") { MaxDefinitionLevel = 4 });
+         var packer = new DefinitionPack(new SchemaElement<int?>("cities") { MaxDefinitionLevel = 4 });
 
-         List<int?> values = packer.Pack(new List<int> { 1, 2, 1, 2 }, new List<int> { 4, 4, 4, 4 }) as List<int?>;
+         var values = new List<int?> { 1, 2, 1, 2 };
+         packer.Pack(values, new List<int> { 4, 4, 4, 4 });
 
          Assert.Equal(4, values.Count);
-         Assert.Equal(Nullable(1, 2, 1, 2), values);
+         Assert.Equal(Nullable<int>(1, 2, 1, 2), values);
       }
 
-      private List<T?> Nullable<T>(params T[] values) where T : struct
+      [Fact]
+      public void First_and_second_is_null_packed()
       {
-         return values.Select(v => new T?(v)).ToList();
+         var packer = new DefinitionPack(new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 });
+
+         var values = new List<int?> { 1, 2 };
+         packer.Pack(values, new List<int> { 0, 0, 1, 1 });
+
+         Assert.Equal(4, values.Count);
+         Assert.Equal(Nullable<int>(null, null, 1, 2), values);
+      }
+
+      [Fact]
+      public void First_and_lastis_null_packed()
+      {
+         var packer = new DefinitionPack(new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 });
+
+         var values = new List<int?> { 1, 2 };
+         packer.Pack(values, new List<int> { 0, 1, 1, 0 });
+
+         Assert.Equal(4, values.Count);
+         Assert.Equal(Nullable<int>(null, 1, 2, null), values);
+      }
+
+
+      private List<T?> Nullable<T>(params object[] values) where T : struct
+      {
+         return values.Select(v => v == null ? new T?() : new T?((T)v)).ToList();
       }
    }
 }

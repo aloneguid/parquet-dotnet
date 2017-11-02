@@ -10,6 +10,7 @@ using System.Numerics;
 using Parquet.Data;
 using System.Collections.Generic;
 using Parquet.File.Values.Primitives;
+using System.Runtime;
 
 namespace Parquet.File.Values
 {
@@ -21,6 +22,7 @@ namespace Parquet.File.Values
 
       public PlainValuesReader(ParquetOptions options)
       {
+         //GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
          _options = options;
       }
 
@@ -160,12 +162,10 @@ namespace Parquet.File.Values
       {
          if (schema.ElementType == typeof(DateTimeOffset))
          {
-            var lst = (List<DateTimeOffset>)destination;
-
             for (int i = 0; i < data.Length; i += 8)
             {
                long lv = BitConverter.ToInt64(data, i);
-               lst.Add(lv.FromUnixTime());
+               destination.Add((DateTimeOffset)(lv.FromUnixTime()));
             }
          }
          else if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
@@ -263,17 +263,21 @@ namespace Parquet.File.Values
             schemaElement.IsAnnotatedWith(Thrift.ConvertedType.JSON) ||
             _options.TreatByteArrayAsString)
          {
+            var lst = (List<string>)destination;
+
             for (int i = 0; i < data.Length;)
             {
                int length = BitConverter.ToInt32(data, i);
                i += 4;        //fast-forward to data
                string s = UTF8.GetString(data, i, length);
                i += length;   //fast-forward to the next element
-               destination.Add(s);
+               lst.Add(s);
             }
          }
          else
          {
+            var lst = (List<byte[]>)destination;
+
             for (int i = 0; i < data.Length;)
             {
                int length = BitConverter.ToInt32(data, i);
@@ -281,7 +285,7 @@ namespace Parquet.File.Values
                byte[] ar = new byte[length];
                Array.Copy(data, i, ar, 0, length);
                i += length;   //fast-forward to the next element
-               destination.Add(ar);
+               lst.Add(ar);
             }
          }
       }

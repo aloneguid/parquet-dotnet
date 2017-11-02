@@ -155,7 +155,7 @@ namespace Parquet.File
 
       private void CreateDefinitions(IList values, SchemaElement schema, out IList nonNullableValues, out List<int> definitions)
       {
-         nonNullableValues = TypeFactory.Create(schema, _formatOptions, false);
+         nonNullableValues = TypeFactory.Create(schema, false);
          definitions = new List<int>();
 
          if (values == null) return;
