@@ -25,32 +25,29 @@ namespace Parquet.File
          levels = new List<int>();
          IList flatValues = _schema.CreateValuesList(0);
 
-         Unpack(hierarchy, levels, flatValues, 0);
+         int touched = 0;
+         Unpack(hierarchy, levels, flatValues, ref touched, 0);
 
          return flatValues;
       }
 
-      private static void Unpack(IList list, List<int> levels, IList flatValues, int currentLevel)
+      private void Unpack(IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
       {
          for (int i = 0; i < list.Count; i++)
          {
             object item = list[i];
 
-            if (item is IList nestedList)
+            if ((listLevel != _schema.MaxRepetitionLevel) && (item is IList nestedList))
             {
-               Unpack(nestedList, levels, flatValues, currentLevel);
+               Unpack(nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1);
             }
             else
             {
-               levels.Add(currentLevel);
-
-               if (i == 0)
-               {
-                  currentLevel += 1;
-               }
-
                flatValues.Add(item);
+               levels.Add(touchedListLevel);
             }
+
+            touchedListLevel = listLevel;
          }
       }
 

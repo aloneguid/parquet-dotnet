@@ -96,6 +96,49 @@ namespace Parquet.Test
          Assert.Equal(new int[] { 6, 7, 19, 20, 21, 22, 23 }, s22);
       }
 
+      [Fact]
+      public void Level2_repetitions_unpacked()
+      {
+         var schema = new SchemaElement<int>("hours") { MaxRepetitionLevel = 2 };
+         var packer = new RepetitionPack(schema);
+
+         IList flatValues = packer.Unpack(
+            new List<List<List<int>>>
+            {
+               new List<List<int>>
+               {
+                  new List<int>{ 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 },
+                  new List<int>{ 6, 7, 19, 20, 21, 22, 23 }
+               },
+               new List<List<int>>
+               {
+                  new List<int>{ 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 },
+                  new List<int>{ 6, 7, 19, 20, 21, 22, 23 }
+               },
+            },
+            out List<int> levels
+            );
+
+         Assert.Equal(34, flatValues.Count);
+         Assert.Equal(34, levels.Count);
+
+         Assert.Equal(new List<int>
+         {
+            0, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            1, 2, 2, 2, 2, 2, 2,
+            0, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            1, 2, 2, 2, 2, 2, 2
+         }, levels);
+
+         Assert.Equal(new List<int>
+         {
+            9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+            6, 7, 19, 20, 21, 22, 23,
+            9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+            6, 7, 19, 20, 21, 22, 23
+         }, flatValues);
+      }
+
       private static IList GetList(IList root, params int[] levels)
       {
          foreach(int l in levels)
