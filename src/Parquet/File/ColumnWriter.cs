@@ -68,21 +68,22 @@ namespace Parquet.File
          byte[] dictionaryPageBytes = null;
          int dictionaryPageCount = 0;
          byte[] dataPageBytes;
-         
-         //flatten values if the field is repeatable
-         if (values != null && schema.IsRepeated)
-         {
-            values = FlattenRepeatables(values, schema);
-         }
+         List<int> repetitions = null;
 
+         //flatten values and create repetitions list if the field is repeatable
+         if (schema.IsRepeated)
+         {
+            var rpack = new RepetitionPack(_schema, _formatOptions);
+            values = rpack.Unpack(values, out repetitions);
+         }
+         
          using (var ms = new MemoryStream())
          {
             using (var writer = new BinaryWriter(ms))
             {
                //write repetitions
-               if (schema.IsRepeated)
+               if (repetitions != null)
                {
-                  List<int> repetitions = CreateRepetitions(values, schema);
                   _rleWriter.Write(writer, _definitionsSchema, repetitions, out IList nullExtra);
                }
 
@@ -138,21 +139,6 @@ namespace Parquet.File
          return headerSize;
       }
 
-      private IList FlattenRepeatables(IList values, SchemaElement se)
-      {
-         IList result = TypeFactory.Create(se.ElementType, se.IsNullable);
-
-         foreach (IEnumerable elementValues in values)
-         {
-            foreach(object add in elementValues)
-            {
-               result.Add(add);
-            }
-         }
-
-         return result;
-      }
-
       private void CreateDefinitions(IList values, SchemaElement schema, out IList nonNullableValues, out List<int> definitions)
       {
          nonNullableValues = TypeFactory.Create(schema, false);
@@ -173,19 +159,6 @@ namespace Parquet.File
                nonNullableValues.Add(value);
             }
          }
-      }
-
-      private List<int> CreateRepetitions(IList values, SchemaElement schema)
-      {
-         var result = new List<int>();
-
-         result.Add(0);
-         if (values != null)
-         {
-            result.AddRange(Enumerable.Repeat(1, values.Count - 1));
-         }
-
-         return result;
       }
 
       private byte[] Compress(Thrift.PageHeader ph, byte[] data, CompressionMethod compression)
