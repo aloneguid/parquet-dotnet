@@ -227,7 +227,7 @@ namespace Parquet.File
                return null;
 
             case Thrift.Encoding.RLE:
-               var rleIndexes = new List<int>();
+               var rleIndexes = new List<int>((int)maxValues);
                _rleReader.Read(reader, _schema, rleIndexes, maxValues);
                return rleIndexes;
 
@@ -237,7 +237,7 @@ namespace Parquet.File
                return dicIndexes;
 
             default:
-               throw new ParquetException($"encoding {encoding} is not supported.");  //todo: replace with own exception type
+               throw new ParquetException($"encoding {encoding} is not supported.");
          }
       }
 

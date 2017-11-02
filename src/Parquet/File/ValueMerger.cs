@@ -48,13 +48,11 @@ namespace Parquet.File
 
          TrimTail(indexes, maxValues);
 
-         IList values = indexes
-            .Select(i => dictionary[i])
-            .ToList();
-
-         TrimTail(values, maxValues);
-
-         foreach (object el in values) _values.Add(el);
+         foreach(int index in indexes)
+         {
+            object value = dictionary[index];
+            _values.Add(value);
+         }
       }
 
       private void ApplyDefinitions(List<int> definitions, int maxValues)
