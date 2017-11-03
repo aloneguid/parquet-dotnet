@@ -269,6 +269,14 @@ root
       }
 
       [Fact]
+      public void Read_simple_map()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("map.parquet"));
+
+         Assert.Single(ds);
+      }
+
+      [Fact]
       public void Read_hardcoded_decimal()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("complex-primitives.parquet"));

@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using TSchemaElement = Parquet.Thrift.SchemaElement;
 using System.Linq;
+using System.Collections;
 
 namespace Parquet.File
 {
@@ -126,6 +127,12 @@ namespace Parquet.File
          return $"{name}{Schema.PathSeparator}list{Schema.PathSeparator}element";
       }
 
+      public static string BuildDictionaryPath(string name)
+      {
+         return $"{name}{Schema.PathSeparator}key_value";
+      }
+
+
       public void SetMeta(Thrift.FileMetaData meta)
       {
          _meta = meta;
@@ -202,7 +209,9 @@ namespace Parquet.File
 
          if(TypeFactory.TryExtractDictionaryType(systemType, out Type keyType, out Type valueType))
          {
-
+            elementType = typeof(IDictionary);
+            pathName = BuildDictionaryPath(name);
+            th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
             throw new NotImplementedException("dictionaries are not implemented yet");
          }
          else if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))

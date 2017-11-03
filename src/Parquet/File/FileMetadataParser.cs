@@ -30,24 +30,7 @@ namespace Parquet.File
 
                if (tse.Converted_type == Thrift.ConvertedType.LIST)
                {
-                  Thrift.SchemaElement tseTop = tse;
-                  Thrift.SchemaElement tseList = _fileMeta.Schema[++i];
-                  Thrift.SchemaElement tseElement = _fileMeta.Schema[++i];
-
-                  mse = new SchemaElement(tseElement,
-                     isRoot ? null : node,
-                     formatOptions,
-                     tseElement.Num_children == 0
-                     ? typeof(IEnumerable)   //augmented to generic IEnumerable in constructor
-                     : typeof(IEnumerable<Row>),
-                     tseTop.Name);
-                  mse.Path = string.Join(Schema.PathSeparator, tseTop.Name, tseList.Name, tseElement.Name);
-                  mse.IsRepeated = true;
-                  if (!isRoot) mse.Path = node.Path + Schema.PathSeparator + mse.Path;
-
-                  AddFlags(mse, tseTop, tseList, tseElement);
-
-                  tse = tseElement;
+                  mse = BuildListSchema(ref tse, ref i, isRoot, node, formatOptions);
                }
                else
                {
@@ -89,6 +72,30 @@ namespace Parquet.File
          root.AutoUpdateLevels = true;
 
          return new Schema(root.Children);
+      }
+
+      private SchemaElement BuildListSchema(ref Thrift.SchemaElement tse, ref int i, bool isRoot, SchemaElement node, ParquetOptions formatOptions)
+      {
+         Thrift.SchemaElement tseTop = tse;
+         Thrift.SchemaElement tseList = _fileMeta.Schema[++i];
+         Thrift.SchemaElement tseElement = _fileMeta.Schema[++i];
+
+         SchemaElement mse = new SchemaElement(tseElement,
+            isRoot ? null : node,
+            formatOptions,
+            tseElement.Num_children == 0
+            ? typeof(IEnumerable)   //augmented to generic IEnumerable in constructor
+            : typeof(IEnumerable<Row>),
+            tseTop.Name);
+         mse.Path = string.Join(Schema.PathSeparator, tseTop.Name, tseList.Name, tseElement.Name);
+         mse.IsRepeated = true;
+         if (!isRoot) mse.Path = node.Path + Schema.PathSeparator + mse.Path;
+
+         AddFlags(mse, tseTop, tseList, tseElement);
+
+         tse = tseElement;
+
+         return mse;
       }
 
       private void AddFlags(SchemaElement node, params Thrift.SchemaElement[] tses)
