@@ -20,7 +20,6 @@ namespace Parquet.File
       private readonly IValuesWriter _plainWriter;
       private readonly IValuesWriter _rleWriter;
       private readonly IValuesWriter _dicWriter;
-      //private readonly SchemaElement _definitionsSchema = new SchemaElement<bool>("definitions");
 
       private struct PageTag
       {
