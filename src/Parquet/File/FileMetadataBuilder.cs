@@ -121,7 +121,7 @@ namespace Parquet.File
          }
       }
 
-      public static string BuildRepeatablePath(string name)
+      public static string BuildListPath(string name)
       {
          return $"{name}{Schema.PathSeparator}list{Schema.PathSeparator}element";
       }
@@ -200,10 +200,15 @@ namespace Parquet.File
       {
          var th = new TSchemaElement(name);
 
-         if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
+         if(TypeFactory.TryExtractDictionaryType(systemType, out Type keyType, out Type valueType))
+         {
+
+            throw new NotImplementedException("dictionaries are not implemented yet");
+         }
+         else if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
          {
             elementType = baseType;
-            pathName = BuildRepeatablePath(name);
+            pathName = BuildListPath(name);
             th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
          }
          else if(typeof(Row) == systemType)
@@ -228,7 +233,6 @@ namespace Parquet.File
             else
             {
                elementType = systemType;
-               //this might be changed later or if column has nulls (on write)
                th.Repetition_type = Thrift.FieldRepetitionType.REQUIRED;
             }
 

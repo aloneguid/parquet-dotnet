@@ -90,5 +90,11 @@ namespace Parquet.Test
 
          Assert.False(se.IsNullable);
       }
+
+      [Fact]
+      public void Valid_dictionaries_are_not_allowed()
+      {
+         Assert.Throws<NotImplementedException>(() => new SchemaElement<IDictionary<int, string>>("dictionary"));
+      }
    }
 }

@@ -54,7 +54,7 @@ namespace Parquet.Test
 
          ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
 
-         ParquetWriter.WriteFile(ds, "c:\\tmp\\rep.parquet", CompressionMethod.None);
+         //ParquetWriter.WriteFile(ds, "c:\\tmp\\rep.parquet", CompressionMethod.None);
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 

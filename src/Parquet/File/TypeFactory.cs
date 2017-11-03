@@ -50,5 +50,20 @@ namespace Parquet.File
          baseType = null;
          return false;
       }
+
+      public static bool TryExtractDictionaryType(Type t, out Type keyType, out Type valueType)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         if(ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+         {
+            keyType = ti.GenericTypeArguments[0];
+            valueType = ti.GenericTypeArguments[1];
+            return true;
+         }
+
+         keyType = valueType = null;
+         return false;
+      }
    }
 }
