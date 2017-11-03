@@ -32,6 +32,10 @@ namespace Parquet.File
                {
                   mse = BuildListSchema(ref tse, ref i, isRoot, node, formatOptions);
                }
+               else if(tse.Converted_type == Thrift.ConvertedType.MAP || tse.Converted_type == Thrift.ConvertedType.MAP_KEY_VALUE)
+               {
+                  mse = BuildMapSchema(ref tse, ref i, isRoot, node, formatOptions);
+               }
                else
                {
                   Type containerType = tse.Num_children > 0
@@ -96,6 +100,24 @@ namespace Parquet.File
          tse = tseElement;
 
          return mse;
+      }
+
+      private SchemaElement BuildMapSchema(ref Thrift.SchemaElement tse, ref int i, bool isRoot, SchemaElement node, ParquetOptions formatOptions)
+      {
+         //tse is followed by map container (REPEATED) and another two elements - key and value
+
+         var mse = new SchemaElement<IDictionary>(tse.Name);   //throws NotSupportedException
+
+         //todo: repetition and definition levels for mse
+
+         ++i;  //skip container
+
+         Thrift.SchemaElement tseKey = _fileMeta.Schema[++i];
+         Thrift.SchemaElement tseValue = _fileMeta.Schema[++i];
+
+         //todo: combine key and value meta into mse (as children?)
+
+         throw new NotImplementedException("map is not implemented yet.");
       }
 
       private void AddFlags(SchemaElement node, params Thrift.SchemaElement[] tses)

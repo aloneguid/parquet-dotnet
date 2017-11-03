@@ -271,9 +271,10 @@ root
       [Fact]
       public void Read_simple_map()
       {
-         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("map.parquet"));
-
-         Assert.Single(ds);
+         Assert.Throws<NotSupportedException>(() =>
+         {
+            DataSet ds = ParquetReader.ReadFile(GetDataFilePath("map.parquet"));
+         });
       }
 
       [Fact]
