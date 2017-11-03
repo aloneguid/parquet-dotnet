@@ -78,6 +78,7 @@ namespace Parquet.File
 
          //extract schema tree
          var root = new SchemaElement<int>("root") { Path = string.Empty };
+         root.AutoUpdateLevels = false;
          int start = 1;
          Build(root, ref start, _fileMeta.Schema[0].Num_children, true);
 
@@ -85,6 +86,7 @@ namespace Parquet.File
          {
             se.Detach();
          }
+         root.AutoUpdateLevels = true;
 
          return new Schema(root.Children);
       }

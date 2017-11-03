@@ -49,9 +49,12 @@ namespace Parquet.Test
                new SchemaElement<string>("name"),
                new SchemaElement<string>("country")));
 
+         Assert.Equal(4, ds.Schema["cities"].Children[1].MaxDefinitionLevel);
+         Assert.Equal(1, ds.Schema["cities"].Children[1].MaxRepetitionLevel);
+
          ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
 
-         ParquetWriter.WriteFile(ds, "c:\\tmp\\rep.parquet");
+         ParquetWriter.WriteFile(ds, "c:\\tmp\\rep.parquet", CompressionMethod.None);
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 

@@ -74,6 +74,27 @@ namespace Parquet.Data
          return flatList;
       }
 
+      internal bool AutoUpdateLevels
+      {
+         set
+         {
+            SetRaiseCallbacks(_elements, value);
+         }
+      }
+
+      internal void SetRaiseCallbacks(IEnumerable<SchemaElement> schema, bool value)
+      {
+         foreach(SchemaElement se in schema)
+         {
+            se.AutoUpdateLevels = value;
+            
+            if(se.Children.Count > 0)
+            {
+               SetRaiseCallbacks(se.Children, value);
+            }
+         }
+      }
+
       /// <summary>
       /// Gets the number of elements in the schema
       /// </summary>

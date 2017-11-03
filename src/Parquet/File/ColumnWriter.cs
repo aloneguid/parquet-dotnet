@@ -20,7 +20,7 @@ namespace Parquet.File
       private readonly IValuesWriter _plainWriter;
       private readonly IValuesWriter _rleWriter;
       private readonly IValuesWriter _dicWriter;
-      private readonly SchemaElement _definitionsSchema = new SchemaElement<bool>("definitions");
+      //private readonly SchemaElement _definitionsSchema = new SchemaElement<bool>("definitions");
 
       private struct PageTag
       {
@@ -87,7 +87,6 @@ namespace Parquet.File
             values = dpack.Unpack(values, out definitions);
          }
 
-         
          using (var ms = new MemoryStream())
          {
             using (var writer = new BinaryWriter(ms))
@@ -95,13 +94,15 @@ namespace Parquet.File
                //write repetitions
                if (repetitions != null)
                {
-                  _rleWriter.Write(writer, _definitionsSchema, repetitions, out IList nullExtra);
+                  int bitWidth = PEncoding.GetWidthFromMaxInt(_schema.MaxRepetitionLevel);
+                  RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, repetitions);
                }
 
                //write definitions
                if (definitions != null)
                {
-                  _rleWriter.Write(writer, _definitionsSchema, definitions, out IList nullExtra);
+                  int bitWidth = PEncoding.GetWidthFromMaxInt(_schema.MaxDefinitionLevel);
+                  RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, definitions);
                }
 
                //write data

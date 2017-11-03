@@ -44,6 +44,7 @@ def convertFromFormattedJson(name: String, writeFile: Boolean): DataFrame = {
 
 val dfSpark = convertFromFormattedJson("repeatedstruct", false)
 dfSpark.printSchema()
+dfSpark.printSchema()
 dfSpark.show()
 
 val df = spark.read.parquet("c:\\tmp\\rep.parquet")

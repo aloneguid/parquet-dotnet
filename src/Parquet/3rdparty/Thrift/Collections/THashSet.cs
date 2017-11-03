@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+#pragma warning disable CS1587
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -143,3 +143,4 @@ namespace Thrift.Collections
     }
 
 }
+#pragma warning restore CS1587

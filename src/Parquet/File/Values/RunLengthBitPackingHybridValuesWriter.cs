@@ -11,12 +11,20 @@ namespace Parquet.File.Values
    {
       public bool Write(BinaryWriter writer, SchemaElement schema, IList data, out IList extraValues)
       {
+         int bitWidth = GetBitWidth(schema);
+         extraValues = null;
+
+         return Write(writer, bitWidth, data);
+      }
+
+      public static bool Write(BinaryWriter writer, int bitWidth, IList data)
+      {
          //int32 - length of data (we'll come back here so let's just write a zero)
          long dataLengthOffset = writer.BaseStream.Position;
          writer.Write((int)0);
 
          //write actual data
-         WriteData(writer, (List<int>)data, GetBitWidth(schema));
+         WriteData(writer, (List<int>)data, bitWidth);
 
          //come back to write data length
          long dataLength = writer.BaseStream.Position - dataLengthOffset - sizeof(int);
@@ -26,7 +34,6 @@ namespace Parquet.File.Values
          //and jump back to the end again
          writer.BaseStream.Seek(0, SeekOrigin.End);
 
-         extraValues = null;
          return true;
       }
 

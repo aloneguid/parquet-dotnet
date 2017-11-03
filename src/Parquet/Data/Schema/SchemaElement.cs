@@ -35,7 +35,7 @@ namespace Parquet.Data
    /// <summary>
    /// Element of dataset's schema
    /// </summary>
-   [DebuggerDisplay("{Name}: {ElementType} (nullable = {IsNullable}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}, P: {Path}")]
+   [DebuggerDisplay("{Name}: {ElementType} (NL/RP/NS: {IsNullable}/{IsRepeated}/{IsNestedStructure}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}, P: {Path}")]
    public class SchemaElement : IEquatable<SchemaElement>
    {
       private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
@@ -52,6 +52,8 @@ namespace Parquet.Data
       {
          Parent = null;
       }
+
+      internal bool AutoUpdateLevels { get; set; } = true;
 
       internal bool IsNestedStructure => _children.Count != 0;
 
@@ -129,16 +131,19 @@ namespace Parquet.Data
 
       private void UpdateFlags()
       {
+         MaxDefinitionLevel = MaxRepetitionLevel = 0;
+
          if (IsNullable)
          {
-            MaxDefinitionLevel = 1;
+            MaxDefinitionLevel += 1;
          }
 
          if(IsRepeated)
          {
-            MaxRepetitionLevel = 1;
+            MaxRepetitionLevel += 1;
          }
 
+         //we don't know if the element has children here, because they are added later
       }
 
       //todo: move this out completely into FileMetadataParser
@@ -176,11 +181,28 @@ namespace Parquet.Data
 
       private SchemaElement OnAddChild(SchemaElement se)
       {
+         se.AutoUpdateLevels = AutoUpdateLevels;
+
          se.Parent = this;
          se.Parent.Thrift.Num_children = se.Parent.Children.Count + 1;
 
-         se.MaxDefinitionLevel = se.Parent.MaxDefinitionLevel + (se.IsNullable ? 1 : 0);
-         se.MaxRepetitionLevel = se.Parent.MaxRepetitionLevel + (se.IsRepeated ? 1 : 0);
+         if (AutoUpdateLevels)
+         {
+            if (Children.Count == 0)
+            {
+               //when child was added the first time, the parent is nullable, therefore definition level needs to be upped
+               MaxDefinitionLevel += 1;
+
+               //if we are repeatable, there is another wired element with optional flag, therefore up one level up
+               if (IsRepeated)
+               {
+                  MaxDefinitionLevel += 1;
+               }
+            }
+
+            se.MaxDefinitionLevel = MaxDefinitionLevel + se.MaxDefinitionLevel;
+            se.MaxRepetitionLevel = MaxRepetitionLevel + se.MaxRepetitionLevel;
+         }
 
          return se;
       }
