@@ -1,3 +1,4 @@
+#pragma warning disable CS1587,CS1570
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -20,7 +21,7 @@
  * Please see doc/old-thrift-license.txt in the Thrift distribution for
  * details.
  */
-
+#pragma warning disable CS1587
 using System;
 using System.Text;
 using Thrift.Transport;

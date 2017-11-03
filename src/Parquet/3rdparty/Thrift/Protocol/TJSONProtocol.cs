@@ -1,3 +1,5 @@
+#pragma warning disable CS1587, CS1570
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -16,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 using System;
 using System.IO;
 using System.Text;
@@ -766,7 +767,7 @@ namespace Thrift.Protocol
 
                 // it's \uXXXX
                 trans.ReadAll(tempBuffer, 0, 4);
-                var wch = (short)((HexVal((byte)tempBuffer[0]) << 12) +
+            short wch = (short)((HexVal((byte)tempBuffer[0]) << 12) +
                                   (HexVal((byte)tempBuffer[1]) << 8) +
                                   (HexVal((byte)tempBuffer[2]) << 4) +
                                    HexVal(tempBuffer[3]));
@@ -787,13 +788,13 @@ namespace Thrift.Protocol
                                                         "Expected high surrogate char");
                     }
                     codeunits.Add((char)wch);
-                    var tmp = utf8Encoding.GetBytes(codeunits.ToArray());
+               byte[] tmp = utf8Encoding.GetBytes(codeunits.ToArray());
                     buffer.Write(tmp, 0, tmp.Length);
                     codeunits.Clear();
                 }
                 else
                 {
-                    var tmp = utf8Encoding.GetBytes(new char[] { (char)wch });
+               byte[] tmp = utf8Encoding.GetBytes(new char[] { (char)wch });
                     buffer.Write(tmp, 0, tmp.Length);
                 }
             }
@@ -993,7 +994,7 @@ namespace Thrift.Protocol
                                              "Message contained bad version.");
             }
 
-            var buf = ReadJSONString(false);
+         byte[] buf = ReadJSONString(false);
             message.Name = utf8Encoding.GetString(buf,0,buf.Length);
             message.Type = (TMessageType)ReadJSONInteger();
             message.SeqID = (int)ReadJSONInteger();
@@ -1115,7 +1116,7 @@ namespace Thrift.Protocol
 
         public override String ReadString()
         {
-            var buf = ReadJSONString(false);
+         byte[] buf = ReadJSONString(false);
             return utf8Encoding.GetString(buf,0,buf.Length);
         }
 

@@ -1,3 +1,4 @@
+#pragma warning disable CS1587
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -132,7 +133,7 @@ namespace Thrift.Protocol
         public abstract long ReadI64();
         public abstract double ReadDouble();
         public virtual string ReadString() {
-            var buf = ReadBinary();
+         byte[] buf = ReadBinary();
             return Encoding.UTF8.GetString(buf, 0, buf.Length);
         }
         public abstract byte[] ReadBinary();

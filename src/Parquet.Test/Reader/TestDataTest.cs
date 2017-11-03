@@ -109,40 +109,6 @@ namespace Parquet.Test.Reader
          ParquetReader.ReadFile(path); //test that this doesn't crash
       }
 
-      //[Fact]
-      public void Alltypes_dictionary_gzip_compression()
-      {
-         CompareFiles("alltypes_dictionary", "gzip",
-            typeof(int?),
-            typeof(bool?),
-            typeof(int?),
-            typeof(int?),
-            typeof(int?),
-            typeof(long?),
-            typeof(float?),
-            typeof(double?),
-            typeof(string),
-            typeof(string),
-            typeof(DateTimeOffset?));
-      }
-
-      //[Fact]
-      public void Alltypes_dictionary_snappy_compression()
-      {
-         CompareFiles("alltypes_dictionary", "snappyS",
-            typeof(int?),
-            typeof(bool?),
-            typeof(int?),
-            typeof(int?),
-            typeof(int?),
-            typeof(long?),
-            typeof(float?),
-            typeof(double?),
-            typeof(string),
-            typeof(string),
-            typeof(DateTimeOffset?));
-      }
-
       [Fact]
       public void Alltypes_dictionary_no_compression_by_spark()
       {

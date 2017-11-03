@@ -6,6 +6,11 @@ namespace Parquet.Data
 {
    public partial class DataSet : IList<Row>
    {
+      /// <summary>
+      /// Gets or sets row by index
+      /// </summary>
+      /// <param name="index">Row index</param>
+      /// <returns>Row object</returns>
       public Row this[int index]
       {
          get => CreateRow(index);
@@ -74,6 +79,10 @@ namespace Parquet.Data
          }
       }
 
+      /// <summary>
+      /// Gets enumerator I guess
+      /// </summary>
+      /// <returns></returns>
       public IEnumerator<Row> GetEnumerator()
       {
          throw new NotImplementedException();
@@ -87,6 +96,11 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
+      /// <summary>
+      /// Inserts a new row, not implemented
+      /// </summary>
+      /// <param name="index"></param>
+      /// <param name="item"></param>
       public void Insert(int index, Row item)
       {
          throw new NotImplementedException();

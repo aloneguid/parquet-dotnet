@@ -1,3 +1,4 @@
+#pragma warning disable CS1587,IDE1006
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -16,7 +17,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#pragma warning disable CS1587
+
 using System;
 using System.Collections;
 

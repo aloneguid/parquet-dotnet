@@ -41,7 +41,9 @@ namespace Parquet.Data
       private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
       private string _path;
       private string _pathName;
+#pragma warning disable IDE1006 // Naming Styles
       private static readonly FileMetadataBuilder Builder = new FileMetadataBuilder();
+#pragma warning restore IDE1006 // Naming Styles
 
       /// <summary>
       /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.

@@ -1,3 +1,4 @@
+#pragma warning disable CS1587
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -20,7 +21,6 @@
  * Please see doc/old-thrift-license.txt in the Thrift distribution for
  * details.
  */
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -52,3 +52,4 @@ namespace Thrift.Protocol
         }
     }
 }
+#pragma warning restore CS1587

@@ -1,3 +1,5 @@
+#pragma warning disable CS1587,IDE1006
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -18,7 +20,6 @@
  */
 
 using System;
-
 namespace Thrift.Protocol
 {
     internal static class TBase64Utils
