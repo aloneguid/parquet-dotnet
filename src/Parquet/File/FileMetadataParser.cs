@@ -43,7 +43,7 @@ namespace Parquet.File
                      : null;
 
                   SchemaElement parent = isRoot ? null : node;
-                  mse = new SchemaElement(tse, parent, formatOptions, containerType);
+                  mse = BuildSchemaElement(tse, parent, formatOptions, containerType);
 
                   AddFlags(mse, tse);
                }
@@ -84,12 +84,12 @@ namespace Parquet.File
          Thrift.SchemaElement tseList = _fileMeta.Schema[++i];
          Thrift.SchemaElement tseElement = _fileMeta.Schema[++i];
 
-         SchemaElement mse = new SchemaElement(tseElement,
+         SchemaElement mse = BuildSchemaElement(tseElement,
             isRoot ? null : node,
             formatOptions,
             tseElement.Num_children == 0
-            ? typeof(IEnumerable)   //augmented to generic IEnumerable in constructor
-            : typeof(IEnumerable<Row>),
+               ? typeof(IEnumerable)   //augmented to generic IEnumerable in constructor
+               : typeof(IEnumerable<Row>),
             tseTop.Name);
          mse.Path = string.Join(Schema.PathSeparator, tseTop.Name, tseList.Name, tseElement.Name);
          mse.IsRepeated = true;
@@ -118,6 +118,34 @@ namespace Parquet.File
          //todo: combine key and value meta into mse (as children?)
 
          throw new NotImplementedException("map is not implemented yet.");
+      }
+
+      private SchemaElement BuildSchemaElement(Thrift.SchemaElement tse, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null)
+      {
+         Type columnType;
+
+         if (elementType != null)
+         {
+            columnType = elementType;
+
+            if (elementType == typeof(IEnumerable))
+            {
+               Type itemType = TypePrimitive.GetSystemTypeBySchema(tse, formatOptions);
+               Type ienumType = typeof(IEnumerable<>);
+               Type ienumGenericType = ienumType.MakeGenericType(itemType);
+               elementType = itemType;
+               columnType = ienumGenericType;
+            }
+         }
+         else
+         {
+            elementType = TypePrimitive.GetSystemTypeBySchema(tse, formatOptions);
+            columnType = elementType;
+         }
+
+         var se = new SchemaElement(tse, name, elementType, columnType, null);
+         se.Parent = parent;
+         return se;
       }
 
       private void AddFlags(SchemaElement node, params Thrift.SchemaElement[] tses)

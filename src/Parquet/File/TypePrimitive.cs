@@ -136,11 +136,11 @@ namespace Parquet.File
          return tp;
       }
 
-      internal static Type GetSystemTypeBySchema(SchemaElement schema, ParquetOptions options)
+      internal static Type GetSystemTypeBySchema(Thrift.SchemaElement schema, ParquetOptions options)
       {
          //edge cases
 
-         switch (schema.Thrift.Type)
+         switch (schema.Type)
          {
             case Thrift.Type.INT96:
                if (options.TreatBigIntegersAsDates) return typeof(DateTimeOffset);
@@ -152,15 +152,15 @@ namespace Parquet.File
 
          //end of edge cases
 
-         var kvp = new KeyValuePair<Thrift.Type, Thrift.ConvertedType?>(schema.Thrift.Type,
-            schema.Thrift.__isset.converted_type
-               ? new Thrift.ConvertedType?(schema.Thrift.Converted_type)
+         var kvp = new KeyValuePair<Thrift.Type, Thrift.ConvertedType?>(schema.Type,
+            schema.__isset.converted_type
+               ? new Thrift.ConvertedType?(schema.Converted_type)
                : null);
 
          if (!thriftTypeAndAnnotationToPrimitive.TryGetValue(kvp, out TypePrimitive tp))
          {
             throw new NotSupportedException(
-               $"cannot find primitive by type '{schema.Thrift.Type}' and annotation '{schema.Thrift.Converted_type}'");
+               $"cannot find primitive by type '{schema.Type}' and annotation '{schema.Converted_type}'");
          }
 
          return tp.SystemType;

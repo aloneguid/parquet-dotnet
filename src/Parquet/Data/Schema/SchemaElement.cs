@@ -62,7 +62,7 @@ namespace Parquet.Data
       /// <summary>
       /// Gets parent schema element, if present. Null for root schema elements.
       /// </summary>
-      internal SchemaElement Parent { get; private set; }
+      public SchemaElement Parent { get; internal set; }
 
       /// <summary>
       /// Used only by derived classes implementing an edge case type
@@ -95,8 +95,19 @@ namespace Parquet.Data
          ElementType = resultElementType;
          _pathName = pathName;
          IsRepeated = Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
-
          UpdateFlags();
+      }
+
+      internal SchemaElement(Thrift.SchemaElement tse, string nameOverride,
+         Type elementType, Type columnType,
+         string path) : this()
+      {
+         Thrift = tse;
+         Name = nameOverride ?? tse.Name;
+         ElementType = elementType;
+         ColumnType = columnType;
+         _path = path;
+         IsRepeated = Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
       }
 
       internal IList CreateValuesList(int capacity, bool honorRepeatables = false)
@@ -148,33 +159,7 @@ namespace Parquet.Data
          //we don't know if the element has children here, because they are added later
       }
 
-      //todo: move this out completely into FileMetadataParser
-      internal SchemaElement(Thrift.SchemaElement thriftSchema, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null) : this()
-      {
-         Name = name ?? thriftSchema.Name;
-         Thrift = thriftSchema;
-         Parent = parent;
 
-         if (elementType != null)
-         {
-            ElementType = elementType;
-            ColumnType = elementType;
-
-            if (elementType == typeof(IEnumerable))
-            {
-               Type itemType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
-               Type ienumType = typeof(IEnumerable<>);
-               Type ienumGenericType = ienumType.MakeGenericType(itemType);
-               ElementType = itemType;
-               ColumnType = ienumGenericType;
-            }
-         }
-         else
-         {
-            ElementType = TypePrimitive.GetSystemTypeBySchema(this, formatOptions);
-            ColumnType = ElementType;
-         }
-      }
 
       private SchemaElement()
       {
