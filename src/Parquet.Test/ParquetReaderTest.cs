@@ -271,10 +271,16 @@ root
       [Fact]
       public void Read_simple_map()
       {
-         Assert.Throws<NotSupportedException>(() =>
-         {
-            DataSet ds = ParquetReader.ReadFile(GetDataFilePath("map.parquet"));
-         });
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("map.parquet"));
+
+         SchemaElement ms = ds.Schema[1];
+         Assert.Equal("numbers", ms.Name);
+
+         Assert.Equal(1, ms.Extra[0].MaxRepetitionLevel);
+         Assert.Equal(2, ms.Extra[0].MaxDefinitionLevel);
+
+         Assert.Equal(1, ms.Extra[1].MaxRepetitionLevel);
+         Assert.Equal(3, ms.Extra[1].MaxDefinitionLevel);
       }
 
       [Fact]

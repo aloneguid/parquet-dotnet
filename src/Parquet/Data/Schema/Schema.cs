@@ -178,6 +178,7 @@ namespace Parquet.Data
             _pathToElement[element.Path] = element;
 
             if (element.Children.Count > 0) CachePath(element.Children);
+            if (element.Extra.Count > 0) CachePath(element.Extra);
          }
       }
 

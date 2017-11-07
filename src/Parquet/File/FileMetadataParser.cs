@@ -106,18 +106,32 @@ namespace Parquet.File
       {
          //tse is followed by map container (REPEATED) and another two elements - key and value
 
-         var mse = new SchemaElement<IDictionary>(tse.Name);   //throws NotSupportedException
-
-         //todo: repetition and definition levels for mse
-
-         ++i;  //skip container
-
+         Thrift.SchemaElement tseContainer = _fileMeta.Schema[++i];
          Thrift.SchemaElement tseKey = _fileMeta.Schema[++i];
          Thrift.SchemaElement tseValue = _fileMeta.Schema[++i];
 
-         //todo: combine key and value meta into mse (as children?)
+         Type keyType = TypePrimitive.GetSystemTypeBySchema(tseKey, formatOptions);
+         Type valueType = TypePrimitive.GetSystemTypeBySchema(tseValue, formatOptions);
+         Type gt = typeof(Dictionary<,>);
+         Type masterType = gt.MakeGenericType(keyType, valueType);
 
-         throw new NotImplementedException("map is not implemented yet.");
+         //master schema
+         var se = new SchemaElement(tseContainer, tse.Name, masterType, masterType,
+            string.Join(Schema.PathSeparator, tse.Name, tseContainer.Name));
+         if (!isRoot) se.Path = node.Parent + Schema.PathSeparator + se.Path;
+         se.Parent = node;
+         AddFlags(se, tse, tseContainer);
+
+         //extra schamas
+         var kse = new SchemaElement(tseKey, null, keyType, keyType, null) { Parent = se };
+         var vse = new SchemaElement(tseValue, null, valueType, valueType, null) { Parent = se };
+         se.Extra.Add(kse);
+         se.Extra.Add(vse);
+         AddFlags(kse, tseKey);
+         AddFlags(vse, tseValue);
+
+         tse = tseValue;
+         return se;
       }
 
       private SchemaElement BuildSchemaElement(Thrift.SchemaElement tse, SchemaElement parent, ParquetOptions formatOptions, Type elementType, string name = null)

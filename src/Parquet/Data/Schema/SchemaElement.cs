@@ -39,6 +39,7 @@ namespace Parquet.Data
    public class SchemaElement : IEquatable<SchemaElement>
    {
       private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
+      private readonly List<SchemaElement> _extra = new List<SchemaElement>();
       private string _path;
       private string _pathName;
 #pragma warning disable IDE1006 // Naming Styles
@@ -58,6 +59,8 @@ namespace Parquet.Data
       internal bool AutoUpdateLevels { get; set; } = true;
 
       internal bool IsNestedStructure => _children.Count != 0;
+
+      internal IList<SchemaElement> Extra => _extra;
 
       /// <summary>
       /// Gets parent schema element, if present. Null for root schema elements.

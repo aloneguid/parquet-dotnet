@@ -43,13 +43,13 @@ namespace Parquet.File
 
       public void Pack(IList values, List<int> definitions)
       {
-         if (definitions == null) return;
+         if (definitions == null || !TypeFactory.IsNullable(values)) return;
 
          int valueIdx = 0;
 
-         foreach (int isDefinedInt in definitions)
+         for(int i = 0; i < definitions.Count; i++)
          {
-            bool isDefined = isDefinedInt != 0;
+            bool isDefined = definitions[i] != 0;
 
             if(!isDefined)
             {

@@ -65,5 +65,15 @@ namespace Parquet.File
          keyType = valueType = null;
          return false;
       }
+
+      public static bool IsNullable(IList list)
+      {
+         TypeInfo ti = list.GetType().GetTypeInfo();
+
+         Type t = ti.GenericTypeArguments[0];
+         Type gt = t.GetTypeInfo().IsGenericType ? t.GetTypeInfo().GetGenericTypeDefinition() : null;
+
+         return gt == typeof(Nullable<>) || t.GetTypeInfo().IsClass;
+      }
    }
 }

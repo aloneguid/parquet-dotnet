@@ -88,7 +88,4 @@ bug fixes:
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net451|AnyCPU'">
     <DocumentationFile>bin\Release\net451\Parquet.xml</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    
-  </ItemGroup>
 </Project>
