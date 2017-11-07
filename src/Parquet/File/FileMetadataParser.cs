@@ -120,6 +120,7 @@ namespace Parquet.File
             string.Join(Schema.PathSeparator, tse.Name, tseContainer.Name));
          if (!isRoot) se.Path = node.Parent + Schema.PathSeparator + se.Path;
          se.Parent = node;
+         se.IsMap = true;
          AddFlags(se, tse, tseContainer);
 
          //extra schamas

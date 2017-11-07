@@ -145,7 +145,11 @@ namespace Parquet.Data
 
       private object CreateElement(SchemaElement se, int index, Dictionary<string, IList> pathToValues)
       {
-         if(se.IsNestedStructure)
+         if(se.IsMap)
+         {
+            return CreateDictionary(se, pathToValues, index);
+         }
+         else if(se.IsNestedStructure)
          {
             if (se.IsRepeated)
             {
@@ -189,6 +193,26 @@ namespace Parquet.Data
          }
 
          return elementPathToValues;
+      }
+
+      private IDictionary CreateDictionary(SchemaElement se, Dictionary<string, IList> pathToValues, int index)
+      {
+         SchemaElement key = se.Extra[0];
+         SchemaElement value = se.Extra[1];
+
+         IList keys = (IList)(pathToValues[key.Path][index]);
+         IList values = (IList)(pathToValues[value.Path][index]);
+
+         Type gt = typeof(Dictionary<,>);
+         Type masterType = gt.MakeGenericType(key.ElementType, value.ElementType);
+         IDictionary result = (IDictionary)Activator.CreateInstance(masterType);
+
+         for(int i = 0; i < keys.Count; i++)
+         {
+            result.Add(keys[i], values[i]);
+         }
+
+         return result;
       }
 
       private void RemoveRow(int index)

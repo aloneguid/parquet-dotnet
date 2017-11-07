@@ -219,6 +219,11 @@ namespace Parquet.Data
       public bool IsRepeated { get; internal set; }
 
       /// <summary>
+      /// When true, this fields represents a map (Dictionary)
+      /// </summary>
+      public bool IsMap { get; internal set; }
+
+      /// <summary>
       /// Element path, separated by dots (.)
       /// </summary>
       public string Path

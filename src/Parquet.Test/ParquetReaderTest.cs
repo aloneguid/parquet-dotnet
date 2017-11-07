@@ -281,6 +281,8 @@ root
 
          Assert.Equal(1, ms.Extra[1].MaxRepetitionLevel);
          Assert.Equal(3, ms.Extra[1].MaxDefinitionLevel);
+
+         Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds[0].ToString());
       }
 
       [Fact]

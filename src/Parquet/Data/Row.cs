@@ -217,6 +217,27 @@ namespace Parquet.Data
          {
             sb.Append("<null>");
          }
+         else if(v is IDictionary dic)
+         {
+            sb.Append("[");
+            bool first = true;
+            foreach(DictionaryEntry pair in dic)
+            {
+               if(first)
+               {
+                  first = false;
+               }
+               else
+               {
+                  sb.Append(";");
+               }
+
+               FormatValue(pair.Key, sb);
+               sb.Append("=>");
+               FormatValue(pair.Value, sb);
+            }
+            sb.Append("]");
+         }
          else if (v is Row row)
          {
             sb.Append(row.ToString());
