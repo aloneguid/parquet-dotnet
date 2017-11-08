@@ -93,11 +93,21 @@ namespace Parquet.Data
          Thrift = Builder
             .CreateSchemaElement(name, elementType,
                out Type resultElementType,
-               out string pathName);
+               out string pathName,
+               out Type[] extras);
 
          ElementType = resultElementType;
          _pathName = pathName;
          IsRepeated = Thrift.Repetition_type == Parquet.Thrift.FieldRepetitionType.REPEATED;
+
+         //hack: to be gone in vNext
+         if(ElementType == typeof(IDictionary))
+         {
+            IsMap = true;
+            _extra.Add(new SchemaElement("key", extras[0]) { Parent = this });
+            _extra.Add(new SchemaElement("value", extras[1]) { Parent = this });
+         }
+
          UpdateFlags();
       }
 

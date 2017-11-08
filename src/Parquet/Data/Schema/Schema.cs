@@ -65,7 +65,14 @@ namespace Parquet.Data
             }
             else
             {
-               list.Add(node);
+               if (node.IsMap)
+               {
+                  list.AddRange(node.Extra);
+               }
+               else
+               {
+                  list.Add(node);
+               }
             }
          }
 

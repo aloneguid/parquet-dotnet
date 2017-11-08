@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using TSchemaElement = Parquet.Thrift.SchemaElement;
 using System.Linq;
+using System.Collections;
 
 namespace Parquet.File
 {
@@ -66,39 +67,13 @@ namespace Parquet.File
       {
          if (se.IsRepeated)
          {
-            var root = new TSchemaElement(se.Name)
+            if (se.IsMap)
             {
-               Converted_type = Thrift.ConvertedType.LIST,
-               Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
-               Num_children = 1
-            };
-            container.Add(root);
-
-            var list = new TSchemaElement("list")
-            {
-               Repetition_type = Thrift.FieldRepetitionType.REPEATED,
-               Num_children = 1
-            };
-            container.Add(list);
-
-            if (se.IsNestedStructure)
-            {
-               var element = new TSchemaElement("element");
-               element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-               element.Num_children = se.Children.Count;
-               container.Add(element);
-
-               foreach(SchemaElement child in se.Children)
-               {
-                  AddSchema(container, child);
-               }
+               AddMapSchema(container, se);
             }
             else
             {
-               TSchemaElement element = se.Thrift;
-               element.Name = "element";
-               element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-               container.Add(element);
+               AddListSchema(container, se);
             }
          }
          else if(se.IsNestedStructure)
@@ -118,6 +93,66 @@ namespace Parquet.File
          else
          {
             container.Add(se.Thrift);
+         }
+      }
+
+      private static void AddMapSchema(List<TSchemaElement> container, SchemaElement se)
+      {
+         var root = new TSchemaElement(se.Name)
+         {
+            Converted_type = Thrift.ConvertedType.MAP,
+            Num_children = 1
+         };
+         container.Add(root);
+
+         var kv = new TSchemaElement("key_value")
+         {
+            Num_children = 2,
+            Repetition_type = Thrift.FieldRepetitionType.REPEATED
+         };
+         container.Add(kv);
+
+         foreach(SchemaElement kvse in se.Extra)
+         {
+            AddSchema(container, kvse);
+         }
+      }
+
+      private static void AddListSchema(List<TSchemaElement> container, SchemaElement se)
+      {
+         var root = new TSchemaElement(se.Name)
+         {
+            Converted_type = Thrift.ConvertedType.LIST,
+            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+            Num_children = 1
+         };
+         container.Add(root);
+
+         var list = new TSchemaElement("list")
+         {
+            Repetition_type = Thrift.FieldRepetitionType.REPEATED,
+            Num_children = 1
+         };
+         container.Add(list);
+
+         if (se.IsNestedStructure)
+         {
+            var element = new TSchemaElement("element");
+            element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+            element.Num_children = se.Children.Count;
+            container.Add(element);
+
+            foreach (SchemaElement child in se.Children)
+            {
+               AddSchema(container, child);
+            }
+         }
+         else
+         {
+            TSchemaElement element = se.Thrift;
+            element.Name = "element";
+            element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+            container.Add(element);
          }
       }
 
@@ -202,16 +237,20 @@ namespace Parquet.File
 
       public TSchemaElement CreateSchemaElement(string name, Type systemType,
          out Type elementType,
-         out string pathName)
+         out string pathName,
+         out Type[] extras)
       {
          var th = new TSchemaElement(name);
+         extras = null;
 
          if(TypeFactory.TryExtractDictionaryType(systemType, out Type keyType, out Type valueType))
          {
-            elementType = typeof(Row);
+            elementType = typeof(IDictionary);
             pathName = BuildDictionaryPath(name);
             CreateDictionary(th, keyType, valueType);
             th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
+
+            extras = new[] { keyType, valueType };
          }
          else if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
          {
@@ -249,7 +288,7 @@ namespace Parquet.File
 
          //adjust schema
 
-         if (typeof(Row) != elementType)
+         if (typeof(Row) != elementType && typeof(IDictionary) != elementType)
          {
             TypePrimitive tp = TypePrimitive.Find(elementType);
 
