@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Parquet.Data;
 using System.Linq;
+using Parquet.DataTypes;
 
 namespace Parquet.File
 {
@@ -185,5 +186,63 @@ namespace Parquet.File
             }
          }
       }
+
+      #region [ Experimental ]
+
+      public SchemaElement2 ParseSchemaExperimental(ParquetOptions formatOptions)
+      {
+         int si = 0;
+         Thrift.SchemaElement tse = _fileMeta.Schema[si++];
+         var root = new SchemaElement2(tse.Name, DataType.Unspecified, null);
+
+         ParseSchemaExperimenal(root, tse.Num_children, ref si, formatOptions);
+
+         return root;
+      }
+
+      private void ParseSchemaExperimenal(SchemaElement2 parent, int childCount, ref int si, ParquetOptions formatOptions)
+      {
+         for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++)
+         {
+            Thrift.SchemaElement tse = _fileMeta.Schema[si];
+            IDataType dth = DataTypeFactory.Match(tse, formatOptions);
+
+            if (dth == null)
+            {
+               if (tse.Num_children > 0)
+               {
+                  //it's an element
+                  ParseSchemaExperimenal(parent, _fileMeta.Schema[si++].Num_children, ref si, formatOptions);
+                  continue;
+               }
+               else
+               {
+                  ThrowNoHandler(tse);
+               }
+            }
+
+            SchemaElement2 newRoot = dth.Create(parent, _fileMeta.Schema, ref si);
+
+            if(newRoot != null)
+            {
+               ParseSchemaExperimenal(newRoot, _fileMeta.Schema[si - 1].Num_children, ref si, formatOptions);
+            }
+         }
+      }
+
+      private void ThrowNoHandler(Thrift.SchemaElement tse)
+      {
+         string ct = tse.__isset.converted_type
+            ? $" ({tse.Converted_type})"
+            : null;
+
+         string t = tse.__isset.type
+            ? $"'{tse.Type}'"
+            : "<unspecified>";
+
+         throw new NotSupportedException($"cannot find data type handler for schema element '{tse.Name}' (type: {t}{ct})");
+      }
+
+      #endregion
    }
 }

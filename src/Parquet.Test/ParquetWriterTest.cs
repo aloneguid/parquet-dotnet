@@ -296,5 +296,15 @@ namespace Parquet.Test
          Assert.Null(ds1[0][1]);
          Assert.Null(ds1[1][1]);
       }
+
+      [Fact]
+      public void Simplest_write_read()
+      {
+         var ds = new DataSet(new SchemaElement<int>("id"));
+         ds.Add(1);
+         ds.Add(2);
+
+         DataSetGenerator.WriteRead(ds);
+      }
    }
 }

@@ -2,15 +2,15 @@
 
 namespace Parquet.DataTypes
 {
-   class Int32DataType : BasicDataType<int>
+   class FloatDataType : BasicDataType<float>
    {
-      public Int32DataType() : base(Thrift.Type.INT32, null, 32)
+      public FloatDataType() : base(Thrift.Type.FLOAT)
       {
       }
 
       protected override SchemaElement2 CreateSimple(SchemaElement2 parent, Thrift.SchemaElement tse)
       {
-         return new SchemaElement2(tse.Name, DataType.Int32, parent);
+         return new SchemaElement2(tse.Name, DataType.Float, parent);
       }
    }
 }

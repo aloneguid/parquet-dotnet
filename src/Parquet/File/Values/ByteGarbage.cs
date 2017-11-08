@@ -2,6 +2,7 @@
 
 namespace Parquet.File.Values
 {
+   //todo: delete this
    static class ByteGarbage
    {
       public static readonly byte[] EmptyByteArray = new byte[0];

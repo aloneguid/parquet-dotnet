@@ -6,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using TSchemaElement = Parquet.Thrift.SchemaElement;
 using System.Linq;
-using System.Collections;
 
 namespace Parquet.File
 {
@@ -209,10 +208,10 @@ namespace Parquet.File
 
          if(TypeFactory.TryExtractDictionaryType(systemType, out Type keyType, out Type valueType))
          {
-            elementType = typeof(IDictionary);
+            elementType = typeof(Row);
             pathName = BuildDictionaryPath(name);
+            CreateDictionary(th, keyType, valueType);
             th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
-            throw new NotImplementedException("dictionaries are not implemented yet");
          }
          else if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
          {
@@ -285,6 +284,12 @@ namespace Parquet.File
 
          nonNullable = t;
          return false;
+      }
+
+      private void CreateDictionary(TSchemaElement schema, Type keyType, Type valueType)
+      {
+         schema.Converted_type = Thrift.ConvertedType.MAP;
+
       }
    }
 }

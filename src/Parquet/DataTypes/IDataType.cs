@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
@@ -11,13 +9,9 @@ namespace Parquet.DataTypes
    /// </summary>
    interface IDataType
    {
-      bool IsMatch(Thrift.SchemaElement tse);
+      bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
-      SchemaElement Parse(SchemaElement root, ICollection<Thrift.SchemaElement> schema, ref int index);
-
-      void Build(SchemaElement element, IList<Thrift.SchemaElement> schema);
-
-      IList CreateList(bool nullable, int capacity);
+      SchemaElement2 Create(SchemaElement2 parent, IList<Thrift.SchemaElement> schema, ref int index);
 
       int? BitWidth { get; }
    }
