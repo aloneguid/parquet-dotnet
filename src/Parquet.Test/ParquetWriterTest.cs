@@ -1,12 +1,7 @@
 ﻿using System;
 using Parquet.Data;
 using System.IO;
-using Parquet.Thrift;
 using Xunit;
-using F = System.IO.File;
-using Type = Parquet.Thrift.Type;
-using NetBox.IO;
-using NetBox;
 using System.Collections.Generic;
 
 namespace Parquet.Test

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.4;net451</TargetFrameworks>
+    <Version>1.2.0.0</Version>
+    <FileVersion>1.2.3.4</FileVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <DefineConstants>DEBUG</DefineConstants>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
+    <Description>JSON integration with Parquet.Net</Description>
+    <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
+    <Company>Elastacloud</Company>
+    <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageProjectUrl>https://github.com/elastacloud/parquet-dotnet</PackageProjectUrl>
+    <PackageId>Parquet.Net.Json</PackageId>
+    <PackageIconUrl>http://i.isolineltd.com/nuget/parquet.png</PackageIconUrl>
+    <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
+    <Product>Parquet.Json</Product>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+</Project>

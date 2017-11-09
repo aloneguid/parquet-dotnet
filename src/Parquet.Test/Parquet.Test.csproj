@@ -2,8 +2,8 @@
 
   <PropertyGroup>    
     <TargetFramework>netcoreapp1.1</TargetFramework>    
-    <SignAssembly>False</SignAssembly>    
-    <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>    
+    <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

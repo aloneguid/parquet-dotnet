@@ -5,8 +5,8 @@
     <FileVersion>1.2.3.4</FileVersion>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <DefineConstants>DEBUG</DefineConstants>
-    <SignAssembly>False</SignAssembly>
-    <AssemblyOriginatorKeyFile>C:\dev\parquet-dotnet\src\pqnet.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
     <Description>A .NET library to read and write Apache Parquet files.</Description>
     <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
     <Company>Elastacloud</Company>
