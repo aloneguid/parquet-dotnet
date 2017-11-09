@@ -148,7 +148,10 @@ namespace Parquet
             pos += rg.Num_rows;
          }
 
-         return new DataSet(schema, pathToValues, _meta.Num_rows, _meta.Created_by) { Thrift = _meta };
+         var ds = new DataSet(schema, pathToValues, _meta.Num_rows, _meta.Created_by);
+         metaParser.AddMeta(ds);
+         ds.Thrift = _meta;
+         return ds;
       }
 
       /// <summary>

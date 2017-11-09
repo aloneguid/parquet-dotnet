@@ -79,6 +79,19 @@ namespace Parquet.File
          return new Schema(root.Children);
       }
 
+      public void AddMeta(DataSet ds)
+      {
+         ds.Metadata.Custom.Clear();
+
+         if (_fileMeta.Key_value_metadata != null && _fileMeta.Key_value_metadata.Count > 0)
+         {
+            foreach(Thrift.KeyValue tkv in _fileMeta.Key_value_metadata)
+            {
+               ds.Metadata.Custom[tkv.Key] = tkv.Value;
+            }
+         }
+      }
+
       private SchemaElement BuildListSchema(ref Thrift.SchemaElement tse, ref int i, bool isRoot, SchemaElement node, ParquetOptions formatOptions)
       {
          Thrift.SchemaElement tseTop = tse;

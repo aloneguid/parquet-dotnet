@@ -283,6 +283,9 @@ root
          Assert.Equal(3, ms.Extra[1].MaxDefinitionLevel);
 
          Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds[0].ToString());
+
+         //DataSet ds2 = DataSetGenerator.WriteRead(ds);
+         //ParquetWriter.WriteFile(ds, "c:\\tmp\\pmaps.parquet", CompressionMethod.None);
       }
 
       [Fact]

@@ -53,7 +53,9 @@ namespace Parquet.File
       public void AddSchema(DataSet ds)
       {
          ds.Metadata.CreatedBy = CreatedBy;
+
          _meta.Schema = new List<TSchemaElement> { new TSchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
+         _meta.Key_value_metadata = ds.Metadata.Custom.Select(kv => new Thrift.KeyValue(kv.Key) { Value = kv.Value }).ToList();
 
          foreach(SchemaElement se in ds.Schema.Elements)
          {
@@ -61,6 +63,7 @@ namespace Parquet.File
          }
          
          _meta.Num_rows = ds.Count;
+         
       }
 
       private static void AddSchema(List<TSchemaElement> container, SchemaElement se)
@@ -210,7 +213,7 @@ namespace Parquet.File
          {
             Encoding = Thrift.Encoding.PLAIN,
             Definition_level_encoding = Thrift.Encoding.RLE,
-            Repetition_level_encoding = Thrift.Encoding.BIT_PACKED,
+            Repetition_level_encoding = Thrift.Encoding.RLE,
             Num_values = valueCount
          };
 

@@ -12,21 +12,21 @@ namespace Parquet.Test
       public void Simple_first_level_map_int_to_string()
       {
          var ds = new DataSet(
-            new SchemaElement<int>("id"),
-            new SchemaElement<IDictionary<int, string>>("names"));
+            new SchemaElement<IDictionary<int, string>>("names"),
+            new SchemaElement<int>("id"));
 
-         ds.Add(1, new Dictionary<int, string>
+         ds.Add(new Dictionary<int, string>
          {
             [1] = "one",
             [2] = "two",
             [3] = "three"
-         });
+         }, 1);
 
-         //ParquetWriter.WriteFile(ds, "c:\\tmp\\map.parquet");
+         //ParquetWriter.WriteFile(ds, "c:\\tmp\\pmap2.parquet");
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
-         Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds1[0].ToString());
+         Assert.Equal("{[1=>one;2=>two;3=>three];1}", ds1[0].ToString());
       }
    }
 }
