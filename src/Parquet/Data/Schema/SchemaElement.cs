@@ -109,6 +109,19 @@ namespace Parquet.Data
          }
 
          UpdateFlags();
+
+         //hack: to be gone in vNext
+         if(IsMap)
+         {
+            SchemaElement sKey = _extra[0];
+            SchemaElement sValue = _extra[1];
+
+            sKey.MaxRepetitionLevel = MaxRepetitionLevel;
+            sValue.MaxRepetitionLevel = MaxRepetitionLevel;
+
+            sKey.MaxDefinitionLevel += (MaxDefinitionLevel + 1);
+            sValue.MaxDefinitionLevel += (MaxDefinitionLevel + 1);
+         }
       }
 
       internal SchemaElement(Thrift.SchemaElement tse, string nameOverride,
