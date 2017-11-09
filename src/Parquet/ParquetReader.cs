@@ -91,7 +91,7 @@ namespace Parquet
 
          var metaParser = new FileMetadataParser(_meta);
          Schema schema = metaParser.ParseSchema(_formatOptions);
-         SchemaElement2 schema2 = metaParser.ParseSchemaExperimental(_formatOptions);
+         SchemaElement schema2 = metaParser.ParseSchemaExperimental(_formatOptions);
 
          var pathToValues = new Dictionary<string, IList>();
          long pos = 0;

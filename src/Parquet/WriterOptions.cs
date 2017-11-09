@@ -33,7 +33,5 @@ namespace Parquet
       /// understands decimals when forced to true.
       /// </summary>
       public bool ForceFixedByteArraysForDecimals { get; set; }
-
-      internal EmulationMode EmulationMode { get; set; }
    }
 }

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
@@ -23,24 +25,29 @@ namespace Parquet.DataTypes
          return tse.__isset.type && _thriftType == tse.Type;
       }
 
-      public SchemaElement2 Create(SchemaElement2 parent, IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
       {
          Thrift.SchemaElement tse = schema[index++];
 
          if(tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
          {
-            var list = new SchemaElement2(tse.Name, DataType.List, parent);
-            parent.Children.Add(list);
-            SchemaElement2 sei = CreateSimple(list, tse);
-            list.Children.Add(sei);
+            var list = new SchemaElement(tse.Name, DataType.List, parent);
+            parent.NewChildren.Add(list);
+            SchemaElement sei = CreateSimple(list, tse);
+            list.NewChildren.Add(sei);
             return null;
          }
 
-         SchemaElement2 se = CreateSimple(parent, tse);
-         parent.Children.Add(se);
+         SchemaElement se = CreateSimple(parent, tse);
+         parent.NewChildren.Add(se);
          return null;
       }
 
-      protected abstract SchemaElement2 CreateSimple(SchemaElement2 parent, Thrift.SchemaElement tse);
+      protected abstract SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse);
+
+      public virtual IList Read(byte[] data)
+      {
+         throw new NotImplementedException();
+      }
    }
 }

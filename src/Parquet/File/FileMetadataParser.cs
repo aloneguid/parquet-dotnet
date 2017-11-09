@@ -202,18 +202,18 @@ namespace Parquet.File
 
       #region [ Experimental ]
 
-      public SchemaElement2 ParseSchemaExperimental(ParquetOptions formatOptions)
+      public SchemaElement ParseSchemaExperimental(ParquetOptions formatOptions)
       {
          int si = 0;
          Thrift.SchemaElement tse = _fileMeta.Schema[si++];
-         var root = new SchemaElement2(tse.Name, DataType.Unspecified, null);
+         var root = new SchemaElement(tse.Name, DataType.Unspecified, null);
 
          ParseSchemaExperimenal(root, tse.Num_children, ref si, formatOptions);
 
          return root;
       }
 
-      private void ParseSchemaExperimenal(SchemaElement2 parent, int childCount, ref int si, ParquetOptions formatOptions)
+      private void ParseSchemaExperimenal(SchemaElement parent, int childCount, ref int si, ParquetOptions formatOptions)
       {
          for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++)
          {
@@ -234,7 +234,7 @@ namespace Parquet.File
                }
             }
 
-            SchemaElement2 newRoot = dth.Create(parent, _fileMeta.Schema, ref si);
+            SchemaElement newRoot = dth.Create(parent, _fileMeta.Schema, ref si);
 
             if(newRoot != null)
             {

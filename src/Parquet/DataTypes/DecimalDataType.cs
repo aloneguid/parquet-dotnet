@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using Parquet.Data;
-using Parquet.Thrift;
 
 namespace Parquet.DataTypes
 {
    class DecimalDataType : BasicDataType<decimal>
    {
-      public DecimalDataType() : base(Thrift.Type.FIXED_LEN_BYTE_ARRAY, ConvertedType.DECIMAL)
+      public DecimalDataType() : base(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL)
       {
       }
 
@@ -16,7 +15,7 @@ namespace Parquet.DataTypes
       {
          return
 
-            tse.__isset.converted_type && tse.Converted_type == ConvertedType.DECIMAL &&
+            tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DECIMAL &&
 
             (
                tse.Type == Thrift.Type.FIXED_LEN_BYTE_ARRAY ||
@@ -25,9 +24,9 @@ namespace Parquet.DataTypes
             );
       }
 
-      protected override SchemaElement2 CreateSimple(SchemaElement2 parent, Thrift.SchemaElement tse)
+      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
       {
-         return new SchemaElement2(tse.Name, DataType.Decimal, parent);
+         return new SchemaElement(tse.Name, DataType.Decimal, parent);
       }
    }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics;
+using Parquet.DataTypes;
 
 namespace Parquet.Data
 {
@@ -42,9 +43,22 @@ namespace Parquet.Data
       private readonly List<SchemaElement> _extra = new List<SchemaElement>();
       private string _path;
       private string _pathName;
-#pragma warning disable IDE1006 // Naming Styles
       private static readonly FileMetadataBuilder Builder = new FileMetadataBuilder();
-#pragma warning restore IDE1006 // Naming Styles
+
+      #region [ vNext ]
+
+      internal DataType DataType { get; private set; }
+
+      internal List<SchemaElement> NewChildren { get; private set; } = new List<SchemaElement>();
+
+      internal SchemaElement(string name, DataType dataType, SchemaElement parent)
+      {
+         Name = name ?? throw new ArgumentNullException(nameof(name));
+         DataType = dataType;
+         Parent = parent;
+      }
+
+      #endregion
 
       /// <summary>
       /// Gets the children schemas. Made internal temporarily, until we can actually read nested structures.

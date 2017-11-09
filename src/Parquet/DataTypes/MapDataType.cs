@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Parquet.Data;
-using Parquet.Thrift;
 
 namespace Parquet.DataTypes
 {
@@ -10,7 +10,7 @@ namespace Parquet.DataTypes
    {
       public int? BitWidth => null;
 
-      public SchemaElement2 Create(SchemaElement2 parent, IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
       {
          //next element is a container
          Thrift.SchemaElement tseContainer = schema[++index];
@@ -19,8 +19,8 @@ namespace Parquet.DataTypes
          Thrift.SchemaElement tseKey = schema[++index];
          Thrift.SchemaElement tseValue = schema[++index];
 
-         var map = new SchemaElement2(tseContainer.Name, DataType.Dictionary, parent);
-         parent.Children.Add(map);
+         var map = new SchemaElement(tseContainer.Name, DataType.Dictionary, parent);
+         parent.NewChildren.Add(map);
 
          //go to next
          index += 1;
@@ -32,7 +32,12 @@ namespace Parquet.DataTypes
       {
          return
             tse.__isset.converted_type &&
-            (tse.Converted_type == ConvertedType.MAP || tse.Converted_type == ConvertedType.MAP_KEY_VALUE);
+            (tse.Converted_type == Thrift.ConvertedType.MAP || tse.Converted_type == Thrift.ConvertedType.MAP_KEY_VALUE);
+      }
+
+      public IList Read(byte[] data)
+      {
+         throw new NotImplementedException();
       }
    }
 }

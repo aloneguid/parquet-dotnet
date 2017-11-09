@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Parquet.Data;
-using Parquet.Thrift;
 
 namespace Parquet.DataTypes
 {
@@ -15,14 +14,14 @@ namespace Parquet.DataTypes
          return tse.__isset.type &&
             tse.Type == Thrift.Type.BYTE_ARRAY &&
             (
-               (tse.__isset.converted_type && tse.Converted_type == ConvertedType.UTF8) ||
+               (tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.UTF8) ||
                formatOptions.TreatByteArrayAsString
             );
       }
 
-      protected override SchemaElement2 CreateSimple(SchemaElement2 parent, Thrift.SchemaElement tse)
+      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
       {
-         return new SchemaElement2(tse.Name, DataType.String, parent);
+         return new SchemaElement(tse.Name, DataType.String, parent);
       }
    }
 }
