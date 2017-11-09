@@ -80,7 +80,7 @@ namespace Parquet.File
             ph.Data_page_header.Num_values = values.Count;
          }
 
-         if (schema.IsNullable || schema.MaxRepetitionLevel > 0)
+         if (schema.IsNullable || schema.MaxDefinitionLevel > 0)
          {
             var dpack = new DefinitionPack(_schema, _formatOptions);
             values = dpack.Unpack(values, out definitions);

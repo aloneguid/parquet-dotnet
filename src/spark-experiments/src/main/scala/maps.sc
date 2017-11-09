@@ -25,4 +25,8 @@ val df = sc.parallelize(Seq(
 df.printSchema
 df.show
 
-write(df, "c:\\tmp\\sparkmap.parquet")
+//write(df, "c:\\tmp\\sparkmap.parquet")
+
+val cp = spark.read.parquet("c:\\tmp\\map.parquet")
+cp.printSchema
+cp.show

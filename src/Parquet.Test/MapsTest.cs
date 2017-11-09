@@ -18,14 +18,15 @@ namespace Parquet.Test
          ds.Add(1, new Dictionary<int, string>
          {
             [1] = "one",
-            [2] = "two"
+            [2] = "two",
+            [3] = "three"
          });
 
          //ParquetWriter.WriteFile(ds, "c:\\tmp\\map.parquet");
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
-         Assert.Equal("{1;[1=>one;2=>two]}", ds1[0].ToString());
+         Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds1[0].ToString());
       }
    }
 }

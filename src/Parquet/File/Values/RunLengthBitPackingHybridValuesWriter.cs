@@ -58,7 +58,7 @@ namespace Parquet.File.Values
       {
          //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
-         const int maxCount = 0b0111_1111_1111_1111;  //max count for an integer with one lost bit
+         const int maxCount = int.MaxValue >> 1;  //max count for an integer with one lost bit
 
          //chunk identical values and write
          int lastValue = 0;

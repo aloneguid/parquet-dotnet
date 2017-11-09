@@ -101,7 +101,8 @@ namespace Parquet.File
          var root = new TSchemaElement(se.Name)
          {
             Converted_type = Thrift.ConvertedType.MAP,
-            Num_children = 1
+            Num_children = 1,
+            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
          };
          container.Add(root);
 
