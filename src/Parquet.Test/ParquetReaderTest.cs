@@ -202,7 +202,7 @@ root
 
          Assert.Equal("{[{UK;London};{US;New York}];1}", ds[0].ToString());
 
-         DataSet ds1 = ParquetReader.ReadFile("c:\\tmp\\rep.parquet");
+         //DataSet ds1 = ParquetReader.ReadFile("c:\\tmp\\rep.parquet");
       }
 
       [Fact]

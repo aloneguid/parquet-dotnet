@@ -241,7 +241,19 @@ namespace Parquet.Data
             SchemaElement se = schema[i];
             object value = row[i];
 
-            if (se.IsNestedStructure)
+            if(se.IsMap)
+            {
+               IList keys = GetValues(se.Extra[0], true);
+               IList values = GetValues(se.Extra[1], true);
+               IDictionary valueMap = (IDictionary)value;
+
+               IList keysItem = valueMap.Keys.Cast<object>().ToList();
+               IList valuesItem = valueMap.Values.Cast<object>().ToList();
+
+               keys.Add(keysItem);
+               values.Add(valuesItem);
+            }
+            else if (se.IsNestedStructure)
             {
                Row valueRow = se.IsRepeated
                   ? Row.Compress(se.Children, (IEnumerable<Row>)value)
