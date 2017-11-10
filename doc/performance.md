@@ -1,5 +1,7 @@
 # Performance Tuning
 
+> Work on performance is postponed until v1.7
+
 ## Performance Comparison
 
 All tests are performed using v1.5 alpha, in the same initial conditions on Intel i7 CPU with 16GB RAM.
@@ -26,20 +28,3 @@ It's worth noting that parquet-dotnet has never been optimised for performance y
 In this test Apache Spark cannot read the file due to an internal bug.
 
 As you can see, Parquet.Net loses to fastparquet slightly in everything except for writing gzip compressed parquet files.
-
-### Case 2
-
-**File:** postcodes.parquet
-
-**Size:** 121Mb
-
-**Rows**: 150'000
-
-||Read|Write (uncompressed)|Write (gzip)|Write (snappy)|
-|-|-|-|-|-|
-|fastparquet| ms| ms| ms| ms|
-|parquet-dotnet| ms| ms| ms| ms|
-|Scala (Spark)| ms| ms| ms| ms|
-
-pending...
-

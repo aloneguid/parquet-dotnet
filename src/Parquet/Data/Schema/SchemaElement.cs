@@ -49,6 +49,8 @@ namespace Parquet.Data
 
       internal DataType DataType { get; private set; }
 
+      internal bool HasNulls { get; set; }
+
       internal List<SchemaElement> NewChildren { get; private set; } = new List<SchemaElement>();
 
       internal SchemaElement(string name, DataType dataType, SchemaElement parent)

@@ -86,6 +86,14 @@ and data
 
 ![Complex 01](img/complex-01.png)
 
+### Nesting Structures
+
+todo
+
 ## Arrays
+
+todo
+
+## Maps
 
 todo

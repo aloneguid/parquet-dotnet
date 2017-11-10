@@ -1,4 +1,4 @@
-|# Supported features
+# Supported features
 
 We are implementing Parquet features gradually, and the table below outlines the current status. If the feature is not listed here it's not supported yet.
 
@@ -20,4 +20,5 @@ We are implementing Parquet features gradually, and the table below outlines the
 |Data pages|yes|yes|
 |Append to files|-|yes|
 |Simple repeatable fields|yes|yes|
-|Nested structures|planned|planned|
+|Nested structures|yes|yes|
+|Map types|yes|yes|
