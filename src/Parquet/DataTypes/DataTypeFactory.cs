@@ -5,7 +5,7 @@ namespace Parquet.DataTypes
 {
    static class DataTypeFactory
    {
-      private static readonly List<IDataType> _allDataTypes = new List<IDataType>
+      private static readonly List<IDataTypeHandler> _allDataTypes = new List<IDataTypeHandler>
       {
          new BooleanDataType(),
          new Int32DataType(),
@@ -21,7 +21,7 @@ namespace Parquet.DataTypes
          new MapDataType()
       };
 
-      public static IDataType Match(Thrift.SchemaElement tse, ParquetOptions formatOptions)
+      public static IDataTypeHandler Match(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
          return _allDataTypes.FirstOrDefault(dt => dt.IsMatch(tse, formatOptions));
       }

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
@@ -7,7 +8,7 @@ namespace Parquet.DataTypes
    /// <summary>
    /// Prototype: data type interface
    /// </summary>
-   interface IDataType
+   interface IDataTypeHandler
    {
       bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
@@ -15,6 +16,6 @@ namespace Parquet.DataTypes
 
       int? BitWidth { get; }
 
-      IList Read(byte[] data);
+      IList Read(BinaryReader reader);
    }
 }

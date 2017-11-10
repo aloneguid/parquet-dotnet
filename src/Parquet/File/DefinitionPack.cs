@@ -11,19 +11,15 @@ namespace Parquet.File
    /// </summary>
    class DefinitionPack
    {
-      private readonly SchemaElement _schema;
-      private readonly ParquetOptions _formatOptions;
 
-      public DefinitionPack(SchemaElement schema, ParquetOptions formatOptions = null)
+      public DefinitionPack()
       {
-         _schema = schema;
-         _formatOptions = formatOptions ?? new ParquetOptions();
       }
 
-      public IList Unpack(IList values, out List<int> definitions)
+      public IList Unpack(IList values, SchemaElement schema, out List<int> definitions)
       {
          definitions = new List<int>(values.Count);
-         IList result = TypeFactory.Create(_schema, false);
+         IList result = TypeFactory.Create(schema, false);
 
          foreach(object value in values)
          {
@@ -33,7 +29,7 @@ namespace Parquet.File
             }
             else
             {
-               definitions.Add(_schema.MaxDefinitionLevel);
+               definitions.Add(schema.MaxDefinitionLevel);
                result.Add(value);
             }
          }

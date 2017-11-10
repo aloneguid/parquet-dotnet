@@ -71,16 +71,6 @@ namespace Parquet
       }
 
       /// <summary>
-      /// Options
-      /// </summary>
-      public ParquetOptions Options => _formatOptions;
-
-      /// <summary>
-      /// Total number of rows in this file
-      /// </summary>
-      public long RowCount => _meta.Num_rows;
-
-      /// <summary>
       /// Test read, to be defined
       /// </summary>
       public DataSet Read()
@@ -89,6 +79,7 @@ namespace Parquet
 
          _meta = ReadMetadata();
 
+         var footer = new ThriftFooter(_meta);
          var metaParser = new FileMetadataParser(_meta);
          Schema schema = metaParser.ParseSchema(_formatOptions);
          SchemaElement schema2 = metaParser.ParseSchemaExperimental(_formatOptions);
@@ -116,10 +107,12 @@ namespace Parquet
                SchemaElement se = schema[cc];
 
                var p = new ColumnReader(cc, se, _input, ThriftStream, _formatOptions);
+               var columnarReader = new ColumnarReader(_input, cc, footer, _formatOptions);
 
                try
                {
                   IList chunkValues = p.Read(offset, count);
+                  //columnarReader.Read(offset, count);
 
                   if(!pathToValues.TryGetValue(se.Path, out IList allValues))
                   {

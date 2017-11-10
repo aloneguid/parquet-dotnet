@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
-   class ListDataType : IDataType
+   class ListDataType : IDataTypeHandler
    {
       public int? BitWidth => null;
 
@@ -26,7 +27,7 @@ namespace Parquet.DataTypes
          return tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.LIST;
       }
 
-      public IList Read(byte[] data)
+      public IList Read(BinaryReader reader)
       {
          throw new NotImplementedException();
       }

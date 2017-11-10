@@ -11,35 +11,30 @@ namespace Parquet.File
    /// </summary>
    class RepetitionPack
    {
-      private readonly SchemaElement _schema;
-      private readonly ParquetOptions _formatOptions;
-
-      public RepetitionPack(SchemaElement schema, ParquetOptions formatOptions = null)
+      public RepetitionPack()
       {
-         _schema = schema;
-         _formatOptions = formatOptions ?? new ParquetOptions();
       }
 
-      public IList Unpack(IList hierarchy, out List<int> levels)
+      public IList Unpack(SchemaElement schema, IList hierarchy, out List<int> levels)
       {
          levels = new List<int>();
-         IList flatValues = _schema.CreateValuesList(0);
+         IList flatValues = schema.CreateValuesList(0);
 
          int touched = 0;
-         Unpack(hierarchy, levels, flatValues, ref touched, 0);
+         Unpack(schema.MaxRepetitionLevel, hierarchy, levels, flatValues, ref touched, 0);
 
          return flatValues;
       }
 
-      private void Unpack(IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
+      private void Unpack(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
       {
          for (int i = 0; i < list.Count; i++)
          {
             object item = list[i];
 
-            if ((listLevel != _schema.MaxRepetitionLevel) && (item is IList nestedList))
+            if ((listLevel != maxRepetitionLevel) && (item is IList nestedList))
             {
-               Unpack(nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1);
+               Unpack(maxRepetitionLevel, nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1);
             }
             else
             {
@@ -51,13 +46,13 @@ namespace Parquet.File
          }
       }
 
-      public IList Pack(IList flatValues, List<int> levels)
+      public IList Pack(SchemaElement schema, IList flatValues, List<int> levels)
       {
-         if (levels == null || _schema.MaxRepetitionLevel == 0) return flatValues;
+         if (levels == null || schema.MaxRepetitionLevel == 0) return flatValues;
 
          //horizontal list split
          var values = new List<IList>();
-         IList[] hl = new IList[_schema.MaxRepetitionLevel];
+         IList[] hl = new IList[schema.MaxRepetitionLevel];
 
          //repetition level indicates where to start to create new lists
 
@@ -70,7 +65,7 @@ namespace Parquet.File
 
             if (lrl != rl)
             {
-               CreateLists(hl, rl);
+               CreateLists(schema, hl, rl);
                lrl = rl;
                chunk = hl[hl.Length - 1];
 
@@ -87,15 +82,15 @@ namespace Parquet.File
          return values;
       }
 
-      private void CreateLists(IList[] hl, int rl)
+      private void CreateLists(SchemaElement schema, IList[] hl, int rl)
       {
-         int maxIdx = _schema.MaxRepetitionLevel - 1;
+         int maxIdx = schema.MaxRepetitionLevel - 1;
 
          //replace lists in chain with new instances
          for (int i = maxIdx; i >= rl; i--)
          {
             IList nl = (i == maxIdx)
-               ? _schema.CreateValuesList(0)
+               ? schema.CreateValuesList(0)
                : new List<IList>();
 
             hl[i] = nl;

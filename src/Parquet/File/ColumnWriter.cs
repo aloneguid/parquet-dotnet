@@ -75,15 +75,15 @@ namespace Parquet.File
          //flatten values and create repetitions list if the field is repeatable
          if (schema.MaxRepetitionLevel > 0)
          {
-            var rpack = new RepetitionPack(_schema, _formatOptions);
-            values = rpack.Unpack(values, out repetitions);
+            var rpack = new RepetitionPack();
+            values = rpack.Unpack(_schema, values, out repetitions);
             ph.Data_page_header.Num_values = values.Count;
          }
 
          if (schema.IsNullable || schema.MaxDefinitionLevel > 0)
          {
-            var dpack = new DefinitionPack(_schema, _formatOptions);
-            values = dpack.Unpack(values, out definitions);
+            var dpack = new DefinitionPack();
+            values = dpack.Unpack(values, _schema, out definitions);
          }
 
          using (var ms = new MemoryStream())

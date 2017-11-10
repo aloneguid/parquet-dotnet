@@ -10,13 +10,11 @@ namespace Parquet.File
    class ValueMerger
    {
       private readonly SchemaElement _schema;
-      private readonly ParquetOptions _formatOptions;
       private IList _values;
 
-      public ValueMerger(SchemaElement schema, ParquetOptions formatOptions, IList values)
+      public ValueMerger(SchemaElement schema, IList values)
       {
          _schema = schema;
-         _formatOptions = formatOptions;
          _values = values;
       }
 
@@ -55,14 +53,14 @@ namespace Parquet.File
 
       private void ApplyDefinitions(List<int> definitions, int maxValues)
       {
-         var packer = new DefinitionPack(_schema, _formatOptions);
+         var packer = new DefinitionPack();
          packer.Pack(_values, definitions);
       }
 
       private void ApplyRepetitions(List<int> repetitions)
       {
-         var packer = new RepetitionPack(_schema, _formatOptions);
-         _values = packer.Pack(_values, repetitions);
+         var packer = new RepetitionPack();
+         _values = packer.Pack(_schema, _values, repetitions);
       }
 
       public static void TrimTail(IList list, int maxValues)

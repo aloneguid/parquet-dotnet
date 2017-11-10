@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
@@ -15,28 +16,23 @@ namespace Parquet.DataTypes
          return new SchemaElement(tse.Name, DataType.Boolean, parent);
       }
 
-      public override IList Read(byte[] data)
+      public override IList Read(BinaryReader reader)
       {
          var dest = new List<bool>();
 
          int ibit = 0;
-         int ibyte = 0;
-         byte b = data[0];
 
-         while(ibyte < data.Length)
+         while(reader.BaseStream.Position < reader.BaseStream.Length)
          {
-            if (ibit == 8)
+            byte b = reader.ReadByte();
+
+            while(ibit <= 8)
             {
-               if (ibyte + 1 >= data.Length)
-               {
-                  break;
-               }
-               b = data[++ibyte];
-               ibit = 0;
+               bool set = ((b >> ibit++) & 1) == 1;
+               dest.Add(set);
             }
 
-            bool set = ((b >> ibit++) & 1) == 1;
-            dest.Add(set);
+            ibit = 0;
          }
 
          return dest;

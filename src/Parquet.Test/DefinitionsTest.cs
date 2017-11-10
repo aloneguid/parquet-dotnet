@@ -14,7 +14,7 @@ namespace Parquet.Test
       [Fact]
       public void Level4_definitions_packed_when_none_are_null()
       {
-         var packer = new DefinitionPack(new SchemaElement<int?>("cities") { MaxDefinitionLevel = 4 });
+         var packer = new DefinitionPack();
 
          var values = new List<int?> { 1, 2, 1, 2 };
          packer.Pack(values, new List<int> { 4, 4, 4, 4 });
@@ -26,7 +26,7 @@ namespace Parquet.Test
       [Fact]
       public void First_and_second_is_null_packed()
       {
-         var packer = new DefinitionPack(new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 });
+         var packer = new DefinitionPack();
 
          var values = new List<int?> { 1, 2 };
          packer.Pack(values, new List<int> { 0, 0, 1, 1 });
@@ -38,8 +38,11 @@ namespace Parquet.Test
       [Fact]
       public void First_and_second_is_null_unpacked()
       {
-         var packer = new DefinitionPack(new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 });
-         IList unpacked = packer.Unpack(new List<int?> { null, null, 1, 2 }, out List<int> definitions);
+         var packer = new DefinitionPack();
+         IList unpacked = packer.Unpack(
+            new List<int?> { null, null, 1, 2 },
+            new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 },
+            out List<int> definitions);
 
          Assert.Equal(new int[] { 1, 2 }, unpacked);
          Assert.Equal(new int[] { 0, 0, 1, 1 }, definitions);
@@ -48,7 +51,7 @@ namespace Parquet.Test
       [Fact]
       public void First_and_lastis_null_packed()
       {
-         var packer = new DefinitionPack(new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 });
+         var packer = new DefinitionPack();
 
          var values = new List<int?> { 1, 2 };
          packer.Pack(values, new List<int> { 0, 1, 1, 0 });
@@ -56,7 +59,6 @@ namespace Parquet.Test
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(null, 1, 2, null), values);
       }
-
 
       private List<T?> Nullable<T>(params object[] values) where T : struct
       {

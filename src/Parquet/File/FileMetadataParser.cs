@@ -218,7 +218,7 @@ namespace Parquet.File
          for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++)
          {
             Thrift.SchemaElement tse = _fileMeta.Schema[si];
-            IDataType dth = DataTypeFactory.Match(tse, formatOptions);
+            IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
 
             if (dth == null)
             {

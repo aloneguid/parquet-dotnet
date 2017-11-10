@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
-   abstract class BasicDataType<TSystemType> : IDataType
+   abstract class BasicDataType<TSystemType> : IDataTypeHandler
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
@@ -45,9 +46,16 @@ namespace Parquet.DataTypes
 
       protected abstract SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse);
 
-      public virtual IList Read(byte[] data)
+      public virtual IList Read(BinaryReader reader)
       {
-         throw new NotImplementedException();
+         var result = new List<int>();
+
+         while(reader.BaseStream.Position < reader.BaseStream.Length)
+         {
+            result.Add(reader.ReadInt32());
+         }
+
+         return result;
       }
    }
 }
