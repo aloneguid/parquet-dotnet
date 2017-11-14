@@ -18,8 +18,16 @@
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>v1.4
+    <PackageReleaseNotes>v1.5:
 
+new features:
+- map type is supported (#255)
+- nested structures, repeated structures, repeated fields, nesting structures into structures etc. is supported (#226, #228, #227)
+
+improvements:
+- Parquet.Net is now a standalone library with no third-party dependencies whatsoever (#264, #265, #263)
+
+v1.4
 new features:
 - data representation internally changed to columnar format, resulting in much smaller memory footprint and better performance (#238)
 - added support for short/ushort CLR type (#235)
