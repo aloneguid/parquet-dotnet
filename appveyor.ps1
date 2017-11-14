@@ -92,4 +92,4 @@ Get-ChildItem *.csproj -Recurse | Where-Object {-not(($_.Name -like "*test*") -o
    Update-ProjectVersion $_
 }
 
-Remove-AllNuGetPackagePreviews -PackageId "Parquet.Net" -ApiKey $env:NUGET_KEY -Keyword "alpha" -PreviewsToKeep 3 -VersionsToMaintain 6
+#Remove-AllNuGetPackagePreviews -PackageId "Parquet.Net" -ApiKey $env:NUGET_KEY -Keyword "alpha" -PreviewsToKeep 3 -VersionsToMaintain 6
