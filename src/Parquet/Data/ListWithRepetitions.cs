@@ -6,6 +6,7 @@ using System.Text;
 namespace Parquet.Data
 {
    /// <summary>
+   /// Experimental:
    /// Wraps source list in repetiton flags and returns elements on request
    /// </summary>
    class ListWithRepetitions<T> : IList<T>

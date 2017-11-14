@@ -1,6 +1,35 @@
 # Complex Data
 
-The library supports reading and writing complex structures since v1.5 (currently in preview).
+The library supports reading and writing complex data since v1.5
+
+## Arrays
+
+To specify an array you can simply set schema type as `IEnumerable<T>`:
+
+```csharp
+var ds = new DataSet(
+   new SchemaElement<int>("id"),
+   new SchemaElement<IEnumerable<string>>("strings"));
+
+ds.Add(1, new[] {"one", "two", "three"});
+```
+
+## Maps
+
+Maps are represented as `IDictionary<TKey, TValue>` where both key and value must be a simple type (no structures are supported):
+
+```csharp
+var ds = new DataSet(
+   new SchemaElement<IDictionary<int, string>>("names"),
+   new SchemaElement<int>("id"));
+
+ds.Add(new Dictionary<int, string>
+{
+   [1] = "one",
+   [2] = "two",
+   [3] = "three"
+}, 1);
+```
 
 ## Structures
 
@@ -86,14 +115,32 @@ and data
 
 ![Complex 01](img/complex-01.png)
 
+### Repeated Structures
+
+Structures can be repeated as well (array of structures) by specifying them as `IEnumerable<Row>`:
+
+```csharp
+var ds = new DataSet(
+   new SchemaElement<int>("id"),
+   new SchemaElement<IEnumerable<Row>>("cities",
+      new SchemaElement<string>("name"),
+      new SchemaElement<string>("country")));
+
+ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
+```
+
 ### Nesting Structures
 
-todo
+You can nest structures into structures on any level, for example:
 
-## Arrays
+```csharp
+var ds = new DataSet(
+   new SchemaElement<string>("name"),
+   new SchemaElement<Row>("address",
+      new SchemaElement<string>("name"),
+      new SchemaElement<Row>("lines",
+         new SchemaElement<string>("line1"),
+         new SchemaElement<string>("line2"))));
 
-todo
-
-## Maps
-
-todo
+ds.Add("Ivan", new Row("Primary", new Row("line1", "line2")));
+```
