@@ -4,10 +4,8 @@
 
 ## Status
 
-|Stable|Pre-release|
-|------|----------|
-|[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)|[![NuGet Pre Release](https://img.shields.io/nuget/vpre/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)|
-|![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/stable/1.0.0?svg=true)|![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)|
+[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5.1` and up.
@@ -111,3 +109,5 @@ Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/p
 ## Contributing
 
 All contributions are welcome. For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
+
+If you need to reference the latest preview version (published on every commit) please use the following NuGet Feed: https://ci.appveyor.com/nuget/parquet-dotnet-nvq9lkymhrek
