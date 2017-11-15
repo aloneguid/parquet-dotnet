@@ -12,7 +12,7 @@ namespace Parquet.DataTypes
    {
       bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
-      SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index);
+      SchemaElement CreateSchemaElement(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index);
 
       int? BitWidth { get; }
 

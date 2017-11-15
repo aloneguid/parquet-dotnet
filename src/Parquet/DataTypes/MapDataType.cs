@@ -15,7 +15,7 @@ namespace Parquet.DataTypes
 
       public int? BitWidth => null;
 
-      public SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
       {
          Thrift.SchemaElement tseRoot = schema[index];
 

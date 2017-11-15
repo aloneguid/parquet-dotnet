@@ -234,7 +234,7 @@ namespace Parquet.File
                }
             }
 
-            SchemaElement newRoot = dth.Create(parent, _fileMeta.Schema, ref si);
+            SchemaElement newRoot = dth.CreateSchemaElement(parent, _fileMeta.Schema, ref si);
 
             if(newRoot != null)
             {

@@ -26,7 +26,7 @@ namespace Parquet.DataTypes
          return tse.__isset.type && _thriftType == tse.Type;
       }
 
-      public SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
       {
          Thrift.SchemaElement tse = schema[index++];
 
