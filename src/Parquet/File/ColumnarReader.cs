@@ -38,7 +38,9 @@ namespace Parquet.File
          _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
          _thriftStream = new ThriftStream(inputStream);
-         _footer.GetLevels(_thriftColumnChunk, out int _maxRepetitionLevel, out int _maxDefinitionLevel);
+         _footer.GetLevels(_thriftColumnChunk, out int mrl, out int mdl);
+         _maxRepetitionLevel = mrl;
+         _maxDefinitionLevel = mdl;
          _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
          _dataTypeHandler = DataTypeFactory.Match(_thriftSchemaElement, _parquetOptions);
       }

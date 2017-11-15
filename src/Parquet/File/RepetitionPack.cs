@@ -92,7 +92,7 @@ namespace Parquet.File
          return values;
       }
 
-      private void CreateNestedLists(int maxRepetitionLevel, Func<IList> createEmptyListFunc , IList[] hl, int rl)
+      private void CreateNestedLists(int maxRepetitionLevel, Func<IList> createEmptyListFunc, IList[] hl, int rl)
       {
          int maxIdx = maxRepetitionLevel - 1;
 

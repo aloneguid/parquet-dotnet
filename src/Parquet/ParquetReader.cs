@@ -111,8 +111,8 @@ namespace Parquet
 
                try
                {
-                  IList chunkValues = p.Read(offset, count);
-                  //IList chunkValues = columnarReader.Read(offset, count);
+                  //IList chunkValues = p.Read(offset, count);
+                  IList chunkValues = columnarReader.Read(offset, count);
 
                   if(!pathToValues.TryGetValue(se.Path, out IList allValues))
                   {

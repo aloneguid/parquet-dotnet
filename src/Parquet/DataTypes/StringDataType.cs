@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
@@ -23,7 +24,17 @@ namespace Parquet.DataTypes
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         throw new System.NotImplementedException();
+         var result = new List<string>();
+
+         while(reader.BaseStream.Position < reader.BaseStream.Length)
+         {
+            int length = reader.ReadInt32();
+            byte[] data = reader.ReadBytes(length);
+            string s = Encoding.UTF8.GetString(data);
+            result.Add(s);
+         }
+
+         return result;
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
