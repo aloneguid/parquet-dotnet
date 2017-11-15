@@ -46,16 +46,6 @@ namespace Parquet.DataTypes
 
       protected abstract SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse);
 
-      public virtual IList Read(BinaryReader reader)
-      {
-         var result = new List<int>();
-
-         while(reader.BaseStream.Position < reader.BaseStream.Length)
-         {
-            result.Add(reader.ReadInt32());
-         }
-
-         return result;
-      }
+      public abstract IList Read(BinaryReader reader);
    }
 }

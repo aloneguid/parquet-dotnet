@@ -9,6 +9,10 @@ namespace Parquet.DataTypes
 {
    class MapDataType : IDataTypeHandler
    {
+      public MapDataType()
+      {
+      }
+
       public int? BitWidth => null;
 
       public SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)

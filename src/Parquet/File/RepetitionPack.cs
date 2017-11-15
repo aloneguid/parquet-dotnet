@@ -46,13 +46,23 @@ namespace Parquet.File
          }
       }
 
+      [Obsolete]
       public IList FlatToHierarchy(SchemaElement schema, IList flatValues, List<int> levels)
       {
-         if (levels == null || schema.MaxRepetitionLevel == 0) return flatValues;
+         return FlatToHierarchy(
+            schema.MaxRepetitionLevel,
+            () => schema.CreateValuesList(0),
+            flatValues,
+            levels);
+      }
+
+      public IList FlatToHierarchy(int maxRepetitionLevel, Func<IList> createEmptyListFunc, IList flatValues, List<int> levels)
+      {
+         if (levels == null || maxRepetitionLevel == 0) return flatValues;
 
          //horizontal list split
          var values = new List<IList>();
-         IList[] hl = new IList[schema.MaxRepetitionLevel];
+         IList[] hl = new IList[maxRepetitionLevel];
 
          //repetition level indicates where to start to create new lists
 
@@ -65,7 +75,7 @@ namespace Parquet.File
 
             if (lrl != rl)
             {
-               CreateNestedLists(schema, hl, rl);
+               CreateNestedLists(maxRepetitionLevel, createEmptyListFunc, hl, rl);
                lrl = rl;
                chunk = hl[hl.Length - 1];
 
@@ -82,15 +92,15 @@ namespace Parquet.File
          return values;
       }
 
-      private void CreateNestedLists(SchemaElement schema, IList[] hl, int rl)
+      private void CreateNestedLists(int maxRepetitionLevel, Func<IList> createEmptyListFunc , IList[] hl, int rl)
       {
-         int maxIdx = schema.MaxRepetitionLevel - 1;
+         int maxIdx = maxRepetitionLevel - 1;
 
          //replace lists in chain with new instances
          for (int i = maxIdx; i >= rl; i--)
          {
             IList nl = (i == maxIdx)
-               ? schema.CreateValuesList(0)
+               ? createEmptyListFunc()
                : new List<IList>();
 
             hl[i] = nl;

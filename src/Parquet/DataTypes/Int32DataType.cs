@@ -1,4 +1,7 @@
-﻿using Parquet.Data;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
@@ -6,6 +9,18 @@ namespace Parquet.DataTypes
    {
       public Int32DataType() : base(Thrift.Type.INT32, null, 32)
       {
+      }
+
+      public override IList Read(BinaryReader reader)
+      {
+         var result = new List<int>();
+
+         while (reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
+         {
+            result.Add(reader.ReadInt32());
+         }
+
+         return result;
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

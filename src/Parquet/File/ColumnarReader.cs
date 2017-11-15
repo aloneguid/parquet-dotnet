@@ -17,6 +17,8 @@ namespace Parquet.File
       private readonly ThriftFooter _footer;
       private readonly ParquetOptions _parquetOptions;
       private readonly ThriftStream _thriftStream;
+      private readonly int _maxRepetitionLevel;
+      private readonly int _maxDefinitionLevel;
 
       private class PageData
       {
@@ -34,9 +36,10 @@ namespace Parquet.File
          _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
          _thriftStream = new ThriftStream(inputStream);
+         _footer.GetLevels(_thriftColumnChunk, out int _maxRepetitionLevel, out int _maxDefinitionLevel);
       }
 
-      public void Read(long offset, long count)
+      public IList Read(long offset, long count)
       {
          Thrift.SchemaElement tse = _footer.GetSchemaElement(_thriftColumnChunk);
 
@@ -80,9 +83,10 @@ namespace Parquet.File
             if (ph.Type != Thrift.PageType.DATA_PAGE) break;
          }
 
-         //IList mergedValues = new ValueMerger(_schema, values)
-         //   .Apply(dictionary, definitions, repetitions, indexes, (int)maxValues);
+         IList mergedValues = new ValueMerger(_maxRepetitionLevel, null, values)
+            .Apply(dictionary, definitions, repetitions, indexes, (int)maxValues);
 
+         return values;
       }
 
       private bool TryReadDictionaryPage(Thrift.PageHeader ph, IDataTypeHandler dataTypeHandler, out IList dictionary)
@@ -93,7 +97,18 @@ namespace Parquet.File
             return false;
          }
 
-         throw new NotImplementedException();
+         //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
+
+         byte[] data = ReadRawBytes(ph, _inputStream);
+
+         using (var dataStream = new MemoryStream(data))
+         {
+            using (var dataReader = new BinaryReader(dataStream))
+            {
+               dictionary = dataTypeHandler.Read(dataReader);
+               return true;
+            }
+         }
       }
 
       private PageData ReadDataPage(IDataTypeHandler dataTypeHandler, Thrift.PageHeader ph, Thrift.SchemaElement tse, long maxValues)
@@ -101,21 +116,20 @@ namespace Parquet.File
          byte[] data = ReadRawBytes(ph, _inputStream);
          int max = ph.Data_page_header.Num_values;
 
-         _footer.GetLevels(_thriftColumnChunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
          var pd = new PageData();
 
          using (var dataStream = new MemoryStream(data))
          {
             using (var reader = new BinaryReader(dataStream))
             {
-               if(maxRepetitionLevel > 0)
+               if(_maxRepetitionLevel > 0)
                {
-                  pd.repetitions = ReadLevels(reader, maxRepetitionLevel);
+                  pd.repetitions = ReadLevels(reader, _maxRepetitionLevel);
                }
 
-               if(maxDefinitionLevel > 0)
+               if(_maxDefinitionLevel > 0)
                {
-                  pd.definitions = ReadLevels(reader, maxDefinitionLevel);
+                  pd.definitions = ReadLevels(reader, _maxDefinitionLevel);
                }
 
                ReadColumn(dataTypeHandler, tse, reader, ph.Data_page_header.Encoding, maxValues,

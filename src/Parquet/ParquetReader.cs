@@ -82,7 +82,7 @@ namespace Parquet
          var footer = new ThriftFooter(_meta);
          var metaParser = new FileMetadataParser(_meta);
          Schema schema = metaParser.ParseSchema(_formatOptions);
-         SchemaElement schema2 = metaParser.ParseSchemaExperimental(_formatOptions);
+         SchemaElement modernSchema = metaParser.ParseSchemaExperimental(_formatOptions);
 
          var pathToValues = new Dictionary<string, IList>();
          long pos = 0;
@@ -112,7 +112,7 @@ namespace Parquet
                try
                {
                   IList chunkValues = p.Read(offset, count);
-                  //columnarReader.Read(offset, count);
+                  //IList chunkValues = columnarReader.Read(offset, count);
 
                   if(!pathToValues.TryGetValue(se.Path, out IList allValues))
                   {

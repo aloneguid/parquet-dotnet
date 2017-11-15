@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Parquet.Data;
 
@@ -10,6 +12,11 @@ namespace Parquet.DataTypes
       public DoubleDataType() : base(Thrift.Type.DOUBLE)
       {
 
+      }
+
+      public override IList Read(BinaryReader reader)
+      {
+         throw new NotImplementedException();
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

@@ -92,7 +92,7 @@ namespace Parquet.File
             if (ph.Type != Thrift.PageType.DATA_PAGE) break;
          }
 
-         IList mergedValues = new ValueMerger(_schema, values)
+         IList mergedValues = new ValueMerger(_schema.MaxRepetitionLevel, () => _schema.CreateValuesList(0), values)
             .Apply(dictionaryPage, definitions, repetitions, indexes, (int)maxValues);
 
          //todo: this won't work for nested arrays

@@ -9,6 +9,10 @@ namespace Parquet.DataTypes
 {
    class ListDataType : IDataTypeHandler
    {
+      public ListDataType()
+      {
+      }
+
       public int? BitWidth => null;
 
       public SchemaElement Create(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)

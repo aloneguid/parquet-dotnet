@@ -1,4 +1,6 @@
-﻿using Parquet.Data;
+﻿using System.Collections;
+using System.IO;
+using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
@@ -6,6 +8,11 @@ namespace Parquet.DataTypes
    {
       public FloatDataType() : base(Thrift.Type.FLOAT)
       {
+      }
+
+      public override IList Read(BinaryReader reader)
+      {
+         throw new System.NotImplementedException();
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

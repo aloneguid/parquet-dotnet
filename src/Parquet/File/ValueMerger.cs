@@ -1,6 +1,7 @@
 ﻿using Parquet.Data;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 namespace Parquet.File
 {
@@ -9,12 +10,16 @@ namespace Parquet.File
    /// </summary>
    class ValueMerger
    {
-      private readonly SchemaElement _schema;
+      private readonly int _maxRepetitionLevel;
+      private readonly Func<IList> _createEmptyListFunc;
       private IList _values;
 
-      public ValueMerger(SchemaElement schema, IList values)
+      public ValueMerger(int maxRepetitionLevel,
+         Func<IList> createEmptyListFunc,
+         IList values)
       {
-         _schema = schema;
+         _maxRepetitionLevel = maxRepetitionLevel;
+         _createEmptyListFunc = createEmptyListFunc;
          _values = values;
       }
 
@@ -60,7 +65,7 @@ namespace Parquet.File
       private void ApplyRepetitions(List<int> repetitions)
       {
          var packer = new RepetitionPack();
-         _values = packer.FlatToHierarchy(_schema, _values, repetitions);
+         _values = packer.FlatToHierarchy(_maxRepetitionLevel, _createEmptyListFunc, _values, repetitions);
       }
 
       public static void TrimTail(IList list, int maxValues)
