@@ -5,7 +5,7 @@ using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
-   class BooleanDataType : BasicDataType<bool>
+   class BooleanDataType : BasicPrimitiveDataType<bool>
    {
       public BooleanDataType() : base(Thrift.Type.BOOLEAN, null, 1)
       {
@@ -18,7 +18,7 @@ namespace Parquet.DataTypes
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         var dest = new List<bool>();
+         IList dest = CreateEmptyList(tse, formatOptions, 0);
 
          int ibit = 0;
 

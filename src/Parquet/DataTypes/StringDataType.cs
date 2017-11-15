@@ -12,6 +12,11 @@ namespace Parquet.DataTypes
       {
       }
 
+      public override IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      {
+         return new List<string>();
+      }
+
       public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
          return tse.__isset.type &&

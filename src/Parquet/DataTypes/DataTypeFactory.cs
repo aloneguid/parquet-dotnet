@@ -7,16 +7,26 @@ namespace Parquet.DataTypes
    {
       private static readonly List<IDataTypeHandler> _allDataTypes = new List<IDataTypeHandler>
       {
-         new BooleanDataType(),
-         new Int32DataType(),
-         new Int64DataType(),
-         new FloatDataType(),
-         new DoubleDataType(),
-         new DecimalDataType(),
-         new StringDataType(),
-         new ByteArrayDataType(),
+         // special types
          new DateTimeOffsetDataType(),
          new IntervalDataType(),
+         new DecimalDataType(),
+
+         // low priority types
+         new BooleanDataType(),
+         new ByteDataType(),
+         new SignedByteDataType(),
+         new Int16DataType(),
+         new UnsignedInt16DataType(),
+         new Int32DataType(),
+         new Int64DataType(),
+         new Int96DataType(),
+         new FloatDataType(),
+         new DoubleDataType(),
+         new StringDataType(),
+         new ByteArrayDataType(),
+
+         // composite types
          new ListDataType(),
          new MapDataType()
       };

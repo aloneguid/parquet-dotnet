@@ -18,5 +18,10 @@ namespace Parquet
             schemaElement.__isset.converted_type &&
             convertedTypes.Any(ct => ct == schemaElement.Converted_type);
       }
+
+      public static bool IsNullable(this Thrift.SchemaElement schemaElement)
+      {
+         return schemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
+      }
    }
 }

@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Parquet.Data;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.DataTypes
 {
-   class DecimalDataType : BasicDataType<decimal>
+   class DecimalDataType : BasicPrimitiveDataType<decimal>
    {
       public DecimalDataType() : base(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL)
       {
@@ -28,7 +29,61 @@ namespace Parquet.DataTypes
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         throw new NotImplementedException();
+         IList result = CreateEmptyList(tse, formatOptions, 0);
+
+         switch(tse.Type)
+         {
+            case Thrift.Type.INT32:
+               ReadAsInt32(tse, reader, result);
+               break;
+            case Thrift.Type.INT64:
+               ReadAsInt64(tse, reader, result);
+               break;
+            case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+               ReadAsFixedLengthByteArray(tse, reader, result);
+               break;
+            default:
+               throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
+         }
+
+         return result;
+      }
+
+      private void ReadAsInt32(Thrift.SchemaElement tse, BinaryReader reader, IList result)
+      {
+         decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+         while(reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
+         {
+            int iv = reader.ReadInt32();
+            decimal dv = iv * scaleFactor;
+            result.Add(dv);
+         }
+      }
+
+      private void ReadAsInt64(Thrift.SchemaElement tse, BinaryReader reader, IList result)
+      {
+         decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+         while (reader.BaseStream.Position + 8 <= reader.BaseStream.Length)
+         {
+            long lv = reader.ReadInt64();
+            decimal dv = lv * scaleFactor;
+            result.Add(dv);
+         }
+      }
+
+      private void ReadAsFixedLengthByteArray(Thrift.SchemaElement tse, BinaryReader reader, IList result)
+      {
+         int typeLength = tse.Type_length;
+
+         //can't read if there is no type length set
+         if (typeLength == 0) return;
+
+         while (reader.BaseStream.Position + typeLength <= reader.BaseStream.Length)
+         {
+            byte[] itemData = reader.ReadBytes(typeLength);
+            decimal dc = new BigDecimal(itemData, tse);
+            result.Add(dc);
+         }
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

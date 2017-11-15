@@ -1,18 +1,20 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.IO;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
-   class FloatDataType : BasicDataType<float>
+   class FloatDataType : BasicPrimitiveDataType<float>
    {
       public FloatDataType() : base(Thrift.Type.FLOAT)
       {
       }
 
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      protected override void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, float> readOneFunc)
       {
-         throw new System.NotImplementedException();
+         typeWidth = 4;
+         readOneFunc = r => r.ReadSingle();
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

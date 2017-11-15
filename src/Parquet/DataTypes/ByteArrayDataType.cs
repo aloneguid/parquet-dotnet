@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
@@ -10,9 +11,23 @@ namespace Parquet.DataTypes
       {
       }
 
+      public override IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      {
+         return new List<byte[]>();
+      }
+
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         throw new System.NotImplementedException();
+         List<byte[]> result = (List<byte[]>)CreateEmptyList(tse, formatOptions, 0);
+
+         while(reader.BaseStream.Position < reader.BaseStream.Length)
+         {
+            int length = reader.ReadInt32();
+            byte[] data = reader.ReadBytes(length);
+            result.Add(data);
+         }
+
+         return result;
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

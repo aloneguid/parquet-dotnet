@@ -304,7 +304,7 @@ namespace Parquet.File
             }
 
             //todo: not the best place for it, but it's a special case at the moment
-            if (systemType == typeof(decimal))
+            if (elementType == typeof(decimal))
             {
                th.Precision = 38;
                th.Scale = 18;

@@ -1,26 +1,21 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
 namespace Parquet.DataTypes
 {
-   class Int32DataType : BasicDataType<int>
+   class Int32DataType : BasicPrimitiveDataType<int>
    {
       public Int32DataType() : base(Thrift.Type.INT32, null, 32)
       {
       }
 
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      protected override void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, int> readOneFunc)
       {
-         var result = new List<int>();
-
-         while (reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
-         {
-            result.Add(reader.ReadInt32());
-         }
-
-         return result;
+         typeWidth = 4;
+         readOneFunc = r => r.ReadInt32();
       }
 
       protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)

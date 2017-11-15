@@ -19,6 +19,11 @@
       Byte,
 
       /// <summary>
+      /// Signed byte data type
+      /// </summary>
+      SignedByte,
+
+      /// <summary>
       /// Unsigned byte
       /// </summary>
       UnsignedByte,
@@ -42,6 +47,11 @@
       /// 64 bit integer
       /// </summary>
       Int64,
+
+      /// <summary>
+      /// 96 bit integer
+      /// </summary>
+      Int96,
 
       /// <summary>
       /// Array of bytes

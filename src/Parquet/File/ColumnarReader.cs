@@ -85,10 +85,16 @@ namespace Parquet.File
             if (ph.Type != Thrift.PageType.DATA_PAGE) break;
          }
 
-         IList mergedValues = new ValueMerger(_maxRepetitionLevel, null, values)
+         IList mergedValues = new ValueMerger(
+            _maxRepetitionLevel,
+            () => _dataTypeHandler.CreateEmptyList(_thriftSchemaElement, _parquetOptions,
+            0),
+            values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement, _parquetOptions, 0))
             .Apply(dictionary, definitions, repetitions, indexes, (int)maxValues);
 
-         return values;
+         ValueMerger.Trim(mergedValues, (int)offset, (int)count);
+
+         return mergedValues;
       }
 
       private bool TryReadDictionaryPage(Thrift.PageHeader ph, out IList dictionary)
