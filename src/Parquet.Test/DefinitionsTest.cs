@@ -17,7 +17,7 @@ namespace Parquet.Test
          var packer = new DefinitionPack();
 
          var values = new List<int?> { 1, 2, 1, 2 };
-         packer.Pack(values, new List<int> { 4, 4, 4, 4 });
+         packer.InsertDefinitions(values, new List<int> { 4, 4, 4, 4 });
 
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(1, 2, 1, 2), values);
@@ -29,7 +29,7 @@ namespace Parquet.Test
          var packer = new DefinitionPack();
 
          var values = new List<int?> { 1, 2 };
-         packer.Pack(values, new List<int> { 0, 0, 1, 1 });
+         packer.InsertDefinitions(values, new List<int> { 0, 0, 1, 1 });
 
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(null, null, 1, 2), values);
@@ -39,7 +39,7 @@ namespace Parquet.Test
       public void First_and_second_is_null_unpacked()
       {
          var packer = new DefinitionPack();
-         IList unpacked = packer.Unpack(
+         IList unpacked = packer.MergeWithDefinitions(
             new List<int?> { null, null, 1, 2 },
             new SchemaElement<int?>("a") { MaxDefinitionLevel = 1 },
             out List<int> definitions);
@@ -54,7 +54,7 @@ namespace Parquet.Test
          var packer = new DefinitionPack();
 
          var values = new List<int?> { 1, 2 };
-         packer.Pack(values, new List<int> { 0, 1, 1, 0 });
+         packer.InsertDefinitions(values, new List<int> { 0, 1, 1, 0 });
 
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(null, 1, 2, null), values);

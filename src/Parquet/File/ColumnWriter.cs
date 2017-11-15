@@ -76,14 +76,14 @@ namespace Parquet.File
          if (schema.MaxRepetitionLevel > 0)
          {
             var rpack = new RepetitionPack();
-            values = rpack.Unpack(_schema, values, out repetitions);
+            values = rpack.HierarchyToFlat(_schema, values, out repetitions);
             ph.Data_page_header.Num_values = values.Count;
          }
 
          if (schema.IsNullable || schema.MaxDefinitionLevel > 0)
          {
             var dpack = new DefinitionPack();
-            values = dpack.Unpack(values, _schema, out definitions);
+            values = dpack.MergeWithDefinitions(values, _schema, out definitions);
          }
 
          using (var ms = new MemoryStream())

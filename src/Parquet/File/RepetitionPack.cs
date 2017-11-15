@@ -15,18 +15,18 @@ namespace Parquet.File
       {
       }
 
-      public IList Unpack(SchemaElement schema, IList hierarchy, out List<int> levels)
+      public IList HierarchyToFlat(SchemaElement schema, IList hierarchy, out List<int> levels)
       {
          levels = new List<int>();
          IList flatValues = schema.CreateValuesList(0);
 
          int touched = 0;
-         Unpack(schema.MaxRepetitionLevel, hierarchy, levels, flatValues, ref touched, 0);
+         HierarchyToFlat(schema.MaxRepetitionLevel, hierarchy, levels, flatValues, ref touched, 0);
 
          return flatValues;
       }
 
-      private void Unpack(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
+      private void HierarchyToFlat(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
       {
          for (int i = 0; i < list.Count; i++)
          {
@@ -34,7 +34,7 @@ namespace Parquet.File
 
             if ((listLevel != maxRepetitionLevel) && (item is IList nestedList))
             {
-               Unpack(maxRepetitionLevel, nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1);
+               HierarchyToFlat(maxRepetitionLevel, nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1);
             }
             else
             {
@@ -46,7 +46,7 @@ namespace Parquet.File
          }
       }
 
-      public IList Pack(SchemaElement schema, IList flatValues, List<int> levels)
+      public IList FlatToHierarchy(SchemaElement schema, IList flatValues, List<int> levels)
       {
          if (levels == null || schema.MaxRepetitionLevel == 0) return flatValues;
 
@@ -65,7 +65,7 @@ namespace Parquet.File
 
             if (lrl != rl)
             {
-               CreateLists(schema, hl, rl);
+               CreateNestedLists(schema, hl, rl);
                lrl = rl;
                chunk = hl[hl.Length - 1];
 
@@ -82,7 +82,7 @@ namespace Parquet.File
          return values;
       }
 
-      private void CreateLists(SchemaElement schema, IList[] hl, int rl)
+      private void CreateNestedLists(SchemaElement schema, IList[] hl, int rl)
       {
          int maxIdx = schema.MaxRepetitionLevel - 1;
 

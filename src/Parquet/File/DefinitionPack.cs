@@ -16,7 +16,7 @@ namespace Parquet.File
       {
       }
 
-      public IList Unpack(IList values, SchemaElement schema, out List<int> definitions)
+      public IList MergeWithDefinitions(IList values, SchemaElement schema, out List<int> definitions)
       {
          definitions = new List<int>(values.Count);
          IList result = TypeFactory.Create(schema, false);
@@ -37,7 +37,7 @@ namespace Parquet.File
          return result;
       }
 
-      public void Pack(IList values, List<int> definitions)
+      public void InsertDefinitions(IList values, List<int> definitions)
       {
          if (definitions == null || !TypeFactory.IsNullable(values)) return;
 

@@ -54,13 +54,13 @@ namespace Parquet.File
       private void ApplyDefinitions(List<int> definitions, int maxValues)
       {
          var packer = new DefinitionPack();
-         packer.Pack(_values, definitions);
+         packer.InsertDefinitions(_values, definitions);
       }
 
       private void ApplyRepetitions(List<int> repetitions)
       {
          var packer = new RepetitionPack();
-         _values = packer.Pack(_schema, _values, repetitions);
+         _values = packer.FlatToHierarchy(_schema, _values, repetitions);
       }
 
       public static void TrimTail(IList list, int maxValues)

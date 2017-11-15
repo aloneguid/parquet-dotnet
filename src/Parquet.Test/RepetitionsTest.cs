@@ -18,7 +18,7 @@ namespace Parquet.Test
          var schema = new SchemaElement<int>("line1") { MaxRepetitionLevel = 1 };
 
          var packer = new RepetitionPack();
-         IList r = packer.Pack(schema, flat, levels);
+         IList r = packer.FlatToHierarchy(schema, flat, levels);
 
          Assert.Equal(2, r.Count);
          Assert.Equal(2, ((IList)r[0]).Count);
@@ -36,7 +36,7 @@ namespace Parquet.Test
          var schema = new SchemaElement<int>("line1") { MaxRepetitionLevel = 1 };
          var packer = new RepetitionPack();
 
-         IList flatValues = packer.Unpack(schema,
+         IList flatValues = packer.HierarchyToFlat(schema,
             new List<List<int>>
             {
                new List<int>{ 1, 2 },
@@ -72,7 +72,7 @@ namespace Parquet.Test
          var schema = new SchemaElement<int>("hours") { MaxRepetitionLevel = 2 };
 
          var packer = new RepetitionPack();
-         IList r = packer.Pack(schema, flat, levels);
+         IList r = packer.FlatToHierarchy(schema, flat, levels);
 
          Assert.Equal(2, r.Count);
 
@@ -103,7 +103,7 @@ namespace Parquet.Test
          var schema = new SchemaElement<int>("hours") { MaxRepetitionLevel = 2 };
          var packer = new RepetitionPack();
 
-         IList flatValues = packer.Unpack(schema,
+         IList flatValues = packer.HierarchyToFlat(schema,
             new List<List<List<int>>>
             {
                new List<List<int>>
