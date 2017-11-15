@@ -16,7 +16,7 @@ namespace Parquet.DataTypes
          return new SchemaElement(tse.Name, DataType.Boolean, parent);
       }
 
-      public override IList Read(BinaryReader reader)
+      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          var dest = new List<bool>();
 

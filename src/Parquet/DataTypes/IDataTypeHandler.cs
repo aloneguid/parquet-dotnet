@@ -16,6 +16,6 @@ namespace Parquet.DataTypes
 
       int? BitWidth { get; }
 
-      IList Read(BinaryReader reader);
+      IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
    }
 }

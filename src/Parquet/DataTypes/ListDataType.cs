@@ -31,7 +31,7 @@ namespace Parquet.DataTypes
          return tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.LIST;
       }
 
-      public IList Read(BinaryReader reader)
+      public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          throw new NotImplementedException();
       }

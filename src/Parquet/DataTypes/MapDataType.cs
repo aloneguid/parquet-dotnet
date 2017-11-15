@@ -42,7 +42,7 @@ namespace Parquet.DataTypes
             (tse.Converted_type == Thrift.ConvertedType.MAP || tse.Converted_type == Thrift.ConvertedType.MAP_KEY_VALUE);
       }
 
-      public IList Read(BinaryReader reader)
+      public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          throw new NotImplementedException();
       }

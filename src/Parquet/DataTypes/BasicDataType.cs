@@ -46,6 +46,6 @@ namespace Parquet.DataTypes
 
       protected abstract SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse);
 
-      public abstract IList Read(BinaryReader reader);
+      public abstract IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
    }
 }

@@ -10,7 +10,7 @@ namespace Parquet.DataTypes
       {
       }
 
-      public override IList Read(BinaryReader reader)
+      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          throw new System.NotImplementedException();
       }

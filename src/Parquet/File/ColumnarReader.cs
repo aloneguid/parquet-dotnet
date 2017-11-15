@@ -14,11 +14,13 @@ namespace Parquet.File
    {
       private readonly Stream _inputStream;
       private readonly Thrift.ColumnChunk _thriftColumnChunk;
+      private readonly Thrift.SchemaElement _thriftSchemaElement;
       private readonly ThriftFooter _footer;
       private readonly ParquetOptions _parquetOptions;
       private readonly ThriftStream _thriftStream;
       private readonly int _maxRepetitionLevel;
       private readonly int _maxDefinitionLevel;
+      private readonly IDataTypeHandler _dataTypeHandler;
 
       private class PageData
       {
@@ -37,14 +39,12 @@ namespace Parquet.File
 
          _thriftStream = new ThriftStream(inputStream);
          _footer.GetLevels(_thriftColumnChunk, out int _maxRepetitionLevel, out int _maxDefinitionLevel);
+         _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
+         _dataTypeHandler = DataTypeFactory.Match(_thriftSchemaElement, _parquetOptions);
       }
 
       public IList Read(long offset, long count)
       {
-         Thrift.SchemaElement tse = _footer.GetSchemaElement(_thriftColumnChunk);
-
-         IDataTypeHandler dataTypeHandler = DataTypeFactory.Match(tse, _parquetOptions);
-
          long fileOffset = GetFileOffset();
          long maxValues = _thriftColumnChunk.Meta_data.Num_values;
 
@@ -58,13 +58,13 @@ namespace Parquet.File
 
          //there can be only one dictionary page in column
          Thrift.PageHeader ph = _thriftStream.Read<Thrift.PageHeader>();
-         if (TryReadDictionaryPage(ph, dataTypeHandler, out dictionary)) ph = _thriftStream.Read<Thrift.PageHeader>();
+         if (TryReadDictionaryPage(ph, out dictionary)) ph = _thriftStream.Read<Thrift.PageHeader>();
 
          int pagesRead = 0;
          while (true)
          {
             int valuesSoFar = Math.Max(indexes == null ? 0 : indexes.Count, values == null ? 0 : values.Count);
-            PageData pd = ReadDataPage(dataTypeHandler, ph, tse, maxValues - valuesSoFar);
+            PageData pd = ReadDataPage(ph, maxValues - valuesSoFar);
 
             repetitions = AssignOrAdd(repetitions, pd.repetitions);
             definitions = AssignOrAdd(definitions, pd.definitions);
@@ -89,7 +89,7 @@ namespace Parquet.File
          return values;
       }
 
-      private bool TryReadDictionaryPage(Thrift.PageHeader ph, IDataTypeHandler dataTypeHandler, out IList dictionary)
+      private bool TryReadDictionaryPage(Thrift.PageHeader ph, out IList dictionary)
       {
          if (ph.Type != Thrift.PageType.DICTIONARY_PAGE)
          {
@@ -105,13 +105,13 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(dataStream))
             {
-               dictionary = dataTypeHandler.Read(dataReader);
+               dictionary = _dataTypeHandler.Read(_thriftSchemaElement, dataReader, _parquetOptions);
                return true;
             }
          }
       }
 
-      private PageData ReadDataPage(IDataTypeHandler dataTypeHandler, Thrift.PageHeader ph, Thrift.SchemaElement tse, long maxValues)
+      private PageData ReadDataPage(Thrift.PageHeader ph, long maxValues)
       {
          byte[] data = ReadRawBytes(ph, _inputStream);
          int max = ph.Data_page_header.Num_values;
@@ -132,7 +132,7 @@ namespace Parquet.File
                   pd.definitions = ReadLevels(reader, _maxDefinitionLevel);
                }
 
-               ReadColumn(dataTypeHandler, tse, reader, ph.Data_page_header.Encoding, maxValues,
+               ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
                   out pd.values,
                   out pd.indexes);
             }
@@ -141,7 +141,7 @@ namespace Parquet.File
          return pd;
       }
 
-      private void ReadColumn(IDataTypeHandler dataTypeHandler, Thrift.SchemaElement tse, BinaryReader reader, Thrift.Encoding encoding, long maxValues,
+      private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long maxValues,
          out IList values,
          out List<int> indexes)
       {
@@ -150,13 +150,13 @@ namespace Parquet.File
          switch (encoding)
          {
             case Thrift.Encoding.PLAIN:
-               values = dataTypeHandler.Read(reader);
+               values = _dataTypeHandler.Read(_thriftSchemaElement, reader, _parquetOptions);
                indexes = null;
                break;
 
             case Thrift.Encoding.RLE:
                values = null;
-               indexes = RunLengthBitPackingHybridValuesReader.Read(reader, tse.Type_length);
+               indexes = RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length);
                break;
 
             case Thrift.Encoding.PLAIN_DICTIONARY:

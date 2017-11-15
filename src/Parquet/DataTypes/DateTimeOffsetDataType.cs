@@ -25,7 +25,7 @@ namespace Parquet.DataTypes
             (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
       }
 
-      public override IList Read(BinaryReader reader)
+      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          throw new NotImplementedException();
       }
