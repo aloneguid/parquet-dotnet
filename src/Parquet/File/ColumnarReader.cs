@@ -169,12 +169,32 @@ namespace Parquet.File
 
             case Thrift.Encoding.PLAIN_DICTIONARY:
                values = null;
-               indexes = PlainDictionaryValuesReader.Read(reader, maxValues);
+               indexes = ReadPlainDictionary(reader, maxValues);
                break;
 
             default:
                throw new ParquetException($"encoding {encoding} is not supported.");
          }
+      }
+
+      private static List<int> ReadPlainDictionary(BinaryReader reader, long maxValues)
+      {
+         var result = new List<int>();
+         int bitWidth = reader.ReadByte();
+
+         //when bit width is zero reader must stop and just repeat zero maxValue number of times
+         if (bitWidth == 0)
+         {
+            for (int i = 0; i < maxValues; i++)
+            {
+               result.Add(0);
+            }
+            return result;
+         }
+
+         int length = GetRemainingLength(reader);
+         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, result);
+         return result;
       }
 
       /// <summary>
@@ -252,6 +272,11 @@ namespace Parquet.File
          }
 
          return container;
+      }
+
+      private static int GetRemainingLength(BinaryReader reader)
+      {
+         return (int)(reader.BaseStream.Length - reader.BaseStream.Position);
       }
    }
 }

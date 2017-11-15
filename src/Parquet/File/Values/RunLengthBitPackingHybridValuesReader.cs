@@ -9,16 +9,8 @@ using System.Runtime.CompilerServices;
 namespace Parquet.File.Values
 {
    //todo: this abstrtion is not useful and must die
-   class RunLengthBitPackingHybridValuesReader : IValuesReader
+   class RunLengthBitPackingHybridValuesReader
    {
-      public void Read(BinaryReader reader, SchemaElement schema, IList destination, long maxValues)
-      {
-         int bitWidth = schema.Thrift.Type_length;
-         var destinationTyped = (List<int>)destination;
-         int length = GetRemainingLength(reader);
-         ReadRleBitpackedHybrid(reader, bitWidth, length, destinationTyped);
-      }
-
       public static List<int> Read(BinaryReader reader, int bitWidth)
       {
          int length = GetRemainingLength(reader);

@@ -2,10 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using TType = Parquet.Thrift.Type;
-using SType = System.Type;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 

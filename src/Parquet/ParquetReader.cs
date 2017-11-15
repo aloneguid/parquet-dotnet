@@ -106,12 +106,10 @@ namespace Parquet
                Thrift.ColumnChunk cc = rg.Columns[icol];
                SchemaElement se = schema[cc];
 
-               var p = new ColumnReader(cc, se, _input, ThriftStream, _formatOptions);
                var columnarReader = new ColumnarReader(_input, cc, footer, _formatOptions);
 
                try
                {
-                  //IList chunkValues = p.Read(offset, count);
                   IList chunkValues = columnarReader.Read(offset, count);
 
                   if(!pathToValues.TryGetValue(se.Path, out IList allValues))
