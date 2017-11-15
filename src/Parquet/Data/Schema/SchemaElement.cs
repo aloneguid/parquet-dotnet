@@ -36,7 +36,7 @@ namespace Parquet.Data
    /// <summary>
    /// Element of dataset's schema
    /// </summary>
-   [DebuggerDisplay("{Name}: {ElementType} (NL/RP/NS: {IsNullable}/{IsRepeated}/{IsNestedStructure}), RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel}, P: {Path}")]
+   [DebuggerDisplay("{Name}: {DataType} (NL: {HasNulls})")]
    public class SchemaElement : IEquatable<SchemaElement>
    {
       private readonly CallbackList<SchemaElement> _children = new CallbackList<SchemaElement>();
@@ -51,13 +51,10 @@ namespace Parquet.Data
 
       internal bool HasNulls { get; set; }
 
-      internal List<SchemaElement> NewChildren { get; private set; } = new List<SchemaElement>();
-
-      internal SchemaElement(string name, DataType dataType, SchemaElement parent)
+      internal SchemaElement(string name, DataType dataType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          DataType = dataType;
-         Parent = parent;
       }
 
       #endregion

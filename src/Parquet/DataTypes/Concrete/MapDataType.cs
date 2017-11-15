@@ -22,7 +22,7 @@ namespace Parquet.DataTypes
          throw new NotImplementedException();
       }
 
-      public SchemaElement CreateSchemaElement(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
       {
          Thrift.SchemaElement tseRoot = schema[index];
 
@@ -33,13 +33,12 @@ namespace Parquet.DataTypes
          Thrift.SchemaElement tseKey = schema[++index];
          Thrift.SchemaElement tseValue = schema[++index];
 
-         var map = new SchemaElement(tseRoot.Name, DataType.Dictionary, parent);
-         parent.NewChildren.Add(map);
+         var map = new MapSchemaElement(tseRoot.Name);
 
          //go to next
          index += 1;
 
-         return null;   //no children here
+         return map;
       }
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)

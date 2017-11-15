@@ -202,18 +202,18 @@ namespace Parquet.File
 
       #region [ Experimental ]
 
-      public SchemaElement ParseSchemaExperimental(ParquetOptions formatOptions)
+      public Schema ParseSchemaExperimental(ParquetOptions formatOptions)
       {
          int si = 0;
          Thrift.SchemaElement tse = _fileMeta.Schema[si++];
-         var root = new SchemaElement(tse.Name, DataType.Unspecified, null);
+         var container = new List<SchemaElement>();
 
-         ParseSchemaExperimenal(root, tse.Num_children, ref si, formatOptions);
+         ParseSchemaExperimenal(container, tse.Num_children, ref si, formatOptions);
 
-         return root;
+         return new Schema(container);
       }
 
-      private void ParseSchemaExperimenal(SchemaElement parent, int childCount, ref int si, ParquetOptions formatOptions)
+      private void ParseSchemaExperimenal(IList<SchemaElement> container, int childCount, ref int si, ParquetOptions formatOptions)
       {
          for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++)
          {
@@ -224,21 +224,32 @@ namespace Parquet.File
             {
                if (tse.Num_children > 0)
                {
-                  //it's an element
-                  ParseSchemaExperimenal(parent, _fileMeta.Schema[si++].Num_children, ref si, formatOptions);
-                  continue;
+                  var structure = new StructureSchemaElement(tse.Name);
+                  container.Add(structure);
+                  si++; //go deeper
+                  ParseSchemaExperimenal(structure.Elements, tse.Num_children, ref si, formatOptions);
                }
                else
                {
                   ThrowNoHandler(tse);
                }
             }
-
-            SchemaElement newRoot = dth.CreateSchemaElement(parent, _fileMeta.Schema, ref si);
-
-            if(newRoot != null)
+            else
             {
-               ParseSchemaExperimenal(newRoot, _fileMeta.Schema[si - 1].Num_children, ref si, formatOptions);
+               SchemaElement element = dth.CreateSchemaElement(_fileMeta.Schema, ref si);
+               container.Add(element);
+
+               if(element.DataType == DataType.List)
+               {
+                  ListSchemaElement lse = element as ListSchemaElement;
+                  if(lse.Item == null)
+                  {
+                     tse = _fileMeta.Schema[si];
+                     var vc = new List<SchemaElement>();
+                     ParseSchemaExperimenal(vc, Math.Max(1, tse.Num_children), ref si, formatOptions);
+                     lse.Item = vc.First();
+                  }
+               }
             }
          }
       }

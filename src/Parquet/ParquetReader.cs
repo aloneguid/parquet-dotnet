@@ -82,7 +82,7 @@ namespace Parquet
          var footer = new ThriftFooter(_meta);
          var metaParser = new FileMetadataParser(_meta);
          Schema schema = metaParser.ParseSchema(_formatOptions);  //only used to pass in result DS now!
-         SchemaElement modernSchema = metaParser.ParseSchemaExperimental(_formatOptions);
+         Schema modernSchema = metaParser.ParseSchemaExperimental(_formatOptions);
 
          var pathToValues = new Dictionary<string, IList>();
          long pos = 0;

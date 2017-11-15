@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using TSchemaElement = Parquet.Thrift.SchemaElement;
 using System.Linq;
 using System.Collections;
 
@@ -54,7 +53,7 @@ namespace Parquet.File
       {
          ds.Metadata.CreatedBy = CreatedBy;
 
-         _meta.Schema = new List<TSchemaElement> { new TSchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
+         _meta.Schema = new List<Thrift.SchemaElement> { new Thrift.SchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
          _meta.Key_value_metadata = ds.Metadata.Custom.Select(kv => new Thrift.KeyValue(kv.Key) { Value = kv.Value }).ToList();
 
          foreach(SchemaElement se in ds.Schema.Elements)
@@ -66,7 +65,7 @@ namespace Parquet.File
          
       }
 
-      private static void AddSchema(List<TSchemaElement> container, SchemaElement se)
+      private static void AddSchema(List<Thrift.SchemaElement> container, SchemaElement se)
       {
          if (se.IsRepeated)
          {
@@ -81,7 +80,7 @@ namespace Parquet.File
          }
          else if(se.IsNestedStructure)
          {
-            var structure = new TSchemaElement(se.Name)
+            var structure = new Thrift.SchemaElement(se.Name)
             {
                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
                Num_children = se.Children.Count
@@ -99,9 +98,9 @@ namespace Parquet.File
          }
       }
 
-      private static void AddMapSchema(List<TSchemaElement> container, SchemaElement se)
+      private static void AddMapSchema(List<Thrift.SchemaElement> container, SchemaElement se)
       {
-         var root = new TSchemaElement(se.Name)
+         var root = new Thrift.SchemaElement(se.Name)
          {
             Converted_type = Thrift.ConvertedType.MAP,
             Num_children = 1,
@@ -109,7 +108,7 @@ namespace Parquet.File
          };
          container.Add(root);
 
-         var kv = new TSchemaElement("key_value")
+         var kv = new Thrift.SchemaElement("key_value")
          {
             Num_children = 2,
             Repetition_type = Thrift.FieldRepetitionType.REPEATED
@@ -122,9 +121,9 @@ namespace Parquet.File
          }
       }
 
-      private static void AddListSchema(List<TSchemaElement> container, SchemaElement se)
+      private static void AddListSchema(List<Thrift.SchemaElement> container, SchemaElement se)
       {
-         var root = new TSchemaElement(se.Name)
+         var root = new Thrift.SchemaElement(se.Name)
          {
             Converted_type = Thrift.ConvertedType.LIST,
             Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
@@ -132,7 +131,7 @@ namespace Parquet.File
          };
          container.Add(root);
 
-         var list = new TSchemaElement("list")
+         var list = new Thrift.SchemaElement("list")
          {
             Repetition_type = Thrift.FieldRepetitionType.REPEATED,
             Num_children = 1
@@ -141,7 +140,7 @@ namespace Parquet.File
 
          if (se.IsNestedStructure)
          {
-            var element = new TSchemaElement("element");
+            var element = new Thrift.SchemaElement("element");
             element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
             element.Num_children = se.Children.Count;
             container.Add(element);
@@ -153,7 +152,7 @@ namespace Parquet.File
          }
          else
          {
-            TSchemaElement element = se.Thrift;
+            Thrift.SchemaElement element = se.Thrift;
             element.Name = "element";
             element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
             container.Add(element);
@@ -232,19 +231,19 @@ namespace Parquet.File
          return ph;
       }
 
-      public TSchemaElement CreateSimpleSchemaElement(string name, bool nullable)
+      public Thrift.SchemaElement CreateSimpleSchemaElement(string name, bool nullable)
       {
-         var th = new TSchemaElement(name);
+         var th = new Thrift.SchemaElement(name);
          th.Repetition_type = nullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED;
          return th;
       }
 
-      public TSchemaElement CreateSchemaElement(string name, Type systemType,
+      public Thrift.SchemaElement CreateSchemaElement(string name, Type systemType,
          out Type elementType,
          out string pathName,
          out Type[] extras)
       {
-         var th = new TSchemaElement(name);
+         var th = new Thrift.SchemaElement(name);
          extras = null;
 
          if(TypeFactory.TryExtractDictionaryType(systemType, out Type keyType, out Type valueType))
@@ -329,10 +328,34 @@ namespace Parquet.File
          return false;
       }
 
-      private void CreateDictionary(TSchemaElement schema, Type keyType, Type valueType)
+      private void CreateDictionary(Thrift.SchemaElement schema, Type keyType, Type valueType)
       {
          schema.Converted_type = Thrift.ConvertedType.MAP;
 
       }
+
+      #region [ vNext ]
+
+      public List<Thrift.SchemaElement> BuildSchemaExperimental(Schema schema)
+      {
+         var container = new List<Thrift.SchemaElement>();
+
+         var root = new Thrift.SchemaElement("schema") { Num_children = schema.Elements.Count };
+         container.Add(root);
+
+         BuildSchemaExperimental(container, schema.Elements);
+
+         return container;
+      }
+
+      private void BuildSchemaExperimental(List<Thrift.SchemaElement> container, IList<SchemaElement> elements)
+      {
+         foreach(SchemaElement element in elements)
+         {
+
+         }
+      }
+
+      #endregion
    }
 }

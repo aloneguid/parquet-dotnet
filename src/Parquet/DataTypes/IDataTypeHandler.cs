@@ -12,7 +12,7 @@ namespace Parquet.DataTypes
    {
       bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
-      SchemaElement CreateSchemaElement(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index);
+      SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index);
 
       int? BitWidth { get; }
 
@@ -21,6 +21,8 @@ namespace Parquet.DataTypes
       IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity);
 
       IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
+
+      Thrift.SchemaElement CreateThriftElement(SchemaElement se, IList<Thrift.SchemaElement> container);
 
       //void Write(BinaryWriter writer, IList values);
    }

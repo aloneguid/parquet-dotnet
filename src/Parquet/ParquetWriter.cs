@@ -107,6 +107,7 @@ namespace Parquet
                WriteMagic();
 
                _meta.AddSchema(ds);
+               List<Thrift.SchemaElement> modernSchema = _meta.BuildSchemaExperimental(ds.Schema);
             }
             else
             {

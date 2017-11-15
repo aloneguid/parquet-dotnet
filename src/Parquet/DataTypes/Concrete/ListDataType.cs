@@ -22,10 +22,9 @@ namespace Parquet.DataTypes
          return new List<IEnumerable>(capacity);
       }
 
-      public SchemaElement CreateSchemaElement(SchemaElement parent, IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
       {
-         var list = new SchemaElement(schema[index].Name, DataType.List, parent);
-         parent.NewChildren.Add(list);
+         var list = new ListSchemaElement(schema[index].Name);
 
          //skip this element and child container
          index += 2;
