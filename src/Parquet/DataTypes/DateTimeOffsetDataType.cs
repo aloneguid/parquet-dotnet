@@ -10,7 +10,7 @@ namespace Parquet.DataTypes
 {
    class DateTimeOffsetDataType : BasicPrimitiveDataType<DateTimeOffset>
    {
-      public DateTimeOffsetDataType() : base(Thrift.Type.BYTE_ARRAY)
+      public DateTimeOffsetDataType() : base(DataType.DateTimeOffset, Thrift.Type.BYTE_ARRAY)
       {
 
       }
@@ -74,11 +74,6 @@ namespace Parquet.DataTypes
             DateTimeOffset dt = nano;
             result.Add(dt);
          }
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.DateTimeOffset, parent);
       }
    }
 }

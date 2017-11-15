@@ -7,7 +7,7 @@ namespace Parquet.DataTypes
 {
    class ByteArrayDataType : BasicDataType<byte[]>
    {
-      public ByteArrayDataType() : base(Thrift.Type.BYTE_ARRAY)
+      public ByteArrayDataType() : base(DataType.ByteArray, Thrift.Type.BYTE_ARRAY)
       {
       }
 
@@ -28,11 +28,6 @@ namespace Parquet.DataTypes
          }
 
          return result;
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.ByteArray, parent);
       }
    }
 }

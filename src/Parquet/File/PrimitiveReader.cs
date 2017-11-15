@@ -55,7 +55,9 @@ namespace Parquet.File
 
       private void ReadNullable(List<TElement?> result, int totalStreamLength)
       {
-         while(_binaryReader.BaseStream.Position + _typeWidth <= totalStreamLength)
+         Stream s = _binaryReader.BaseStream;
+
+         while(s.Position + _typeWidth <= totalStreamLength)
          {
             TElement element = _readOneFunc(_binaryReader);
             result.Add(element);
@@ -64,7 +66,9 @@ namespace Parquet.File
 
       private void ReadNonNullable(List<TElement> result, int totalStreamLength)
       {
-         while (_binaryReader.BaseStream.Position + _typeWidth <= totalStreamLength)
+         Stream s = _binaryReader.BaseStream;
+
+         while (s.Position + _typeWidth <= totalStreamLength)
          {
             TElement element = _readOneFunc(_binaryReader);
             result.Add(element);

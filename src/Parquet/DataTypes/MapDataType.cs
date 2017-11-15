@@ -15,6 +15,8 @@ namespace Parquet.DataTypes
 
       public int? BitWidth => null;
 
+      public DataType DataType => DataType.Dictionary;
+
       public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
       {
          throw new NotImplementedException();

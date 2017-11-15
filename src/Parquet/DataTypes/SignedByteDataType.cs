@@ -9,7 +9,7 @@ namespace Parquet.DataTypes
 {
    class SignedByteDataType : BasicPrimitiveDataType<sbyte>
    {
-      public SignedByteDataType(): base(Thrift.Type.INT32, Thrift.ConvertedType.INT_8, 8)
+      public SignedByteDataType(): base(DataType.SignedByte, Thrift.Type.INT32, Thrift.ConvertedType.INT_8, 8)
       {
 
       }
@@ -18,11 +18,6 @@ namespace Parquet.DataTypes
       {
          typeWidth = 1;
          readOneFunc = r => r.ReadSByte();
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.SignedByte, parent);
       }
    }
 }

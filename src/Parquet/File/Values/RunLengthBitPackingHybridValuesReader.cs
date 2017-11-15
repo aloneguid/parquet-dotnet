@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace Parquet.File.Values
 {
-   //todo: this abstrtion is not useful and must die
+   //todo: this abstrtion is not useful and must die - create RLE encoding class instead for both reading and writing
    class RunLengthBitPackingHybridValuesReader
    {
       public static List<int> Read(BinaryReader reader, int bitWidth)

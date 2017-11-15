@@ -10,7 +10,8 @@ namespace Parquet.DataTypes
    abstract class BasicPrimitiveDataType<TSystemType> : BasicDataType<TSystemType>
       where TSystemType : struct
    {
-      public BasicPrimitiveDataType(Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null, int? bitWidth = null) : base(thriftType, convertedType, bitWidth)
+      public BasicPrimitiveDataType(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null, int? bitWidth = null)
+         : base(dataType, thriftType, convertedType, bitWidth)
       {
       }
 
@@ -42,14 +43,17 @@ namespace Parquet.DataTypes
       private readonly Thrift.ConvertedType? _convertedType;
       private readonly int? _bitWidth;
 
-      public BasicDataType(Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null, int? bitWidth = null)
+      public BasicDataType(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null, int? bitWidth = null)
       {
+         DataType = dataType;
          _thriftType = thriftType;
          _convertedType = convertedType;
          _bitWidth = bitWidth;
       }
 
       public int? BitWidth => _bitWidth;
+
+      public DataType DataType { get; private set; }
 
       public virtual bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
@@ -76,7 +80,10 @@ namespace Parquet.DataTypes
          return null;
       }
 
-      protected abstract SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse);
+      protected virtual SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
+      {
+         return new SchemaElement(tse.Name, DataType, parent);
+      }
 
       public abstract IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity);
 

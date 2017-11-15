@@ -8,7 +8,7 @@ namespace Parquet.DataTypes
 {
    class StringDataType : BasicDataType<string>
    {
-      public StringDataType() : base(Thrift.Type.BYTE_ARRAY)
+      public StringDataType() : base(DataType.String, Thrift.Type.BYTE_ARRAY)
       {
       }
 
@@ -42,9 +42,5 @@ namespace Parquet.DataTypes
          return result;
       }
 
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.String, parent);
-      }
    }
 }

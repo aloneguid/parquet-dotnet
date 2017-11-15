@@ -7,7 +7,7 @@ namespace Parquet.DataTypes
 {
    class FloatDataType : BasicPrimitiveDataType<float>
    {
-      public FloatDataType() : base(Thrift.Type.FLOAT)
+      public FloatDataType() : base(DataType.Float, Thrift.Type.FLOAT)
       {
       }
 
@@ -15,11 +15,6 @@ namespace Parquet.DataTypes
       {
          typeWidth = 4;
          readOneFunc = r => r.ReadSingle();
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Float, parent);
       }
    }
 }

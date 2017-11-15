@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.Data;
 
 namespace Parquet
 {
@@ -22,6 +23,11 @@ namespace Parquet
       public static bool IsNullable(this Thrift.SchemaElement schemaElement)
       {
          return schemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
+      }
+
+      public static string GetPath(this Thrift.ColumnChunk columnChunk)
+      {
+         return string.Join(Schema.PathSeparator, columnChunk.Meta_data.Path_in_schema);
       }
    }
 }

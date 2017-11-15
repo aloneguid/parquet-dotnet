@@ -15,6 +15,8 @@ namespace Parquet.DataTypes
 
       public int? BitWidth => null;
 
+      public DataType DataType => DataType.List;
+
       public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
       {
          return new List<IEnumerable>(capacity);

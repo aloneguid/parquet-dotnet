@@ -7,13 +7,8 @@ namespace Parquet.DataTypes
 {
    class BooleanDataType : BasicPrimitiveDataType<bool>
    {
-      public BooleanDataType() : base(Thrift.Type.BOOLEAN, null, 1)
+      public BooleanDataType() : base(DataType.Boolean, Thrift.Type.BOOLEAN, null, 1)
       {
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Boolean, parent);
       }
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)

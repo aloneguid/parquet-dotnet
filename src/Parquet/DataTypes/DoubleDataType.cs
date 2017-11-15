@@ -6,7 +6,7 @@ namespace Parquet.DataTypes
 {
    class DoubleDataType : BasicPrimitiveDataType<double>
    {
-      public DoubleDataType() : base(Thrift.Type.DOUBLE)
+      public DoubleDataType() : base(DataType.Double, Thrift.Type.DOUBLE)
       {
 
       }
@@ -15,11 +15,6 @@ namespace Parquet.DataTypes
       {
          typeWidth = 8;
          readOneFunc = r => r.ReadDouble();
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Double, parent);
       }
    }
 }

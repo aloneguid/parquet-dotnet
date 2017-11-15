@@ -10,7 +10,7 @@ namespace Parquet.DataTypes
 {
    class Int96DataType : BasicPrimitiveDataType<BigInteger>
    {
-      public Int96DataType() : base(Thrift.Type.INT96, null, 12)
+      public Int96DataType() : base(DataType.Int96, Thrift.Type.INT96, null, 12)
       {
       }
 
@@ -28,11 +28,6 @@ namespace Parquet.DataTypes
             var big = new BigInteger(data);
             return big;
          };
-      }
-
-      protected override Data.SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Int96, parent);
       }
    }
 }

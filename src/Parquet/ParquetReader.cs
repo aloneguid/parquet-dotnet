@@ -81,7 +81,7 @@ namespace Parquet
 
          var footer = new ThriftFooter(_meta);
          var metaParser = new FileMetadataParser(_meta);
-         Schema schema = metaParser.ParseSchema(_formatOptions);
+         Schema schema = metaParser.ParseSchema(_formatOptions);  //only used to pass in result DS now!
          SchemaElement modernSchema = metaParser.ParseSchemaExperimental(_formatOptions);
 
          var pathToValues = new Dictionary<string, IList>();
@@ -104,7 +104,7 @@ namespace Parquet
             for(int icol = 0; icol < rg.Columns.Count; icol++)
             {
                Thrift.ColumnChunk cc = rg.Columns[icol];
-               SchemaElement se = schema[cc];
+               string path = cc.GetPath();
 
                var columnarReader = new ColumnarReader(_input, cc, footer, _formatOptions);
 
@@ -112,9 +112,9 @@ namespace Parquet
                {
                   IList chunkValues = columnarReader.Read(offset, count);
 
-                  if(!pathToValues.TryGetValue(se.Path, out IList allValues))
+                  if(!pathToValues.TryGetValue(path, out IList allValues))
                   {
-                     pathToValues[se.Path] = chunkValues;
+                     pathToValues[path] = chunkValues;
                   }
                   else
                   {
@@ -132,7 +132,7 @@ namespace Parquet
                }
                catch(Exception ex)
                {
-                  throw new ParquetException($"fatal error reading column '{se}'", ex);
+                  throw new ParquetException($"fatal error reading column '{path}'", ex);
                }
             }
 

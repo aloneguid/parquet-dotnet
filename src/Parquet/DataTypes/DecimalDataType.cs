@@ -10,7 +10,7 @@ namespace Parquet.DataTypes
 {
    class DecimalDataType : BasicPrimitiveDataType<decimal>
    {
-      public DecimalDataType() : base(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL)
+      public DecimalDataType() : base(DataType.Decimal, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL)
       {
       }
 
@@ -84,11 +84,6 @@ namespace Parquet.DataTypes
             decimal dc = new BigDecimal(itemData, tse);
             result.Add(dc);
          }
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Decimal, parent);
       }
    }
 }

@@ -19,11 +19,8 @@ namespace Parquet.Runner
          L.Config
             .WriteTo.PoshConsole();
 
-#if DEBUG
          Debug();
-#else
-         Perf();
-#endif
+         //Perf();
       }
 
 

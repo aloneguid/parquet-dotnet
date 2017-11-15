@@ -10,7 +10,7 @@ namespace Parquet.DataTypes
 {
    class IntervalDataType : BasicPrimitiveDataType<Interval>
    {
-      public IntervalDataType() : base(Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL)
+      public IntervalDataType() : base(DataType.Interval, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL)
       {
 
       }
@@ -37,11 +37,6 @@ namespace Parquet.DataTypes
          }
 
          return result;
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Interval, parent);
       }
    }
 }

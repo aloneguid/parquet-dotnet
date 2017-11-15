@@ -7,7 +7,7 @@ namespace Parquet.DataTypes
 {
    class Int64DataType : BasicPrimitiveDataType<long>
    {
-      public Int64DataType() : base(Thrift.Type.INT64)
+      public Int64DataType() : base(DataType.Int64, Thrift.Type.INT64)
       {
       }
 
@@ -15,11 +15,6 @@ namespace Parquet.DataTypes
       {
          typeWidth = 8;
          readOneFunc = r => r.ReadInt64();
-      }
-
-      protected override SchemaElement CreateSimple(SchemaElement parent, Thrift.SchemaElement tse)
-      {
-         return new SchemaElement(tse.Name, DataType.Int64, parent);
       }
    }
 }

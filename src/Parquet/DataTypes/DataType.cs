@@ -38,6 +38,10 @@
       /// </summary>
       UnsignedShort,
 
+      Int16,
+
+      UnsignedInt16,
+
       /// <summary>
       /// 32 bit integer
       /// </summary>
@@ -92,6 +96,11 @@
       /// List of elements
       /// </summary>
       List,
+
+      /// <summary>
+      /// Structure containing other elements
+      /// </summary>
+      Structure,
 
       /// <summary>
       /// Dictionary of key-value pairs
