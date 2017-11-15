@@ -204,7 +204,7 @@ namespace Parquet.File.Values
          if (schema.IsAnnotatedWith(Thrift.ConvertedType.DECIMAL))
          {
             int typeLength = schema.Thrift.Type_length;
-            byte[] itemData = ByteGarbage.GetByteArray(typeLength);
+            byte[] itemData = new byte[typeLength];
             for (int i = 0; i < data.Length; i += typeLength)
             {
                Array.Copy(data, i, itemData, 0, typeLength);
