@@ -29,16 +29,6 @@ namespace Parquet.Test
          Assert.Equal(4, ((IList)r[1])[1]);
       }
 
-      //[Fact]
-      public void Level1_repetitions_list_packed()
-      {
-         var levels = new List<int> { 0, 1, 0, 1 };
-         var flat = new List<int> { 1, 2, 3, 4 };
-
-         var rlist = new ListWithRepetitions<int>(flat, levels, 1);
-
-         Assert.Equal(2, rlist.Count);
-      }
 
       [Fact]
       public void Level1_repetitions_unpacked()
