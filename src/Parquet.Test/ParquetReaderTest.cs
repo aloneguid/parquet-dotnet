@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using Xunit;
 using System.Linq;
+using Parquet.DataTypes;
 
 namespace Parquet.Test
 {
@@ -218,9 +219,9 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
 
          Assert.Equal(2, ds.Schema.Length);
-         Assert.Equal(typeof(IEnumerable<string>), ds.Schema[0].ColumnType);
-         Assert.Equal(typeof(string), ds.Schema[0].ElementType);
-         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
+         Assert.Equal(DataType.String, ds.Schema[0].DataType);
+         Assert.Equal(DataType.String, ds.Schema[0].DataType);
+         Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
 
          Assert.Equal("cities", ds.Schema[0].Name);
          Assert.Equal("id", ds.Schema[1].Name);
@@ -252,8 +253,8 @@ root
          Assert.Equal(1, ds.RowCount);
          Assert.Equal(2, ds.ColumnCount);
 
-         Assert.Equal(typeof(Row), ds.Schema[0].ElementType);
-         Assert.Equal(typeof(long), ds.Schema[1].ElementType);
+         Assert.Equal(DataType.Structure, ds.Schema[0].DataType);
+         Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
 
          Assert.Equal("city", ds.Schema.ColumnNames[0]);
          Assert.Equal("id", ds.Schema.ColumnNames[1]);
@@ -276,16 +277,7 @@ root
          SchemaElement ms = ds.Schema[1];
          Assert.Equal("numbers", ms.Name);
 
-         Assert.Equal(1, ms.Extra[0].MaxRepetitionLevel);
-         Assert.Equal(2, ms.Extra[0].MaxDefinitionLevel);
-
-         Assert.Equal(1, ms.Extra[1].MaxRepetitionLevel);
-         Assert.Equal(3, ms.Extra[1].MaxDefinitionLevel);
-
          Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds[0].ToString());
-
-         //DataSet ds2 = DataSetGenerator.WriteRead(ds);
-         //ParquetWriter.WriteFile(ds, "c:\\tmp\\pmaps.parquet", CompressionMethod.None);
       }
 
       [Fact]

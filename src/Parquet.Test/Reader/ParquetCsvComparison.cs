@@ -1,9 +1,6 @@
-﻿using NetBox;
-using NetBox.FileFormats;
+﻿using NetBox.FileFormats;
 using Parquet.Data;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -52,7 +49,9 @@ namespace Parquet.Test.Reader
 
       private void Compare(Schema schema, Row pc, Row cc)
       {
-         for(int i = 0; i < pc.Length; i++)
+         throw new NotImplementedException();
+
+         /*for(int i = 0; i < pc.Length; i++)
          {
             //todo: this comparison needs to be improved, probably doesn't handle nulls etc.
 
@@ -83,7 +82,7 @@ namespace Parquet.Test.Reader
                      $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
                }
             }
-         }
+         }*/
       }
 
       private object ChangeType(object v, Type t)
@@ -117,7 +116,7 @@ namespace Parquet.Test.Reader
 
             //header
             string[] columnNames = reader.ReadNextRow();
-            result = new DataSet(new Schema(columnNames.Select(n => new SchemaElement(n, typeof(string)))));
+            result = new DataSet(new Schema(columnNames.Select(n => new SchemaElement(n, DataTypes.DataType.String))));
 
             //values
             string[] values;

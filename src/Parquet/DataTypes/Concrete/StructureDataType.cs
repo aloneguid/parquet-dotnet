@@ -26,7 +26,7 @@ namespace Parquet.DataTypes.Concrete
 
          index += 2; //this element plus inline wasted container
 
-         return new StructureSchemaElement(container.Name);
+         return new StructureSchemaElement(container.Name, false);
       }
 
       public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)

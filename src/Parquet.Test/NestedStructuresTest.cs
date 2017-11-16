@@ -13,7 +13,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<string>("name"),
-            new StructureSchemaElement("address",
+            new StructureSchemaElement("address", false,
                new SchemaElement<string>("line1"),
                new SchemaElement<string>("postcode")
             ));
@@ -45,16 +45,11 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<int>("id"),
-            new SchemaElement<IEnumerable<Row>>("cities",
+            new StructureSchemaElement("cities", true,
                new SchemaElement<string>("name"),
                new SchemaElement<string>("country")));
 
-         Assert.Equal(4, ds.Schema["cities"].Children[1].MaxDefinitionLevel);
-         Assert.Equal(1, ds.Schema["cities"].Children[1].MaxRepetitionLevel);
-
          ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
-
-         //ParquetWriter.WriteFile(ds, "c:\\tmp\\rep.parquet", CompressionMethod.None);
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
@@ -66,9 +61,9 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<string>("name"),
-            new SchemaElement<Row>("address",
+            new StructureSchemaElement("address", false,
                new SchemaElement<string>("name"),
-               new SchemaElement<Row>("lines",
+               new StructureSchemaElement("lines", false,
                   new SchemaElement<string>("line1"),
                   new SchemaElement<string>("line2"))));
 
@@ -84,7 +79,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<string>("name"),
-            new SchemaElement<Row>("address",
+            new StructureSchemaElement("address", false,
                new SchemaElement<string>("name"),
                new SchemaElement<IEnumerable<string>>("lines")));
 

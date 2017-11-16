@@ -88,7 +88,9 @@ namespace Parquet.Data
 
          return
             string.Equals(Name, other.Name) &&
-            DataType.Equals(other.DataType);
+            DataType.Equals(other.DataType) &&
+            HasNulls == other.HasNulls &&
+            IsArray == other.IsArray;
       }
 
       /// <summary>

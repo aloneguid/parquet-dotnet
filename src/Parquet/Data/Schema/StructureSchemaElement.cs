@@ -5,7 +5,7 @@ namespace Parquet.Data
 {
    public class StructureSchemaElement : SchemaElement
    {
-      public StructureSchemaElement(string name, params SchemaElement[] elements) : base(name, DataType.Structure)
+      public StructureSchemaElement(string name, bool isArray, params SchemaElement[] elements) : base(name, DataType.Structure, true, isArray)
       {
          foreach(SchemaElement element in elements)
          {

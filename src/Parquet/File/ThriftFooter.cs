@@ -159,7 +159,7 @@ namespace Parquet.File
             {
                if (tse.Num_children > 0)
                {
-                  var structure = new StructureSchemaElement(tse.Name);
+                  var structure = new StructureSchemaElement(tse.Name, false);
                   container.Add(structure);
                   si++; //go deeper
                   CreateModelSchema(structure.Elements, tse.Num_children, ref si, formatOptions);
