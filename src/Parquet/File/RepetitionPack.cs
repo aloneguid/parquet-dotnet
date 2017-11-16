@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Parquet.Data;
+using Parquet.DataTypes;
 
 namespace Parquet.File
 {
@@ -15,18 +16,17 @@ namespace Parquet.File
       {
       }
 
-      public IList HierarchyToFlat(SchemaElement schema, IList hierarchy, out List<int> levels)
+      public static void HierarchyToFlat(int maxRepetitionLevel,
+         IList hierarchyList,
+         IList flatList,
+         List<int> levels)
       {
          levels = new List<int>();
-         IList flatValues = schema.CreateValuesList(0);
-
          int touched = 0;
-         HierarchyToFlat(schema.MaxRepetitionLevel, hierarchy, levels, flatValues, ref touched, 0);
-
-         return flatValues;
+         HierarchyToFlat(maxRepetitionLevel, hierarchyList, levels, flatList, ref touched, 0);
       }
 
-      private void HierarchyToFlat(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
+      private static void HierarchyToFlat(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
       {
          for (int i = 0; i < list.Count; i++)
          {
@@ -44,16 +44,6 @@ namespace Parquet.File
 
             touchedListLevel = listLevel;
          }
-      }
-
-      [Obsolete]
-      public IList FlatToHierarchy(SchemaElement schema, IList flatValues, List<int> levels)
-      {
-         return FlatToHierarchy(
-            schema.MaxRepetitionLevel,
-            () => schema.CreateValuesList(0),
-            flatValues,
-            levels);
       }
 
       public IList FlatToHierarchy(int maxRepetitionLevel, Func<IList> createEmptyListFunc, IList flatValues, List<int> levels)

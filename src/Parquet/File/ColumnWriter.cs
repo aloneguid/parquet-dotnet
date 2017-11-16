@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Parquet.Data;
+using Parquet.DataTypes;
 using Parquet.File.Data;
 using Parquet.File.Values;
 
@@ -12,14 +12,16 @@ namespace Parquet.File
    {
       private readonly Stream _output;
       private readonly ThriftStream _thriftStream;
-      private readonly FileMetadataBuilder _meta;
-      private readonly SchemaElement _schema;
+      private readonly ThriftFooter _footer;
+      private readonly Thrift.SchemaElement _tse;
       private readonly CompressionMethod _compressionMethod;
       private readonly ParquetOptions _formatOptions;
       private readonly WriterOptions _writerOptions;
-      private readonly IValuesWriter _plainWriter;
-      private readonly IValuesWriter _rleWriter;
-      private readonly IValuesWriter _dicWriter;
+      private readonly IDataTypeHandler _dataTypeHandler;
+      private readonly Thrift.ColumnChunk _chunk;
+      private readonly Thrift.PageHeader _ph;
+      private readonly int _maxRepetitionLevel;
+      private readonly int _maxDefinitionLevel;
 
       private struct PageTag
       {
@@ -28,62 +30,60 @@ namespace Parquet.File
       }
 
       public ColumnWriter(Stream output, ThriftStream thriftStream,
-         FileMetadataBuilder builder, SchemaElement schema,
+         ThriftFooter footer, Thrift.SchemaElement tse,
          CompressionMethod compressionMethod,
          ParquetOptions formatOptions,
          WriterOptions writerOptions)
       {
          _output = output;
          _thriftStream = thriftStream;
-         _meta = builder;
-         _schema = schema;
+         _footer = footer;
+         _tse = tse;
          _compressionMethod = compressionMethod;
          _formatOptions = formatOptions;
          _writerOptions = writerOptions;
-         _plainWriter = new PlainValuesWriter(formatOptions);
-         _rleWriter = new RunLengthBitPackingHybridValuesWriter();
-         _dicWriter = new PlainDictionaryValuesWriter(_rleWriter);
+         _dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
+
+         _chunk = _footer.CreateColumnChunk(_compressionMethod, _output, _tse.Type, null, 0);
+         _ph = _footer.CreateDataPage(0);
+         _footer.GetLevels(_chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
+         _maxRepetitionLevel = maxRepetitionLevel;
+         _maxDefinitionLevel = maxDefinitionLevel;
       }
 
       public Thrift.ColumnChunk Write(int offset, int count, IList values)
       {
-         if (values == null) values = TypeFactory.Create(_schema.ElementType, _schema.IsNullable, _schema.IsRepeated);
-
-         Thrift.ColumnChunk chunk = _meta.AddColumnChunk(_compressionMethod, _output, _schema, values.Count);
-         Thrift.PageHeader ph = _meta.CreateDataPage(values.Count);
-
-         List<PageTag> pages = WriteValues(_schema, values, ph, _compressionMethod);
-
-         chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
+         _ph.Data_page_header.Num_values = values.Count;
+         List<PageTag> pages = WriteValues(values);
+         _chunk.Meta_data.Num_values = _ph.Data_page_header.Num_values;
 
          //the following counters must include both data size and header size
-         chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
-         chunk.Meta_data.Total_uncompressed_size = pages.Sum(p => p.HeaderMeta.Uncompressed_page_size + p.HeaderSize);
+         _chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
+         _chunk.Meta_data.Total_uncompressed_size = pages.Sum(p => p.HeaderMeta.Uncompressed_page_size + p.HeaderSize);
 
-         return chunk;
+         return _chunk;
       }
 
-      private List<PageTag> WriteValues(SchemaElement schema, IList values, Thrift.PageHeader ph, CompressionMethod compression)
+      private List<PageTag> WriteValues(IList values)
       {
          var result = new List<PageTag>();
-         byte[] dictionaryPageBytes = null;
-         int dictionaryPageCount = 0;
          byte[] dataPageBytes;
          List<int> repetitions = null;
          List<int> definitions = null;
 
          //flatten values and create repetitions list if the field is repeatable
-         if (schema.MaxRepetitionLevel > 0)
+         if (_maxRepetitionLevel > 0)
          {
-            var rpack = new RepetitionPack();
-            values = rpack.HierarchyToFlat(_schema, values, out repetitions);
-            ph.Data_page_header.Num_values = values.Count;
+            repetitions = new List<int>();
+            IList flatValues = _dataTypeHandler.CreateEmptyList(_tse, _formatOptions, 0);
+            RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions);
+            values = flatValues;
+            _ph.Data_page_header.Num_values = values.Count; //update with new count
          }
 
-         if (schema.IsNullable || schema.MaxDefinitionLevel > 0)
+         if (_maxDefinitionLevel > 0)
          {
-            var dpack = new DefinitionPack();
-            values = dpack.MergeWithDefinitions(values, _schema, out definitions);
+            definitions = DefinitionPack.RemoveNulls(values, _maxDefinitionLevel);
          }
 
          using (var ms = new MemoryStream())
@@ -93,80 +93,58 @@ namespace Parquet.File
                //write repetitions
                if (repetitions != null)
                {
-                  int bitWidth = PEncoding.GetWidthFromMaxInt(_schema.MaxRepetitionLevel);
+                  int bitWidth = PEncoding.GetWidthFromMaxInt(_maxRepetitionLevel);
                   RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, repetitions);
                }
 
                //write definitions
                if (definitions != null)
                {
-                  int bitWidth = PEncoding.GetWidthFromMaxInt(_schema.MaxDefinitionLevel);
+                  int bitWidth = PEncoding.GetWidthFromMaxInt(_maxDefinitionLevel);
                   RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, definitions);
                }
 
                //write data
-               if (!_writerOptions.UseDictionaryEncoding || !_dicWriter.Write(writer, schema, values, out IList dicValues))
-               {
-                  _plainWriter.Write(writer, schema, values, out IList plainExtra);
-               }
-               else
-               {
-                  dictionaryPageCount = dicValues.Count;
-                  ph.Data_page_header.Encoding = Thrift.Encoding.PLAIN_DICTIONARY;
-                  using (var dms = new MemoryStream())
-                  using (var dwriter = new BinaryWriter(dms))
-                  {
-                     _plainWriter.Write(dwriter, schema, dicValues, out IList t0);
-                     dictionaryPageBytes = dms.ToArray();
-                  }
-               }
+               _dataTypeHandler.Write(writer, values);
 
                dataPageBytes = ms.ToArray();
             }
          }
 
-         if (dictionaryPageBytes != null)
-         {
-            Thrift.PageHeader dph = _meta.CreateDictionaryPage(dictionaryPageCount);
-            dictionaryPageBytes = Compress(dph, dictionaryPageBytes, compression);
-            int dictionaryHeaderSize = Write(dph, dictionaryPageBytes);
-            result.Add(new PageTag { HeaderSize = dictionaryHeaderSize, HeaderMeta = dph });
-         }
-
-         dataPageBytes = Compress(ph, dataPageBytes, compression);
-         int dataHeaderSize = Write(ph, dataPageBytes);
-         result.Add(new PageTag { HeaderSize = dataHeaderSize, HeaderMeta = ph });
+         dataPageBytes = Compress(dataPageBytes);
+         int dataHeaderSize = Write(dataPageBytes);
+         result.Add(new PageTag { HeaderSize = dataHeaderSize, HeaderMeta = _ph });
 
          return result;
       }
 
-      private int Write(Thrift.PageHeader ph, byte[] data)
+      private int Write(byte[] data)
       {
-         int headerSize = _thriftStream.Write(ph);
+         int headerSize = _thriftStream.Write(_ph);
          _output.Write(data, 0, data.Length);
          return headerSize;
       }
 
-      private byte[] Compress(Thrift.PageHeader ph, byte[] data, CompressionMethod compression)
+      private byte[] Compress(byte[] data)
       {
          //note that page size numbers do not include header size by spec
 
-         ph.Uncompressed_page_size = data.Length;
+         _ph.Uncompressed_page_size = data.Length;
          byte[] result;
 
-         if (compression != CompressionMethod.None)
+         if (_compressionMethod != CompressionMethod.None)
          {
-            IDataWriter writer = DataFactory.GetWriter(compression);
+            IDataWriter writer = DataFactory.GetWriter(_compressionMethod);
             using (var ms = new MemoryStream())
             {
                writer.Write(data, ms);
                result = ms.ToArray();
             }
-            ph.Compressed_page_size = result.Length;
+            _ph.Compressed_page_size = result.Length;
          }
          else
          {
-            ph.Compressed_page_size = ph.Uncompressed_page_size;
+            _ph.Compressed_page_size = _ph.Uncompressed_page_size;
             result = data;
          }
 

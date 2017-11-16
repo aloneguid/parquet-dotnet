@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.DataTypes;
 using Parquet.File;
 
 namespace Parquet.Data
@@ -90,7 +91,7 @@ namespace Parquet.Data
             throw new ArgumentNullException(nameof(schemaElement));
          }
 
-         if (!_pathToValues.TryGetValue(schemaElement.Path, out IList values))
+         if (!_pathToValues.TryGetValue(schemaElement.Name, out IList values))
          {
             return null;
          }
@@ -145,38 +146,18 @@ namespace Parquet.Data
 
       private object CreateElement(SchemaElement se, int index, Dictionary<string, IList> pathToValues)
       {
-         if(se.IsMap)
+         if(se.DataType == DataType.Dictionary || se.DataType == DataType.Structure || se.DataType == DataType.List)
          {
-            return CreateDictionary(se, pathToValues, index);
-         }
-         else if(se.IsNestedStructure)
-         {
-            if (se.IsRepeated)
-            {
-               Dictionary<string, IList> elementPathToValues = CreateElementPathToValue(se, index, pathToValues, out int count);
-               var rows = new List<Row>(count);
-
-               for(int ci = 0; ci < count; ci++)
-               {
-                  Row row = CreateRow(se.Children, ci, elementPathToValues);
-                  rows.Add(row);
-               }
-
-               return rows;
-            }
-            else
-            {
-               return CreateRow(se.Children, index, pathToValues);
-            }
+            throw new NotSupportedException($"{se.DataType} is not (yet) supported");
          }
          else
          {
-            IList values = pathToValues[se.Path];
+            IList values = pathToValues[se.Name];
             return values[index];
          }
       }
 
-      private Dictionary<string, IList> CreateElementPathToValue(
+      /*private Dictionary<string, IList> CreateElementPathToValue(
          SchemaElement root, int index,
          Dictionary<string, IList> pathToValues,
          out int count)
@@ -193,27 +174,7 @@ namespace Parquet.Data
          }
 
          return elementPathToValues;
-      }
-
-      private IDictionary CreateDictionary(SchemaElement se, Dictionary<string, IList> pathToValues, int index)
-      {
-         SchemaElement key = se.Extra[0];
-         SchemaElement value = se.Extra[1];
-
-         IList keys = (IList)(pathToValues[key.Path][index]);
-         IList values = (IList)(pathToValues[value.Path][index]);
-
-         Type gt = typeof(Dictionary<,>);
-         Type masterType = gt.MakeGenericType(key.ElementType, value.ElementType);
-         IDictionary result = (IDictionary)Activator.CreateInstance(masterType);
-
-         for(int i = 0; i < keys.Count; i++)
-         {
-            result.Add(keys[i], values[i]);
-         }
-
-         return result;
-      }
+      }*/
 
       private void RemoveRow(int index)
       {
@@ -241,25 +202,9 @@ namespace Parquet.Data
             SchemaElement se = schema[i];
             object value = row[i];
 
-            if(se.IsMap)
+            if(se.DataType == DataType.Dictionary || se.DataType == DataType.Structure || se.DataType == DataType.List)
             {
-               IList keys = GetValues(se.Extra[0], true);
-               IList values = GetValues(se.Extra[1], true);
-               IDictionary valueMap = (IDictionary)value;
-
-               IList keysItem = valueMap.Keys.Cast<object>().ToList();
-               IList valuesItem = valueMap.Values.Cast<object>().ToList();
-
-               keys.Add(keysItem);
-               values.Add(valuesItem);
-            }
-            else if (se.IsNestedStructure)
-            {
-               Row valueRow = se.IsRepeated
-                  ? Row.Compress(se.Children, (IEnumerable<Row>)value)
-                  : (Row)value;
-
-               AddRow(valueRow, se.Children, false);
+               throw new NotSupportedException($"{se.DataType} is not (yet) supported");
             }
             else
             {
@@ -277,24 +222,15 @@ namespace Parquet.Data
 
       private IList GetValues(SchemaElement schema, bool createIfMissing)
       {
-         if (!_pathToValues.TryGetValue(schema.Path, out IList values))
+         if (!_pathToValues.TryGetValue(schema.Name, out IList values))
          {
             if (createIfMissing)
             {
-               if (schema.MaxRepetitionLevel > 0)
-               {
-                  values = new List<IEnumerable>();
-               }
-               else
-               {
-                  values = schema.CreateValuesList(0, false);
-               }
-
-               _pathToValues[schema.Path] = values;
+               throw new NotImplementedException();
             }
             else
             {
-               throw new ArgumentException($"column '{schema.Name}' does not exist by path '{schema.Parent}'", nameof(schema));
+               throw new ArgumentException($"column '{schema.Name}' does not exist by path '{schema.Name}'", nameof(schema));
             }
          }
 

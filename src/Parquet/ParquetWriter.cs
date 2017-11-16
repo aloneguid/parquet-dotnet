@@ -13,10 +13,9 @@ namespace Parquet
    /// </summary>
    public class ParquetWriter : ParquetActor, IDisposable
    {
-      private readonly FileMetadataBuilder _meta;
+      private ThriftFooter _footer;
       private readonly ParquetOptions _formatOptions;
       private readonly WriterOptions _writerOptions;
-      private Schema _existingSchema;
       private bool _dataWritten;
 
       /// <summary>
@@ -35,7 +34,6 @@ namespace Parquet
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
          _formatOptions = formatOptions ?? new ParquetOptions();
          _writerOptions = writerOptions ?? new WriterOptions();
-         _meta = new FileMetadataBuilder();
       }
 
       /// <summary>
@@ -50,16 +48,19 @@ namespace Parquet
 
          int offset = 0;
          int count;
+         List<Thrift.SchemaElement> writeableSchema = _footer.GetWriteableSchema().ToList();
+
          do
          {
             count = Math.Min(_writerOptions.RowGroupsSize, dataSet.Count - offset);
-            Thrift.RowGroup rg = _meta.AddRowGroup();
+            Thrift.RowGroup rg = _footer.AddRowGroup();
             long rgStartPos = Stream.Position;
 
             rg.Columns = new List<Thrift.ColumnChunk>();
-            foreach(SchemaElement se in dataSet.Schema.Flatten())
+
+            foreach(Thrift.SchemaElement tse in writeableSchema)
             {
-               var cw = new ColumnWriter(Stream, ThriftStream, _meta, se, compression, _formatOptions, _writerOptions);
+               var cw = new ColumnWriter(Stream, ThriftStream, _footer, tse, compression, _formatOptions, _writerOptions);
                IList values = dataSet.GetColumn(se, offset, count);
                Thrift.ColumnChunk chunk = cw.Write(offset, count, values);
                rg.Columns.Add(chunk);
@@ -86,36 +87,24 @@ namespace Parquet
             ValidateFile();
 
             Thrift.FileMetaData fileMeta = ReadMetadata();
-            _meta.SetMeta(fileMeta);
+            _footer = new ThriftFooter(fileMeta);
 
-            Schema existingSchema = new FileMetadataParser(fileMeta).ParseSchema(_formatOptions);
+            throw new NotImplementedException("cannot compare schemas yet");
+            /*Schema existingSchema = new FileMetadataParser(fileMeta).ParseSchema(_formatOptions);
 
             if (!ds.Schema.Equals(existingSchema))
             {
                throw new ParquetException($"{nameof(DataSet)} schema does not match existing file schema");
             }
 
-            GoBeforeFooter();
+            GoBeforeFooter();*/
          }
          else
          {
-            if (_existingSchema == null)
-            {
-               _existingSchema = ds.Schema;
+            _footer = new ThriftFooter(ds.Schema);
 
-               //file starts with magic
-               WriteMagic();
-
-               _meta.AddSchema(ds);
-               List<Thrift.SchemaElement> modernSchema = _meta.BuildSchemaExperimental(ds.Schema);
-            }
-            else
-            {
-               if(!_existingSchema.Equals(ds.Schema))
-               {
-                  throw new ParquetException($"expeted schema {_existingSchema} but found {ds.Schema}.");
-               }
-            }
+            //file starts with magic
+            WriteMagic();
          }
       }
 
@@ -169,7 +158,7 @@ namespace Parquet
          if (!_dataWritten) return;
 
          //finalize file
-         long size = ThriftStream.Write(_meta.ThriftMeta);
+         long size = _footer.Write(ThriftStream);
 
          //metadata size
          Writer.Write((int)size);  //4 bytes

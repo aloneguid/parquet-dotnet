@@ -17,6 +17,8 @@ namespace Parquet.DataTypes
 
       public DataType DataType => DataType.List;
 
+      public Type ClrType => typeof(IEnumerable<>);
+
       public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
       {
          return new List<IEnumerable>(capacity);
@@ -29,7 +31,19 @@ namespace Parquet.DataTypes
          //skip this element and child container
          index += 2;
 
+         //parent parser should add more elements inside this structure
+
          return list;
+      }
+
+      public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
+      public Thrift.SchemaElement CreateThriftElement(SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
       }
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
@@ -38,6 +52,11 @@ namespace Parquet.DataTypes
       }
 
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void Write(BinaryWriter writer, IList values)
       {
          throw new NotImplementedException();
       }

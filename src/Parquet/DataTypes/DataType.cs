@@ -1,13 +1,10 @@
 ﻿namespace Parquet.DataTypes
 {
    /// <summary>
-   /// Experimental:
    /// List of supported data types
    /// </summary>
-   enum DataType
+   public enum DataType
    {
-      Unspecified,
-
       /// <summary>
       /// Boolean
       /// </summary>
@@ -38,8 +35,14 @@
       /// </summary>
       UnsignedShort,
 
+      /// <summary>
+      /// 16 bit integer
+      /// </summary>
       Int16,
 
+      /// <summary>
+      /// 16 bit unsigned integer
+      /// </summary>
       UnsignedInt16,
 
       /// <summary>

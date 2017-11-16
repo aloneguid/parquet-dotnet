@@ -26,6 +26,8 @@ namespace Parquet.DataTypes
 
       public DataType DataType { get; private set; }
 
+      public Type ClrType => typeof(TSystemType);
+
       public virtual bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
          return
@@ -37,34 +39,32 @@ namespace Parquet.DataTypes
       {
          Thrift.SchemaElement tse = schema[index++];
 
-         if (tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
-         {
-            var list = new ListSchemaElement(tse.Name);
-            SchemaElement sei = CreateSimple(tse);
-            list.Item = sei;
-            return list;
-         }
-         else
-         {
-            SchemaElement se = CreateSimple(tse);
-            return se;
-         }
+         bool hasNulls = (tse.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
+         bool isArray = (tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
+
+         return CreateSimple(tse, hasNulls, isArray);
       }
 
-      protected virtual SchemaElement CreateSimple(Thrift.SchemaElement tse)
+      protected virtual SchemaElement CreateSimple(Thrift.SchemaElement tse, bool hasNulls, bool isArray)
       {
-         return new SchemaElement(tse.Name, DataType);
+         return new SchemaElement(tse.Name, DataType, hasNulls, isArray);
       }
 
       public abstract IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity);
 
       public abstract IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
 
-      public Thrift.SchemaElement CreateThriftElement(SchemaElement se, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(SchemaElement se, IList<Thrift.SchemaElement> container)
       {
          var tse = new Thrift.SchemaElement(se.Name);
-
-         return tse;
+         tse.Type = _thriftType;
+         if (_convertedType != null) tse.Converted_type = _convertedType.Value;
+         tse.Repetition_type = se.IsArray
+            ? Thrift.FieldRepetitionType.REPEATED
+            : (se.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
+         container.Add(tse);
       }
+
+      public abstract void Write(BinaryWriter writer, IList values);
    }
 }

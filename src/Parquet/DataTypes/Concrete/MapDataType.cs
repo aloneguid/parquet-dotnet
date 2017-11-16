@@ -17,6 +17,8 @@ namespace Parquet.DataTypes
 
       public DataType DataType => DataType.Dictionary;
 
+      public Type ClrType => typeof(IDictionary<,>);
+
       public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
       {
          throw new NotImplementedException();
@@ -41,6 +43,16 @@ namespace Parquet.DataTypes
          return map;
       }
 
+      public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
+      public Thrift.SchemaElement CreateThriftElement(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
          return
@@ -49,6 +61,11 @@ namespace Parquet.DataTypes
       }
 
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void Write(BinaryWriter writer, IList values)
       {
          throw new NotImplementedException();
       }

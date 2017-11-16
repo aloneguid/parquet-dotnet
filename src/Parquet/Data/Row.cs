@@ -163,7 +163,9 @@ namespace Parquet.Data
 
       internal static Row Compress(IEnumerable<SchemaElement> schema, IEnumerable<Row> rows)
       {
-         List<Row> rowsList = rows.ToList();
+         throw new NotImplementedException();
+
+         /*List<Row> rowsList = rows.ToList();
          var rv = new List<object>();
 
          int i = 0;
@@ -178,7 +180,7 @@ namespace Parquet.Data
             i += 1;
          }
 
-         return new Row(rv);
+         return new Row(rv);*/
       }
 
       /// <summary>

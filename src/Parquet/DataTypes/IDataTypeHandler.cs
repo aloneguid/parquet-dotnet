@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
@@ -18,12 +19,14 @@ namespace Parquet.DataTypes
 
       DataType DataType { get; }
 
+      Type ClrType { get; }
+
       IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity);
 
       IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
 
-      Thrift.SchemaElement CreateThriftElement(SchemaElement se, IList<Thrift.SchemaElement> container);
+      void CreateThrift(SchemaElement se, IList<Thrift.SchemaElement> container);
 
-      //void Write(BinaryWriter writer, IList values);
+      void Write(BinaryWriter writer, IList values);
    }
 }

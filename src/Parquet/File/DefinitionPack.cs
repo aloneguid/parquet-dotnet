@@ -16,10 +16,9 @@ namespace Parquet.File
       {
       }
 
-      public IList MergeWithDefinitions(IList values, SchemaElement schema, out List<int> definitions)
+      public static List<int> RemoveNulls(IList values, int maxDefinitionLevel)
       {
-         definitions = new List<int>(values.Count);
-         IList result = TypeFactory.Create(schema, false);
+         var definitions = new List<int>(values.Count);
 
          foreach(object value in values)
          {
@@ -29,12 +28,13 @@ namespace Parquet.File
             }
             else
             {
-               definitions.Add(schema.MaxDefinitionLevel);
-               result.Add(value);
+               definitions.Add(maxDefinitionLevel);
+               throw new NotImplementedException();
+               //result.Add(value);
             }
          }
 
-         return result;
+         return definitions;
       }
 
       public void InsertDefinitions(IList values, List<int> definitions)

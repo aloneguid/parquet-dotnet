@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Parquet.File.Values
 {
-   class RunLengthBitPackingHybridValuesWriter : IValuesWriter
+   class RunLengthBitPackingHybridValuesWriter
    {
       public bool Write(BinaryWriter writer, SchemaElement schema, IList data, out IList extraValues)
       {

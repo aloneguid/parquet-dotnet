@@ -13,6 +13,8 @@ namespace Parquet.DataTypes.Concrete
 
       public DataType DataType => DataType.Structure;
 
+      public Type ClrType => typeof(Row);
+
       public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
       {
          throw new NotSupportedException("structures cannot have row values");
@@ -27,6 +29,16 @@ namespace Parquet.DataTypes.Concrete
          return new StructureSchemaElement(container.Name);
       }
 
+      public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
+      public Thrift.SchemaElement CreateThriftElement(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
          return
@@ -36,6 +48,11 @@ namespace Parquet.DataTypes.Concrete
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          throw new NotSupportedException("structures are never to be read individually");
+      }
+
+      public void Write(BinaryWriter writer, IList values)
+      {
+         throw new NotImplementedException();
       }
    }
 }

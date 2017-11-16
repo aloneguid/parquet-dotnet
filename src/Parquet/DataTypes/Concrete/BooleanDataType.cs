@@ -32,5 +32,35 @@ namespace Parquet.DataTypes
 
          return dest;
       }
+
+      public override void Write(BinaryWriter writer, IList values)
+      {
+         var lst = (List<bool>)values;
+         int n = 0;
+         byte b = 0;
+         byte[] buffer = new byte[lst.Count / 8 + 1];
+         int ib = 0;
+
+         foreach (bool flag in lst)
+         {
+            if (flag)
+            {
+               b |= (byte)(1 << n);
+            }
+
+            if (n == 8)
+            {
+               buffer[ib++] = b;
+               n = 0;
+               b = 0;
+            }
+
+            n += 1;
+         }
+
+         if (n != 0) buffer[ib] = b;
+
+         writer.Write(buffer);
+      }
    }
 }

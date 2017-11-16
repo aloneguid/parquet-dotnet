@@ -31,12 +31,6 @@ namespace Parquet.File
          return (IList)Activator.CreateInstance(listGType, capacity.Value);
       }
 
-      public static IList Create(SchemaElement schema, bool nullable = false, int? capacity = null)
-      {
-         Type t = schema.ElementType;  //use ElementType as it's properly pre-calculated
-         return Create(t, nullable, false, capacity);
-      }
-
       public static bool TryExtractEnumerableType(Type t, out Type baseType)
       {
          TypeInfo ti = t.GetTypeInfo();

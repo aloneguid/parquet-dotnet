@@ -6,11 +6,13 @@ using System.IO;
 using System.Reflection;
 using System.Linq;
 using System.Collections;
+using Parquet.DataTypes;
 
 namespace Parquet.File
 {
    /// <summary>
    /// Responsible for building Thrift file metadata when writing files
+   /// todo: to move under ThriftFooter
    /// </summary>
    class FileMetadataBuilder
    {
@@ -20,7 +22,7 @@ namespace Parquet.File
       {
          //get file version
          Version fileVersion = FileVersion(typeof(FileMetadataBuilder));
-         CreatedBy = $"parquet-dotnet version {fileVersion}";
+         CreatedBy = $"Parquet.Net version {fileVersion}";
       }
 
       private static Version FileVersion(Type t)
@@ -56,119 +58,14 @@ namespace Parquet.File
          _meta.Schema = new List<Thrift.SchemaElement> { new Thrift.SchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
          _meta.Key_value_metadata = ds.Metadata.Custom.Select(kv => new Thrift.KeyValue(kv.Key) { Value = kv.Value }).ToList();
 
-         foreach(SchemaElement se in ds.Schema.Elements)
+         /*foreach(SchemaElement se in ds.Schema.Elements)
          {
             AddSchema(_meta.Schema, se);
-         }
+         }*/
          
          _meta.Num_rows = ds.Count;
          
       }
-
-      private static void AddSchema(List<Thrift.SchemaElement> container, SchemaElement se)
-      {
-         if (se.IsRepeated)
-         {
-            if (se.IsMap)
-            {
-               AddMapSchema(container, se);
-            }
-            else
-            {
-               AddListSchema(container, se);
-            }
-         }
-         else if(se.IsNestedStructure)
-         {
-            var structure = new Thrift.SchemaElement(se.Name)
-            {
-               Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
-               Num_children = se.Children.Count
-            };
-            container.Add(structure);
-
-            foreach(SchemaElement child in se.Children)
-            {
-               AddSchema(container, child);
-            }
-         }
-         else
-         {
-            container.Add(se.Thrift);
-         }
-      }
-
-      private static void AddMapSchema(List<Thrift.SchemaElement> container, SchemaElement se)
-      {
-         var root = new Thrift.SchemaElement(se.Name)
-         {
-            Converted_type = Thrift.ConvertedType.MAP,
-            Num_children = 1,
-            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
-         };
-         container.Add(root);
-
-         var kv = new Thrift.SchemaElement("key_value")
-         {
-            Num_children = 2,
-            Repetition_type = Thrift.FieldRepetitionType.REPEATED
-         };
-         container.Add(kv);
-
-         foreach(SchemaElement kvse in se.Extra)
-         {
-            AddSchema(container, kvse);
-         }
-      }
-
-      private static void AddListSchema(List<Thrift.SchemaElement> container, SchemaElement se)
-      {
-         var root = new Thrift.SchemaElement(se.Name)
-         {
-            Converted_type = Thrift.ConvertedType.LIST,
-            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
-            Num_children = 1
-         };
-         container.Add(root);
-
-         var list = new Thrift.SchemaElement("list")
-         {
-            Repetition_type = Thrift.FieldRepetitionType.REPEATED,
-            Num_children = 1
-         };
-         container.Add(list);
-
-         if (se.IsNestedStructure)
-         {
-            var element = new Thrift.SchemaElement("element");
-            element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-            element.Num_children = se.Children.Count;
-            container.Add(element);
-
-            foreach (SchemaElement child in se.Children)
-            {
-               AddSchema(container, child);
-            }
-         }
-         else
-         {
-            Thrift.SchemaElement element = se.Thrift;
-            element.Name = "element";
-            element.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-            container.Add(element);
-         }
-      }
-
-      public static string BuildListPath(string name)
-      {
-         return $"{name}{Schema.PathSeparator}list{Schema.PathSeparator}element";
-      }
-
-      public static string BuildDictionaryPath(string name)
-      {
-         return $"{name}{Schema.PathSeparator}key_value";
-      }
-
 
       public void SetMeta(Thrift.FileMetaData meta)
       {
@@ -182,42 +79,8 @@ namespace Parquet.File
          return rg;
       }
 
-      public Thrift.ColumnChunk AddColumnChunk(CompressionMethod compression, Stream output, SchemaElement schema, int valuesCount)
-      {
-         Thrift.CompressionCodec codec = DataFactory.GetThriftCompression(compression);
 
-         var chunk = new Thrift.ColumnChunk();
-         long startPos = output.Position;
-         chunk.File_offset = startPos;
-         chunk.Meta_data = new Thrift.ColumnMetaData();
-         chunk.Meta_data.Num_values = valuesCount;
-         chunk.Meta_data.Type = schema.Thrift.Type;
-         chunk.Meta_data.Codec = codec;
-         chunk.Meta_data.Data_page_offset = startPos;
-         chunk.Meta_data.Encodings = new List<Thrift.Encoding>
-         {
-            Thrift.Encoding.RLE,
-            Thrift.Encoding.BIT_PACKED,
-            Thrift.Encoding.PLAIN
-         };
-         chunk.Meta_data.Path_in_schema = new List<string>(schema.Path.Split(Schema.PathSeparatorChar));
 
-         return chunk;
-      }
-
-      public Thrift.PageHeader CreateDataPage(int valueCount)
-      {
-         var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
-         ph.Data_page_header = new Thrift.DataPageHeader
-         {
-            Encoding = Thrift.Encoding.PLAIN,
-            Definition_level_encoding = Thrift.Encoding.RLE,
-            Repetition_level_encoding = Thrift.Encoding.RLE,
-            Num_values = valueCount
-         };
-
-         return ph;
-      }
 
       public Thrift.PageHeader CreateDictionaryPage(int valueCount)
       {
@@ -238,81 +101,6 @@ namespace Parquet.File
          return th;
       }
 
-      public Thrift.SchemaElement CreateSchemaElement(string name, Type systemType,
-         out Type elementType,
-         out string pathName,
-         out Type[] extras)
-      {
-         var th = new Thrift.SchemaElement(name);
-         extras = null;
-
-         if(TypeFactory.TryExtractDictionaryType(systemType, out Type keyType, out Type valueType))
-         {
-            elementType = typeof(IDictionary);
-            pathName = BuildDictionaryPath(name);
-            CreateDictionary(th, keyType, valueType);
-            th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
-
-            extras = new[] { keyType, valueType };
-         }
-         else if (TypeFactory.TryExtractEnumerableType(systemType, out Type baseType))
-         {
-            elementType = baseType;
-            pathName = BuildListPath(name);
-            th.Repetition_type = Thrift.FieldRepetitionType.REPEATED;
-         }
-         else if(typeof(Row) == systemType)
-         {
-            elementType = typeof(Row);
-            pathName = null;
-            th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-         }
-         else
-         {
-            if(TryGetNonNullableType(systemType, out Type nonNullableSystemType))
-            {
-               elementType = nonNullableSystemType;
-               th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-            }
-            else if(systemType.GetTypeInfo().IsClass)
-            {
-               //reference types are always nullable
-               elementType = systemType;
-               th.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-            }
-            else
-            {
-               elementType = systemType;
-               th.Repetition_type = Thrift.FieldRepetitionType.REQUIRED;
-            }
-
-            pathName = null;
-         }
-
-         //adjust schema
-
-         if (typeof(Row) != elementType && typeof(IDictionary) != elementType)
-         {
-            TypePrimitive tp = TypePrimitive.Find(elementType);
-
-            th.Type = tp.ThriftType;
-
-            if (tp.ThriftAnnotation != null)
-            {
-               th.Converted_type = tp.ThriftAnnotation.Value;
-            }
-
-            //todo: not the best place for it, but it's a special case at the moment
-            if (elementType == typeof(decimal))
-            {
-               th.Precision = 38;
-               th.Scale = 18;
-               th.Type_length = 16;   //set to default type length to be used when no elements are added
-            }
-         }
-
-         return th;
-      }
 
       private static bool TryGetNonNullableType(Type t, out Type nonNullable)
       {
@@ -334,8 +122,6 @@ namespace Parquet.File
 
       }
 
-      #region [ vNext ]
-
       public List<Thrift.SchemaElement> BuildSchemaExperimental(Schema schema)
       {
          var container = new List<Thrift.SchemaElement>();
@@ -352,10 +138,10 @@ namespace Parquet.File
       {
          foreach(SchemaElement element in elements)
          {
+            IDataTypeHandler handler = DataTypeFactory.Match(element.DataType);
 
+            handler.CreateThrift(element, container);
          }
       }
-
-      #endregion
    }
 }

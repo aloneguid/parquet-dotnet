@@ -30,6 +30,11 @@ namespace Parquet.DataTypes
          return pr.ReadAll();
       }
 
+      public override void Write(BinaryWriter writer, IList values)
+      {
+         throw new NotImplementedException();
+      }
+
       protected virtual void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, TSystemType> readOneFunc)
       {
          throw new InvalidOperationException($"'{nameof(GetPrimitiveReaderParameters)}' is not defined. Either declare it, or implement '{nameof(Read)}' yourself.");

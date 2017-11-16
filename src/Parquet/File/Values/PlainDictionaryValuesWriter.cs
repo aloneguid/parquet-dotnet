@@ -1,4 +1,6 @@
-﻿using System;
+﻿//todo: dictionary encoding is off now, needs to be re-written and reimplemented
+
+/*using System;
 using System.Collections;
 using System.IO;
 using Parquet.Data;
@@ -69,4 +71,4 @@ namespace Parquet.File.Values
          return true;
       }
    }
-}
+}*/

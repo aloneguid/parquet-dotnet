@@ -1,4 +1,5 @@
 ﻿using System;
+using Parquet.DataTypes;
 
 namespace Parquet.Data
 {
@@ -7,6 +8,8 @@ namespace Parquet.Data
    /// </summary>
    public class DateTimeSchemaElement : SchemaElement
    {
+      public DateTimeFormat DateTimeFormat { get; }
+
       /// <summary>
       /// Initializes a new instance of the <see cref="DateTimeSchemaElement"/> class.
       /// </summary>
@@ -14,26 +17,10 @@ namespace Parquet.Data
       /// <param name="format">The format.</param>
       /// <param name="nullable">Is 'DateTime?'</param>
       /// <exception cref="ArgumentException">format</exception>
-      public DateTimeSchemaElement(string name, DateTimeFormat format, bool nullable = false) : base(name, nullable)
+      public DateTimeSchemaElement(string name, DateTimeFormat format, bool hasNulls = true, bool isArray = false)
+         : base(name, DataType.DateTimeOffset, hasNulls, isArray)
       {
-         ElementType = ColumnType = typeof(DateTimeOffset);
-         switch (format)
-         {
-            case DateTimeFormat.Impala:
-               Thrift.Type = Parquet.Thrift.Type.INT96;
-               Thrift.Converted_type = Parquet.Thrift.ConvertedType.TIMESTAMP_MILLIS;
-               break;
-            case DateTimeFormat.DateAndTime:
-               Thrift.Type = Parquet.Thrift.Type.INT64;
-               Thrift.Converted_type = Parquet.Thrift.ConvertedType.TIMESTAMP_MILLIS;
-               break;
-            case DateTimeFormat.Date:
-               Thrift.Type = Parquet.Thrift.Type.INT32;
-               Thrift.Converted_type = Parquet.Thrift.ConvertedType.DATE;
-               break;
-            default:
-               throw new ArgumentException($"unknown date format '{format}'", nameof(format));
-         }
+         DateTimeFormat = format;
       }
    }
 }

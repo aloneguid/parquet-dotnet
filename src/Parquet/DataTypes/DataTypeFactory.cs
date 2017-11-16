@@ -41,5 +41,20 @@ namespace Parquet.DataTypes
       {
          return _allDataTypes.FirstOrDefault(dt => dt.DataType == dataType);
       }
+
+      public static IDataTypeHandler Match(Type clrType)
+      {
+         return _allDataTypes.FirstOrDefault(dt => dt.ClrType == clrType);
+      }
+
+      public static void ThrowClrTypeNotSupported(Type clrType)
+      {
+         string message = string.Format("CLR type '{0}' is not supported, please specify one of '{1}' or use an alternative constructor",
+            clrType,
+            string.Join(", ", _allDataTypes.Select(dt => dt.ClrType))
+            );
+
+         throw new NotSupportedException(message);
+      }
    }
 }
