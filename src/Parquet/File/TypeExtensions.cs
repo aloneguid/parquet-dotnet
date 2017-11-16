@@ -6,7 +6,7 @@ using Parquet.Data;
 
 namespace Parquet.File
 {
-   static class TypeFactory
+   static class TypeExtensions
    {
       public static IList Create(Type systemType, bool nullable = false, bool repeated = false, int? capacity = null)
       {
@@ -31,7 +31,7 @@ namespace Parquet.File
          return (IList)Activator.CreateInstance(listGType, capacity.Value);
       }
 
-      public static bool TryExtractEnumerableType(Type t, out Type baseType)
+      public static bool TryExtractEnumerableType(this Type t, out Type baseType)
       {
          TypeInfo ti = t.GetTypeInfo();
 
@@ -60,7 +60,7 @@ namespace Parquet.File
          return false;
       }
 
-      public static bool IsNullable(IList list)
+      public static bool IsNullable(this IList list)
       {
          TypeInfo ti = list.GetType().GetTypeInfo();
 
@@ -68,6 +68,22 @@ namespace Parquet.File
          Type gt = t.GetTypeInfo().IsGenericType ? t.GetTypeInfo().GetGenericTypeDefinition() : null;
 
          return gt == typeof(Nullable<>) || t.GetTypeInfo().IsClass;
+      }
+
+      public static bool IsNullable(this Type t)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         return
+            ti.IsClass ||
+            (ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>));
+      }
+
+      public static Type GetNonNullable(this Type t)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         return ti.GenericTypeArguments[0];
       }
    }
 }

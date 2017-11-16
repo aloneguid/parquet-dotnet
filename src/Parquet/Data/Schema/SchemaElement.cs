@@ -15,18 +15,53 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      public SchemaElement(string name) : base(name, GetDataType(typeof(T)))
+      public SchemaElement(string name) : base(name, GetDataType(), GetIsNullable())
       {
 
       }
 
-      private static DataType GetDataType(Type clrType)
+      private static DataType GetDataType()
       {
-         IDataTypeHandler handler = DataTypeFactory.Match(clrType);
+         Deconstruct(out Type baseType, out bool t1, out bool t2, out bool t3);
 
-         if (handler == null) DataTypeFactory.ThrowClrTypeNotSupported(clrType);
+         IDataTypeHandler handler = DataTypeFactory.Match(baseType);
+         if (handler == null) DataTypeFactory.ThrowClrTypeNotSupported(baseType);
 
          return handler.DataType;
+      }
+
+      private static bool GetIsNullable()
+      {
+         Deconstruct(out Type t1, out bool hasNulls, out bool t2, out bool t3);
+         return hasNulls;
+      }
+
+      private static void Deconstruct(out Type baseType, out bool hasNulls, out bool isArray, out bool isDictionary)
+      {
+         Type t = typeof(T);
+         baseType = t;
+         isDictionary = false;
+
+         if(t.TryExtractEnumerableType(out Type enumItemType))
+         {
+            baseType = enumItemType;
+            isArray = true;
+         }
+         else
+         {
+            isArray = false;
+         }
+
+         if(baseType.IsNullable())
+         {
+            baseType = baseType.GetNonNullable();
+            hasNulls = true;
+         }
+         else
+         {
+            hasNulls = false;
+         }
+         
       }
 
    }

@@ -35,7 +35,7 @@ namespace Parquet.File
 
       public static void InsertDefinitions(IList values, List<int> definitions)
       {
-         if (definitions == null || !TypeFactory.IsNullable(values)) return;
+         if (definitions == null || !values.IsNullable()) return;
 
          int valueIdx = 0;
 
