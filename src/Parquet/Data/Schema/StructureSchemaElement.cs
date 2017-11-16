@@ -3,10 +3,14 @@ using Parquet.DataTypes;
 
 namespace Parquet.Data
 {
-   class StructureSchemaElement : SchemaElement
+   public class StructureSchemaElement : SchemaElement
    {
-      public StructureSchemaElement(string name) : base(name, DataType.Structure)
+      public StructureSchemaElement(string name, params SchemaElement[] elements) : base(name, DataType.Structure)
       {
+         foreach(SchemaElement element in elements)
+         {
+            Elements.Add(element);
+         }
       }
 
       public IList<SchemaElement> Elements { get; } = new List<SchemaElement>();

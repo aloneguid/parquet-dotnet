@@ -7,7 +7,7 @@ using System.Collections;
 
 namespace Parquet.Test.File.Values
 {
-   public class PlainDictionaryValuesReaderWriterTest
+   /*public class PlainDictionaryValuesReaderWriterTest
    {
       [Fact]
       public void Dictionary_detects_uniqueue_values()
@@ -32,5 +32,5 @@ namespace Parquet.Test.File.Values
 
          Assert.Equal(2, dictionary.Count);
       }
-   }
+   }*/
 }

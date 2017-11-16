@@ -14,15 +14,6 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Creating_schema_with_nullable_primitive_succeds_and_converts_to_non_nullable_element_type()
-      {
-         var se = new SchemaElement<int?>("ok!");
-
-         Assert.Equal(typeof(int?), se.ColumnType);
-         Assert.Equal(typeof(int), se.ElementType);
-      }
-
-      [Fact]
       public void SchemaElement_are_equal()
       {
          Assert.Equal(new SchemaElement<int>("id"), new SchemaElement<int>("id"));
@@ -80,7 +71,7 @@ namespace Parquet.Test
       {
          var se = new SchemaElement<string>("id");
 
-         Assert.True(se.IsNullable);
+         Assert.True(se.HasNulls);
       }
 
       [Fact]
@@ -88,7 +79,7 @@ namespace Parquet.Test
       {
          var se = new SchemaElement<DateTime>("id");
 
-         Assert.False(se.IsNullable);
+         Assert.False(se.HasNulls);
       }
 
       [Fact]

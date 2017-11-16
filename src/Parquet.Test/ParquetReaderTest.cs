@@ -225,8 +225,8 @@ root
          Assert.Equal("cities", ds.Schema[0].Name);
          Assert.Equal("id", ds.Schema[1].Name);
 
-         Assert.True(ds.Schema[0].IsRepeated);
-         Assert.False(ds.Schema[1].IsRepeated);
+         Assert.True(ds.Schema[0].IsArray);
+         Assert.False(ds.Schema[1].IsArray);
 
          Assert.Equal(1L, ds[0][1]);
          Assert.Equal(ds[0][0], new[] { "London", "Derby", "Paris", "New York" });

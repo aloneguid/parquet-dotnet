@@ -9,13 +9,13 @@ namespace Parquet.File.Values
 {
    class RunLengthBitPackingHybridValuesWriter
    {
-      public bool Write(BinaryWriter writer, SchemaElement schema, IList data, out IList extraValues)
+      /*public bool Write(BinaryWriter writer, SchemaElement schema, IList data, out IList extraValues)
       {
          int bitWidth = GetBitWidth(schema);
          extraValues = null;
 
          return Write(writer, bitWidth, data);
-      }
+      }*/
 
       public static bool Write(BinaryWriter writer, int bitWidth, IList data)
       {
@@ -37,14 +37,14 @@ namespace Parquet.File.Values
          return true;
       }
 
-      private int GetBitWidth(SchemaElement schema)
+      /*private int GetBitWidth(SchemaElement schema)
       {
          int bitWidth = TypePrimitive.GetBitWidth(schema.ElementType);
 
          if (bitWidth == 0) throw new ParquetException($"cannot find bit width for type '{schema.ElementType}'");
 
          return bitWidth;
-      }
+      }*/
 
       //todo: write without length envelope
       public static void Write(BinaryWriter writer, IList data, int bitWidth)

@@ -42,5 +42,9 @@ namespace Parquet.DataTypes
          return result;
       }
 
+      public override void Write(BinaryWriter writer, IList values)
+      {
+         throw new System.NotImplementedException();
+      }
    }
 }

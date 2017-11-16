@@ -7,6 +7,7 @@ using Parquet.File.Values;
 using Xunit;
 using Xunit.Extensions;
 using Parquet.File.Values.Primitives;
+using Parquet.DataTypes;
 
 namespace Parquet.Test
 {
@@ -37,7 +38,7 @@ namespace Parquet.Test
          new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "dateandtime" },
          // don't want any excess info in the offset INT32 doesn't contain or care about this data 
          new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero), "date" },
-         new object[] {  new IntervalSchemaElement("interval"), new Interval(3, 2, 1) },
+         new object[] {  new SchemaElement<Interval>("interval"), new Interval(3, 2, 1) },
 
          new object[] {  new SchemaElement<byte>("byte"), byte.MinValue },
          new object[] {  new SchemaElement<byte>("byte"), byte.MaxValue },
@@ -67,7 +68,7 @@ namespace Parquet.Test
          object expectedValue = ds[0][0];
          object actualValue = ds1[0][0];
 
-         if(schema.ElementType == typeof(DateTime))
+         if(schema.DataType == DataType.DateTimeOffset)
             actualValue = ((DateTimeOffset) actualValue).DateTime;
 
          Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),

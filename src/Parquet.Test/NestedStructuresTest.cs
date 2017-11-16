@@ -13,7 +13,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new SchemaElement<string>("name"),
-            new SchemaElement<Row>("address",
+            new StructureSchemaElement("address",
                new SchemaElement<string>("line1"),
                new SchemaElement<string>("postcode")
             ));

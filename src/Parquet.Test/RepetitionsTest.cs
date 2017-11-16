@@ -15,10 +15,8 @@ namespace Parquet.Test
       {
          var levels = new List<int> { 0, 1, 0, 1 };
          var flat = new List<int> { 1, 2, 3, 4 };
-         var schema = new SchemaElement<int>("line1") { MaxRepetitionLevel = 1 };
 
-         var packer = new RepetitionPack();
-         IList r = packer.FlatToHierarchy(schema, flat, levels);
+         IList r = RepetitionPack.FlatToHierarchy(1, () => new List<int>(), flat, levels);
 
          Assert.Equal(2, r.Count);
          Assert.Equal(2, ((IList)r[0]).Count);
@@ -33,16 +31,16 @@ namespace Parquet.Test
       [Fact]
       public void Level1_repetitions_unpacked()
       {
-         var schema = new SchemaElement<int>("line1") { MaxRepetitionLevel = 1 };
-         var packer = new RepetitionPack();
-
-         IList flatValues = packer.HierarchyToFlat(schema,
+         var flatValues = new List<int>();
+         var levels = new List<int>();
+         RepetitionPack.HierarchyToFlat(1,
             new List<List<int>>
             {
                new List<int>{ 1, 2 },
                new List<int>{ 3, 4 }
             },
-            out List<int> levels
+            flatValues,
+            levels
             );
 
          Assert.Equal(4, flatValues.Count);
@@ -69,10 +67,8 @@ namespace Parquet.Test
             9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
             6, 7, 19, 20, 21, 22, 23
          };
-         var schema = new SchemaElement<int>("hours") { MaxRepetitionLevel = 2 };
 
-         var packer = new RepetitionPack();
-         IList r = packer.FlatToHierarchy(schema, flat, levels);
+         IList r = RepetitionPack.FlatToHierarchy(2, () => new List<int>(), flat, levels);
 
          Assert.Equal(2, r.Count);
 
@@ -100,10 +96,10 @@ namespace Parquet.Test
       [Fact]
       public void Level2_repetitions_unpacked()
       {
-         var schema = new SchemaElement<int>("hours") { MaxRepetitionLevel = 2 };
-         var packer = new RepetitionPack();
+         var flatList = new List<int>();
+         var levels = new List<int>();
 
-         IList flatValues = packer.HierarchyToFlat(schema,
+         RepetitionPack.HierarchyToFlat(2,
             new List<List<List<int>>>
             {
                new List<List<int>>
@@ -117,10 +113,11 @@ namespace Parquet.Test
                   new List<int>{ 6, 7, 19, 20, 21, 22, 23 }
                },
             },
-            out List<int> levels
+            flatList,
+            levels
             );
 
-         Assert.Equal(34, flatValues.Count);
+         Assert.Equal(34, flatList.Count);
          Assert.Equal(34, levels.Count);
 
          Assert.Equal(new List<int>
@@ -137,7 +134,7 @@ namespace Parquet.Test
             6, 7, 19, 20, 21, 22, 23,
             9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
             6, 7, 19, 20, 21, 22, 23
-         }, flatValues);
+         }, flatList);
       }
 
       private static IList GetList(IList root, params int[] levels)

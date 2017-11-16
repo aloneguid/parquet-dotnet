@@ -9,12 +9,8 @@ namespace Parquet.File
    /// <summary>
    /// Packs/unpacks definition levels
    /// </summary>
-   class DefinitionPack
+   static class DefinitionPack
    {
-
-      public DefinitionPack()
-      {
-      }
 
       public static List<int> RemoveNulls(IList values, int maxDefinitionLevel)
       {
@@ -37,7 +33,7 @@ namespace Parquet.File
          return definitions;
       }
 
-      public void InsertDefinitions(IList values, List<int> definitions)
+      public static void InsertDefinitions(IList values, List<int> definitions)
       {
          if (definitions == null || !TypeFactory.IsNullable(values)) return;
 
