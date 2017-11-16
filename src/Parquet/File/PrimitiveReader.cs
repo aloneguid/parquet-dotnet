@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Parquet.DataTypes;
+using Parquet.Data;
 
 namespace Parquet.File
 {
@@ -39,7 +39,7 @@ namespace Parquet.File
 
          //create list with effective capacity
          int capacity = (int)((_binaryReader.BaseStream.Position - totalLength) / _typeWidth);
-         IList result = _dataTypeHandler.CreateEmptyList(_schemaElement, _parquetOptions, capacity);
+         IList result = _dataTypeHandler.CreateEmptyList(_schemaElement.IsNullable(), capacity);
 
          if(_schemaElement.IsNullable())
          {

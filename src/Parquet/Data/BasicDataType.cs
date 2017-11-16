@@ -5,7 +5,7 @@ using System.IO;
 using Parquet.Data;
 using Parquet.File;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
 
    abstract class BasicDataType<TSystemType> : IDataTypeHandler
@@ -50,11 +50,11 @@ namespace Parquet.DataTypes
          return new SchemaElement(tse.Name, DataType, hasNulls, isArray);
       }
 
-      public abstract IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity);
+      public abstract IList CreateEmptyList(bool isNullable, int capacity);
 
       public abstract IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
 
-      public void CreateThrift(SchemaElement se, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          var tse = new Thrift.SchemaElement(se.Name);
          tse.Type = _thriftType;
@@ -63,6 +63,7 @@ namespace Parquet.DataTypes
             ? Thrift.FieldRepetitionType.REPEATED
             : (se.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
          container.Add(tse);
+         parent.Num_children += 1;
       }
 
       public abstract void Write(BinaryWriter writer, IList values);

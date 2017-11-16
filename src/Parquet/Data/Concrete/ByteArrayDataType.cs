@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class ByteArrayDataType : BasicDataType<byte[]>
    {
@@ -11,14 +11,14 @@ namespace Parquet.DataTypes
       {
       }
 
-      public override IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      public override IList CreateEmptyList(bool isNullable, int capacity)
       {
          return new List<byte[]>();
       }
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         List<byte[]> result = (List<byte[]>)CreateEmptyList(tse, formatOptions, 0);
+         List<byte[]> result = (List<byte[]>)CreateEmptyList(tse.IsNullable(), 0);
 
          while(reader.BaseStream.Position < reader.BaseStream.Length)
          {

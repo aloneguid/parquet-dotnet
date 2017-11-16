@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    static class DataTypeFactory
    {

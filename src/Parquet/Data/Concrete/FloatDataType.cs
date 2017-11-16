@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class FloatDataType : BasicPrimitiveDataType<float>
    {

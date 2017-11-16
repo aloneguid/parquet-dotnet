@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.DataTypes.Concrete
+namespace Parquet.Data.Concrete
 {
    class StructureDataType : IDataTypeHandler
    {
@@ -15,7 +15,9 @@ namespace Parquet.DataTypes.Concrete
 
       public Type ClrType => typeof(Row);
 
-      public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      System.Type IDataTypeHandler.ClrType => throw new NotImplementedException();
+
+      public IList CreateEmptyList(bool isNullable, int capacity)
       {
          throw new NotSupportedException("structures cannot have row values");
       }
@@ -30,6 +32,11 @@ namespace Parquet.DataTypes.Concrete
       }
 
       public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }

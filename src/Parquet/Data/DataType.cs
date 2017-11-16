@@ -1,4 +1,4 @@
-﻿namespace Parquet.DataTypes
+﻿namespace Parquet.Data
 {
    /// <summary>
    /// List of supported data types

@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class SignedByteDataType : BasicPrimitiveDataType<sbyte>
    {

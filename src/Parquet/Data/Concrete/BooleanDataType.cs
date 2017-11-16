@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class BooleanDataType : BasicPrimitiveDataType<bool>
    {
@@ -13,7 +13,7 @@ namespace Parquet.DataTypes
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         IList dest = CreateEmptyList(tse, formatOptions, 0);
+         IList dest = CreateEmptyList(tse.IsNullable(), 0);
 
          int ibit = 0;
 

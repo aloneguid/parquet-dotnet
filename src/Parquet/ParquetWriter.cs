@@ -60,11 +60,13 @@ namespace Parquet
 
             foreach(Thrift.SchemaElement tse in writeableSchema)
             {
-               var cw = new ColumnWriter(Stream, ThriftStream, _footer, tse, compression, _formatOptions, _writerOptions);
-               throw new NotImplementedException();
-               //IList values = dataSet.GetColumn(se, offset, count);
-               //Thrift.ColumnChunk chunk = cw.Write(offset, count, values);
-               //rg.Columns.Add(chunk);
+               var path = new List<string> { tse.Name };
+               string flatPath = string.Join(Schema.PathSeparator, path);
+               var cw = new ColumnWriter(Stream, ThriftStream, _footer, tse, path, compression, _formatOptions, _writerOptions);
+
+               IList values = dataSet.GetColumn(flatPath, offset, count);
+               Thrift.ColumnChunk chunk = cw.Write(offset, count, values);
+               rg.Columns.Add(chunk);
             }
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers

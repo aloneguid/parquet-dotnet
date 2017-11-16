@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class MapDataType : IDataTypeHandler
    {
@@ -19,7 +19,7 @@ namespace Parquet.DataTypes
 
       public Type ClrType => typeof(IDictionary<,>);
 
-      public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      public IList CreateEmptyList(bool isNullable, int capacity)
       {
          throw new NotImplementedException();
       }
@@ -44,6 +44,11 @@ namespace Parquet.DataTypes
       }
 
       public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Parquet.DataTypes;
+using Parquet.Data;
 using Parquet.File.Data;
 using Parquet.File.Values;
 
@@ -87,9 +87,8 @@ namespace Parquet.File
 
          IList mergedValues = new ValueMerger(
             _maxRepetitionLevel,
-            () => _dataTypeHandler.CreateEmptyList(_thriftSchemaElement, _parquetOptions,
-            0),
-            values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement, _parquetOptions, 0))
+            () => _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), 0),
+            values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), 0))
             .Apply(dictionary, definitions, repetitions, indexes, (int)maxValues);
 
          ValueMerger.Trim(mergedValues, (int)offset, (int)count);

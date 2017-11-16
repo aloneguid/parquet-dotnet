@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    /// <summary>
    /// Prototype: data type interface
@@ -21,11 +21,11 @@ namespace Parquet.DataTypes
 
       Type ClrType { get; }
 
-      IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity);
+      IList CreateEmptyList(bool isNullable, int capacity);
 
       IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
 
-      void CreateThrift(SchemaElement se, IList<Thrift.SchemaElement> container);
+      void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
 
       void Write(BinaryWriter writer, IList values);
    }

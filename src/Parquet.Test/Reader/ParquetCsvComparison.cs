@@ -116,7 +116,7 @@ namespace Parquet.Test.Reader
 
             //header
             string[] columnNames = reader.ReadNextRow();
-            result = new DataSet(new Schema(columnNames.Select(n => new SchemaElement(n, DataTypes.DataType.String))));
+            result = new DataSet(new Schema(columnNames.Select(n => new SchemaElement(n, DataType.String))));
 
             //values
             string[] values;

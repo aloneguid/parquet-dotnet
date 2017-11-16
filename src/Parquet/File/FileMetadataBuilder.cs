@@ -1,4 +1,4 @@
-﻿using Parquet.Data;
+﻿/*using Parquet.Data;
 using Parquet.File.Data;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using System.Linq;
 using System.Collections;
-using Parquet.DataTypes;
 
 namespace Parquet.File
 {
@@ -58,10 +57,10 @@ namespace Parquet.File
          _meta.Schema = new List<Thrift.SchemaElement> { new Thrift.SchemaElement("schema") { Num_children = ds.Schema.Elements.Count } };
          _meta.Key_value_metadata = ds.Metadata.Custom.Select(kv => new Thrift.KeyValue(kv.Key) { Value = kv.Value }).ToList();
 
-         /*foreach(SchemaElement se in ds.Schema.Elements)
+         foreach(SchemaElement se in ds.Schema.Elements)
          {
             AddSchema(_meta.Schema, se);
-         }*/
+         }
          
          _meta.Num_rows = ds.Count;
          
@@ -144,4 +143,4 @@ namespace Parquet.File
          }
       }
    }
-}
+}*/

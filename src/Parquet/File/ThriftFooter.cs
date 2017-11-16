@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Parquet.Data;
-using Parquet.DataTypes;
 using Parquet.File.Data;
 
 namespace Parquet.File
@@ -14,12 +13,17 @@ namespace Parquet.File
 
       public ThriftFooter(Thrift.FileMetaData fileMeta)
       {
-         _fileMeta = fileMeta;
+         _fileMeta = fileMeta ?? throw new ArgumentNullException(nameof(fileMeta));
       }
 
       public ThriftFooter(Schema schema)
       {
-         throw new NotImplementedException();
+         if (schema == null)
+         {
+            throw new ArgumentNullException(nameof(schema));
+         }
+
+         _fileMeta = CreateThriftSchema(schema);
       }
 
       public long Write(ThriftStream thriftStream)
@@ -94,6 +98,7 @@ namespace Parquet.File
       public Thrift.RowGroup AddRowGroup()
       {
          var rg = new Thrift.RowGroup();
+         if (_fileMeta.Row_groups == null) _fileMeta.Row_groups = new List<Thrift.RowGroup>();
          _fileMeta.Row_groups.Add(rg);
          return rg;
       }
@@ -201,6 +206,42 @@ namespace Parquet.File
 
          throw new NotSupportedException($"cannot find data type handler for schema element '{tse.Name}' (type: {t}{ct})");
       }
+
+      #endregion
+
+      #region [ Convertion from Model Schema ]
+
+      public Thrift.FileMetaData CreateThriftSchema(Schema schema)
+      {
+         var meta = new Thrift.FileMetaData();
+         meta.Version = 1;
+         meta.Schema = new List<Thrift.SchemaElement>();
+
+         Thrift.SchemaElement root = AddRoot(meta.Schema);
+         CreateThriftSchema(schema.Elements, root, meta.Schema);
+
+         return meta;
+      }
+
+      private Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container)
+      {
+         var root = new Thrift.SchemaElement("parquet-dotnet-schema");
+         container.Add(root);
+         return root;
+      }
+
+      private void CreateThriftSchema(IEnumerable<SchemaElement> ses, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      {
+         foreach(SchemaElement se in ses)
+         {
+            IDataTypeHandler handler = DataTypeFactory.Match(se.DataType);
+
+            //todo: check that handler is found indeed
+
+            handler.CreateThrift(se, parent, container);
+         }
+      }
+
 
       #endregion
    }

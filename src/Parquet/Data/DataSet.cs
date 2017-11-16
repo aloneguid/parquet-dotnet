@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Parquet.DataTypes;
-using Parquet.File;
 
 namespace Parquet.Data
 {
@@ -86,12 +84,13 @@ namespace Parquet.Data
       /// <exception cref="ArgumentException"></exception>
       public IList GetColumn(SchemaElement schemaElement, int offset = 0, int count = -1)
       {
-         if (schemaElement == null)
-         {
-            throw new ArgumentNullException(nameof(schemaElement));
-         }
+         throw new NotImplementedException();
+      }
 
-         if (!_pathToValues.TryGetValue(schemaElement.Name, out IList values))
+
+      internal IList GetColumn(string path, int offset, int count)
+      {
+         if (!_pathToValues.TryGetValue(path, out IList values))
          {
             return null;
          }
@@ -226,7 +225,11 @@ namespace Parquet.Data
          {
             if (createIfMissing)
             {
-               throw new NotImplementedException();
+               IDataTypeHandler handler = DataTypeFactory.Match(schema.DataType);
+
+               values = handler.CreateEmptyList(schema.HasNulls, 0);
+
+               _pathToValues[schema.Name] = values;
             }
             else
             {

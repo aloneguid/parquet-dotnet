@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Parquet.DataTypes;
+using Parquet.Data;
 using Parquet.File.Data;
 using Parquet.File.Values;
 
@@ -30,7 +30,8 @@ namespace Parquet.File
       }
 
       public ColumnWriter(Stream output, ThriftStream thriftStream,
-         ThriftFooter footer, Thrift.SchemaElement tse,
+         ThriftFooter footer,
+         Thrift.SchemaElement tse, List<string> path,
          CompressionMethod compressionMethod,
          ParquetOptions formatOptions,
          WriterOptions writerOptions)
@@ -44,7 +45,7 @@ namespace Parquet.File
          _writerOptions = writerOptions;
          _dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
 
-         _chunk = _footer.CreateColumnChunk(_compressionMethod, _output, _tse.Type, null, 0);
+         _chunk = _footer.CreateColumnChunk(_compressionMethod, _output, _tse.Type, path, 0);
          _ph = _footer.CreateDataPage(0);
          _footer.GetLevels(_chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
          _maxRepetitionLevel = maxRepetitionLevel;
@@ -75,7 +76,7 @@ namespace Parquet.File
          if (_maxRepetitionLevel > 0)
          {
             repetitions = new List<int>();
-            IList flatValues = _dataTypeHandler.CreateEmptyList(_tse, _formatOptions, 0);
+            IList flatValues = _dataTypeHandler.CreateEmptyList(_tse.IsNullable(), 0);
             RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions);
             values = flatValues;
             _ph.Data_page_header.Num_values = values.Count; //update with new count

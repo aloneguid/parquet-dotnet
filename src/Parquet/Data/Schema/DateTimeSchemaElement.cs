@@ -1,5 +1,4 @@
 ﻿using System;
-using Parquet.DataTypes;
 
 namespace Parquet.Data
 {

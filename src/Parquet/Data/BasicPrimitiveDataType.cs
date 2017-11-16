@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.File;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    abstract class BasicPrimitiveDataType<TSystemType> : BasicDataType<TSystemType>
       where TSystemType : struct
@@ -14,11 +14,11 @@ namespace Parquet.DataTypes
       {
       }
 
-      public override IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      public override IList CreateEmptyList(bool isNullable, int capacity)
       {
-         return tse.IsNullable()
-            ? (IList)(new List<TSystemType?>())
-            : (IList)(new List<TSystemType>());
+         return isNullable
+            ? (IList)(new List<TSystemType?>(capacity))
+            : (IList)(new List<TSystemType>(capacity));
       }
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)

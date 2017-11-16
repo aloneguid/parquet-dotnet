@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class ListDataType : IDataTypeHandler
    {
@@ -19,7 +19,7 @@ namespace Parquet.DataTypes
 
       public Type ClrType => typeof(IEnumerable<>);
 
-      public IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      public IList CreateEmptyList(bool isNullable, int capacity)
       {
          return new List<IEnumerable>(capacity);
       }
@@ -36,12 +36,7 @@ namespace Parquet.DataTypes
          return list;
       }
 
-      public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
-      {
-         throw new NotImplementedException();
-      }
-
-      public Thrift.SchemaElement CreateThriftElement(SchemaElement se, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }

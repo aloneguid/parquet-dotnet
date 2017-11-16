@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class Int96DataType : BasicPrimitiveDataType<BigInteger>
    {

@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Text;
 using Xunit;
 using System.Linq;
-using Parquet.DataTypes;
 
 namespace Parquet.Test
 {

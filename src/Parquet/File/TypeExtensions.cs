@@ -83,7 +83,14 @@ namespace Parquet.File
       {
          TypeInfo ti = t.GetTypeInfo();
 
-         return ti.GenericTypeArguments[0];
+         if(ti.IsClass)
+         {
+            return t;
+         }
+         else
+         {
+            return ti.GenericTypeArguments[0];
+         }
       }
    }
 }

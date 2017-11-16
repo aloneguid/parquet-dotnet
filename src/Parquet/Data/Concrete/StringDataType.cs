@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class StringDataType : BasicDataType<string>
    {
@@ -12,9 +12,9 @@ namespace Parquet.DataTypes
       {
       }
 
-      public override IList CreateEmptyList(Thrift.SchemaElement tse, ParquetOptions parquetOptions, int capacity)
+      public override IList CreateEmptyList(bool isNullable, int capacity)
       {
-         return new List<string>();
+         return new List<string>(capacity);
       }
 
       public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)

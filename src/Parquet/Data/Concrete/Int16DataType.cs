@@ -2,7 +2,7 @@
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class Int16DataType : BasicPrimitiveDataType<short>
    {

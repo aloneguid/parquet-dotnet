@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Parquet.DataTypes;
+using Parquet.Data;
 
 namespace Parquet.Data
 {

@@ -6,7 +6,7 @@ using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class IntervalDataType : BasicPrimitiveDataType<Interval>
    {
@@ -17,7 +17,7 @@ namespace Parquet.DataTypes
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         IList result = CreateEmptyList(tse, formatOptions, 0);
+         IList result = CreateEmptyList(tse.IsNullable(), 0);
          int typeLength = tse.Type_length;
          if (typeLength == 0) return result;
 

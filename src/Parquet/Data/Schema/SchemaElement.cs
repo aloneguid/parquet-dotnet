@@ -1,7 +1,6 @@
 ﻿using Parquet.File;
 using System;
 using System.Collections.Generic;
-using Parquet.DataTypes;
 
 namespace Parquet.Data
 {

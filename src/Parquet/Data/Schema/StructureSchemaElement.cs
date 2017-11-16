@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Parquet.DataTypes;
 
 namespace Parquet.Data
 {

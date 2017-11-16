@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.DataTypes
+namespace Parquet.Data
 {
    class Int32DataType : BasicPrimitiveDataType<int>
    {
