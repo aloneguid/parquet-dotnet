@@ -101,9 +101,15 @@ namespace Parquet.Data
       /// </summary>
       internal Type ClrType { get; private set; }
 
+      /// <summary>
+      /// Only used internally!
+      /// </summary>
+      internal string Path { get; set; }
+
       public SchemaElement(string name, DataType dataType, bool hasNulls = true, bool isArray = false)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
+
          DataType = dataType;
          HasNulls = hasNulls;
          IsArray = isArray;
@@ -170,5 +176,14 @@ namespace Parquet.Data
       {
          return Name.GetHashCode() * DataType.GetHashCode();
       }
+
+      #region [ Internal Helpers ]
+
+      internal virtual void Assign(SchemaElement se)
+      {
+
+      }
+
+      #endregion
    }
 }

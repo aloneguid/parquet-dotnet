@@ -35,14 +35,16 @@ namespace Parquet.Data
             (_convertedType == null || (tse.__isset.converted_type && tse.Converted_type == _convertedType.Value));
       }
 
-      public virtual SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
+      public virtual SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          Thrift.SchemaElement tse = schema[index++];
 
          bool hasNulls = (tse.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
          bool isArray = (tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
 
-         return CreateSimple(tse, hasNulls, isArray);
+         SchemaElement simple = CreateSimple(tse, hasNulls, isArray);
+         ownedChildCount = 0;
+         return simple;
       }
 
       protected virtual SchemaElement CreateSimple(Thrift.SchemaElement tse, bool hasNulls, bool isArray)

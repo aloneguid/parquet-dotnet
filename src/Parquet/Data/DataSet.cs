@@ -145,7 +145,11 @@ namespace Parquet.Data
 
       private object CreateElement(SchemaElement se, int index, Dictionary<string, IList> pathToValues)
       {
-         if(se.DataType == DataType.Dictionary || se.DataType == DataType.Structure || se.DataType == DataType.List)
+         if(se.DataType == DataType.Dictionary)
+         {
+            return ((MapSchemaElement)se).CreateCellValue(pathToValues, index);
+         }
+         else if(se.DataType == DataType.Structure || se.DataType == DataType.List)
          {
             throw new NotSupportedException($"{se.DataType} is not (yet) supported");
          }
@@ -155,25 +159,6 @@ namespace Parquet.Data
             return values[index];
          }
       }
-
-      /*private Dictionary<string, IList> CreateElementPathToValue(
-         SchemaElement root, int index,
-         Dictionary<string, IList> pathToValues,
-         out int count)
-      {
-         var elementPathToValues = new Dictionary<string, IList>();
-         count = int.MaxValue;
-
-         foreach(SchemaElement child in root.Children)
-         {
-            string key = child.Path;
-            IList value = pathToValues[key][index] as IList;
-            elementPathToValues[key] = value;
-            if (value.Count < count) count = value.Count;
-         }
-
-         return elementPathToValues;
-      }*/
 
       private void RemoveRow(int index)
       {

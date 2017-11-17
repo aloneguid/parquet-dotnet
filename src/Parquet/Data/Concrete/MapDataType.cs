@@ -24,22 +24,24 @@ namespace Parquet.Data
          throw new NotImplementedException();
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          Thrift.SchemaElement tseRoot = schema[index];
 
          //next element is a container
          Thrift.SchemaElement tseContainer = schema[++index];
 
-         //followed by a key and a value
-         Thrift.SchemaElement tseKey = schema[++index];
-         Thrift.SchemaElement tseValue = schema[++index];
+         if(tseContainer.Num_children != 2)
+         {
+            throw new IndexOutOfRangeException($"dictionary container must have exactly 2 children but {tseContainer.Num_children} found");
+         }
+
+         //followed by a key and a value, but we declared them as owned
 
          var map = new MapSchemaElement(tseRoot.Name);
-
-         //go to next
+         map.Path = tseRoot.Name + Schema.PathSeparator + tseContainer.Name;
          index += 1;
-
+         ownedChildCount = 2;
          return map;
       }
 

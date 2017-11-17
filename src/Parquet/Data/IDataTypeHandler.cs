@@ -13,8 +13,11 @@ namespace Parquet.Data
    {
       bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
-      SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index);
+      SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);
 
+      void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
+
+      //todo: remove field!
       int? BitWidth { get; }
 
       DataType DataType { get; }
@@ -27,6 +30,5 @@ namespace Parquet.Data
 
       void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values);
 
-      void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
    }
 }

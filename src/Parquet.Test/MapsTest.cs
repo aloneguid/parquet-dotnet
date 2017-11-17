@@ -22,8 +22,6 @@ namespace Parquet.Test
             [3] = "three"
          }, 1);
 
-         //ParquetWriter.WriteFile(ds, "c:\\tmp\\pmap2.parquet");
-
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
          Assert.Equal("{[1=>one;2=>two;3=>three];1}", ds1[0].ToString());

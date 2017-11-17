@@ -169,49 +169,34 @@ namespace Parquet.File
          Thrift.SchemaElement tse = _fileMeta.Schema[si++];
          var container = new List<SchemaElement>();
 
-         CreateModelSchema(container, tse.Num_children, ref si, formatOptions);
+         CreateModelSchema(null, container, tse.Num_children, ref si, formatOptions);
 
          return new Schema(container);
       }
 
-      private void CreateModelSchema(IList<SchemaElement> container, int childCount, ref int si, ParquetOptions formatOptions)
+      private void CreateModelSchema(string path, IList<SchemaElement> container, int childCount, ref int si, ParquetOptions formatOptions)
       {
          for (int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++)
          {
             Thrift.SchemaElement tse = _fileMeta.Schema[si];
             IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
 
-            if (dth == null)
-            {
-               if (tse.Num_children > 0)
-               {
-                  var structure = new StructureSchemaElement(tse.Name, false);
-                  container.Add(structure);
-                  si++; //go deeper
-                  CreateModelSchema(structure.Elements, tse.Num_children, ref si, formatOptions);
-               }
-               else
-               {
-                  ThrowNoHandler(tse);
-               }
-            }
-            else
-            {
-               SchemaElement element = dth.CreateSchemaElement(_fileMeta.Schema, ref si);
-               container.Add(element);
+            SchemaElement se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
 
-               if (element.DataType == DataType.List)
+            se.Path = string.Join(Schema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
+
+            if (ownedChildCount > 0)
+            {
+               var childContainer = new List<SchemaElement>();
+               CreateModelSchema(se.Path, childContainer, ownedChildCount, ref si, formatOptions);
+               foreach(SchemaElement cse in childContainer)
                {
-                  ListSchemaElement lse = element as ListSchemaElement;
-                  if (lse.Item == null)
-                  {
-                     tse = _fileMeta.Schema[si];
-                     var vc = new List<SchemaElement>();
-                     CreateModelSchema(vc, Math.Max(1, tse.Num_children), ref si, formatOptions);
-                     lse.Item = vc.First();
-                  }
+                  se.Assign(cse);
                }
             }
+
+
+            container.Add(se);
          }
       }
 

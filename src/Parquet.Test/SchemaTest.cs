@@ -93,5 +93,11 @@ namespace Parquet.Test
       {
          Assert.Throws<NotSupportedException>(() => new SchemaElement<Dictionary<int, int>>("d"));
       }
+
+      [Fact]
+      public void Cannot_declare_dictionary_from_plain_type()
+      {
+         Assert.Throws<NotSupportedException>(() => new SchemaElement("dictionary", DataType.Dictionary));
+      }
    }
 }

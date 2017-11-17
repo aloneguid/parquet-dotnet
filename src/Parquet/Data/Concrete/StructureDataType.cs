@@ -22,12 +22,14 @@ namespace Parquet.Data.Concrete
          throw new NotSupportedException("structures cannot have row values");
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          Thrift.SchemaElement container = schema[index];
 
          index += 2; //this element plus inline wasted container
 
+         throw new NotImplementedException();
+         ownedChildCount = 0;
          return new StructureSchemaElement(container.Name, false);
       }
 

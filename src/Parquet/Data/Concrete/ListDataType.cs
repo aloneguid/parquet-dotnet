@@ -24,7 +24,7 @@ namespace Parquet.Data
          return new List<IEnumerable>(capacity);
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
+      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          var list = new ListSchemaElement(schema[index].Name);
 
@@ -33,6 +33,8 @@ namespace Parquet.Data
 
          //parent parser should add more elements inside this structure
 
+         throw new NotImplementedException();
+         ownedChildCount = 0;
          return list;
       }
 
@@ -47,11 +49,6 @@ namespace Parquet.Data
       }
 
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         throw new NotImplementedException();
-      }
-
-      public void Write(BinaryWriter writer, IList values)
       {
          throw new NotImplementedException();
       }
