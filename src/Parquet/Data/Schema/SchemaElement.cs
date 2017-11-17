@@ -14,7 +14,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="SchemaElement"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      public SchemaElement(string name) : base(name, GetDataType(), GetIsNullable())
+      public SchemaElement(string name) : base(name, GetDataType(), GetIsNullable(), GetIsArray())
       {
 
       }
@@ -33,6 +33,12 @@ namespace Parquet.Data
       {
          Deconstruct(out Type t1, out bool hasNulls, out bool t2, out bool t3);
          return hasNulls;
+      }
+
+      private static bool GetIsArray()
+      {
+         Deconstruct(out Type t1, out bool t2, out bool isArray, out bool t3);
+         return isArray;
       }
 
       private static void Deconstruct(out Type baseType, out bool hasNulls, out bool isArray, out bool isDictionary)
