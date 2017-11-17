@@ -16,23 +16,17 @@ namespace Parquet.Data
          return new List<byte[]>();
       }
 
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      protected override byte[] ReadOne(BinaryReader reader)
       {
-         List<byte[]> result = (List<byte[]>)CreateEmptyList(tse.IsNullable(), 0);
-
-         while(reader.BaseStream.Position < reader.BaseStream.Length)
-         {
-            int length = reader.ReadInt32();
-            byte[] data = reader.ReadBytes(length);
-            result.Add(data);
-         }
-
-         return result;
+         int length = reader.ReadInt32();
+         byte[] data = reader.ReadBytes(length);
+         return data;
       }
 
-      public override void Write(BinaryWriter writer, IList values)
+      protected override void WriteOne(BinaryWriter writer, byte[] value)
       {
-         throw new System.NotImplementedException();
+         writer.Write(value.Length);
+         writer.Write(value);
       }
    }
 }

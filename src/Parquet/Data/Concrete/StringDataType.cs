@@ -8,7 +8,7 @@ namespace Parquet.Data
 {
    class StringDataType : BasicDataType<string>
    {
-      public StringDataType() : base(DataType.String, Thrift.Type.BYTE_ARRAY)
+      public StringDataType() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
       {
       }
 
@@ -35,9 +35,19 @@ namespace Parquet.Data
          return s;
       }
 
-      public override void Write(BinaryWriter writer, IList values)
+      protected override void WriteOne(BinaryWriter writer, string value)
       {
-         throw new System.NotImplementedException();
+         if(value.Length == 0)
+         {
+            writer.Write((int)0);
+         }
+         else
+         {
+            //transofrm to byte array first, as we need the length of the byte buffer, not string length
+            byte[] data = Encoding.UTF8.GetBytes(value);
+            writer.Write((int)data.Length);
+            writer.Write(data);
+         }
       }
    }
 }

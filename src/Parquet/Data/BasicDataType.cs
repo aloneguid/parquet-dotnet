@@ -35,7 +35,7 @@ namespace Parquet.Data
             (_convertedType == null || (tse.__isset.converted_type && tse.Converted_type == _convertedType.Value));
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
+      public virtual SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index)
       {
          Thrift.SchemaElement tse = schema[index++];
 
@@ -87,7 +87,7 @@ namespace Parquet.Data
          }
       }
 
-      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public virtual void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          var tse = new Thrift.SchemaElement(se.Name);
          tse.Type = _thriftType;
