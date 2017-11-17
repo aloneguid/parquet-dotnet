@@ -104,10 +104,17 @@ namespace Parquet
          }
          else
          {
-            _footer = new ThriftFooter(ds.Schema, ds.RowCount);
+            if (_footer == null)
+            {
+               _footer = new ThriftFooter(ds.Schema, ds.RowCount);
 
-            //file starts with magic
-            WriteMagic();
+               //file starts with magic
+               WriteMagic();
+            }
+            else
+            {
+               _footer.Add(ds.RowCount);
+            }
          }
       }
 

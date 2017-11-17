@@ -27,6 +27,11 @@ namespace Parquet.File
          _fileMeta.Num_rows = totalRowCount;
       }
 
+      public void Add(long totalRowCount)
+      {
+         _fileMeta.Num_rows += totalRowCount;
+      }
+
       public long Write(ThriftStream thriftStream)
       {
          return thriftStream.Write(_fileMeta);
