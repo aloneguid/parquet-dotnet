@@ -16,7 +16,7 @@ namespace Parquet.File
          _fileMeta = fileMeta ?? throw new ArgumentNullException(nameof(fileMeta));
       }
 
-      public ThriftFooter(Schema schema)
+      public ThriftFooter(Schema schema, long totalRowCount)
       {
          if (schema == null)
          {
@@ -24,6 +24,7 @@ namespace Parquet.File
          }
 
          _fileMeta = CreateThriftSchema(schema);
+         _fileMeta.Num_rows = totalRowCount;
       }
 
       public long Write(ThriftStream thriftStream)

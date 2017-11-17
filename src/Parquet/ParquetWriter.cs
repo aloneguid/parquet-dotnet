@@ -104,7 +104,7 @@ namespace Parquet
          }
          else
          {
-            _footer = new ThriftFooter(ds.Schema);
+            _footer = new ThriftFooter(ds.Schema, ds.RowCount);
 
             //file starts with magic
             WriteMagic();
