@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Parquet.Data;
 using Parquet.File.Data;
 
@@ -25,6 +26,20 @@ namespace Parquet.File
 
          _fileMeta = CreateThriftSchema(schema);
          _fileMeta.Num_rows = totalRowCount;
+
+         Version fileVersion = FileVersion(typeof(ThriftFooter));
+         _fileMeta.Created_by = $"Parquet.Net version {fileVersion}";
+      }
+
+      private static Version FileVersion(Type t)
+      {
+         CustomAttributeData fva = t.GetTypeInfo()
+            .Assembly
+            .CustomAttributes
+            .First(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
+         CustomAttributeTypedArgument varg = fva.ConstructorArguments[0];
+         string fileVersion = (string)varg.Value;
+         return new Version(fileVersion);
       }
 
       public void Add(long totalRowCount)

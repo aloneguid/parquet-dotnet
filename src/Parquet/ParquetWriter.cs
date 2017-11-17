@@ -62,7 +62,7 @@ namespace Parquet
             {
                var path = new List<string> { tse.Name };
                string flatPath = string.Join(Schema.PathSeparator, path);
-               var cw = new ColumnWriter(Stream, ThriftStream, _footer, tse, path, compression, _formatOptions, _writerOptions);
+               var cw = new ColumnarWriter(Stream, ThriftStream, _footer, tse, path, compression, _formatOptions, _writerOptions);
 
                IList values = dataSet.GetColumn(flatPath, offset, count);
                Thrift.ColumnChunk chunk = cw.Write(offset, count, values);

@@ -109,7 +109,10 @@ namespace Parquet.Data
          IsArray = isArray;
 
          IDataTypeHandler handler = DataTypeFactory.Match(dataType);
-         ClrType = handler.ClrType;
+         if (handler != null)
+         {
+            ClrType = handler.ClrType;
+         }
       }
 
       /// <summary>

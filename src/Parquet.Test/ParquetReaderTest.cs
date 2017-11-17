@@ -136,7 +136,7 @@ namespace Parquet.Test
 
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms);
-         Assert.StartsWith("parquet-dotnet", ds1.Metadata.CreatedBy);
+         Assert.StartsWith("Parquet.Net", ds1.Metadata.CreatedBy);
       }
 
       //this only tests that the file is readable as it used to completely crash before
@@ -218,14 +218,13 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
 
          Assert.Equal(2, ds.Schema.Length);
-         Assert.Equal(DataType.String, ds.Schema[0].DataType);
-         Assert.Equal(DataType.String, ds.Schema[0].DataType);
+         Assert.Equal(DataType.List, ds.Schema[0].DataType);
          Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
 
          Assert.Equal("cities", ds.Schema[0].Name);
          Assert.Equal("id", ds.Schema[1].Name);
 
-         Assert.True(ds.Schema[0].IsArray);
+         Assert.False(ds.Schema[0].IsArray);
          Assert.False(ds.Schema[1].IsArray);
 
          Assert.Equal(1L, ds[0][1]);
