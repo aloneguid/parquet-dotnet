@@ -42,10 +42,6 @@ namespace Parquet.Test
       public void Write_int64datetimeoffset()
       {
          var element = new SchemaElement<DateTimeOffset>("timestamp_col");
-         /*{
-            ThriftConvertedType = ConvertedType.TIMESTAMP_MILLIS,
-            ThriftOriginalType = Type.INT64
-         };*/
 
          var ds = new DataSet(
             element
@@ -54,9 +50,6 @@ namespace Parquet.Test
             new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 22)),
             new DateTimeOffset(new DateTime(2017, 1, 1, 12, 13, 24))
          };
-
-         //8 values for each column
-
 
          var uncompressed = new MemoryStream();
          using (var writer = new ParquetWriter(uncompressed))

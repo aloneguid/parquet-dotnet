@@ -49,16 +49,15 @@ namespace Parquet.Test.Reader
 
       private void Compare(Schema schema, Row pc, Row cc)
       {
-         throw new NotImplementedException();
-
-         /*for(int i = 0; i < pc.Length; i++)
+         for(int i = 0; i < pc.Length; i++)
          {
             //todo: this comparison needs to be improved, probably doesn't handle nulls etc.
 
             SchemaElement se = schema.Elements[i];
+            Type clrType = DataTypeFactory.Match(se.DataType).ClrType;
 
             object pv = pc[i];
-            object cv = ChangeType(cc[i], se.ElementType);
+            object cv = ChangeType(cc[i], clrType);
 
             if (pv == null)
             {
@@ -71,7 +70,7 @@ namespace Parquet.Test.Reader
             }
             else
             {
-               if (se.ElementType == typeof(string))
+               if (clrType == typeof(string))
                {
                   Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
                      $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
@@ -82,7 +81,7 @@ namespace Parquet.Test.Reader
                      $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
                }
             }
-         }*/
+         }
       }
 
       private object ChangeType(object v, Type t)
