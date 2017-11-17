@@ -19,15 +19,11 @@ namespace Parquet.Data
          return tse.Type == Thrift.Type.INT96 && !formatOptions.TreatBigIntegersAsDates;
       }
 
-      protected override void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, BigInteger> readOneFunc)
+      protected override BigInteger ReadOne(BinaryReader reader)
       {
-         typeWidth = 12;
-         readOneFunc = (r) =>
-         {
-            byte[] data = r.ReadBytes(12);
-            var big = new BigInteger(data);
-            return big;
-         };
+         byte[] data = reader.ReadBytes(12);
+         var big = new BigInteger(data);
+         return big;
       }
    }
 }

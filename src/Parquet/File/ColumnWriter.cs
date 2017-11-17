@@ -94,15 +94,13 @@ namespace Parquet.File
                //write repetitions
                if (repetitions != null)
                {
-                  int bitWidth = PEncoding.GetWidthFromMaxInt(_maxRepetitionLevel);
-                  RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, repetitions);
+                  WriteLevels(writer, repetitions, _maxRepetitionLevel);
                }
 
                //write definitions
                if (definitions != null)
                {
-                  int bitWidth = PEncoding.GetWidthFromMaxInt(_maxDefinitionLevel);
-                  RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, definitions);
+                  WriteLevels(writer, definitions, _maxDefinitionLevel);
                }
 
                //write data
@@ -117,6 +115,12 @@ namespace Parquet.File
          result.Add(new PageTag { HeaderSize = dataHeaderSize, HeaderMeta = _ph });
 
          return result;
+      }
+
+      private void WriteLevels(BinaryWriter writer, List<int> levels, int maxLevel)
+      {
+         int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
+         RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, levels);
       }
 
       private int Write(byte[] data)

@@ -52,7 +52,40 @@ namespace Parquet.Data
 
       public abstract IList CreateEmptyList(bool isNullable, int capacity);
 
-      public abstract IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
+      public virtual IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      {
+         int totalLength = (int)reader.BaseStream.Length;
+
+         //create list with effective capacity
+         //int capacity = (int)((reader.BaseStream.Position - totalLength) / _typeWidth);
+         int capacity = 0;
+         IList result = CreateEmptyList(tse.IsNullable(), capacity);
+
+         Stream s = reader.BaseStream;
+         try
+         {
+            while (s.Position < totalLength)
+            {
+               TSystemType element = ReadOne(reader);
+               result.Add(element);
+            }
+         }
+         catch(EndOfStreamException)
+         {
+            //that's fine to hit the end of stream as many types are longer than one byte
+            throw;
+         }
+
+         return result;
+      }
+
+      public virtual void Write(BinaryWriter writer, IList values)
+      {
+         foreach(TSystemType one in values)
+         {
+            WriteOne(writer, one);
+         }
+      }
 
       public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
@@ -66,6 +99,19 @@ namespace Parquet.Data
          parent.Num_children += 1;
       }
 
-      public abstract void Write(BinaryWriter writer, IList values);
+      #region [ Reader / Writer Helpers ]
+
+      protected virtual TSystemType ReadOne(BinaryReader reader)
+      {
+         throw new NotSupportedException();
+      }
+
+      protected virtual void WriteOne(BinaryWriter writer, TSystemType value)
+      {
+         throw new NotSupportedException();
+      }
+
+      #endregion
+
    }
 }

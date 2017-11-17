@@ -27,19 +27,12 @@ namespace Parquet.Data
             );
       }
 
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
+      protected override string ReadOne(BinaryReader reader)
       {
-         var result = new List<string>();
-
-         while(reader.BaseStream.Position < reader.BaseStream.Length)
-         {
-            int length = reader.ReadInt32();
-            byte[] data = reader.ReadBytes(length);
-            string s = Encoding.UTF8.GetString(data);
-            result.Add(s);
-         }
-
-         return result;
+         int length = reader.ReadInt32();
+         byte[] data = reader.ReadBytes(length);
+         string s = Encoding.UTF8.GetString(data);
+         return s;
       }
 
       public override void Write(BinaryWriter writer, IList values)

@@ -12,24 +12,31 @@ namespace Parquet.File
    static class DefinitionPack
    {
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="values">Values to compress. This operation modifies the list</param>
+      /// <param name="maxDefinitionLevel"></param>
+      /// <returns>Definitions for the input values</returns>
       public static List<int> RemoveNulls(IList values, int maxDefinitionLevel)
       {
          var definitions = new List<int>(values.Count);
 
-         foreach(object value in values)
+         for(int i = values.Count - 1; i >= 0; i--)
          {
+            object value = values[i];
             if(value == null)
             {
                definitions.Add(0);
+               values.RemoveAt(i);
             }
             else
             {
                definitions.Add(maxDefinitionLevel);
-               throw new NotImplementedException();
-               //result.Add(value);
             }
          }
 
+         definitions.Reverse();
          return definitions;
       }
 

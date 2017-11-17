@@ -20,24 +20,5 @@ namespace Parquet.Data
             ? (IList)(new List<TSystemType?>(capacity))
             : (IList)(new List<TSystemType>(capacity));
       }
-
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, TSystemType> readOneFunc);
-
-         var pr = new PrimitiveReader<TSystemType>(tse, formatOptions, this, reader, typeWidth, readOneFunc);
-
-         return pr.ReadAll();
-      }
-
-      public override void Write(BinaryWriter writer, IList values)
-      {
-         throw new NotImplementedException();
-      }
-
-      protected virtual void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, TSystemType> readOneFunc)
-      {
-         throw new InvalidOperationException($"'{nameof(GetPrimitiveReaderParameters)}' is not defined. Either declare it, or implement '{nameof(Read)}' yourself.");
-      }
    }
 }

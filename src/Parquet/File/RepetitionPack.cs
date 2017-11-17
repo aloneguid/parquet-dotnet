@@ -14,7 +14,6 @@ namespace Parquet.File
          IList flatList,
          List<int> levels)
       {
-         levels = new List<int>();
          int touched = 0;
          HierarchyToFlat(maxRepetitionLevel, hierarchyList, levels, flatList, ref touched, 0);
       }

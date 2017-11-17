@@ -14,10 +14,9 @@ namespace Parquet.Data
 
       }
 
-      protected override void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, sbyte> readOneFunc)
+      protected override sbyte ReadOne(BinaryReader reader)
       {
-         typeWidth = 1;
-         readOneFunc = r => r.ReadSByte();
+         return reader.ReadSByte();
       }
    }
 }

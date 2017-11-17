@@ -12,10 +12,14 @@ namespace Parquet.Data
       {
       }
 
-      protected override void GetPrimitiveReaderParameters(out int typeWidth, out Func<BinaryReader, int> readOneFunc)
+      protected override int ReadOne(BinaryReader reader)
       {
-         typeWidth = 4;
-         readOneFunc = r => r.ReadInt32();
+         return reader.ReadInt32();
+      }
+
+      protected override void WriteOne(BinaryWriter writer, int value)
+      {
+         writer.Write(value);
       }
    }
 }
