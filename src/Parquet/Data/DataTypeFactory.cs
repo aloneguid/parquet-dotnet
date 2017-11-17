@@ -10,6 +10,7 @@ namespace Parquet.Data
       {
          // special types
          new DateTimeOffsetDataType(),
+         new DateTimeDataType(),
          new IntervalDataType(),
          new DecimalDataType(),
 
