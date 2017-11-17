@@ -12,7 +12,7 @@ namespace Parquet.Test
       public void Simple_first_level_map_int_to_string()
       {
          var ds = new DataSet(
-            new SchemaElement<IDictionary<int, string>>("names"),
+            new DictionarySchemaElement("names", DataType.Int32, DataType.String),
             new SchemaElement<int>("id"));
 
          ds.Add(new Dictionary<int, string>

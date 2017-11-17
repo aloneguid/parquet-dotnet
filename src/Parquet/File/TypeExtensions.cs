@@ -45,11 +45,11 @@ namespace Parquet.File
          return false;
       }
 
-      public static bool TryExtractDictionaryType(Type t, out Type keyType, out Type valueType)
+      public static bool TryExtractDictionaryType(this Type t, out Type keyType, out Type valueType)
       {
          TypeInfo ti = t.GetTypeInfo();
 
-         if(ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+         if(ti.IsGenericType && ti.GetGenericTypeDefinition().GetTypeInfo().IsAssignableFrom(typeof(Dictionary<,>).GetTypeInfo()))
          {
             keyType = ti.GenericTypeArguments[0];
             valueType = ti.GenericTypeArguments[1];

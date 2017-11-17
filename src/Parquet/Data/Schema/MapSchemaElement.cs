@@ -4,14 +4,27 @@ using System.Collections.Generic;
 
 namespace Parquet.Data
 {
-   class MapSchemaElement : SchemaElement
+   public class DictionarySchemaElement : SchemaElement
    {
       internal SchemaElement Key { get; private set; }
 
       internal SchemaElement Value { get; private set; }
 
-      //todo: how do you specify types?
-      public MapSchemaElement(string name) : base(name, DataType.Dictionary)
+      public DataType KeyType => Key.DataType;
+
+      public DataType ValueType => Value.DataType;
+
+      //todo: add overload for CLR generics
+
+      public DictionarySchemaElement(string name, DataType keyDataType, DataType valueDataType)
+         : base(name, DataType.Dictionary)
+      {
+         Key = new SchemaElement("key", keyDataType, false, true);
+         Value = new SchemaElement("value", valueDataType, true, true);
+      }
+
+      internal DictionarySchemaElement(string name)
+         : base(name, DataType.Dictionary)
       {
       }
 

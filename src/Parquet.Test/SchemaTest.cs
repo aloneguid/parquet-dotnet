@@ -83,15 +83,15 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Valid_dictionaries_are_allowed()
+      public void Generic_dictionaries_are_not_allowed()
       {
-         new SchemaElement<IDictionary<int, string>>("dictionary");
+         Assert.Throws<NotSupportedException>(() => new SchemaElement<IDictionary<int, string>>("dictionary"));
       }
 
       [Fact]
       public void Invalid_dictionary_declaration()
       {
-         Assert.Throws<NotSupportedException>(() => new SchemaElement<Dictionary<int, int>>("d"));
+         Assert.Throws<ArgumentException>(() => new SchemaElement<Dictionary<int, int>>("d"));
       }
 
       [Fact]

@@ -1,75 +1,7 @@
-﻿using Parquet.File;
-using System;
-using System.Collections.Generic;
+﻿using System;
 
 namespace Parquet.Data
 {
-   /// <summary>
-   /// Element of dataset's schema. Provides a helper way to construct a schema element with .NET generics.
-   /// <typeparamref name="T">Type of element in the column</typeparamref>
-   /// </summary>
-   public class SchemaElement<T> : SchemaElement
-   {
-      /// <summary>
-      /// Initializes a new instance of the <see cref="SchemaElement"/> class.
-      /// </summary>
-      /// <param name="name">Column name</param>
-      public SchemaElement(string name) : base(name, GetDataType(), GetIsNullable(), GetIsArray())
-      {
-
-      }
-
-      private static DataType GetDataType()
-      {
-         Deconstruct(out Type baseType, out bool t1, out bool t2, out bool t3);
-
-         IDataTypeHandler handler = DataTypeFactory.Match(baseType);
-         if (handler == null) DataTypeFactory.ThrowClrTypeNotSupported(baseType);
-
-         return handler.DataType;
-      }
-
-      private static bool GetIsNullable()
-      {
-         Deconstruct(out Type t1, out bool hasNulls, out bool t2, out bool t3);
-         return hasNulls;
-      }
-
-      private static bool GetIsArray()
-      {
-         Deconstruct(out Type t1, out bool t2, out bool isArray, out bool t3);
-         return isArray;
-      }
-
-      private static void Deconstruct(out Type baseType, out bool hasNulls, out bool isArray, out bool isDictionary)
-      {
-         Type t = typeof(T);
-         baseType = t;
-         isDictionary = false;
-
-         if(t.TryExtractEnumerableType(out Type enumItemType))
-         {
-            baseType = enumItemType;
-            isArray = true;
-         }
-         else
-         {
-            isArray = false;
-         }
-
-         if(baseType.IsNullable())
-         {
-            baseType = baseType.GetNonNullable();
-            hasNulls = true;
-         }
-         else
-         {
-            hasNulls = false;
-         }
-         
-      }
-
-   }
 
    /// <summary>
    /// Element of dataset's schema

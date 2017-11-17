@@ -43,7 +43,7 @@ namespace Parquet.Data
       /// <summary>
       /// Gets the schema elements
       /// </summary>
-      public IList<SchemaElement> Elements => _elements;
+      public IReadOnlyList<SchemaElement> Elements => _elements;
 
       /// <summary>
       /// Gets the number of elements in the schema

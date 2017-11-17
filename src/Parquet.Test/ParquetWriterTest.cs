@@ -151,21 +151,21 @@ namespace Parquet.Test
       {
          var ms = new MemoryStream();
 
-         var schema = new Schema();
-         schema.Elements.Add(new SchemaElement<int>("Id"));
-         schema.Elements.Add(new SchemaElement<DateTime>("Timestamp"));
-         schema.Elements.Add(new SchemaElement<DateTimeOffset>("Timestamp2"));
-         schema.Elements.Add(new SchemaElement<string>("Message"));
-         schema.Elements.Add(new SchemaElement<byte[]>("Data"));
-         schema.Elements.Add(new SchemaElement<bool>("IsDeleted"));
-         schema.Elements.Add(new SchemaElement<float>("Amount"));
-         schema.Elements.Add(new SchemaElement<decimal>("TotalAmount"));
-         schema.Elements.Add(new SchemaElement<long>("Counter"));
-         schema.Elements.Add(new SchemaElement<double>("Amount2"));
-         schema.Elements.Add(new SchemaElement<byte>("Flag"));
-         schema.Elements.Add(new SchemaElement<sbyte>("Flag2"));
-         schema.Elements.Add(new SchemaElement<short>("Flag3"));
-         schema.Elements.Add(new SchemaElement<ushort>("Flag4"));
+         var schema = new Schema(
+            new SchemaElement<int>("Id"),
+            new SchemaElement<DateTime>("Timestamp"),
+            new SchemaElement<DateTimeOffset>("Timestamp2"),
+            new SchemaElement<string>("Message"),
+            new SchemaElement<byte[]>("Data"),
+            new SchemaElement<bool>("IsDeleted"),
+            new SchemaElement<float>("Amount"),
+            new SchemaElement<decimal>("TotalAmount"),
+            new SchemaElement<long>("Counter"),
+            new SchemaElement<double>("Amount2"),
+            new SchemaElement<byte>("Flag"),
+            new SchemaElement<sbyte>("Flag2"),
+            new SchemaElement<short>("Flag3"),
+            new SchemaElement<ushort>("Flag4"));
 
          var ds1 = new DataSet(schema);
 

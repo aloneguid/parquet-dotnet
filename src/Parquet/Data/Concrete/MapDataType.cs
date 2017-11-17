@@ -38,7 +38,7 @@ namespace Parquet.Data
 
          //followed by a key and a value, but we declared them as owned
 
-         var map = new MapSchemaElement(tseRoot.Name);
+         var map = new DictionarySchemaElement(tseRoot.Name);
          map.Path = tseRoot.Name + Schema.PathSeparator + tseContainer.Name;
          index += 1;
          ownedChildCount = 2;

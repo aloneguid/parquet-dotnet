@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.File;
 
 namespace Parquet.Data
 {
@@ -147,7 +148,7 @@ namespace Parquet.Data
       {
          if(se.DataType == DataType.Dictionary)
          {
-            return ((MapSchemaElement)se).CreateCellValue(pathToValues, index);
+            return ((DictionarySchemaElement)se).CreateCellValue(pathToValues, index);
          }
          else if(se.DataType == DataType.Structure || se.DataType == DataType.List)
          {
@@ -177,7 +178,7 @@ namespace Parquet.Data
          AddRow(row, _schema.Elements, true);
       }
 
-      private void AddRow(Row row, IList<SchemaElement> schema, bool updateCount)
+      private void AddRow(Row row, IReadOnlyList<SchemaElement> schema, bool updateCount)
       {
          ValidateRow(row);
 
@@ -186,7 +187,11 @@ namespace Parquet.Data
             SchemaElement se = schema[i];
             object value = row[i];
 
-            if(se.DataType == DataType.Dictionary || se.DataType == DataType.Structure || se.DataType == DataType.List)
+            if(se.DataType == DataType.Dictionary)
+            {
+               throw new NotImplementedException();
+            }
+            if(se.DataType == DataType.Structure || se.DataType == DataType.List)
             {
                throw new NotSupportedException($"{se.DataType} is not (yet) supported");
             }
@@ -206,7 +211,7 @@ namespace Parquet.Data
 
       private IList GetValues(SchemaElement schema, bool createIfMissing)
       {
-         if (!_pathToValues.TryGetValue(schema.Name, out IList values))
+         if (!_pathToValues.TryGetValue(schema.Path, out IList values))
          {
             if (createIfMissing)
             {
@@ -214,11 +219,11 @@ namespace Parquet.Data
 
                values = handler.CreateEmptyList(schema.HasNulls, 0);
 
-               _pathToValues[schema.Name] = values;
+               _pathToValues[schema.Path] = values;
             }
             else
             {
-               throw new ArgumentException($"column '{schema.Name}' does not exist by path '{schema.Name}'", nameof(schema));
+               throw new ArgumentException($"column '{schema.Path}' does not exist by path '{schema.Path}'", nameof(schema));
             }
          }
 
@@ -240,7 +245,7 @@ namespace Parquet.Data
          ValidateRow(row.RawValues, _schema.Elements);
       }
 
-      private void ValidateRow(object[] values, IList<SchemaElement> schema)
+      private void ValidateRow(object[] values, IReadOnlyList<SchemaElement> schema)
       {
          if (values.Length != schema.Count)
             throw new ArgumentException($"the row has {values.Length} values but schema expects {schema.Count}", nameof(values));
@@ -266,13 +271,25 @@ namespace Parquet.Data
                   }
                   else
                   {
-                     throw new ArgumentException($"expected '{se.ClrType}' but found '{vt}' in column '{se.Name}'");
+                     if (!IsValidDictionary(se, value))
+                     {
+                        throw new ArgumentException($"expected '{se.ClrType}' but found '{vt}' in column '{se.Name}'");
+                     }
                   }
 
                }
             }
 
          }
+      }
+
+      private static bool IsValidDictionary(SchemaElement se, object value)
+      {
+         if (!(se is DictionarySchemaElement dse)) return false;
+
+         if (!value.GetType().TryExtractDictionaryType(out Type keyType, out Type valueType)) return false;
+
+         return keyType == dse.Key.ClrType && valueType == dse.Value.ClrType;
       }
 
       private static bool TrySmartConvert(Type passedType, Type requiredType, object value, out object convertedValue)
