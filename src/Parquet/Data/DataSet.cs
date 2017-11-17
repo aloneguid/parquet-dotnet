@@ -252,12 +252,54 @@ namespace Parquet.Data
       {
          if (row == null) throw new ArgumentNullException(nameof(row));
 
-         int rl = row.Length;
+         ValidateRow(row.RawValues, _schema.Elements);
+      }
 
-         if (rl != _schema.Length)
-            throw new ArgumentException($"the row has {rl} values but schema expects {_schema.Length}", nameof(row));
+      private void ValidateRow(object[] values, IList<SchemaElement> schema)
+      {
+         if (values.Length != schema.Count)
+            throw new ArgumentException($"the row has {values.Length} values but schema expects {schema.Count}", nameof(values));
 
-         //todo: type validation
+         for(int i = 0; i < values.Length; i++)
+         {
+            object value = values[i];
+            SchemaElement se = schema[i];
+
+            if(value == null)
+            {
+               if (!se.HasNulls)
+                  throw new ArgumentException($"element is null but column '{se.Name}' does not accept nulls");
+            }
+            else
+            {
+               Type vt = value.GetType();
+               if (value.GetType() != se.ClrType)
+               {
+                  if (TrySmartConvert(vt, se.ClrType, value, out object convertedValue))
+                  {
+                     values[i] = convertedValue;
+                  }
+                  else
+                  {
+                     throw new ArgumentException($"expected '{se.ClrType}' but found '{vt}' in column '{se.Name}'");
+                  }
+
+               }
+            }
+
+         }
+      }
+
+      private static bool TrySmartConvert(Type passedType, Type requiredType, object value, out object convertedValue)
+      {
+         if (passedType == typeof(DateTime) && requiredType == typeof(DateTimeOffset))
+         {
+            convertedValue = new DateTimeOffset((DateTime)value);
+            return true;
+         }
+
+         convertedValue = null;
+         return false;
       }
 
       #endregion

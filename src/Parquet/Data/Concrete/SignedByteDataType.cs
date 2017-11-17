@@ -18,5 +18,10 @@ namespace Parquet.Data
       {
          return reader.ReadSByte();
       }
+
+      protected override void WriteOne(BinaryWriter writer, sbyte value)
+      {
+         writer.Write(value);
+      }
    }
 }

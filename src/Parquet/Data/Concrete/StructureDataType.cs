@@ -15,7 +15,7 @@ namespace Parquet.Data.Concrete
 
       public Type ClrType => typeof(Row);
 
-      System.Type IDataTypeHandler.ClrType => throw new NotImplementedException();
+      Type IDataTypeHandler.ClrType => throw new NotImplementedException();
 
       public IList CreateEmptyList(bool isNullable, int capacity)
       {
@@ -58,6 +58,11 @@ namespace Parquet.Data.Concrete
       }
 
       public void Write(BinaryWriter writer, IList values)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
          throw new NotImplementedException();
       }

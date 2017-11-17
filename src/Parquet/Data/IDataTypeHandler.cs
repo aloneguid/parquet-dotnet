@@ -25,8 +25,8 @@ namespace Parquet.Data
 
       IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
 
-      void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
+      void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values);
 
-      void Write(BinaryWriter writer, IList values);
+      void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
    }
 }

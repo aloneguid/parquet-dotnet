@@ -79,7 +79,7 @@ namespace Parquet.Data
          return result;
       }
 
-      public virtual void Write(BinaryWriter writer, IList values)
+      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
          foreach(TSystemType one in values)
          {

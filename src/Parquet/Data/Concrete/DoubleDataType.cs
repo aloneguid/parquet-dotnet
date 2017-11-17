@@ -15,5 +15,10 @@ namespace Parquet.Data
       {
          return reader.ReadDouble();
       }
+
+      protected override void WriteOne(BinaryWriter writer, double value)
+      {
+         writer.Write(value);
+      }
    }
 }

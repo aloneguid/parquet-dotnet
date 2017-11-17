@@ -104,7 +104,7 @@ namespace Parquet.File
                }
 
                //write data
-               _dataTypeHandler.Write(writer, values);
+               _dataTypeHandler.Write(_tse, writer, values);
 
                dataPageBytes = ms.ToArray();
             }

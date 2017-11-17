@@ -33,7 +33,7 @@ namespace Parquet.Data
          return dest;
       }
 
-      public override void Write(BinaryWriter writer, IList values)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
          var lst = (List<bool>)values;
          int n = 0;

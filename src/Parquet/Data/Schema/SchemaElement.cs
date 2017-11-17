@@ -91,18 +91,26 @@ namespace Parquet.Data
       /// </summary>
       public bool IsArray { get; }
 
+      /// <summary>
+      /// Column name
+      /// </summary>
+      public string Name { get; private set; }
+
+      /// <summary>
+      /// CLR type of this column. Not sure whether to expose this externally yet.
+      /// </summary>
+      internal Type ClrType { get; private set; }
+
       public SchemaElement(string name, DataType dataType, bool hasNulls = true, bool isArray = false)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          DataType = dataType;
          HasNulls = hasNulls;
          IsArray = isArray;
-      }
 
-      /// <summary>
-      /// Column name
-      /// </summary>
-      public string Name { get; private set; }
+         IDataTypeHandler handler = DataTypeFactory.Match(dataType);
+         ClrType = handler.ClrType;
+      }
 
       /// <summary>
       /// Pretty prints

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.IO;
-using Parquet.Data;
+﻿using System.IO;
 
 namespace Parquet.Data
 {
@@ -14,6 +11,11 @@ namespace Parquet.Data
       protected override float ReadOne(BinaryReader reader)
       {
          return reader.ReadSingle();
+      }
+
+      protected override void WriteOne(BinaryWriter writer, float value)
+      {
+         writer.Write(value);
       }
    }
 }

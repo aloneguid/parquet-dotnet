@@ -15,5 +15,10 @@ namespace Parquet.Data
       {
          return reader.ReadInt64();
       }
+
+      protected override void WriteOne(BinaryWriter writer, long value)
+      {
+         writer.Write(value);
+      }
    }
 }

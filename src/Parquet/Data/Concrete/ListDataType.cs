@@ -55,5 +55,10 @@ namespace Parquet.Data
       {
          throw new NotImplementedException();
       }
+
+      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      {
+         throw new NotImplementedException();
+      }
    }
 }

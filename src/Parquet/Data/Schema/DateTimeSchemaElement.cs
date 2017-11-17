@@ -7,6 +7,9 @@ namespace Parquet.Data
    /// </summary>
    public class DateTimeSchemaElement : SchemaElement
    {
+      /// <summary>
+      /// Desired data format, Parquet specific
+      /// </summary>
       public DateTimeFormat DateTimeFormat { get; }
 
       /// <summary>
@@ -14,8 +17,8 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">The name.</param>
       /// <param name="format">The format.</param>
-      /// <param name="nullable">Is 'DateTime?'</param>
-      /// <exception cref="ArgumentException">format</exception>
+      /// <param name="hasNulls">Is 'DateTime?'</param>
+      /// <param name="isArray"></param>
       public DateTimeSchemaElement(string name, DateTimeFormat format, bool hasNulls = true, bool isArray = false)
          : base(name, DataType.DateTimeOffset, hasNulls, isArray)
       {

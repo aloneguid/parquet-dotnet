@@ -240,7 +240,7 @@ namespace Parquet.Test
       [Fact]
       public void Datetime_as_null_writes()
       {
-         var schemaElements = new List<Data.SchemaElement>();
+         var schemaElements = new List<SchemaElement>();
          schemaElements.Add(new SchemaElement<string>("primary-key"));
          schemaElements.Add(new SchemaElement<DateTime?>("as-at-date"));
 

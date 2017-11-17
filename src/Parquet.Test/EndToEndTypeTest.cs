@@ -14,10 +14,10 @@ namespace Parquet.Test
    {
       public static IEnumerable<object[]> TypeData => new[]
       {
-         new object[] {  new SchemaElement<string>("s"), "plain string" },
-         new object[] {  new SchemaElement<string>("s"), "L'Oréal Paris" },
-         new object[] {  new SchemaElement<float>("f"), 1.23f },
-         new object[] {  new SchemaElement<double>("d"), 10.44D },
+         new object[] {  new SchemaElement<string>("string"), "plain string" },
+         new object[] {  new SchemaElement<string>("unicode string"), "L'Oréal Paris" },
+         new object[] {  new SchemaElement<float>("float"), 1.23f },
+         new object[] {  new SchemaElement<double>("double"), 10.44D },
          new object[] { new SchemaElement<DateTime>("datetime"), DateTime.UtcNow.RoundToSecond()},
          new object[] { new SchemaElement<long>("long"), (long)1234 },
 
@@ -31,12 +31,12 @@ namespace Parquet.Test
          //loses precision slightly, i.e.
          //Expected: 2017-07-13T10:58:44.3767154+00:00
          //Actual:   2017-07-12T10:58:44.3770000+00:00
-         new object[] {  new SchemaElement<DateTimeOffset>("d"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "default" },
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Impala), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "impala" },
+         new object[] {  new SchemaElement<DateTimeOffset>("dateTimeOffset"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "default" },
+         new object[] {  new DateTimeSchemaElement("dateImpala", DateTimeFormat.Impala), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "impala" },
 
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "dateandtime" },
+         new object[] {  new DateTimeSchemaElement("dateDateAndTime", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "dateandtime" },
          // don't want any excess info in the offset INT32 doesn't contain or care about this data 
-         new object[] {  new DateTimeSchemaElement("d", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero), "date" },
+         new object[] {  new DateTimeSchemaElement("dateDate", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero), "date" },
          new object[] {  new SchemaElement<Interval>("interval"), new Interval(3, 2, 1) },
 
          new object[] {  new SchemaElement<byte>("byte"), byte.MinValue },
@@ -67,8 +67,8 @@ namespace Parquet.Test
          object expectedValue = ds[0][0];
          object actualValue = ds1[0][0];
 
-         if(schema.DataType == DataType.DateTimeOffset)
-            actualValue = ((DateTimeOffset) actualValue).DateTime;
+         //if(schema.DataType == DataType.DateTimeOffset)
+         //   actualValue = ((DateTimeOffset) actualValue).DateTime;
 
          Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");

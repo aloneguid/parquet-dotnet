@@ -25,5 +25,11 @@ namespace Parquet.Data
          var big = new BigInteger(data);
          return big;
       }
+
+      protected override void WriteOne(BinaryWriter writer, BigInteger value)
+      {
+         byte[] data = value.ToByteArray();
+         writer.Write(data);
+      }
    }
 }

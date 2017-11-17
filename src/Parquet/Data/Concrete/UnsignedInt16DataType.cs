@@ -15,5 +15,10 @@ namespace Parquet.Data
       {
          return reader.ReadUInt16();
       }
+
+      protected override void WriteOne(BinaryWriter writer, ushort value)
+      {
+         writer.Write(value);
+      }
    }
 }
