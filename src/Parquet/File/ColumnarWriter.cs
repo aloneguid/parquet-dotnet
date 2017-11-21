@@ -76,7 +76,7 @@ namespace Parquet.File
          if (_maxRepetitionLevel > 0)
          {
             repetitions = new List<int>();
-            IList flatValues = _dataTypeHandler.CreateEmptyList(_tse.IsNullable(), 0);
+            IList flatValues = _dataTypeHandler.CreateEmptyList(_tse.IsNullable(), false, 0);
             RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions);
             values = flatValues;
             _ph.Data_page_header.Num_values = values.Count; //update with new count

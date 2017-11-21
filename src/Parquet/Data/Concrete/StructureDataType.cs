@@ -17,7 +17,7 @@ namespace Parquet.Data.Concrete
 
       Type IDataTypeHandler.ClrType => throw new NotImplementedException();
 
-      public IList CreateEmptyList(bool isNullable, int capacity)
+      public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
          throw new NotSupportedException("structures cannot have row values");
       }

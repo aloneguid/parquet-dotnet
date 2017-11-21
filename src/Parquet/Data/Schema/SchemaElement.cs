@@ -51,6 +51,8 @@ namespace Parquet.Data
          {
             ClrType = handler.ClrType;
          }
+
+         Path = name;
       }
 
       /// <summary>
@@ -58,7 +60,7 @@ namespace Parquet.Data
       /// </summary>
       public override string ToString()
       {
-         return $"{Name}: {DataType} (HN: {HasNulls}, IA: {IsArray})";
+         return $"{Name}: {DataType} (nulls: {HasNulls}, array: {IsArray}, clr: {ClrType}, path: {Path})";
       }
 
       /// <summary>

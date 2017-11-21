@@ -189,9 +189,9 @@ namespace Parquet.Data
 
             if(se.DataType == DataType.Dictionary)
             {
-               throw new NotImplementedException();
+               ((DictionarySchemaElement)se).AddElement(this, value as IDictionary);
             }
-            if(se.DataType == DataType.Structure || se.DataType == DataType.List)
+            else if(se.DataType == DataType.Structure || se.DataType == DataType.List)
             {
                throw new NotSupportedException($"{se.DataType} is not (yet) supported");
             }
@@ -209,21 +209,23 @@ namespace Parquet.Data
          }
       }
 
-      private IList GetValues(SchemaElement schema, bool createIfMissing)
+      internal IList GetValues(SchemaElement schema, bool createIfMissing)
       {
+         if(schema.Path == null) throw new ArgumentNullException(nameof(schema.Path));
+
          if (!_pathToValues.TryGetValue(schema.Path, out IList values))
          {
             if (createIfMissing)
             {
                IDataTypeHandler handler = DataTypeFactory.Match(schema.DataType);
 
-               values = handler.CreateEmptyList(schema.HasNulls, 0);
+               values = handler.CreateEmptyList(schema.HasNulls, schema.IsArray, 0);
 
                _pathToValues[schema.Path] = values;
             }
             else
             {
-               throw new ArgumentException($"column '{schema.Path}' does not exist by path '{schema.Path}'", nameof(schema));
+               throw new ArgumentException($"column does not exist by path '{schema.Path}'", nameof(schema));
             }
          }
 

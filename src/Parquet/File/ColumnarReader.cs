@@ -87,8 +87,8 @@ namespace Parquet.File
 
          IList mergedValues = new ValueMerger(
             _maxRepetitionLevel,
-            () => _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), 0),
-            values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), 0))
+            () => _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), false, 0),
+            values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), false, 0))
             .Apply(dictionary, definitions, repetitions, indexes, (int)maxValues);
 
          ValueMerger.Trim(mergedValues, (int)offset, (int)count);

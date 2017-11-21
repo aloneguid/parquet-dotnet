@@ -11,9 +11,11 @@ namespace Parquet.Data
       {
       }
 
-      public override IList CreateEmptyList(bool isNullable, int capacity)
+      public override IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
-         return new List<byte[]>();
+         return isArray
+            ? (IList)(new List<List<byte[]>>())
+            : (IList)(new List<byte[]>());
       }
 
       protected override byte[] ReadOne(BinaryReader reader)

@@ -60,7 +60,7 @@ namespace Parquet
 
             foreach(Thrift.SchemaElement tse in writeableSchema)
             {
-               var path = new List<string> { tse.Name };
+               List<string> path = _footer.GetPath(tse);
                string flatPath = string.Join(Schema.PathSeparator, path);
                var cw = new ColumnarWriter(Stream, ThriftStream, _footer, tse, path, compression, _formatOptions, _writerOptions);
 

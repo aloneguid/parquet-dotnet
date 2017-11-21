@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet.Data
 {
@@ -21,6 +22,9 @@ namespace Parquet.Data
       {
          Key = new SchemaElement("key", keyDataType, false, true);
          Value = new SchemaElement("value", valueDataType, true, true);
+
+         Key.Path = $"{Path}.key_value.key";
+         Value.Path = $"{Path}.key_value.value";
       }
 
       internal DictionarySchemaElement(string name)
@@ -59,6 +63,24 @@ namespace Parquet.Data
          }
 
          return result;
+      }
+
+      internal void AddElement(DataSet ds, IDictionary dictionary)
+      {
+         IList keys = ds.GetValues(Key, true);
+         IList values = ds.GetValues(Value, true);
+
+         IDataTypeHandler keyHandler = DataTypeFactory.Match(Key.DataType);
+         IDataTypeHandler valueHandler = DataTypeFactory.Match(Value.DataType);
+
+         IList keysList = keyHandler.CreateEmptyList(Key.HasNulls, false, dictionary.Count);
+         IList valuesList = valueHandler.CreateEmptyList(Value.HasNulls, false, dictionary.Count);
+
+         foreach (object v in dictionary.Keys) keysList.Add(v);
+         foreach (object v in dictionary.Values) valuesList.Add(v);
+
+         keys.Add(keysList);
+         values.Add(valuesList);
       }
    }
 }

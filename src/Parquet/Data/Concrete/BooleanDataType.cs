@@ -13,7 +13,7 @@ namespace Parquet.Data
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         IList dest = CreateEmptyList(tse.IsNullable(), 0);
+         IList dest = CreateEmptyList(tse.IsNullable(), false, 0);
 
          int ibit = 0;
 

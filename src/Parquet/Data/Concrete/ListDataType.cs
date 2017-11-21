@@ -19,9 +19,9 @@ namespace Parquet.Data
 
       public Type ClrType => typeof(IEnumerable<>);
 
-      public IList CreateEmptyList(bool isNullable, int capacity)
+      public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
-         return new List<IEnumerable>(capacity);
+         throw new NotImplementedException();
       }
 
       public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)

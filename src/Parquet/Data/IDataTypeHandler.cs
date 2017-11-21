@@ -24,7 +24,7 @@ namespace Parquet.Data
 
       Type ClrType { get; }
 
-      IList CreateEmptyList(bool isNullable, int capacity);
+      IList CreateEmptyList(bool isNullable, bool isArray, int capacity);
 
       IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
 

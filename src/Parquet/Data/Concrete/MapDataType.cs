@@ -19,7 +19,7 @@ namespace Parquet.Data
 
       public Type ClrType => typeof(IDictionary<,>);
 
-      public IList CreateEmptyList(bool isNullable, int capacity)
+      public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
          throw new NotImplementedException();
       }
@@ -45,19 +45,42 @@ namespace Parquet.Data
          return map;
       }
 
-      public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
-      {
-         throw new NotImplementedException();
-      }
-
       public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         throw new NotImplementedException();
-      }
+         parent.Num_children += 1;
 
-      public Thrift.SchemaElement CreateThriftElement(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
-      {
-         throw new NotImplementedException();
+         //add the root container where map begins
+         var root = new Thrift.SchemaElement(se.Name)
+         {
+            Converted_type = Thrift.ConvertedType.MAP,
+            Num_children = 1,
+            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL
+         };
+         container.Add(root);
+
+         //key-value is a container for column of keys and column of values
+         var keyValue = new Thrift.SchemaElement("key_value")
+         {
+            Num_children = 0, //is assigned by children
+            Repetition_type = Thrift.FieldRepetitionType.REPEATED
+         };
+         container.Add(keyValue);
+
+         //now add the key and value separately
+         DictionarySchemaElement dse = se as DictionarySchemaElement;
+         IDataTypeHandler keyHandler = DataTypeFactory.Match(dse.Key.DataType);
+         IDataTypeHandler valueHandler = DataTypeFactory.Match(dse.Value.DataType);
+
+         keyHandler.CreateThrift(dse.Key, keyValue, container);
+         Thrift.SchemaElement tseKey = container[container.Count - 1];
+         valueHandler.CreateThrift(dse.Value, keyValue, container);
+         Thrift.SchemaElement tseValue = container[container.Count - 1];
+
+         //fixups for weirdness in RLs
+         if (tseKey.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
+            tseKey.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+         if (tseValue.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
+            tseValue.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
       }
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
@@ -68,11 +91,6 @@ namespace Parquet.Data
       }
 
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         throw new NotImplementedException();
-      }
-
-      public void Write(BinaryWriter writer, IList values)
       {
          throw new NotImplementedException();
       }

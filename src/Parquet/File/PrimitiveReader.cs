@@ -39,7 +39,7 @@ namespace Parquet.File
 
          //create list with effective capacity
          int capacity = (int)((_binaryReader.BaseStream.Position - totalLength) / _typeWidth);
-         IList result = _dataTypeHandler.CreateEmptyList(_schemaElement.IsNullable(), capacity);
+         IList result = _dataTypeHandler.CreateEmptyList(_schemaElement.IsNullable(), false, capacity);
 
          if(_schemaElement.IsNullable())
          {

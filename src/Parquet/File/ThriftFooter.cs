@@ -75,6 +75,22 @@ namespace Parquet.File
          return _fileMeta.Schema[i];
       }
 
+      public List<string> GetPath(Thrift.SchemaElement schemaElement)
+      {
+         var tree = new ThriftSchemaTree(_fileMeta.Schema);
+         var path = new List<string>();
+
+         ThriftSchemaTree.Node wrapped = tree.Find(schemaElement);
+         while(wrapped.parent != null)
+         {
+            path.Add(wrapped.element.Name);
+            wrapped = wrapped.parent;
+         }
+
+         path.Reverse();
+         return path;
+      }
+
       public void GetLevels(Thrift.ColumnChunk columnChunk, out int maxRepetitionLevel, out int maxDefinitionLevel)
       {
          maxRepetitionLevel = 0;
@@ -92,10 +108,10 @@ namespace Parquet.File
                   Thrift.SchemaElement se = _fileMeta.Schema[i];
 
                   bool repeated = (se.__isset.repetition_type && se.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
-                  bool defined = (se.Repetition_type != Thrift.FieldRepetitionType.REQUIRED);
+                  bool defined = (se.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
 
                   if (repeated) maxRepetitionLevel += 1;
-                  if (defined) maxDefinitionLevel += 1;
+                  if (!defined) maxDefinitionLevel += 1;
 
                   break;
                }
@@ -248,6 +264,65 @@ namespace Parquet.File
          }
       }
 
+      #endregion
+
+      #region [ Helpers ]
+
+      class ThriftSchemaTree
+      {
+         public class Node
+         {
+            public Thrift.SchemaElement element;
+            public List<Node> children;
+            public Node parent;
+         }
+
+         public Node root;
+
+         public ThriftSchemaTree(List<Thrift.SchemaElement> schema)
+         {
+            root = new Node { element = schema[0] };
+            int i = 1;
+
+            BuildSchema(root, schema, root.element.Num_children, ref i);
+         }
+
+         public Node Find(Thrift.SchemaElement tse)
+         {
+            return Find(root, tse);
+         }
+
+         private Node Find(Node root, Thrift.SchemaElement tse)
+         {
+            foreach(Node child in root.children)
+            {
+               if (child.element == tse) return child;
+
+               if(child.children != null)
+               {
+                  Node cf = Find(child, tse);
+                  if (cf != null) return cf;
+               }
+            }
+
+            return null;
+         }
+
+         private void BuildSchema(Node parent, List<Thrift.SchemaElement> schema, int count, ref int i)
+         {
+            parent.children = new List<Node>();
+            for(int ic = 0; ic < count; ic++)
+            {
+               Thrift.SchemaElement child = schema[i++];
+               var node = new Node { element = child, parent = parent };
+               parent.children.Add(node);
+               if(child.Num_children > 0)
+               {
+                  BuildSchema(node, schema, child.Num_children, ref i);
+               }
+            }
+         }
+      }
 
       #endregion
    }

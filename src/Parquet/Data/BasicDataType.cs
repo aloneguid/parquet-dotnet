@@ -52,7 +52,7 @@ namespace Parquet.Data
          return new SchemaElement(tse.Name, DataType, hasNulls, isArray);
       }
 
-      public abstract IList CreateEmptyList(bool isNullable, int capacity);
+      public abstract IList CreateEmptyList(bool isNullable, bool isArray, int capacity);
 
       public virtual IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
@@ -61,7 +61,7 @@ namespace Parquet.Data
          //create list with effective capacity
          //int capacity = (int)((reader.BaseStream.Position - totalLength) / _typeWidth);
          int capacity = 0;
-         IList result = CreateEmptyList(tse.IsNullable(), capacity);
+         IList result = CreateEmptyList(tse.IsNullable(), false, capacity);
 
          Stream s = reader.BaseStream;
          try

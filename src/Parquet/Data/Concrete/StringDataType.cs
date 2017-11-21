@@ -12,9 +12,11 @@ namespace Parquet.Data
       {
       }
 
-      public override IList CreateEmptyList(bool isNullable, int capacity)
+      public override IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
-         return new List<string>(capacity);
+         return isArray
+            ? (IList)(new List<List<string>>())
+            : (IList)(new List<string>(capacity));
       }
 
       public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)

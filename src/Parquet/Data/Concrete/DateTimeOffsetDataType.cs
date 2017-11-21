@@ -58,7 +58,7 @@ namespace Parquet.Data
 
       public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         IList result = CreateEmptyList(tse.IsNullable(), 0);
+         IList result = CreateEmptyList(tse.IsNullable(), false, 0);
 
          switch(tse.Type)
          {
