@@ -53,7 +53,7 @@ namespace Parquet.Test.Reader
          {
             //todo: this comparison needs to be improved, probably doesn't handle nulls etc.
 
-            SchemaElement se = schema.Elements[i];
+            Field se = schema.Elements[i];
             Type clrType = DataTypeFactory.Match(se.DataType).ClrType;
 
             object pv = pc[i];
@@ -115,7 +115,7 @@ namespace Parquet.Test.Reader
 
             //header
             string[] columnNames = reader.ReadNextRow();
-            result = new DataSet(new Schema(columnNames.Select(n => new SchemaElement(n, DataType.String))));
+            result = new DataSet(new Schema(columnNames.Select(n => new Field(n, DataType.String))));
 
             //values
             string[] values;

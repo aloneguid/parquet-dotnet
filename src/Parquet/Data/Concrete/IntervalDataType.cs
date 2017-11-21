@@ -16,7 +16,7 @@ namespace Parquet.Data
 
       }
 
-      public override void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          base.CreateThrift(se, parent, container);
 

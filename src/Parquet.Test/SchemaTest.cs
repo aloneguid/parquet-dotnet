@@ -10,32 +10,32 @@ namespace Parquet.Test
       [Fact]
       public void Creating_element_with_unsupported_type_throws_exception()
       {
-         Assert.Throws<NotSupportedException>(() => new SchemaElement<Enum>("e"));
+         Assert.Throws<NotSupportedException>(() => new Field<Enum>("e"));
       }
 
       [Fact]
       public void SchemaElement_are_equal()
       {
-         Assert.Equal(new SchemaElement<int>("id"), new SchemaElement<int>("id"));
+         Assert.Equal(new Field<int>("id"), new Field<int>("id"));
       }
 
       [Fact]
       public void SchemaElement_different_names_not_equal()
       {
-         Assert.NotEqual(new SchemaElement<int>("id1"), new SchemaElement<int>("id"));
+         Assert.NotEqual(new Field<int>("id1"), new Field<int>("id"));
       }
 
       [Fact]
       public void SchemaElement_different_types_not_equal()
       {
-         Assert.NotEqual((SchemaElement)(new SchemaElement<int>("id")), (SchemaElement)(new SchemaElement<double>("id")));
+         Assert.NotEqual((Field)(new Field<int>("id")), (Field)(new Field<double>("id")));
       }
 
       [Fact]
       public void Schemas_idential_equal()
       {
-         var schema1 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("city"));
-         var schema2 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("city"));
+         var schema1 = new Schema(new Field<int>("id"), new Field<string>("city"));
+         var schema2 = new Schema(new Field<int>("id"), new Field<string>("city"));
 
          Assert.Equal(schema1, schema2);
       }
@@ -43,8 +43,8 @@ namespace Parquet.Test
       [Fact]
       public void Schemas_different_not_equal()
       {
-         var schema1 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("city"));
-         var schema2 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("city2"));
+         var schema1 = new Schema(new Field<int>("id"), new Field<string>("city"));
+         var schema2 = new Schema(new Field<int>("id"), new Field<string>("city2"));
 
          Assert.NotEqual(schema1, schema2);
       }
@@ -52,8 +52,8 @@ namespace Parquet.Test
       [Fact]
       public void Schemas_differ_only_in_repeated_fields_not_equal()
       {
-         var schema1 = new Schema(new SchemaElement<int>("id"), new SchemaElement<string>("cities"));
-         var schema2 = new Schema(new SchemaElement<int>("id"), new SchemaElement<IEnumerable<string>>("cities"));
+         var schema1 = new Schema(new Field<int>("id"), new Field<string>("cities"));
+         var schema2 = new Schema(new Field<int>("id"), new Field<IEnumerable<string>>("cities"));
 
          Assert.NotEqual(schema1, schema2);
       }
@@ -61,15 +61,15 @@ namespace Parquet.Test
       [Fact]
       public void Schemas_differ_by_nullability()
       {
-         Assert.NotEqual<SchemaElement>(
-            new SchemaElement<int>("id"),
-            new SchemaElement<int?>("id"));
+         Assert.NotEqual<Field>(
+            new Field<int>("id"),
+            new Field<int?>("id"));
       }
 
       [Fact]
       public void String_is_always_nullable()
       {
-         var se = new SchemaElement<string>("id");
+         var se = new Field<string>("id");
 
          Assert.True(se.HasNulls);
       }
@@ -77,7 +77,7 @@ namespace Parquet.Test
       [Fact]
       public void Datetime_is_not_nullable_by_default()
       {
-         var se = new SchemaElement<DateTime>("id");
+         var se = new Field<DateTime>("id");
 
          Assert.False(se.HasNulls);
       }
@@ -85,19 +85,19 @@ namespace Parquet.Test
       [Fact]
       public void Generic_dictionaries_are_not_allowed()
       {
-         Assert.Throws<NotSupportedException>(() => new SchemaElement<IDictionary<int, string>>("dictionary"));
+         Assert.Throws<NotSupportedException>(() => new Field<IDictionary<int, string>>("dictionary"));
       }
 
       [Fact]
       public void Invalid_dictionary_declaration()
       {
-         Assert.Throws<ArgumentException>(() => new SchemaElement<Dictionary<int, int>>("d"));
+         Assert.Throws<ArgumentException>(() => new Field<Dictionary<int, int>>("d"));
       }
 
       [Fact]
-      public void Cannot_declare_dictionary_from_plain_type()
+      public void But_i_can_declare_a_dictionary()
       {
-         Assert.Throws<NotSupportedException>(() => new SchemaElement("dictionary", DataType.Dictionary));
+         new MapField("dictionary", DataType.Int32, DataType.String);
       }
    }
 }

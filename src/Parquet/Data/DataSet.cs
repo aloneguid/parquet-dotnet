@@ -34,7 +34,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="DataSet"/> class.
       /// </summary>
       /// <param name="schema">The schema.</param>
-      public DataSet(IEnumerable<SchemaElement> schema) : this(new Schema(schema))
+      public DataSet(IEnumerable<Field> schema) : this(new Schema(schema))
       {
       }
 
@@ -42,7 +42,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="DataSet"/> class.
       /// </summary>
       /// <param name="schema">The schema.</param>
-      public DataSet(params SchemaElement[] schema) : this(new Schema(schema))
+      public DataSet(params Field[] schema) : this(new Schema(schema))
       {
       }
 
@@ -83,7 +83,7 @@ namespace Parquet.Data
       /// Column values
       /// </returns>
       /// <exception cref="ArgumentException"></exception>
-      public IList GetColumn(SchemaElement schemaElement, int offset = 0, int count = -1)
+      public IList GetColumn(Field schemaElement, int offset = 0, int count = -1)
       {
          throw new NotImplementedException();
       }
@@ -116,7 +116,7 @@ namespace Parquet.Data
       /// <typeparam name="T">Column element type</typeparam>
       /// <param name="schemaElement">Column schema</param>
       /// <returns>Strong typed collection</returns>
-      public IReadOnlyCollection<T> GetColumn<T>(SchemaElement schemaElement)
+      public IReadOnlyCollection<T> GetColumn<T>(Field schemaElement)
       {
          return (List<T>)GetColumn(schemaElement);
       }
@@ -139,20 +139,20 @@ namespace Parquet.Data
          return CreateRow(_schema.Elements, index, _pathToValues);
       }
 
-      private Row CreateRow(IEnumerable<SchemaElement> schema, int index, Dictionary<string, IList> pathToValues)
+      private Row CreateRow(IEnumerable<Field> schema, int index, Dictionary<string, IList> pathToValues)
       {
          return new Row(schema.Select(se => CreateElement(se, index, pathToValues)));
       }
 
-      private object CreateElement(SchemaElement se, int index, Dictionary<string, IList> pathToValues)
+      private object CreateElement(Field se, int index, Dictionary<string, IList> pathToValues)
       {
-         if(se.DataType == DataType.Dictionary)
+         if(se.SchemaType == SchemaType.Map)
          {
-            return ((DictionarySchemaElement)se).CreateCellValue(pathToValues, index);
+            return ((MapField)se).CreateCellValue(pathToValues, index);
          }
-         else if(se.DataType == DataType.Structure || se.DataType == DataType.List)
+         else if(se.SchemaType == SchemaType.Structure || se.SchemaType == SchemaType.List)
          {
-            throw new NotSupportedException($"{se.DataType} is not (yet) supported");
+            throw new NotSupportedException($"{se.SchemaType} is not (yet) supported");
          }
          else
          {
@@ -178,26 +178,26 @@ namespace Parquet.Data
          AddRow(row, _schema.Elements, true);
       }
 
-      private void AddRow(Row row, IReadOnlyList<SchemaElement> schema, bool updateCount)
+      private void AddRow(Row row, IReadOnlyList<Field> schema, bool updateCount)
       {
          ValidateRow(row);
 
          for(int i = 0; i < schema.Count; i++)
          {
-            SchemaElement se = schema[i];
+            Field se = schema[i];
             object value = row[i];
 
-            if(se.DataType == DataType.Dictionary)
+            if(se.SchemaType == SchemaType.Map)
             {
-               ((DictionarySchemaElement)se).AddElement(this, value as IDictionary);
+               ((MapField)se).AddElement(this, value as IDictionary);
             }
-            else if(se.DataType == DataType.Structure || se.DataType == DataType.List)
+            else if(se.SchemaType == SchemaType.Structure || se.SchemaType == SchemaType.List)
             {
-               throw new NotSupportedException($"{se.DataType} is not (yet) supported");
+               throw new NotSupportedException($"{se.SchemaType} is not (yet) supported");
             }
             else
             {
-               IList values = GetValues(se, true);
+               IList values = GetValues((DataField)se, true);
 
                values.Add(value);
             }
@@ -209,23 +209,23 @@ namespace Parquet.Data
          }
       }
 
-      internal IList GetValues(SchemaElement schema, bool createIfMissing)
+      internal IList GetValues(DataField field, bool createIfMissing)
       {
-         if(schema.Path == null) throw new ArgumentNullException(nameof(schema.Path));
+         if(field.Path == null) throw new ArgumentNullException(nameof(field.Path));
 
-         if (!_pathToValues.TryGetValue(schema.Path, out IList values))
+         if (!_pathToValues.TryGetValue(field.Path, out IList values))
          {
             if (createIfMissing)
             {
-               IDataTypeHandler handler = DataTypeFactory.Match(schema.DataType);
+               IDataTypeHandler handler = DataTypeFactory.Match(field);
 
-               values = handler.CreateEmptyList(schema.HasNulls, schema.IsArray, 0);
+               values = handler.CreateEmptyList(field.HasNulls, field.IsArray, 0);
 
-               _pathToValues[schema.Path] = values;
+               _pathToValues[field.Path] = values;
             }
             else
             {
-               throw new ArgumentException($"column does not exist by path '{schema.Path}'", nameof(schema));
+               throw new ArgumentException($"column does not exist by path '{field.Path}'", nameof(field));
             }
          }
 
@@ -247,7 +247,7 @@ namespace Parquet.Data
          ValidateRow(row.RawValues, _schema.Elements);
       }
 
-      private void ValidateRow(object[] values, IReadOnlyList<SchemaElement> schema)
+      private void ValidateRow(object[] values, IReadOnlyList<Field> schema)
       {
          if (values.Length != schema.Count)
             throw new ArgumentException($"the row has {values.Length} values but schema expects {schema.Count}", nameof(values));
@@ -255,7 +255,7 @@ namespace Parquet.Data
          for(int i = 0; i < values.Length; i++)
          {
             object value = values[i];
-            SchemaElement se = schema[i];
+            Field se = schema[i];
 
             if(value == null)
             {
@@ -285,9 +285,9 @@ namespace Parquet.Data
          }
       }
 
-      private static bool IsValidDictionary(SchemaElement se, object value)
+      private static bool IsValidDictionary(Field se, object value)
       {
-         if (!(se is DictionarySchemaElement dse)) return false;
+         if (!(se is MapField dse)) return false;
 
          if (!value.GetType().TryExtractDictionaryType(out Type keyType, out Type valueType)) return false;
 

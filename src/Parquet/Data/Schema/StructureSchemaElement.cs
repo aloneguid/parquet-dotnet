@@ -2,16 +2,16 @@
 
 namespace Parquet.Data
 {
-   public class StructureSchemaElement : SchemaElement
+   public class StructureSchemaElement : Field
    {
-      public StructureSchemaElement(string name, bool isArray, params SchemaElement[] elements) : base(name, DataType.Structure, true, isArray)
+      public StructureSchemaElement(string name, bool isArray, params Field[] elements) : base(name, SchemaType.Structure)
       {
-         foreach(SchemaElement element in elements)
+         foreach(Field element in elements)
          {
             Elements.Add(element);
          }
       }
 
-      public IList<SchemaElement> Elements { get; } = new List<SchemaElement>();
+      public IList<Field> Elements { get; } = new List<Field>();
    }
 }

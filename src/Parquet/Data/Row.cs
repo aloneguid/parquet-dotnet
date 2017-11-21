@@ -161,7 +161,7 @@ namespace Parquet.Data
       /// </summary>
       public object[] RawValues => _values;
 
-      internal static Row Compress(IEnumerable<SchemaElement> schema, IEnumerable<Row> rows)
+      internal static Row Compress(IEnumerable<Field> schema, IEnumerable<Row> rows)
       {
          throw new NotImplementedException();
 

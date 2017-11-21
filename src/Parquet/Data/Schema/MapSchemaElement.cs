@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace Parquet.Data
 {
-   public class DictionarySchemaElement : SchemaElement
+   public class MapField : Field
    {
-      internal SchemaElement Key { get; private set; }
+      internal DataField Key { get; private set; }
 
-      internal SchemaElement Value { get; private set; }
+      internal DataField Value { get; private set; }
 
       public DataType KeyType => Key.DataType;
 
@@ -17,30 +17,30 @@ namespace Parquet.Data
 
       //todo: add overload for CLR generics
 
-      public DictionarySchemaElement(string name, DataType keyDataType, DataType valueDataType)
-         : base(name, DataType.Dictionary)
+      public MapField(string name, DataField keyField, DataField valueField)
+         : base(name, SchemaType.Map)
       {
-         Key = new SchemaElement("key", keyDataType, false, true);
-         Value = new SchemaElement("value", valueDataType, true, true);
+         Key = keyField;
+         Value = valueField;
 
          Key.Path = $"{Path}.key_value.key";
          Value.Path = $"{Path}.key_value.value";
       }
 
-      internal DictionarySchemaElement(string name)
-         : base(name, DataType.Dictionary)
+      internal MapField(string name)
+         : base(name, SchemaType.Map)
       {
       }
 
-      internal override void Assign(SchemaElement se)
+      internal override void Assign(Field se)
       {
          if(Key == null)
          {
-            Key = se;
+            Key = (DataField)se;
          }
          else if(Value == null)
          {
-            Value = se;
+            Value = (DataField)se;
          }
          else
          {

@@ -15,7 +15,9 @@ namespace Parquet.Data
 
       public int? BitWidth => null;
 
-      public DataType DataType => DataType.List;
+      public DataType DataType => DataType.Unspecified;
+
+      public SchemaType SchemaType => SchemaType.Structure;
 
       public Type ClrType => typeof(IEnumerable<>);
 
@@ -24,9 +26,9 @@ namespace Parquet.Data
          throw new NotImplementedException();
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
+      public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
-         var list = new ListSchemaElement(schema[index].Name);
+         var list = new ListField(schema[index].Name);
 
          //skip this element and child container
          index += 2;
@@ -38,7 +40,7 @@ namespace Parquet.Data
          return list;
       }
 
-      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }

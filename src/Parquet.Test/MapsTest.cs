@@ -12,8 +12,8 @@ namespace Parquet.Test
       public void Simple_first_level_map_int_to_string()
       {
          var ds = new DataSet(
-            new DictionarySchemaElement("names", DataType.Int32, DataType.String),
-            new SchemaElement<int>("id"));
+            new MapField("names", DataType.Int32, DataType.String),
+            new Field<int>("id"));
 
          ds.Add(new Dictionary<int, string>
          {

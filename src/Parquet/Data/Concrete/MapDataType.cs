@@ -15,7 +15,9 @@ namespace Parquet.Data
 
       public int? BitWidth => null;
 
-      public DataType DataType => DataType.Dictionary;
+      public DataType DataType => DataType.Unspecified;
+
+      public SchemaType SchemaType => SchemaType.Structure;
 
       public Type ClrType => typeof(IDictionary<,>);
 
@@ -24,7 +26,7 @@ namespace Parquet.Data
          throw new NotImplementedException();
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
+      public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          Thrift.SchemaElement tseRoot = schema[index];
 
@@ -38,14 +40,14 @@ namespace Parquet.Data
 
          //followed by a key and a value, but we declared them as owned
 
-         var map = new DictionarySchemaElement(tseRoot.Name);
+         var map = new MapField(tseRoot.Name);
          map.Path = tseRoot.Name + Schema.PathSeparator + tseContainer.Name;
          index += 1;
          ownedChildCount = 2;
          return map;
       }
 
-      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          parent.Num_children += 1;
 
@@ -67,7 +69,7 @@ namespace Parquet.Data
          container.Add(keyValue);
 
          //now add the key and value separately
-         DictionarySchemaElement dse = se as DictionarySchemaElement;
+         MapField dse = se as MapField;
          IDataTypeHandler keyHandler = DataTypeFactory.Match(dse.Key.DataType);
          IDataTypeHandler valueHandler = DataTypeFactory.Match(dse.Value.DataType);
 

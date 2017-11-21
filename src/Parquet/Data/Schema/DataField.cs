@@ -1,12 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Parquet.Data
 {
-
-   /// <summary>
-   /// Element of dataset's schema
-   /// </summary>
-   public class SchemaElement : IEquatable<SchemaElement>
+   public class DataField : Field, IEquatable<DataField>
    {
       /// <summary>
       /// Data type of this element
@@ -24,24 +22,12 @@ namespace Parquet.Data
       public bool IsArray { get; }
 
       /// <summary>
-      /// Column name
-      /// </summary>
-      public string Name { get; private set; }
-
-      /// <summary>
       /// CLR type of this column. Not sure whether to expose this externally yet.
       /// </summary>
       internal Type ClrType { get; private set; }
 
-      /// <summary>
-      /// Only used internally!
-      /// </summary>
-      internal string Path { get; set; }
-
-      public SchemaElement(string name, DataType dataType, bool hasNulls = true, bool isArray = false)
+      public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false) : base(name, SchemaType.PrimitiveType)
       {
-         Name = name ?? throw new ArgumentNullException(nameof(name));
-
          DataType = dataType;
          HasNulls = hasNulls;
          IsArray = isArray;
@@ -70,7 +56,7 @@ namespace Parquet.Data
       /// <returns>
       /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
       /// </returns>
-      public bool Equals(SchemaElement other)
+      public bool Equals(DataField other)
       {
          if (ReferenceEquals(null, other)) return false;
          if (ReferenceEquals(this, other)) return true;
@@ -97,7 +83,7 @@ namespace Parquet.Data
          if (ReferenceEquals(this, obj)) return true;
          if (obj.GetType() != GetType()) return false;
 
-         return Equals((SchemaElement) obj);
+         return Equals((Field)obj);
       }
 
       /// <summary>
@@ -110,14 +96,5 @@ namespace Parquet.Data
       {
          return Name.GetHashCode() * DataType.GetHashCode();
       }
-
-      #region [ Internal Helpers ]
-
-      internal virtual void Assign(SchemaElement se)
-      {
-
-      }
-
-      #endregion
    }
 }

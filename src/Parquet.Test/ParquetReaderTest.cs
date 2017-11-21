@@ -218,7 +218,7 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
 
          Assert.Equal(2, ds.Schema.Length);
-         Assert.Equal(DataType.List, ds.Schema[0].DataType);
+         Assert.Equal(DataType.Unspecified, ds.Schema[0].DataType);
          Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
 
          Assert.Equal("cities", ds.Schema[0].Name);
@@ -251,7 +251,7 @@ root
          Assert.Equal(1, ds.RowCount);
          Assert.Equal(2, ds.ColumnCount);
 
-         Assert.Equal(DataType.Structure, ds.Schema[0].DataType);
+         Assert.Equal(DataType.Unspecified, ds.Schema[0].DataType);
          Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
 
          Assert.Equal("city", ds.Schema.ColumnNames[0]);
@@ -272,7 +272,7 @@ root
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("map.parquet"));
 
-         SchemaElement ms = ds.Schema[1];
+         Field ms = ds.Schema[1];
          Assert.Equal("numbers", ms.Name);
 
          Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds[0].ToString());
@@ -289,7 +289,7 @@ root
       [Fact]
       public void Read_column_with_all_nulls()
       {
-         var ds = new DataSet(new SchemaElement<int?>("id"))
+         var ds = new DataSet(new Field<int?>("id"))
          {
             new object[] {null},
             new object[] {null}

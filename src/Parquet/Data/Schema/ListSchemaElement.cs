@@ -4,11 +4,11 @@ using System.Text;
 
 namespace Parquet.Data
 {
-   class ListSchemaElement : SchemaElement
+   class ListField : Field
    {
-      public SchemaElement Item { get; internal set; }
+      public Field Item { get; internal set; }
 
-      internal ListSchemaElement(string name) : base(name, DataType.List)
+      internal ListField(string name) : base(name, SchemaType.List)
       {
       }
    }

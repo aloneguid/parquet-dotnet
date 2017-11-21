@@ -9,13 +9,13 @@ namespace Parquet.Data
    /// Element of dataset's schema. Provides a helper way to construct a schema element with .NET generics.
    /// <typeparamref name="T">Type of element in the column</typeparamref>
    /// </summary>
-   public class SchemaElement<T> : SchemaElement
+   public class Field<T> : DataField
    {
       /// <summary>
-      /// Initializes a new instance of the <see cref="SchemaElement"/> class.
+      /// Initializes a new instance of the <see cref="Field"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      public SchemaElement(string name) : base(name, Discover().dataType, Discover().hasNulls, Discover().isArray)
+      public Field(string name) : base(name, Discover().dataType, Discover().hasNulls, Discover().isArray)
       {
       }
 
@@ -37,7 +37,7 @@ namespace Parquet.Data
          //throw a useful hint
          if(t.TryExtractDictionaryType(out Type dKey, out Type dValue))
          {
-            throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(DictionarySchemaElement)}.");
+            throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
          }
 
          if (t.TryExtractEnumerableType(out Type enumItemType))

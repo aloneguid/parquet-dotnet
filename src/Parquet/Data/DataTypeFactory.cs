@@ -45,6 +45,21 @@ namespace Parquet.Data
          return _allDataTypes.FirstOrDefault(dt => dt.DataType == dataType);
       }
 
+      public static IDataTypeHandler Match(Field field)
+      {
+         switch(field.SchemaType)
+         {
+            case SchemaType.Map:
+               return new MapDataType();
+            case SchemaType.List:
+               return new ListDataType();
+            case SchemaType.PrimitiveType:
+               return Match(((DataField)field).DataType);
+            default:
+               throw new NotImplementedException();
+         }
+      }
+
       public static IDataTypeHandler Match(Type clrType)
       {
          return _allDataTypes.FirstOrDefault(dt => dt.ClrType == clrType);

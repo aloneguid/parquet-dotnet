@@ -26,6 +26,8 @@ namespace Parquet.Data
 
       public DataType DataType { get; private set; }
 
+      public SchemaType SchemaType => SchemaType.PrimitiveType;
+
       public Type ClrType => typeof(TSystemType);
 
       public virtual bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
@@ -35,21 +37,21 @@ namespace Parquet.Data
             (_convertedType == null || (tse.__isset.converted_type && tse.Converted_type == _convertedType.Value));
       }
 
-      public virtual SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
+      public virtual Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          Thrift.SchemaElement tse = schema[index++];
 
          bool hasNulls = (tse.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
          bool isArray = (tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
 
-         SchemaElement simple = CreateSimple(tse, hasNulls, isArray);
+         Field simple = CreateSimple(tse, hasNulls, isArray);
          ownedChildCount = 0;
          return simple;
       }
 
-      protected virtual SchemaElement CreateSimple(Thrift.SchemaElement tse, bool hasNulls, bool isArray)
+      protected virtual DataField CreateSimple(Thrift.SchemaElement tse, bool hasNulls, bool isArray)
       {
-         return new SchemaElement(tse.Name, DataType, hasNulls, isArray);
+         return new DataField(tse.Name, DataType, hasNulls, isArray);
       }
 
       public abstract IList CreateEmptyList(bool isNullable, bool isArray, int capacity);
@@ -89,14 +91,15 @@ namespace Parquet.Data
          }
       }
 
-      public virtual void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
+         DataField sef = (DataField)se;
          var tse = new Thrift.SchemaElement(se.Name);
          tse.Type = _thriftType;
          if (_convertedType != null) tse.Converted_type = _convertedType.Value;
-         tse.Repetition_type = se.IsArray
+         tse.Repetition_type = sef.IsArray
             ? Thrift.FieldRepetitionType.REPEATED
-            : (se.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
+            : (sef.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
          container.Add(tse);
          parent.Num_children += 1;
       }

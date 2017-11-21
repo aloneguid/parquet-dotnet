@@ -183,29 +183,29 @@ namespace Parquet.File
       {
          int si = 0;
          Thrift.SchemaElement tse = _fileMeta.Schema[si++];
-         var container = new List<SchemaElement>();
+         var container = new List<Field>();
 
          CreateModelSchema(null, container, tse.Num_children, ref si, formatOptions);
 
          return new Schema(container);
       }
 
-      private void CreateModelSchema(string path, IList<SchemaElement> container, int childCount, ref int si, ParquetOptions formatOptions)
+      private void CreateModelSchema(string path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions)
       {
          for (int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++)
          {
             Thrift.SchemaElement tse = _fileMeta.Schema[si];
             IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
 
-            SchemaElement se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
+            Field se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
 
             se.Path = string.Join(Schema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
 
             if (ownedChildCount > 0)
             {
-               var childContainer = new List<SchemaElement>();
+               var childContainer = new List<Field>();
                CreateModelSchema(se.Path, childContainer, ownedChildCount, ref si, formatOptions);
-               foreach(SchemaElement cse in childContainer)
+               foreach(Field cse in childContainer)
                {
                   se.Assign(cse);
                }
@@ -252,11 +252,11 @@ namespace Parquet.File
          return root;
       }
 
-      private void CreateThriftSchema(IEnumerable<SchemaElement> ses, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      private void CreateThriftSchema(IEnumerable<Field> ses, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         foreach(SchemaElement se in ses)
+         foreach(Field se in ses)
          {
-            IDataTypeHandler handler = DataTypeFactory.Match(se.DataType);
+            IDataTypeHandler handler = DataTypeFactory.Match(se);
 
             //todo: check that handler is found indeed
 

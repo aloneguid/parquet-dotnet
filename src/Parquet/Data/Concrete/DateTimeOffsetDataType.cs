@@ -27,13 +27,13 @@ namespace Parquet.Data
             (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
       }
 
-      public override void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          base.CreateThrift(se, parent, container);
 
          //modify annotations
          Thrift.SchemaElement tse = container.Last();
-         if(se is DateTimeSchemaElement dse)
+         if(se is DateTimeDataField dse)
          {
             switch(dse.DateTimeFormat)
             {

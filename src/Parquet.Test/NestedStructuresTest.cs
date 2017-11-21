@@ -12,10 +12,10 @@ namespace Parquet.Test
       public void Simple_nested_structure_write_read()
       {
          var ds = new DataSet(
-            new SchemaElement<string>("name"),
+            new Field<string>("name"),
             new StructureSchemaElement("address", false,
-               new SchemaElement<string>("line1"),
-               new SchemaElement<string>("postcode")
+               new Field<string>("line1"),
+               new Field<string>("postcode")
             ));
 
          ds.Add("Ivan", new Row("Woods", "postcode"));
@@ -29,8 +29,8 @@ namespace Parquet.Test
       public void Simple_repeated_field_write_read()
       {
          var ds = new DataSet(
-            new SchemaElement<int>("id"),
-            new SchemaElement<IEnumerable<string>>("items"));
+            new Field<int>("id"),
+            new Field<IEnumerable<string>>("items"));
 
          ds.Add(1, new[] { "one", "two" });
 
@@ -44,10 +44,10 @@ namespace Parquet.Test
       public void Repeated_structure_write_read()
       {
          var ds = new DataSet(
-            new SchemaElement<int>("id"),
+            new Field<int>("id"),
             new StructureSchemaElement("cities", true,
-               new SchemaElement<string>("name"),
-               new SchemaElement<string>("country")));
+               new Field<string>("name"),
+               new Field<string>("country")));
 
          ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
 
@@ -60,12 +60,12 @@ namespace Parquet.Test
       public void Structure_nested_into_structure_write_read()
       {
          var ds = new DataSet(
-            new SchemaElement<string>("name"),
+            new Field<string>("name"),
             new StructureSchemaElement("address", false,
-               new SchemaElement<string>("name"),
+               new Field<string>("name"),
                new StructureSchemaElement("lines", false,
-                  new SchemaElement<string>("line1"),
-                  new SchemaElement<string>("line2"))));
+                  new Field<string>("line1"),
+                  new Field<string>("line2"))));
 
          ds.Add("Ivan", new Row("Primary", new Row("line1", "line2")));
 
@@ -78,10 +78,10 @@ namespace Parquet.Test
       public void Structure_with_repeated_field_writes_reads()
       {
          var ds = new DataSet(
-            new SchemaElement<string>("name"),
+            new Field<string>("name"),
             new StructureSchemaElement("address", false,
-               new SchemaElement<string>("name"),
-               new SchemaElement<IEnumerable<string>>("lines")));
+               new Field<string>("name"),
+               new Field<IEnumerable<string>>("lines")));
 
          ds.Add("Ivan", new Row("Primary", new[] { "line1", "line2" }));
 

@@ -11,7 +11,9 @@ namespace Parquet.Data.Concrete
    {
       public int? BitWidth => null;
 
-      public DataType DataType => DataType.Structure;
+      public DataType DataType => DataType.Unspecified;
+
+      public SchemaType SchemaType => SchemaType.Structure;
 
       public Type ClrType => typeof(Row);
 
@@ -22,7 +24,7 @@ namespace Parquet.Data.Concrete
          throw new NotSupportedException("structures cannot have row values");
       }
 
-      public SchemaElement CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
+      public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
          Thrift.SchemaElement container = schema[index];
 
@@ -33,17 +35,17 @@ namespace Parquet.Data.Concrete
          return new StructureSchemaElement(container.Name, false);
       }
 
-      public void CreateThrift(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Data.Field se, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }
 
-      public void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }
 
-      public Thrift.SchemaElement CreateThriftElement(Data.SchemaElement se, IList<Thrift.SchemaElement> container)
+      public Thrift.SchemaElement CreateThriftElement(Data.Field se, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }

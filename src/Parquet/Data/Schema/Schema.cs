@@ -20,13 +20,13 @@ namespace Parquet.Data
       /// </summary>
       public const char PathSeparatorChar = '.';
 
-      private readonly List<SchemaElement> _elements;
+      private readonly List<Field> _elements;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="Schema"/> class from schema elements.
       /// </summary>
       /// <param name="elements">The elements.</param>
-      public Schema(IEnumerable<SchemaElement> elements)
+      public Schema(IEnumerable<Field> elements)
       {
          _elements = elements.ToList();
       }
@@ -35,7 +35,7 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="Schema"/> class.
       /// </summary>
       /// <param name="elements">The elements.</param>
-      public Schema(params SchemaElement[] elements)
+      public Schema(params Field[] elements)
       {
          _elements = elements.ToList();
       }
@@ -43,7 +43,7 @@ namespace Parquet.Data
       /// <summary>
       /// Gets the schema elements
       /// </summary>
-      public IReadOnlyList<SchemaElement> Elements => _elements;
+      public IReadOnlyList<Field> Elements => _elements;
 
       /// <summary>
       /// Gets the number of elements in the schema
@@ -60,7 +60,7 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="i">Index of schema element</param>
       /// <returns>Schema element</returns>
-      public SchemaElement this[int i]
+      public Field this[int i]
       {
          get { return _elements[i]; }
       }
@@ -70,11 +70,11 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Schema element name</param>
       /// <returns>Schema element</returns>
-      public SchemaElement this[string name]
+      public Field this[string name]
       {
          get
          {
-            SchemaElement result = _elements.FirstOrDefault(e => e.Name == name);
+            Field result = _elements.FirstOrDefault(e => e.Name == name);
 
             if (result == null) throw new ArgumentException($"schema element '{name}' not found", nameof(name));
 
@@ -86,7 +86,7 @@ namespace Parquet.Data
       /// Gets the column index by schema element
       /// </summary>
       /// <returns>Element index or -1 if not found</returns>
-      public int GetElementIndex(SchemaElement schema)
+      public int GetElementIndex(Field schema)
       {
          for (int i = 0; i < _elements.Count; i++)
             if (schema.Equals(_elements[i])) return i;

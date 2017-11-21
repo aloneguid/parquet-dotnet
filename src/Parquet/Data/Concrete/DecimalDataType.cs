@@ -28,14 +28,14 @@ namespace Parquet.Data
             );
       }
 
-      public override void CreateThrift(SchemaElement se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          base.CreateThrift(se, parent, container);
 
          //modify this element slightly
          Thrift.SchemaElement tse = container.Last();
 
-         if (se is DecimalSchemaElement dse)
+         if (se is DecimalDataField dse)
          {
             if(dse.ForceByteArrayEncoding)
             {

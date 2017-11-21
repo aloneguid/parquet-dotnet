@@ -5,6 +5,8 @@
    /// </summary>
    public enum DataType
    {
+      Unspecified,
+
       /// <summary>
       /// Boolean
       /// </summary>
@@ -93,7 +95,7 @@
       /// <summary>
       /// Interval
       /// </summary>
-      Interval,
+      Interval/*,
 
       /// <summary>
       /// List of elements
@@ -108,6 +110,6 @@
       /// <summary>
       /// Dictionary of key-value pairs
       /// </summary>
-      Dictionary
+      Dictionary*/
    }
 }

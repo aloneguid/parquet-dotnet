@@ -7,7 +7,7 @@ namespace Parquet.Test
    {
       public static DataSet Generate(int rowCount)
       {
-         var ds = new DataSet(new SchemaElement<int>("id"));
+         var ds = new DataSet(new Field<int>("id"));
          for(int i = 0; i < rowCount; i++)
          {
             var row = new Row(i);
