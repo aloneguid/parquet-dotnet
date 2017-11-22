@@ -152,13 +152,21 @@ namespace Parquet.Data
          {
             return ((MapField)se).CreateCellValue(pathToValues, index);
          }
-         else if(se.SchemaType == SchemaType.Structure || se.SchemaType == SchemaType.List)
+         else if(se.SchemaType == SchemaType.Structure)
+         {
+            return CreateRow(((StructField)se).Elements, index, pathToValues);
+         }
+         else if(se.SchemaType == SchemaType.List)
          {
             throw new NotSupportedException($"{se.SchemaType} is not (yet) supported");
          }
          else
          {
-            IList values = pathToValues[se.Name];
+            if(!pathToValues.TryGetValue(se.Path, out IList values))
+            {
+               throw new ParquetException($"something terrible happened, there is no column by name '{se.Name}' and path '{se.Path}'");
+            }
+
             return values[index];
          }
       }

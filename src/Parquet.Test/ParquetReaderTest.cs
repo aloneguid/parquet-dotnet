@@ -262,6 +262,7 @@ root
          Assert.Equal("London", city[2]);
 
          Assert.Equal(1L, mr[1]);
+         Assert.Equal("{{United Kingdom;True;London};1}", ds[0].ToString());
       }
 
       [Fact]
