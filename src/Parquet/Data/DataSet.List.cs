@@ -14,7 +14,7 @@ namespace Parquet.Data
       public Row this[int index]
       {
          get => CreateRow(index);
-         set => throw new NotImplementedException();
+         set => throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("assigning row by index");
       }
 
       /// <summary>
@@ -85,7 +85,7 @@ namespace Parquet.Data
       /// <returns></returns>
       public IEnumerator<Row> GetEnumerator()
       {
-         throw new NotImplementedException();
+         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("enumerating DataSet");
       }
 
       /// <summary>
@@ -103,7 +103,7 @@ namespace Parquet.Data
       /// <param name="item"></param>
       public void Insert(int index, Row item)
       {
-         throw new NotImplementedException();
+         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("inserting rows into DataSet");
       }
 
       /// <summary>
@@ -125,7 +125,7 @@ namespace Parquet.Data
 
       IEnumerator IEnumerable.GetEnumerator()
       {
-         throw new NotImplementedException();
+         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("enumerating DataSet");
       }
    }
 }

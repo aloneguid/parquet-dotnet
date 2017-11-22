@@ -25,25 +25,10 @@ namespace Snappy.Sharp
          return result.Take(count).ToArray();
       }
 
-      public static void Compress(Stream uncompressed, SnappyStream compressed)
-      {
-         throw new NotImplementedException();
-      }
-
       public static int GetUncompressedLength(byte[] compressed, int offset = 0)
       {
          var decompressor = new SnappyDecompressor();
          return decompressor.ReadUncompressedLength(compressed, offset)[0];
-      }
-
-      public static byte[] Uncompress(byte[] compressed)
-      {
-         throw new NotImplementedException();
-      }
-
-      public static void Uncompress(SnappyStream compressed, StreamWriter uncompressed)
-      {
-         throw new NotImplementedException();
       }
    }
 }

@@ -75,7 +75,7 @@ namespace Parquet.Data
          }
          else
          {
-            throw new NotImplementedException("only structures so far!");
+            throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"adding {listField.Item.SchemaType} to list");
          }
       }
 

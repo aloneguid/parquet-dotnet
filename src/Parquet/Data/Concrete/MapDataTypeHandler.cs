@@ -92,12 +92,12 @@ namespace Parquet.Data.Concrete
 
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         throw new NotImplementedException();
+         throw new NotSupportedException();
       }
 
       public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
-         throw new NotImplementedException();
+         throw new NotSupportedException();
       }
    }
 }

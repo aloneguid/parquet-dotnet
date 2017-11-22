@@ -77,7 +77,7 @@ namespace Parquet.File.Values
       {
          //int header = 0x1;
 
-         throw new NotImplementedException();
+         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("bitpacked encoding");
       }
 
       private static void WriteIntBytes(BinaryWriter writer, int value, int byteWidth)

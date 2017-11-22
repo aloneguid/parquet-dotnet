@@ -60,7 +60,7 @@ namespace Parquet.Data
             case SchemaType.PrimitiveType:
                return Match(((DataField)field).DataType);
             default:
-               throw new NotImplementedException();
+               throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"matching {field.SchemaType}");
          }
       }
 
