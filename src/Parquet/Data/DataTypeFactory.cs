@@ -51,6 +51,8 @@ namespace Parquet.Data
       {
          switch(field.SchemaType)
          {
+            case SchemaType.Structure:
+               return new StructureDataTypeHandler();
             case SchemaType.Map:
                return new MapDataTypeHandler();
             case SchemaType.List:

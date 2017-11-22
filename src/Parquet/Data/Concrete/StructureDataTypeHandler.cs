@@ -26,9 +26,22 @@ namespace Parquet.Data.Concrete
          return StructField.CreateWithNoElements(container.Name);
       }
 
-      public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         throw new NotImplementedException();
+         StructField structField = (StructField)field;
+
+         Thrift.SchemaElement tseStruct = new Thrift.SchemaElement(field.Name)
+         {
+            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+         };
+         container.Add(tseStruct);
+         parent.Num_children += 1;
+
+         foreach(Field cf in structField.Elements)
+         {
+            IDataTypeHandler handler = DataTypeFactory.Match(cf);
+            handler.CreateThrift(cf, tseStruct, container);
+         }
       }
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)

@@ -24,6 +24,7 @@ namespace Parquet.Data
 
          foreach(Field element in elements)
          {
+            element.Path = $"{Path}{Schema.PathSeparator}{element.Path}";
             _elements.Add(element);
          }
       }

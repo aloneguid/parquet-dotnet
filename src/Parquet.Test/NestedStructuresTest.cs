@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Parquet.Data;
 using Xunit;
 
@@ -23,6 +21,8 @@ namespace Parquet.Test
          Assert.Equal(2, ds.ColumnCount);
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal("{Ivan;{Woods;postcode}}", ds1[0].ToString());
       }
 
       [Fact]
