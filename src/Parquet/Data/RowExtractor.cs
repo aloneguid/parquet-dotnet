@@ -29,21 +29,27 @@ namespace Parquet.Data
 
             if (lf.Item.SchemaType == SchemaType.Structure)
             {
-               StructField sf = (StructField)lf.Item;
-               Dictionary<string, IList> elementPathToValues = CreateElementPathToValue(sf, index, columns, out int count);
+               StructField structField = (StructField)lf.Item;
+               Dictionary<string, IList> elementColumns = CreateFieldColumns(structField.Fields, index, columns, out int count);
 
                var rows = new List<Row>(count);
                for (int i = 0; i < count; i++)
                {
-                  Row row = Extract(sf.Fields, i, elementPathToValues);
+                  Row row = Extract(structField.Fields, i, elementColumns);
                   rows.Add(row);
                }
 
                return rows;
             }
+            else if(lf.Item.SchemaType == SchemaType.PrimitiveType)
+            {
+               DataField dataField = (DataField)lf.Item;
+               IList values = GetFieldPathValues(dataField, index, columns);
+               return values;
+            }
             else
             {
-               throw new NotImplementedException();
+               throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"reading {lf.Item.SchemaType} from lists");
             }
          }
          else
@@ -57,8 +63,8 @@ namespace Parquet.Data
          }
       }
 
-      private static Dictionary<string, IList> CreateElementPathToValue(
-         StructField root, int index,
+      private static Dictionary<string, IList> CreateFieldColumns(
+         IEnumerable<Field> fields, int index,
          Dictionary<string, IList> pathToValues,
          out int count)
       {
@@ -66,15 +72,21 @@ namespace Parquet.Data
 
          count = int.MaxValue;
 
-         foreach (Field child in root.Fields)
+         foreach (Field field in fields)
          {
-            string key = child.Path;
+            string key = field.Path;
             IList value = pathToValues[key][index] as IList;
             elementPathToValues[key] = value;
             if (value.Count < count) count = value.Count;
          }
 
          return elementPathToValues;
+      }
+
+      private static IList GetFieldPathValues(Field field, int index, Dictionary<string, IList> columns)
+      {
+         IList values = columns[field.Path][index] as IList;
+         return values;
       }
 
    }
