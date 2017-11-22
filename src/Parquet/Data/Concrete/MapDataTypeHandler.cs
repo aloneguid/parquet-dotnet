@@ -17,7 +17,7 @@ namespace Parquet.Data.Concrete
 
       public SchemaType SchemaType => SchemaType.Structure;
 
-      public Type ClrType => typeof(IDictionary<,>);
+      public Type ClrType => null;
 
       public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {

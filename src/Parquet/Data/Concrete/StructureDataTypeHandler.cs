@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
@@ -13,7 +11,7 @@ namespace Parquet.Data.Concrete
 
       public SchemaType SchemaType => SchemaType.Structure;
 
-      public Type ClrType => typeof(Row);
+      public Type ClrType => null;
 
       public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
@@ -24,16 +22,14 @@ namespace Parquet.Data.Concrete
       {
          Thrift.SchemaElement container = schema[index++];
 
-         ownedChildCount = container.Num_children;
-
-         return new StructField(container.Name);
+         ownedChildCount = container.Num_children; //make then owned to receive in .Assign()
+         return StructField.CreateWithNoElements(container.Name);
       }
 
       public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }
-
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {

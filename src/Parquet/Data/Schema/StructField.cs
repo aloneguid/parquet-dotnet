@@ -15,7 +15,7 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Structure name</param>
       /// <param name="elements">List of elements</param>
-      public StructField(string name, params Field[] elements) : base(name, SchemaType.Structure)
+      public StructField(string name, params Field[] elements) : this(name)
       {
          if(elements == null || elements.Length == 0)
          {
@@ -26,6 +26,16 @@ namespace Parquet.Data
          {
             _elements.Add(element);
          }
+      }
+
+      private StructField(string name) : base(name, SchemaType.Structure)
+      {
+
+      }
+
+      internal static StructField CreateWithNoElements(string name)
+      {
+         return new StructField(name);
       }
 
       /// <summary>

@@ -52,6 +52,11 @@ namespace Parquet.Data
             hasNulls = true;
          }
 
+         if(typeof(Row) == baseType)
+         {
+            throw new ArgumentException($"{typeof(Row)} is not supported. If you tried to declare a struct please use {typeof(StructField)} instead.");
+         }
+
          IDataTypeHandler handler = DataTypeFactory.Match(baseType);
          if (handler == null) DataTypeFactory.ThrowClrTypeNotSupported(baseType);
 

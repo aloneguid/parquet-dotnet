@@ -115,5 +115,11 @@ namespace Parquet.Test
       {
          Assert.Throws<ArgumentException>(() => new StructField("struct"));
       }
+
+      [Fact]
+      public void Generic_field_of_row_throws_a_hint_to_structure()
+      {
+         Assert.Throws<ArgumentException>(() => new Field<Row>("struct"));
+      }
    }
 }
