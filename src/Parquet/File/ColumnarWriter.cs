@@ -127,7 +127,7 @@ namespace Parquet.File
 
       private void WriteLevels(BinaryWriter writer, List<int> levels, int maxLevel)
       {
-         int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
+         int bitWidth = maxLevel.GetBitWidth();
          RunLengthBitPackingHybridValuesWriter.Write(writer, bitWidth, levels);
       }
 

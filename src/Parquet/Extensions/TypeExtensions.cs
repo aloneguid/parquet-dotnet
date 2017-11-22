@@ -4,37 +4,10 @@ using System.Collections;
 using System.Reflection;
 using Parquet.Data;
 
-namespace Parquet.File
+namespace Parquet
 {
    static class TypeExtensions
    {
-      public static IList CreateGenericList(this DataField df, IEnumerable values)
-      {
-         Type elementType = df.ClrType;
-
-         //make the type nullable if it's not a class
-         if(df.HasNulls && !df.IsArray)
-         {
-            if(!elementType.GetTypeInfo().IsClass)
-            {
-               elementType = typeof(Nullable<>).MakeGenericType(elementType);
-            }
-         }
-
-         //create generic list instance
-         Type listType = typeof(List<>);
-         Type listGType = listType.MakeGenericType(elementType);
-
-         IList result = (IList)Activator.CreateInstance(listGType);
-
-         foreach(object value in values)
-         {
-            result.Add(value);
-         }
-
-         return result;
-      }
-
       public static bool TryExtractEnumerableType(this Type t, out Type baseType)
       {
          if(typeof(byte[]) == t)
@@ -109,5 +82,30 @@ namespace Parquet.File
             return ti.GenericTypeArguments[0];
          }
       }
+
+      public static bool IsSimple(this Type t)
+      {
+         if (t == null) return true;
+
+         return
+            t == typeof(bool) ||
+            t == typeof(byte) ||
+            t == typeof(sbyte) ||
+            t == typeof(char) ||
+            t == typeof(decimal) ||
+            t == typeof(double) ||
+            t == typeof(float) ||
+            t == typeof(int) ||
+            t == typeof(uint) ||
+            t == typeof(long) ||
+            t == typeof(ulong) ||
+            t == typeof(short) ||
+            t == typeof(ushort) ||
+            t == typeof(TimeSpan) ||
+            t == typeof(DateTime) ||
+            t == typeof(Guid) ||
+            t == typeof(string);
+      }
+
    }
 }

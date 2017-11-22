@@ -8,20 +8,11 @@ namespace Parquet.Data
 {
    class DataSetValidator
    {
-      private readonly Schema _schema;
-      private readonly DataSet _ds;
-
-      public DataSetValidator(DataSet ds)
-      {
-         _schema = ds.Schema;
-         _ds = ds;
-      }
-
-      public void ValidateRow(Row row)
+      public void ValidateRow(Row row, IReadOnlyList<Field> schema)
       {
          if (row == null) throw new ArgumentNullException(nameof(row));
 
-         ValidateRow(row.RawValues, _schema.Elements);
+         ValidateRow(row.RawValues, schema);
       }
 
       private void ValidateRow(object[] values, IReadOnlyList<Field> schema)

@@ -204,7 +204,7 @@ namespace Parquet.File
       /// <returns></returns>
       private List<int> ReadLevels(BinaryReader reader, int maxLevel)
       {
-         int bitWidth = PEncoding.GetWidthFromMaxInt(maxLevel);
+         int bitWidth = maxLevel.GetBitWidth();
          var result = new List<int>();
 
          //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied

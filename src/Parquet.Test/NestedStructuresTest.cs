@@ -41,13 +41,14 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Repeated_structure_write_read()
+      public void List_of_structures_writes_reads()
       {
          var ds = new DataSet(
             new Field<int>("id"),
-            new StructField("cities",
+            new ListField("cities",
+            new StructField("element",
                new Field<string>("name"),
-               new Field<string>("country")));
+               new Field<string>("country"))));
 
          ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
 

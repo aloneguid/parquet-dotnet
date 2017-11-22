@@ -30,7 +30,7 @@ namespace Parquet.Data
 
          _pathToValues = new Dictionary<string, IList>();
 
-         _validator = new DataSetValidator(this);
+         _validator = new DataSetValidator();
       }
 
       /// <summary>
@@ -229,7 +229,7 @@ namespace Parquet.Data
 
       private void AddRow(Row row, IReadOnlyList<Field> schema, bool updateCount)
       {
-         _validator.ValidateRow(row);
+         _validator.ValidateRow(row, schema);
 
          for(int i = 0; i < schema.Count; i++)
          {
@@ -242,19 +242,11 @@ namespace Parquet.Data
             }
             else if(se.SchemaType == SchemaType.Structure)
             {
-               Row structRow = value as Row;
-
-               if(structRow == null)
-               {
-                  throw new ArgumentException($"expected {typeof(Row)} for field [{se}] value but found {value.GetType()}");
-               }
-
-               StructField structField = (StructField)se;
-               AddRow(structRow, structField.Elements, false);
+               AddStructure(se as StructField, value as Row);
             }
             else if(se.SchemaType == SchemaType.List)
             {
-               throw new NotSupportedException($"{se.SchemaType} is not (yet) supported");
+               AddList(se as ListField, value);
             }
             else
             {
@@ -267,6 +259,40 @@ namespace Parquet.Data
          if (updateCount)
          {
             _rowCount += 1;
+         }
+      }
+
+      private void AddStructure(StructField field, Row structRow)
+      {
+         if (structRow == null)
+         {
+            throw new ArgumentException($"expected {typeof(Row)} for field [{field}] value");
+         }
+
+         AddRow(structRow, field.Elements, false);
+      }
+
+      private void AddList(ListField listField, object value)
+      {
+         if(listField.Item.SchemaType == SchemaType.Structure)
+         {
+            StructField structField = (StructField)listField.Item;
+            IEnumerable<Row> rows = value as IEnumerable<Row>;
+
+            foreach(Row row in rows)
+            {
+               AddRow(row, structField.Elements, false);
+            }
+
+            throw new NotImplementedException();
+
+            //Row singleRow = Row.Compress(structField.Elements, rows);
+            //AddRow(singleRow, structField.Elements, false);
+            //throw new NotImplementedException();
+         }
+         else
+         {
+            throw new NotImplementedException("only structures so far!");
          }
       }
 
