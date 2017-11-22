@@ -9,7 +9,7 @@ namespace Parquet.Test
    public class NestedStructuresTest
    {
       [Fact]
-      public void Simple_nested_structure_write_read()
+      public void Simple_structure_write_read()
       {
          var ds = new DataSet(
             new Field<string>("name"),

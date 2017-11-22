@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.Data.Concrete;
 
 namespace Parquet.Data
 {
@@ -30,7 +31,8 @@ namespace Parquet.Data
 
          // composite types
          new ListDataType(),
-         new MapDataType()
+         new MapDataType(),
+         new StructureDataType()
       };
 
       //todo: all the matches can be much faster, cache them.

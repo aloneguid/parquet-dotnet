@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.Data
+namespace Parquet.Data.Concrete
 {
    class Int64DataType : BasicPrimitiveDataType<long>
    {

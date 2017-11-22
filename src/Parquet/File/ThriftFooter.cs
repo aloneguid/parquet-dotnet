@@ -197,6 +197,11 @@ namespace Parquet.File
             Thrift.SchemaElement tse = _fileMeta.Schema[si];
             IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
 
+            if(dth == null)
+            {
+               throw new InvalidOperationException($"cannot find data type handler to create model schema for {tse.Describe()}");
+            }
+
             Field se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
 
             se.Path = string.Join(Schema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));

@@ -35,20 +35,11 @@ namespace Parquet.Data.Concrete
          return new StructureSchemaElement(container.Name, false);
       }
 
-      public void CreateThrift(Data.Field se, IList<Thrift.SchemaElement> container)
-      {
-         throw new NotImplementedException();
-      }
-
       public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          throw new NotImplementedException();
       }
 
-      public Thrift.SchemaElement CreateThriftElement(Data.Field se, IList<Thrift.SchemaElement> container)
-      {
-         throw new NotImplementedException();
-      }
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
@@ -59,11 +50,6 @@ namespace Parquet.Data.Concrete
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
          throw new NotSupportedException("structures are never to be read individually");
-      }
-
-      public void Write(BinaryWriter writer, IList values)
-      {
-         throw new NotImplementedException();
       }
 
       public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)

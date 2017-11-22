@@ -229,7 +229,7 @@ root
       }
 
       [Fact]
-      public void Read_simple_nested_structure()
+      public void Read_simple_structure()
       {
          /*
           * root

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Parquet.Data
+namespace Parquet.Data.Concrete
 {
    class FloatDataType : BasicPrimitiveDataType<float>
    {

@@ -7,7 +7,7 @@ using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 
-namespace Parquet.Data
+namespace Parquet.Data.Concrete
 {
    class DateTimeOffsetDataType : BasicPrimitiveDataType<DateTimeOffset>
    {

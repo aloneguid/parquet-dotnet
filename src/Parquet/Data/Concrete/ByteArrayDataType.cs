@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 
-namespace Parquet.Data
+namespace Parquet.Data.Concrete
 {
    class ByteArrayDataType : BasicDataType<byte[]>
    {

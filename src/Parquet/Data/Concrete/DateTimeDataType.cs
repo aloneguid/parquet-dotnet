@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using Parquet.File.Values.Primitives;
 
-namespace Parquet.Data
+namespace Parquet.Data.Concrete
 {
    class DateTimeDataType : BasicPrimitiveDataType<DateTime>
    {

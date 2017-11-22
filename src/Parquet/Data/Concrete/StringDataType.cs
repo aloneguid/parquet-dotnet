@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using Parquet.Data;
 
-namespace Parquet.Data
+namespace Parquet.Data.Concrete
 {
    class StringDataType : BasicDataType<string>
    {
