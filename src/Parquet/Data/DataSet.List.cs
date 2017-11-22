@@ -51,7 +51,7 @@ namespace Parquet.Data
       /// </summary>
       public void Clear()
       {
-         foreach(KeyValuePair<string, IList> kvp in _pathToValues)
+         foreach(KeyValuePair<string, IList> kvp in _columns)
          {
             kvp.Value.Clear();
          }
