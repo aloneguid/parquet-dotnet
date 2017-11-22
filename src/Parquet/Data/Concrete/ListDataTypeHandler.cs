@@ -34,9 +34,31 @@ namespace Parquet.Data.Concrete
          return listField;
       }
 
-      public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         throw new NotImplementedException();
+         ListField listField = (ListField)field;
+
+         parent.Num_children += 1;
+
+         //add list container
+         var root = new Thrift.SchemaElement(field.Name)
+         {
+            Converted_type = Thrift.ConvertedType.LIST,
+            Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+            Num_children = 1  //field container below
+         };
+         container.Add(root);
+
+         //add field container
+         var list = new Thrift.SchemaElement("list")
+         {
+            Repetition_type = Thrift.FieldRepetitionType.REPEATED
+         };
+         container.Add(list);
+
+         //add the list item as well
+         IDataTypeHandler fieldHandler = DataTypeFactory.Match(listField.Item);
+         fieldHandler.CreateThrift(listField.Item, list, container);
       }
 
       public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
@@ -46,12 +68,12 @@ namespace Parquet.Data.Concrete
 
       public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
       {
-         throw new NotImplementedException();
+         throw new NotSupportedException();
       }
 
       public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
-         throw new NotImplementedException();
+         throw new NotSupportedException();
       }
    }
 }

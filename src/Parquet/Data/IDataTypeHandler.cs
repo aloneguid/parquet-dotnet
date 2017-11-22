@@ -20,7 +20,7 @@ namespace Parquet.Data
 
       Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);
 
-      void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
+      void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
 
       DataType DataType { get; }
 

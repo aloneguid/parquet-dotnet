@@ -45,12 +45,12 @@ namespace Parquet.Data.Concrete
          return map;
       }
 
-      public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+      public void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
          parent.Num_children += 1;
 
          //add the root container where map begins
-         var root = new Thrift.SchemaElement(se.Name)
+         var root = new Thrift.SchemaElement(field.Name)
          {
             Converted_type = Thrift.ConvertedType.MAP,
             Num_children = 1,
@@ -67,13 +67,13 @@ namespace Parquet.Data.Concrete
          container.Add(keyValue);
 
          //now add the key and value separately
-         MapField dse = se as MapField;
-         IDataTypeHandler keyHandler = DataTypeFactory.Match(dse.Key.DataType);
-         IDataTypeHandler valueHandler = DataTypeFactory.Match(dse.Value.DataType);
+         MapField mapField = field as MapField;
+         IDataTypeHandler keyHandler = DataTypeFactory.Match(mapField.Key.DataType);
+         IDataTypeHandler valueHandler = DataTypeFactory.Match(mapField.Value.DataType);
 
-         keyHandler.CreateThrift(dse.Key, keyValue, container);
+         keyHandler.CreateThrift(mapField.Key, keyValue, container);
          Thrift.SchemaElement tseKey = container[container.Count - 1];
-         valueHandler.CreateThrift(dse.Value, keyValue, container);
+         valueHandler.CreateThrift(mapField.Value, keyValue, container);
          Thrift.SchemaElement tseValue = container[container.Count - 1];
 
          //fixups for weirdness in RLs
