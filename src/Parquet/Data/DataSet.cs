@@ -146,29 +146,68 @@ namespace Parquet.Data
          return new Row(schema.Select(se => CreateElement(se, index, pathToValues)));
       }
 
-      private object CreateElement(Field se, int index, Dictionary<string, IList> pathToValues)
+      private object CreateElement(Field field, int index, Dictionary<string, IList> pathToValues)
       {
-         if(se.SchemaType == SchemaType.Map)
+         if(field.SchemaType == SchemaType.Map)
          {
-            return ((MapField)se).CreateCellValue(pathToValues, index);
+            return ((MapField)field).CreateCellValue(pathToValues, index);
          }
-         else if(se.SchemaType == SchemaType.Structure)
+         else if(field.SchemaType == SchemaType.Structure)
          {
-            return CreateRow(((StructField)se).Elements, index, pathToValues);
+            return CreateRow(((StructField)field).Elements, index, pathToValues);
          }
-         else if(se.SchemaType == SchemaType.List)
+         else if(field.SchemaType == SchemaType.List)
          {
-            throw new NotSupportedException($"{se.SchemaType} is not (yet) supported");
+            ListField lf = (ListField)field;
+
+            if(lf.Item.SchemaType == SchemaType.Structure)
+            {
+               StructField sf = (StructField)lf.Item;
+               Dictionary<string, IList> elementPathToValues = CreateElementPathToValue(sf, index, pathToValues, out int count);
+
+               var rows = new List<Row>(count);
+               for(int i = 0; i < count; i++)
+               {
+                  Row row = CreateRow(sf.Elements, i, elementPathToValues);
+                  rows.Add(row);
+               }
+
+               return rows;
+            }
+            else
+            {
+               throw new NotImplementedException($"oh wow, we found {lf.Item.SchemaType} in a list but we only implemented structures, go ahead and open an issue on GitHub and don't be an asshole, so include the sample file and code");
+            }
          }
          else
          {
-            if(!pathToValues.TryGetValue(se.Path, out IList values))
+            if(!pathToValues.TryGetValue(field.Path, out IList values))
             {
-               throw new ParquetException($"something terrible happened, there is no column by name '{se.Name}' and path '{se.Path}'");
+               throw new ParquetException($"something terrible happened, there is no column by name '{field.Name}' and path '{field.Path}'");
             }
 
             return values[index];
          }
+      }
+
+      private Dictionary<string, IList> CreateElementPathToValue(
+         StructField root, int index,
+         Dictionary<string, IList> pathToValues,
+         out int count)
+      {
+         var elementPathToValues = new Dictionary<string, IList>();
+
+         count = int.MaxValue;
+
+         foreach (Field child in root.Elements)
+         {
+            string key = child.Path;
+            IList value = pathToValues[key][index] as IList;
+            elementPathToValues[key] = value;
+            if (value.Count < count) count = value.Count;
+         }
+
+         return elementPathToValues;
       }
 
       private void RemoveRow(int index)

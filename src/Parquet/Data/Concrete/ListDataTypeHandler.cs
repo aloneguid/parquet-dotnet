@@ -26,16 +26,14 @@ namespace Parquet.Data.Concrete
 
       public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
-         var list = new ListField(schema[index].Name);
+         Thrift.SchemaElement tseList = schema[index];
 
-         //skip this element and child container
-         index += 2;
-
-         //parent parser should add more elements inside this structure
-
-         throw new NotImplementedException();
-         ownedChildCount = 0;
-         return list;
+         ListField listField = ListField.CreateWithNoItem(tseList.Name);
+         //as we are skipping elements set path hint
+         listField.Path = $"{tseList.Name}{Schema.PathSeparator}{schema[index + 1].Name}";
+         index += 2;          //skip this element and child container
+         ownedChildCount = 1; //we should get this element assigned back
+         return listField;
       }
 
       public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)

@@ -34,6 +34,11 @@ namespace Parquet.Data
 
       }
 
+      public override string ToString()
+      {
+         return $"structure of {_elements.Count}";
+      }
+
       internal static StructField CreateWithNoElements(string name)
       {
          return new StructField(name);
