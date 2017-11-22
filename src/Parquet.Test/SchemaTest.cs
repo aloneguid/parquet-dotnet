@@ -99,5 +99,15 @@ namespace Parquet.Test
       {
          new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String));
       }
+
+      [Fact]
+      public void Byte_array_schema_is_a_bytearray_type()
+      {
+         var field = new Field<byte[]>("bytes");
+         Assert.Equal(DataType.ByteArray, field.DataType);
+         Assert.Equal(typeof(byte[]), field.ClrType);
+         Assert.False(field.IsArray);
+         Assert.True(field.HasNulls);
+      }
    }
 }

@@ -37,6 +37,13 @@ namespace Parquet.File
 
       public static bool TryExtractEnumerableType(this Type t, out Type baseType)
       {
+         if(typeof(byte[]) == t)
+         {
+            //it's a special case to avoid confustion between byte arrays and repeatable bytes
+            baseType = null;
+            return false;
+         }
+
          TypeInfo ti = t.GetTypeInfo();
 
          if(ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IEnumerable<>))

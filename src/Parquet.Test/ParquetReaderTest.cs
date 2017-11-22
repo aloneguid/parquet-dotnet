@@ -206,7 +206,7 @@ root
       }
 
       [Fact]
-      public void Read_simple_repeated_field()
+      public void Read_simple_list_with_one_item()
       {
          /*
 root
@@ -229,7 +229,7 @@ root
       }
 
       [Fact]
-      public void Read_simple_nested_field()
+      public void Read_simple_nested_structure()
       {
          /*
           * root

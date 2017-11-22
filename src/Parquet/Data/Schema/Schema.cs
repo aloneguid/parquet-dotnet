@@ -116,6 +116,39 @@ namespace Parquet.Data
          return true;
       }
 
+      internal string GetNotEqualsMessage(Schema other, string thisName, string otherName)
+      {
+         if(_elements.Count != other._elements.Count)
+         {
+            return $"different number of elements ({_elements.Count} != {other._elements.Count})";
+         }
+
+         var sb = new StringBuilder();
+         for (int i = 0; i < _elements.Count; i++)
+         {
+            if (!_elements[i].Equals(other._elements[i]))
+            {
+               if(sb.Length != 0)
+               {
+                  sb.Append(", ");
+               }
+
+               sb.Append("[");
+               sb.Append(thisName);
+               sb.Append(": ");
+               sb.Append(_elements[i]);
+               sb.Append("] != [");
+               sb.Append(otherName);
+               sb.Append(": ");
+               sb.Append(other._elements[i]);
+               sb.Append("]");
+            }
+         }
+         if (sb.Length > 0) return sb.ToString();
+
+         return "not sure!";
+      }
+
       /// <summary>
       /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
       /// </summary>
