@@ -45,6 +45,7 @@ namespace Parquet
       public void Write(DataSet dataSet, CompressionMethod compression = CompressionMethod.Gzip, bool append = false)
       {
          PrepareFile(dataSet, append);
+         _footer.CustomMetadata = dataSet.Metadata.Custom;
 
          int offset = 0;
          int count;

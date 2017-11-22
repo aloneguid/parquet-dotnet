@@ -31,6 +31,25 @@ namespace Parquet.File
          _fileMeta.Created_by = $"Parquet.Net version {fileVersion}";
       }
 
+      public Dictionary<string, string> CustomMetadata
+      {
+         set
+         {
+            _fileMeta.Key_value_metadata = null;
+            if (value == null || value.Count == 0) return;
+
+            _fileMeta.Key_value_metadata = value
+               .Select(kvp => new Thrift.KeyValue(kvp.Key) { Value = kvp.Value })
+               .ToList();
+         }
+         get
+         {
+            if (_fileMeta.Key_value_metadata == null || _fileMeta.Key_value_metadata.Count == 0) return null;
+
+            return _fileMeta.Key_value_metadata.ToDictionary(kv => kv.Key, kv => kv.Value);
+         }
+      }
+
       private static Version FileVersion(Type t)
       {
          CustomAttributeData fva = t.GetTypeInfo()
