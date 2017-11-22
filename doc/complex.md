@@ -1,19 +1,5 @@
 # Complex Data
 
-The library supports reading and writing complex data since v1.5
-
-## Arrays
-
-To specify an array you can simply set schema type as `IEnumerable<T>`:
-
-```csharp
-var ds = new DataSet(
-   new SchemaElement<int>("id"),
-   new SchemaElement<IEnumerable<string>>("strings"));
-
-ds.Add(1, new[] {"one", "two", "three"});
-```
-
 ## Maps
 
 Maps are represented as `IDictionary<TKey, TValue>` where both key and value must be a simple type (no structures are supported):
