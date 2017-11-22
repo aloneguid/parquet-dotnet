@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Parquet.Data;
 
 namespace Parquet
@@ -46,13 +48,12 @@ namespace Parquet
 
       public static string AddPath(this string s, params string[] parts)
       {
-         foreach(string part in parts)
-         {
-            s += Schema.PathSeparator;
-            s += part;
-         }
+         var path = new List<string>(parts.Length + 1);
 
-         return s;
+         if (s != null) path.Add(s);
+         if (parts != null) path.AddRange(parts.Where(p => p != null));
+
+         return string.Join(Schema.PathSeparator, path);
       }
    }
 }

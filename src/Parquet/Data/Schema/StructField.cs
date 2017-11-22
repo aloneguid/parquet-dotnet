@@ -31,7 +31,7 @@ namespace Parquet.Data
          }
 
          Path = name;
-         PathPrefix = name;
+         PathPrefix = null;
       }
 
       internal override string PathPrefix

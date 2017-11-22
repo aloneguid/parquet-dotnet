@@ -2,22 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Data;
-using System.Runtime.CompilerServices;
 
 namespace Parquet.File.Values
 {
    class RunLengthBitPackingHybridValuesWriter
    {
-      /*public bool Write(BinaryWriter writer, SchemaElement schema, IList data, out IList extraValues)
-      {
-         int bitWidth = GetBitWidth(schema);
-         extraValues = null;
-
-         return Write(writer, bitWidth, data);
-      }*/
-
-      public static bool Write(BinaryWriter writer, int bitWidth, IList data)
+      public static void Write(BinaryWriter writer, int bitWidth, IList data)
       {
          //int32 - length of data (we'll come back here so let's just write a zero)
          long dataLengthOffset = writer.BaseStream.Position;
@@ -33,27 +23,8 @@ namespace Parquet.File.Values
 
          //and jump back to the end again
          writer.BaseStream.Seek(0, SeekOrigin.End);
-
-         return true;
       }
 
-      /*private int GetBitWidth(SchemaElement schema)
-      {
-         int bitWidth = TypePrimitive.GetBitWidth(schema.ElementType);
-
-         if (bitWidth == 0) throw new ParquetException($"cannot find bit width for type '{schema.ElementType}'");
-
-         return bitWidth;
-      }*/
-
-      //todo: write without length envelope
-      public static void Write(BinaryWriter writer, IList data, int bitWidth)
-      {
-         //write actual data
-         WriteData(writer, (List<int>)data, bitWidth);
-      }
-
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteData(BinaryWriter writer, List<int> data, int bitWidth)
       {
          //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
@@ -92,7 +63,6 @@ namespace Parquet.File.Values
          }
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteRle(BinaryWriter writer, int chunkCount, int value, int bitWidth)
       {
          int header = 0x0; // the last bit for RLE is 0
@@ -110,7 +80,6 @@ namespace Parquet.File.Values
          throw new NotImplementedException();
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteIntBytes(BinaryWriter writer, int value, int byteWidth)
       {
          byte[] dataBytes = BitConverter.GetBytes(value);
@@ -139,7 +108,6 @@ namespace Parquet.File.Values
          }
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void WriteUnsignedVarInt(BinaryWriter writer, int value)
       {
          while(value > 127)
