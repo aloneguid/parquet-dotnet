@@ -70,7 +70,7 @@ namespace Parquet.Data
          string createdBy) : this(schema)
       {
          _pathToValues = pathToValues;
-         _rowCount = pathToValues.Min(pv => pv.Value.Count);
+         _rowCount = _pathToValues.Count == 0 ? 0 : pathToValues.Min(pv => pv.Value.Count);
          TotalRowCount = totalRowCount;
          _metadata.CreatedBy = createdBy;
       }

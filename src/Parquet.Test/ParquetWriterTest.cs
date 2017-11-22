@@ -238,6 +238,17 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void Writing_no_values_is_possible()
+      {
+         var ds = new DataSet(new DataField("id", DataType.Int32));
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal(0, ds1.TotalRowCount);
+         Assert.Equal(0, ds1.RowCount);
+      }
+
+      [Fact]
       public void Datetime_as_null_writes()
       {
          var schemaElements = new List<Field>();

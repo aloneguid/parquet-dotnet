@@ -54,7 +54,9 @@ namespace Parquet.File
 
       public Thrift.ColumnChunk Write(int offset, int count, IList values)
       {
-         _ph.Data_page_header.Num_values = values.Count;
+         //note that values can be null, meaning there are no values at all
+
+         _ph.Data_page_header.Num_values = values == null ? 0 : values.Count;
          List<PageTag> pages = WriteValues(values);
          _chunk.Meta_data.Num_values = _ph.Data_page_header.Num_values;
 
@@ -72,39 +74,45 @@ namespace Parquet.File
          List<int> repetitions = null;
          List<int> definitions = null;
 
-         //flatten values and create repetitions list if the field is repeatable
-         if (_maxRepetitionLevel > 0)
+         if (values != null)
          {
-            repetitions = new List<int>();
-            IList flatValues = _dataTypeHandler.CreateEmptyList(_tse.IsNullable(), false, 0);
-            RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions);
-            values = flatValues;
-            _ph.Data_page_header.Num_values = values.Count; //update with new count
-         }
+            //flatten values and create repetitions list if the field is repeatable
+            if (_maxRepetitionLevel > 0)
+            {
+               repetitions = new List<int>();
+               IList flatValues = _dataTypeHandler.CreateEmptyList(_tse.IsNullable(), false, 0);
+               RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions);
+               values = flatValues;
+               _ph.Data_page_header.Num_values = values.Count; //update with new count
+            }
 
-         if (_maxDefinitionLevel > 0)
-         {
-            definitions = DefinitionPack.RemoveNulls(values, _maxDefinitionLevel);
+            if (_maxDefinitionLevel > 0)
+            {
+               definitions = DefinitionPack.RemoveNulls(values, _maxDefinitionLevel);
+            }
          }
 
          using (var ms = new MemoryStream())
          {
             using (var writer = new BinaryWriter(ms))
             {
-               //write repetitions
-               if (repetitions != null)
+               if (values != null)
                {
-                  WriteLevels(writer, repetitions, _maxRepetitionLevel);
-               }
+                  //write repetitions
+                  if (repetitions != null)
+                  {
+                     WriteLevels(writer, repetitions, _maxRepetitionLevel);
+                  }
 
-               //write definitions
-               if (definitions != null)
-               {
-                  WriteLevels(writer, definitions, _maxDefinitionLevel);
-               }
+                  //write definitions
+                  if (definitions != null)
+                  {
+                     WriteLevels(writer, definitions, _maxDefinitionLevel);
+                  }
 
-               //write data
-               _dataTypeHandler.Write(_tse, writer, values);
+                  //write data
+                  _dataTypeHandler.Write(_tse, writer, values);
+               }
 
                dataPageBytes = ms.ToArray();
             }

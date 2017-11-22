@@ -92,14 +92,7 @@ namespace Parquet
             Thrift.FileMetaData fileMeta = ReadMetadata();
             _footer = new ThriftFooter(fileMeta);
 
-
-            Schema existingSchema = new ThriftFooter(fileMeta).CreateModelSchema(_formatOptions);
-
-            if (!ds.Schema.Equals(existingSchema))
-            {
-               string reason = ds.Schema.GetNotEqualsMessage(existingSchema, "appending", "existing");
-               throw new ParquetException($"{nameof(DataSet)} schema does not match existing file schema, reason: {reason}");
-            }
+            ValidateSchemasCompatible(_footer, ds);
 
             GoBeforeFooter();
          }
@@ -114,8 +107,21 @@ namespace Parquet
             }
             else
             {
+               ValidateSchemasCompatible(_footer, ds);
+
                _footer.Add(ds.RowCount);
             }
+         }
+      }
+
+      private void ValidateSchemasCompatible(ThriftFooter footer, DataSet ds)
+      {
+         Schema existingSchema = footer.CreateModelSchema(_formatOptions);
+
+         if (!ds.Schema.Equals(existingSchema))
+         {
+            string reason = ds.Schema.GetNotEqualsMessage(existingSchema, "appending", "existing");
+            throw new ParquetException($"{nameof(DataSet)} schema does not match existing file schema, reason: {reason}");
          }
       }
 
