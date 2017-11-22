@@ -97,7 +97,7 @@ namespace Parquet.Test
       [Fact]
       public void But_i_can_declare_a_dictionary()
       {
-         new MapField("dictionary", DataType.Int32, DataType.String);
+         new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String));
       }
    }
 }

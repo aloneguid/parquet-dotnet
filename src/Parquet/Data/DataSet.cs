@@ -16,6 +16,7 @@ namespace Parquet.Data
       private readonly Dictionary<string, IList> _pathToValues;
       private int _rowCount;
       private readonly DataSetMetadata _metadata = new DataSetMetadata();
+      private readonly DataSetValidator _validator;
 
       internal Thrift.FileMetaData Thrift { get; set; }
 
@@ -28,6 +29,8 @@ namespace Parquet.Data
          _schema = schema ?? throw new ArgumentNullException(nameof(schema));
 
          _pathToValues = new Dictionary<string, IList>();
+
+         _validator = new DataSetValidator(this);
       }
 
       /// <summary>
@@ -180,7 +183,7 @@ namespace Parquet.Data
 
       private void AddRow(Row row, IReadOnlyList<Field> schema, bool updateCount)
       {
-         ValidateRow(row);
+         _validator.ValidateRow(row);
 
          for(int i = 0; i < schema.Count; i++)
          {
@@ -240,71 +243,6 @@ namespace Parquet.Data
          }
       }
 
-      private void ValidateRow(Row row)
-      {
-         if (row == null) throw new ArgumentNullException(nameof(row));
-
-         ValidateRow(row.RawValues, _schema.Elements);
-      }
-
-      private void ValidateRow(object[] values, IReadOnlyList<Field> schema)
-      {
-         if (values.Length != schema.Count)
-            throw new ArgumentException($"the row has {values.Length} values but schema expects {schema.Count}", nameof(values));
-
-         for(int i = 0; i < values.Length; i++)
-         {
-            object value = values[i];
-            Field se = schema[i];
-
-            if(value == null)
-            {
-               if (!se.HasNulls)
-                  throw new ArgumentException($"element is null but column '{se.Name}' does not accept nulls");
-            }
-            else
-            {
-               Type vt = value.GetType();
-               if (value.GetType() != se.ClrType)
-               {
-                  if (TrySmartConvert(vt, se.ClrType, value, out object convertedValue))
-                  {
-                     values[i] = convertedValue;
-                  }
-                  else
-                  {
-                     if (!IsValidDictionary(se, value))
-                     {
-                        throw new ArgumentException($"expected '{se.ClrType}' but found '{vt}' in column '{se.Name}'");
-                     }
-                  }
-
-               }
-            }
-
-         }
-      }
-
-      private static bool IsValidDictionary(Field se, object value)
-      {
-         if (!(se is MapField dse)) return false;
-
-         if (!value.GetType().TryExtractDictionaryType(out Type keyType, out Type valueType)) return false;
-
-         return keyType == dse.Key.ClrType && valueType == dse.Value.ClrType;
-      }
-
-      private static bool TrySmartConvert(Type passedType, Type requiredType, object value, out object convertedValue)
-      {
-         if (passedType == typeof(DateTime) && requiredType == typeof(DateTimeOffset))
-         {
-            convertedValue = new DateTimeOffset((DateTime)value);
-            return true;
-         }
-
-         convertedValue = null;
-         return false;
-      }
 
       #endregion
 

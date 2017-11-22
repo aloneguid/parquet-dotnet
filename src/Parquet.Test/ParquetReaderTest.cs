@@ -218,14 +218,11 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplerepeated.parquet"));
 
          Assert.Equal(2, ds.Schema.Length);
-         Assert.Equal(DataType.Unspecified, ds.Schema[0].DataType);
-         Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
+         Assert.Equal(SchemaType.Structure, ds.Schema[0].SchemaType);
+         Assert.Equal(SchemaType.PrimitiveType, ds.Schema[1].SchemaType);
 
          Assert.Equal("cities", ds.Schema[0].Name);
          Assert.Equal("id", ds.Schema[1].Name);
-
-         Assert.False(ds.Schema[0].IsArray);
-         Assert.False(ds.Schema[1].IsArray);
 
          Assert.Equal(1L, ds[0][1]);
          Assert.Equal(ds[0][0], new[] { "London", "Derby", "Paris", "New York" });
@@ -251,8 +248,8 @@ root
          Assert.Equal(1, ds.RowCount);
          Assert.Equal(2, ds.ColumnCount);
 
-         Assert.Equal(DataType.Unspecified, ds.Schema[0].DataType);
-         Assert.Equal(DataType.Int64, ds.Schema[1].DataType);
+         Assert.Equal(SchemaType.Structure, ds.Schema[0].SchemaType);
+         Assert.Equal(SchemaType.PrimitiveType, ds.Schema[1].SchemaType);
 
          Assert.Equal("city", ds.Schema.ColumnNames[0]);
          Assert.Equal("id", ds.Schema.ColumnNames[1]);

@@ -29,8 +29,6 @@ namespace Parquet.Data
          SchemaType = schemaType;
       }
 
-
-
       #region [ Internal Helpers ]
 
       internal virtual void Assign(Field se)

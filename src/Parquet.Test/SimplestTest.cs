@@ -8,7 +8,7 @@ namespace Parquet.Test
       [Fact]
       public void Run_perfect_expressive_boolean_column()
       {
-         var schema = new Schema(new Field("id", DataType.Boolean, false, false));
+         var schema = new Schema(new DataField("id", DataType.Boolean, false, false));
          var ds = new DataSet(schema);
 
          ds.Add(true);
