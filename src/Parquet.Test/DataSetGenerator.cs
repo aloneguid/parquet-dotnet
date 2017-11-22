@@ -5,6 +5,11 @@ namespace Parquet.Test
 {
    static class DataSetGenerator
    {
+      public static DataSet WriteRead(this DataSet ds)
+      {
+         return WriteRead(ds, null);
+      }
+
       public static DataSet Generate(int rowCount)
       {
          var ds = new DataSet(new Field<int>("id"));

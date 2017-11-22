@@ -1,11 +1,13 @@
-val s = System.nanoTime
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-def msFrom(start: Long) : Double = {
-   val diff = System.nanoTime - start
-   val ms = diff/1e6
-   ms
-}
+val spark = SparkSession.builder()
+   .appName("random")
+   .master("local[1]")
+   .getOrCreate()
 
-msFrom(s)
+import spark.implicits._
+val sc = spark.sparkContext
 
-
+val df = spark.read.parquet("c:\\tmp\\1.parquet")
+df.printSchema()
+df.show()
