@@ -102,7 +102,7 @@ namespace Parquet.Test
 
          ms.Position = 0;
          DataSet ds1 = ParquetReader.Read(ms);
-         Assert.Equal(1, ds1.ColumnCount);
+         Assert.Equal(1, ds1.FieldCount);
          Assert.Equal(103, ds1.RowCount);
       }
 

@@ -24,7 +24,7 @@ namespace Parquet.Test.Reader
       private void Compare(DataSet parquet, DataSet csv, Type[] columnTypes)
       {
          //compar number of columns is the same
-         Assert.Equal(parquet.ColumnCount, csv.ColumnCount);
+         Assert.Equal(parquet.FieldCount, csv.FieldCount);
 
          //compare column names
          foreach(string pq in parquet.Schema.FieldNames)
@@ -33,7 +33,7 @@ namespace Parquet.Test.Reader
          }
 
          //compare column values one by one
-         Assert.True(columnTypes.Length == csv.ColumnCount,
+         Assert.True(columnTypes.Length == csv.FieldCount,
             $"incorrect type count, expected {csv.Count} but found {columnTypes.Length}");
 
          //compare individual rows

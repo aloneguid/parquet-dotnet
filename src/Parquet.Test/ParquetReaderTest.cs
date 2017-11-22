@@ -246,7 +246,7 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("simplenested.parquet"));
 
          Assert.Equal(1, ds.RowCount);
-         Assert.Equal(2, ds.ColumnCount);
+         Assert.Equal(2, ds.FieldCount);
 
          Assert.Equal(SchemaType.Structure, ds.Schema[0].SchemaType);
          Assert.Equal(SchemaType.PrimitiveType, ds.Schema[1].SchemaType);

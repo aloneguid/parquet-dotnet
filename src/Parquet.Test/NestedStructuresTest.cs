@@ -18,7 +18,7 @@ namespace Parquet.Test
 
          ds.Add("Ivan", new Row("Woods", "postcode"));
          Assert.Equal(1, ds.RowCount);
-         Assert.Equal(2, ds.ColumnCount);
+         Assert.Equal(2, ds.FieldCount);
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
