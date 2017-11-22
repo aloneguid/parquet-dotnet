@@ -65,22 +65,38 @@ namespace Parquet.Data
 
       private static Dictionary<string, IList> CreateFieldColumns(
          IEnumerable<Field> fields, int index,
-         Dictionary<string, IList> pathToValues,
+         Dictionary<string, IList> columns,
          out int count)
       {
-         var elementPathToValues = new Dictionary<string, IList>();
+         var elementColumns = new Dictionary<string, IList>();
 
          count = int.MaxValue;
 
          foreach (Field field in fields)
          {
             string key = field.Path;
-            IList value = pathToValues[key][index] as IList;
-            elementPathToValues[key] = value;
-            if (value.Count < count) count = value.Count;
+
+            switch (field.SchemaType)
+            {
+               case SchemaType.PrimitiveType:
+                  IList value = columns[key][index] as IList;
+                  elementColumns[key] = value;
+                  if (value.Count < count) count = value.Count;
+                  break;
+
+               case SchemaType.List:
+                  var listField = (ListField)field;
+                  Dictionary<string, IList> listColumns = CreateFieldColumns(new[] { listField.Item }, index, columns, out int listCount);
+                  elementColumns.AddRange(listColumns);
+                  count = Math.Min(count, listColumns.Min(kvp => kvp.Value.Count));
+                  break;
+
+               default:
+                  throw new NotImplementedException(field.SchemaType.ToString());
+            }
          }
 
-         return elementPathToValues;
+         return elementColumns;
       }
 
       private static IList GetFieldPathValues(Field field, int index, Dictionary<string, IList> columns)
