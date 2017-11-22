@@ -9,7 +9,7 @@ namespace Parquet.Data.Concrete
 {
    class ByteDataType : BasicPrimitiveDataType<byte>
    {
-      public ByteDataType(): base(DataType.Byte, Thrift.Type.INT32, Thrift.ConvertedType.UINT_8, 8)
+      public ByteDataType(): base(DataType.Byte, Thrift.Type.INT32, Thrift.ConvertedType.UINT_8)
       {
 
       }

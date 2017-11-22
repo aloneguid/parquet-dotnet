@@ -13,8 +13,6 @@ namespace Parquet.Data.Concrete
       {
       }
 
-      public int? BitWidth => null;
-
       public DataType DataType => DataType.Unspecified;
 
       public SchemaType SchemaType => SchemaType.Structure;

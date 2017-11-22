@@ -10,7 +10,7 @@ namespace Parquet.Data.Concrete
 {
    class Int96DataType : BasicPrimitiveDataType<BigInteger>
    {
-      public Int96DataType() : base(DataType.Int96, Thrift.Type.INT96, null, 12)
+      public Int96DataType() : base(DataType.Int96, Thrift.Type.INT96)
       {
       }
 

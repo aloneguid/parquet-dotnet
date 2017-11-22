@@ -17,9 +17,6 @@ namespace Parquet.Data
 
       void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
 
-      //todo: remove field!
-      int? BitWidth { get; }
-
       DataType DataType { get; }
 
       SchemaType SchemaType { get; }

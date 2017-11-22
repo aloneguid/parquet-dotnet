@@ -7,7 +7,7 @@ namespace Parquet.Data.Concrete
 {
    class BooleanDataType : BasicPrimitiveDataType<bool>
    {
-      public BooleanDataType() : base(DataType.Boolean, Thrift.Type.BOOLEAN, null, 1)
+      public BooleanDataType() : base(DataType.Boolean, Thrift.Type.BOOLEAN)
       {
       }
 

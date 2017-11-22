@@ -6,7 +6,7 @@ namespace Parquet.Data.Concrete
 {
    class Int16DataType : BasicPrimitiveDataType<short>
    {
-      public Int16DataType() : base(DataType.Short, Thrift.Type.INT32, Thrift.ConvertedType.INT_16, 16)
+      public Int16DataType() : base(DataType.Short, Thrift.Type.INT32, Thrift.ConvertedType.INT_16)
       {
 
       }

@@ -14,15 +14,12 @@ namespace Parquet.Data
       private readonly Thrift.ConvertedType? _convertedType;
       private readonly int? _bitWidth;
 
-      public BasicDataType(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null, int? bitWidth = null)
+      public BasicDataType(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
       {
          DataType = dataType;
          _thriftType = thriftType;
          _convertedType = convertedType;
-         _bitWidth = bitWidth;
       }
-
-      public int? BitWidth => _bitWidth;
 
       public DataType DataType { get; private set; }
 
