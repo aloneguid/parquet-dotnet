@@ -7,9 +7,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class ListDataType : IDataTypeHandler
+   class ListDataTypeHandler : IDataTypeHandler
    {
-      public ListDataType()
+      public ListDataTypeHandler()
       {
       }
 

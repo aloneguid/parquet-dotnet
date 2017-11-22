@@ -6,10 +6,10 @@ using Parquet.File;
 
 namespace Parquet.Data
 {
-   abstract class BasicPrimitiveDataType<TSystemType> : BasicDataType<TSystemType>
+   abstract class BasicPrimitiveDataTypeHandler<TSystemType> : BasicDataTypeHandler<TSystemType>
       where TSystemType : struct
    {
-      public BasicPrimitiveDataType(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
+      public BasicPrimitiveDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
          : base(dataType, thriftType, convertedType)
       {
       }

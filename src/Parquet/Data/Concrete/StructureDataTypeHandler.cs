@@ -7,7 +7,7 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class StructureDataType : IDataTypeHandler
+   class StructureDataTypeHandler : IDataTypeHandler
    {
       public DataType DataType => DataType.Unspecified;
 

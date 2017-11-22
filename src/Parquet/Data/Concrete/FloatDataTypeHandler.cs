@@ -2,9 +2,9 @@
 
 namespace Parquet.Data.Concrete
 {
-   class FloatDataType : BasicPrimitiveDataType<float>
+   class FloatDataTypeHandler : BasicPrimitiveDataTypeHandler<float>
    {
-      public FloatDataType() : base(DataType.Float, Thrift.Type.FLOAT)
+      public FloatDataTypeHandler() : base(DataType.Float, Thrift.Type.FLOAT)
       {
       }
 

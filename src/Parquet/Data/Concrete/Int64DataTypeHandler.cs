@@ -5,9 +5,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class Int64DataType : BasicPrimitiveDataType<long>
+   class Int64DataTypeHandler : BasicPrimitiveDataTypeHandler<long>
    {
-      public Int64DataType() : base(DataType.Int64, Thrift.Type.INT64)
+      public Int64DataTypeHandler() : base(DataType.Int64, Thrift.Type.INT64)
       {
       }
 

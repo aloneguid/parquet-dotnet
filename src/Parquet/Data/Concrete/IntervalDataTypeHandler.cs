@@ -9,9 +9,9 @@ using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data.Concrete
 {
-   class IntervalDataType : BasicPrimitiveDataType<Interval>
+   class IntervalDataTypeHandler : BasicPrimitiveDataTypeHandler<Interval>
    {
-      public IntervalDataType() : base(DataType.Interval, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL)
+      public IntervalDataTypeHandler() : base(DataType.Interval, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL)
       {
 
       }

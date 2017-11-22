@@ -8,13 +8,13 @@ using Parquet.File;
 namespace Parquet.Data
 {
 
-   abstract class BasicDataType<TSystemType> : IDataTypeHandler
+   abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
       private readonly int? _bitWidth;
 
-      public BasicDataType(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
+      public BasicDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
       {
          DataType = dataType;
          _thriftType = thriftType;

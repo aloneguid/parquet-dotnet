@@ -5,9 +5,9 @@ using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data.Concrete
 {
-   class DateTimeDataType : BasicPrimitiveDataType<DateTime>
+   class DateTimeDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTime>
    {
-      public DateTimeDataType() : base(DataType.DateTimeOffset, Thrift.Type.BYTE_ARRAY)
+      public DateTimeDataTypeHandler() : base(DataType.DateTimeOffset, Thrift.Type.BYTE_ARRAY)
       {
 
       }

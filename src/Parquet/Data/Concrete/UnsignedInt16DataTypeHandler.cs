@@ -4,9 +4,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class UnsignedInt16DataType : BasicPrimitiveDataType<ushort>
+   class UnsignedInt16DataTypeHandler : BasicPrimitiveDataTypeHandler<ushort>
    {
-      public UnsignedInt16DataType() : base(DataType.UnsignedInt16, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16)
+      public UnsignedInt16DataTypeHandler() : base(DataType.UnsignedInt16, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16)
       {
 
       }

@@ -6,9 +6,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class Int32DataType : BasicPrimitiveDataType<int>
+   class Int32DataTypeHandler : BasicPrimitiveDataTypeHandler<int>
    {
-      public Int32DataType() : base(DataType.Int32, Thrift.Type.INT32)
+      public Int32DataTypeHandler() : base(DataType.Int32, Thrift.Type.INT32)
       {
       }
 

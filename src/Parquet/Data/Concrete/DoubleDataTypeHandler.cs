@@ -4,9 +4,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class DoubleDataType : BasicPrimitiveDataType<double>
+   class DoubleDataTypeHandler : BasicPrimitiveDataTypeHandler<double>
    {
-      public DoubleDataType() : base(DataType.Double, Thrift.Type.DOUBLE)
+      public DoubleDataTypeHandler() : base(DataType.Double, Thrift.Type.DOUBLE)
       {
 
       }

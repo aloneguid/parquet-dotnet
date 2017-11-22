@@ -7,9 +7,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class MapDataType : IDataTypeHandler
+   class MapDataTypeHandler : IDataTypeHandler
    {
-      public MapDataType()
+      public MapDataTypeHandler()
       {
       }
 
@@ -21,7 +21,7 @@ namespace Parquet.Data.Concrete
 
       public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
-         throw new NotImplementedException();
+         throw new NotSupportedException();
       }
 
       public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)

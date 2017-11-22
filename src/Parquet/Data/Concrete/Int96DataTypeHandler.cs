@@ -8,9 +8,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class Int96DataType : BasicPrimitiveDataType<BigInteger>
+   class Int96DataTypeHandler : BasicPrimitiveDataTypeHandler<BigInteger>
    {
-      public Int96DataType() : base(DataType.Int96, Thrift.Type.INT96)
+      public Int96DataTypeHandler() : base(DataType.Int96, Thrift.Type.INT96)
       {
       }
 

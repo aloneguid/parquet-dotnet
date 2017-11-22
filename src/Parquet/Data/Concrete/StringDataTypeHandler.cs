@@ -6,9 +6,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class StringDataType : BasicDataType<string>
+   class StringDataTypeHandler : BasicDataTypeHandler<string>
    {
-      public StringDataType() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
+      public StringDataTypeHandler() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
       {
       }
 

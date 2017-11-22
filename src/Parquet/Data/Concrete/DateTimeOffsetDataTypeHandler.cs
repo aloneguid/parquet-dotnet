@@ -9,9 +9,9 @@ using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data.Concrete
 {
-   class DateTimeOffsetDataType : BasicPrimitiveDataType<DateTimeOffset>
+   class DateTimeOffsetDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTimeOffset>
    {
-      public DateTimeOffsetDataType() : base(DataType.DateTimeOffset, Thrift.Type.INT96)
+      public DateTimeOffsetDataTypeHandler() : base(DataType.DateTimeOffset, Thrift.Type.INT96)
       {
 
       }

@@ -5,9 +5,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class ByteArrayDataType : BasicDataType<byte[]>
+   class ByteArrayDataTypeHandler : BasicDataTypeHandler<byte[]>
    {
-      public ByteArrayDataType() : base(DataType.ByteArray, Thrift.Type.BYTE_ARRAY)
+      public ByteArrayDataTypeHandler() : base(DataType.ByteArray, Thrift.Type.BYTE_ARRAY)
       {
       }
 

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Data;
 
 namespace Parquet.Data
 {
@@ -11,6 +10,12 @@ namespace Parquet.Data
    /// </summary>
    interface IDataTypeHandler
    {
+      /// <summary>
+      /// Called by the library to determine if this data handler can be used in current schema position
+      /// </summary>
+      /// <param name="tse"></param>
+      /// <param name="formatOptions"></param>
+      /// <returns></returns>
       bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
       Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);

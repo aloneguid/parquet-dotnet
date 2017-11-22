@@ -9,9 +9,9 @@ using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data.Concrete
 {
-   class DecimalDataType : BasicPrimitiveDataType<decimal>
+   class DecimalDataTypeHandler : BasicPrimitiveDataTypeHandler<decimal>
    {
-      public DecimalDataType() : base(DataType.Decimal, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL)
+      public DecimalDataTypeHandler() : base(DataType.Decimal, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL)
       {
       }
 

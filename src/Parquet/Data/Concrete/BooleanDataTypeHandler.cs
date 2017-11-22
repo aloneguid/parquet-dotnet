@@ -5,9 +5,9 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class BooleanDataType : BasicPrimitiveDataType<bool>
+   class BooleanDataTypeHandler : BasicPrimitiveDataTypeHandler<bool>
    {
-      public BooleanDataType() : base(DataType.Boolean, Thrift.Type.BOOLEAN)
+      public BooleanDataTypeHandler() : base(DataType.Boolean, Thrift.Type.BOOLEAN)
       {
       }
 
