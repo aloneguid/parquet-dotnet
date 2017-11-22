@@ -247,5 +247,11 @@ namespace Parquet.Data
          }
 
       }
+
+      #region [ Internal Helpers ]
+
+
+
+      #endregion
    }
 }

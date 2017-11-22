@@ -23,6 +23,8 @@ namespace Parquet.Data
       /// </summary>
       internal string Path { get; set; }
 
+      internal virtual string PathPrefix { set { } }
+
       /// <summary>
       /// Constructs a field with only requiremd parameters
       /// </summary>
@@ -31,6 +33,12 @@ namespace Parquet.Data
       protected Field(string name, SchemaType schemaType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
+
+         if(Name.Contains(Schema.PathSeparator))
+         {
+            throw new ArgumentException($"'{Schema.PathSeparator}' is not allowed in field name as it's used internally as path separator");
+         }
+
          SchemaType = schemaType;
          Path = name;
       }

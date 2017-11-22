@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
@@ -21,7 +19,7 @@ namespace Parquet.Data.Concrete
 
       public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
-         throw new NotImplementedException();
+         throw new NotSupportedException();
       }
 
       public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)

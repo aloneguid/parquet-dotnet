@@ -39,6 +39,14 @@ namespace Parquet.Data
          }
       }
 
+      internal override string PathPrefix
+      {
+         set
+         {
+            Path = $"{value}{Schema.PathSeparator}{Name}";
+         }
+      }
+
       /// <summary>
       /// Pretty prints
       /// </summary>

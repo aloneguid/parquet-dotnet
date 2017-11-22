@@ -16,6 +16,8 @@ namespace Parquet.Data
       public ListField(string name, Field item) : this(name)
       {
          Item = item ?? throw new ArgumentNullException(nameof(item));
+         Path = name.AddPath("list");
+         Item.PathPrefix = Path;
       }
 
       private ListField(string name) : base(name, SchemaType.List)

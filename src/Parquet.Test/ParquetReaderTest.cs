@@ -251,8 +251,8 @@ root
          Assert.Equal(SchemaType.Structure, ds.Schema[0].SchemaType);
          Assert.Equal(SchemaType.PrimitiveType, ds.Schema[1].SchemaType);
 
-         Assert.Equal("city", ds.Schema.ColumnNames[0]);
-         Assert.Equal("id", ds.Schema.ColumnNames[1]);
+         Assert.Equal("city", ds.Schema.FieldNames[0]);
+         Assert.Equal("id", ds.Schema.FieldNames[1]);
 
          Row mr = ds[0];
 

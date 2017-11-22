@@ -37,7 +37,7 @@ namespace Parquet.Data.Concrete
          container.Add(tseStruct);
          parent.Num_children += 1;
 
-         foreach(Field cf in structField.Elements)
+         foreach(Field cf in structField.Fields)
          {
             IDataTypeHandler handler = DataTypeFactory.Match(cf);
             handler.CreateThrift(cf, tseStruct, container);

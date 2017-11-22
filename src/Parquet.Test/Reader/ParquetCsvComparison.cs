@@ -27,9 +27,9 @@ namespace Parquet.Test.Reader
          Assert.Equal(parquet.ColumnCount, csv.ColumnCount);
 
          //compare column names
-         foreach(string pq in parquet.Schema.ColumnNames)
+         foreach(string pq in parquet.Schema.FieldNames)
          {
-            Assert.Contains(pq, csv.Schema.ColumnNames);
+            Assert.Contains(pq, csv.Schema.FieldNames);
          }
 
          //compare column values one by one
@@ -53,7 +53,7 @@ namespace Parquet.Test.Reader
          {
             //todo: this comparison needs to be improved, probably doesn't handle nulls etc.
 
-            Field se = schema.Elements[i];
+            Field se = schema.Fields[i];
             Type clrType = DataTypeFactory.Match(se).ClrType;
 
             object pv = pc[i];

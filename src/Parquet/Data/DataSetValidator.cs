@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using Parquet.File;
 
 namespace Parquet.Data
 {
-   class DataSetValidator
+   static class DataSetValidator
    {
-      public void ValidateRow(Row row, IReadOnlyList<Field> schema)
+      public static void ValidateRow(Row row, IReadOnlyList<Field> schema)
       {
          if (row == null) throw new ArgumentNullException(nameof(row));
 
          ValidateRow(row.RawValues, schema);
       }
 
-      private void ValidateRow(object[] values, IReadOnlyList<Field> schema)
+      private static void ValidateRow(object[] values, IReadOnlyList<Field> schema)
       {
          if (values.Length != schema.Count)
             throw new ArgumentException($"the row has {values.Length} values but schema expects {schema.Count}", nameof(values));
@@ -38,7 +36,7 @@ namespace Parquet.Data
          }
       }
 
-      private object ValidatePrimitive(DataField df, object value)
+      private static object ValidatePrimitive(DataField df, object value)
       {
          if (value == null)
          {

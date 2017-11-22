@@ -30,7 +30,7 @@ namespace Parquet.Data
       /// <summary>
       /// Gets the number of columns contained in this dataset
       /// </summary>
-      public int ColumnCount => _schema.Elements.Count;
+      public int ColumnCount => _schema.Fields.Count;
 
       /// <summary>
       /// Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.

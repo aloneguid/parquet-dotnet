@@ -8,7 +8,8 @@ namespace Parquet.Data
    /// </summary>
    public class StructField : Field
    {
-      private readonly List<Field> _elements = new List<Field>();
+      private string _path;
+      private readonly List<Field> _fields = new List<Field>();
 
       /// <summary>
       /// Creates a new structure field 
@@ -22,10 +23,27 @@ namespace Parquet.Data
             throw new ArgumentException($"structure '{name}' requires at least one element");
          }
 
-         foreach(Field element in elements)
+         //path for structures has no weirdnes, yay!
+
+         foreach(Field field in elements)
          {
-            element.Path = $"{Path}{Schema.PathSeparator}{element.Path}";
-            _elements.Add(element);
+            _fields.Add(field);
+         }
+
+         Path = name;
+         PathPrefix = name;
+      }
+
+      internal override string PathPrefix
+      {
+         set
+         {
+            Path = value.AddPath(Name);
+
+            foreach(Field field in _fields)
+            {
+               field.PathPrefix = Path;
+            }
          }
       }
 
@@ -36,7 +54,7 @@ namespace Parquet.Data
 
       public override string ToString()
       {
-         return $"structure of {_elements.Count}";
+         return $"structure of {_fields.Count}";
       }
 
       internal static StructField CreateWithNoElements(string name)
@@ -47,11 +65,11 @@ namespace Parquet.Data
       /// <summary>
       /// Elements of this structure
       /// </summary>
-      public IReadOnlyList<Field> Elements => _elements;
+      public IReadOnlyList<Field> Fields => _fields;
 
       internal override void Assign(Field se)
       {
-         _elements.Add(se);
+         _fields.Add(se);
       }
    }
 }

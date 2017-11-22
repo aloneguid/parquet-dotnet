@@ -121,5 +121,11 @@ namespace Parquet.Test
       {
          Assert.Throws<ArgumentException>(() => new Field<Row>("struct"));
       }
+
+      [Fact]
+      public void Cannot_use_dots_in_field_names()
+      {
+         Assert.Throws<ArgumentException>(() => new Field<int>("one.two"));
+      }
    }
 }

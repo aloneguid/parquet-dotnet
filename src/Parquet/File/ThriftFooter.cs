@@ -245,7 +245,7 @@ namespace Parquet.File
          meta.Schema = new List<Thrift.SchemaElement>();
 
          Thrift.SchemaElement root = AddRoot(meta.Schema);
-         CreateThriftSchema(schema.Elements, root, meta.Schema);
+         CreateThriftSchema(schema.Fields, root, meta.Schema);
 
          return meta;
       }

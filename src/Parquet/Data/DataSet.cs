@@ -16,7 +16,6 @@ namespace Parquet.Data
       private readonly Dictionary<string, IList> _pathToValues;
       private int _rowCount;
       private readonly DataSetMetadata _metadata = new DataSetMetadata();
-      private readonly DataSetValidator _validator;
 
       internal Thrift.FileMetaData Thrift { get; set; }
 
@@ -29,8 +28,6 @@ namespace Parquet.Data
          _schema = schema ?? throw new ArgumentNullException(nameof(schema));
 
          _pathToValues = new Dictionary<string, IList>();
-
-         _validator = new DataSetValidator();
       }
 
       /// <summary>
@@ -138,7 +135,7 @@ namespace Parquet.Data
       {
          ValidateIndex(index);
 
-         return CreateRow(_schema.Elements, index, _pathToValues);
+         return CreateRow(_schema.Fields, index, _pathToValues);
       }
 
       private Row CreateRow(IEnumerable<Field> schema, int index, Dictionary<string, IList> pathToValues)
@@ -154,7 +151,7 @@ namespace Parquet.Data
          }
          else if(field.SchemaType == SchemaType.Structure)
          {
-            return CreateRow(((StructField)field).Elements, index, pathToValues);
+            return CreateRow(((StructField)field).Fields, index, pathToValues);
          }
          else if(field.SchemaType == SchemaType.List)
          {
@@ -168,7 +165,7 @@ namespace Parquet.Data
                var rows = new List<Row>(count);
                for(int i = 0; i < count; i++)
                {
-                  Row row = CreateRow(sf.Elements, i, elementPathToValues);
+                  Row row = CreateRow(sf.Fields, i, elementPathToValues);
                   rows.Add(row);
                }
 
@@ -199,7 +196,7 @@ namespace Parquet.Data
 
          count = int.MaxValue;
 
-         foreach (Field child in root.Elements)
+         foreach (Field child in root.Fields)
          {
             string key = child.Path;
             IList value = pathToValues[key][index] as IList;
@@ -224,83 +221,21 @@ namespace Parquet.Data
 
       private void AddRow(Row row)
       {
-         AddRow(row, _schema.Elements, true);
-      }
+         RowAppender.Append(_pathToValues, _schema.Fields, row);
 
-      private void AddRow(Row row, IReadOnlyList<Field> schema, bool updateCount)
-      {
-         _validator.ValidateRow(row, schema);
-
-         for(int i = 0; i < schema.Count; i++)
-         {
-            Field se = schema[i];
-            object value = row[i];
-
-            if(se.SchemaType == SchemaType.Map)
-            {
-               ((MapField)se).AddElement(this, value as IDictionary);
-            }
-            else if(se.SchemaType == SchemaType.Structure)
-            {
-               AddStructure(se as StructField, value as Row);
-            }
-            else if(se.SchemaType == SchemaType.List)
-            {
-               AddList(se as ListField, value);
-            }
-            else
-            {
-               IList values = GetValues((DataField)se, true);
-
-               values.Add(value);
-            }
-         }
-
-         if (updateCount)
-         {
-            _rowCount += 1;
-         }
-      }
-
-      private void AddStructure(StructField field, Row structRow)
-      {
-         if (structRow == null)
-         {
-            throw new ArgumentException($"expected {typeof(Row)} for field [{field}] value");
-         }
-
-         AddRow(structRow, field.Elements, false);
-      }
-
-      private void AddList(ListField listField, object value)
-      {
-         if(listField.Item.SchemaType == SchemaType.Structure)
-         {
-            StructField structField = (StructField)listField.Item;
-            IEnumerable<Row> rows = value as IEnumerable<Row>;
-
-            foreach(Row row in rows)
-            {
-               AddRow(row, structField.Elements, false);
-            }
-
-            throw new NotImplementedException();
-
-            //Row singleRow = Row.Compress(structField.Elements, rows);
-            //AddRow(singleRow, structField.Elements, false);
-            //throw new NotImplementedException();
-         }
-         else
-         {
-            throw new NotImplementedException("only structures so far!");
-         }
+         _rowCount += 1;
       }
 
       internal IList GetValues(DataField field, bool createIfMissing, bool isNested = false)
       {
+         return GetValues(_pathToValues, field, createIfMissing, isNested);
+      }
+
+      private static IList GetValues(Dictionary<string, IList> pathToValues, DataField field, bool createIfMissing, bool isNested = false)
+      {
          if(field.Path == null) throw new ArgumentNullException(nameof(field.Path));
 
-         if (!_pathToValues.TryGetValue(field.Path, out IList values))
+         if (!pathToValues.TryGetValue(field.Path, out IList values))
          {
             if (createIfMissing)
             {
@@ -310,7 +245,7 @@ namespace Parquet.Data
                   ? (IList)(new List<IEnumerable>())
                   : (IList)(handler.CreateEmptyList(field.HasNulls, field.IsArray, 0));
 
-               _pathToValues[field.Path] = values;
+               pathToValues[field.Path] = values;
             }
             else
             {

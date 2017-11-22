@@ -20,40 +20,40 @@ namespace Parquet.Data
       /// </summary>
       public const char PathSeparatorChar = '.';
 
-      private readonly List<Field> _elements;
+      private readonly List<Field> _fields;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="Schema"/> class from schema elements.
       /// </summary>
-      /// <param name="elements">The elements.</param>
-      public Schema(IEnumerable<Field> elements)
+      /// <param name="fields">The elements.</param>
+      public Schema(IEnumerable<Field> fields)
       {
-         _elements = elements.ToList();
+         _fields = fields.ToList();
       }
 
       /// <summary>
       /// Initializes a new instance of the <see cref="Schema"/> class.
       /// </summary>
-      /// <param name="elements">The elements.</param>
-      public Schema(params Field[] elements)
+      /// <param name="fields">The elements.</param>
+      public Schema(params Field[] fields)
       {
-         _elements = elements.ToList();
+         _fields = fields.ToList();
       }
 
       /// <summary>
       /// Gets the schema elements
       /// </summary>
-      public IReadOnlyList<Field> Elements => _elements;
+      public IReadOnlyList<Field> Fields => _fields;
 
       /// <summary>
       /// Gets the number of elements in the schema
       /// </summary>
-      public int Length => _elements.Count;
+      public int Length => _fields.Count;
 
       /// <summary>
       /// Gets the column names as string array
       /// </summary>
-      public string[] ColumnNames => _elements.Select(e => e.Name).ToArray();
+      public string[] FieldNames => _fields.Select(e => e.Name).ToArray();
 
       /// <summary>
       /// Get schema element by index
@@ -62,7 +62,7 @@ namespace Parquet.Data
       /// <returns>Schema element</returns>
       public Field this[int i]
       {
-         get { return _elements[i]; }
+         get { return _fields[i]; }
       }
 
       /// <summary>
@@ -74,7 +74,7 @@ namespace Parquet.Data
       {
          get
          {
-            Field result = _elements.FirstOrDefault(e => e.Name == name);
+            Field result = _fields.FirstOrDefault(e => e.Name == name);
 
             if (result == null) throw new ArgumentException($"schema element '{name}' not found", nameof(name));
 
@@ -86,10 +86,10 @@ namespace Parquet.Data
       /// Gets the column index by schema element
       /// </summary>
       /// <returns>Element index or -1 if not found</returns>
-      public int GetElementIndex(Field schema)
+      public int GetFieldIndex(Field field)
       {
-         for (int i = 0; i < _elements.Count; i++)
-            if (schema.Equals(_elements[i])) return i;
+         for (int i = 0; i < _fields.Count; i++)
+            if (field.Equals(_fields[i])) return i;
 
          return -1;
       }
@@ -106,11 +106,11 @@ namespace Parquet.Data
          if (ReferenceEquals(null, other)) return false;
          if (ReferenceEquals(this, other)) return true;
 
-         if (_elements.Count != other._elements.Count) return false;
+         if (_fields.Count != other._fields.Count) return false;
 
-         for(int i = 0; i < _elements.Count; i++)
+         for(int i = 0; i < _fields.Count; i++)
          {
-            if (!_elements[i].Equals(other._elements[i])) return false;
+            if (!_fields[i].Equals(other._fields[i])) return false;
          }
 
          return true;
@@ -118,15 +118,15 @@ namespace Parquet.Data
 
       internal string GetNotEqualsMessage(Schema other, string thisName, string otherName)
       {
-         if(_elements.Count != other._elements.Count)
+         if(_fields.Count != other._fields.Count)
          {
-            return $"different number of elements ({_elements.Count} != {other._elements.Count})";
+            return $"different number of elements ({_fields.Count} != {other._fields.Count})";
          }
 
          var sb = new StringBuilder();
-         for (int i = 0; i < _elements.Count; i++)
+         for (int i = 0; i < _fields.Count; i++)
          {
-            if (!_elements[i].Equals(other._elements[i]))
+            if (!_fields[i].Equals(other._fields[i]))
             {
                if(sb.Length != 0)
                {
@@ -136,11 +136,11 @@ namespace Parquet.Data
                sb.Append("[");
                sb.Append(thisName);
                sb.Append(": ");
-               sb.Append(_elements[i]);
+               sb.Append(_fields[i]);
                sb.Append("] != [");
                sb.Append(otherName);
                sb.Append(": ");
-               sb.Append(other._elements[i]);
+               sb.Append(other._fields[i]);
                sb.Append("]");
             }
          }
@@ -173,7 +173,7 @@ namespace Parquet.Data
       /// </returns>
       public override int GetHashCode()
       {
-         return _elements.Aggregate(1, (current, se) => current * se.GetHashCode());
+         return _fields.Aggregate(1, (current, se) => current * se.GetHashCode());
       }
    }
 }

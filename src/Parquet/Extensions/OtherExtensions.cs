@@ -1,4 +1,5 @@
 ﻿using System;
+using Parquet.Data;
 
 namespace Parquet
 {
@@ -43,5 +44,15 @@ namespace Parquet
          return Convert.ToInt64((date - UnixEpoch).TotalDays);
       }
 
+      public static string AddPath(this string s, params string[] parts)
+      {
+         foreach(string part in parts)
+         {
+            s += Schema.PathSeparator;
+            s += part;
+         }
+
+         return s;
+      }
    }
 }
