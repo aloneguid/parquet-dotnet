@@ -8,27 +8,31 @@ namespace Parquet.File
 {
    static class TypeExtensions
    {
-      public static IList Create(Type systemType, bool nullable = false, bool repeated = false, int? capacity = null)
+      public static IList CreateGenericList(this DataField df, IEnumerable values)
       {
+         Type elementType = df.ClrType;
+
          //make the type nullable if it's not a class
-         if(nullable && !repeated)
+         if(df.HasNulls && !df.IsArray)
          {
-            if(!systemType.GetTypeInfo().IsClass)
+            if(!elementType.GetTypeInfo().IsClass)
             {
-               systemType = typeof(Nullable<>).MakeGenericType(systemType);
+               elementType = typeof(Nullable<>).MakeGenericType(elementType);
             }
          }
 
          //create generic list instance
          Type listType = typeof(List<>);
-         Type listGType = listType.MakeGenericType(systemType);
+         Type listGType = listType.MakeGenericType(elementType);
 
-         if (capacity == null)
+         IList result = (IList)Activator.CreateInstance(listGType);
+
+         foreach(object value in values)
          {
-            return (IList)Activator.CreateInstance(listGType);
+            result.Add(value);
          }
 
-         return (IList)Activator.CreateInstance(listGType, capacity.Value);
+         return result;
       }
 
       public static bool TryExtractEnumerableType(this Type t, out Type baseType)
@@ -38,6 +42,12 @@ namespace Parquet.File
          if(ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IEnumerable<>))
          {
             baseType = ti.GenericTypeArguments[0];
+            return true;
+         }
+
+         if(ti.IsArray)
+         {
+            baseType = ti.GetElementType();
             return true;
          }
 

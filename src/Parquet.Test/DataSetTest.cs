@@ -31,7 +31,7 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Can_add_repeatable_fields()
+      public void Can_add_repeatable_fields_of_incompatible_types()
       {
          var ds = new DataSet(
             new Field<int>("id"),

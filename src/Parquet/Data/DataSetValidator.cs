@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Parquet.File;
 
 namespace Parquet.Data
 {
@@ -37,6 +39,8 @@ namespace Parquet.Data
                case SchemaType.PrimitiveType:
                   values[i] = ValidatePrimitive((DataField)se, value);
                   break;
+
+               //todo: validate the rest of the schemas
             }
 
 
@@ -53,9 +57,22 @@ namespace Parquet.Data
          else
          {
             Type vt = value.GetType();
-            if (value.GetType() != df.ClrType)
+            Type et = df.ClrType;
+            if (vt.IsNullable()) vt = vt.GetNonNullable();
+
+            if(vt.TryExtractEnumerableType(out Type enumElementType))
             {
-               if (TrySmartConvert(vt, df.ClrType, value, out object convertedValue))
+               if(!df.IsArray)
+               {
+                  throw new ArgumentException($"element is an array but non-array type ({vt}) is passed in column '{df.Name}''");
+               }
+
+               vt = enumElementType;
+            }
+
+            if (vt != et)
+            {
+               if (TrySmartConvertPrimitive(vt, et, value, out object convertedValue))
                {
                   return convertedValue;
                }
@@ -65,12 +82,18 @@ namespace Parquet.Data
                }
 
             }
+
+            if (df.IsArray)
+            {
+               return df.CreateGenericList((IEnumerable)value);
+            }
+
          }
 
          return value;
       }
 
-      private static bool TrySmartConvert(Type passedType, Type requiredType, object value, out object convertedValue)
+      private static bool TrySmartConvertPrimitive(Type passedType, Type requiredType, object value, out object convertedValue)
       {
          if (passedType == typeof(DateTime) && requiredType == typeof(DateTimeOffset))
          {
@@ -81,6 +104,5 @@ namespace Parquet.Data
          convertedValue = null;
          return false;
       }
-
    }
 }

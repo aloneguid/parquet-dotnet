@@ -8,8 +8,8 @@
     <DefineConstants>DEBUG</DefineConstants>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
-    <Description>JSON integration with Parquet.Net</Description>
-    <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
+    <Description>JSON integration with Parquet.Net, allows reading from json files and object into Parquet DataSets, and converting DataSets into JSON.</Description>
+    <Authors>Ivan Gavryliuk (@aloneguid);</Authors>
     <Company>Elastacloud</Company>
     <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>

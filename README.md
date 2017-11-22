@@ -7,6 +7,8 @@
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 ![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)
 
+**The library is being completely rewritten towards v2.0 at the moment, which will make nested structures work like a charm**. If you need to contribute to source code please fork off *stable-1.5* branch.
+
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5.1` and up.
 - `.NET Standard 1.4` and up.
