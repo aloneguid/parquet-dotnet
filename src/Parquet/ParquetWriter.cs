@@ -92,15 +92,15 @@ namespace Parquet
             Thrift.FileMetaData fileMeta = ReadMetadata();
             _footer = new ThriftFooter(fileMeta);
 
-            throw new NotImplementedException("cannot compare schemas yet");
-            /*Schema existingSchema = new FileMetadataParser(fileMeta).ParseSchema(_formatOptions);
+
+            Schema existingSchema = new ThriftFooter(fileMeta).CreateModelSchema(_formatOptions);
 
             if (!ds.Schema.Equals(existingSchema))
             {
                throw new ParquetException($"{nameof(DataSet)} schema does not match existing file schema");
             }
 
-            GoBeforeFooter();*/
+            GoBeforeFooter();
          }
          else
          {

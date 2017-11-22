@@ -41,7 +41,7 @@ namespace Parquet.Data
       {
          Thrift.SchemaElement tse = schema[index++];
 
-         bool hasNulls = (tse.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
+         bool hasNulls = (tse.Repetition_type != Thrift.FieldRepetitionType.REQUIRED);
          bool isArray = (tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
 
          Field simple = CreateSimple(tse, hasNulls, isArray);

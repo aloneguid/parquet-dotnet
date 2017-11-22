@@ -86,11 +86,10 @@ namespace Parquet.Data
       /// Column values
       /// </returns>
       /// <exception cref="ArgumentException"></exception>
-      public IList GetColumn(Field schemaElement, int offset = 0, int count = -1)
+      public IList GetColumn(DataField schemaElement, int offset = 0, int count = -1)
       {
-         throw new NotImplementedException();
+         return GetColumn(schemaElement.Path, offset, count);
       }
-
 
       internal IList GetColumn(string path, int offset, int count)
       {
@@ -119,7 +118,7 @@ namespace Parquet.Data
       /// <typeparam name="T">Column element type</typeparam>
       /// <param name="schemaElement">Column schema</param>
       /// <returns>Strong typed collection</returns>
-      public IReadOnlyCollection<T> GetColumn<T>(Field schemaElement)
+      public IReadOnlyCollection<T> GetColumn<T>(DataField schemaElement)
       {
          return (List<T>)GetColumn(schemaElement);
       }
