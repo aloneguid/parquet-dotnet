@@ -26,5 +26,24 @@ namespace Parquet.Test
 
          Assert.Equal("{[1=>one;2=>two;3=>three];1}", ds1[0].ToString());
       }
+
+      [Fact]
+      public void Map_in_a_struct()
+      {
+         var ds = new DataSet(
+            new Field<int>("id"),
+            new StructField("random",
+               new Field<string>("r1"),
+               new MapField("keys",
+                  new Field<int>("key"),
+                  new Field<string>("value")
+            )));
+         ds.Add(1, new Row("r1", new Dictionary<int, string>
+         {
+            [1] = "one",
+            [2] = "two"
+         }));
+         Assert.Equal("", ds.WriteReadFirstRow());
+      }
    }
 }
