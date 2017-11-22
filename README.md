@@ -110,6 +110,10 @@ Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/p
 
 ## Contributing
 
-All contributions are welcome. For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
+We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
 
-If you need to reference the latest preview version (published on every commit) please use the following NuGet Feed: https://ci.appveyor.com/nuget/parquet-dotnet-nvq9lkymhrek
+![Helpwanted](doc/img/helpwanted.jpg)
+
+For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
+
+> If you need to reference the latest preview version (published on every commit) please use the following NuGet Feed: https://ci.appveyor.com/nuget/parquet-dotnet-nvq9lkymhrek
