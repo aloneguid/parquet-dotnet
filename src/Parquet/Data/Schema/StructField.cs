@@ -41,7 +41,7 @@ namespace Parquet.Data
       /// <summary>
       /// Elements of this structure
       /// </summary>
-      public IReadOnlyCollection<Field> Elements => _elements;
+      public IReadOnlyList<Field> Elements => _elements;
 
       internal override void Assign(Field se)
       {

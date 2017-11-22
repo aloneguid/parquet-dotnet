@@ -201,7 +201,19 @@ namespace Parquet.Data
             {
                ((MapField)se).AddElement(this, value as IDictionary);
             }
-            else if(se.SchemaType == SchemaType.Structure || se.SchemaType == SchemaType.List)
+            else if(se.SchemaType == SchemaType.Structure)
+            {
+               Row structRow = value as Row;
+
+               if(structRow == null)
+               {
+                  throw new ArgumentException($"expected {typeof(Row)} for field [{se}] value but found {value.GetType()}");
+               }
+
+               StructField structField = (StructField)se;
+               AddRow(structRow, structField.Elements, false);
+            }
+            else if(se.SchemaType == SchemaType.List)
             {
                throw new NotSupportedException($"{se.SchemaType} is not (yet) supported");
             }
