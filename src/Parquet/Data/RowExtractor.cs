@@ -92,7 +92,7 @@ namespace Parquet.Data
                   break;
 
                default:
-                  throw new NotImplementedException(field.SchemaType.ToString());
+                  throw new NotImplementedException($"extracting {field.SchemaType} columns");
             }
          }
 
