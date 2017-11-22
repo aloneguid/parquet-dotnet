@@ -15,8 +15,6 @@ namespace Parquet.Data.Concrete
 
       public Type ClrType => typeof(Row);
 
-      Type IDataTypeHandler.ClrType => throw new NotImplementedException();
-
       public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
       {
          throw new NotSupportedException("structures cannot have row values");
@@ -24,13 +22,11 @@ namespace Parquet.Data.Concrete
 
       public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
       {
-         Thrift.SchemaElement container = schema[index];
+         Thrift.SchemaElement container = schema[index++];
 
-         index += 2; //this element plus inline wasted container
+         ownedChildCount = container.Num_children;
 
-         throw new NotImplementedException();
-         ownedChildCount = 0;
-         return new StructureSchemaElement(container.Name, false);
+         return new StructField(container.Name);
       }
 
       public void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)

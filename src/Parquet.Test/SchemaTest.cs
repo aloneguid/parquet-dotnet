@@ -109,5 +109,11 @@ namespace Parquet.Test
          Assert.False(field.IsArray);
          Assert.True(field.HasNulls);
       }
+
+      [Fact]
+      public void Cannot_create_struct_with_no_elements()
+      {
+         Assert.Throws<ArgumentException>(() => new StructField("struct"));
+      }
    }
 }

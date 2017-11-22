@@ -13,7 +13,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new Field<string>("name"),
-            new StructureSchemaElement("address", false,
+            new StructField("address",
                new Field<string>("line1"),
                new Field<string>("postcode")
             ));
@@ -45,7 +45,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new Field<int>("id"),
-            new StructureSchemaElement("cities", true,
+            new StructField("cities",
                new Field<string>("name"),
                new Field<string>("country")));
 
@@ -61,9 +61,9 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new Field<string>("name"),
-            new StructureSchemaElement("address", false,
+            new StructField("address",
                new Field<string>("name"),
-               new StructureSchemaElement("lines", false,
+               new StructField("lines",
                   new Field<string>("line1"),
                   new Field<string>("line2"))));
 
@@ -79,7 +79,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new Field<string>("name"),
-            new StructureSchemaElement("address", false,
+            new StructField("address",
                new Field<string>("name"),
                new Field<IEnumerable<string>>("lines")));
 

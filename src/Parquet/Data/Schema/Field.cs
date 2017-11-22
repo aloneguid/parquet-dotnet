@@ -23,7 +23,12 @@ namespace Parquet.Data
       /// </summary>
       internal string Path { get; set; }
 
-      public Field(string name, SchemaType schemaType)
+      /// <summary>
+      /// Constructs a field with only requiremd parameters
+      /// </summary>
+      /// <param name="name">Field name, required</param>
+      /// <param name="schemaType">Type of schema of this field</param>
+      protected Field(string name, SchemaType schemaType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          SchemaType = schemaType;
@@ -32,9 +37,9 @@ namespace Parquet.Data
 
       #region [ Internal Helpers ]
 
-      internal virtual void Assign(Field se)
+      internal virtual void Assign(Field field)
       {
-
+         //only used by some schema fields internally to help construct a field hierarchy
       }
 
       #endregion

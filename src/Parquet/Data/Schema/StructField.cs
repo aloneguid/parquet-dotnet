@@ -1,0 +1,41 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Parquet.Data
+{
+   /// <summary>
+   /// Represents a structure i.e. a container for other fields.
+   /// </summary>
+   public class StructField : Field
+   {
+      private readonly List<Field> _elements = new List<Field>();
+
+      /// <summary>
+      /// Creates a new structure field 
+      /// </summary>
+      /// <param name="name">Structure name</param>
+      /// <param name="elements">List of elements</param>
+      public StructField(string name, params Field[] elements) : base(name, SchemaType.Structure)
+      {
+         if(elements == null || elements.Length == 0)
+         {
+            throw new ArgumentException($"structure '{name}' requires at least one element");
+         }
+
+         foreach(Field element in elements)
+         {
+            _elements.Add(element);
+         }
+      }
+
+      /// <summary>
+      /// Elements of this structure
+      /// </summary>
+      public IReadOnlyCollection<Field> Elements => _elements;
+
+      internal override void Assign(Field se)
+      {
+         _elements.Add(se);
+      }
+   }
+}
