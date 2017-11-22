@@ -27,6 +27,7 @@ namespace Parquet.Data
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
          SchemaType = schemaType;
+         Path = name;
       }
 
       #region [ Internal Helpers ]

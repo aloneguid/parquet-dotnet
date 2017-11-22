@@ -67,8 +67,8 @@ namespace Parquet.Data
 
       internal void AddElement(DataSet ds, IDictionary dictionary)
       {
-         IList keys = ds.GetValues(Key, true);
-         IList values = ds.GetValues(Value, true);
+         IList keys = ds.GetValues(Key, true, true);
+         IList values = ds.GetValues(Value, true, true);
 
          IDataTypeHandler keyHandler = DataTypeFactory.Match(Key.DataType);
          IDataTypeHandler valueHandler = DataTypeFactory.Match(Value.DataType);

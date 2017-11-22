@@ -211,7 +211,7 @@ namespace Parquet.Data
          }
       }
 
-      internal IList GetValues(DataField field, bool createIfMissing)
+      internal IList GetValues(DataField field, bool createIfMissing, bool isNested = false)
       {
          if(field.Path == null) throw new ArgumentNullException(nameof(field.Path));
 
@@ -221,7 +221,9 @@ namespace Parquet.Data
             {
                IDataTypeHandler handler = DataTypeFactory.Match(field);
 
-               values = handler.CreateEmptyList(field.HasNulls, field.IsArray, 0);
+               values = isNested
+                  ? (IList)(new List<IEnumerable>())
+                  : (IList)(handler.CreateEmptyList(field.HasNulls, field.IsArray, 0));
 
                _pathToValues[field.Path] = values;
             }

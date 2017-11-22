@@ -37,8 +37,6 @@ namespace Parquet.Data
          {
             ClrType = handler.ClrType;
          }
-
-         Path = name;
       }
 
       /// <summary>
