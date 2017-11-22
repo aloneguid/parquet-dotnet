@@ -10,6 +10,12 @@ namespace Parquet.Test
          return WriteRead(ds, null);
       }
 
+      public static string WriteReadFirstRow(this DataSet ds)
+      {
+         DataSet ds1 = WriteRead(ds, null);
+         return ds1[0].ToString();
+      }
+
       public static DataSet Generate(int rowCount)
       {
          var ds = new DataSet(new Field<int>("id"));

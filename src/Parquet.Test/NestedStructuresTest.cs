@@ -76,6 +76,21 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void Three_level_nesting()
+      {
+         var ds = new DataSet(
+            new Field<string>("name"),
+            new StructField("address",
+               new Field<string>("name"),
+               new StructField("lines",
+                  new Field<string>("line1"),
+                  new StructField("line2",
+                     new Field<string>("here")))));
+         ds.Add("Ivan", new Row("Primary", new Row("line1", new Row("here"))));
+         Assert.Equal("{Ivan;{Primary;{line1;{here}}}}", ds.WriteReadFirstRow());
+      }
+
+      [Fact]
       public void Structure_with_repeated_field_writes_reads()
       {
          var ds = new DataSet(
