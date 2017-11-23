@@ -9,6 +9,21 @@ namespace Parquet.Test
    public class RepeatableFieldsTest
    {
       [Fact]
+      public void Simple_repeated_field_write_read()
+      {
+         var ds = new DataSet(
+            new Field<int>("id"),
+            new Field<IEnumerable<string>>("items"));
+
+         ds.Add(1, new[] { "one", "two" });
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal(1, ds1[0][0]);
+         Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
+      }
+
+      [Fact]
       public void Repeatable_field_writes_reads()
       {
          var ds = new DataSet(new Field<int>("id"), new Field<IEnumerable<string>>("repeats"));

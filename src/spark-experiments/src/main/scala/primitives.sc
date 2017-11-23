@@ -19,18 +19,27 @@ def write(df: DataFrame, path: String): Unit = {
       .parquet(path)
 }
 
+//decimals
 val validDecimal: BigDecimal = 1.2
 val nullDecimal: BigDecimal = null
-
-val df = sc.parallelize(Seq(
+val dfDec = sc.parallelize(Seq(
    (1, validDecimal, nullDecimal)
 )).toDF("id", "validDecimal", "nullDecimal")
 
-df.show
-df.printSchema
-df.schema.prettyJson
+//repeatables
+val dfRep2 = sc.parallelize(Seq(
+   (1, Array[String]("1", "2", "3")),
+   (2, Array[String]())
+)).toDF("id", "repeats2")
 
-write(df, root + "decimalnulls.folder.parquet")
+val dfRep1 = sc.parallelize(Seq(
+   (2, Array[String]())
+)).toDF("id", "repeats1")
+
+val df = dfRep2
+df.printSchema
+df.show
+write(df, "c:\\tmp\\repempty2.folder.parquet")
 
 
 

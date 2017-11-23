@@ -5,7 +5,7 @@ namespace Newtonsoft.Json.Linq
 {
    public static class JsonExtenstions
    {
-      public static DataSet ToParquetDataSet(JObject jObject)
+      public static DataSet ToParquetDataSet(this JObject jObject)
       {
          throw new NotImplementedException();
       }

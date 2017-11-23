@@ -61,21 +61,34 @@ namespace Parquet.Data
            Only list is changing hierarchy dramatically.
           */
 
-         if (listField.Item.SchemaType == SchemaType.Structure)
+         switch(listField.Item.SchemaType)
          {
-            StructField structField = (StructField)listField.Item;
-            IEnumerable<Row> rows = value as IEnumerable<Row>;
+            case SchemaType.Structure:
+               StructField structField = (StructField)listField.Item;
+               IEnumerable<Row> rows = value as IEnumerable<Row>;
 
-            var deepColumns = new Dictionary<string, IList>();
-            foreach(Row row in rows)
-            {
-               Append(deepColumns, structField.Fields, row);
-            }
-            SliceIn(columns, deepColumns);
-         }
-         else
-         {
-            throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"adding {listField.Item.SchemaType} to list");
+               var deepColumns = new Dictionary<string, IList>();
+               foreach (Row row in rows)
+               {
+                  Append(deepColumns, structField.Fields, row);
+               }
+               SliceIn(columns, deepColumns);
+               break;
+
+            case SchemaType.PrimitiveType:
+               DataField dataField = (DataField)listField.Item;
+               IDataTypeHandler handler = DataTypeFactory.Match(dataField);
+               IList values = handler.CreateEmptyList(dataField.HasNulls, dataField.IsArray, 0);
+               
+               foreach(object v in (IEnumerable)value)
+               {
+                  values.Add(v);
+               }
+               GetValues(columns, dataField, true, true).Add(values);
+               break;
+
+            default:
+               throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"adding {listField.Item.SchemaType} to list");
          }
       }
 

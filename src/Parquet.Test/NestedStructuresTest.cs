@@ -26,21 +26,6 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Simple_repeated_field_write_read()
-      {
-         var ds = new DataSet(
-            new Field<int>("id"),
-            new Field<IEnumerable<string>>("items"));
-
-         ds.Add(1, new[] { "one", "two" });
-
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
-
-         Assert.Equal(1, ds1[0][0]);
-         Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
-      }
-
-      [Fact]
       public void List_of_structures_writes_reads()
       {
          var ds = new DataSet(
@@ -55,6 +40,18 @@ namespace Parquet.Test
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
 
          Assert.Equal("{1;[{London;UK};{New York;US}]}", ds1[0].ToString());
+      }
+
+      [Fact]
+      public void List_of_elements_writes_reads()
+      {
+         var ds = new DataSet(
+            new Field<int>("id"),
+            new ListField("strings",
+               new Field<string>("item")
+            ));
+         ds.Add(1, new[] { "one", "two" } );
+         Assert.Equal("{1;[one;two]}", ds.WriteReadFirstRow());
       }
 
       [Fact]
@@ -76,7 +73,7 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Three_level_nesting()
+      public void Structure_with_three_level_nesting()
       {
          var ds = new DataSet(
             new Field<string>("name"),

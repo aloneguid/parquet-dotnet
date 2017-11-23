@@ -17,16 +17,17 @@ def write(df: DataFrame, path: String): Unit = {
 }
 
 val map = Map(1 -> "one", 2 -> "two", 3 -> "three")
+val mapc = Map(1 -> Array[String]("1", "2"), 2 -> Array[String]("3", "4"))
 
 val df = sc.parallelize(Seq(
-   (1, map)
+   (1, mapc)
 )).toDF("id", "numbers")
 
 df.printSchema
 df.show
 
-//write(df, "c:\\tmp\\sparkmap.parquet")
+write(df, "c:\\tmp\\sparkmap.complex.folder.parquet")
 
-val cp = spark.read.parquet("c:\\tmp\\map.parquet")
-cp.printSchema
-cp.show
+//val cp = spark.read.parquet("c:\\tmp\\map.parquet")
+//cp.printSchema
+//cp.show
