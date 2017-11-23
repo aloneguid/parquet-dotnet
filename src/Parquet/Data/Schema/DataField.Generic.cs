@@ -7,13 +7,13 @@ namespace Parquet.Data
    /// Element of dataset's schema. Provides a helper way to construct a schema element with .NET generics.
    /// <typeparamref name="T">Type of element in the column</typeparamref>
    /// </summary>
-   public class Field<T> : DataField
+   public class DataField<T> : DataField
    {
       /// <summary>
       /// Initializes a new instance of the <see cref="Field"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      public Field(string name) : base(name, Discover().dataType, Discover().hasNulls, Discover().isArray)
+      public DataField(string name) : base(name, Discover().dataType, Discover().hasNulls, Discover().isArray)
       {
       }
 

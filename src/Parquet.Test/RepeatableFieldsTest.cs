@@ -12,8 +12,8 @@ namespace Parquet.Test
       public void Simple_repeated_field_write_read()
       {
          var ds = new DataSet(
-            new Field<int>("id"),
-            new Field<IEnumerable<string>>("items"));
+            new DataField<int>("id"),
+            new DataField<IEnumerable<string>>("items"));
 
          ds.Add(1, new[] { "one", "two" });
 
@@ -26,7 +26,7 @@ namespace Parquet.Test
       [Fact]
       public void Repeatable_field_writes_reads()
       {
-         var ds = new DataSet(new Field<int>("id"), new Field<IEnumerable<string>>("repeats"));
+         var ds = new DataSet(new DataField<int>("id"), new DataField<IEnumerable<string>>("repeats"));
          ds.Add(1, new[] { "one", "two", "three" });
 
          Assert.Equal("{1;[one;two;three]}", DataSetGenerator.WriteRead(ds)[0].ToString());
@@ -35,7 +35,7 @@ namespace Parquet.Test
       [Fact]
       public void Repeatable_field_with_no_values_writes_reads()
       {
-         var ds = new DataSet(new Field<int>("id"), new Field<IEnumerable<string>>("repeats"));
+         var ds = new DataSet(new DataField<int>("id"), new DataField<IEnumerable<string>>("repeats"));
          ds.Add(1, new string[0]);
 
          DataSet ds1 = ds.WriteRead();

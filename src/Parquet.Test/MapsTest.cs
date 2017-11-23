@@ -13,7 +13,7 @@ namespace Parquet.Test
       {
          var ds = new DataSet(
             new MapField("names", new DataField("key", DataType.Int32), new DataField("value", DataType.String)),
-            new Field<int>("id"));
+            new DataField<int>("id"));
 
          ds.Add(new Dictionary<int, string>
          {
@@ -31,12 +31,12 @@ namespace Parquet.Test
       public void Map_in_a_struct()
       {
          var ds = new DataSet(
-            new Field<int>("id"),
+            new DataField<int>("id"),
             new StructField("random",
-               new Field<string>("r1"),
+               new DataField<string>("r1"),
                new MapField("keys",
-                  new Field<int>("key"),
-                  new Field<string>("value")
+                  new DataField<int>("key"),
+                  new DataField<string>("value")
             )));
          ds.Add(1, new Row("r1", new Dictionary<int, string>
          {

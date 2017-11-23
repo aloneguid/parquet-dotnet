@@ -1,5 +1,22 @@
 # Complex Data
 
+## Maps
+
+Maps are represented as `IDictionary<TKey, TValue>` where both key and value must be a simple type (no structures are supported):
+
+```csharp
+var ds = new DataSet(
+   new SchemaElement<IDictionary<int, string>>("names"),
+   new SchemaElement<int>("id"));
+
+ds.Add(new Dictionary<int, string>
+{
+   [1] = "one",
+   [2] = "two",
+   [3] = "three"
+}, 1);
+```
+
 ## Structures
 
 In addition to [specifying basic types](schema.md), schema can contain complex structures. Let's say you have a table defined as:
@@ -83,26 +100,6 @@ which produces the following output for schema
 and data
 
 ![Complex 01](img/complex-01.png)
-
-## Maps
-
-Maps are represented as `IDictionary<TKey, TValue>` where both key and value must be a simple type (no structures are supported):
-
-```csharp
-var ds = new DataSet(
-   new SchemaElement<IDictionary<int, string>>("names"),
-   new SchemaElement<int>("id"));
-
-ds.Add(new Dictionary<int, string>
-{
-   [1] = "one",
-   [2] = "two",
-   [3] = "three"
-}, 1);
-```
-
---- remove below
-
 
 ### Repeated Structures
 

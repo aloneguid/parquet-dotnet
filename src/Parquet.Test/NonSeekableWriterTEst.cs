@@ -18,8 +18,8 @@ namespace Parquet.Test
          var forwardOnly = new WriteableNonSeekableStream(ms);
 
          var ds = new DataSet(
-            new Field<int>("id"),
-            new Field<string>("nonsense"));
+            new DataField<int>("id"),
+            new DataField<string>("nonsense"));
          ds.Add(1, Generator.RandomString);
 
          using (var writer = new ParquetWriter(forwardOnly))

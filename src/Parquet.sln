@@ -7,6 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4B-4489-9EE7-C609A2C1BFBB}"
 	ProjectSection(SolutionItems) = preProject
+		..\doc\complex-struct.md = ..\doc\complex-struct.md
 		..\doc\complex.md = ..\doc\complex.md
 		..\doc\dataset.md = ..\doc\dataset.md
 		..\doc\features.md = ..\doc\features.md
@@ -54,7 +55,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{AB82
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.Json", "Parquet.Json\Parquet.Json.csproj", "{08326D63-E89F-4DA0-90C8-91F5D2849B66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.Json.Test", "Parquet.Json.Test\Parquet.Json.Test.csproj", "{544C299B-4CB6-47E8-96CA-B957F55E148F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.Json.Test", "Parquet.Json.Test\Parquet.Json.Test.csproj", "{544C299B-4CB6-47E8-96CA-B957F55E148F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

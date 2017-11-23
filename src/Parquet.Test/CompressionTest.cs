@@ -14,7 +14,7 @@ namespace Parquet.Test
       {
 
          var ms = new MemoryStream();
-         DataSet ds1 = new DataSet(new Field<int>("id"));   
+         DataSet ds1 = new DataSet(new DataField<int>("id"));   
          DataSet ds2;
          ds1.Add(5);
 
@@ -40,8 +40,8 @@ namespace Parquet.Test
       {
          var ms = new MemoryStream();
          var ds1 = new DataSet(
-            new Field<int>("id"),
-            new Field<int>("no"));
+            new DataField<int>("id"),
+            new DataField<int>("no"));
 
          ds1.Add(1, 3);
          ds1.Add(2, 4);

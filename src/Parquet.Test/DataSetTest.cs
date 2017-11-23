@@ -10,14 +10,14 @@ namespace Parquet.Test
       [Fact]
       public void Validate_cant_add_null_row()
       {
-         var ds = new DataSet(new Field<int>("id"));
+         var ds = new DataSet(new DataField<int>("id"));
          Assert.Throws<ArgumentNullException>(() => ds.Add((Row)null));
       }
 
       [Fact]
       public void Validate_type_mismatch_throws_exception()
       {
-         var ds = new DataSet(new Field<string>("s"));
+         var ds = new DataSet(new DataField<string>("s"));
 
          Assert.Throws<ArgumentException>(() => ds.Add(4));
       }
@@ -25,7 +25,7 @@ namespace Parquet.Test
       [Fact]
       public void Validate_wrongcolnumber_throws_exception()
       {
-         var ds = new DataSet(new Field<string>("s"));
+         var ds = new DataSet(new DataField<string>("s"));
 
          Assert.Throws<ArgumentException>(() => ds.Add("1", 2));
       }
@@ -34,8 +34,8 @@ namespace Parquet.Test
       public void Can_add_repeatable_fields_of_incompatible_types()
       {
          var ds = new DataSet(
-            new Field<int>("id"),
-            new Field<IEnumerable<string>>("rep"));
+            new DataField<int>("id"),
+            new DataField<IEnumerable<string>>("rep"));
 
          ds.Add(1, new[] { "one", "two" });
       }

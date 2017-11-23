@@ -287,7 +287,7 @@ root
       [Fact]
       public void Read_column_with_all_nulls()
       {
-         var ds = new DataSet(new Field<int?>("id"))
+         var ds = new DataSet(new DataField<int?>("id"))
          {
             new object[] {null},
             new object[] {null}

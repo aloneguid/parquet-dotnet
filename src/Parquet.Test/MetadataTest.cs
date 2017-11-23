@@ -11,7 +11,7 @@ namespace Parquet.Test
       [Fact]
       public void Setting_custom_metadata_keys_reads_them_back()
       {
-         var ds = new DataSet(new Field<int>("id"));
+         var ds = new DataSet(new DataField<int>("id"));
          ds.Metadata.Custom["ivan"] = "is cool";
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);

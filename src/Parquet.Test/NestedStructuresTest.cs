@@ -10,10 +10,10 @@ namespace Parquet.Test
       public void Simple_structure_write_read()
       {
          var ds = new DataSet(
-            new Field<string>("name"),
+            new DataField<string>("name"),
             new StructField("address",
-               new Field<string>("line1"),
-               new Field<string>("postcode")
+               new DataField<string>("line1"),
+               new DataField<string>("postcode")
             ));
 
          ds.Add("Ivan", new Row("Woods", "postcode"));
@@ -29,11 +29,11 @@ namespace Parquet.Test
       public void List_of_structures_writes_reads()
       {
          var ds = new DataSet(
-            new Field<int>("id"),
+            new DataField<int>("id"),
             new ListField("cities",
             new StructField("element",
-               new Field<string>("name"),
-               new Field<string>("country"))));
+               new DataField<string>("name"),
+               new DataField<string>("country"))));
 
          ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
 
@@ -46,9 +46,9 @@ namespace Parquet.Test
       public void List_of_elements_writes_reads()
       {
          var ds = new DataSet(
-            new Field<int>("id"),
+            new DataField<int>("id"),
             new ListField("strings",
-               new Field<string>("item")
+               new DataField<string>("item")
             ));
          ds.Add(1, new[] { "one", "two" } );
          Assert.Equal("{1;[one;two]}", ds.WriteReadFirstRow());
@@ -58,12 +58,12 @@ namespace Parquet.Test
       public void Structure_nested_into_structure_write_read()
       {
          var ds = new DataSet(
-            new Field<string>("name"),
+            new DataField<string>("name"),
             new StructField("address",
-               new Field<string>("name"),
+               new DataField<string>("name"),
                new StructField("lines",
-                  new Field<string>("line1"),
-                  new Field<string>("line2"))));
+                  new DataField<string>("line1"),
+                  new DataField<string>("line2"))));
 
          ds.Add("Ivan", new Row("Primary", new Row("line1", "line2")));
 
@@ -76,13 +76,13 @@ namespace Parquet.Test
       public void Structure_with_three_level_nesting()
       {
          var ds = new DataSet(
-            new Field<string>("name"),
+            new DataField<string>("name"),
             new StructField("address",
-               new Field<string>("name"),
+               new DataField<string>("name"),
                new StructField("lines",
-                  new Field<string>("line1"),
+                  new DataField<string>("line1"),
                   new StructField("line2",
-                     new Field<string>("here")))));
+                     new DataField<string>("here")))));
          ds.Add("Ivan", new Row("Primary", new Row("line1", new Row("here"))));
          Assert.Equal("{Ivan;{Primary;{line1;{here}}}}", ds.WriteReadFirstRow());
       }
@@ -91,10 +91,10 @@ namespace Parquet.Test
       public void Structure_with_repeated_field_writes_reads()
       {
          var ds = new DataSet(
-            new Field<string>("name"),
+            new DataField<string>("name"),
             new StructField("address",
-               new Field<string>("name"),
-               new Field<IEnumerable<string>>("lines")));
+               new DataField<string>("name"),
+               new DataField<IEnumerable<string>>("lines")));
 
          ds.Add("Ivan", new Row("Primary", new[] { "line1", "line2" }));
 

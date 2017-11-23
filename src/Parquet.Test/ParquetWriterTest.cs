@@ -12,9 +12,9 @@ namespace Parquet.Test
       public void Write_different_compressions()
       {
          var ds = new DataSet(
-            new Field<int>("id"),
-            new Field<bool>("bool_col"),
-            new Field<string>("string_col")
+            new DataField<int>("id"),
+            new DataField<bool>("bool_col"),
+            new DataField<string>("string_col")
          )
          {
             //8 values for each column
@@ -41,7 +41,7 @@ namespace Parquet.Test
       [Fact]
       public void Write_int64datetimeoffset()
       {
-         var element = new Field<DateTimeOffset>("timestamp_col");
+         var element = new DataField<DateTimeOffset>("timestamp_col");
 
          var ds = new DataSet(
             element
@@ -61,7 +61,7 @@ namespace Parquet.Test
       [Fact]
       public void Write_and_read_nullable_integers()
       {
-         var ds = new DataSet(new Field<int?>("id"))
+         var ds = new DataSet(new DataField<int?>("id"))
          {
             1,
             2,
@@ -91,7 +91,7 @@ namespace Parquet.Test
       {
          var options = new WriterOptions { RowGroupsSize = 5 };
 
-         var ds = new DataSet(new Field<int>("index"));
+         var ds = new DataSet(new DataField<int>("index"));
          for(int i = 0; i < 103; i++)
          {
             ds.Add(new Row(i));
@@ -109,7 +109,7 @@ namespace Parquet.Test
       [Fact]
       public void Write_supposably_in_dictionary_encoding()
       {
-         var ds = new DataSet(new Field<int>("id"), new Field<string>("dic_col"));
+         var ds = new DataSet(new DataField<int>("id"), new DataField<string>("dic_col"));
          ds.Add(1, "one");
          ds.Add(2, "one");
          ds.Add(3, "one");
@@ -128,13 +128,13 @@ namespace Parquet.Test
       {
          var ms = new MemoryStream();
 
-         var ds1 = new DataSet(new Field<int>("id"));
+         var ds1 = new DataSet(new DataField<int>("id"));
          ds1.Add(1);
          ds1.Add(2);
          ParquetWriter.Write(ds1, ms);
 
          //append to file
-         var ds2 = new DataSet(new Field<int>("id"));
+         var ds2 = new DataSet(new DataField<int>("id"));
          ds2.Add(3);
          ds2.Add(4);
          ParquetWriter.Write(ds2, ms, CompressionMethod.Gzip, null, null, true);
@@ -152,20 +152,20 @@ namespace Parquet.Test
          var ms = new MemoryStream();
 
          var schema = new Schema(
-            new Field<int>("Id"),
-            new Field<DateTime>("Timestamp"),
-            new Field<DateTimeOffset>("Timestamp2"),
-            new Field<string>("Message"),
-            new Field<byte[]>("Data"),
-            new Field<bool>("IsDeleted"),
-            new Field<float>("Amount"),
-            new Field<decimal>("TotalAmount"),
-            new Field<long>("Counter"),
-            new Field<double>("Amount2"),
-            new Field<byte>("Flag"),
-            new Field<sbyte>("Flag2"),
-            new Field<short>("Flag3"),
-            new Field<ushort>("Flag4"));
+            new DataField<int>("Id"),
+            new DataField<DateTime>("Timestamp"),
+            new DataField<DateTimeOffset>("Timestamp2"),
+            new DataField<string>("Message"),
+            new DataField<byte[]>("Data"),
+            new DataField<bool>("IsDeleted"),
+            new DataField<float>("Amount"),
+            new DataField<decimal>("TotalAmount"),
+            new DataField<long>("Counter"),
+            new DataField<double>("Amount2"),
+            new DataField<byte>("Flag"),
+            new DataField<sbyte>("Flag2"),
+            new DataField<short>("Flag3"),
+            new DataField<ushort>("Flag4"));
 
          var ds1 = new DataSet(schema);
 
@@ -186,13 +186,13 @@ namespace Parquet.Test
       {
          var ms = new MemoryStream();
 
-         var ds1 = new DataSet(new Field<int>("id"));
+         var ds1 = new DataSet(new DataField<int>("id"));
          ds1.Add(1);
          ds1.Add(2);
          ParquetWriter.Write(ds1, ms);
 
          //append to file
-         var ds2 = new DataSet(new Field<double>("id"));
+         var ds2 = new DataSet(new DataField<double>("id"));
          ds2.Add(3d);
          ds2.Add(4d);
          Assert.Throws<ParquetException>(() => ParquetWriter.Write(ds2, ms, CompressionMethod.Gzip, null, null, true));
@@ -202,8 +202,8 @@ namespace Parquet.Test
       public void Write_column_with_only_one_null_value()
       {
          var ds = new DataSet(
-           new Field<int>("id"),
-           new Field<int?>("city")
+           new DataField<int>("id"),
+           new DataField<int?>("city")
        );
 
          ds.Add(0, null);
@@ -223,8 +223,8 @@ namespace Parquet.Test
       public void Writing_another_chunk_validates_schema()
       {
 
-         var ds1 = new DataSet(new Field<int>("id"));
-         var ds2 = new DataSet(new Field<int>("id1"));
+         var ds1 = new DataSet(new DataField<int>("id"));
+         var ds2 = new DataSet(new DataField<int>("id1"));
 
          using (var ms = new MemoryStream())
          {
@@ -252,8 +252,8 @@ namespace Parquet.Test
       public void Datetime_as_null_writes()
       {
          var schemaElements = new List<Field>();
-         schemaElements.Add(new Field<string>("primary-key"));
-         schemaElements.Add(new Field<DateTime?>("as-at-date"));
+         schemaElements.Add(new DataField<string>("primary-key"));
+         schemaElements.Add(new DataField<DateTime?>("as-at-date"));
 
          var ds = new DataSet(schemaElements);
 
@@ -284,7 +284,7 @@ namespace Parquet.Test
       [Fact]
       public void Column_with_all_null_decimals_has_type_length()
       {
-         var ds = new DataSet(new Field<int>("id"), new Field<decimal?>("nulls"))
+         var ds = new DataSet(new DataField<int>("id"), new DataField<decimal?>("nulls"))
          {
             { 1, null },
             { 2, null }
@@ -299,7 +299,7 @@ namespace Parquet.Test
       [Fact]
       public void Simplest_write_read()
       {
-         var ds = new DataSet(new Field<int>("id"));
+         var ds = new DataSet(new DataField<int>("id"));
          ds.Add(1);
          ds.Add(2);
 

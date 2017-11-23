@@ -5,7 +5,7 @@ Parquet.Net supports repeatable fields i.e. fields that contain an array of valu
 To declare a repeatable field in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
 
 ```csharp
-var se = new SchemaElement<IEnumerable<int>>("ids");
+var se = new Field<IEnumerable<int>>("ids");
 ```
 
 When writing to the field you can specify any value which derives from `IEnumerable<int>`, for instance
