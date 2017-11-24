@@ -39,5 +39,34 @@ namespace Parquet.Test
 
          ds.Add(1, new[] { "one", "two" });
       }
+
+      [Fact]
+      public void Can_merge_two_datasets()
+      {
+         var ds1 = new DataSet(new DataField<int>("id"));
+         ds1.Add(1);
+         ds1.Add(2);
+
+         var ds2 = new DataSet(new DataField<int>("id"));
+         ds2.Add(3);
+         ds2.Add(4);
+
+         ds1.Merge(ds2);
+
+         Assert.Equal(4, ds1.Count);
+
+         IReadOnlyCollection<int> column = ds1.GetColumn<int>((DataField)ds1.Schema[0]);
+         Assert.Equal(4, column.Count);
+         Assert.Equal(new[] { 1, 2, 3, 4 }, column);
+      }
+
+      [Fact]
+      public void Cannot_merge_datasets_with_incompatible_schemas()
+      {
+         var ds1 = new DataSet(new DataField<int>("id"));
+         var ds2 = new DataSet(new DataField<int?>("id"));
+
+         Assert.Throws<ArgumentException>(() => ds1.Merge(ds2));
+      }
    }
 }

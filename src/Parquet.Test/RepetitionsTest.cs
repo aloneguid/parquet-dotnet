@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using Parquet.Data;
 using Parquet.File;
 using Xunit;
 
@@ -26,7 +23,6 @@ namespace Parquet.Test
          Assert.Equal(3, ((IList)r[1])[0]);
          Assert.Equal(4, ((IList)r[1])[1]);
       }
-
 
       [Fact]
       public void Level1_repetitions_unpacked()

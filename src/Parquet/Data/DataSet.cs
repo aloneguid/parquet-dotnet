@@ -168,6 +168,34 @@ namespace Parquet.Data
 
       #endregion
 
+      #region [ Data Helpers ]
+
+      /// <summary>
+      /// Merges dataset into this dataset
+      /// </summary>
+      /// <param name="source">DataSet to take the data from</param>
+      public void Merge(DataSet source)
+      {
+         if (source == null) throw new ArgumentNullException(nameof(source));
+         if (source == this) throw new ArgumentException("cannot merge into itself", nameof(source));
+
+         if(!Schema.Equals(source.Schema))
+         {
+            string reason = Schema.GetNotEqualsMessage(source.Schema, "current", "source");
+            throw new ArgumentException($"{nameof(DataSet)} schema does not match existing file schema, reason: {reason}", nameof(source));
+         }
+
+         foreach(KeyValuePair<string, IList> kvp in source._columns)
+         {
+            IList dest = _columns[kvp.Key];
+            dest.AddOneByOne(kvp.Value);
+         }
+
+         _rowCount += source.RowCount;
+      }
+
+      #endregion
+
       /// <summary>
       /// Displays some DataSet rows
       /// </summary>

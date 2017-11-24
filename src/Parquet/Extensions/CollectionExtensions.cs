@@ -30,5 +30,15 @@ namespace Parquet
          TrimHead(list, list.Count - offset);
          TrimTail(list, count);
       }
+
+      public static void AddOneByOne(this IList dest, IList source)
+      {
+         if (source == null) return;
+
+         foreach(object o in source)
+         {
+            dest.Add(o);
+         }
+      }
    }
 }
