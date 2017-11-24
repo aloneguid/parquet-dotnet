@@ -51,7 +51,7 @@ namespace Parquet.File
          IList chunk = null;
          int lrl = -1;
 
-         for (int i = 0; i < flatValues.Count; i++)
+         for (int i = 0; i < levels.Count; i++)
          {
             int rl = levels[i];
 
@@ -68,7 +68,10 @@ namespace Parquet.File
                }
             }
 
-            chunk.Add(flatValues[i]);
+            if (flatValues.Count > i)
+            {
+               chunk.Add(flatValues[i]);
+            }
          }
 
          return values;

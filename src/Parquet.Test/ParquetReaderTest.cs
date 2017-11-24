@@ -217,7 +217,7 @@ root
 
          Assert.Equal(2, ds.Schema.Length);
          Assert.Equal(SchemaType.List, ds.Schema[0].SchemaType);
-         Assert.Equal(SchemaType.PrimitiveType, ds.Schema[1].SchemaType);
+         Assert.Equal(SchemaType.Data, ds.Schema[1].SchemaType);
 
          Assert.Equal("cities", ds.Schema[0].Name);
          Assert.Equal("id", ds.Schema[1].Name);
@@ -248,8 +248,8 @@ root
          Assert.Equal(1, ds.RowCount);
          Assert.Equal(2, ds.FieldCount);
 
-         Assert.Equal(SchemaType.Structure, ds.Schema[0].SchemaType);
-         Assert.Equal(SchemaType.PrimitiveType, ds.Schema[1].SchemaType);
+         Assert.Equal(SchemaType.Struct, ds.Schema[0].SchemaType);
+         Assert.Equal(SchemaType.Data, ds.Schema[1].SchemaType);
 
          Assert.Equal("city", ds.Schema.FieldNames[0]);
          Assert.Equal("id", ds.Schema.FieldNames[1]);

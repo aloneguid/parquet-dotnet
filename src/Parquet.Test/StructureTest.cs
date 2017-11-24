@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Parquet.Test
 {
-   public class NestedStructuresTest
+   public class StructureTest
    {
       [Fact]
       public void Simple_structure_write_read()
@@ -25,34 +25,6 @@ namespace Parquet.Test
          Assert.Equal("{Ivan;{Woods;postcode}}", ds1[0].ToString());
       }
 
-      [Fact]
-      public void List_of_structures_writes_reads()
-      {
-         var ds = new DataSet(
-            new DataField<int>("id"),
-            new ListField("cities",
-            new StructField("element",
-               new DataField<string>("name"),
-               new DataField<string>("country"))));
-
-         ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
-
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
-
-         Assert.Equal("{1;[{London;UK};{New York;US}]}", ds1[0].ToString());
-      }
-
-      [Fact]
-      public void List_of_elements_writes_reads()
-      {
-         var ds = new DataSet(
-            new DataField<int>("id"),
-            new ListField("strings",
-               new DataField<string>("item")
-            ));
-         ds.Add(1, new[] { "one", "two" } );
-         Assert.Equal("{1;[one;two]}", ds.WriteReadFirstRow());
-      }
 
       [Fact]
       public void Structure_nested_into_structure_write_read()

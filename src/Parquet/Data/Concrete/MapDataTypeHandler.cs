@@ -15,7 +15,7 @@ namespace Parquet.Data.Concrete
 
       public DataType DataType => DataType.Unspecified;
 
-      public SchemaType SchemaType => SchemaType.Structure;
+      public SchemaType SchemaType => SchemaType.Struct;
 
       public Type ClrType => null;
 

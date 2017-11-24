@@ -19,7 +19,7 @@ namespace Parquet.Data
          {
             return ((MapField)field).CreateCellValue(columns, index);
          }
-         else if (field.SchemaType == SchemaType.Structure)
+         else if (field.SchemaType == SchemaType.Struct)
          {
             return Extract(((StructField)field).Fields, index, columns);
          }
@@ -27,7 +27,7 @@ namespace Parquet.Data
          {
             ListField lf = (ListField)field;
 
-            if (lf.Item.SchemaType == SchemaType.Structure)
+            if (lf.Item.SchemaType == SchemaType.Struct)
             {
                StructField structField = (StructField)lf.Item;
                Dictionary<string, IList> elementColumns = CreateFieldColumns(structField.Fields, index, columns, out int count);
@@ -41,7 +41,7 @@ namespace Parquet.Data
 
                return rows;
             }
-            else if(lf.Item.SchemaType == SchemaType.PrimitiveType)
+            else if(lf.Item.SchemaType == SchemaType.Data)
             {
                DataField dataField = (DataField)lf.Item;
                IList values = GetFieldPathValues(dataField, index, columns);
@@ -78,7 +78,7 @@ namespace Parquet.Data
 
             switch (field.SchemaType)
             {
-               case SchemaType.PrimitiveType:
+               case SchemaType.Data:
                   IList value = columns[key][index] as IList;
                   elementColumns[key] = value;
                   if (value.Count < count) count = value.Count;

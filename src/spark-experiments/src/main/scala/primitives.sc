@@ -36,10 +36,10 @@ val dfRep1 = sc.parallelize(Seq(
    (2, Array[String]())
 )).toDF("id", "repeats1")
 
-val df = dfRep2
+val df = dfRep1
 df.printSchema
 df.show
-write(df, "c:\\tmp\\repempty2.folder.parquet")
+write(df, root + "listofitems-empty-onerow.folder.parquet")
 
 
 

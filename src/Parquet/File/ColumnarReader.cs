@@ -91,7 +91,7 @@ namespace Parquet.File
             values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), false, 0))
             .Apply(dictionary, definitions, repetitions, indexes, (int)maxValues);
 
-         ValueMerger.Trim(mergedValues, (int)offset, (int)count);
+         mergedValues.Trim((int)offset, (int)count);
 
          return mergedValues;
       }
@@ -131,12 +131,12 @@ namespace Parquet.File
             {
                if(_maxRepetitionLevel > 0)
                {
-                  pd.repetitions = ReadLevels(reader, _maxRepetitionLevel);
+                  pd.repetitions = ReadLevels(reader, _maxRepetitionLevel, max);
                }
 
                if(_maxDefinitionLevel > 0)
                {
-                  pd.definitions = ReadLevels(reader, _maxDefinitionLevel);
+                  pd.definitions = ReadLevels(reader, _maxDefinitionLevel, max);
                }
 
                ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
@@ -201,14 +201,16 @@ namespace Parquet.File
       /// </summary>
       /// <param name="reader"></param>
       /// <param name="maxLevel">Maximum level value, depends on level type</param>
+      /// <param name="maxValues">Maximum number of values, so result can be trimmed when it's exceeded</param>
       /// <returns></returns>
-      private List<int> ReadLevels(BinaryReader reader, int maxLevel)
+      private List<int> ReadLevels(BinaryReader reader, int maxLevel, int maxValues)
       {
          int bitWidth = maxLevel.GetBitWidth();
          var result = new List<int>();
 
          //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
          RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result);
+         result.TrimTail(maxValues);
 
          return result;
       }

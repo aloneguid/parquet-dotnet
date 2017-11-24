@@ -1,16 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Parquet.Data
+﻿namespace Parquet.Data
 {
+   /// <summary>
+   /// Type of schema
+   /// </summary>
    public enum SchemaType
    {
-      PrimitiveType,
+      /// <summary>
+      /// Contains actual values i.e. declared by a <see cref="DataField"/>
+      /// </summary>
+      Data,
 
       Map,
 
-      Structure,
+      Struct,
 
       List
    }

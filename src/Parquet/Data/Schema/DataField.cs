@@ -26,7 +26,7 @@ namespace Parquet.Data
       /// </summary>
       internal Type ClrType { get; private set; }
 
-      public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false) : base(name, SchemaType.PrimitiveType)
+      public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false) : base(name, SchemaType.Data)
       {
          DataType = dataType;
          HasNulls = hasNulls;

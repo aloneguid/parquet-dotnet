@@ -1,12 +1,12 @@
-﻿using Parquet.Data;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 namespace Parquet.File
 {
    /// <summary>
-   /// Responsible for merging values from different parts of column chunk
+   /// Responsible for merging values from different parts of column parts (repetition, definitions etc.)
    /// </summary>
    class ValueMerger
    {
@@ -47,7 +47,7 @@ namespace Parquet.File
          //when dictionary has no indexes
          if (indexes == null) return;
 
-         TrimTail(indexes, maxValues);
+         indexes.TrimTail(maxValues);
 
          foreach(int index in indexes)
          {
@@ -65,33 +65,5 @@ namespace Parquet.File
       {
          _values = RepetitionPack.FlatToHierarchy(_maxRepetitionLevel, _createEmptyListFunc, _values, repetitions);
       }
-
-      public static void TrimTail(IList list, int maxValues)
-      {
-         if (list == null) return;
-
-         if (list.Count > maxValues)
-         {
-            int diffCount = list.Count - maxValues;
-            while (--diffCount >= 0) list.RemoveAt(list.Count - 1); //more effective than copying the list again
-         }
-      }
-
-      public static void TrimHead(IList list, int maxValues)
-      {
-         if (list == null) return;
-
-         while (list.Count > maxValues && list.Count > 0)
-         {
-            list.RemoveAt(0);
-         }
-      }
-
-      public static void Trim(IList list, int offset, int count)
-      {
-         TrimHead(list, list.Count - offset);
-         TrimTail(list, count);
-      }
-
    }
 }

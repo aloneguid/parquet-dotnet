@@ -27,7 +27,7 @@ namespace Parquet.Data
 
                ((MapField)field).AddElement(keys, values, value as IDictionary);
             }
-            else if (field.SchemaType == SchemaType.Structure)
+            else if (field.SchemaType == SchemaType.Struct)
             {
                AddStructure(columns, field as StructField, value as Row);
             }
@@ -63,7 +63,7 @@ namespace Parquet.Data
 
          switch(listField.Item.SchemaType)
          {
-            case SchemaType.Structure:
+            case SchemaType.Struct:
                StructField structField = (StructField)listField.Item;
                IEnumerable<Row> rows = value as IEnumerable<Row>;
 
@@ -75,7 +75,7 @@ namespace Parquet.Data
                SliceIn(columns, deepColumns);
                break;
 
-            case SchemaType.PrimitiveType:
+            case SchemaType.Data:
                DataField dataField = (DataField)listField.Item;
                IDataTypeHandler handler = DataTypeFactory.Match(dataField);
                IList values = handler.CreateEmptyList(dataField.HasNulls, dataField.IsArray, 0);

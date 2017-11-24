@@ -25,7 +25,7 @@ namespace Parquet.Data
 
             switch(se.SchemaType)
             {
-               case SchemaType.PrimitiveType:
+               case SchemaType.Data:
                   values[i] = ValidatePrimitive((DataField)se, value);
                   break;
 

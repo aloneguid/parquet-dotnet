@@ -51,13 +51,13 @@ namespace Parquet.Data
       {
          switch(field.SchemaType)
          {
-            case SchemaType.Structure:
+            case SchemaType.Struct:
                return new StructureDataTypeHandler();
             case SchemaType.Map:
                return new MapDataTypeHandler();
             case SchemaType.List:
                return new ListDataTypeHandler();
-            case SchemaType.PrimitiveType:
+            case SchemaType.Data:
                return Match(((DataField)field).DataType);
             default:
                throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"matching {field.SchemaType}");

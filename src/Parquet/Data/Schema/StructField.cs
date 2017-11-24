@@ -47,7 +47,7 @@ namespace Parquet.Data
          }
       }
 
-      private StructField(string name) : base(name, SchemaType.Structure)
+      private StructField(string name) : base(name, SchemaType.Struct)
       {
 
       }

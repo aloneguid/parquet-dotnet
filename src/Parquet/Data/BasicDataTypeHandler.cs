@@ -21,7 +21,7 @@ namespace Parquet.Data
 
       public DataType DataType { get; private set; }
 
-      public SchemaType SchemaType => SchemaType.PrimitiveType;
+      public SchemaType SchemaType => SchemaType.Data;
 
       public Type ClrType => typeof(TSystemType);
 
