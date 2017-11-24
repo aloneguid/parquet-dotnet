@@ -56,6 +56,18 @@ value 1: R:0 D:1 V:<null>
 
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("listofitems-empty-onerow.parquet"));
          Assert.Equal("{2;[]}", ds[0].ToString());
+         Assert.Equal(1, ds.RowCount);
+      }
+
+      [Fact]
+      public void List_of_elements_with_some_items_empty()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("listofitems-empty-alternates.parquet"));
+         Assert.Equal(4, ds.RowCount);
+         Assert.Equal("{1;[1;2;3]}", ds[0].ToString());
+         Assert.Equal("{2;[]}", ds[1].ToString());
+         Assert.Equal("{3;[1;2;3]}", ds[2].ToString());
+         Assert.Equal("{4;[]}", ds[3].ToString());
       }
 
       [Fact]

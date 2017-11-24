@@ -29,17 +29,19 @@ val dfDec = sc.parallelize(Seq(
 //repeatables
 val dfRep2 = sc.parallelize(Seq(
    (1, Array[String]("1", "2", "3")),
-   (2, Array[String]())
+   (2, Array[String]()),
+   (3, Array[String]("1", "2", "3")),
+   (4, Array[String]())
 )).toDF("id", "repeats2")
 
 val dfRep1 = sc.parallelize(Seq(
    (2, Array[String]())
 )).toDF("id", "repeats1")
 
-val df = dfRep1
+val df = dfRep2
 df.printSchema
 df.show
-write(df, root + "listofitems-empty-onerow.folder.parquet")
+write(df, root + "listofitems-empty-alternates.folder.parquet")
 
 
 
