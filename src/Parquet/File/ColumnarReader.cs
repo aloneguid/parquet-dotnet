@@ -86,6 +86,7 @@ namespace Parquet.File
          }
 
          IList mergedValues = new ValueMerger(
+            _maxDefinitionLevel,
             _maxRepetitionLevel,
             () => _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), false, 0),
             values ?? _dataTypeHandler.CreateEmptyList(_thriftSchemaElement.IsNullable(), false, 0))

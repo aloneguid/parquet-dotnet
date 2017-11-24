@@ -40,23 +40,31 @@ namespace Parquet.File
          return definitions;
       }
 
-      public static void InsertDefinitions(IList values, List<int> definitions)
+      public static List<bool> InsertDefinitions(IList values, int maxDefinitionLevel, List<int> definitions)
       {
-         if (definitions == null || !values.IsNullable()) return;
+         if (definitions == null || !values.IsNullable()) return null;
 
-         int valueIdx = 0;
+         var noValueFlags = new List<bool>();
 
          for(int i = 0; i < definitions.Count; i++)
          {
-            bool isDefined = definitions[i] != 0;
+            int def = definitions[i];
+            bool hasValue = true;
 
-            if(!isDefined)
+            if(def == 0)
             {
-               values.Insert(valueIdx, null);
+               values.Insert(i, null);
+            }
+            else if(def != maxDefinitionLevel)
+            {
+               values.Insert(i, null); //stil need to insert something to keep consistent length
+               hasValue = false;
             }
 
-            valueIdx++;
+            noValueFlags.Add(hasValue);
          }
+
+         return noValueFlags;
       }
    }
 }

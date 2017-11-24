@@ -15,7 +15,7 @@ namespace Parquet.Test
       public void Level4_definitions_packed_when_none_are_null()
       {
          var values = new List<int?> { 1, 2, 1, 2 };
-         DefinitionPack.InsertDefinitions(values, new List<int> { 4, 4, 4, 4 });
+         DefinitionPack.InsertDefinitions(values, 4, new List<int> { 4, 4, 4, 4 });
 
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(1, 2, 1, 2), values);
@@ -25,7 +25,7 @@ namespace Parquet.Test
       public void First_and_second_is_null_packed()
       {
          var values = new List<int?> { 1, 2 };
-         DefinitionPack.InsertDefinitions(values, new List<int> { 0, 0, 1, 1 });
+         DefinitionPack.InsertDefinitions(values, 1, new List<int> { 0, 0, 1, 1 });
 
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(null, null, 1, 2), values);
@@ -45,7 +45,7 @@ namespace Parquet.Test
       public void First_and_lastis_null_packed()
       {
          var values = new List<int?> { 1, 2 };
-         DefinitionPack.InsertDefinitions(values, new List<int> { 0, 1, 1, 0 });
+         DefinitionPack.InsertDefinitions(values, 1, new List<int> { 0, 1, 1, 0 });
 
          Assert.Equal(4, values.Count);
          Assert.Equal(Nullable<int>(null, 1, 2, null), values);

@@ -38,7 +38,7 @@ namespace Parquet.File
          }
       }
 
-      public static IList FlatToHierarchy(int maxRepetitionLevel, Func<IList> createEmptyListFunc, IList flatValues, List<int> levels)
+      public static IList FlatToHierarchy(int maxRepetitionLevel, Func<IList> createEmptyListFunc, IList flatValues, List<int> levels, List<bool> hasValueFlags = null)
       {
          if (levels == null || maxRepetitionLevel == 0) return flatValues;
 
@@ -55,7 +55,7 @@ namespace Parquet.File
          {
             int rl = levels[i];
 
-            if (lrl != rl)
+            if (lrl != rl || rl == 0)
             {
                CreateNestedLists(maxRepetitionLevel, createEmptyListFunc, hl, rl);
                lrl = rl;
@@ -70,7 +70,11 @@ namespace Parquet.File
 
             if (flatValues.Count > i)
             {
-               chunk.Add(flatValues[i]);
+               bool hasValue = (hasValueFlags == null) ? true : hasValueFlags[i];
+               if (hasValue)
+               {
+                  chunk.Add(flatValues[i]);
+               }
             }
          }
 

@@ -10,14 +10,18 @@ namespace Parquet.File
    /// </summary>
    class ValueMerger
    {
+      private readonly int _maxDefinitionLevel;
       private readonly int _maxRepetitionLevel;
       private readonly Func<IList> _createEmptyListFunc;
       private IList _values;
 
-      public ValueMerger(int maxRepetitionLevel,
+      public ValueMerger(
+         int maxDefinitionLevel,
+         int maxRepetitionLevel,
          Func<IList> createEmptyListFunc,
          IList values)
       {
+         _maxDefinitionLevel = maxDefinitionLevel;
          _maxRepetitionLevel = maxRepetitionLevel;
          _createEmptyListFunc = createEmptyListFunc;
          _values = values;
@@ -32,9 +36,9 @@ namespace Parquet.File
 
          ApplyDictionary(dictionary, indexes, maxValues);
 
-         ApplyDefinitions(definitions, maxValues);
+         List<bool> hasValueFlags = DefinitionPack.InsertDefinitions(_values, _maxDefinitionLevel, definitions);
 
-         ApplyRepetitions(repetitions);
+         _values = RepetitionPack.FlatToHierarchy(_maxRepetitionLevel, _createEmptyListFunc, _values, repetitions, hasValueFlags);
 
          return _values;
       }
@@ -54,16 +58,6 @@ namespace Parquet.File
             object value = dictionary[index];
             _values.Add(value);
          }
-      }
-
-      private void ApplyDefinitions(List<int> definitions, int maxValues)
-      {
-         DefinitionPack.InsertDefinitions(_values, definitions);
-      }
-
-      private void ApplyRepetitions(List<int> repetitions)
-      {
-         _values = RepetitionPack.FlatToHierarchy(_maxRepetitionLevel, _createEmptyListFunc, _values, repetitions);
       }
    }
 }
