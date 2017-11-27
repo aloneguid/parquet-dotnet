@@ -38,10 +38,18 @@ val dfRep1 = sc.parallelize(Seq(
    (2, Array[String]())
 )).toDF("id", "repeats1")
 
-val df = dfRep2
+//maps in structs
+case class StructSample(id: Int, map: Map[Int, String])
+
+val map = Map(1 -> "one", 2 -> "two", 3 -> "three")
+val dfMapsInStructs = sc.parallelize(Seq(
+   (1, new StructSample(1, map))
+)).toDF("id", "strcture")
+
+val df = dfMapsInStructs
 df.printSchema
 df.show
-write(df, root + "listofitems-empty-alternates.folder.parquet")
+write(df, root + "mapinstruct.folder.parquet")
 
 
 

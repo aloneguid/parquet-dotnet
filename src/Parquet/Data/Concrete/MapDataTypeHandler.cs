@@ -59,7 +59,7 @@ namespace Parquet.Data.Concrete
          container.Add(root);
 
          //key-value is a container for column of keys and column of values
-         var keyValue = new Thrift.SchemaElement("key_value")
+         var keyValue = new Thrift.SchemaElement(MapField.ContainerName)
          {
             Num_children = 0, //is assigned by children
             Repetition_type = Thrift.FieldRepetitionType.REPEATED

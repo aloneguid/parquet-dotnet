@@ -43,7 +43,7 @@ namespace Parquet.Data
       {
          set
          {
-            Path = $"{value}{Schema.PathSeparator}{Name}";
+            Path = value.AddPath(Name);
          }
       }
 

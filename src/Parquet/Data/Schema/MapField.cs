@@ -6,6 +6,8 @@ namespace Parquet.Data
 {
    public class MapField : Field
    {
+      internal const string ContainerName = "key_value";
+
       internal DataField Key { get; private set; }
 
       internal DataField Value { get; private set; }
@@ -22,8 +24,9 @@ namespace Parquet.Data
          Key = keyField;
          Value = valueField;
 
-         Key.Path = $"{Path}.key_value.key";
-         Value.Path = $"{Path}.key_value.value";
+         Path = name.AddPath(ContainerName);
+         Key.PathPrefix = Path;
+         Value.PathPrefix = Path;
       }
 
       internal MapField(string name)
@@ -44,6 +47,16 @@ namespace Parquet.Data
          else
          {
             throw new InvalidOperationException($"'{Name}' already has key and value assigned");
+         }
+      }
+
+      internal override string PathPrefix
+      {
+         set
+         {
+            Path = value.AddPath(Name, ContainerName);
+            Key.PathPrefix = Path;
+            Value.PathPrefix = Path;
          }
       }
 
