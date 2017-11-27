@@ -21,7 +21,7 @@ namespace Parquet.Data.Concrete
          {
             byte b = reader.ReadByte();
 
-            while(ibit <= 8)
+            while(ibit < 8)
             {
                bool set = ((b >> ibit++) & 1) == 1;
                dest.Add(set);
@@ -45,7 +45,7 @@ namespace Parquet.Data.Concrete
          {
             if (flag)
             {
-               b |= (byte)(1 << n);
+               b |= (byte)(1 << n++);
             }
 
             if (n == 8)
@@ -54,8 +54,6 @@ namespace Parquet.Data.Concrete
                n = 0;
                b = 0;
             }
-
-            n += 1;
          }
 
          if (n != 0) buffer[ib] = b;

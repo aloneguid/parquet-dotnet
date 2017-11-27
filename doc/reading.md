@@ -35,6 +35,8 @@ using(Stream fs = File.OpenRead("c:\\data\\input.parquet"))
 
 ## Reading parts of file
 
+### Offsets and Counts
+
 Parquet.Net supports reading portions of files using offset and count properties. In order to do that you need to pass `ReaderOptions` and specify the desired parameters. Every `Read` method supports those as optional parameters. 
 
 For example, to read `input.parquet` from rows 10 to 15 use the following code:
@@ -42,6 +44,23 @@ For example, to read `input.parquet` from rows 10 to 15 use the following code:
 ```csharp
 var options = new ReaderOptions { Offset = 10, Count = 5};
 DataSet ds = ParquetReader.ReadFile("c:\\data\\input.parquet", null, options);
+```
+
+### Limiting by columns
+
+Parquet.Net allows you to read only a specific set of columns as well. This might come in handly when your dataset consists of a large amount of columns, or just as a parformance optimisation when you know beforehand which data you are interested in.
+
+Reading a subset of columns makes parquet reader completely ignore data in other columns which greatly improves data retreival speed.
+
+To set which columns to read, you have to pass their names to `ReaderOptions`, for example:
+
+```csharp
+var options = new ReaderOptions
+{
+   Columns = new[] { "n_name", "n_regionkey" }
+};
+
+DataSet ds = ParquetReader.ReadFile("path_to_file.parquet", null, options);
 ```
 
 ## Using format options

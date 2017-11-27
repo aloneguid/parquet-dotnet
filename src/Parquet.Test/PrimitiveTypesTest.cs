@@ -27,7 +27,7 @@ namespace Parquet.Test
 
          for(int i = 0; i < count; i++)
          {
-            Assert.True(ds[i].GetBoolean(1));
+            Assert.True(ds1[i].GetBoolean(1), $"got FALSE at position {i}");
          }
 
       }
