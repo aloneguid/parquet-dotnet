@@ -31,6 +31,7 @@ This project is aimed to fix this problem. We support all the popular server and
   - [Maps](doc/complex-map.md)
   - [Lists](doc/complex-list.md)
 - [Performance Tuning](doc/performance.md)
+- [JSON Support](doc/json.md)
 
 You can track the [amount of features we have implemented so far](doc/features.md).
 

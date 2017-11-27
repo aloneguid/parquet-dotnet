@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4
 		..\doc\complex-struct.md = ..\doc\complex-struct.md
 		..\doc\dataset.md = ..\doc\dataset.md
 		..\doc\features.md = ..\doc\features.md
+		..\doc\json.md = ..\doc\json.md
 		..\doc\parquet-getting-started.md = ..\doc\parquet-getting-started.md
 		..\doc\performance.md = ..\doc\performance.md
 		..\doc\reading.md = ..\doc\reading.md
