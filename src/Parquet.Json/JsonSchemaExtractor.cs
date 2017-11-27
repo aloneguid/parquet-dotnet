@@ -4,7 +4,11 @@ using System.Text;
 
 namespace Parquet.Json
 {
-    class JsonSchemaExtractor
-    {
-    }
+   class JsonSchemaExtractor
+   {
+      public JsonSchemaExtractor()
+      {
+
+      }
+   }
 }

@@ -15,14 +15,16 @@ using Parquet.Data;
 var ds1 = new DataSet(
 	new Schema()
 	{
-		new Field<int>("id"),
-		new Field<string>("city"
+		new DataField<int>("id"),
+		new DataField<string>("city"
 	});
 
 var ds2 = new DataSet(
-	new Field<int>("id"),
-	new Field<string>("city"));
+	new DataField<int>("id"),
+	new DataField<string>("city"));
 ```
+
+`DataField` here is a subclass of `Field` which is designed to hold column data, and is the most common schema element.
 
 As `DataSet` implements `IList<Row>` interface you can keep adding `Row` objects to it:
 
@@ -32,6 +34,21 @@ ds1.Add(row);
 ```
 
 The row object contains a list of untyped elements (`System.Object`), however `DataSet` will validate the types according to it's schema when adding elements and throw an appropriate exception.
+
+## Utilities
+
+### Merging DataSets
+
+Two datasets can be merged together, if they have idential schemas, you can use `.Merge()` method for this:
+
+```csharp
+DataSet ds1 = ...
+DataSet ds2 = ...
+
+ds1.Merge(ds2);
+```
+
+Merge method takes data from `ds2` and adds into `ds1`. Internally it's super-fast comparing to manually adding a set of `Row`s as it operates on columns instead of rows.
 
 ### A special note on dates
 
