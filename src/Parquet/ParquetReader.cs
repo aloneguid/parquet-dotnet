@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 using System.Collections;
+using Parquet.Data.Predicates;
+using System.Linq;
 
 namespace Parquet
 {
@@ -16,6 +18,7 @@ namespace Parquet
       private Thrift.FileMetaData _meta;
       private readonly ParquetOptions _formatOptions;
       private readonly ReaderOptions _readerOptions;
+      private readonly FieldPredicate[] _fieldPredicates;
 
       /// <summary>
       /// Creates an instance from input stream
@@ -35,6 +38,7 @@ namespace Parquet
          ValidateFile();
          _formatOptions = formatOptions ?? new ParquetOptions();
          _readerOptions = readerOptions ?? new ReaderOptions();
+         _fieldPredicates = PredicateFactory.CreateFieldPredicates(_readerOptions);
       }
 
       /// <summary>
@@ -102,6 +106,7 @@ namespace Parquet
             {
                Thrift.ColumnChunk cc = rg.Columns[icol];
                string path = cc.GetPath();
+               if (!_fieldPredicates.Any(p => p.IsMatch(cc, path))) continue;
 
                var columnarReader = new ColumnarReader(_input, cc, footer, _formatOptions);
 
@@ -136,7 +141,9 @@ namespace Parquet
             pos += rg.Num_rows;
          }
 
-         var ds = new DataSet(footer.CreateModelSchema(_formatOptions), pathToValues, _meta.Num_rows, _meta.Created_by);
+         Schema schema = footer.CreateModelSchema(_formatOptions);
+         schema = schema.Filter(_fieldPredicates);
+         var ds = new DataSet(schema, pathToValues, _meta.Num_rows, _meta.Created_by);
          Dictionary<string, string> customMetadata = footer.CustomMetadata;
          if (customMetadata != null) ds.Metadata.Custom.AddRange(customMetadata);
          ds.Thrift = _meta;

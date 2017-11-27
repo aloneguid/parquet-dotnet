@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.Data.Predicates;
 
 namespace Parquet.Data
 {
@@ -92,6 +93,13 @@ namespace Parquet.Data
             if (field.Equals(_fields[i])) return i;
 
          return -1;
+      }
+
+      internal Schema Filter(FieldPredicate[] predicates)
+      {
+         if (predicates == null) return this;
+
+         return new Schema(_fields.Where(f => predicates.Any(p => p.IsMatch(f))));
       }
 
       /// <summary>

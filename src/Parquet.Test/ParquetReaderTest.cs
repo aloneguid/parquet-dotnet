@@ -319,6 +319,19 @@ root
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("decimalnulls.parquet"));
       }
 
+      [Fact]
+      public void Read_only_limited_columns()
+      {
+         var options = new ReaderOptions
+         {
+            Columns = new[] { "n_name", "n_regionkey" }
+         };
+
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("nation.impala.parquet"), null, options);
+
+         Assert.Equal(2, ds.FieldCount);
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)
