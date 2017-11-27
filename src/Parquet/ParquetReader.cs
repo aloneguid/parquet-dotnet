@@ -106,7 +106,7 @@ namespace Parquet
             {
                Thrift.ColumnChunk cc = rg.Columns[icol];
                string path = cc.GetPath();
-               if (!_fieldPredicates.Any(p => p.IsMatch(cc, path))) continue;
+               if (_fieldPredicates != null && !_fieldPredicates.Any(p => p.IsMatch(cc, path))) continue;
 
                var columnarReader = new ColumnarReader(_input, cc, footer, _formatOptions);
 
