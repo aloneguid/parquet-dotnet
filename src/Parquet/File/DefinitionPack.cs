@@ -17,8 +17,9 @@ namespace Parquet.File
       /// </summary>
       /// <param name="values">Values to compress. This operation modifies the list</param>
       /// <param name="maxDefinitionLevel"></param>
+      /// <param name="hasValueFlags">Indicates where values are present and where not, optional.</param>
       /// <returns>Definitions for the input values</returns>
-      public static List<int> RemoveNulls(IList values, int maxDefinitionLevel)
+      public static List<int> RemoveNulls(IList values, int maxDefinitionLevel, List<bool> hasValueFlags = null)
       {
          var definitions = new List<int>(values.Count);
 
@@ -27,7 +28,10 @@ namespace Parquet.File
             object value = values[i];
             if(value == null)
             {
-               definitions.Add(0);
+               int level = (hasValueFlags != null && !hasValueFlags[i])
+                  ? Math.Max(1, maxDefinitionLevel - 1)
+                  : 0;
+               definitions.Add(level);
                values.RemoveAt(i);
             }
             else

@@ -73,6 +73,7 @@ namespace Parquet.File
          byte[] dataPageBytes;
          List<int> repetitions = null;
          List<int> definitions = null;
+         List<bool> hasValueFlags = null;
 
          if (values != null)
          {
@@ -81,14 +82,15 @@ namespace Parquet.File
             {
                repetitions = new List<int>();
                IList flatValues = _dataTypeHandler.CreateEmptyList(_tse.IsNullable(), false, 0);
-               RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions);
+               hasValueFlags = new List<bool>();
+               RepetitionPack.HierarchyToFlat(_maxRepetitionLevel, values, flatValues, repetitions, hasValueFlags);
                values = flatValues;
                _ph.Data_page_header.Num_values = values.Count; //update with new count
             }
 
             if (_maxDefinitionLevel > 0)
             {
-               definitions = DefinitionPack.RemoveNulls(values, _maxDefinitionLevel);
+               definitions = DefinitionPack.RemoveNulls(values, _maxDefinitionLevel, hasValueFlags);
             }
          }
 

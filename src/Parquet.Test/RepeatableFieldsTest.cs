@@ -40,7 +40,7 @@ namespace Parquet.Test
 
          DataSet ds1 = ds.WriteRead();
 
-         Assert.Equal("{1;[one;two;three]}", ds1[0].ToString());
+         Assert.Equal("{1;[]}", ds1[0].ToString());
       }
    }
 }

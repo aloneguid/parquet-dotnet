@@ -60,7 +60,7 @@ value 1: R:0 D:1 V:<null>
       }
 
       [Fact]
-      public void List_of_elements_with_some_items_empty()
+      public void List_of_elements_with_some_items_empty_reads_file()
       {
          DataSet ds = ParquetReader.ReadFile(GetDataFilePath("listofitems-empty-alternates.parquet"));
          Assert.Equal(4, ds.RowCount);
@@ -82,5 +82,26 @@ value 1: R:0 D:1 V:<null>
          Assert.Equal("{1;[]}", ds.WriteReadFirstRow());
       }
 
+      [Fact]
+      public void List_of_elements_with_some_items_empty_writes_reads()
+      {
+         var ds = new DataSet(
+            new DataField<int>("id"),
+            new ListField("strings",
+               new DataField<string>("item")
+            ));
+         ds.Add(1, new string[] { "1", "2", "3" });
+         ds.Add(2, new string[] { });
+         ds.Add(3, new string[] { "1", "2", "3" });
+         ds.Add(4, new string[] { });
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+         Assert.Equal(4, ds1.RowCount);
+         Assert.Equal("{1;[1;2;3]}", ds1[0].ToString());
+         Assert.Equal("{2;[]}", ds1[1].ToString());
+         Assert.Equal("{3;[1;2;3]}", ds1[2].ToString());
+         Assert.Equal("{4;[]}", ds1[3].ToString());
+
+      }
    }
 }

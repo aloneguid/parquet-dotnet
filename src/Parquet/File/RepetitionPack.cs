@@ -12,24 +12,34 @@ namespace Parquet.File
       public static void HierarchyToFlat(int maxRepetitionLevel,
          IList hierarchyList,
          IList flatList,
-         List<int> levels)
+         List<int> levels,
+         List<bool> hasValueFlags = null)
       {
          int touched = 0;
-         HierarchyToFlat(maxRepetitionLevel, hierarchyList, levels, flatList, ref touched, 0);
+         HierarchyToFlat(maxRepetitionLevel, hierarchyList, levels, flatList, ref touched, 0, hasValueFlags);
       }
 
-      private static void HierarchyToFlat(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel)
+      private static void HierarchyToFlat(int maxRepetitionLevel, IList list, List<int> levels, IList flatValues, ref int touchedListLevel, int listLevel, List<bool> hasValueFlags = null)
       {
+         if(listLevel == maxRepetitionLevel && list.Count == 0 && hasValueFlags != null)
+         {
+            //cater for nested lists
+            hasValueFlags.Add(false);
+            flatValues.Add(null);
+            levels.Add(0);
+         }
+
          for (int i = 0; i < list.Count; i++)
          {
             object item = list[i];
 
             if ((listLevel != maxRepetitionLevel) && (item is IList nestedList))
             {
-               HierarchyToFlat(maxRepetitionLevel, nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1);
+               HierarchyToFlat(maxRepetitionLevel, nestedList, levels, flatValues, ref touchedListLevel, listLevel + 1, hasValueFlags);
             }
             else
             {
+               if (hasValueFlags != null) hasValueFlags.Add(true);
                flatValues.Add(item);
                levels.Add(touchedListLevel);
             }
