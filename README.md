@@ -11,11 +11,13 @@
 - `.NET 4.5.1` and up.
 - `.NET Standard 1.4` and up.
 
+Runs on all flavors of Windows, Linux, and mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/)
+
 ## Why
 
-Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language working on all platforms and devices, we still don't have anything good in this area.
+Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language (C# is just Java done right) working on all platforms and devices, we still don't have anything good in this area.
 
-This project is aimed to fix this problem. We support all the popular server and client operating systems, mobile devices, gaming consoles and everything that can run `.NET` which is quite a lot!
+This project is aimed to fix this problem. We support all the popular server and client operating systems, mobile devices, [gaming consoles](doc/xboxone.md) and everything that can run `.NET` which is quite a lot!
 
 ## Index
 

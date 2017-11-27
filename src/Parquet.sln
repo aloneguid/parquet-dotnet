@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4
 		..\doc\schema.md = ..\doc\schema.md
 		..\doc\types.md = ..\doc\types.md
 		..\doc\writing.md = ..\doc\writing.md
+		..\doc\xboxone.md = ..\doc\xboxone.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.Test", "Parquet.Test\Parquet.Test.csproj", "{8B0A6566-6722-4550-8EF2-1D91DF188F9B}"
