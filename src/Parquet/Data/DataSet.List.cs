@@ -85,7 +85,7 @@ namespace Parquet.Data
       /// <returns></returns>
       public IEnumerator<Row> GetEnumerator()
       {
-         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("enumerating DataSet");
+         return new DataSetEnumerator(this);
       }
 
       /// <summary>
@@ -125,7 +125,7 @@ namespace Parquet.Data
 
       IEnumerator IEnumerable.GetEnumerator()
       {
-         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("enumerating DataSet");
+         return new DataSetEnumerator(this);
       }
    }
 }

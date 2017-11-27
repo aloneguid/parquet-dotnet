@@ -68,5 +68,22 @@ namespace Parquet.Test
 
          Assert.Throws<ArgumentException>(() => ds1.Merge(ds2));
       }
+
+      [Fact]
+      public void DataSet_is_enumerable()
+      {
+         var ds = new DataSet(new DataField<int>("id"))
+         {
+            1,
+            2,
+            3
+         };
+
+         int i = 0;
+         foreach(Row row in ds)
+         {
+            Assert.Equal(++i, row[0]);
+         }
+      }
    }
 }
