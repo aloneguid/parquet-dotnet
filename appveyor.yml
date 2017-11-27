@@ -25,4 +25,4 @@ deploy:
 - provider: Environment
   name: aloneguid NuGet
   on:
-    branch: /stable-\./
+    branch: /stable-.*/
