@@ -25,11 +25,8 @@ This project is aimed to fix this problem. We support all the popular server and
 - [Writing Data](doc/writing.md)
 - [DataSet](doc/dataset.md) 
 - [Declaring Schema](doc/schema.md)
-- [Supported Types](doc/types.md)
-  - [Repeatable Fields](doc/types/repeatable.md) 
-  - [Working with Floating Point Data](doc/types/floating.md)
-  - [Working with Dates](doc/types/dates.md)
-- Advanced types
+  - [Supported Types](doc/types.md)
+- Advanced Types
   - [Structures](doc/complex-struct.md)
   - [Maps](doc/complex-map.md)
   - [Lists](doc/complex-list.md)

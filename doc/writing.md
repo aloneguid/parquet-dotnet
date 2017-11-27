@@ -8,8 +8,8 @@ using Parquet;
 using Parquet.Data;
 
 var ds = new DataSet(
-	new Field<int>("id"),
-	new Field<string>("city")
+	new DataField<int>("id"),
+	new DataField<string>("city")
 );
 
 ds.Add(1, "London");

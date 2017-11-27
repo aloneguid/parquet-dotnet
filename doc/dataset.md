@@ -50,18 +50,6 @@ ds1.Merge(ds2);
 
 Merge method takes data from `ds2` and adds into `ds1`. Internally it's super-fast comparing to manually adding a set of `Row`s as it operates on columns instead of rows.
 
-### A special note on dates
-
-In the old times Parquet format didn't support dates, therefore people used to store dates as `int96` number. Because of backward compatibility issues we use this as the default date storage format.
-
-If you need to override date format storage you can use `DateTimeField` instead of `Field<DateTimeOffset>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
-
-```csharp
-new DateTimeField("date_col", DateTimeFormat.Date);
-```
-
-see `DateTimeFormat` enumeration for detailed explanation of available options.
-
 ## Counts
 
 DataSet contains a few `Count` properties which carry a different meaning:
@@ -69,3 +57,7 @@ DataSet contains a few `Count` properties which carry a different meaning:
 - **Count** is an alias to **RowCount** and returns the number of rows dataset physically contains.
 - **TotalRowCount** represetns the number of rows in the source file the DataSet was read from. It's only filled by `ParquetDataReader`.
 - **ColumnCount** is number of columns in this dataset and is just an alias property which reads number of columns from the schema.
+
+## File Metadata
+
+Parquet supports file-wide metadata which are key-value strings. When reading a file you can access this metadata by calling to `DataSet.Metadata.Custom` property. Likewise, you can set this collection to your custom values before writing file.

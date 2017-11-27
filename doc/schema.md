@@ -23,7 +23,7 @@ The second one is just a shortcut to `DataField` that allows you to use .NET Gen
 Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly:
 
 ```csharp
-new Field<int?>("id");
+new DataField<int?>("id");
 
 new DataField("id", DataType.Int32, true);
 ```
@@ -32,6 +32,38 @@ This allows you to force the schema to be nullable, so you can add null values. 
 
 > Note that `string` type is always nullable. Although `string` is an [immutable type](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/strings/) in CLR, it's still passed by reference, which can be assigned to `null` value.
 
-## Repeatable fields
+## Dates
 
-todo
+In the old times Parquet format didn't support dates, therefore people used to store dates as `int96` number. Because of backward compatibility issues we use this as the default date storage format.
+
+If you need to override date format storage you can use `DateTimeDataField` instead of `DataField<DateTimeOffset>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
+
+```csharp
+new DateTimeDataField("date_col", DateTimeFormat.Date);
+```
+
+see `DateTimeFormat` enumeration for detailed explanation of available options.
+
+## Decimals
+
+Writing a decimal by default uses precision 38 and scele 18, however you can set different precision and schema by using `DecimalDataField` schema element (see constructor for options).
+
+## Repeatable Fields
+
+Parquet.Net supports repeatable fields i.e. fields that contain an array of values instead of just one single value.
+
+To declare a repeatable field in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
+
+```csharp
+var se = new DataField<IEnumerable<int>>("ids");
+```
+
+you can also specify that a field is repeatable by setting `isArray` in `DataField` constructor to `true`.
+
+When writing to the field you can specify any value which derives from `IEnumerable<int>`, for instance
+
+```csharp
+ds.Add(1, new int[] { 1, 2, 3 });
+```
+
+When reading schema back, you can check if it's repeatable by calling to `.IsArray` member. 
