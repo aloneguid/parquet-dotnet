@@ -21,7 +21,8 @@ namespace Parquet.Json.Test
          Assert.Equal(new DataField<int?>("population"), s[2]);
 
          //validate data
-         Assert.Equal(0, ds.RowCount);
+         Assert.Equal(1, ds.RowCount);
+         Assert.Equal("{123;UK;1300000}", ds[0].ToString());
       }
 
    }

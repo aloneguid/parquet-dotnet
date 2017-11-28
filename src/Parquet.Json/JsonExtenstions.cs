@@ -15,9 +15,11 @@ namespace Newtonsoft.Json.Linq
          PSchema schema = schemaExtractor.GetSchema();
 
          //convert data
-         //todo
+         var dataExtractor = new JsonDataExtractor(schema);
+         var ds = new DataSet(schema);
+         dataExtractor.AddRow(ds, jObject);
 
-         return new DataSet(schema);
+         return ds;
       }
    }
 }
