@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json.Linq;
 using Parquet.Data;
@@ -10,10 +11,24 @@ namespace Parquet.Json
    class JsonSchemaExtractor
    {
       private RelaxedField _root;
+      private static readonly Dictionary<JTokenType, DataType> JsonTypeToParquetType = new Dictionary<JTokenType, DataType>
+      {
+         [JTokenType.Integer] = DataType.Int32,
+         [JTokenType.Float] = DataType.Float,
+         [JTokenType.String] = DataType.String,
+         [JTokenType.Boolean] = DataType.Boolean,
+         [JTokenType.Null] = DataType.Unspecified,
+         [JTokenType.Date] = DataType.DateTimeOffset,
+         [JTokenType.Raw] = DataType.ByteArray,
+         [JTokenType.Bytes] = DataType.ByteArray,
+         [JTokenType.Guid] = DataType.ByteArray,
+         [JTokenType.Uri] = DataType.String,
+         [JTokenType.TimeSpan] = DataType.Interval
+      };
 
       public JsonSchemaExtractor()
       {
-         _root = new RelaxedField("root");
+         _root = new RelaxedField("root", null);
       }
 
       public void Analyze(JObject jObject)
@@ -21,36 +36,45 @@ namespace Parquet.Json
          Analyze(_root, jObject);
       }
 
-      public void Analyze(RelaxedField parent, JToken jToken)
+      public Schema GetSchema()
       {
-         foreach(JToken token in jToken.Children())
+         return new Schema(_root.Children.Select(c => c.ToField()));
+      }
+
+      public void Analyze(RelaxedField parent, JContainer jo)
+      {
+         foreach (JToken jt in jo)
          {
-            switch(token.Type)
+            switch (jt.Type)
             {
                case JTokenType.Property:
-                  Analyze(parent, (JProperty)token);
+                  AnalyzeProperty(parent, jt as JProperty);
                   break;
-
-               case JTokenType.Object:
-                  Analyze(parent, (JObject)token);
-                  break;
-
                default:
-                  throw new NotSupportedException($"unsupported token type: {token.Type}");
+                  throw new NotImplementedException($"no {jt.Type} yet ;)");
+
             }
          }
       }
 
-      private void Analyze(RelaxedField parent, JProperty property)
+      private void AnalyzeProperty(RelaxedField parent, JProperty jp)
       {
-         var f = new RelaxedField(property.Name);
-         parent.Children.Add(f);
-         Analyze(f, property.Value);
+         if(jp.Value.Type >= JTokenType.Integer)
+         {
+            var field = new RelaxedField(jp.Name, parent);
+            field.DataType = GetParquetDataType(jp.Value.Type, parent.DataType);
+            parent.Children.Add(field);
+         }
+         else
+         {
+            throw new NotImplementedException();
+         }
       }
 
-      private void Analyze(RelaxedField parent, JObject jObject)
+      private DataType GetParquetDataType(JTokenType jType, DataType? existingType)
       {
-         parent = null;
+         return JsonTypeToParquetType[jType];
       }
+
    }
 }

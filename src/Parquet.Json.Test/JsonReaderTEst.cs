@@ -1,6 +1,4 @@
-﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Parquet.Data;
 using Xunit;
 
@@ -14,6 +12,13 @@ namespace Parquet.Json.Test
          JObject jo = JObject.Parse(ReadJson("001.json"));
 
          DataSet ds = jo.ToParquetDataSet();
+
+         //validate schema
+         Schema s = ds.Schema;
+         Assert.Equal(3, s.Length);
+         Assert.Equal(new DataField<int?>("id"), s[0]);
+         Assert.Equal(new DataField<string>("country"), s[1]);
+         Assert.Equal(new DataField<int?>("population"), s[2]);
       }
 
    }
