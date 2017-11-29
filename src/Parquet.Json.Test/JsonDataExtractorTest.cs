@@ -59,5 +59,12 @@ namespace Parquet.Json.Test
          DataSet ds = jo.ToParquetDataSet(schema);
          Assert.Equal("{123;[UK;US]}", ds[0].ToString());
       }
+
+      [Fact]
+      public void Read_perfect_list_of_structs()
+      {
+         JObject jo = JObject.Parse(ReadJson("listofstructs.json"));
+         Schema schema = jo.InferParquetSchema();
+      }
    }
 }

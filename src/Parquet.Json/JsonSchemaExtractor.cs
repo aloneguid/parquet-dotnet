@@ -26,9 +26,19 @@ namespace Parquet.Json
          [JTokenType.TimeSpan] = DataType.Interval
       };
 
+      //    JObject -> JContainer -> JToken
+      //  JProperty -> JContainer
+      //     JArray -> JContainer
+
       public JsonSchemaExtractor()
       {
          _root = new RelaxedField("root", null);
+      }
+
+      //todo: merge all incoming JObjects
+      public void Analyze(IEnumerable<JObject> jObjects)
+      {
+         
       }
 
       public void Analyze(JObject jObject)
@@ -36,58 +46,61 @@ namespace Parquet.Json
          Analyze(_root, jObject);
       }
 
+      private void Analyze(RelaxedField parent, JToken token)
+      {
+         switch (token.Type)
+         {
+            //object has key-value properties that are columns!
+            case JTokenType.Object:
+               JObject jObject = (JObject)token;
+               foreach (JToken child in jObject.Children())
+               {
+                  Analyze(parent, child);
+               }
+               break;
+
+            //contains a value or further nesting
+            case JTokenType.Property:
+               JProperty jProperty = (JProperty)token;
+               var property = new RelaxedField(jProperty.Name, parent);
+               parent.Children.Add(property);
+               Analyze(property, jProperty.Value);
+               break;
+
+            //is either a simple value or a list
+            case JTokenType.Array:
+               JArray jArray = (JArray)token;
+               JToken jae = jArray.First;
+               if (jae != null)
+               {
+                  if (jae.IsPrimitiveValue())
+                  {
+                     parent.IsArray = true;
+                     parent.DataType = GetParquetDataType(jae.Type, null);
+                  }
+                  else
+                  {
+                     //it's not an array then, children are actual objects!
+                     Analyze(parent, jae);
+                  }
+               }
+               break;
+
+            case JTokenType.Integer:
+            case JTokenType.String:
+               parent.DataType = GetParquetDataType(token.Type, null);
+               break;
+
+            default:
+               throw new NotImplementedException($"what's {token.Type}?");
+         }
+      }
+
       public Schema GetSchema()
       {
          return new Schema(_root.Children.Select(c => c.ToField()));
       }
 
-      public void Analyze(RelaxedField parent, JContainer jo)
-      {
-         foreach (JToken jt in jo)
-         {
-            switch (jt.Type)
-            {
-               case JTokenType.Property:
-                  AnalyzeProperty(parent, jt as JProperty);
-                  break;
-               default:
-                  throw new NotImplementedException($"no {jt.Type} yet ;)");
-
-            }
-         }
-      }
-
-      private void AnalyzeProperty(RelaxedField parent, JProperty jp)
-      {
-         if(jp.Value.Type >= JTokenType.Integer)
-         {
-            var field = new RelaxedField(jp.Name, parent);
-            field.DataType = GetParquetDataType(jp.Value.Type, parent.DataType);
-            parent.Children.Add(field);
-         }
-         else if(jp.Value.Type == JTokenType.Object)
-         {
-            var field = new RelaxedField(jp.Name, parent);
-            parent.Children.Add(field);
-            Analyze(field, (JContainer)jp.Value);
-         }
-         else if(jp.Value.Type == JTokenType.Array)
-         {
-            var field = new RelaxedField(jp.Name, parent);
-            field.IsArray = true;
-
-            JArray jArray = (JArray)jp.Value;
-            JToken firstElement = jArray.Children().FirstOrDefault();
-            field.DataType =
-               GetParquetDataType(firstElement.Type, parent.DataType);
-
-            parent.Children.Add(field);
-         }
-         else
-         {
-            throw new NotImplementedException($"unsupported type: {jp.Value.Type}");
-         }
-      }
 
       private DataType GetParquetDataType(JTokenType jType, DataType? existingType)
       {

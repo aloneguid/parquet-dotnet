@@ -16,7 +16,7 @@ namespace Parquet.Json.Data
 
       public List<RelaxedField> Children { get; } = new List<RelaxedField>();
 
-      public string Name { get; }
+      public string Name { get; set; }
 
       public DataType? DataType { get; set; }
 
