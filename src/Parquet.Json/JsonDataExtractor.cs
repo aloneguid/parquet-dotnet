@@ -22,16 +22,17 @@ namespace Parquet.Json
       /// <param name="jo"></param>
       public void AddRow(DataSet ds, JObject jo)
       {
-         ds.Add(CreateRow(jo, _schema.Fields));
+         ds.Add(CreateRow(null, jo, _schema.Fields));
       }
 
-      private Row CreateRow(JObject jo, IEnumerable<Field> fields)
+      private Row CreateRow(string parentPath, JObject jo, IEnumerable<Field> fields)
       {
          var values = new List<object>();
 
          foreach (Field field in fields)
          {
-            string path = GetJsonPath(field);
+            //string path = GetJsonPath(parentPath, field);
+            string path = "$." + field.Name;
             object value;
 
             switch(field.SchemaType)
@@ -42,10 +43,26 @@ namespace Parquet.Json
                      ? GetValues((JArray)vt, (DataField)field)
                      : GetValue(((JValue)vt)?.Value, (DataField)field);
                   break;
+
                case SchemaType.Struct:
                   JToken vtStruct = jo.SelectToken(path);
-                  value = CreateRow((JObject)vtStruct, ((StructField)field).Fields);
+                  value = CreateRow(path, (JObject)vtStruct, ((StructField)field).Fields);
                   break;
+
+               case SchemaType.List:
+                  JToken vtList = jo.SelectToken(path);
+                  //it's always a struct in a list
+                  ListField listField = (ListField)field;
+                  StructField structField = (StructField) listField.Item;
+                  var rows = new List<Row>();
+                  foreach (JObject vtListItem in ((JArray) vtList).Children())
+                  {
+                     Row row = CreateRow(null, vtListItem, structField.Fields);
+                     rows.Add(row);
+                  }
+                  value = rows;
+                  break;
+
                default:
                   throw new NotImplementedException();
 
@@ -57,9 +74,11 @@ namespace Parquet.Json
          return new Row(values);
       }
 
-      private string GetJsonPath(Field field)
+      private string GetJsonPath(string parentPath, Field field)
       {
-         return "$." + field.Name;
+         return parentPath == null
+            ? "$." + field.Name
+            : parentPath + "." + field.Name;
       }
 
       private IList GetValues(JArray jArray, DataField df)

@@ -152,5 +152,31 @@ namespace Parquet.Test
             new StructField("f1", new DataField<int>("name")));
       }
 
+      [Fact]
+      public void Lists_are_equal()
+      {
+         Assert.Equal(
+            new ListField("item", new DataField<int>("id")),
+            new ListField("item", new DataField<int>("id"))
+         );
+      }
+
+      [Fact]
+      public void Lists_are_not_equal_by_name()
+      {
+         Assert.NotEqual(
+            new ListField("item", new DataField<int>("id")),
+            new ListField("item1", new DataField<int>("id"))
+         );
+      }
+
+      [Fact]
+      public void Lists_are_not_equal_by_item()
+      {
+         Assert.NotEqual(
+            new ListField("item", new DataField<int>("id")),
+            new ListField("item", new DataField<string>("id"))
+         );
+      }
    }
 }

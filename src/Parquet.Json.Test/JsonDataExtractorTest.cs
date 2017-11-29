@@ -65,6 +65,22 @@ namespace Parquet.Json.Test
       {
          JObject jo = JObject.Parse(ReadJson("listofstructs.json"));
          Schema schema = jo.InferParquetSchema();
+
+         Assert.Equal(
+            new Schema(
+               new DataField<int?>("id"),
+               new DataField<string>("country"),
+               new ListField("population",
+                  new StructField("item",
+                     new DataField<int?>("year"),
+                     new DataField<int?>("population")
+                  )
+               )
+            ),
+            schema);
+
+         DataSet ds = jo.ToParquetDataSet(schema);
+         Assert.Equal("{123;UK;[{2017;111};{2018;222}]}", ds[0].ToString());
       }
    }
 }

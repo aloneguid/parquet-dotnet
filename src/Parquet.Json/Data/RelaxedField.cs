@@ -34,6 +34,14 @@ namespace Parquet.Json.Data
             return new DataField(Name, DataType.Value, true, IsArray);
          }
 
+         Field item = new StructField(Name, Children.Select(c => c.ToField()).ToArray());
+
+         if (IsArray)
+         {
+            return new ListField(Name,
+               new StructField("item", Children.Select(c => c.ToField()).ToArray()));
+         }
+
          return new StructField(Name, Children.Select(c => c.ToField()).ToArray());
       }
    }

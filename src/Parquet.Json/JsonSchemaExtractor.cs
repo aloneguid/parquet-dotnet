@@ -70,12 +70,12 @@ namespace Parquet.Json
             //is either a simple value or a list
             case JTokenType.Array:
                JArray jArray = (JArray)token;
+               parent.IsArray = true;
                JToken jae = jArray.First;
                if (jae != null)
                {
                   if (jae.IsPrimitiveValue())
                   {
-                     parent.IsArray = true;
                      parent.DataType = GetParquetDataType(jae.Type, null);
                   }
                   else
