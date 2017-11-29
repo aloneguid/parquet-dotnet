@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Parquet.Data;
 
 namespace Parquet.Data.Concrete
@@ -35,7 +36,9 @@ namespace Parquet.Data.Concrete
 
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
-         var lst = (List<bool>)values;
+         List<bool> lst = tse.IsNullable()
+            ? ((List<bool?>)values).Select(v => v.Value).ToList()
+            : (List<bool>)values;
          int n = 0;
          byte b = 0;
          byte[] buffer = new byte[lst.Count / 8 + 1];

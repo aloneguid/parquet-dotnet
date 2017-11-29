@@ -106,5 +106,18 @@ namespace Parquet.Json.Test
          Assert.Equal("{123;UK;{2016;111;<null>};<null>}", ds[0].ToString());
          Assert.Equal("{123;UK;{2017;222;111};no comments}", ds[1].ToString());
       }
+
+      [Fact]
+      public void TempTest()
+      {
+         JObject doc = JObject.Parse(System.IO.File.ReadAllText("c:\\tmp\\com.json"));
+         Schema schema = doc.InferParquetSchema();
+
+         var extractor = new JsonDataExtractor(schema);
+         var ds = new DataSet(schema);
+         extractor.AddRow(ds, doc);
+
+         ParquetWriter.WriteFile(ds, "c:\\tmp\\com.parquet");
+      }
    }
 }

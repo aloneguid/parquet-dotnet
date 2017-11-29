@@ -124,7 +124,7 @@ namespace Parquet.Data
          return true;
       }
 
-      internal string GetNotEqualsMessage(Schema other, string thisName, string otherName)
+      public string GetNotEqualsMessage(Schema other, string thisName, string otherName)
       {
          if(_fields.Count != other._fields.Count)
          {
@@ -182,6 +182,18 @@ namespace Parquet.Data
       public override int GetHashCode()
       {
          return _fields.Aggregate(1, (current, se) => current * se.GetHashCode());
+      }
+
+      public override string ToString()
+      {
+         var sb = new StringBuilder();
+
+         foreach (Field f in Fields)
+         {
+            sb.AppendLine(f.ToString());
+         }
+
+         return sb.ToString();
       }
    }
 }

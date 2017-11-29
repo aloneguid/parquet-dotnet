@@ -30,5 +30,20 @@ namespace Parquet.Json.Test
                new DataField<string>("comment")),
             schema);
       }
+
+      [Fact]
+      public void Infer_all_primitive_types()
+      {
+         JObject doc = JObject.Parse(ReadJson("allprimitives.json"));
+         Schema schema = doc.InferParquetSchema();
+         Schema expected = new Schema(
+            new DataField<int?>("int"),
+            new DataField<string>("string"),
+            new DataField<bool?>("bool"),
+            new DataField<double?>("float"),
+            new DataField<DateTimeOffset?>("date"));
+
+         Assert.True(expected.Equals(schema), expected.GetNotEqualsMessage(schema, "expected", "actual"));
+      }
    }
 }

@@ -51,6 +51,9 @@ namespace Parquet.Test
 
          new object[] {  new DecimalDataField("decimal?", 4, 1, true, true), null},
          new object[] {  new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null },
+
+         new object[] { new DataField<bool>("bool"), true },
+         new object[] { new DataField<bool?>("bool?"), new bool?(true) }
       };
 
       [Theory]

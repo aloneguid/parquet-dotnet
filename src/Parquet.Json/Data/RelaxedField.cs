@@ -12,7 +12,7 @@ namespace Parquet.Json.Data
          Parent = parent;
       }
 
-      public RelaxedField Parent { get; }
+      public RelaxedField Parent { get; set;  }
 
       public List<RelaxedField> Children { get; } = new List<RelaxedField>();
 
@@ -21,6 +21,15 @@ namespace Parquet.Json.Data
       public DataType? DataType { get; set; }
 
       public bool IsArray { get; set; }
+
+      /// <summary>
+      /// Removes this node from parent
+      /// </summary>
+      public void Remove()
+      {
+         Parent.Children.Remove(this);
+         Parent = null;
+      }
 
       public override string ToString()
       {

@@ -13,16 +13,11 @@ namespace Parquet.Json
       private static readonly Dictionary<JTokenType, DataType> JsonTypeToParquetType = new Dictionary<JTokenType, DataType>
       {
          [JTokenType.Integer] = DataType.Int32,
-         [JTokenType.Float] = DataType.Float,
+         [JTokenType.Float] = DataType.Double,
          [JTokenType.String] = DataType.String,
          [JTokenType.Boolean] = DataType.Boolean,
-         [JTokenType.Null] = DataType.Unspecified,
          [JTokenType.Date] = DataType.DateTimeOffset,
-         [JTokenType.Raw] = DataType.ByteArray,
-         [JTokenType.Bytes] = DataType.ByteArray,
-         [JTokenType.Guid] = DataType.ByteArray,
          [JTokenType.Uri] = DataType.String,
-         [JTokenType.TimeSpan] = DataType.Interval
       };
 
       //    JObject -> JContainer -> JToken
@@ -101,11 +96,29 @@ namespace Parquet.Json
                      Analyze(parent, jae);
                   }
                }
+               else
+               {
+                  //array is empty, remove it from parent!
+                  parent.Remove();
+               }
                break;
 
             case JTokenType.Integer:
+            case JTokenType.Float:
             case JTokenType.String:
+            case JTokenType.Boolean:
+            case JTokenType.Date:
+            case JTokenType.Raw:
+            case JTokenType.Bytes:
+            case JTokenType.Guid:
+            case JTokenType.Uri:
+            case JTokenType.TimeSpan:
                parent.DataType = GetParquetDataType(token.Type, null);
+               break;
+
+            case JTokenType.Null:
+               //cannot infer type for nulls
+               parent.Remove();
                break;
 
             default:

@@ -112,8 +112,14 @@ namespace Parquet.Json
                return new int?((int)(long)jsonValue);
             case DataType.String:
                return (string)jsonValue;
+            case DataType.Boolean:
+               return new bool?((bool) jsonValue);
+            case DataType.DateTimeOffset:
+               return new DateTimeOffset?(new DateTimeOffset((DateTime)jsonValue));
+            case DataType.Double:
+               return new double?((double) jsonValue);
             default:
-               throw new NotImplementedException();
+               throw new NotImplementedException($"conversion not implemented for type {df.DataType}");
          }
       }
    }
