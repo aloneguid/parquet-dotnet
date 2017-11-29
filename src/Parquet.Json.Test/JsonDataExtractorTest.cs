@@ -82,5 +82,29 @@ namespace Parquet.Json.Test
          DataSet ds = jo.ToParquetDataSet(schema);
          Assert.Equal("{123;UK;[{2017;111};{2018;222}]}", ds[0].ToString());
       }
+
+      [Fact]
+      public void Read_multiple_with_missing_data()
+      {
+         var schema = new Schema(
+            new DataField<int?>("id"),
+            new DataField<string>("country"),
+            new StructField("population",
+               new DataField<int?>("year"),
+               new DataField<int?>("amount"),
+               new DataField<int?>("diff")),
+            new DataField<string>("comment"));
+
+         var extractor = new JsonDataExtractor(schema);
+         JObject doc1 = JObject.Parse(ReadJson("infer00.json"));
+         JObject doc2 = JObject.Parse(ReadJson("infer01.json"));
+         var ds = new DataSet(schema);
+         extractor.AddRow(ds, doc1);
+         extractor.AddRow(ds, doc2);
+
+         Assert.Equal(2, ds.RowCount);
+         Assert.Equal("{123;UK;{2016;111;<null>};<null>}", ds[0].ToString());
+         Assert.Equal("{123;UK;{2017;222;111};no comments}", ds[1].ToString());
+      }
    }
 }

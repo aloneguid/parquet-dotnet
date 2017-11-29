@@ -6,7 +6,7 @@ using Parquet.Data;
 
 namespace Parquet.Json
 {
-   class JsonDataExtractor
+   public class JsonDataExtractor
    {
       private readonly Schema _schema;
 
@@ -39,9 +39,16 @@ namespace Parquet.Json
             {
                case SchemaType.Data:
                   JToken vt = jo.SelectToken(path);
-                  value = vt.Type == JTokenType.Array
-                     ? GetValues((JArray)vt, (DataField)field)
-                     : GetValue(((JValue)vt)?.Value, (DataField)field);
+                  if (vt == null)
+                  {
+                     value = null;
+                  }
+                  else
+                  {
+                     value = vt.Type == JTokenType.Array
+                        ? GetValues((JArray) vt, (DataField) field)
+                        : GetValue(((JValue) vt)?.Value, (DataField) field);
+                  }
                   break;
 
                case SchemaType.Struct:
