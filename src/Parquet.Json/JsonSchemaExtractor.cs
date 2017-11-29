@@ -65,6 +65,12 @@ namespace Parquet.Json
             field.DataType = GetParquetDataType(jp.Value.Type, parent.DataType);
             parent.Children.Add(field);
          }
+         else if(jp.Value.Type == JTokenType.Object)
+         {
+            var field = new RelaxedField(jp.Name, parent);
+            parent.Children.Add(field);
+            Analyze(field, (JContainer)jp.Value);
+         }
          else
          {
             throw new NotImplementedException();

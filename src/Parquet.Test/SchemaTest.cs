@@ -127,5 +127,30 @@ namespace Parquet.Test
       {
          Assert.Throws<ArgumentException>(() => new DataField<int>("one.two"));
       }
+
+      [Fact]
+      public void Identical_structs_field_are_equal()
+      {
+         Assert.Equal(
+            new StructField("f1", new DataField<string>("name")),
+            new StructField("f1", new DataField<string>("name")));
+      }
+
+      [Fact]
+      public void Structs_named_different_are_not_equal()
+      {
+         Assert.NotEqual(
+            new StructField("f1", new DataField<string>("name")),
+            new StructField("f2", new DataField<string>("name")));
+      }
+
+      [Fact]
+      public void Structs_with_different_children_are_not_equal()
+      {
+         Assert.NotEqual(
+            new StructField("f1", new DataField<string>("name")),
+            new StructField("f1", new DataField<int>("name")));
+      }
+
    }
 }

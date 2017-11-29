@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet.Data
 {
    /// <summary>
    /// Represents a structure i.e. a container for other fields.
    /// </summary>
-   public class StructField : Field
+   public class StructField : Field, IEquatable<StructField>
    {
       private string _path;
       private readonly List<Field> _fields = new List<Field>();
@@ -54,7 +55,9 @@ namespace Parquet.Data
 
       public override string ToString()
       {
-         return $"structure of {_fields.Count}";
+         string fields = string.Join(", ", Fields.Select(f => f.ToString()));
+
+         return $"{Name}: [{fields}]";
       }
 
       internal static StructField CreateWithNoElements(string name)
@@ -70,6 +73,36 @@ namespace Parquet.Data
       internal override void Assign(Field se)
       {
          _fields.Add(se);
+      }
+
+      public bool Equals(StructField other)
+      {
+         if (ReferenceEquals(null, other)) return false;
+         if (ReferenceEquals(this, other)) return true;
+
+         if (Name != other.Name) return false;
+         if (Fields.Count != other.Fields.Count) return false;
+         for(int i = 0; i < Fields.Count; i++)
+         {
+            if (!Fields[i].Equals(other.Fields[i])) return false;
+         }
+
+         return true;
+      }
+
+      public override bool Equals(object obj)
+      {
+         if (ReferenceEquals(null, obj)) return false;
+         if (ReferenceEquals(this, obj)) return true;
+         if (obj.GetType() != GetType()) return false;
+
+         return Equals((StructField)obj);
+      }
+
+      public override int GetHashCode()
+      {
+         return Name.GetHashCode() *
+            Fields.Aggregate(1, (current, f) => current * f.GetHashCode());
       }
    }
 }

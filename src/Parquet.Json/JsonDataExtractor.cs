@@ -14,24 +14,45 @@ namespace Parquet.Json
          _schema = schema;
       }
 
+      /// <summary>
+      /// Adds a row to an existing DataSet by converting it from specified JSON object using specified schema
+      /// </summary>
+      /// <param name="ds"></param>
+      /// <param name="jo"></param>
       public void AddRow(DataSet ds, JObject jo)
+      {
+         ds.Add(CreateRow(jo, _schema.Fields));
+      }
+
+      private Row CreateRow(JObject jo, IEnumerable<Field> fields)
       {
          var values = new List<object>();
 
-         foreach(Field field in _schema.Fields)
+         foreach (Field field in fields)
          {
             string path = GetJsonPath(field);
+            object value;
 
-            JToken vt = jo.SelectToken(path);
-            JValue jv = (JValue)vt;
+            switch(field.SchemaType)
+            {
+               case SchemaType.Data:
+                  JToken vt = jo.SelectToken(path);
+                  JValue jv = (JValue)vt;
+                  value = GetValue(jv?.Value, (DataField)field);
+                  break;
+               case SchemaType.Struct:
+                  JToken vtStruct = jo.SelectToken(path);
+                  value = CreateRow((JObject)vtStruct, ((StructField)field).Fields);
+                  break;
+               default:
+                  throw new NotImplementedException();
 
-            object value = GetValue(jv.Value, (DataField)field);
+            }
+
             values.Add(value);
          }
 
-         var row = new Row(values);
-         ds.Add(row);
-
+         return new Row(values);
       }
 
       private string GetJsonPath(Field field)
@@ -41,6 +62,8 @@ namespace Parquet.Json
 
       private object GetValue(object jsonValue, DataField df)
       {
+         if (jsonValue == null) return null;
+
          switch(df.DataType)
          {
             case DataType.Int32:
