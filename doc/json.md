@@ -1,3 +1,4 @@
 # JSON Support
 
-the feature is under development, come back soon...
+> This feature is in preview and documentation on it is not yet included in the official release.
+

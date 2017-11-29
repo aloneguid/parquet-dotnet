@@ -17,6 +17,7 @@ test_script:
    dotnet test src\Parquet.Json.Test
 artifacts:
 - path: src/Parquet/bin/**/*.nupkg
+- path: src/Parquet.Json/bin/**/*.nupkg
 deploy:
 - provider: Environment
   name: aloneguid NuGet
