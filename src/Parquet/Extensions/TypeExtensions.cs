@@ -18,11 +18,28 @@ namespace Parquet
          }
 
          TypeInfo ti = t.GetTypeInfo();
+         Type[] args = ti.GenericTypeArguments;
 
-         if(ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+         if (args.Length == 1)
          {
-            baseType = ti.GenericTypeArguments[0];
-            return true;
+            //check derived interfaces
+            foreach (Type interfaceType in ti.ImplementedInterfaces)
+            {
+               TypeInfo iti = interfaceType.GetTypeInfo();
+               if (iti.IsGenericType && iti.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+               {
+
+                  baseType = ti.GenericTypeArguments[0];
+                  return true;
+               }
+            }
+
+            //check if this is an IEnumerable<>
+            if (ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+               baseType = ti.GenericTypeArguments[0];
+               return true;
+            }
          }
 
          if(ti.IsArray)

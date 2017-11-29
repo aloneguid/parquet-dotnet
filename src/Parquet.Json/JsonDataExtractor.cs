@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Parquet.Data;
@@ -37,8 +38,9 @@ namespace Parquet.Json
             {
                case SchemaType.Data:
                   JToken vt = jo.SelectToken(path);
-                  JValue jv = (JValue)vt;
-                  value = GetValue(jv?.Value, (DataField)field);
+                  value = vt.Type == JTokenType.Array
+                     ? GetValues((JArray)vt, (DataField)field)
+                     : GetValue(((JValue)vt)?.Value, (DataField)field);
                   break;
                case SchemaType.Struct:
                   JToken vtStruct = jo.SelectToken(path);
@@ -58,6 +60,20 @@ namespace Parquet.Json
       private string GetJsonPath(Field field)
       {
          return "$." + field.Name;
+      }
+
+      private IList GetValues(JArray jArray, DataField df)
+      {
+         IList values = df.CreateEmptyList(true, false);
+
+         foreach(JToken child in jArray.Children())
+         {
+            JValue jv = (JValue)child;
+            object value = GetValue(jv.Value, df);
+            values.Add(value);
+         }
+
+         return values;
       }
 
       private object GetValue(object jsonValue, DataField df)

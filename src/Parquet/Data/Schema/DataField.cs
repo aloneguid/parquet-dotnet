@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -37,6 +38,12 @@ namespace Parquet.Data
          {
             ClrType = handler.ClrType;
          }
+      }
+
+      public IList CreateEmptyList(bool isNullable, bool isArray)
+      {
+         IDataTypeHandler handler = DataTypeFactory.Match(DataType);
+         return handler.CreateEmptyList(isNullable, isArray, 0);
       }
 
       internal override string PathPrefix

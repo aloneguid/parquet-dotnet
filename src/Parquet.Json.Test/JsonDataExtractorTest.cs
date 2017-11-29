@@ -55,6 +55,9 @@ namespace Parquet.Json.Test
          Assert.Equal(
             new Schema(new DataField<int?>("id"), new DataField<IEnumerable<string>>("countries")),
             schema);
+
+         DataSet ds = jo.ToParquetDataSet(schema);
+         Assert.Equal("{123;[UK;US]}", ds[0].ToString());
       }
    }
 }

@@ -34,5 +34,12 @@ namespace Parquet.Test
          Assert.True(typeof(IEnumerable<int?>).TryExtractEnumerableType(out Type et));
          Assert.Equal(typeof(int?), et);
       }
+
+      [Fact]
+      public void ListOfT_is_ienumerable()
+      {
+         Assert.True(typeof(List<int>).TryExtractEnumerableType(out Type baseType));
+         Assert.Equal(typeof(int), baseType);
+      }
    }
 }
