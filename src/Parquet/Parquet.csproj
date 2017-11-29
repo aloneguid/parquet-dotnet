@@ -7,7 +7,10 @@
     <DefineConstants>DEBUG</DefineConstants>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
-    <Description>A .NET library to read and write Apache Parquet files.</Description>
+    <Description>.NET library to read and write Apache Parquet files.
+Supports all parquet features, including maps, structs, lists, repeatable fields.
+Compatible with .NET 4.5.1 and .NET Standard 1.4 and up.
+Works on all flavours of Windows and Linux. Compatible with iOS and Android via Xamarin.</Description>
     <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
     <Company>Elastacloud</Company>
     <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
@@ -18,62 +21,10 @@
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>v1.5:
-
-new features:
-- map type is supported (#255)
-- nested structures, repeated structures, repeated fields, nesting structures into structures etc. is supported (#226, #228, #227)
-
-improvements:
-- Parquet.Net is now a standalone library with no third-party dependencies whatsoever (#264, #265, #263)
-
-v1.4
-new features:
-- data representation internally changed to columnar format, resulting in much smaller memory footprint and better performance (#238)
-- added support for short/ushort CLR type (#235)
-- breaking change: nullable columns are easier to define, parquet.net doesn't try to guess the nullability anymore and gives full control to the user
-
-improvements:
-- BigDecimal type supports much bigger numbers (scale and precision) (#239)
-- Writer was failing on some forward-only streams like GZipStream as they don't track stream position, now parquet.net supports all kinds of non-seekable streams for write operations (#252)
-- Decimal number format is now compatible with Impala (#243)
-
-bug fixes
-- Writer was failing on columns consisting of only null values (#222)
-- When appending to file and using DateTime for one of your columns, subsequent appends would fail on schema validation (#247)
-- Failure when deserialising Impala generated file with all nulls in a column (#240)
-v1.3
-new features:
-- .NET byte and sbyte type is supported
-- DataSet has got a new .Merge method that allows to merge two datasets, even if rows and columns are incompatible
-
-improvements:
-- we have removed a dependency on Snappy.Sharp completely which conflicted with projects targeting .NET 4.5
-- dependency on System.ValueTuple is removed
-- Apache Thrift dependency was replaced by a custom build which has zero downstream dependencies now. This was causing problems for projects using ASP.NET Core and specific Kestrel version, as stupidly enough Apache Thrift was referencing web hosting framework!
-
-v1.2
-new features:
-- INT64 (C# long) type is supported (#194)
-- Decimal datatype is fully supported (#209). This includes support for simple System.Decimal, and decimal types with different scales and precisions. Decimals are encoded by utilising all three encodings from parquet specs, however this can be switched off for compatibility with older system. Decimals are fully compatible with Hive and Impala which have some edge cases not complying with parquet specifications. Thanks to @dmitryPavliv and @nzapolski for making this possible
-
-bugs fixed:
-- fixed a flaw in dictionary encoding implementation affecting files written for AWS Impala (#193)
-- when a column contains only single value and it's null Parquet.Net was crashing (#198)
-
-v1.1
-new features:
-- Reader supports nested structures.
-- Parquet output is now compatible with AWS Athena
-- Writer can append data to existing file
-
-improvements:
-- Parquet metadata sets page sizes according to standard
-- Schema and SchemaElement has Show method allowing to get user readable representation 
-
-bug fixes:
-- some files mix encodings between data pages resulting in wrong count of rows and occasional crashes (#183)
-- some string encoded fields not annotated properly were crashing Parquet.Net reader (#138)</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.1.0
+- improvement: list and struct types implement IEquitable, GetHashCode and Equals for easier schema comparison
+- bug fixed: nullable boolean field would not write due to a boolean conversion issues
+- a lot of small improvements leading to Parquet.Net.Json first release</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

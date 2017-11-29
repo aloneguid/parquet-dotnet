@@ -8,6 +8,8 @@ namespace Parquet.Data
    /// </summary>
    public class ListField : Field, IEquatable<ListField>
    {
+      internal const string ContainerName = "list";
+
       /// <summary>
       /// Item contained within this list
       /// </summary>
@@ -16,17 +18,25 @@ namespace Parquet.Data
       public ListField(string name, Field item) : this(name)
       {
          Item = item ?? throw new ArgumentNullException(nameof(item));
-         Path = name.AddPath("list");
-         Item.PathPrefix = Path;
+         PathPrefix = null;
       }
 
       private ListField(string name) : base(name, SchemaType.List)
       {
       }
 
+      internal override string PathPrefix
+      {
+         set
+         {
+            Path = value.AddPath(Name, ContainerName);
+            Item.PathPrefix = Path;
+         }
+      }
+
       public override string ToString()
       {
-         return $"list of ({Item})";
+         return $"{Name}: ({Item})";
       }
 
       internal static ListField CreateWithNoItem(string name)

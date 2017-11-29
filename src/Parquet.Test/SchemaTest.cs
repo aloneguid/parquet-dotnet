@@ -178,5 +178,14 @@ namespace Parquet.Test
             new ListField("item", new DataField<string>("id"))
          );
       }
+
+      [Fact]
+      public void List_maintains_path_prefix()
+      {
+         var list = new ListField("List", new DataField<int>("id"));
+         list.PathPrefix = "Parent";
+
+         Assert.Equal("Parent.List.list.id", list.Item.Path);
+      }
    }
 }

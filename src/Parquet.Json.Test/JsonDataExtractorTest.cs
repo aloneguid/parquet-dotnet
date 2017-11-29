@@ -107,7 +107,7 @@ namespace Parquet.Json.Test
          Assert.Equal("{123;UK;{2017;222;111};no comments}", ds[1].ToString());
       }
 
-      [Fact]
+      //[Fact]
       public void TempTest()
       {
          JObject doc = JObject.Parse(System.IO.File.ReadAllText("c:\\tmp\\com.json"));

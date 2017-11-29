@@ -8,7 +8,11 @@
     <DefineConstants>DEBUG</DefineConstants>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
-    <Description>JSON integration with Parquet.Net, allows reading from json files and object into Parquet DataSets, and converting DataSets into JSON.</Description>
+    <Description>JSON integration with Parquet.Net
+
+- infers schema from json documents
+- convers json documents into parquet DataSets
+- supports json files with infinite nesting</Description>
     <Authors>Ivan Gavryliuk (@aloneguid);</Authors>
     <Company>Elastacloud</Company>
     <RepositoryUrl>https://github.com/elastacloud/parquet-dotnet</RepositoryUrl>
@@ -19,6 +23,7 @@
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <Product>Parquet.Json</Product>
+    <PackageReleaseNotes>This is the first release of Parquet.Net.Json which may have serious limitations.</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
