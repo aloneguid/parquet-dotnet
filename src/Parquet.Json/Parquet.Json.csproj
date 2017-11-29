@@ -20,6 +20,9 @@
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <Product>Parquet.Json</Product>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
