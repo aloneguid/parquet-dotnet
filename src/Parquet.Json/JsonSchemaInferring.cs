@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Newtonsoft.Json.Linq;
 using Parquet.Data;
 using Parquet.Json.Data;
 
 namespace Parquet.Json
 {
-   class JsonSchemaExtractor
+   public class JsonSchemaInferring
    {
       private RelaxedField _root;
       private static readonly Dictionary<JTokenType, DataType> JsonTypeToParquetType = new Dictionary<JTokenType, DataType>
@@ -30,20 +29,38 @@ namespace Parquet.Json
       //  JProperty -> JContainer
       //     JArray -> JContainer
 
-      public JsonSchemaExtractor()
+      public JsonSchemaInferring()
       {
          _root = new RelaxedField("root", null);
       }
 
-      //todo: merge all incoming JObjects
-      public void Analyze(IEnumerable<JObject> jObjects)
-      {
-         
-      }
-
-      public void Analyze(JObject jObject)
+      private void Analyze(JObject jObject)
       {
          Analyze(_root, jObject);
+      }
+
+      private void Analyze(IEnumerable<JObject> jObjects)
+      {
+         JObject masterObject = null;
+         var settings = new JsonMergeSettings
+         {
+            MergeNullValueHandling = MergeNullValueHandling.Ignore,
+            MergeArrayHandling = MergeArrayHandling.Union
+         };
+
+         foreach (JObject jObject in jObjects)
+         {
+            if (masterObject == null)
+            {
+               masterObject = jObject;
+            }
+            else
+            {
+               masterObject.Merge(jObject, settings);
+            }
+         }
+
+         Analyze(masterObject);
       }
 
       private void Analyze(RelaxedField parent, JToken token)
@@ -96,8 +113,10 @@ namespace Parquet.Json
          }
       }
 
-      public Schema GetSchema()
+      public Schema InferSchema(IEnumerable<JObject> jObjects)
       {
+         Analyze(jObjects);
+
          return new Schema(_root.Children.Select(c => c.ToField()));
       }
 

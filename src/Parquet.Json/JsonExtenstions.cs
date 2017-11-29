@@ -9,9 +9,8 @@ namespace Newtonsoft.Json.Linq
    {
       public static PSchema InferParquetSchema(this JObject jObject)
       {
-         var schemaExtractor = new JsonSchemaExtractor();
-         schemaExtractor.Analyze(jObject);
-         PSchema schema = schemaExtractor.GetSchema();
+         var schemaExtractor = new JsonSchemaInferring();
+         PSchema schema = schemaExtractor.InferSchema(new[] { jObject });
          return schema;
       }
 
