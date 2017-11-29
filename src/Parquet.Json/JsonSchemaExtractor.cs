@@ -71,15 +71,32 @@ namespace Parquet.Json
             parent.Children.Add(field);
             Analyze(field, (JContainer)jp.Value);
          }
+         else if(jp.Value.Type == JTokenType.Array)
+         {
+            var field = new RelaxedField(jp.Name, parent);
+            field.IsArray = true;
+
+            JArray jArray = (JArray)jp.Value;
+            JToken firstElement = jArray.Children().FirstOrDefault();
+            field.DataType =
+               GetParquetDataType(firstElement.Type, parent.DataType);
+
+            parent.Children.Add(field);
+         }
          else
          {
-            throw new NotImplementedException();
+            throw new NotImplementedException($"unsupported type: {jp.Value.Type}");
          }
       }
 
       private DataType GetParquetDataType(JTokenType jType, DataType? existingType)
       {
-         return JsonTypeToParquetType[jType];
+         if(!JsonTypeToParquetType.TryGetValue(jType, out DataType pt))
+         {
+            throw new NotImplementedException($"{jType} is not mapped");
+         }
+
+         return pt;
       }
 
    }

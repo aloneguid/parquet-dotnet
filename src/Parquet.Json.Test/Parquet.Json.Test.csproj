@@ -24,6 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="data\array.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="data\struct.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

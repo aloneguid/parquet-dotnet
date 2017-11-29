@@ -20,16 +20,18 @@ namespace Parquet.Json.Data
 
       public DataType? DataType { get; set; }
 
+      public bool IsArray { get; set; }
+
       public override string ToString()
       {
-         return $"{Name} ({DataType})";
+         return $"{Name} ({DataType}), array: {IsArray}";
       }
 
       public Field ToField()
       {
          if(Children.Count == 0)
          {
-            return new DataField(Name, DataType.Value, true, false);
+            return new DataField(Name, DataType.Value, true, IsArray);
          }
 
          return new StructField(Name, Children.Select(c => c.ToField()).ToArray());

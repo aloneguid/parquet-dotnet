@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using Parquet.Data;
 using Xunit;
 
@@ -43,6 +44,17 @@ namespace Parquet.Json.Test
          //validate data
          Assert.Equal(1, ds.RowCount);
          Assert.Equal("{123;UK;{2017;12345}}", ds[0].ToString());
+      }
+
+      [Fact]
+      public void Read_perfect_array()
+      {
+         JObject jo = JObject.Parse(ReadJson("array.json"));
+         Schema schema = jo.InferParquetSchema();
+
+         Assert.Equal(
+            new Schema(new DataField<int?>("id"), new DataField<IEnumerable<string>>("countries")),
+            schema);
       }
    }
 }
