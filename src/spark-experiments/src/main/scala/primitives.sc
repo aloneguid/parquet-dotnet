@@ -22,9 +22,10 @@ def write(df: DataFrame, path: String): Unit = {
 //decimals
 val validDecimal: BigDecimal = 1.2
 val nullDecimal: BigDecimal = null
+val negDecimal: BigDecimal = -1
 val dfDec = sc.parallelize(Seq(
-   (1, validDecimal, nullDecimal)
-)).toDF("id", "validDecimal", "nullDecimal")
+   (1, validDecimal, nullDecimal, negDecimal)
+)).toDF("id", "validDecimal", "nullDecimal", "negDecimal")
 
 //repeatables
 val dfRep2 = sc.parallelize(Seq(
@@ -46,10 +47,10 @@ val dfMapsInStructs = sc.parallelize(Seq(
    (1, new StructSample(1, map))
 )).toDF("id", "strcture")
 
-val df = dfMapsInStructs
+val df = dfDec
 df.printSchema
 df.show
-write(df, root + "mapinstruct.folder.parquet")
+write(df, root + "decimals.folder.parquet")
 
 
 

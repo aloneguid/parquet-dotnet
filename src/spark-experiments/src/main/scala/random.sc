@@ -8,6 +8,6 @@ val spark = SparkSession.builder()
 import spark.implicits._
 val sc = spark.sparkContext
 
-val df = spark.read.parquet("c:\\tmp\\com.parquet")
+val df = spark.read.parquet("c:\\tmp\\decneg.parquet")
 df.printSchema()
 df.show()

@@ -42,43 +42,6 @@ namespace Parquet.File.Values.Primitives
          DecimalValue = ipScaled + fpScaled;
       }
 
-      public BigDecimal(decimal d)
-      {
-         uint[] bits = (uint[])(object)decimal.GetBits(d);
-
-         decimal mantissa =
-            (bits[2] * 4294967296m * 4294967296m) +
-            (bits[1] * 4294967296m) +
-            bits[0];
-
-         uint scale = (bits[3] >> 16) & 31;
-
-         uint precision = 0;
-         if (d != 0m)
-         {
-            for (decimal tmp = mantissa; tmp >= 1; tmp /= 10)
-            {
-               precision++;
-            }
-         }
-         else
-         {
-            // Handle zero differently. It's odd.
-            precision = scale + 1;
-         }
-
-         DecimalValue = d;
-         Precision = (int)precision;
-         Scale = (int)scale;
-
-         BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
-         BigInteger ipScaled = new BigInteger(DecimalValue);
-         decimal fpScaled = DecimalValue - (decimal)ipScaled;
-         decimal fpUnscaled = fpScaled * (decimal)scaleMultiplier;
-
-         UnscaledValue = (ipScaled * scaleMultiplier) + new BigInteger(fpUnscaled);
-      }
-
       public BigDecimal(decimal d, int precision, int scale)
       {
          DecimalValue = d;
@@ -200,10 +163,24 @@ namespace Parquet.File.Values.Primitives
 
       public byte[] ToByteArray()
       {
+         /*
+          * Java: https://docs.oracle.com/javase/7/docs/api/java/math/BigInteger.html#toByteArray()
+          * 
+          * Returns a byte array containing the two's-complement representation of this BigInteger. The byte array will be in big-endian byte-order: the most significant byte is in the zeroth element. The array will contain the minimum number of bytes required to represent this BigInteger, including at least one sign bit, which is (ceil((this.bitLength() + 1)/8)). (This representation is compatible with the (byte[]) constructor.)
+          * 
+          * C#:   https://msdn.microsoft.com/en-us/library/system.numerics.biginteger.tobytearray(v=vs.110).aspx
+          * 
+          * 
+          *  value | C# | Java
+          * 
+          * -1 | [1111 1111] | [1111 1111] - no difference, so maybe buffer size?
+          * 
+          */
+
+
          byte[] result = AllocateResult();
 
          byte[] data = UnscaledValue.ToByteArray();
-
          if (data.Length > result.Length) throw new NotSupportedException($"decimal data buffer is {data.Length} but result must fit into {result.Length} bytes");
 
          Array.Copy(data, result, data.Length);
