@@ -21,7 +21,10 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>v2.1.0
+    <PackageReleaseNotes>v2.1.1
+- bug fixed: negative decimals were not properly written when using legacy mode (Impala) #275
+
+v2.1.0
 - improvement: list and struct types implement IEquitable, GetHashCode and Equals for easier schema comparison
 - bug fixed: nullable boolean field would not write due to a boolean conversion issues
 - a lot of small improvements leading to Parquet.Net.Json first release</PackageReleaseNotes>
