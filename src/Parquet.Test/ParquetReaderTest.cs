@@ -320,6 +320,19 @@ root
       }
 
       [Fact]
+      public void Read_all_legacy_decimals()
+      {
+         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("decimallegacy.parquet"));
+
+         Row row = ds[0];
+         Assert.Equal(1, (int)row[0]);
+         Assert.Equal(1.2m, (decimal)row[1], 2);
+         Assert.Null(row[2]);
+         Assert.Equal(-1m, (decimal)row[3], 2);
+      }
+
+
+      [Fact]
       public void Read_only_limited_columns()
       {
          var options = new ReaderOptions
