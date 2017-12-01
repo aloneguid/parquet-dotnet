@@ -306,13 +306,21 @@ namespace Parquet.Test
          DataSetGenerator.WriteRead(ds);
       }
 
-      //[Fact]
-      public void Issue_275_negative_decimal_bytearray()
+      [Fact]
+      public void Write_negative_decimals_in_legacy_mode()
       {
          var ds = new DataSet(new DecimalDataField("dec", 10, 2, true));
-         ds.Add(-1.2m);
-         ds.Add(1.2m);
-         ParquetWriter.WriteFile(ds, "c:\\tmp\\decneg.parquet");
+         ds.Add(-1.0m);
+         ds.Add(-1.23m);
+         ds.Add(-23233.12m);
+         ds.Add(-999999.999m);
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal(         -1.0m, (decimal)(ds1[0][0]), 2);
+         Assert.Equal(        -1.23m, (decimal)(ds1[1][0]), 2);
+         Assert.Equal(    -23233.12m, (decimal)(ds1[2][0]), 2);
+         Assert.Equal(  -999999.99m, (decimal)(ds1[3][0]), 2);
       }
    }
 }

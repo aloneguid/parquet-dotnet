@@ -27,7 +27,7 @@ namespace Parquet.Test
          new object[] { new DecimalDataField("decInt32", 4, 1), 12.4m},
          new object[] { new DecimalDataField("decInt64", 17, 12), 1234567.88m},
          new object[] { new DecimalDataField("decFixedByteArray", 48, 12), 34434.5m},
-         new object[] { new DecimalDataField("decMinus", 10, 2, true), -1},
+         new object[] { new DecimalDataField("decMinus", 10, 2, true), -1m},
 
          //loses precision slightly, i.e.
          //Expected: 2017-07-13T10:58:44.3767154+00:00

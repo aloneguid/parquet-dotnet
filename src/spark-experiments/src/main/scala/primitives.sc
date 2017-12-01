@@ -1,3 +1,4 @@
+import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 val spark = SparkSession.builder()
@@ -7,6 +8,8 @@ val spark = SparkSession.builder()
 
 import spark.implicits._
 val sc = spark.sparkContext
+
+spark.sqlContext.setConf("spark.sql.parquet.writeLegacyFormat", "true")
 
 val root = "C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\"
 
@@ -23,9 +26,13 @@ def write(df: DataFrame, path: String): Unit = {
 val validDecimal: BigDecimal = 1.2
 val nullDecimal: BigDecimal = null
 val negDecimal: BigDecimal = -1
-val dfDec = sc.parallelize(Seq(
+//negDecimal.setScale(2, BigDecimal.RoundingMode.FLOOR)
+var dfDec = sc.parallelize(Seq(
    (1, validDecimal, nullDecimal, negDecimal)
-)).toDF("id", "validDecimal", "nullDecimal", "negDecimal")
+))
+   .toDF("id", "validDecimal", "nullDecimal", "negDecimal")
+
+dfDec = dfDec.withColumn("negDecimal", dfDec.col("negDecimal").cast(DecimalType(10, 2)))
 
 //repeatables
 val dfRep2 = sc.parallelize(Seq(
@@ -50,7 +57,7 @@ val dfMapsInStructs = sc.parallelize(Seq(
 val df = dfDec
 df.printSchema
 df.show
-write(df, root + "decimals.folder.parquet")
+write(df, root + "decimallegacy.folder.parquet")
 
 
 

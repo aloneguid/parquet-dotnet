@@ -185,6 +185,15 @@ namespace Parquet.File.Values.Primitives
 
          Array.Copy(data, result, data.Length);
 
+         //if value is negative fill the remaining bytes with [1111 1111] i.e. negative flag bit (0xFF)
+         if (UnscaledValue.Sign == -1)
+         {
+            for (int i = data.Length; i < result.Length; i++)
+            {
+               result[i] = 0xFF;
+            }
+         }
+
          result = result.Reverse().ToArray();
          return result;
       }
