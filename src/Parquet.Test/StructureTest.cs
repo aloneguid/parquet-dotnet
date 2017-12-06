@@ -74,5 +74,38 @@ namespace Parquet.Test
 
          Assert.Equal("{Ivan;{Primary;[line1;line2]}}", ds1[0].ToString());
       }
+
+      [Fact]
+      public void Structure_in_a_list_in_a_structure_of_lists_writes_reads()
+      {
+         var ds = new DataSet(
+            new DataField<string>("name"),
+            new ListField("addresses",
+               new StructField("address",
+                  new ListField("lines",
+                     new StructField("first", new DataField<int>("one"))))));
+
+         ds.Add(
+            "Ivan",           // name
+            new Row[]         // addresses
+            {
+               new Row        // addresses.address
+               (
+                  true,
+                  new Row[]   // addresses.address.lines
+                  {
+                     new Row  // addresses.address.lines.first
+                     (
+                        1     // addresses.address.lines.first.one
+                     )
+                  }
+               )
+            });
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+
+         Assert.Equal("{Ivan;[{[{1}]}]}", ds1[0].ToString());
+
+      }
    }
 }

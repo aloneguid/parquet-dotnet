@@ -19,18 +19,41 @@ namespace Parquet.Data
       /// Initializes a new instance of the <see cref="Row"/> class.
       /// </summary>
       /// <param name="values">The values.</param>
-      public Row(IEnumerable<object> values)
+      public Row(IEnumerable<object> values) : this(false, values)
       {
-         _values = values.ToArray();
+         
       }
 
       /// <summary>
       /// Initializes a new instance of the <see cref="Row"/> class.
       /// </summary>
       /// <param name="values">The values.</param>
-      public Row(params object[] values)
+      public Row(params object[] values) : this(false, values)
       {
-         _values = values;
+      }
+
+      public Row(bool isSingleValue, params object[] values)
+      {
+         if(isSingleValue)
+         {
+            _values = new object[] { values };
+         }
+         else
+         {
+            _values = values;
+         }
+      }
+
+      public Row(bool isSingleValue, IEnumerable<object> values)
+      {
+         if (isSingleValue)
+         {
+            _values = new object[] { values };
+         }
+         else
+         {
+            _values = values.ToArray();
+         }
       }
 
       /// <summary>

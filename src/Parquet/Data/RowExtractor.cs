@@ -91,8 +91,15 @@ namespace Parquet.Data
                   count = Math.Min(count, listColumns.Min(kvp => kvp.Value.Count));
                   break;
 
+               case SchemaType.Struct:
+                  var structField = (StructField)field;
+                  Dictionary<string, IList> structColumns = CreateFieldColumns(structField.Fields, index, columns, out int structCount);
+                  elementColumns.AddRange(structColumns);
+                  count = Math.Min(count, structColumns.Min(kvp => kvp.Value.Count));
+                  break;
+
                default:
-                  throw new NotImplementedException($"extracting {field.SchemaType} columns");
+                  throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners($"extracting {field.SchemaType} columns");
             }
          }
 
