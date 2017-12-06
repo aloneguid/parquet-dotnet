@@ -109,7 +109,7 @@ namespace Parquet.Json.Test
          Assert.Equal("{123;UK;{2017;222;111};no comments}", ds[1].ToString());
       }
 
-      [Fact]
+      //[Fact]
       public void TempTest()
       {
          var dir = new DirectoryInfo(@"C:\Users\ivang\Downloads\Fullfeed-20170330004044");
