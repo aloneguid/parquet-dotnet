@@ -18,8 +18,4 @@ test_script:
 artifacts:
 - path: src/Parquet/bin/**/*.nupkg
 - path: src/Parquet.Json/bin/**/*.nupkg
-deploy:
-- provider: Environment
-  name: aloneguid NuGet
-  on:
-    branch: /stable-.*/
+deploy: off
