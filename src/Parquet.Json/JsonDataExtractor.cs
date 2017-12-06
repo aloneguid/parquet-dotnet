@@ -62,10 +62,13 @@ namespace Parquet.Json
                   ListField listField = (ListField)field;
                   StructField structField = (StructField) listField.Item;
                   var rows = new List<Row>();
-                  foreach (JObject vtListItem in ((JArray) vtList).Children())
+                  if (vtList.Type == JTokenType.Array)   //the value may be null or just not matching the schema
                   {
-                     Row row = CreateRow(null, vtListItem, structField.Fields);
-                     rows.Add(row);
+                     foreach (JObject vtListItem in ((JArray)vtList).Children())
+                     {
+                        Row row = CreateRow(null, vtListItem, structField.Fields);
+                        rows.Add(row);
+                     }
                   }
                   value = rows;
                   break;

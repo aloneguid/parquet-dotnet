@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using Parquet.Data;
 using Xunit;
@@ -107,15 +109,25 @@ namespace Parquet.Json.Test
          Assert.Equal("{123;UK;{2017;222;111};no comments}", ds[1].ToString());
       }
 
-      //[Fact]
+      [Fact]
       public void TempTest()
       {
-         JObject doc = JObject.Parse(System.IO.File.ReadAllText("c:\\tmp\\com.json"));
-         Schema schema = doc.InferParquetSchema();
+         var dir = new DirectoryInfo(@"C:\Users\ivang\Downloads\Fullfeed-20170330004044");
+         FileInfo[] files = dir.GetFiles();
+         JObject[] jos = files
+            .Select(fi => JObject.Parse(System.IO.File.ReadAllText(fi.FullName)))
+            .Take(1000)
+            .ToArray();
+
+         var inferrer = new JsonSchemaInferring();
+         Schema schema = inferrer.InferSchema(jos);
 
          var extractor = new JsonDataExtractor(schema);
          var ds = new DataSet(schema);
-         extractor.AddRow(ds, doc);
+         for(int i = 0; i < jos.Length; i++)
+         {
+            extractor.AddRow(ds, jos[i]);
+         }
 
          ParquetWriter.WriteFile(ds, "c:\\tmp\\com.parquet");
       }
