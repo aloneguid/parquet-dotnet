@@ -48,6 +48,8 @@ see `DateTimeFormat` enumeration for detailed explanation of available options.
 
 Writing a decimal by default uses precision 38 and scele 18, however you can set different precision and schema by using `DecimalDataField` schema element (see constructor for options).
 
+Note that AWS Athena, Impala and possibly other systems do not conform to Parquet specifications when reading decimal fields. If this is the case, you must use `DecimalDataField` explicitly and set `forceByteArrayEncoding` to `true`.
+
 ## Repeatable Fields
 
 Parquet.Net supports repeatable fields i.e. fields that contain an array of values instead of just one single value.

@@ -92,6 +92,8 @@ namespace Parquet.File
             {
                definitions = DefinitionPack.RemoveNulls(values, _maxDefinitionLevel, hasValueFlags);
             }
+
+            TryAddStats(values);
          }
 
          using (var ms = new MemoryStream())
@@ -125,6 +127,11 @@ namespace Parquet.File
          result.Add(new PageTag { HeaderSize = dataHeaderSize, HeaderMeta = _ph });
 
          return result;
+      }
+
+      private void TryAddStats(IList flatValues)
+      {
+         var counter = new StatCounter(flatValues);
       }
 
       private void WriteLevels(BinaryWriter writer, List<int> levels, int maxLevel)
