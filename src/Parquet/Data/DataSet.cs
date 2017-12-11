@@ -117,7 +117,7 @@ namespace Parquet.Data
       /// <returns>Strong typed collection</returns>
       public IReadOnlyCollection<T> GetColumn<T>(DataField schemaElement)
       {
-         return (List<T>)GetColumn(schemaElement);
+         return (IReadOnlyCollection<T>)GetColumn(schemaElement);
       }
 
       /// <summary>
