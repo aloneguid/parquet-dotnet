@@ -36,9 +36,9 @@ namespace Parquet.Data.Concrete
 
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
-         IList<bool> lst = tse.IsNullable()
-            ? ((IList<bool?>)values).Select(v => v.Value).ToList()
-            : (IList<bool>)values;
+         List<bool> lst = tse.IsNullable()
+            ? ((List<bool?>)values).Select(v => v.Value).ToList()
+            : (List<bool>)values;
          int n = 0;
          byte b = 0;
          byte[] buffer = new byte[lst.Count / 8 + 1];

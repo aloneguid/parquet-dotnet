@@ -19,14 +19,14 @@ namespace Parquet.Data
          if (isArray)
          {
             return isNullable
-               ? (IList)(new List<StatTrackingList<TSystemType?>>(capacity))
-               : (IList)(new List<StatTrackingList<TSystemType>>(capacity));
+               ? (IList)(new List<List<TSystemType?>>(capacity))
+               : (IList)(new List<List<TSystemType>>(capacity));
          }
          else
          {
             return isNullable
-               ? (IList)(new StatTrackingList<TSystemType?>(capacity))
-               : (IList)(new StatTrackingList<TSystemType>(capacity));
+               ? (IList)(new List<TSystemType?>(capacity))
+               : (IList)(new List<TSystemType>(capacity));
          }
       }
    }
