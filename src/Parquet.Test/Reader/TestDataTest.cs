@@ -9,7 +9,6 @@ namespace Parquet.Test.Reader
    {
       public TestDataTest()
       {
-         System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
       }
 
       /// <summary>
