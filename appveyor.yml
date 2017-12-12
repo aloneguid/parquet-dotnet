@@ -12,9 +12,9 @@ build:
   verbosity: minimal
 test_script:
 - cmd: >-
-   dotnet test src\Parquet.Test --framework netcoreapp1.1 --configuration debug
+   dotnet test src\Parquet.Test --framework netcoreapp1.1 --configuration release
 
-   dotnet test src\Parquet.Json.Test
+   dotnet test src\Parquet.Json.Test --configuration release
 artifacts:
 - path: src/Parquet/bin/**/*.nupkg
 - path: src/Parquet.Json/bin/**/*.nupkg
