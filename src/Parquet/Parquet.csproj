@@ -24,11 +24,7 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <PackageReleaseNotes>
  v2.1.2
  - bug fixed: appending to DataSets containing a MapField column was failing on schema comparison (#283)
-    
- v2.1.0
-- improvement: list and struct types implement IEquitable, GetHashCode and Equals for easier schema comparison
-- bug fixed: nullable boolean field would not write due to a boolean conversion issues
-- a lot of small improvements leading to Parquet.Net.Json first release</PackageReleaseNotes>
+</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
