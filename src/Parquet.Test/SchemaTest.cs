@@ -101,6 +101,22 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void Map_fields_with_same_types_are_equal()
+      {
+         Assert.Equal(new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String)),
+                      new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String)));
+
+      }
+
+      [Fact]
+      public void Map_fields_with_different_types_are_unequal()
+      {
+         Assert.NotEqual(new MapField("dictionary", new DataField("key", DataType.String), new DataField("value", DataType.String)),
+                      new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String)));
+
+      }
+
+      [Fact]
       public void Byte_array_schema_is_a_bytearray_type()
       {
          var field = new DataField<byte[]>("bytes");

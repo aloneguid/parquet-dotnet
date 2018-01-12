@@ -91,5 +91,12 @@ namespace Parquet.Data
          keys.Add(keysList);
          values.Add(valuesList);
       }
+
+      public override bool Equals(Object obj)
+      {
+         MapField other = (MapField)obj;
+         return Name.Equals(other.Name) && KeyType.Equals(other.KeyType) && ValueType.Equals(other.ValueType);
+      }
+   
    }
 }
