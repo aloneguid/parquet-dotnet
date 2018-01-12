@@ -8,10 +8,16 @@ namespace Parquet.Test
 {
    public class TestBase
    {
+      private static readonly string ThisPath;
+
+      static TestBase()
+      {
+         ThisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
+      }
+
       protected string GetDataFilePath(string name)
       {
-         string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
-         return Path.Combine(Path.GetDirectoryName(thisPath), "data", name);
+         return Path.Combine(Path.GetDirectoryName(ThisPath), "data", name);
       }
    }
 }
