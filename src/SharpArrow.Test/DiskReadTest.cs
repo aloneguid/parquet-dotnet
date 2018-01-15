@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Xunit;
 
 namespace SharpArrow.Test
@@ -8,7 +9,13 @@ namespace SharpArrow.Test
       [Fact]
       public void Smoke_that_file()
       {
-
+         using (Stream s = GetDataFileStream("file.dat"))
+         {
+            using (var af = new ArrowFile(s))
+            {
+               af.Read();
+            }
+         }
       }
    }
 }

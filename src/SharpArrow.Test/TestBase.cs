@@ -16,5 +16,12 @@ namespace SharpArrow.Test
       {
          return Path.Combine(Path.GetDirectoryName(ThisPath), "TestData", name);
       }
+
+      protected Stream GetDataFileStream(string name)
+      {
+         byte[] data = File.ReadAllBytes(GetDataFilePath(name));
+
+         return new MemoryStream(data);
+      }
    }
 }
