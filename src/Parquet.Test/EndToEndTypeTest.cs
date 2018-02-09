@@ -7,6 +7,7 @@ using Parquet.File.Values;
 using Xunit;
 using Xunit.Extensions;
 using Parquet.File.Values.Primitives;
+using NetBox.Extensions;
 
 namespace Parquet.Test
 {

@@ -37,7 +37,7 @@ namespace Parquet.Test
       [Fact]
       public void FixedLenByteArray_dictionary()
       {
-         using (Stream s = F.OpenRead(GetDataFilePath("fixedlenbytearray.parquet")))
+         using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
          {
             using (var r = new ParquetReader(s))
             {
@@ -50,7 +50,7 @@ namespace Parquet.Test
       public void Datetypes_all()
       {
          DateTimeOffset offset, offset2;
-         using (Stream s = F.OpenRead(GetDataFilePath("dates.parquet")))
+         using (Stream s = OpenTestFile("dates.parquet"))
          {
             using (var r = new ParquetReader(s))
             {

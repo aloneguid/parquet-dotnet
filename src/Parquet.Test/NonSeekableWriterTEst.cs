@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using NetBox;
+using NetBox.Generator;
 using NetBox.IO;
 using Parquet.Data;
 using Xunit;
@@ -20,7 +18,7 @@ namespace Parquet.Test
          var ds = new DataSet(
             new DataField<int>("id"),
             new DataField<string>("nonsense"));
-         ds.Add(1, Generator.RandomString);
+         ds.Add(1, RandomGenerator.RandomString);
 
          using (var writer = new ParquetWriter(forwardOnly))
          {

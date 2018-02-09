@@ -30,7 +30,7 @@ namespace Parquet.Test
       [Fact]
       public void Map_in_a_struct_reads_file()
       {
-         DataSet ds = ParquetReader.ReadFile(GetDataFilePath("mapinstruct.parquet"));
+         DataSet ds = ParquetReader.Read(OpenTestFile("mapinstruct.parquet"));
          Assert.Equal("{1;{1;[1=>one;2=>two;3=>three]}}", ds[0].ToString());
       }
 

@@ -12,7 +12,7 @@ using Type = System.Type;
 
 namespace Parquet.Test.Reader
 {
-   public class ParquetCsvComparison
+   public class ParquetCsvComparison : TestBase
    {
       protected void CompareFiles(string baseName, string encoding, params Type[] columnTypes)
       {
@@ -101,15 +101,17 @@ namespace Parquet.Test.Reader
 
       private DataSet ReadParquet(string name)
       {
-         string path = GetDataFilePath(name);
-         return ParquetReader.ReadFile(path, new ParquetOptions { TreatByteArrayAsString = true });
+         using (Stream s = OpenTestFile(name))
+         {
+            return ParquetReader.Read(s, new ParquetOptions { TreatByteArrayAsString = true });
+         }
       }
 
       private DataSet ReadCsv(string name)
       {
          DataSet result;
 
-         using (Stream fs = F.OpenRead(GetDataFilePath(name)))
+         using (Stream fs = OpenTestFile(name))
          {
             var reader = new CsvReader(fs, Encoding.UTF8);
 
@@ -126,12 +128,6 @@ namespace Parquet.Test.Reader
             }
          }
          return result;
-      }
-
-      private string GetDataFilePath(string name)
-      {
-         string thisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
-         return Path.Combine(Path.GetDirectoryName(thisPath), "data", name);
       }
    }
 }
