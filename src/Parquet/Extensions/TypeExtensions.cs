@@ -8,6 +8,12 @@ namespace Parquet
 {
    static class TypeExtensions
    {
+      /// <summary>
+      /// Checks if this type implements generic IEnumerable or an array.
+      /// </summary>
+      /// <param name="t"></param>
+      /// <param name="baseType"></param>
+      /// <returns></returns>
       public static bool TryExtractEnumerableType(this Type t, out Type baseType)
       {
          if(typeof(byte[]) == t)

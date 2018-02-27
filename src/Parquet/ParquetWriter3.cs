@@ -41,7 +41,7 @@ namespace Parquet
 
       public ParquetRowGroupWriter CreateRowGroup(int rowCount)
       {
-         return new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, rowCount);
+         return new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, CompressionMethod.Snappy, rowCount);
       }
 
       private void PrepareFile(bool append)

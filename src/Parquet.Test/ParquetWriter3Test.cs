@@ -10,7 +10,7 @@ namespace Parquet.Test
 {
    public class ParquetWriter3Test
    {
-      //[Fact]
+      [Fact]
       public void SmokeWrite()
       {
          var schema = new Schema(new DataField<int>("id"), new DataField<string>("name"));
@@ -21,11 +21,19 @@ namespace Parquet.Test
             {
                using (ParquetRowGroupWriter group = writer.CreateRowGroup(3))
                {
-                  group.Write(new[] { 1, 2, 3 });
-                  group.Write(new[] { "first", "second", "third" });
+                  group.Write(CreateColumn(schema[0], 1, 2, 3));
+                  group.Write(CreateColumn(schema[1], "first", "second", "third"));
                }
             }
          }
+      }
+
+      private DataColumn CreateColumn<T>(Field f, params T[] values)
+      {
+         var df = (DataField)f;
+         var list = new List<T>(values);
+
+         return new DataColumn(df, list);
       }
    }
 }
