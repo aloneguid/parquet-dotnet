@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Parquet.Data
 {
@@ -11,6 +12,7 @@ namespace Parquet.Data
    {
       private readonly DataField _field;
       private readonly IList _data;
+      private readonly List<int> _definitionLevels = new List<int>();
 
       public DataColumn(DataField field, IEnumerable data)
       {
@@ -22,10 +24,40 @@ namespace Parquet.Data
          }
 
          if (baseType != field.ClrType) throw new ArgumentException($"expected {_field.ClrType} but passed a collection of {baseType}");
+
+         IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
+         _data = handler.CreateEmptyList(field.HasNulls, field.IsArray, 0);
+         foreach (object element in data) Add(element);
       }
 
       public bool HasRepetitions => false;
 
       public bool HasDefinitions => _field.HasNulls;
+
+      //todo: think of a better way
+      public IList Data => _data;
+
+      public List<int> DefinitionLevels => _definitionLevels;
+
+      // todo: boxing is happening here, must be killed or MSIL-generated
+      public void Add(object item)
+      {
+         if(item == null)
+         {
+            _definitionLevels.Add(0);
+            return;
+         }
+
+         _definitionLevels.Add(1);
+         _data.Add(item);
+      }
+
+      private void AddRange(IEnumerable data)
+      {
+         foreach(object item in data)
+         {
+            Add(item);
+         }
+      }
    }
 }

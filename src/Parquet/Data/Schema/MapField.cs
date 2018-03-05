@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace Parquet.Data
 {
+   /// <summary>
+   /// Implements a dictionary field
+   /// </summary>
    public class MapField : Field
    {
       internal const string ContainerName = "key_value";
@@ -97,6 +100,10 @@ namespace Parquet.Data
          MapField other = (MapField)obj;
          return Name.Equals(other.Name) && KeyType.Equals(other.KeyType) && ValueType.Equals(other.ValueType);
       }
-   
+
+      public override int GetHashCode()
+      {
+         return Name.GetHashCode() * KeyType.GetHashCode() * ValueType.GetHashCode();
+      }
    }
 }

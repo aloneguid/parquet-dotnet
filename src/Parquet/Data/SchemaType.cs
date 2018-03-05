@@ -10,10 +10,19 @@
       /// </summary>
       Data,
 
+      /// <summary>
+      /// Contains dictionary definition
+      /// </summary>
       Map,
 
+      /// <summary>
+      /// Contains structure definition
+      /// </summary>
       Struct,
 
+      /// <summary>
+      /// Contains list definition
+      /// </summary>
       List
    }
 }

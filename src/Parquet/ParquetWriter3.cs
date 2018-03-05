@@ -17,6 +17,11 @@ namespace Parquet
       private bool _dataWritten;
 
       /// <summary>
+      /// Type of compression to use, defaults to <see cref="CompressionMethod.Snappy"/>
+      /// </summary>
+      public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
+
+      /// <summary>
       /// Creates an instance of parquet writer on top of a stream
       /// </summary>
       /// <param name="schema"></param>
@@ -41,7 +46,9 @@ namespace Parquet
 
       public ParquetRowGroupWriter CreateRowGroup(int rowCount)
       {
-         return new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, CompressionMethod.Snappy, rowCount);
+         _dataWritten = true;
+
+         return new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, CompressionMethod, _formatOptions, rowCount);
       }
 
       private void PrepareFile(bool append)

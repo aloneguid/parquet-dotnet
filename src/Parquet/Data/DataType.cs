@@ -5,6 +5,9 @@
    /// </summary>
    public enum DataType
    {
+      /// <summary>
+      /// Type is not specified, shouldn't be used.
+      /// </summary>
       Unspecified,
 
       /// <summary>

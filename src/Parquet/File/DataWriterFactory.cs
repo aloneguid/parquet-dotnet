@@ -12,7 +12,8 @@ namespace Parquet.File
    /// </summary>
    static class DataWriterFactory
    {
-      public static BinaryWriter CreateWriter(Stream nakedStream, CompressionMethod compressionMethod)
+      public static PositionTrackingStream CreateWriter(
+         Stream nakedStream, CompressionMethod compressionMethod)
       {
          Stream dest = nakedStream;
 
@@ -24,11 +25,13 @@ namespace Parquet.File
             case CompressionMethod.Snappy:
                dest = new SnappyStream(dest, CompressionMode.Compress, false, false);
                break;
+            case CompressionMethod.None:
+               break;
             default:
                throw new NotImplementedException();
          }
-
-         return new BinaryWriter(dest);
+         
+         return new PositionTrackingStream(dest);
       }
    }
 }
