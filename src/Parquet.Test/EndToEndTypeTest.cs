@@ -8,10 +8,11 @@ using Xunit;
 using Xunit.Extensions;
 using Parquet.File.Values.Primitives;
 using NetBox.Extensions;
+using Parquet.File;
 
 namespace Parquet.Test
 {
-   public class EndToEndTypeTest
+   public class EndToEndTypeTest : TestBase
    {
       public static IEnumerable<object[]> TypeData => new[]
       {
@@ -19,7 +20,7 @@ namespace Parquet.Test
          new object[] {  new DataField<string>("unicode string"), "L'Oréal Paris" },
          new object[] {  new DataField<float>("float"), 1.23f },
          new object[] {  new DataField<double>("double"), 10.44D },
-         new object[] { new DataField<DateTime>("datetime"), DateTime.UtcNow.RoundToSecond()},
+         new object[] { new DataField<DateTime>("datetime"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond()), "simpleDateTime"},
          new object[] { new DataField<long>("long"), (long)1234 },
 
          //difference cases of decimals
@@ -52,7 +53,7 @@ namespace Parquet.Test
          new object[] {  new DataField<ushort>("ushort"), ushort.MaxValue },
 
          new object[] {  new DecimalDataField("decimal?", 4, 1, true, true), null},
-         new object[] {  new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null },
+         new object[] {  new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null, "dateTimeNullable" },
 
          new object[] { new DataField<bool>("bool"), true },
          new object[] { new DataField<bool?>("bool?"), new bool?(true) }
@@ -60,8 +61,9 @@ namespace Parquet.Test
 
       [Theory]
       [MemberData(nameof(TypeData))]
-      public void Type_writes_and_reads_end_to_end(Field schema, object value, string name = null)
+      public void Type_writes_and_reads_end_to_end(DataField schema, object value, string name = null)
       {
+         //parquet writer 2
          var ds = new DataSet(schema) { new Row(value) };
          var ms = new MemoryStream();
          ParquetWriter.Write(ds, ms);
@@ -77,6 +79,17 @@ namespace Parquet.Test
 
          Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
+      }
+
+      [Theory]
+      [MemberData(nameof(TypeData))]
+      public void Type_writes_and_reads_end_to_end_on_v3(DataField schema, object expected, string name = null)
+      {
+         object actual = WriteReadSingle(schema, expected);
+
+         bool equal = (expected == null && actual == null || actual.Equals(expected));
+
+         Assert.True(equal, $"{name}| expected: {expected}, actual: {actual}, schema element: {schema}");
       }
    }
 }

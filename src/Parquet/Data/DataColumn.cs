@@ -14,10 +14,16 @@ namespace Parquet.Data
       private readonly IList _data;
       private readonly List<int> _definitionLevels = new List<int>();
 
-      public DataColumn(DataField field, IEnumerable data)
+      public DataColumn(DataField field)
       {
          _field = field ?? throw new ArgumentNullException(nameof(field));
 
+         IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
+         _data = handler.CreateEmptyList(field.HasNulls, field.IsArray, 0);
+      }
+
+      public DataColumn(DataField field, IEnumerable data) : this(field)
+      {
          if(!data.GetType().TryExtractEnumerableType(out Type baseType))
          {
             throw new ArgumentException($"the collection is not a generic one", nameof(data));
@@ -25,9 +31,7 @@ namespace Parquet.Data
 
          if (baseType != field.ClrType) throw new ArgumentException($"expected {_field.ClrType} but passed a collection of {baseType}");
 
-         IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
-         _data = handler.CreateEmptyList(field.HasNulls, field.IsArray, 0);
-         foreach (object element in data) Add(element);
+         AddRange(data);
       }
 
       public bool HasRepetitions => false;
