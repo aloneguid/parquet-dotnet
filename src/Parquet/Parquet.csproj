@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.4;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
     <Version>1.2.0.0</Version>
     <FileVersion>1.2.3.4</FileVersion>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
@@ -9,7 +9,7 @@
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
     <Description>.NET library to read and write Apache Parquet files.
 Supports all parquet features, including maps, structs, lists, repeatable fields.
-Compatible with .NET 4.5.1 and .NET Standard 1.4 and up.
+Compatible with .NET 4.5 and .NET Standard 1.4 and up.
 Works on all flavours of Windows and Linux. Compatible with iOS and Android via Xamarin.</Description>
     <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
     <Company>Elastacloud</Company>
@@ -35,10 +35,10 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.4|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard1.4\Parquet.xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net451|AnyCPU'">
-    <DocumentationFile>bin\Debug\net451\Parquet.xml</DocumentationFile>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <DocumentationFile>bin\Debug\net45\Parquet.xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net451|AnyCPU'">
-    <DocumentationFile>bin\Release\net451\Parquet.xml</DocumentationFile>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+    <DocumentationFile>bin\Release\net45\Parquet.xml</DocumentationFile>
   </PropertyGroup>
 </Project>
