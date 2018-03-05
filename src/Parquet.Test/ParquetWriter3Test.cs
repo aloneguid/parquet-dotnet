@@ -27,8 +27,6 @@ namespace Parquet.Test
                   group.Write(CreateColumn(schema[1], "first", "second", "third"));
                }
             }
-
-            System.IO.File.WriteAllBytes("c:\\tmp\\p3.parquet", ms.ToArray());
          }
       }
 
