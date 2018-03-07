@@ -1,4 +1,4 @@
-# Parquet.Net
+# Apache Parquet for .Net Platform
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
