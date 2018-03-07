@@ -99,7 +99,7 @@ namespace Parquet.File
 
          using (var ms = new MemoryStream())
          {
-            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.DefinedData.Count);
+            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.TotalCount);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
             using (PositionTrackingStream pps = DataStreamFactory.CreateWriter(ms, _compressionMethod))

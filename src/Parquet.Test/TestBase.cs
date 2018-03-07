@@ -43,7 +43,7 @@ namespace Parquet.Test
                {
                   DataColumn column = rowGroupReader.ReadColumn(field);
 
-                  return column.DefinedData.OfType<object>().First();
+                  return column.DefinedData.OfType<object>().FirstOrDefault();
                }
 
                return null;

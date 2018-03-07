@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet.Data
 {
@@ -13,6 +14,7 @@ namespace Parquet.Data
       private readonly DataField _field;
       private readonly IList _definedData;            // data that is defined i.e. doesn't ever have nulls
       private readonly List<int> _definitionLevels;   // not utilised at all when field is not nullable
+      private int _undefinedCount;
 
       public DataColumn(DataField field)
       {
@@ -27,7 +29,11 @@ namespace Parquet.Data
       {
          _definedData.AddOneByOne(definedData);
 
-         if (_definitionLevels != null) _definitionLevels.AddRange(definitionLevels);
+         if (_definitionLevels != null)
+         {
+            _definitionLevels.AddRange(definitionLevels);
+            _undefinedCount = _definitionLevels.Count(l => l == 0);
+         }
       }
 
       public DataColumn(DataField field, IEnumerable data) : this(field)
@@ -51,6 +57,8 @@ namespace Parquet.Data
 
       public List<int> DefinitionLevels => _definitionLevels;
 
+      public int TotalCount => _definedData.Count + _undefinedCount;
+
       // todo: boxing is happening here, must be killed or MSIL-generated
       public void Add(object item)
       {
@@ -59,6 +67,7 @@ namespace Parquet.Data
             if (item == null)
             {
                _definitionLevels.Add(0);
+               _undefinedCount += 1;
                return;
             }
 
