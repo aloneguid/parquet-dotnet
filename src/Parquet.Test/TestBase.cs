@@ -4,6 +4,7 @@ using System.Reflection;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.Test.data;
+using System.Linq;
 
 namespace Parquet.Test
 {
@@ -35,7 +36,18 @@ namespace Parquet.Test
 
             // read back single value
 
-            throw new NotImplementedException();
+            ms.Position = 0;
+            using (var reader = new ParquetReader3(ms))
+            {
+               foreach(ParquetRowGroupReader rowGroupReader in reader)
+               {
+                  DataColumn column = rowGroupReader.ReadColumn(field);
+
+                  return column.DefinedData.OfType<object>().First();
+               }
+
+               return null;
+            }
          }
       }
    }

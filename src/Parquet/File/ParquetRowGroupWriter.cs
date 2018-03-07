@@ -99,10 +99,10 @@ namespace Parquet.File
 
          using (var ms = new MemoryStream())
          {
-            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Data.Count);
+            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.DefinedData.Count);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-            using (PositionTrackingStream pps = DataWriterFactory.CreateWriter(ms, _compressionMethod))
+            using (PositionTrackingStream pps = DataStreamFactory.CreateWriter(ms, _compressionMethod))
             {
                using (var writer = new BinaryWriter(pps))
                {
@@ -114,7 +114,7 @@ namespace Parquet.File
                      WriteLevels(writer, column.DefinitionLevels, maxDefinitionLevel);
                   }
 
-                  dataTypeHandler.Write(tse, writer, column.Data);
+                  dataTypeHandler.Write(tse, writer, column.DefinedData);
                }
 
                dataPageHeader.Uncompressed_page_size = (int)pps.Position;

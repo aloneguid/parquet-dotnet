@@ -2,13 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using Parquet.File.Values;
 using Xunit;
-using Xunit.Extensions;
 using Parquet.File.Values.Primitives;
 using NetBox.Extensions;
-using Parquet.File;
 
 namespace Parquet.Test
 {

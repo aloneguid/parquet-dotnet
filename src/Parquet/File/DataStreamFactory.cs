@@ -10,7 +10,7 @@ namespace Parquet.File
    /// <summary>
    /// part of experiments
    /// </summary>
-   static class DataWriterFactory
+   static class DataStreamFactory
    {
       public static PositionTrackingStream CreateWriter(
          Stream nakedStream, CompressionMethod compressionMethod)

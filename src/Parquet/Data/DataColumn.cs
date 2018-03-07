@@ -11,15 +11,23 @@ namespace Parquet.Data
    internal class DataColumn
    {
       private readonly DataField _field;
-      private readonly IList _data;
-      private readonly List<int> _definitionLevels = new List<int>();
+      private readonly IList _definedData;            // data that is defined i.e. doesn't ever have nulls
+      private readonly List<int> _definitionLevels;   // not utilised at all when field is not nullable
 
       public DataColumn(DataField field)
       {
          _field = field ?? throw new ArgumentNullException(nameof(field));
 
          IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
-         _data = handler.CreateEmptyList(field.HasNulls, field.IsArray, 0);
+         _definedData = handler.CreateEmptyList(false, false, 0);       // always a plain list, always non-nullable when possible
+         _definitionLevels = field.HasNulls ? new List<int>() : null;   // do not create an instance when not required
+      }
+
+      internal DataColumn(DataField field, IList definedData, List<int> definitionLevels) : this(field)
+      {
+         _definedData.AddOneByOne(definedData);
+
+         if (_definitionLevels != null) _definitionLevels.AddRange(definitionLevels);
       }
 
       public DataColumn(DataField field, IEnumerable data) : this(field)
@@ -39,21 +47,25 @@ namespace Parquet.Data
       public bool HasDefinitions => _field.HasNulls;
 
       //todo: think of a better way
-      public IList Data => _data;
+      public IList DefinedData => _definedData;
 
       public List<int> DefinitionLevels => _definitionLevels;
 
       // todo: boxing is happening here, must be killed or MSIL-generated
       public void Add(object item)
       {
-         if(item == null)
+         if (_field.HasNulls)
          {
-            _definitionLevels.Add(0);
-            return;
+            if (item == null)
+            {
+               _definitionLevels.Add(0);
+               return;
+            }
+
+            _definitionLevels.Add(1);
          }
 
-         _definitionLevels.Add(1);
-         _data.Add(item);
+         _definedData.Add(item);
       }
 
       private void AddRange(IEnumerable data)

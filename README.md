@@ -1,4 +1,4 @@
-# Parquet.Net 
+# Parquet.Net
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
