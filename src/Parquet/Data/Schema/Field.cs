@@ -21,7 +21,7 @@ namespace Parquet.Data
       /// <summary>
       /// Path
       /// </summary>
-      public string Path { get; set; }
+      public string Path { get; internal set; }
 
       internal virtual string PathPrefix { set { } }
 
