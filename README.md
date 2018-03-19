@@ -9,7 +9,7 @@
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5` and up.
-- `.NET Standard 1.4` and up.
+- `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
 
 Runs on all flavors of Windows, Linux, and mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/)
 

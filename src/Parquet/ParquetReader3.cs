@@ -10,7 +10,7 @@ using System.Linq;
 namespace Parquet
 {
    /// <summary>
-   /// Implements Apache Parquet format reader
+   /// Implements Apache Parquet format reader, experimental version for next major release.
    /// </summary>
    internal class ParquetReader3 : ParquetActor, IEnumerable<ParquetRowGroupReader>, IDisposable
    {

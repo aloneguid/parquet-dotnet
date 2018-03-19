@@ -21,12 +21,6 @@ namespace Parquet.File
       private readonly List<Thrift.SchemaElement> _thschema;
       private int _colIdx;
 
-      private struct PageTag
-      {
-         public int HeaderSize;
-         public Thrift.PageHeader HeaderMeta;
-      }
-
       internal ParquetRowGroupWriter(Schema schema,
          Stream stream,
          ThriftStream thriftStream,
@@ -58,90 +52,12 @@ namespace Parquet.File
          IDataTypeHandler dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
          //todo: check if the column is in the right order
 
-
          List<string> path = _footer.GetPath(tse);
 
-         Thrift.ColumnChunk chunk = WriteColumnChunk(tse, path, column, dataTypeHandler);
+         var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse, _compressionMethod, _rowCount);
+
+         Thrift.ColumnChunk chunk = writer.Write(path, column, dataTypeHandler);
          _thriftRowGroup.Columns.Add(chunk);
-      }
-
-      private Thrift.ColumnChunk WriteColumnChunk(Thrift.SchemaElement tse, List<string> path, DataColumn column, IDataTypeHandler dataTypeHandler)
-      {
-         Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, tse.Type, path, 0);
-         Thrift.PageHeader ph = _footer.CreateDataPage(_rowCount);
-         _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
-
-         List<PageTag> pages = WriteColumn(column, tse, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel);
-
-         chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
-
-         //the following counters must include both data size and header size
-         chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
-         chunk.Meta_data.Total_uncompressed_size = pages.Sum(p => p.HeaderMeta.Uncompressed_page_size + p.HeaderSize);
-
-         return chunk;
-      }
-
-      private List<PageTag> WriteColumn(DataColumn column, 
-         Thrift.SchemaElement tse,
-         IDataTypeHandler dataTypeHandler,
-         int maxRepetitionLevel,
-         int maxDefinitionLevel)
-      {
-         var pages = new List<PageTag>();
-
-         /*
-          * Page header must preceeed actual data (compressed or not) however it contains both
-          * the uncompressed and compressed data size which we don't know! This somehow limits
-          * the write efficiency.
-          */
-
-
-         using (var ms = new MemoryStream())
-         {
-            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.TotalCount);
-
-            //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-            using (PositionTrackingStream pps = DataStreamFactory.CreateWriter(ms, _compressionMethod))
-            {
-               using (var writer = new BinaryWriter(pps))
-               {
-                  if (column.HasRepetitions)
-                     throw new NotImplementedException();
-
-                  if (column.HasDefinitions)
-                  {
-                     WriteLevels(writer, column.DefinitionLevels, maxDefinitionLevel);
-                  }
-
-                  dataTypeHandler.Write(tse, writer, column.DefinedData);
-               }
-
-               dataPageHeader.Uncompressed_page_size = (int)pps.Position;
-            }
-            dataPageHeader.Compressed_page_size = (int)ms.Position;
-
-            //write the hader in
-            int headerSize = _thriftStream.Write(dataPageHeader);
-            ms.Position = 0;
-            ms.CopyTo(_stream);
-
-            var dataTag = new PageTag
-            {
-               HeaderMeta = dataPageHeader,
-               HeaderSize = headerSize
-            };
-
-            pages.Add(dataTag);
-         }
-
-         return pages;
-      }
-
-      private void WriteLevels(BinaryWriter writer, List<int> levels, int maxLevel)
-      {
-         int bitWidth = maxLevel.GetBitWidth();
-         RunLengthBitPackingHybridValuesWriter.WriteForwardOnly(writer, bitWidth, levels);
       }
 
       public void Dispose()
