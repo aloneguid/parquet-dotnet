@@ -43,11 +43,13 @@ namespace Parquet.File
       public Thrift.ColumnChunk Write(List<string> path, DataColumn column, IDataTypeHandler dataTypeHandler)
       {
          Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, path, 0);
-         Thrift.PageHeader ph = _footer.CreateDataPage(_rowCount);
+         Thrift.PageHeader ph = _footer.CreateDataPage(column.TotalCount);
          _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
          List<PageTag> pages = WriteColumn(column, _schemaElement, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel);
 
+         //this count must be set to number of all values in the column, including nulls.
+         //for hierarchy/repeated columns this is a count of flattened list, including nulls.
          chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
 
          //the following counters must include both data size and header size
@@ -82,7 +84,9 @@ namespace Parquet.File
                using (var writer = new BinaryWriter(pps))
                {
                   if (column.HasRepetitions)
-                     throw new NotImplementedException();
+                  {
+                     WriteLevels(writer, column.RepetitionLevels, maxRepetitionLevel);
+                  }
 
                   if (column.HasDefinitions)
                   {

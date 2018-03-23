@@ -14,7 +14,10 @@ namespace Parquet.Data
       private readonly DataField _field;
       private readonly IList _definedData;            // data that is defined i.e. doesn't ever have nulls
       private readonly List<int> _definitionLevels;   // not utilised at all when field is not nullable
+      private readonly List<int> _repetitionLevels;
       private int _undefinedCount;
+      private int _currentRepetitionLevel = 0;
+      private int _touchedRepetitionLevel = 0;
 
       public DataColumn(DataField field)
       {
@@ -23,6 +26,9 @@ namespace Parquet.Data
          IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
          _definedData = handler.CreateEmptyList(false, false, 0);       // always a plain list, always non-nullable when possible
          _definitionLevels = field.HasNulls ? new List<int>() : null;   // do not create an instance when not required
+
+         HasRepetitions = field.IsArray;
+         _repetitionLevels = HasRepetitions ? new List<int>() : null;
       }
 
       internal DataColumn(DataField field, IList definedData, List<int> definitionLevels) : this(field)
@@ -48,7 +54,7 @@ namespace Parquet.Data
          AddRange(data);
       }
 
-      public bool HasRepetitions => false;
+      public bool HasRepetitions { get; private set; }
 
       public bool HasDefinitions => _field.HasNulls;
 
@@ -57,7 +63,20 @@ namespace Parquet.Data
 
       public List<int> DefinitionLevels => _definitionLevels;
 
+      public List<int> RepetitionLevels => _repetitionLevels;
+
       public int TotalCount => _definedData.Count + _undefinedCount;
+
+      public void IncrementLevel()
+      {
+         _currentRepetitionLevel += 1;
+      }
+
+      public void DecrementLevel()
+      {
+         _currentRepetitionLevel -= 1;
+         _touchedRepetitionLevel = _currentRepetitionLevel;
+      }
 
       // todo: boxing is happening here, must be killed or MSIL-generated
       public void Add(object item)
@@ -75,6 +94,12 @@ namespace Parquet.Data
          }
 
          _definedData.Add(item);
+
+         if (HasRepetitions)
+         {
+            _repetitionLevels.Add(_touchedRepetitionLevel);
+            _touchedRepetitionLevel = _currentRepetitionLevel;
+         }
       }
 
       private void AddRange(IEnumerable data)

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Parquet.Data;
+using Parquet.File;
 using Xunit;
+using F = System.IO.File;
 
 namespace Parquet.Test
 {
@@ -21,6 +24,30 @@ namespace Parquet.Test
 
          Assert.Equal(1, ds1[0][0]);
          Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
+      }
+
+      [Fact]
+      public void Simple_repeated_field_write_read_v3()
+      {
+         // arrange 
+         var schema = new Schema(new DataField<IEnumerable<int>>("items"));
+         var column = new DataColumn((DataField)schema[0]);
+         column.IncrementLevel();
+         column.Add(1);
+         column.Add(2);
+         column.DecrementLevel();
+         column.IncrementLevel();
+         column.Add(3);
+         column.Add(4);
+         column.DecrementLevel();
+
+         // act
+         var ms = new MemoryStream();
+         ms.WriteSingleRowGroup(schema, 2, column);
+         ms.Position = 0;
+
+         // assert
+         F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
       }
 
       [Fact]

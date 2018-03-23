@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using Parquet.Data;
+using System.Diagnostics;
 
 namespace Parquet
 {

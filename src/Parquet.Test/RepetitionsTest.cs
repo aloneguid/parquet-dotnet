@@ -49,6 +49,8 @@ namespace Parquet.Test
       [Fact]
       public void Level2_repetitions_packed()
       {
+         int i = 0;
+
          var levels = new List<int>
          {
             0, 2, 2, 2, 2, 2, 2, 2, 2, 2,
