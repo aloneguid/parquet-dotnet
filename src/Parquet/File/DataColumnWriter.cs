@@ -83,7 +83,7 @@ namespace Parquet.File
             {
                using (var writer = new BinaryWriter(pps))
                {
-                  if (column.HasRepetitions)
+                  if (maxRepetitionLevel > 0)
                   {
                      WriteLevels(writer, column.RepetitionLevels, maxRepetitionLevel);
                   }
@@ -100,7 +100,7 @@ namespace Parquet.File
             }
             dataPageHeader.Compressed_page_size = (int)ms.Position;
 
-            //write the hader in
+            //write the header in
             int headerSize = _thriftStream.Write(dataPageHeader);
             ms.Position = 0;
             ms.CopyTo(_stream);

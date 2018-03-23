@@ -47,7 +47,7 @@ namespace Parquet.Test
          ms.Position = 0;
 
          // assert
-         F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+         //F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
       }
 
       [Fact]
