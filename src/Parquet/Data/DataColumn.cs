@@ -25,7 +25,7 @@ namespace Parquet.Data
 
          IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
          _definedData = handler.CreateEmptyList(false, false, 0);       // always a plain list, always non-nullable when possible
-         _definitionLevels = field.HasNulls ? new List<int>() : null;   // do not create an instance when not required
+         _definitionLevels = new List<int>();
 
          HasRepetitions = field.IsArray;
          _repetitionLevels = HasRepetitions ? new List<int>() : null;
@@ -56,8 +56,6 @@ namespace Parquet.Data
 
       public bool HasRepetitions { get; private set; }
 
-      public bool HasDefinitions => _field.HasNulls;
-
       //todo: think of a better way
       public IList DefinedData => _definedData;
 
@@ -81,17 +79,14 @@ namespace Parquet.Data
       // todo: boxing is happening here, must be killed or MSIL-generated
       public void Add(object item)
       {
-         if (_field.HasNulls)
+         if (item == null)
          {
-            if (item == null)
-            {
-               _definitionLevels.Add(0);
-               _undefinedCount += 1;
-               return;
-            }
-
-            _definitionLevels.Add(1);
+            _definitionLevels.Add(0);
+            _undefinedCount += 1;
+            return;
          }
+
+         _definitionLevels.Add(1);
 
          _definedData.Add(item);
 

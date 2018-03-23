@@ -23,7 +23,8 @@ namespace Parquet.File
                dest = new GZipStream(dest, CompressionLevel.Optimal, false);
                break;
             case CompressionMethod.Snappy:
-               dest = new SnappyStream(dest, CompressionMode.Compress, false, false);
+               //dest = new SnappyStream(dest, CompressionMode.Compress, false, false);
+               throw new NotImplementedException();
                break;
             case CompressionMethod.None:
                break;

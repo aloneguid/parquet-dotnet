@@ -16,6 +16,7 @@ namespace Parquet
       {
          using (var writer = new ParquetWriter3(schema, stream))
          {
+            writer.CompressionMethod = CompressionMethod.None;
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(rowCount))
             {
                foreach(DataColumn column in columns)

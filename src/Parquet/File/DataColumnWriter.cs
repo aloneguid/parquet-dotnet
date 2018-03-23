@@ -88,7 +88,7 @@ namespace Parquet.File
                      WriteLevels(writer, column.RepetitionLevels, maxRepetitionLevel);
                   }
 
-                  if (column.HasDefinitions)
+                  if (maxDefinitionLevel > 0)
                   {
                      WriteLevels(writer, column.DefinitionLevels, maxDefinitionLevel);
                   }
