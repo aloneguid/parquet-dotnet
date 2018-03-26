@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Parquet.Data;
+using Parquet.File.Values.Primitives;
 using Xunit;
 
 namespace Parquet.Test
@@ -30,6 +31,21 @@ namespace Parquet.Test
             Assert.True(ds1[i].GetBoolean(1), $"got FALSE at position {i}");
          }
 
+      }
+
+      [Fact]
+      public void Interval_tests()
+      {
+         var ds = new DataSet(
+            new DataField<int>("id"),
+            new DataField<Interval>("interval"));
+         ds.Add(1000, new Interval(1,2,3));
+
+         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+         Interval retInterval = (Interval)ds1[0][1];
+         Assert.Equal(1, retInterval.Months);
+         Assert.Equal(2, retInterval.Days);
+         Assert.Equal(3, retInterval.Millis);
       }
    }
 }
