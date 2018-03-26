@@ -42,7 +42,7 @@ namespace Parquet.Test
          ds.Add(1000, new Interval(1,2,3));
 
          DataSet ds1 = DataSetGenerator.WriteRead(ds);
-         Interval retInterval = (Interval)ds1[0][1];
+         var retInterval = (Interval)ds1[0][1];
          Assert.Equal(1, retInterval.Months);
          Assert.Equal(2, retInterval.Days);
          Assert.Equal(3, retInterval.Millis);
