@@ -84,6 +84,21 @@ namespace Parquet.Data
       }
 
       /// <summary>
+      /// Gets <see cref="DataField"/> at specified position
+      /// </summary>
+      /// <param name="index">Position</param>
+      /// <returns><see cref="DataField"/></returns>
+      /// <exception cref="ArgumentException">Thrown when field at position is not a <see cref="DataField"/></exception>
+      public DataField DataFieldAt(int index)
+      {
+         DataField result = _fields[index] as DataField;
+
+         if (result == null) throw new ArgumentException($"field at position {index} is not a {typeof(DataField).Name}");
+
+         return result;
+      }
+
+      /// <summary>
       /// Gets the column index by schema element
       /// </summary>
       /// <returns>Element index or -1 if not found</returns>

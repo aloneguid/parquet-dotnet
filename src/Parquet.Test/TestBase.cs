@@ -26,7 +26,7 @@ namespace Parquet.Test
 
             if(flushToDisk)
             {
-               F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+               FlushTempFile(ms);
             }
 
             // read first gow group and first column
@@ -40,6 +40,11 @@ namespace Parquet.Test
 
 
          }
+      }
+
+      protected void FlushTempFile(MemoryStream ms)
+      {
+         F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
       }
 
       protected object WriteReadSingle(DataField field, object value)
