@@ -31,14 +31,19 @@ namespace Parquet.Data
          _repetitionLevels = HasRepetitions ? new List<int>() : null;
       }
 
-      internal DataColumn(DataField field, IList definedData, List<int> definitionLevels) : this(field)
+      internal DataColumn(DataField field, IList definedData, List<int> definitionLevels, List<int> repetitionLevels) : this(field)
       {
          _definedData.AddOneByOne(definedData);
 
-         if (_definitionLevels != null)
+         if (_definitionLevels != null && definitionLevels != null)
          {
             _definitionLevels.AddRange(definitionLevels);
             _undefinedCount = _definitionLevels.Count(l => l == 0);
+         }
+
+         if(HasRepetitions && repetitionLevels != null)
+         {
+            _repetitionLevels.AddRange(repetitionLevels);
          }
       }
 

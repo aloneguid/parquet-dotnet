@@ -97,7 +97,7 @@ namespace Parquet.File
          // all the data is available here!
 
          // todo: this is a simple hack for trivial tests to succeed
-         return new DataColumn(_dataField, values, definitions);
+         return new DataColumn(_dataField, values, definitions, repetitions);
       }
 
       private bool TryReadDictionaryPage(Thrift.PageHeader ph, out IList dictionary)

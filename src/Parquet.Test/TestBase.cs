@@ -5,6 +5,7 @@ using Parquet.Data;
 using Parquet.File;
 using Parquet.Test.data;
 using System.Linq;
+using F = System.IO.File;
 
 namespace Parquet.Test
 {
@@ -13,6 +14,32 @@ namespace Parquet.Test
       protected Stream OpenTestFile(string name)
       {
          return ResourceReader.Open(name);
+      }
+
+      internal DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn, bool flushToDisk = false)
+      {
+         using (var ms = new MemoryStream())
+         {
+            // write with built-in extension method
+            ms.WriteSingleRowGroup(new Schema(field), rowCount, dataColumn);
+            ms.Position = 0;
+
+            if(flushToDisk)
+            {
+               F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+            }
+
+            // read first gow group and first column
+            using (var reader = new ParquetReader3(ms))
+            {
+               ParquetRowGroupReader rgReader = reader.FirstOrDefault();
+               if (rgReader == null) return null;
+
+               return rgReader.ReadColumn(field);
+            }
+
+
+         }
       }
 
       protected object WriteReadSingle(DataField field, object value)
