@@ -10,6 +10,8 @@ namespace Parquet.Test
       [Fact]
       public void Simple_repeated_field_write_read()
       {
+         //v2
+
          var ds = new DataSet(
             new DataField<int>("id"),
             new DataField<IEnumerable<string>>("items"));
@@ -20,11 +22,9 @@ namespace Parquet.Test
 
          Assert.Equal(1, ds1[0][0]);
          Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
-      }
 
-      [Fact]
-      public void Simple_repeated_field_write_read_v3()
-      {
+         //v3
+
          // arrange 
          var field = new DataField<IEnumerable<int>>("items");
          var column = new DataColumn(field);
@@ -44,6 +44,7 @@ namespace Parquet.Test
          Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.DefinedData);
          Assert.Equal(new int[] { 1, 1, 1, 1 }, rc.DefinitionLevels);
          Assert.Equal(new int[] { 0, 1, 0, 1 }, rc.RepetitionLevels);
+
       }
    }
 }

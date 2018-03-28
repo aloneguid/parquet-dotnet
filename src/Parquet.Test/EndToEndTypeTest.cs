@@ -57,10 +57,12 @@ namespace Parquet.Test
 
       [Theory]
       [MemberData(nameof(TypeData))]
-      public void Type_writes_and_reads_end_to_end(DataField schema, object value, string name = null)
+      public void Type_writes_and_reads_end_to_end(DataField schema, object expected, string name = null)
       {
+         //v2
+
          //parquet writer 2
-         var ds = new DataSet(schema) { new Row(value) };
+         var ds = new DataSet(schema) { new Row(expected) };
          var ms = new MemoryStream();
          ParquetWriter.Write(ds, ms);
 
@@ -70,17 +72,11 @@ namespace Parquet.Test
          object expectedValue = ds[0][0];
          object actualValue = ds1[0][0];
 
-         //if(schema.DataType == DataType.DateTimeOffset)
-         //   actualValue = ((DateTimeOffset) actualValue).DateTime;
-
          Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),
             $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {schema}");
-      }
 
-      [Theory]
-      [MemberData(nameof(TypeData))]
-      public void Type_writes_and_reads_end_to_end_on_v3(DataField schema, object expected, string name = null)
-      {
+         //v3
+
          object actual = WriteReadSingle(schema, expected);
 
          bool equal = (expected == null && actual == null || actual.Equals(expected));
