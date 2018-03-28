@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Parquet.Data;
 using Parquet.File.Data;
+using Parquet.File.Streams;
 using Parquet.File.Values;
 
 namespace Parquet.File
@@ -110,11 +111,9 @@ namespace Parquet.File
 
          //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
 
-         byte[] data = ReadRawBytes(ph, _inputStream);
-
-         using (var dataStream = new MemoryStream(data))
+         using (Stream pageStream = OpenDataPageStream(ph))
          {
-            using (var dataReader = new BinaryReader(dataStream))
+            using (var dataReader = new BinaryReader(pageStream))
             {
                dictionary = _dataTypeHandler.Read(_thriftSchemaElement, dataReader, _parquetOptions);
                return true;
@@ -122,12 +121,13 @@ namespace Parquet.File
          }
       }
 
-      private byte[] ReadRawBytes(Thrift.PageHeader ph, Stream inputStream)
+      private Stream OpenDataPageStream(Thrift.PageHeader pageHeader)
       {
-         Thrift.CompressionCodec thriftCodec = _thriftColumnChunk.Meta_data.Codec;
-         IDataReader reader = DataFactory.GetReader(thriftCodec);
+         var window = new WindowedStream(_inputStream, pageHeader.Compressed_page_size);
 
-         return reader.Read(inputStream, ph.Compressed_page_size);
+         Stream uncompressed = DataStreamFactory.CreateReader(window, _thriftColumnChunk.Meta_data.Codec, pageHeader.Uncompressed_page_size);
+
+         return uncompressed;
       }
 
       private long GetFileOffset()
@@ -146,14 +146,13 @@ namespace Parquet.File
 
       private PageData ReadDataPage(Thrift.PageHeader ph, long maxValues)
       {
-         byte[] data = ReadRawBytes(ph, _inputStream);
          int max = ph.Data_page_header.Num_values;
 
          var pd = new PageData();
 
-         using (var dataStream = new MemoryStream(data))
+         using (Stream pageStream = OpenDataPageStream(ph))
          {
-            using (var reader = new BinaryReader(dataStream))
+            using (var reader = new BinaryReader(pageStream))
             {
                if (_maxRepetitionLevel > 0)
                {

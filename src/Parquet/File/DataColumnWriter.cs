@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Parquet.Data;
+using Parquet.File.Streams;
 using Parquet.File.Values;
 
 namespace Parquet.File
@@ -79,7 +80,7 @@ namespace Parquet.File
             Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.TotalCount);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-            using (PositionTrackingStream pps = DataStreamFactory.CreateWriter(ms, _compressionMethod))
+            using (GapStream pps = DataStreamFactory.CreateWriter(ms, _compressionMethod))
             {
                using (var writer = new BinaryWriter(pps))
                {
@@ -96,6 +97,7 @@ namespace Parquet.File
                   dataTypeHandler.Write(tse, writer, column.DefinedData);
                }
 
+               pps.Flush();   //extremely important to flush the stream as some compression algorithms don't finish writing
                dataPageHeader.Uncompressed_page_size = (int)pps.Position;
             }
             dataPageHeader.Compressed_page_size = (int)ms.Position;

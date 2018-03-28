@@ -47,7 +47,8 @@ namespace Parquet.Test
          F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
       }
 
-      protected object WriteReadSingle(DataField field, object value)
+      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None,
+         bool flushToDisk = false)
       {
          using (var ms = new MemoryStream())
          {
@@ -55,7 +56,7 @@ namespace Parquet.Test
 
             using (var writer = new ParquetWriter3(new Schema(field), ms))
             {
-               writer.CompressionMethod = CompressionMethod.None;
+               writer.CompressionMethod = compressionMethod;
 
                using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
                {
@@ -65,6 +66,12 @@ namespace Parquet.Test
                   rg.Write(column);
                }
             }
+
+            if (flushToDisk)
+            {
+               FlushTempFile(ms);
+            }
+
 
             // read back single value
 

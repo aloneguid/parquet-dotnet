@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections;
 using Parquet.Data;
 using System.Diagnostics;
+using Parquet.File.Streams;
 
 namespace Parquet
 {
@@ -28,7 +29,7 @@ namespace Parquet
       /// <exception cref="ArgumentNullException">Output is null.</exception>
       /// <exception cref="ArgumentException">Output stream is not writeable</exception>
       public ParquetWriter(Stream output, ParquetOptions formatOptions = null, WriterOptions writerOptions = null) 
-         : base(new PositionTrackingStream(output))
+         : base(new GapStream(output))
       {
          if (output == null) throw new ArgumentNullException(nameof(output));
 
