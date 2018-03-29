@@ -8,13 +8,18 @@ namespace Parquet.Data
    /// </summary>
    public class ListField : Field, IEquatable<ListField>
    {
-      internal const string ContainerName = "list";
+      internal const string _containerName = "list";
 
       /// <summary>
       /// Item contained within this list
       /// </summary>
       public Field Item { get; internal set; }
 
+      /// <summary>
+      /// Creates a new instance of <see cref="ListField"/>
+      /// </summary>
+      /// <param name="name">Field name</param>
+      /// <param name="item">Field representing list element</param>
       public ListField(string name, Field item) : this(name)
       {
          Item = item ?? throw new ArgumentNullException(nameof(item));
@@ -29,11 +34,13 @@ namespace Parquet.Data
       {
          set
          {
-            Path = value.AddPath(Name, ContainerName);
+            Path = value.AddPath(Name, _containerName);
             Item.PathPrefix = Path;
          }
       }
 
+      /// <summary>
+      /// </summary>
       public override string ToString()
       {
          return $"{Name}: ({Item})";
@@ -54,6 +61,8 @@ namespace Parquet.Data
          Item = field ?? throw new ArgumentNullException(nameof(field));
       }
 
+      /// <summary>
+      /// </summary>
       public bool Equals(ListField other)
       {
          if (ReferenceEquals(null, other)) return false;
@@ -62,6 +71,8 @@ namespace Parquet.Data
          return Name.Equals(other.Name) && Item.Equals(other.Item);
       }
 
+      /// <summary>
+      /// </summary>
       public override bool Equals(object obj)
       {
          if (ReferenceEquals(null, obj)) return false;
@@ -71,6 +82,8 @@ namespace Parquet.Data
          return Equals((ListField)obj);
       }
 
+      /// <summary>
+      /// </summary>
       public override int GetHashCode()
       {
          return Name.GetHashCode() * Item.GetHashCode();

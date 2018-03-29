@@ -108,28 +108,5 @@ namespace Parquet.Json.Test
          Assert.Equal("{123;UK;{2016;111;<null>};<null>}", ds[0].ToString());
          Assert.Equal("{123;UK;{2017;222;111};no comments}", ds[1].ToString());
       }
-
-      //[Fact]
-      public void TempTest()
-      {
-         var dir = new DirectoryInfo(@"C:\Users\ivang\Downloads\Fullfeed-20170330004044");
-         FileInfo[] files = dir.GetFiles();
-         JObject[] jos = files
-            .Select(fi => JObject.Parse(System.IO.File.ReadAllText(fi.FullName)))
-            .Take(1000)
-            .ToArray();
-
-         var inferrer = new JsonSchemaInferring();
-         Schema schema = inferrer.InferSchema(jos);
-
-         var extractor = new JsonDataExtractor(schema);
-         var ds = new DataSet(schema);
-         for(int i = 0; i < jos.Length; i++)
-         {
-            extractor.AddRow(ds, jos[i]);
-         }
-
-         ParquetWriter.WriteFile(ds, "c:\\tmp\\com.parquet");
-      }
    }
 }

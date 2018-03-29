@@ -211,7 +211,6 @@ namespace Parquet.Data
          for(int i = 0; i < count; i++)
          {
             Row row = CreateRow(i);
-            sb.AppendFormat("{0,5}: ");
             sb.AppendLine(row.ToString());
          }
 

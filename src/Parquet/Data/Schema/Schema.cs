@@ -110,6 +110,49 @@ namespace Parquet.Data
          return -1;
       }
 
+      /// <summary>
+      /// Gets a flat list of all data fields in this schema
+      /// </summary>
+      /// <returns></returns>
+      public List<DataField> GetDataFields()
+      {
+         var result = new List<DataField>();
+
+         void analyse(Field f)
+         {
+            switch (f.SchemaType)
+            {
+               case SchemaType.Data:
+                  result.Add((DataField)f);
+                  break;
+               case SchemaType.List:
+                  analyse(((ListField)f).Item);
+                  break;
+               case SchemaType.Map:
+                  MapField mf = (MapField)f;
+                  analyse(mf.Key);
+                  analyse(mf.Value);
+                  break;
+               case SchemaType.Struct:
+                  StructField sf = (StructField)f;
+                  traverse(sf.Fields);
+                  break;
+            }
+         }
+
+         void traverse(IEnumerable<Field> fields)
+         {
+            foreach(Field f in fields)
+            {
+               analyse(f);
+            }
+         }
+
+         traverse(Fields);
+
+         return result;
+      }
+
       internal Schema Filter(FieldPredicate[] predicates)
       {
          if (predicates == null) return this;
@@ -139,6 +182,9 @@ namespace Parquet.Data
          return true;
       }
 
+      /// <summary>
+      /// Compares this schema to <paramref name="other"/> and produces a human readable message describing the differences.
+      /// </summary>
       public string GetNotEqualsMessage(Schema other, string thisName, string otherName)
       {
          if(_fields.Count != other._fields.Count)
@@ -199,6 +245,8 @@ namespace Parquet.Data
          return _fields.Aggregate(1, (current, se) => current * se.GetHashCode());
       }
 
+      /// <summary>
+      /// </summary>
       public override string ToString()
       {
          var sb = new StringBuilder();

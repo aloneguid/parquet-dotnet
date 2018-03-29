@@ -9,25 +9,32 @@ namespace Parquet.Data
    /// </summary>
    public class MapField : Field
    {
-      internal const string ContainerName = "key_value";
+      internal const string _containerName = "key_value";
 
       internal DataField Key { get; private set; }
 
       internal DataField Value { get; private set; }
 
+      /// <summary>
+      /// 
+      /// </summary>
       public DataType KeyType => Key.DataType;
 
+      /// <summary>
+      /// 
+      /// </summary>
       public DataType ValueType => Value.DataType;
 
-      //todo: add overload for CLR generics
-
+      /// <summary>
+      /// Declares a map field
+      /// </summary>
       public MapField(string name, DataField keyField, DataField valueField)
          : base(name, SchemaType.Map)
       {
          Key = keyField;
          Value = valueField;
 
-         Path = name.AddPath(ContainerName);
+         Path = name.AddPath(_containerName);
          Key.PathPrefix = Path;
          Value.PathPrefix = Path;
       }
@@ -57,7 +64,7 @@ namespace Parquet.Data
       {
          set
          {
-            Path = value.AddPath(Name, ContainerName);
+            Path = value.AddPath(Name, _containerName);
             Key.PathPrefix = Path;
             Value.PathPrefix = Path;
          }
@@ -95,12 +102,18 @@ namespace Parquet.Data
          values.Add(valuesList);
       }
 
+      /// <summary>
+      /// <see cref="Equals(object)"/>
+      /// </summary>
       public override bool Equals(Object obj)
       {
          MapField other = (MapField)obj;
          return Name.Equals(other.Name) && KeyType.Equals(other.KeyType) && ValueType.Equals(other.ValueType);
       }
 
+      /// <summary>
+      /// <see cref="GetHashCode"/>
+      /// </summary>
       public override int GetHashCode()
       {
          return Name.GetHashCode() * KeyType.GetHashCode() * ValueType.GetHashCode();

@@ -59,6 +59,8 @@ namespace Parquet.Data
          AddRange(data);
       }
 
+      public DataField Field => _field;
+
       public bool HasRepetitions { get; private set; }
 
       //todo: think of a better way

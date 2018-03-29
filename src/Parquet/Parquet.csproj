@@ -31,6 +31,8 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
   </PropertyGroup>  
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.4|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.4\Parquet.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.4|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard1.4\Parquet.xml</DocumentationFile>
@@ -41,4 +43,9 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
     <DocumentationFile>bin\Release\net45\Parquet.xml</DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  </ItemGroup>
+  
 </Project>

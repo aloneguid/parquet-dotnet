@@ -23,6 +23,11 @@ namespace Parquet.Data
       /// </summary>
       internal string Path { get; set; }
 
+      /// <summary>
+      /// Used internally for serialisation
+      /// </summary>
+      internal string ClrPropName { get; set; }
+
       internal virtual string PathPrefix { set { } }
 
       /// <summary>

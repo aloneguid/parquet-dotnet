@@ -10,7 +10,6 @@ namespace Parquet.Data
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
-      private readonly int? _bitWidth;
 
       public BasicDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
       {
