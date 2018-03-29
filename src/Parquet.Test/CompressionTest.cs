@@ -35,7 +35,7 @@ namespace Parquet.Test
 
          //v3
          const int value = 5;
-         object actual = WriteReadSingle(new DataField<int>("id"), value, compressionMethod, true);
+         object actual = WriteReadSingle(new DataField<int>("id"), value, compressionMethod);
          Assert.Equal(5, (int)actual);
       }
    }

@@ -38,7 +38,7 @@ namespace Parquet.Test
          column.DecrementLevel();
 
          // act
-         DataColumn rc = WriteReadSingleColumn(field, 2, column, true);
+         DataColumn rc = WriteReadSingleColumn(field, 2, column);
 
          // assert
          Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.DefinedData);
