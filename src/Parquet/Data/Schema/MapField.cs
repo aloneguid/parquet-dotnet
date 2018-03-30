@@ -11,8 +11,14 @@ namespace Parquet.Data
    {
       internal const string _containerName = "key_value";
 
+      /// <summary>
+      /// Data field used as a key
+      /// </summary>
       public DataField Key { get; private set; }
 
+      /// <summary>
+      /// Data field used as a value
+      /// </summary>
       public DataField Value { get; private set; }
 
       /// <summary>

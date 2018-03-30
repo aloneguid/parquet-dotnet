@@ -19,7 +19,9 @@ namespace Parquet.Data
       public string Name { get; private set; }
 
       /// <summary>
-      /// Path
+      /// Gets Parquet column path. For non-nested columns always equals to column <see cref="Name"/> otherwise contains
+      /// a dot (.) separated path to the column within Parquet file. Note that this is a physical path which depends on field
+      /// schema and you shouldn't build any reasonable business logic based on it.
       /// </summary>
       public string Path { get; internal set; }
 
