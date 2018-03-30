@@ -4,7 +4,7 @@ namespace Parquet.File.Values.Primitives
    /// A parquet interval type compatible with a Spark INTERVAL type
    /// 12 byte little Endian structure fits in an INT96 original type with an INTERVAL converted type
    /// </summary>
-   struct Interval
+   public struct Interval
    {
       /// <summary>
       /// Used to create an interval type
