@@ -34,10 +34,9 @@ namespace Parquet.Test
          Assert.Equal(5, ds2[0].GetInt(0));
 
          //v3
-         //temporary ignore v3 tests
-         /*const int value = 5;
+         const int value = 5;
          object actual = WriteReadSingle(new DataField<int>("id"), value, compressionMethod);
-         Assert.Equal(5, (int)actual);*/
+         Assert.Equal(5, (int)actual);
       }
    }
 }

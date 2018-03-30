@@ -3,6 +3,9 @@ using System.IO;
 
 namespace Parquet.File.Streams
 {
+   /// <summary>
+   /// Creates a read window on top of a stream limiting reader's ability to go over certain amount of bytes
+   /// </summary>
    class WindowedStream : Stream
    {
       private readonly Stream _parent;
