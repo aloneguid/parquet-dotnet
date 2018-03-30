@@ -71,7 +71,7 @@ namespace Parquet.Data
          catch(EndOfStreamException)
          {
             //that's fine to hit the end of stream as many types are longer than one byte
-            //throw;
+            throw;
          }
 
          return result;
