@@ -11,9 +11,9 @@ namespace Parquet.Data
    {
       internal const string _containerName = "key_value";
 
-      internal DataField Key { get; private set; }
+      public DataField Key { get; private set; }
 
-      internal DataField Value { get; private set; }
+      public DataField Value { get; private set; }
 
       /// <summary>
       /// 

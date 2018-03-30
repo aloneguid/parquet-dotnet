@@ -19,9 +19,9 @@ namespace Parquet.Data
       public string Name { get; private set; }
 
       /// <summary>
-      /// Only used internally!
+      /// Path
       /// </summary>
-      internal string Path { get; set; }
+      public string Path { get; internal set; }
 
       /// <summary>
       /// Used internally for serialisation
