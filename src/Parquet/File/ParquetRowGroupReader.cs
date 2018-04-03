@@ -5,7 +5,7 @@ using Parquet.Data;
 
 namespace Parquet.File
 {
-   internal class ParquetRowGroupReader
+   internal class ParquetRowGroupReader : IDisposable
    {
       private readonly Thrift.RowGroup _rowGroup;
       private readonly ThriftFooter _footer;
@@ -57,5 +57,12 @@ namespace Parquet.File
 
          return columnReader.Read();
       }
+
+      public void Dispose()
+      {
+         //don't need to dispose anything here, but for clarity we implement IDisposable and client must use it as we may add something
+         //important in it later
+      }
+
    }
 }

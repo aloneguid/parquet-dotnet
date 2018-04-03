@@ -24,7 +24,7 @@ namespace Parquet.Test
             ms.WriteSingleRowGroup(new Schema(field), rowCount, dataColumn);
             ms.Position = 0;
 
-            if(flushToDisk)
+            if (flushToDisk)
             {
                FlushTempFile(ms);
             }
@@ -32,8 +32,8 @@ namespace Parquet.Test
             // read first gow group and first column
             using (var reader = new ParquetReader3(ms))
             {
-               ParquetRowGroupReader rgReader = reader.FirstOrDefault();
-               if (rgReader == null) return null;
+               if (reader.RowGroupCount == 0) return null;
+               ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
                return rgReader.ReadColumn(field);
             }
@@ -78,14 +78,12 @@ namespace Parquet.Test
             ms.Position = 0;
             using (var reader = new ParquetReader3(ms))
             {
-               foreach(ParquetRowGroupReader rowGroupReader in reader)
+               using (ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0))
                {
                   DataColumn column = rowGroupReader.ReadColumn(field);
 
                   return column.DefinedData.OfType<object>().FirstOrDefault();
                }
-
-               return null;
             }
          }
       }
