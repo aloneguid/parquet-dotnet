@@ -5,6 +5,7 @@ using System.Linq;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.Serialization;
+using Parquet.Serialization.Values;
 
 namespace Parquet
 {
@@ -17,6 +18,7 @@ namespace Parquet
          Schema schema = null,
          WriterOptions writerOptions = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy)
+         where T : new()
       {
          if (objectInstances == null) throw new ArgumentNullException(nameof(objectInstances));
          if (destination == null) throw new ArgumentNullException(nameof(destination));
@@ -37,7 +39,7 @@ namespace Parquet
 
             foreach(IEnumerable<T> batch in objectInstances.Batch(writerOptions.RowGroupsSize))
             {
-               List<DataColumn> columns = extractor.ExtractColumns(batch, schema);
+               IReadOnlyCollection<DataColumn> columns = extractor.ExtractColumns(batch, schema);
 
                using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batch.Count()))
                {
@@ -50,6 +52,35 @@ namespace Parquet
          }
 
          return schema;
+      }
+
+      public static IEnumerable<T> Deserialize<T>(Stream input) where T : new()
+      {
+         var result = new List<T>();
+
+         IColumnClrMapper mapper = new SlowReflectionColumnClrMapper(typeof(T));
+
+         using (var reader = new ParquetReader3(input))
+         {
+            Schema fileSchema = reader.Schema;
+            List<DataField> dataFields = fileSchema.GetDataFields();
+
+            for(int i = 0; i < reader.RowGroupCount; i++)
+            {
+               using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(i))
+               {
+                  List<DataColumn> groupColumns = dataFields
+                     .Select(df => groupReader.ReadColumn(df))
+                     .ToList();
+
+                  IReadOnlyCollection<T> groupClrObjects = mapper.CreateClassInstances<T>(groupColumns);
+
+                  result.AddRange(groupClrObjects);
+               }
+            }
+         }
+
+         return result;
       }
    }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Parquet.Data;
 using Parquet.Serialization;
 using Xunit;
@@ -32,7 +33,7 @@ namespace Parquet.Test
             new SimpleColumns { Id = 1, Name = "First"}, new SimpleColumns { Id = 2, Name = "Second"}, new SimpleColumns { Id = 3, Name = "Third" }
          };
 
-         List<DataColumn> columns = extractor.ExtractColumns(classes, schema);
+         List<DataColumn> columns = extractor.ExtractColumns(classes, schema).ToList();
          Assert.Equal(new[] { 1, 2, 3 }, columns[0].DefinedData);
          Assert.Equal(new[] { "First", "Second", "Third" }, columns[1].DefinedData);
       }
@@ -57,7 +58,7 @@ namespace Parquet.Test
             }
          };
 
-         List<DataColumn> columns = extractor.ExtractColumns(ac, schema);
+         List<DataColumn> columns = extractor.ExtractColumns(ac, schema).ToList();
 
          Assert.Equal(new[] { 1, 2 }, columns[0].DefinedData);
 

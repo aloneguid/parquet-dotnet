@@ -27,13 +27,12 @@ namespace Parquet.Serialization
       /// <typeparam name="TClass">Class type</typeparam>
       /// <param name="classInstances">Collection of class instances</param>
       /// <param name="schema">Schema to operate on</param>
-      public List<DataColumn> ExtractColumns<TClass>(IEnumerable<TClass> classInstances, Schema schema)
+      public IReadOnlyCollection<DataColumn> ExtractColumns<TClass>(IEnumerable<TClass> classInstances, Schema schema)
       {
          List<DataField> dataFields = schema.GetDataFields();
-         List<DataColumn> result = dataFields.Select(df => new DataColumn(df)).ToList();
 
-         var valuesExtractor = new ColumnValuesSlowReflectionExtractor(typeof(TClass), result);
-         valuesExtractor.ExtractToList(classInstances);
+         IColumnClrMapper valuesExtractor = new SlowReflectionColumnClrMapper(typeof(TClass));
+         IReadOnlyCollection<DataColumn> result = valuesExtractor.ExtractDataColumns(dataFields, classInstances);
 
          return result;
       }

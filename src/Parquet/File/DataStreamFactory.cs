@@ -12,7 +12,7 @@ namespace Parquet.File
    /// </summary>
    static class DataStreamFactory
    {
-      private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> CompressionMethodToCodec = 
+      private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> _compressionMethodToCodec = 
          new Dictionary<CompressionMethod, Thrift.CompressionCodec>
       {
          { CompressionMethod.None, Thrift.CompressionCodec.UNCOMPRESSED },
@@ -20,7 +20,7 @@ namespace Parquet.File
          { CompressionMethod.Snappy, Thrift.CompressionCodec.SNAPPY }
       };
 
-      private static readonly Dictionary<Thrift.CompressionCodec, CompressionMethod> CodecToCompressionMethod =
+      private static readonly Dictionary<Thrift.CompressionCodec, CompressionMethod> _codecToCompressionMethod =
          new Dictionary<Thrift.CompressionCodec, CompressionMethod>
          {
             { Thrift.CompressionCodec.UNCOMPRESSED, CompressionMethod.None },
@@ -52,7 +52,7 @@ namespace Parquet.File
 
       public static Stream CreateReader(Stream nakedStream, Thrift.CompressionCodec compressionCodec, long knownLength)
       {
-         if (!CodecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
+         if (!_codecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
             throw new NotSupportedException($"reader for compression '{compressionCodec}' is not supported.");
 
          return CreateReader(nakedStream, compressionMethod, knownLength);

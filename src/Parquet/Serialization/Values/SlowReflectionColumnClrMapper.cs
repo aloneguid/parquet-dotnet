@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Parquet.Data;
@@ -10,28 +11,30 @@ namespace Parquet.Serialization.Values
    /// <summary>
    /// Extremely slow reflection based column extractor used to validate the concept and simply compare performance.
    /// </summary>
-   class ColumnValuesSlowReflectionExtractor : IColumnValuesExtractor
+   class SlowReflectionColumnClrMapper : IColumnClrMapper
    {
       private readonly Type _classType;
-      private readonly List<DataColumn> _columns;
 
-      public ColumnValuesSlowReflectionExtractor(Type classType, List<DataColumn> columns)
+      public SlowReflectionColumnClrMapper(Type classType)
       {
          _classType = classType;
-         _columns = columns;
       }
 
-      public void ExtractToList(IEnumerable classInstances)
+      public IReadOnlyCollection<DataColumn> ExtractDataColumns(IReadOnlyCollection<DataField> dataFields, IEnumerable classInstances)
       {
-         foreach(object ci in classInstances)
+         List<DataColumn> result = dataFields.Select(df => new DataColumn(df)).ToList();
+
+         foreach (object ci in classInstances)
          {
-            Extract(ci);
+            Extract(result, ci);
          }
+
+         return result;
       }
 
-      private void Extract(object classInstance)
+      private void Extract(IReadOnlyCollection<DataColumn> columns, object classInstance)
       {
-         foreach(DataColumn dc in _columns)
+         foreach(DataColumn dc in columns)
          {
             AddValue(classInstance, dc);
          }
@@ -67,6 +70,13 @@ namespace Parquet.Serialization.Values
          {
             dc.Add(value);
          }
+      }
+
+      public IReadOnlyCollection<T> CreateClassInstances<T>(IReadOnlyCollection<DataColumn> columns) where T : new()
+      {
+         var result = new List<T>();
+
+         throw new NotImplementedException();
       }
    }
 }

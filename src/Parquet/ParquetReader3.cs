@@ -52,6 +52,8 @@ namespace Parquet
       /// </summary>
       public int RowGroupCount => _meta.Row_groups.Count;
 
+      public Schema Schema => _footer.CreateModelSchema(_parquetOptions);
+
       public ParquetRowGroupReader OpenRowGroupReader(int index)
       {
          return _groupReaders[index];
