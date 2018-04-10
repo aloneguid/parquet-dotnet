@@ -1,23 +1,91 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
+using Parquet.Data;
+using Parquet.File;
+using Parquet.Test.data;
+using System.Linq;
+using F = System.IO.File;
 
 namespace Parquet.Test
 {
    public class TestBase
    {
-      private static readonly string ThisPath;
-
-      static TestBase()
+      protected Stream OpenTestFile(string name)
       {
-         ThisPath = Assembly.Load(new AssemblyName("Parquet.Test")).Location;
+         return ResourceReader.Open(name);
       }
 
-      protected string GetDataFilePath(string name)
+      internal DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn, bool flushToDisk = false)
       {
-         return Path.Combine(Path.GetDirectoryName(ThisPath), "data", name);
+         using (var ms = new MemoryStream())
+         {
+            // write with built-in extension method
+            ms.WriteSingleRowGroup(new Schema(field), rowCount, dataColumn);
+            ms.Position = 0;
+
+            if (flushToDisk)
+            {
+               FlushTempFile(ms);
+            }
+
+            // read first gow group and first column
+            using (var reader = new ParquetReader3(ms))
+            {
+               if (reader.RowGroupCount == 0) return null;
+               ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
+
+               return rgReader.ReadColumn(field);
+            }
+
+
+         }
+      }
+
+      protected void FlushTempFile(MemoryStream ms)
+      {
+         F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+      }
+
+      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None,
+         bool flushToDisk = false)
+      {
+         using (var ms = new MemoryStream())
+         {
+            // write single value
+
+            using (var writer = new ParquetWriter3(new Schema(field), ms))
+            {
+               writer.CompressionMethod = compressionMethod;
+
+               using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
+               {
+                  var column = new DataColumn(field);
+                  column.Add(value);
+
+                  rg.Write(column);
+               }
+            }
+
+            if (flushToDisk)
+            {
+               FlushTempFile(ms);
+            }
+
+
+            // read back single value
+
+            ms.Position = 0;
+            using (var reader = new ParquetReader3(ms))
+            {
+               using (ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0))
+               {
+                  DataColumn column = rowGroupReader.ReadColumn(field);
+
+                  return column.DefinedData.OfType<object>().FirstOrDefault();
+               }
+            }
+         }
       }
    }
 }

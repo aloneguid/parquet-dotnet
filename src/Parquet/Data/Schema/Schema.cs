@@ -84,6 +84,21 @@ namespace Parquet.Data
       }
 
       /// <summary>
+      /// Gets <see cref="DataField"/> at specified position
+      /// </summary>
+      /// <param name="index">Position</param>
+      /// <returns><see cref="DataField"/></returns>
+      /// <exception cref="ArgumentException">Thrown when field at position is not a <see cref="DataField"/></exception>
+      public DataField DataFieldAt(int index)
+      {
+         DataField result = _fields[index] as DataField;
+
+         if (result == null) throw new ArgumentException($"field at position {index} is not a {typeof(DataField).Name}");
+
+         return result;
+      }
+
+      /// <summary>
       /// Gets the column index by schema element
       /// </summary>
       /// <returns>Element index or -1 if not found</returns>
@@ -93,6 +108,49 @@ namespace Parquet.Data
             if (field.Equals(_fields[i])) return i;
 
          return -1;
+      }
+
+      /// <summary>
+      /// Gets a flat list of all data fields in this schema
+      /// </summary>
+      /// <returns></returns>
+      public List<DataField> GetDataFields()
+      {
+         var result = new List<DataField>();
+
+         void analyse(Field f)
+         {
+            switch (f.SchemaType)
+            {
+               case SchemaType.Data:
+                  result.Add((DataField)f);
+                  break;
+               case SchemaType.List:
+                  analyse(((ListField)f).Item);
+                  break;
+               case SchemaType.Map:
+                  MapField mf = (MapField)f;
+                  analyse(mf.Key);
+                  analyse(mf.Value);
+                  break;
+               case SchemaType.Struct:
+                  StructField sf = (StructField)f;
+                  traverse(sf.Fields);
+                  break;
+            }
+         }
+
+         void traverse(IEnumerable<Field> fields)
+         {
+            foreach(Field f in fields)
+            {
+               analyse(f);
+            }
+         }
+
+         traverse(Fields);
+
+         return result;
       }
 
       internal Schema Filter(FieldPredicate[] predicates)
@@ -124,6 +182,9 @@ namespace Parquet.Data
          return true;
       }
 
+      /// <summary>
+      /// Compares this schema to <paramref name="other"/> and produces a human readable message describing the differences.
+      /// </summary>
       public string GetNotEqualsMessage(Schema other, string thisName, string otherName)
       {
          if(_fields.Count != other._fields.Count)
@@ -184,6 +245,8 @@ namespace Parquet.Data
          return _fields.Aggregate(1, (current, se) => current * se.GetHashCode());
       }
 
+      /// <summary>
+      /// </summary>
       public override string ToString()
       {
          var sb = new StringBuilder();

@@ -104,8 +104,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_strings()
       {
-         string path = GetDataFilePath("alltypes_dictionary.plain.parquet");
-         ParquetReader.ReadFile(path); //test that this doesn't crash
+         ParquetReader.Read(OpenTestFile("alltypes_dictionary.plain.parquet")); //test that this doesn't crash
       }
 
       [Fact]
@@ -177,12 +176,5 @@ namespace Parquet.Test.Reader
             typeof(int?),
             typeof(string));
       }
-
-      private string GetDataFilePath(string name)
-      {
-         string thisPath = typeof(TestDataTest).GetTypeInfo().Assembly.Location;
-         return Path.Combine(Path.GetDirectoryName(thisPath), "data", name);
-      }
-
    }
 }

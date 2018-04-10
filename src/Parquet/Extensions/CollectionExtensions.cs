@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet
 {
@@ -39,6 +41,35 @@ namespace Parquet
          {
             dest.Add(o);
          }
+      }
+
+      /// <summary>
+      /// Batch through IEnumerable without going to the beginning every time. May need optimisations but OK so far.
+      /// </summary>
+      public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int size)
+      {
+         T[] bucket = null;
+         int count = 0;
+
+         foreach (T item in source)
+         {
+            if (bucket == null)
+               bucket = new T[size];
+
+            bucket[count++] = item;
+
+            if (count != size)
+               continue;
+
+            yield return bucket.Select(x => x);
+
+            bucket = null;
+            count = 0;
+         }
+
+         // Return the last bucket with all remaining elements
+         if (bucket != null && count > 0)
+            yield return bucket.Take(count);
       }
    }
 }

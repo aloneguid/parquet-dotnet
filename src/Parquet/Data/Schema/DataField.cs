@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Parquet.Data
 {
+   /// <summary>
+   /// Field containing actual data, unlike fields containing metadata.
+   /// </summary>
    public class DataField : Field, IEquatable<DataField>
    {
       /// <summary>
@@ -27,11 +28,23 @@ namespace Parquet.Data
       /// </summary>
       internal Type ClrType { get; private set; }
 
+      /// <summary>
+      /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
+      /// </summary>
+      /// <param name="name">Field name</param>
+      /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
       public DataField(string name, Type clrType) : this(name, Discover(clrType).dataType, Discover(clrType).hasNulls, Discover(clrType).isArray)
       {
 
       }
 
+      /// <summary>
+      /// Creates a new instance of <see cref="DataField"/> by specifying all the required attributes.
+      /// </summary>
+      /// <param name="name">Field name.</param>
+      /// <param name="dataType">Native Parquet type</param>
+      /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space comparing to non-nullable.</param>
+      /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in .NET</param>
       public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false) : base(name, SchemaType.Data)
       {
          DataType = dataType;
@@ -45,6 +58,9 @@ namespace Parquet.Data
          }
       }
 
+      /// <summary>
+      /// To be deprecated soon
+      /// </summary>
       public IList CreateEmptyList(bool isNullable, bool isArray)
       {
          IDataTypeHandler handler = DataTypeFactory.Match(DataType);

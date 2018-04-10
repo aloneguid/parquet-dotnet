@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.4;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
     <Version>1.2.0.0</Version>
     <FileVersion>1.2.3.4</FileVersion>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
@@ -9,7 +9,7 @@
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
     <Description>.NET library to read and write Apache Parquet files.
 Supports all parquet features, including maps, structs, lists, repeatable fields.
-Compatible with .NET 4.5.1 and .NET Standard 1.4 and up.
+Compatible with .NET 4.5 and .NET Standard 1.4 and up.
 Works on all flavours of Windows and Linux. Compatible with iOS and Android via Xamarin.</Description>
     <Authors>Ivan Gavryliuk (@aloneguid); Richard Conway (@azurecoder)</Authors>
     <Company>Elastacloud</Company>
@@ -21,24 +21,33 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <PackageLicenseUrl>https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright (c) 2017 by Elastacloud Ltd.</Copyright>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>
+    <PackageReleaseNotes>v2.1.3
+small improvement: Field.Path property is made public, Interval class is made public (#296)
+
  v2.1.2
  - bug fixed: appending to DataSets containing a MapField column was failing on schema comparison (#283)
 </PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-  </PropertyGroup>
+  </PropertyGroup>  
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.4|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.4\Parquet.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.4|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard1.4\Parquet.xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net451|AnyCPU'">
-    <DocumentationFile>bin\Debug\net451\Parquet.xml</DocumentationFile>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <DocumentationFile>bin\Debug\net45\Parquet.xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net451|AnyCPU'">
-    <DocumentationFile>bin\Release\net451\Parquet.xml</DocumentationFile>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+    <DocumentationFile>bin\Release\net45\Parquet.xml</DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  </ItemGroup>
+  
 </Project>

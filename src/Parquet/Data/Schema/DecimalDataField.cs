@@ -7,10 +7,19 @@ namespace Parquet.Data
    /// </summary>
    public class DecimalDataField : DataField
    {
+      /// <summary>
+      /// Precision
+      /// </summary>
       public int Precision { get; }
 
+      /// <summary>
+      /// Scale
+      /// </summary>
       public int Scale { get; }
 
+      /// <summary>
+      /// Gets a flag indicating whether byte array encoding is forced.
+      /// </summary>
       public bool ForceByteArrayEncoding { get; }
 
       /// <summary>
@@ -20,7 +29,8 @@ namespace Parquet.Data
       /// <param name="precision">Cusom precision</param>
       /// <param name="scale">Custom scale</param>
       /// <param name="forceByteArrayEncoding">Whether to force decimal type encoding as fixed bytes. Hive and Impala only understands decimals when forced to true.</param>
-      /// <param name="nullable">Is 'decimal?'</param>
+      /// <param name="hasNulls">Is 'decimal?'</param>
+      /// <param name="isArray">Indicates whether this field is repeatable.</param>
       public DecimalDataField(string name, int precision, int scale, bool forceByteArrayEncoding = false, bool hasNulls = true, bool isArray = false)
          : base(name, DataType.Decimal, hasNulls, isArray)
       {

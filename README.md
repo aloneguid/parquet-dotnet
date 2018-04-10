@@ -1,4 +1,4 @@
-# Parquet.Net 
+# Apache Parquet for .Net Platform
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
@@ -8,8 +8,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet)
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
-- `.NET 4.5.1` and up.
-- `.NET Standard 1.4` and up.
+- `.NET 4.5` and up.
+- `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
 
 Runs on all flavors of Windows, Linux, and mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/)
 
@@ -113,8 +113,6 @@ Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/p
 
 We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
 
-![Helpwanted](doc/img/helpwanted.jpg)
-
 For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
 
-> If you need to reference the latest preview version (published on every commit) please use the following NuGet Feed: https://ci.appveyor.com/nuget/parquet-dotnet-nvq9lkymhrek
+> If you need to reference the latest preview version (published on every commit) please use the following NuGet Feed: https://ci.appveyor.com/nuget/parquet-dotnet

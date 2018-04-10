@@ -32,6 +32,9 @@ namespace Parquet.Data
       {
       }
 
+      /// <summary>
+      /// Initializes a new instance of the <see cref="Row"/> class.
+      /// </summary>
       public Row(bool isSingleValue, params object[] values)
       {
          if(isSingleValue)
@@ -44,6 +47,9 @@ namespace Parquet.Data
          }
       }
 
+      /// <summary>
+      /// Initializes a new instance of the <see cref="Row"/> class.
+      /// </summary>
       public Row(bool isSingleValue, IEnumerable<object> values)
       {
          if (isSingleValue)

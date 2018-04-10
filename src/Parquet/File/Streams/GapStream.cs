@@ -1,16 +1,18 @@
 ﻿using System;
 using System.IO;
 
-namespace Parquet.File
+namespace Parquet.File.Streams
 {
-   class PositionTrackingStream : Stream
+   class GapStream : Stream
    {
       private readonly Stream _parent;
+      private readonly long? _knownLength;
       private long _position;
 
-      public PositionTrackingStream(Stream parent)
+      public GapStream(Stream parent, long? knownLength = null)
       {
          _parent = parent;
+         _knownLength = knownLength;
       }
 
       public override bool CanRead => _parent.CanRead;
@@ -19,7 +21,7 @@ namespace Parquet.File
 
       public override bool CanWrite => _parent.CanWrite;
 
-      public override long Length => _parent.Length;
+      public override long Length => _knownLength ?? _parent.Length;
 
       public override long Position
       {

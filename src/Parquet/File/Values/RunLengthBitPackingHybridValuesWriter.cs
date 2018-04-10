@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Parquet.File.Values
 {
@@ -23,6 +24,29 @@ namespace Parquet.File.Values
 
          //and jump back to the end again
          writer.BaseStream.Seek(0, SeekOrigin.End);
+      }
+
+      /// <summary>
+      /// Writes to target stream without jumping around, therefore can be used in forward-only stream
+      /// </summary>
+      public static void WriteForwardOnly(BinaryWriter writer, int bitWidth, IList data)
+      {
+         //write data to a memory buffer, as we need data length to be written before the data
+         using (var ms = new MemoryStream())
+         {
+            using (var bw = new BinaryWriter(ms, Encoding.UTF8, true))
+            {
+               //write actual data
+               WriteData(bw, (List<int>)data, bitWidth);
+            }
+
+            //int32 - length of data
+            writer.Write((int)ms.Length);
+
+            //actual data
+            ms.Position = 0;
+            ms.CopyTo(writer.BaseStream);
+         }
       }
 
       private static void WriteData(BinaryWriter writer, List<int> data, int bitWidth)
