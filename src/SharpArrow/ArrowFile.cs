@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using FlatBuffers;
@@ -46,6 +47,7 @@ namespace SharpArrow
       private readonly Stream _s;
       private readonly BinaryReader _br;
       private const string MagicTag = "ARROW1";
+      private readonly List<FB.Block> _blocks = new List<FB.Block>();
 
       public ArrowFile(Stream s)
       {
@@ -56,6 +58,8 @@ namespace SharpArrow
       }
 
       public Schema Schema { get; private set; }
+
+      public int RecordBatchCount { get; private set; }
 
       private void ReadBasics()
       {
@@ -77,7 +81,16 @@ namespace SharpArrow
       {
          FB.Footer root = FB.Footer.GetRootAsFooter(new ByteBuffer(data));
 
+         //read schema
          Schema = new Schema(root.Schema.GetValueOrDefault());
+
+         //read list of blocks for convenience
+         for(int i = 0; i < root.RecordBatchesLength; i++)
+         {
+            FB.Block block = root.RecordBatches(i).GetValueOrDefault();
+
+            _blocks.Add(block);
+         }
       }
 
       private void ReadMagic(bool pad)
