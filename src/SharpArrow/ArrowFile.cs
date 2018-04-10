@@ -2,7 +2,8 @@
 using System.IO;
 using System.Text;
 using FlatBuffers;
-using org.apache.arrow.flatbuf;
+using SharpArrow.Data;
+using FB = org.apache.arrow.flatbuf;
 
 namespace SharpArrow
 {
@@ -50,9 +51,13 @@ namespace SharpArrow
       {
          _s = s;
          _br = new BinaryReader(_s);
+
+         ReadBasics();
       }
 
-      public void Read()
+      public Schema Schema { get; private set; }
+
+      private void ReadBasics()
       {
          _s.Seek(0, SeekOrigin.Begin);
          ReadMagic(true);
@@ -68,10 +73,11 @@ namespace SharpArrow
          ReadFooter(footerData);
       }
 
-      private Footer ReadFooter(byte[] data)
+      private void ReadFooter(byte[] data)
       {
-         Footer root = Footer.GetRootAsFooter(new ByteBuffer(data));
-         return root;
+         FB.Footer root = FB.Footer.GetRootAsFooter(new ByteBuffer(data));
+
+         Schema = new Schema(root.Schema.GetValueOrDefault());
       }
 
       private void ReadMagic(bool pad)
@@ -87,13 +93,11 @@ namespace SharpArrow
          }
       }
 
-
-
       public static void Int32()
       {
          var builder = new FlatBufferBuilder(1024);
 
-         Offset<Schema> schema = Schema.CreateSchema(builder);
+         Offset<FB.Schema> schema = FB.Schema.CreateSchema(builder);
 
 
          //

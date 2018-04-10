@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using SharpArrow.Data;
 using Xunit;
 
 namespace SharpArrow.Test
@@ -13,7 +14,7 @@ namespace SharpArrow.Test
          {
             using (var af = new ArrowFile(s))
             {
-               af.Read();
+               Schema schema = af.Schema;
             }
          }
       }
