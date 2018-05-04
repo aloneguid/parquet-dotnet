@@ -13,7 +13,9 @@ before_build:
 
     dotnet housework setbuildnumber %FileVersion%  ../../build.ini
 
-    dotnet housework author .\NetBox.csproj  ../../build.ini
+    dotnet housework author .\Parquet.csproj  ../../build.ini
+
+    dotnet housework author ..\Parquet.Json\Parquet.Json.csproj  ../../build.ini
 
     cd ../..
 build:
