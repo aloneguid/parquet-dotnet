@@ -1,4 +1,4 @@
-version: 2.1.4-preview-{build}
+version: "{build}"
 pull_requests:
   do_not_increment_build_number: true
 skip_tags: true
@@ -6,7 +6,16 @@ image: Visual Studio 2017
 configuration: Release
 platform: Any CPU
 before_build:
-- ps: .\appveyor.ps1
+- ps: >-
+    dotnet restore src/Parquet.sln
+
+    cd src/Parquet
+
+    dotnet housework setbuildnumber %FileVersion%  ../../build.ini
+
+    dotnet housework author .\NetBox.csproj  ../../build.ini
+
+    cd ../..
 build:
   project: src/Parquet.sln
   verbosity: minimal
