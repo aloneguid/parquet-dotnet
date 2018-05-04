@@ -17,6 +17,8 @@ before_build:
 
     dotnet housework author ..\Parquet.Json\Parquet.Json.csproj  ../../build.ini
 
+    dotnet housework author ..\SharpArrow\SharpArrow.csproj  ../../build.ini
+
     cd ../..
 build:
   project: src/Parquet.sln
