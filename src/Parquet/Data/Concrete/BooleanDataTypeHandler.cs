@@ -45,9 +45,10 @@ namespace Parquet.Data.Concrete
          {
             if (flag)
             {
-               b |= (byte)(1 << n++);
+               b |= (byte)(1 << n);
             }
 
+            n++;
             if (n == 8)
             {
                buffer[ib++] = b;
