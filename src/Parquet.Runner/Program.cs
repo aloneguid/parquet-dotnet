@@ -19,7 +19,10 @@ namespace Parquet.Runner
          L.Config
             .WriteTo.PoshConsole();
 
-         Debug();
+         for (int i = 0; i < 10; i++)
+         {
+            Debug();
+         }
          //Perf();
       }
 
@@ -27,7 +30,7 @@ namespace Parquet.Runner
       private static void Debug()
       {
          //GCSettings.LatencyMode = GCLatencyMode.LowLatency;
-         DataSet ds = ParquetReader.ReadFile("c:\\tmp\\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true });
+         DataSet ds = ParquetReader.ReadFile(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true });
       }
 
       private static void Perf()

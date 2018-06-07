@@ -22,5 +22,5 @@ writer.close()
 
 buf = sink.get_result()
 
-with open('file.dat', 'wb') as f:
+with open('threecols.dat', 'wb') as f:
    f.write(buf)

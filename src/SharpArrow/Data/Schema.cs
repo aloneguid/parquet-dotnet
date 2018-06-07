@@ -18,5 +18,7 @@ namespace SharpArrow.Data
             _fields.Add(new Field(field));
          }
       }
+
+      public IReadOnlyCollection<Field> Fields => _fields;
    }
 }
