@@ -80,9 +80,9 @@ namespace Parquet.File
             Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.TotalCount);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-            using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod))
+            using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, true))
             {
-               using (var writer = new BinaryWriter(pageStream))
+               using (var writer = new BinaryWriter(pageStream, Encoding.UTF8, true))
                {
                   if (maxRepetitionLevel > 0)
                   {
@@ -95,6 +95,8 @@ namespace Parquet.File
                   }
 
                   dataTypeHandler.Write(tse, writer, column.DefinedData);
+
+                  writer.Flush();
                }
 
                pageStream.Flush();   //extremely important to flush the stream as some compression algorithms don't finish writing

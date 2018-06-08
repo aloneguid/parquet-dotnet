@@ -27,8 +27,7 @@ namespace Parquet.File
          _fileMeta = CreateThriftSchema(schema);
          _fileMeta.Num_rows = totalRowCount;
 
-         Version fileVersion = FileVersion(typeof(ThriftFooter));
-         _fileMeta.Created_by = $"Parquet.Net version {fileVersion}";
+         _fileMeta.Created_by = $"Parquet.Net version %Version% (build %Git.LongCommitHash%)";
       }
 
       public Dictionary<string, string> CustomMetadata
@@ -48,17 +47,6 @@ namespace Parquet.File
 
             return _fileMeta.Key_value_metadata.ToDictionary(kv => kv.Key, kv => kv.Value);
          }
-      }
-
-      private static Version FileVersion(Type t)
-      {
-         CustomAttributeData fva = t.GetTypeInfo()
-            .Assembly
-            .CustomAttributes
-            .First(a => a.AttributeType == typeof(AssemblyFileVersionAttribute));
-         CustomAttributeTypedArgument varg = fva.ConstructorArguments[0];
-         string fileVersion = (string)varg.Value;
-         return new Version(fileVersion);
       }
 
       public void Add(long totalRowCount)

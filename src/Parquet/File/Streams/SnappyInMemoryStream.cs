@@ -15,6 +15,7 @@ namespace Parquet.File.Streams
       private readonly Stream _parent;
       private readonly CompressionMode _compressionMode;
       private readonly MemoryStream _ms;
+      private bool _flushed;
 
       public SnappyInMemoryStream(Stream parent, CompressionMode compressionMode)
       {
@@ -43,6 +44,8 @@ namespace Parquet.File.Streams
 
       public override void Flush()
       {
+         if (_flushed) return;
+
          if(_compressionMode == CompressionMode.Compress)
          {
             //compress memory buffer and write to destination
@@ -53,6 +56,15 @@ namespace Parquet.File.Streams
             int length = snappyCompressor.Compress(_ms.ToArray(), 0, uncompressedLength, compressed);
             _parent.Write(compressed, 0, length);
          }
+
+         _flushed = true;
+      }
+
+      protected override void Dispose(bool disposing)
+      {
+         Flush();
+
+         base.Dispose(disposing);
       }
 
       public override int Read(byte[] buffer, int offset, int count)

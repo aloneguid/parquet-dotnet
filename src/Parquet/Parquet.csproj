@@ -21,7 +21,7 @@ small improvement: Field.Path property is made public, Interval class is made pu
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-    <DotNetCliToolReference Include="dotnet-housework" Version="0.0.6" />
+    <DotNetCliToolReference Include="dotnet-housework" Version="0.0.9" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

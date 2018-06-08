@@ -29,25 +29,29 @@ namespace Parquet.File
          };
 
       public static GapStream CreateWriter(
-         Stream nakedStream, CompressionMethod compressionMethod)
+         Stream nakedStream, CompressionMethod compressionMethod,
+         bool leaveNakedOpen)
       {
-         Stream dest = nakedStream;
+         Stream dest;
 
          switch(compressionMethod)
          {
             case CompressionMethod.Gzip:
-               dest = new GZipStream(dest, CompressionLevel.Optimal, false);
+               dest = new GZipStream(nakedStream, CompressionLevel.Optimal, leaveNakedOpen);
+               leaveNakedOpen = false;
                break;
             case CompressionMethod.Snappy:
-               dest = new SnappyInMemoryStream(dest, CompressionMode.Compress);
+               dest = new SnappyInMemoryStream(nakedStream, CompressionMode.Compress);
+               leaveNakedOpen = false;
                break;
             case CompressionMethod.None:
+               dest = nakedStream;
                break;
             default:
                throw new NotImplementedException($"unknown compression method {compressionMethod}");
          }
          
-         return new GapStream(dest);
+         return new GapStream(dest, leaveOpen: leaveNakedOpen);
       }
 
       public static Stream CreateReader(Stream nakedStream, Thrift.CompressionCodec compressionCodec, long knownLength)

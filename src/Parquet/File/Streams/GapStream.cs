@@ -7,12 +7,14 @@ namespace Parquet.File.Streams
    {
       private readonly Stream _parent;
       private readonly long? _knownLength;
+      private readonly bool _leaveOpen;
       private long _position;
 
-      public GapStream(Stream parent, long? knownLength = null)
+      public GapStream(Stream parent, long? knownLength = null, bool leaveOpen = false)
       {
          _parent = parent;
          _knownLength = knownLength;
+         _leaveOpen = leaveOpen;
       }
 
       public override bool CanRead => _parent.CanRead;
@@ -63,6 +65,16 @@ namespace Parquet.File.Streams
       {
          _parent.Write(buffer, offset, count);
          _position += count;
+      }
+
+      protected override void Dispose(bool disposing)
+      {
+         if (!_leaveOpen)
+         {
+            _parent.Dispose();
+         }
+
+         base.Dispose(disposing);
       }
    }
 }

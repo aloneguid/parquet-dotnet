@@ -16,18 +16,13 @@ namespace Parquet.Test
          return ResourceReader.Open(name);
       }
 
-      internal DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn, bool flushToDisk = false)
+      internal DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn)
       {
          using (var ms = new MemoryStream())
          {
             // write with built-in extension method
             ms.WriteSingleRowGroup(new Schema(field), rowCount, dataColumn);
             ms.Position = 0;
-
-            if (flushToDisk)
-            {
-               FlushTempFile(ms);
-            }
 
             // read first gow group and first column
             using (var reader = new ParquetReader3(ms))
@@ -42,14 +37,11 @@ namespace Parquet.Test
          }
       }
 
-      protected void FlushTempFile(MemoryStream ms)
+      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None)
       {
-         F.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
-      }
+         //for sanity, use disconnected streams
+         byte[] data;
 
-      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None,
-         bool flushToDisk = false)
-      {
          using (var ms = new MemoryStream())
          {
             // write single value
@@ -67,12 +59,13 @@ namespace Parquet.Test
                }
             }
 
-            if (flushToDisk)
-            {
-               FlushTempFile(ms);
-            }
+            data = ms.ToArray();
 
+            //F.WriteAllBytes($"c:\\tmp\\{compressionMethod}.parquet", data);
+         }
 
+         using (var ms = new MemoryStream(data))
+         { 
             // read back single value
 
             ms.Position = 0;
