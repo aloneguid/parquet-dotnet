@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Parquet.Data;
+using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete
 {
@@ -32,6 +34,30 @@ namespace Parquet.Data.Concrete
          }
 
          return dest;
+      }
+
+      public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      {
+         int start = offset;
+
+         int ibit = 0;
+         bool[] bdest = (bool[])dest;
+
+         while (reader.BaseStream.Position < reader.BaseStream.Length && offset < dest.Length)
+         {
+            byte b = reader.ReadByte();
+
+            while (ibit < 8 && offset < dest.Length)
+            {
+               bool set = ((b >> ibit++) & 1) == 1;
+               bdest[offset++] = set;
+            }
+
+            ibit = 0;
+         }
+
+
+         return offset - start;
       }
 
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)

@@ -33,8 +33,6 @@ namespace Parquet.Test
 
          ParquetWriter.Write(original, ms, CompressionMethod.None, null, writerOptions);
 
-         //System.IO.File.WriteAllBytes("c:\\tmp\\wr.parquet", ms.ToArray());
-
          ms.Position = 0;
          return ParquetReader.Read(ms);
       }

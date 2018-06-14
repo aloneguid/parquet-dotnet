@@ -95,6 +95,11 @@ namespace Parquet.Data.Concrete
          throw new NotSupportedException();
       }
 
+      public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      {
+         throw new NotSupportedException();
+      }
+
       public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
          throw new NotSupportedException();

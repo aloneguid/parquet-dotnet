@@ -25,12 +25,24 @@ namespace Parquet.File
       private readonly int _maxDefinitionLevel;
       private readonly IDataTypeHandler _dataTypeHandler;
 
-      private class PageData
+      private class ColumnRawData
       {
-         public List<int> definitions;
-         public List<int> repetitions;
-         public List<int> indexes;
-         public IList values;
+         public int maxCount;
+
+         public int[] repetitions;
+         public int repetitionsOffset;
+
+         public int[] definitions;
+         public int definitionsOffset;
+
+         public int[] indexes;
+         public int indexesOffset;
+
+         public Array values;
+         public int valuesOffset;
+
+         public Array dictionary;
+         public int dictionaryOffset;
       }
 
       public DataColumnReader(
@@ -61,34 +73,29 @@ namespace Parquet.File
 
          _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-         IList dictionary = null;
-         List<int> indexes = null;
-         List<int> repetitions = null;
-         List<int> definitions = null;
-         IList values = null;
+         var cd = new ColumnRawData();
+         cd.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
          //there can be only one dictionary page in column
          Thrift.PageHeader ph = _thriftStream.Read<Thrift.PageHeader>();
-         if (TryReadDictionaryPage(ph, out dictionary)) ph = _thriftStream.Read<Thrift.PageHeader>();
+         if (TryReadDictionaryPage(ph, out cd.dictionary, out cd.dictionaryOffset))
+         {
+            ph = _thriftStream.Read<Thrift.PageHeader>();
+         }
 
          int pagesRead = 0;
 
          while (true)
          {
-            int valuesSoFar = Math.Max(indexes == null ? 0 : indexes.Count, values == null ? 0 : values.Count);
-            PageData pd = ReadDataPage(ph, maxValues - valuesSoFar);
-
-            repetitions = AssignOrAdd(repetitions, pd.repetitions);
-            definitions = AssignOrAdd(definitions, pd.definitions);
-            indexes = AssignOrAdd(indexes, pd.indexes);
-            values = AssignOrAdd(values, pd.values);
+            int valuesSoFar = Math.Max(cd.indexes == null ? 0 : cd.indexes.Length, cd.values == null ? 0 : cd.values.Length);
+            ReadDataPage(ph, cd, maxValues - valuesSoFar);
 
             pagesRead++;
 
             int totalCount = Math.Max(
-               (values == null ? 0 : values.Count) +
-               (indexes == null ? 0 : indexes.Count),
-               (definitions == null ? 0 : definitions.Count));
+               (cd.values == null ? 0 : cd.values.Length) +
+               (cd.indexes == null ? 0 : cd.indexes.Length),
+               (cd.definitions == null ? 0 : cd.definitions.Length));
             if (totalCount >= maxValues) break; //limit reached
 
             ph = _thriftStream.Read<Thrift.PageHeader>();
@@ -98,14 +105,34 @@ namespace Parquet.File
          // all the data is available here!
 
          // todo: this is a simple hack for trivial tests to succeed
-         return new DataColumn(_dataField, values, definitions, repetitions);
+
+         // todo: perform merge
+
+         return new DataColumn(_dataField, cd.values, cd.definitions, cd.repetitions);
       }
 
-      private bool TryReadDictionaryPage(Thrift.PageHeader ph, out IList dictionary)
+      private static void MergeDictionary(ColumnRawData cd)
+      {
+         if (cd.indexes == null) return;
+
+         int[] tv = (int[])cd.values;
+
+         for(int i = 0; i < cd.valuesOffset; i++)
+         {
+            int index = tv[i];
+            cd.values.SetValue(cd.dictionary.GetValue(index), i);
+         }
+
+         cd.indexes = null;
+         cd.indexesOffset = 0;
+      }
+
+      private bool TryReadDictionaryPage(Thrift.PageHeader ph, out Array dictionary, out int dictionaryOffset)
       {
          if (ph.Type != Thrift.PageType.DICTIONARY_PAGE)
          {
             dictionary = null;
+            dictionaryOffset = 0;
             return false;
          }
 
@@ -115,7 +142,12 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(pageStream))
             {
-               dictionary = _dataTypeHandler.Read(_thriftSchemaElement, dataReader, _parquetOptions);
+               dictionary = Array.CreateInstance(
+                  _dataField.ClrType,
+                  (int)_thriftColumnChunk.Meta_data.Num_values);
+
+               dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0, _parquetOptions);
+
                return true;
             }
          }
@@ -144,11 +176,9 @@ namespace Parquet.File
             .Min();
       }
 
-      private PageData ReadDataPage(Thrift.PageHeader ph, long maxValues)
+      private void ReadDataPage(Thrift.PageHeader ph, ColumnRawData cd, long maxValues)
       {
          int max = ph.Data_page_header.Num_values;
-
-         var pd = new PageData();
 
          using (Stream pageStream = OpenDataPageStream(ph))
          {
@@ -156,56 +186,55 @@ namespace Parquet.File
             {
                if (_maxRepetitionLevel > 0)
                {
-                  pd.repetitions = ReadLevels(reader, _maxRepetitionLevel, max);
+                  if (cd.repetitions == null) cd.repetitions = new int[cd.maxCount];
+
+                  cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, max, cd.repetitions, cd.repetitionsOffset);
                }
 
                if (_maxDefinitionLevel > 0)
                {
-                  pd.definitions = ReadLevels(reader, _maxDefinitionLevel, max);
+                  if (cd.definitions == null) cd.definitions = new int[cd.maxCount];
+
+                  cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, max, cd.definitions, cd.definitionsOffset);
                }
 
                ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
-                  out pd.values,
-                  out pd.indexes);
+                  max,
+                  ref cd.values, ref cd.valuesOffset,
+                  ref cd.indexes, ref cd.indexesOffset);
             }
          }
-
-         return pd;
       }
 
-      private List<int> ReadLevels(BinaryReader reader, int maxLevel, int maxValues)
+      private int ReadLevels(BinaryReader reader, int maxLevel, int maxValues, int[] dest, int offset)
       {
          int bitWidth = maxLevel.GetBitWidth();
-         var result = new List<int>();
 
-         //todo: there might be more data on larger files, therefore line below need to be called in a loop until valueCount is satisfied
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, result);
-         result.TrimTail(maxValues);
-
-         return result;
+         return RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, dest, offset);
       }
 
       private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long maxValues,
-         out IList values,
-         out List<int> indexes)
+         int maxArrayLength,
+         ref Array values, ref int valuesOffset,
+         ref int[] indexes, ref int indexesOffset)
       {
          //dictionary encoding uses RLE to encode data
 
          switch (encoding)
          {
             case Thrift.Encoding.PLAIN:
-               values = _dataTypeHandler.Read(_thriftSchemaElement, reader, _parquetOptions);
-               indexes = null;
+               if (values == null) values = Array.CreateInstance(_dataField.ClrType, maxArrayLength);
+               valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset, _parquetOptions);
                break;
 
             case Thrift.Encoding.RLE:
-               values = null;
-               indexes = RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length);
+               if (indexes == null) indexes = new int[maxArrayLength];
+               indexesOffset += RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, indexes, indexesOffset);
                break;
 
             case Thrift.Encoding.PLAIN_DICTIONARY:
-               values = null;
-               indexes = ReadPlainDictionary(reader, maxValues);
+               if (indexes == null) indexes = new int[maxArrayLength];
+               indexesOffset += ReadPlainDictionary(reader, maxValues, indexes, indexesOffset);
                break;
 
             default:
@@ -213,9 +242,9 @@ namespace Parquet.File
          }
       }
 
-      private static List<int> ReadPlainDictionary(BinaryReader reader, long maxValues)
+      private static int ReadPlainDictionary(BinaryReader reader, long maxValues, int[] dest, int offset)
       {
-         var result = new List<int>();
+         int start = offset;
          int bitWidth = reader.ReadByte();
 
          //when bit width is zero reader must stop and just repeat zero maxValue number of times
@@ -223,14 +252,16 @@ namespace Parquet.File
          {
             for (int i = 0; i < maxValues; i++)
             {
-               result.Add(0);
+               dest[offset++] = 0;
             }
-            return result;
+         }
+         else
+         {
+            int length = GetRemainingLength(reader);
+            offset += RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset);
          }
 
-         int length = GetRemainingLength(reader);
-         RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, result);
-         return result;
+         return offset - start;
       }
 
       private static int GetRemainingLength(BinaryReader reader)

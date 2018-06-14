@@ -31,6 +31,11 @@ namespace Parquet.Data
          _repetitionLevels = HasRepetitions ? new List<int>() : null;
       }
 
+      internal DataColumn(DataField field, Array definedData, int[] definitionLevels, int[] repetitionLevels) : this(field)
+      {
+         _definedData.AddOneByOne(definedData);
+      }
+
       internal DataColumn(DataField field, IList definedData, List<int> definitionLevels, List<int> repetitionLevels) : this(field)
       {
          _definedData.AddOneByOne(definedData);

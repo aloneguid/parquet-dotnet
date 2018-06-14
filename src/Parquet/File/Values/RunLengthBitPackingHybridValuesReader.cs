@@ -19,6 +19,12 @@ namespace Parquet.File.Values
          return result;
       }
 
+      public static int Read(BinaryReader reader, int bitWidth, int[] dest, int destOffset)
+      {
+         int length = GetRemainingLength(reader);
+         return ReadRleBitpackedHybrid(reader, bitWidth, length, dest, destOffset);
+      }
+
       /* from specs:
        * rle-bit-packed-hybrid: <length> <encoded-data>
        * length := length of the <encoded-data> in bytes stored as 4 bytes little endian
@@ -55,6 +61,31 @@ namespace Parquet.File.Values
          }
       }
 
+      public static int ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, int[] dest, int offset)
+      {
+         if (length == 0) length = reader.ReadInt32();
+
+         long start = reader.BaseStream.Position;
+         int startOffset = offset;
+         while (reader.BaseStream.Position - start < length)
+         {
+            int header = ReadUnsignedVarInt(reader);
+            bool isRle = (header & 1) == 0;
+
+            if (isRle)
+            {
+               offset += ReadRle(header, reader, bitWidth, dest, offset);
+            }
+            else
+            {
+               offset += ReadBitpacked(header, reader, bitWidth, dest, offset);
+            }
+         }
+
+         return offset - startOffset;
+      }
+
+
       /// <summary>
       /// Read run-length encoded run from the given header and bit length.
       /// </summary>
@@ -72,6 +103,29 @@ namespace Parquet.File.Values
          destination.AddRange(Enumerable.Repeat(value, count));
       }
 
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      private static int ReadRle(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
+      {
+         // The count is determined from the header and the width is used to grab the
+         // value that's repeated. Yields the value repeated count times.
+
+         int start = offset;
+         int count = header >> 1;
+         if (count == 0) return 0; //important not to continue reading as will result in data corruption in data page further
+         int width = (bitWidth + 7) / 8; //round up to next byte
+         byte[] data = reader.ReadBytes(width);
+         int value = ReadIntOnBytes(data);
+
+         for(int i = 0; i < count; i++)
+         {
+            dest[offset++] = value;
+         }
+
+         return offset - start;
+      }
+
+
+      //obsolete
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadBitpacked(int header, BinaryReader reader, int bitWidth, List<int> destination)
       {
@@ -114,6 +168,54 @@ namespace Parquet.File.Values
             }
          }
       }
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      private static int ReadBitpacked(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
+      {
+         int start = offset;
+         int groupCount = header >> 1;
+         int count = groupCount * 8;
+         int byteCount = (bitWidth * count) / 8;
+         //int byteCount2 = (int)Math.Ceiling(bitWidth * count / 8.0);
+
+         byte[] rawBytes = reader.ReadBytes(byteCount);
+         byteCount = rawBytes.Length;  //sometimes there will be less data available, typically on the last page
+
+         int mask = MaskForBits(bitWidth);
+
+         int i = 0;
+         int b = rawBytes[i];
+         int total = byteCount * 8;
+         int bwl = 8;
+         int bwr = 0;
+         while (total >= bitWidth && offset < dest.Length)
+         {
+            if (bwr >= 8)
+            {
+               bwr -= 8;
+               bwl -= 8;
+               b >>= 8;
+            }
+            else if (bwl - bwr >= bitWidth)
+            {
+               int r = ((b >> bwr) & mask);
+               total -= bitWidth;
+               bwr += bitWidth;
+
+               dest[offset++] = r;
+            }
+            else if (i + 1 < byteCount)
+            {
+               i += 1;
+               b |= (rawBytes[i] << bwl);
+               bwl += 8;
+            }
+         }
+
+         return offset - start;
+      }
+
+
 
       /// <summary>
       /// Read a value using the unsigned, variable int encoding.

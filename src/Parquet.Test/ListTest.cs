@@ -1,4 +1,5 @@
 ﻿using Parquet.Data;
+using Parquet.File;
 using Xunit;
 
 namespace Parquet.Test
@@ -62,12 +63,24 @@ value 1: R:0 D:1 V:<null>
       [Fact]
       public void List_of_elements_with_some_items_empty_reads_file()
       {
+         //v2
          DataSet ds = ParquetReader.Read(OpenTestFile("listofitems-empty-alternates.parquet"));
          Assert.Equal(4, ds.RowCount);
          Assert.Equal("{1;[1;2;3]}", ds[0].ToString());
          Assert.Equal("{2;[]}", ds[1].ToString());
          Assert.Equal("{3;[1;2;3]}", ds[2].ToString());
          Assert.Equal("{4;[]}", ds[3].ToString());
+
+         //v3
+         using (var reader = new ParquetReader3(OpenTestFile("listofitems-empty-alternates.parquet")))
+         {
+            using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0))
+            {
+               DataColumn id = groupReader.ReadColumn(reader.Schema.GetDataFields()[0]);
+               DataColumn list = groupReader.ReadColumn(reader.Schema.GetDataFields()[1]);
+            }
+         }
+
       }
 
       [Fact]

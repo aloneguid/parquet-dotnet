@@ -60,21 +60,34 @@ namespace Parquet.Data
          IList result = CreateEmptyList(tse.IsNullable(), false, capacity);
 
          Stream s = reader.BaseStream;
-         try
+         while (s.Position < totalLength)
          {
-            while (s.Position < totalLength)
-            {
-               TSystemType element = ReadOne(reader);
-               result.Add(element);
-            }
-         }
-         catch(EndOfStreamException)
-         {
-            //that's fine to hit the end of stream as many types are longer than one byte
-            throw;
+            TSystemType element = ReadOne(reader);
+            result.Add(element);
          }
 
          return result;
+      }
+
+      public virtual int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      {
+         return Read(tse, reader, formatOptions, (TSystemType[])dest, offset);
+      }
+
+
+      private int Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions, TSystemType[] dest, int offset)
+      {
+         int totalLength = (int)reader.BaseStream.Length;
+         int idx = offset;
+         Stream s = reader.BaseStream;
+
+         while (s.Position < totalLength)
+         {
+            TSystemType element = ReadOne(reader);
+            dest[idx++] = element;
+         }
+
+         return idx - offset;
       }
 
       public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)

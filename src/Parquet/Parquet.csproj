@@ -18,23 +18,18 @@ small improvement: Field.Path property is made public, Interval class is made pu
 </PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
+     <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>
+     <DebugType>full</DebugType>
+     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
-  <ItemGroup>
+
+   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+      <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+   </PropertyGroup>
+
+   <ItemGroup>
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
     <DotNetCliToolReference Include="dotnet-housework" Version="0.0.9" />
-  </ItemGroup>
+  </ItemGroup>        
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-  </PropertyGroup>  
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.4'">
-    <DocumentationFile>bin\Debug\netstandard1.4\Parquet.xml</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
-    <DocumentationFile>bin\Debug\net45\Parquet.xml</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.4|AnyCPU'">
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>  
 </Project>
