@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -27,6 +28,24 @@ namespace Parquet.Data.Concrete
                (tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.UTF8) ||
                formatOptions.TreatByteArrayAsString
             );
+      }
+
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      {
+         string[] tdest = (string[])dest;
+
+         int totalLength = (int)reader.BaseStream.Length;
+         int idx = offset;
+         Stream s = reader.BaseStream;
+
+         while (s.Position < totalLength)
+         {
+            string element = ReadOne(reader);
+            tdest[idx++] = element;
+         }
+
+         return idx - offset;
+
       }
 
       protected override string ReadOne(BinaryReader reader)

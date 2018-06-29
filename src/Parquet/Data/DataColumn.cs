@@ -64,6 +64,16 @@ namespace Parquet.Data
          AddRange(data);
       }
 
+      public static DataColumn Create<T>(DataField field, T[] data)
+      {
+         throw new NotImplementedException();
+      }
+
+      public static DataColumn Create<T>(DataField field, T?[] data) where T : struct
+      {
+         throw new NotImplementedException();
+      }
+
       public DataField Field => _field;
 
       public bool HasRepetitions { get; private set; }

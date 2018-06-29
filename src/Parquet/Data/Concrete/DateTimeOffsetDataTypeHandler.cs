@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
+using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete
 {
@@ -78,6 +79,17 @@ namespace Parquet.Data.Concrete
          return result;
       }
 
+      public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      {
+         switch(tse.Type)
+         {
+            case Thrift.Type.INT32:
+               return ReadAsInt32(reader, (DateTimeOffset[])dest, offset);
+            default:
+               throw new NotSupportedException();
+         }
+      }
+
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
          switch(tse.Type)
@@ -103,6 +115,19 @@ namespace Parquet.Data.Concrete
             int iv = reader.ReadInt32();
             result.Add(new DateTimeOffset(iv.FromUnixTime(), TimeSpan.Zero));
          }
+      }
+
+      private int ReadAsInt32(BinaryReader reader, DateTimeOffset[] dest, int offset)
+      {
+         int idx = offset;
+         while (reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
+         {
+            int iv = reader.ReadInt32();
+            DateTimeOffset e = new DateTimeOffset(iv.FromUnixTime(), TimeSpan.Zero);
+            dest[idx++] = e;
+         }
+
+         return idx - offset;
       }
 
       private void WriteAsInt32(BinaryWriter writer, IList values)
