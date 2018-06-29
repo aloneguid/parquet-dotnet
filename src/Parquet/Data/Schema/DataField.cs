@@ -28,14 +28,20 @@ namespace Parquet.Data
       /// </summary>
       internal Type ClrType { get; private set; }
 
+      internal Type ClrNullableIfHasNullsType { get; private set; }
+
       /// <summary>
       /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
       /// </summary>
       /// <param name="name">Field name</param>
       /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
-      public DataField(string name, Type clrType) : this(name, Discover(clrType).dataType, Discover(clrType).hasNulls, Discover(clrType).isArray)
+      public DataField(string name, Type clrType) 
+         : this(name,
+              Discover(clrType).dataType,
+              Discover(clrType).hasNulls,
+              Discover(clrType).isArray)
       {
-
+         //todo: calls to Discover() can be killed by making a constructor method
       }
 
       /// <summary>
@@ -55,6 +61,7 @@ namespace Parquet.Data
          if (handler != null)
          {
             ClrType = handler.ClrType;
+            ClrNullableIfHasNullsType = hasNulls ? ClrType.GetNullable() : ClrType;
          }
       }
 

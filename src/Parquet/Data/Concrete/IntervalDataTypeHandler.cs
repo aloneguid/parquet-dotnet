@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
+using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete
 {
@@ -43,6 +44,27 @@ namespace Parquet.Data.Concrete
          }
 
          return result;
+      }
+
+      public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      {
+         int typeLength = tse.Type_length;
+         if (typeLength == 0) return 0;
+         int idx = offset;
+         Interval[] tdest = (Interval[])dest;
+
+         while (reader.BaseStream.Position + 12 <= reader.BaseStream.Length)
+         {
+            // assume this is the number of months / days / millis offset from the Julian calendar
+            int months = reader.ReadInt32();
+            int days = reader.ReadInt32();
+            int millis = reader.ReadInt32();
+            var e = new Interval(months, days, millis);
+
+            tdest[idx++] = e;
+         }
+
+         return idx - offset;
       }
 
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)

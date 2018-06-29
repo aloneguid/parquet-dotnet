@@ -31,25 +31,23 @@ namespace Parquet.Data
          _repetitionLevels = HasRepetitions ? new List<int>() : null;
       }
 
-      internal DataColumn(DataField field, Array definedData, int[] definitionLevels, int[] repetitionLevels) : this(field)
+      internal DataColumn(DataField field,
+         Array definedData,
+         int[] definitionLevels, int maxDefinitionLevel,
+         int[] repetitionLevels, int maxRepetitionLevel,
+         Array dictionary) : this(field)
       {
-         _definedData.AddOneByOne(definedData);
-      }
+         if (dictionary != null) throw new NotSupportedException("dictionaries not yet supported in V3");
+         if (repetitionLevels != null) throw new NotSupportedException("repetitions not yet supported in V3");
 
-      internal DataColumn(DataField field, IList definedData, List<int> definitionLevels, List<int> repetitionLevels) : this(field)
-      {
-         _definedData.AddOneByOne(definedData);
+         Data = definedData;
 
-         if (_definitionLevels != null && definitionLevels != null)
+         if(definitionLevels != null)
          {
-            _definitionLevels.AddRange(definitionLevels);
-            _undefinedCount = _definitionLevels.Count(l => l == 0);
+            Data = UnpackDefinitions(field, definedData, definitionLevels, maxDefinitionLevel);
          }
 
-         if(HasRepetitions && repetitionLevels != null)
-         {
-            _repetitionLevels.AddRange(repetitionLevels);
-         }
+         _definedData.AddOneByOne(definedData);
       }
 
       public DataColumn(DataField field, IEnumerable data) : this(field)
@@ -64,15 +62,7 @@ namespace Parquet.Data
          AddRange(data);
       }
 
-      public static DataColumn Create<T>(DataField field, T[] data)
-      {
-         throw new NotImplementedException();
-      }
-
-      public static DataColumn Create<T>(DataField field, T?[] data) where T : struct
-      {
-         throw new NotImplementedException();
-      }
+      public Array Data { get; private set; }
 
       public DataField Field => _field;
 
@@ -86,6 +76,23 @@ namespace Parquet.Data
       public List<int> RepetitionLevels => _repetitionLevels;
 
       public int TotalCount => _definedData.Count + _undefinedCount;
+
+      private static Array UnpackDefinitions(DataField df, Array src, int[] definitonLevels, int maxDefinitionLevel)
+      {
+         Array result = Array.CreateInstance(df.ClrNullableIfHasNullsType, definitonLevels.Length);
+
+         int isrc = 0;
+         for(int i = 0; i < definitonLevels.Length; i++)
+         {
+            int level = definitonLevels[i];
+            if(level == maxDefinitionLevel)
+            {
+               result.SetValue(src.GetValue(isrc++), i);
+            }
+         }
+
+         return result;
+      }
 
       public void IncrementLevel()
       {

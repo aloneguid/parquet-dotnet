@@ -100,10 +100,21 @@ namespace Parquet
          {
             return t;
          }
-         else
+
+         return ti.GenericTypeArguments[0];
+      }
+
+      public static Type GetNullable(this Type t)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         if(ti.IsClass)
          {
-            return ti.GenericTypeArguments[0];
+            return t;
          }
+
+         Type nt = typeof(Nullable<>);
+         return nt.MakeGenericType(t);
       }
 
       public static bool IsSimple(this Type t)

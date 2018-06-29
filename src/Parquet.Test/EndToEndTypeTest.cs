@@ -112,7 +112,7 @@ namespace Parquet.Test
          object actualValue = ds1[0][0];
 
          Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),
-            $"{name}| expected: {expectedValue}, actual: {actualValue}, schema element: {input.field}");
+            $"{name}| expected: [{expectedValue}], actual: [{actualValue}], schema element: {input.field}");
 
          //v3
 
@@ -120,7 +120,7 @@ namespace Parquet.Test
 
          bool equal = (input.expectedValue == null && actual == null || actual.Equals(input.expectedValue));
 
-         Assert.True(equal, $"{name}| expected: {input.expectedValue}, actual: {actual}, schema element: {input.field}");
+         Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}");
       }
    }
 }

@@ -75,7 +75,8 @@ namespace Parquet.Test
                {
                   DataColumn column = rowGroupReader.ReadColumn(field);
 
-                  return column.DefinedData.OfType<object>().FirstOrDefault();
+                  return column.Data.GetValue(0);
+                  //return column.DefinedData.OfType<object>().FirstOrDefault();
                }
             }
          }

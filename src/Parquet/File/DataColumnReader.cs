@@ -73,12 +73,12 @@ namespace Parquet.File
 
          _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-         var cd = new ColumnRawData();
-         cd.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
+         var colData = new ColumnRawData();
+         colData.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
          //there can be only one dictionary page in column
          Thrift.PageHeader ph = _thriftStream.Read<Thrift.PageHeader>();
-         if (TryReadDictionaryPage(ph, out cd.dictionary, out cd.dictionaryOffset))
+         if (TryReadDictionaryPage(ph, out colData.dictionary, out colData.dictionaryOffset))
          {
             ph = _thriftStream.Read<Thrift.PageHeader>();
          }
@@ -87,15 +87,15 @@ namespace Parquet.File
 
          while (true)
          {
-            int valuesSoFar = Math.Max(cd.indexes == null ? 0 : cd.indexes.Length, cd.values == null ? 0 : cd.values.Length);
-            ReadDataPage(ph, cd, maxValues - valuesSoFar);
+            int valuesSoFar = Math.Max(colData.indexes == null ? 0 : colData.indexes.Length, colData.values == null ? 0 : colData.values.Length);
+            ReadDataPage(ph, colData, maxValues - valuesSoFar);
 
             pagesRead++;
 
             int totalCount = Math.Max(
-               (cd.values == null ? 0 : cd.values.Length) +
-               (cd.indexes == null ? 0 : cd.indexes.Length),
-               (cd.definitions == null ? 0 : cd.definitions.Length));
+               (colData.values == null ? 0 : colData.values.Length) +
+               (colData.indexes == null ? 0 : colData.indexes.Length),
+               (colData.definitions == null ? 0 : colData.definitions.Length));
             if (totalCount >= maxValues) break; //limit reached
 
             ph = _thriftStream.Read<Thrift.PageHeader>();
@@ -106,9 +106,11 @@ namespace Parquet.File
 
          // todo: this is a simple hack for trivial tests to succeed
 
-         // todo: perform merge
-
-         return new DataColumn(_dataField, cd.values, cd.definitions, cd.repetitions);
+         return new DataColumn(
+            _dataField, colData.values,
+            colData.definitions, _maxDefinitionLevel,
+            colData.repetitions, _maxRepetitionLevel,
+            colData.dictionary);
       }
 
       private static void MergeDictionary(ColumnRawData cd)
