@@ -188,6 +188,7 @@ namespace Parquet.File
             {
                if (_maxRepetitionLevel > 0)
                {
+                  //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
                   if (cd.repetitions == null) cd.repetitions = new int[cd.maxCount];
 
                   cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, max, cd.repetitions, cd.repetitionsOffset);
@@ -270,47 +271,5 @@ namespace Parquet.File
       {
          return (int)(reader.BaseStream.Length - reader.BaseStream.Position);
       }
-
-      #region [ To be culled ]
-
-      private List<int> AssignOrAdd(List<int> container, List<int> source)
-      {
-         if (source != null)
-         {
-            if (container == null)
-            {
-               container = source;
-            }
-            else
-            {
-               container.AddRange(source);
-            }
-         }
-
-         return container;
-      }
-
-      private IList AssignOrAdd(IList container, IList source)
-      {
-         if (source != null)
-         {
-            if (container == null)
-            {
-               container = source;
-            }
-            else
-            {
-               foreach (object item in source)
-               {
-                  container.Add(item);
-               }
-            }
-         }
-
-         return container;
-      }
-
-
-      #endregion
    }
 }

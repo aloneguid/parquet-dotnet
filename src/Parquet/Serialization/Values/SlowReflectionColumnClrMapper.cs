@@ -55,7 +55,8 @@ namespace Parquet.Serialization.Values
 
          if (dc.Field.IsArray)
          {
-            IEnumerable ienum = value as IEnumerable;
+            throw new NotSupportedException();
+            /*IEnumerable ienum = value as IEnumerable;
             if(ienum != null)
             {
                dc.IncrementLevel();
@@ -64,11 +65,11 @@ namespace Parquet.Serialization.Values
                   dc.Add(element);
                }
                dc.DecrementLevel();
-            }
+            }*/
          }
          else
          {
-            dc.Add(value);
+            //dc.Add(value);
          }
       }
 

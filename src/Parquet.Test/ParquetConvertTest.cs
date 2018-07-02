@@ -39,8 +39,8 @@ namespace Parquet.Test
                   DataColumn ids = rgr.ReadColumn(schema.DataFieldAt(0));
                   DataColumn names = rgr.ReadColumn(schema.DataFieldAt(1));
 
-                  Assert.Equal(10, ids.TotalCount);
-                  Assert.Equal(10, names.TotalCount);
+                  Assert.Equal(10, ids.Data.Length);
+                  Assert.Equal(10, names.Data.Length);
                }
             }
          }

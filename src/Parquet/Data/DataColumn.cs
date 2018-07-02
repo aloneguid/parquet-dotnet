@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,24 +12,17 @@ namespace Parquet.Data
    /// </summary>
    internal class DataColumn
    {
-      private readonly DataField _field;
-      private readonly IList _definedData;            // data that is defined i.e. doesn't ever have nulls
-      private readonly List<int> _definitionLevels;   // not utilised at all when field is not nullable
-      private readonly List<int> _repetitionLevels;
-      private int _undefinedCount;
-      private int _currentRepetitionLevel = 0;
-      private int _touchedRepetitionLevel = 0;
-
       public DataColumn(DataField field)
       {
-         _field = field ?? throw new ArgumentNullException(nameof(field));
+         Field = field ?? throw new ArgumentNullException(nameof(field));
 
          IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
-         _definedData = handler.CreateEmptyList(false, false, 0);       // always a plain list, always non-nullable when possible
-         _definitionLevels = new List<int>();
-
          HasRepetitions = field.IsArray;
-         _repetitionLevels = HasRepetitions ? new List<int>() : null;
+      }
+
+      public DataColumn(DataField field, Array data) : this(field)
+      {
+         Data = data ?? throw new ArgumentNullException(nameof(data));
       }
 
       internal DataColumn(DataField field,
@@ -38,7 +32,12 @@ namespace Parquet.Data
          Array dictionary) : this(field)
       {
          if (dictionary != null) throw new NotSupportedException("dictionaries not yet supported in V3");
-         if (repetitionLevels != null) throw new NotSupportedException("repetitions not yet supported in V3");
+
+         /*
+          1. dictionary
+          2. definitions
+          3. repetitions
+          */
 
          Data = definedData;
 
@@ -47,35 +46,16 @@ namespace Parquet.Data
             Data = UnpackDefinitions(field, definedData, definitionLevels, maxDefinitionLevel);
          }
 
-         _definedData.AddOneByOne(definedData);
-      }
-
-      public DataColumn(DataField field, IEnumerable data) : this(field)
-      {
-         if(!data.GetType().TryExtractEnumerableType(out Type baseType))
-         {
-            throw new ArgumentException($"the collection is not a generic one", nameof(data));
-         }
-
-         if (baseType != field.ClrType) throw new ArgumentException($"expected {_field.ClrType} but passed a collection of {baseType}");
-
-         AddRange(data);
+         if (repetitionLevels != null) throw new NotSupportedException("repetitions not yet supported in V3");
       }
 
       public Array Data { get; private set; }
 
-      public DataField Field => _field;
+      public int[] RepetitionLevels { get; private set; }
+
+      public DataField Field { get; private set; }
 
       public bool HasRepetitions { get; private set; }
-
-      //todo: think of a better way
-      public IList DefinedData => _definedData;
-
-      public List<int> DefinitionLevels => _definitionLevels;
-
-      public List<int> RepetitionLevels => _repetitionLevels;
-
-      public int TotalCount => _definedData.Count + _undefinedCount;
 
       private static Array UnpackDefinitions(DataField df, Array src, int[] definitonLevels, int maxDefinitionLevel)
       {
@@ -94,44 +74,50 @@ namespace Parquet.Data
          return result;
       }
 
-      public void IncrementLevel()
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="maxDefinitionLevel"></param>
+      /// <param name="definitionLevels">Rented array where length can be greater than needed. You have to release it after use.</param>
+      /// <param name="definitionLevelCount"></param>
+      /// <returns></returns>
+      internal Array PackDefinitions(int maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelCount)
       {
-         _currentRepetitionLevel += 1;
-      }
-
-      public void DecrementLevel()
-      {
-         _currentRepetitionLevel -= 1;
-         _touchedRepetitionLevel = _currentRepetitionLevel;
-      }
-
-      // todo: boxing is happening here, must be killed or MSIL-generated
-      public void Add(object item)
-      {
-         if (item == null)
+         if (!Field.HasNulls)
          {
-            _definitionLevels.Add(0);
-            _undefinedCount += 1;
-            return;
+            definitionLevels = null;
+            definitionLevelCount = 0;
+            return Data;
          }
 
-         _definitionLevels.Add(1);
-
-         _definedData.Add(item);
-
-         if (HasRepetitions)
+         //get count of nulls
+         int nullCount = 0;
+         for(int i = 0; i < Data.Length; i++)
          {
-            _repetitionLevels.Add(_touchedRepetitionLevel);
-            _touchedRepetitionLevel = _currentRepetitionLevel;
+            bool isNull = (Data.GetValue(i) == null);
+            if (isNull) nullCount += 1;
          }
-      }
 
-      private void AddRange(IEnumerable data)
-      {
-         foreach(object item in data)
+         //pack
+         Array result = Array.CreateInstance(Field.ClrType, Data.Length - nullCount);
+         int ir = 0;
+         //definitionLevels = new int[Data.Length];
+         definitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
+         definitionLevelCount = Data.Length;
+         for(int i = 0; i < Data.Length; i++)
          {
-            Add(item);
+            object value = Data.GetValue(i);
+            if(value == null)
+            {
+               definitionLevels[i] = 0;
+            }
+            else
+            {
+               definitionLevels[i] = maxDefinitionLevel;
+               result.SetValue(value, ir++);
+            }
          }
+         return result;
       }
    }
 }

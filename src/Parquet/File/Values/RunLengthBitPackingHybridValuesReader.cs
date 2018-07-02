@@ -89,7 +89,6 @@ namespace Parquet.File.Values
       /// <summary>
       /// Read run-length encoded run from the given header and bit length.
       /// </summary>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadRle(int header, BinaryReader reader, int bitWidth, List<int> destination)
       {
          // The count is determined from the header and the width is used to grab the
@@ -103,7 +102,6 @@ namespace Parquet.File.Values
          destination.AddRange(Enumerable.Repeat(value, count));
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static int ReadRle(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
       {
          // The count is determined from the header and the width is used to grab the
@@ -126,7 +124,6 @@ namespace Parquet.File.Values
 
 
       //obsolete
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static void ReadBitpacked(int header, BinaryReader reader, int bitWidth, List<int> destination)
       {
          int groupCount = header >> 1;
@@ -169,7 +166,6 @@ namespace Parquet.File.Values
          }
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static int ReadBitpacked(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
       {
          int start = offset;
@@ -220,7 +216,6 @@ namespace Parquet.File.Values
       /// <summary>
       /// Read a value using the unsigned, variable int encoding.
       /// </summary>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static int ReadUnsignedVarInt(BinaryReader reader)
       {
          int result = 0;
@@ -237,7 +232,6 @@ namespace Parquet.File.Values
          return result;
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static int ReadIntOnBytes(byte[] data)
       {
          switch (data.Length)
@@ -257,13 +251,11 @@ namespace Parquet.File.Values
          }
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static int MaskForBits(int width)
       {
          return (1 << width) - 1;
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       private static int GetRemainingLength(BinaryReader reader)
       {
          return (int)(reader.BaseStream.Length - reader.BaseStream.Position);

@@ -52,16 +52,15 @@ namespace Parquet.Test
 
                using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
                {
-                  var column = new DataColumn(field);
-                  column.Add(value);
+                  Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);
+                  dataArray.SetValue(value, 0);
+                  var column = new DataColumn(field, dataArray);
 
                   rg.Write(column);
                }
             }
 
             data = ms.ToArray();
-
-            //F.WriteAllBytes($"c:\\tmp\\{compressionMethod}.parquet", data);
          }
 
          using (var ms = new MemoryStream(data))
@@ -76,7 +75,6 @@ namespace Parquet.Test
                   DataColumn column = rowGroupReader.ReadColumn(field);
 
                   return column.Data.GetValue(0);
-                  //return column.DefinedData.OfType<object>().FirstOrDefault();
                }
             }
          }

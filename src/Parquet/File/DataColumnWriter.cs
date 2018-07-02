@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace Parquet.File
       public Thrift.ColumnChunk Write(List<string> path, DataColumn column, IDataTypeHandler dataTypeHandler)
       {
          Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, path, 0);
-         Thrift.PageHeader ph = _footer.CreateDataPage(column.TotalCount);
+         Thrift.PageHeader ph = _footer.CreateDataPage(column.Data.Length);
          _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
          List<PageTag> pages = WriteColumn(column, _schemaElement, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel);
@@ -77,7 +78,7 @@ namespace Parquet.File
 
          using (var ms = new MemoryStream())
          {
-            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.TotalCount);
+            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Data.Length);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
             using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, true))
@@ -86,15 +87,26 @@ namespace Parquet.File
                {
                   if (maxRepetitionLevel > 0)
                   {
-                     WriteLevels(writer, column.RepetitionLevels, maxRepetitionLevel);
+                     WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels == null ? 0 : column.RepetitionLevels.Length, maxRepetitionLevel);
                   }
+
+                  Array data = column.Data;
 
                   if (maxDefinitionLevel > 0)
                   {
-                     WriteLevels(writer, column.DefinitionLevels, maxDefinitionLevel);
+                     data = column.PackDefinitions(maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelsLength);
+
+                     try
+                     {
+                        WriteLevels(writer, definitionLevels, definitionLevelsLength, maxDefinitionLevel);
+                     }
+                     finally
+                     {
+                        ArrayPool<int>.Shared.Return(definitionLevels);
+                     }
                   }
 
-                  dataTypeHandler.Write(tse, writer, column.DefinedData);
+                  dataTypeHandler.Write(tse, writer, data);
 
                   writer.Flush();
                }
@@ -121,10 +133,10 @@ namespace Parquet.File
          return pages;
       }
 
-      private void WriteLevels(BinaryWriter writer, List<int> levels, int maxLevel)
+      private void WriteLevels(BinaryWriter writer, int[] levels, int count, int maxLevel)
       {
          int bitWidth = maxLevel.GetBitWidth();
-         RunLengthBitPackingHybridValuesWriter.WriteForwardOnly(writer, bitWidth, levels);
+         RunLengthBitPackingHybridValuesWriter.WriteForwardOnly(writer, bitWidth, levels, count);
       }
    }
 }

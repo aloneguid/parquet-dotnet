@@ -15,7 +15,8 @@ namespace Parquet.File.Values
          writer.Write((int)0);
 
          //write actual data
-         WriteData(writer, (List<int>)data, bitWidth);
+         var dataList = (List<int>)data;
+         WriteData(writer, dataList.ToArray(), dataList.Count, bitWidth);
 
          //come back to write data length
          long dataLength = writer.BaseStream.Position - dataLengthOffset - sizeof(int);
@@ -29,7 +30,7 @@ namespace Parquet.File.Values
       /// <summary>
       /// Writes to target stream without jumping around, therefore can be used in forward-only stream
       /// </summary>
-      public static void WriteForwardOnly(BinaryWriter writer, int bitWidth, IList data)
+      public static void WriteForwardOnly(BinaryWriter writer, int bitWidth, int[] data, int count)
       {
          //write data to a memory buffer, as we need data length to be written before the data
          using (var ms = new MemoryStream())
@@ -37,7 +38,7 @@ namespace Parquet.File.Values
             using (var bw = new BinaryWriter(ms, Encoding.UTF8, true))
             {
                //write actual data
-               WriteData(bw, (List<int>)data, bitWidth);
+               WriteData(bw, data, count, bitWidth);
             }
 
             //int32 - length of data
@@ -49,7 +50,7 @@ namespace Parquet.File.Values
          }
       }
 
-      private static void WriteData(BinaryWriter writer, List<int> data, int bitWidth)
+      private static void WriteData(BinaryWriter writer, int[] data, int count, int bitWidth)
       {
          //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
@@ -58,8 +59,10 @@ namespace Parquet.File.Values
          //chunk identical values and write
          int lastValue = 0;
          int chunkCount = 0;
-         foreach (int item in data)
+         for (int i = 0; i < count; i++)
          {
+            int item = data[i];
+
             if(chunkCount == 0)
             {
                chunkCount = 1;

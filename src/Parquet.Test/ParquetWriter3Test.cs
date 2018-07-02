@@ -33,9 +33,7 @@ namespace Parquet.Test
       private DataColumn CreateColumn<T>(Field f, params T[] values)
       {
          var df = (DataField)f;
-         var list = new List<T>(values);
-
-         return new DataColumn(df, list);
+         return new DataColumn(df, values);
       }
    }
 }

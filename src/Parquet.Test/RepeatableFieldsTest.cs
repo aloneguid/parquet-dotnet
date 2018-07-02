@@ -28,21 +28,14 @@ namespace Parquet.Test
          // arrange 
          var field = new DataField<IEnumerable<int>>("items");
          var column = new DataColumn(field);
-         column.IncrementLevel();
-         column.Add(1);
-         column.Add(2);
-         column.DecrementLevel();
-         column.IncrementLevel();
-         column.Add(3);
-         column.Add(4);
-         column.DecrementLevel();
+         int[] cdata = new int[] { 1, 2, 3, 4 };
+         int[] dreps = new int[] { 0, 1, 0, 1 };
 
          // act
          DataColumn rc = WriteReadSingleColumn(field, 2, column);
 
          // assert
-         Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.DefinedData);
-         Assert.Equal(new int[] { 1, 1, 1, 1 }, rc.DefinitionLevels);
+         Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.Data);
          Assert.Equal(new int[] { 0, 1, 0, 1 }, rc.RepetitionLevels);
 
       }

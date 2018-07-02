@@ -28,8 +28,9 @@ small improvement: Field.Path property is made public, Interval class is made pu
    </PropertyGroup>
 
    <ItemGroup>
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
     <DotNetCliToolReference Include="dotnet-housework" Version="0.0.9" />
-  </ItemGroup>        
+  </ItemGroup>
 
 </Project>

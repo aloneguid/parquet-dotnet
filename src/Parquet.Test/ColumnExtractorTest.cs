@@ -34,8 +34,8 @@ namespace Parquet.Test
          };
 
          List<DataColumn> columns = extractor.ExtractColumns(classes, schema).ToList();
-         Assert.Equal(new[] { 1, 2, 3 }, columns[0].DefinedData);
-         Assert.Equal(new[] { "First", "Second", "Third" }, columns[1].DefinedData);
+         Assert.Equal(new[] { 1, 2, 3 }, columns[0].Data);
+         Assert.Equal(new[] { "First", "Second", "Third" }, columns[1].Data);
       }
 
       [Fact]
@@ -60,9 +60,9 @@ namespace Parquet.Test
 
          List<DataColumn> columns = extractor.ExtractColumns(ac, schema).ToList();
 
-         Assert.Equal(new[] { 1, 2 }, columns[0].DefinedData);
+         Assert.Equal(new[] { 1, 2 }, columns[0].Data);
 
-         Assert.Equal(new[] { "Fiddler", "On", "The", "Roof" }, columns[1].DefinedData);
+         Assert.Equal(new[] { "Fiddler", "On", "The", "Roof" }, columns[1].Data);
          Assert.Equal(new[] { 0, 1, 0, 1 }, columns[1].RepetitionLevels);
       }
    }
