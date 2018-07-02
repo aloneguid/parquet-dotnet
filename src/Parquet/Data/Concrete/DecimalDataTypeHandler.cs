@@ -64,28 +64,6 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         IList result = CreateEmptyList(tse.IsNullable(), false, 0);
-
-         switch(tse.Type)
-         {
-            case Thrift.Type.INT32:
-               ReadAsInt32(tse, reader, result);
-               break;
-            case Thrift.Type.INT64:
-               ReadAsInt64(tse, reader, result);
-               break;
-            case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
-               ReadAsFixedLengthByteArray(tse, reader, result);
-               break;
-            default:
-               throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
-         }
-
-         return result;
-      }
-
       public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
          decimal[] ddest = (decimal[])dest;

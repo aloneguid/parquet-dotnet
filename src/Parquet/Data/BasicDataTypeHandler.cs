@@ -48,32 +48,10 @@ namespace Parquet.Data
          return new DataField(tse.Name, DataType, hasNulls, isArray);
       }
 
-      public abstract IList CreateEmptyList(bool isNullable, bool isArray, int capacity);
-
-      public virtual IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         int totalLength = (int)reader.BaseStream.Length;
-
-         //create list with effective capacity
-         //int capacity = (int)((reader.BaseStream.Position - totalLength) / _typeWidth);
-         int capacity = 0;
-         IList result = CreateEmptyList(tse.IsNullable(), false, capacity);
-
-         Stream s = reader.BaseStream;
-         while (s.Position < totalLength)
-         {
-            TSystemType element = ReadOne(reader);
-            result.Add(element);
-         }
-
-         return result;
-      }
-
       public virtual int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
          return Read(tse, reader, formatOptions, (TSystemType[])dest, offset);
       }
-
 
       private int Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions, TSystemType[] dest, int offset)
       {

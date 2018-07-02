@@ -11,13 +11,6 @@ namespace Parquet.Data.Concrete
       {
       }
 
-      public override IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
-      {
-         return isArray
-            ? (IList)(new List<List<byte[]>>())
-            : (IList)(new List<byte[]>());
-      }
-
       protected override byte[] ReadOne(BinaryReader reader)
       {
          int length = reader.ReadInt32();

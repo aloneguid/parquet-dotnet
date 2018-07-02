@@ -28,13 +28,8 @@ namespace Parquet.Data
 
       Type ClrType { get; }
 
-      IList CreateEmptyList(bool isNullable, bool isArray, int capacity);
-
-      IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions);
-
       int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions);
 
       void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values);
-
    }
 }

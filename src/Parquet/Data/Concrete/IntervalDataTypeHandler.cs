@@ -26,26 +26,6 @@ namespace Parquet.Data.Concrete
          tse.Type_length = 12;
       }
 
-
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         IList result = CreateEmptyList(tse.IsNullable(), false, 0);
-         int typeLength = tse.Type_length;
-         if (typeLength == 0) return result;
-
-         while(reader.BaseStream.Position + 12 <= reader.BaseStream.Length)
-         {
-            // assume this is the number of months / days / millis offset from the Julian calendar
-            int months = reader.ReadInt32();
-            int days = reader.ReadInt32();
-            int millis = reader.ReadInt32();
-
-            result.Add(new Interval(months, days, millis));
-         }
-
-         return result;
-      }
-
       public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
          int typeLength = tse.Type_length;

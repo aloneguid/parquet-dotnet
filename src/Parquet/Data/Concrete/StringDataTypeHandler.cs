@@ -17,13 +17,6 @@ namespace Parquet.Data.Concrete
       {
       }
 
-      public override IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
-      {
-         return isArray
-            ? (IList)(new List<List<string>>())
-            : (IList)(new List<string>(capacity));
-      }
-
       public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
       {
          return tse.__isset.type &&

@@ -57,28 +57,6 @@ namespace Parquet.Data.Concrete
 
       }
 
-      public override IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         IList result = CreateEmptyList(tse.IsNullable(), false, 0);
-
-         switch(tse.Type)
-         {
-            case Thrift.Type.INT32:
-               ReadAsInt32(reader, result);
-               break;
-            case Thrift.Type.INT64:
-               ReadAsInt64(reader, result);
-               break;
-            case Thrift.Type.INT96:
-               ReadAsInt96(reader, result);
-               break;
-            default:
-               throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
-         }
-
-         return result;
-      }
-
       public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
          switch(tse.Type)
