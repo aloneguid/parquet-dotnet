@@ -29,24 +29,25 @@ namespace Parquet.Data
          Array definedData,
          int[] definitionLevels, int maxDefinitionLevel,
          int[] repetitionLevels, int maxRepetitionLevel,
-         Array dictionary) : this(field)
+         Array dictionary,
+         int[] dictionaryIndexes) : this(field)
       {
-         if (dictionary != null) throw new NotSupportedException("dictionaries not yet supported in V3");
-
-         /*
-          1. dictionary
-          2. definitions
-          3. repetitions
-          */
-
          Data = definedData;
 
-         if(definitionLevels != null)
+         // 1. Dictionary merge
+         if (dictionary != null)
          {
-            Data = UnpackDefinitions(field, definedData, definitionLevels, maxDefinitionLevel);
+            Data = MergeDictionary(dictionary, dictionaryIndexes);
          }
 
-         if (repetitionLevels != null) throw new NotSupportedException("repetitions not yet supported in V3");
+         // 2. Apply definitions
+         if(definitionLevels != null)
+         {
+            Data = UnpackDefinitions(field, Data, definitionLevels, maxDefinitionLevel);
+         }
+
+         // 3. Apply repetitions
+         RepetitionLevels = repetitionLevels;
       }
 
       public Array Data { get; private set; }
@@ -65,6 +66,7 @@ namespace Parquet.Data
          for(int i = 0; i < definitonLevels.Length; i++)
          {
             int level = definitonLevels[i];
+
             if(level == maxDefinitionLevel)
             {
                result.SetValue(src.GetValue(isrc++), i);
@@ -74,18 +76,11 @@ namespace Parquet.Data
          return result;
       }
 
-      /// <summary>
-      /// 
-      /// </summary>
-      /// <param name="maxDefinitionLevel"></param>
-      /// <param name="definitionLevels">Rented array where length can be greater than needed. You have to release it after use.</param>
-      /// <param name="definitionLevelCount"></param>
-      /// <returns></returns>
-      internal Array PackDefinitions(int maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelCount)
+      internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount)
       {
          if (!Field.HasNulls)
          {
-            definitionLevels = null;
+            pooledDefinitionLevels = null;
             definitionLevelCount = 0;
             return Data;
          }
@@ -102,21 +97,35 @@ namespace Parquet.Data
          Array result = Array.CreateInstance(Field.ClrType, Data.Length - nullCount);
          int ir = 0;
          //definitionLevels = new int[Data.Length];
-         definitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
+         pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
          definitionLevelCount = Data.Length;
          for(int i = 0; i < Data.Length; i++)
          {
             object value = Data.GetValue(i);
             if(value == null)
             {
-               definitionLevels[i] = 0;
+               pooledDefinitionLevels[i] = 0;
             }
             else
             {
-               definitionLevels[i] = maxDefinitionLevel;
+               pooledDefinitionLevels[i] = maxDefinitionLevel;
                result.SetValue(value, ir++);
             }
          }
+         return result;
+      }
+
+      private Array MergeDictionary(Array dictionary, int[] indexes)
+      {
+         Array result = Array.CreateInstance(Field.ClrType, indexes.Length);
+
+         for(int i = 0; i < indexes.Length; i++)
+         {
+            int index = indexes[i];
+            object value = dictionary.GetValue(index);
+            result.SetValue(value, i);
+         }
+
          return result;
       }
    }

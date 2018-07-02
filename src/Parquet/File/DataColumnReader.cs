@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Parquet.Data;
-using Parquet.File.Data;
 using Parquet.File.Streams;
 using Parquet.File.Values;
 
@@ -110,23 +106,8 @@ namespace Parquet.File
             _dataField, colData.values,
             colData.definitions, _maxDefinitionLevel,
             colData.repetitions, _maxRepetitionLevel,
-            colData.dictionary);
-      }
-
-      private static void MergeDictionary(ColumnRawData cd)
-      {
-         if (cd.indexes == null) return;
-
-         int[] tv = (int[])cd.values;
-
-         for(int i = 0; i < cd.valuesOffset; i++)
-         {
-            int index = tv[i];
-            cd.values.SetValue(cd.dictionary.GetValue(index), i);
-         }
-
-         cd.indexes = null;
-         cd.indexesOffset = 0;
+            colData.dictionary,
+            colData.indexes);
       }
 
       private bool TryReadDictionaryPage(Thrift.PageHeader ph, out Array dictionary, out int dictionaryOffset)
