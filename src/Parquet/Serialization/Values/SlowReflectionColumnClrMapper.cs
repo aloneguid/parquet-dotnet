@@ -22,7 +22,7 @@ namespace Parquet.Serialization.Values
 
       public IReadOnlyCollection<DataColumn> ExtractDataColumns(IReadOnlyCollection<DataField> dataFields, IEnumerable classInstances)
       {
-         List<DataColumn> result = dataFields.Select(df => new DataColumn(df)).ToList();
+         List<DataColumn> result = dataFields.Select(df => new DataColumn(df, null)).ToList();
 
          foreach (object ci in classInstances)
          {

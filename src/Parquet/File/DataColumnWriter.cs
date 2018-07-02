@@ -85,9 +85,9 @@ namespace Parquet.File
             {
                using (var writer = new BinaryWriter(pageStream, Encoding.UTF8, true))
                {
-                  if (maxRepetitionLevel > 0)
+                  if (column.RepetitionLevels != null)
                   {
-                     WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels == null ? 0 : column.RepetitionLevels.Length, maxRepetitionLevel);
+                     WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
                   }
 
                   Array data = column.Data;
@@ -102,7 +102,10 @@ namespace Parquet.File
                      }
                      finally
                      {
-                        ArrayPool<int>.Shared.Return(definitionLevels);
+                        if (definitionLevels != null)
+                        {
+                           ArrayPool<int>.Shared.Return(definitionLevels);
+                        }
                      }
                   }
 

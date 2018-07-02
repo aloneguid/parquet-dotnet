@@ -27,9 +27,10 @@ namespace Parquet.Test
 
          // arrange 
          var field = new DataField<IEnumerable<int>>("items");
-         var column = new DataColumn(field);
-         int[] cdata = new int[] { 1, 2, 3, 4 };
-         int[] dreps = new int[] { 0, 1, 0, 1 };
+         var column = new DataColumn(
+            field,
+            new int[] { 1, 2, 3, 4 },
+            new int[] { 0, 1, 0, 1 });
 
          // act
          DataColumn rc = WriteReadSingleColumn(field, 2, column);

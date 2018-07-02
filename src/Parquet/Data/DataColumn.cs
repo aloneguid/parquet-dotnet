@@ -12,7 +12,7 @@ namespace Parquet.Data
    /// </summary>
    internal class DataColumn
    {
-      public DataColumn(DataField field)
+      private DataColumn(DataField field)
       {
          Field = field ?? throw new ArgumentNullException(nameof(field));
 
@@ -20,9 +20,11 @@ namespace Parquet.Data
          HasRepetitions = field.IsArray;
       }
 
-      public DataColumn(DataField field, Array data) : this(field)
+      public DataColumn(DataField field, Array data, int[] repetitionLevels = null) : this(field)
       {
          Data = data ?? throw new ArgumentNullException(nameof(data));
+
+         RepetitionLevels = repetitionLevels;
       }
 
       internal DataColumn(DataField field,
@@ -78,10 +80,16 @@ namespace Parquet.Data
 
       internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount)
       {
+         pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
+         definitionLevelCount = Data.Length;
+
          if (!Field.HasNulls)
          {
-            pooledDefinitionLevels = null;
-            definitionLevelCount = 0;
+            for(int i = 0; i < Data.Length; i++)
+            {
+               pooledDefinitionLevels[i] = maxDefinitionLevel;
+            }
+
             return Data;
          }
 
@@ -96,9 +104,6 @@ namespace Parquet.Data
          //pack
          Array result = Array.CreateInstance(Field.ClrType, Data.Length - nullCount);
          int ir = 0;
-         //definitionLevels = new int[Data.Length];
-         pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
-         definitionLevelCount = Data.Length;
          for(int i = 0; i < Data.Length; i++)
          {
             object value = Data.GetValue(i);
