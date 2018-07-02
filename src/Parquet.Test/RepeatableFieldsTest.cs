@@ -10,21 +10,6 @@ namespace Parquet.Test
       [Fact]
       public void Simple_repeated_field_write_read()
       {
-         //v2
-
-         var ds = new DataSet(
-            new DataField<int>("id"),
-            new DataField<IEnumerable<string>>("items"));
-
-         ds.Add(1, new[] { "one", "two" });
-
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
-
-         Assert.Equal(1, ds1[0][0]);
-         Assert.Equal(new[] { "one", "two" }, ds1[0][1]);
-
-         //v3
-
          // arrange 
          var field = new DataField<IEnumerable<int>>("items");
          var column = new DataColumn(

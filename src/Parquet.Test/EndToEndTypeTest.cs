@@ -98,24 +98,6 @@ namespace Parquet.Test
       {
          (DataField field, object expectedValue) input = _nameToData[name];
 
-         //v2
-
-         //parquet writer 2
-         var ds = new DataSet(input.field) { new Row(input.expectedValue) };
-         var ms = new MemoryStream();
-         ParquetWriter2.Write(ds, ms);
-
-         ms.Position = 0;
-         DataSet ds1 = ParquetReader2.Read(ms);
-
-         object expectedValue = ds[0][0];
-         object actualValue = ds1[0][0];
-
-         Assert.True(expectedValue == null && actualValue == null || expectedValue.Equals(actualValue),
-            $"{name}| expected: [{expectedValue}], actual: [{actualValue}], schema element: {input.field}");
-
-         //v3
-
          object actual = WriteReadSingle(input.field, input.expectedValue);
 
          bool equal = (input.expectedValue == null && actual == null || actual.Equals(input.expectedValue));

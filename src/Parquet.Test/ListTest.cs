@@ -1,4 +1,4 @@
-﻿using Parquet.Data;
+﻿/*using Parquet.Data;
 using Parquet.File;
 using Xunit;
 
@@ -38,22 +38,6 @@ namespace Parquet.Test
       [Fact]
       public void List_of_elements_is_empty_reads_file()
       {
-         /*
-          * This is a tricky one, as there are actually no elements in the second column, here is a dump of it:
-          * 
-
-repeats1.list.element TV=1 RL=1 DL=3                                         
----------------------------------------------------------------------------- 
-page 0:  DLE:RLE RLE:RLE VLE:PLAIN ST:[no stats for this column] SZ:13 VC:1  
-         
-BINARY repeats1.list.element
---------------------------------------------------------------------------------
-*** row group 1 of 1, values 1 to 1 ***
-value 1: R:0 D:1 V:<null>
-          *
-          *  The dump shows there is actually one value, but with DL=1, whereas column's DL is 3. That means the list is created on level 1
-          *  (repeats entry level).
-          */
 
          DataSet ds = ParquetReader2.Read(OpenTestFile("listofitems-empty-onerow.parquet"));
          Assert.Equal("{2;[]}", ds[0].ToString());
@@ -117,4 +101,4 @@ value 1: R:0 D:1 V:<null>
 
       }
    }
-}
+}*/

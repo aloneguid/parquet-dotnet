@@ -1,4 +1,4 @@
-using Parquet.Data;
+/*using Parquet.Data;
 using System;
 using System.IO;
 using Xunit;
@@ -63,4 +63,4 @@ namespace Parquet.Test
          Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
       }
    }
-}
+}*/

@@ -1,8 +1,0 @@
-﻿{
-   "id": 123,
-   "country": "UK",
-   "population": {
-      "year": 2017,
-      "amount":  12345
-   }
-}

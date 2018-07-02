@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using Parquet.Data;
 using System.IO;
 using Xunit;
@@ -323,5 +323,32 @@ namespace Parquet.Test
          Assert.Equal(    -23233.12m, (decimal)(ds1[2][0]), 2);
          Assert.Equal(  -999999.99m, (decimal)(ds1[3][0]), 2);
       }
+
+      [Fact]
+      public void Write_simplest_int_and_string_columns_in_one_row_group()
+      {
+         var schema = new Schema(new DataField<int>("id"), new DataField<string>("name"));
+
+         using (var ms = new MemoryStream())
+         {
+            using (var writer = new ParquetWriter(schema, ms))
+            {
+               writer.CompressionMethod = CompressionMethod.None;
+
+               using (ParquetRowGroupWriter group = writer.CreateRowGroup(3))
+               {
+                  group.Write(CreateColumn(schema[0], 1, 2, 3));
+                  group.Write(CreateColumn(schema[1], "first", "second", "third"));
+               }
+            }
+         }
+      }
+
+      private DataColumn CreateColumn<T>(Field f, params T[] values)
+      {
+         var df = (DataField)f;
+         return new DataColumn(df, values);
+      }
    }
 }
+*/

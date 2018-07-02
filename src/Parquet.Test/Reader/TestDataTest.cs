@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using System.IO;
 using System.Reflection;
 using Xunit;
@@ -104,7 +104,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_strings()
       {
-         ParquetReader2.Read(OpenTestFile("alltypes_dictionary.plain.parquet")); //test that this doesn't crash
+         ParquetReader.Read(OpenTestFile("alltypes_dictionary.plain.parquet")); //test that this doesn't crash
       }
 
       [Fact]
@@ -178,3 +178,4 @@ namespace Parquet.Test.Reader
       }
    }
 }
+*/

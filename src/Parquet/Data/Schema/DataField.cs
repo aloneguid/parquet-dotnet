@@ -65,15 +65,6 @@ namespace Parquet.Data
          }
       }
 
-      /// <summary>
-      /// To be deprecated soon
-      /// </summary>
-      public IList CreateEmptyList(bool isNullable, bool isArray)
-      {
-         IDataTypeHandler handler = DataTypeFactory.Match(DataType);
-         return handler.CreateEmptyList(isNullable, isArray, 0);
-      }
-
       internal override string PathPrefix
       {
          set
@@ -170,11 +161,6 @@ namespace Parquet.Data
          {
             baseType = baseType.GetNonNullable();
             hasNulls = true;
-         }
-
-         if (typeof(Row) == baseType)
-         {
-            throw new ArgumentException($"{typeof(Row)} is not supported. If you tried to declare a struct please use {typeof(StructField)} instead.");
          }
 
          IDataTypeHandler handler = DataTypeFactory.Match(baseType);

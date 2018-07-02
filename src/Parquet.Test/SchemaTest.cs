@@ -133,12 +133,6 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Generic_field_of_row_throws_a_hint_to_structure()
-      {
-         Assert.Throws<ArgumentException>(() => new DataField<Row>("struct"));
-      }
-
-      [Fact]
       public void Cannot_use_dots_in_field_names()
       {
          Assert.Throws<ArgumentException>(() => new DataField<int>("one.two"));

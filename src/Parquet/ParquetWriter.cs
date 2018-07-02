@@ -97,7 +97,7 @@ namespace Parquet
          if (!schema.Equals(existingSchema))
          {
             string reason = schema.GetNotEqualsMessage(existingSchema, "appending", "existing");
-            throw new ParquetException($"{nameof(DataSet)} schema does not match existing file schema, reason: {reason}");
+            throw new ParquetException($"passed schema does not match existing file schema, reason: {reason}");
          }
       }
 
