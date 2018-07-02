@@ -14,7 +14,7 @@ namespace Parquet
    {
       public static void WriteSingleRowGroup(this Stream stream, Schema schema, int rowCount, params DataColumn[] columns)
       {
-         using (var writer = new ParquetWriter3(schema, stream))
+         using (var writer = new ParquetWriter(schema, stream))
          {
             writer.CompressionMethod = CompressionMethod.None;
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(rowCount))

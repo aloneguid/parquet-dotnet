@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,9 @@ namespace Parquet.Data.Concrete
 {
    class StringDataTypeHandler : BasicDataTypeHandler<string>
    {
+      private static readonly Encoding E = Encoding.UTF8;
+      private static readonly ArrayPool<byte> Pool = ArrayPool<byte>.Shared;
+
       public StringDataTypeHandler() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
       {
       }
@@ -51,8 +55,16 @@ namespace Parquet.Data.Concrete
       protected override string ReadOne(BinaryReader reader)
       {
          int length = reader.ReadInt32();
-         byte[] data = reader.ReadBytes(length);
-         string s = Encoding.UTF8.GetString(data);
+
+         byte[] buffer = Pool.Rent(length);
+         reader.Read(buffer, 0, length);
+         string s = E.GetString(buffer, 0, length);   //can't avoid this :(
+         Pool.Return(buffer);
+
+         //non-optimised version
+         //byte[] data = reader.ReadBytes(length);
+         //string s = Encoding.UTF8.GetString(data);
+
          return s;
       }
 

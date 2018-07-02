@@ -161,8 +161,6 @@ namespace Parquet.File
 
       private void ReadDataPage(Thrift.PageHeader ph, ColumnRawData cd, long maxValues)
       {
-         int max = ph.Data_page_header.Num_values;
-
          using (Stream pageStream = OpenDataPageStream(ph))
          {
             using (var reader = new BinaryReader(pageStream))
@@ -172,25 +170,24 @@ namespace Parquet.File
                   //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
                   if (cd.repetitions == null) cd.repetitions = new int[cd.maxCount];
 
-                  cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, max, cd.repetitions, cd.repetitionsOffset);
+                  cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset);
                }
 
                if (_maxDefinitionLevel > 0)
                {
                   if (cd.definitions == null) cd.definitions = new int[cd.maxCount];
 
-                  cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, max, cd.definitions, cd.definitionsOffset);
+                  cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset);
                }
 
                ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
-                  max,
                   ref cd.values, ref cd.valuesOffset,
                   ref cd.indexes, ref cd.indexesOffset);
             }
          }
       }
 
-      private int ReadLevels(BinaryReader reader, int maxLevel, int maxValues, int[] dest, int offset)
+      private int ReadLevels(BinaryReader reader, int maxLevel, int[] dest, int offset)
       {
          int bitWidth = maxLevel.GetBitWidth();
 
@@ -198,7 +195,6 @@ namespace Parquet.File
       }
 
       private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long maxValues,
-         int maxArrayLength,
          ref Array values, ref int valuesOffset,
          ref int[] indexes, ref int indexesOffset)
       {
@@ -207,17 +203,17 @@ namespace Parquet.File
          switch (encoding)
          {
             case Thrift.Encoding.PLAIN:
-               if (values == null) values = Array.CreateInstance(_dataField.ClrType, maxArrayLength);
+               if (values == null) values = Array.CreateInstance(_dataField.ClrType, (int)maxValues);
                valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset, _parquetOptions);
                break;
 
             case Thrift.Encoding.RLE:
-               if (indexes == null) indexes = new int[maxArrayLength];
+               if (indexes == null) indexes = new int[(int)maxValues];
                indexesOffset += RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, indexes, indexesOffset);
                break;
 
             case Thrift.Encoding.PLAIN_DICTIONARY:
-               if (indexes == null) indexes = new int[maxArrayLength];
+               if (indexes == null) indexes = new int[(int)maxValues];
                indexesOffset += ReadPlainDictionary(reader, maxValues, indexes, indexesOffset);
                break;
 

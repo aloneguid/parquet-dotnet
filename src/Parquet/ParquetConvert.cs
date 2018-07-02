@@ -33,7 +33,7 @@ namespace Parquet
          if (writerOptions == null) writerOptions = new WriterOptions();
 
          var extractor = new ColumnExtractor();
-         using (var writer = new ParquetWriter3(schema, destination, writerOptions: writerOptions))
+         using (var writer = new ParquetWriter(schema, destination, writerOptions: writerOptions))
          {
             writer.CompressionMethod = compressionMethod;
 
@@ -60,7 +60,7 @@ namespace Parquet
 
          IColumnClrMapper mapper = new SlowReflectionColumnClrMapper(typeof(T));
 
-         using (var reader = new ParquetReader3(input))
+         using (var reader = new ParquetReader(input))
          {
             Schema fileSchema = reader.Schema;
             List<DataField> dataFields = fileSchema.GetDataFields();

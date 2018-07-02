@@ -31,10 +31,10 @@ namespace Parquet.Test
       {
          var ms = new MemoryStream();
 
-         ParquetWriter.Write(original, ms, CompressionMethod.None, null, writerOptions);
+         ParquetWriter2.Write(original, ms, CompressionMethod.None, null, writerOptions);
 
          ms.Position = 0;
-         return ParquetReader.Read(ms);
+         return ParquetReader2.Read(ms);
       }
    }
 }

@@ -104,7 +104,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_strings()
       {
-         ParquetReader.Read(OpenTestFile("alltypes_dictionary.plain.parquet")); //test that this doesn't crash
+         ParquetReader2.Read(OpenTestFile("alltypes_dictionary.plain.parquet")); //test that this doesn't crash
       }
 
       [Fact]

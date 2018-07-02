@@ -20,7 +20,7 @@ namespace Parquet.Test
             new DataField<string>("nonsense"));
          ds.Add(1, RandomGenerator.RandomString);
 
-         using (var writer = new ParquetWriter(forwardOnly))
+         using (var writer = new ParquetWriter2(forwardOnly))
          {
             writer.Write(ds);
             writer.Write(ds);
@@ -28,7 +28,7 @@ namespace Parquet.Test
          }
 
          ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms);
+         DataSet ds1 = ParquetReader2.Read(ms);
 
          Assert.Equal(3, ds1.RowCount);
 

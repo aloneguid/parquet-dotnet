@@ -55,7 +55,7 @@ value 1: R:0 D:1 V:<null>
           *  (repeats entry level).
           */
 
-         DataSet ds = ParquetReader.Read(OpenTestFile("listofitems-empty-onerow.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("listofitems-empty-onerow.parquet"));
          Assert.Equal("{2;[]}", ds[0].ToString());
          Assert.Equal(1, ds.RowCount);
       }
@@ -64,7 +64,7 @@ value 1: R:0 D:1 V:<null>
       public void List_of_elements_with_some_items_empty_reads_file()
       {
          //v2
-         DataSet ds = ParquetReader.Read(OpenTestFile("listofitems-empty-alternates.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("listofitems-empty-alternates.parquet"));
          Assert.Equal(4, ds.RowCount);
          Assert.Equal("{1;[1;2;3]}", ds[0].ToString());
          Assert.Equal("{2;[]}", ds[1].ToString());
@@ -72,7 +72,7 @@ value 1: R:0 D:1 V:<null>
          Assert.Equal("{4;[]}", ds[3].ToString());
 
          //v3
-         using (var reader = new ParquetReader3(OpenTestFile("listofitems-empty-alternates.parquet")))
+         using (var reader = new ParquetReader(OpenTestFile("listofitems-empty-alternates.parquet")))
          {
             using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0))
             {

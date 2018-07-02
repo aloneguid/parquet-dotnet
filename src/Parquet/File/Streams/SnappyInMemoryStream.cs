@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -91,9 +92,10 @@ namespace Parquet.File.Streams
       {
          var snappyDecompressor = new SnappyDecompressor();
 
-         byte[] buffer = new byte[source.Length];
+         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)source.Length);
          source.Read(buffer, 0, (int)source.Length);
          byte[] uncompressedBytes = snappyDecompressor.Decompress(buffer, 0, (int)source.Length);
+         ArrayPool<byte>.Shared.Return(buffer);
          return new MemoryStream(uncompressedBytes);
 
       }

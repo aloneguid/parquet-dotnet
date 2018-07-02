@@ -17,7 +17,7 @@ namespace Parquet.Test
 
          using (var ms = new MemoryStream())
          {
-            using (var writer = new ParquetWriter3(schema, ms))
+            using (var writer = new ParquetWriter(schema, ms))
             {
                writer.CompressionMethod = CompressionMethod.None;
 

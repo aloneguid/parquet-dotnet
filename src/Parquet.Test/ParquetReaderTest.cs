@@ -54,7 +54,7 @@ namespace Parquet.Test
       [Fact]
       public void Opening_readable_and_seekable_stream_succeeds()
       {
-         new ParquetReader(new ReadableAndSeekableStream(new NonReadableSeekableStream("PAR1DATAPAR1".ToMemoryStream())));
+         new ParquetReader2(new ReadableAndSeekableStream(new NonReadableSeekableStream("PAR1DATAPAR1".ToMemoryStream())));
       }
 
       [Fact]
@@ -65,10 +65,10 @@ namespace Parquet.Test
          var ro = new ReaderOptions { Offset = 0, Count = 2 };
 
          var ms = new MemoryStream();
-         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+         ParquetWriter2.Write(ds, ms, CompressionMethod.None, null, wo);
 
          ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms, null, ro);
+         DataSet ds1 = ParquetReader2.Read(ms, null, ro);
 
          Assert.Equal(30, ds1.TotalRowCount);
          Assert.Equal(2, ds1.RowCount);
@@ -84,10 +84,10 @@ namespace Parquet.Test
          var ro = new ReaderOptions { Offset = 5, Count = 2 };
 
          var ms = new MemoryStream();
-         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+         ParquetWriter2.Write(ds, ms, CompressionMethod.None, null, wo);
 
          ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms, null, ro);
+         DataSet ds1 = ParquetReader2.Read(ms, null, ro);
 
          Assert.Equal(15, ds1.TotalRowCount);
          Assert.Equal(2, ds1.RowCount);
@@ -103,10 +103,10 @@ namespace Parquet.Test
          var ro = new ReaderOptions { Offset = 4, Count = 2 };
 
          var ms = new MemoryStream();
-         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+         ParquetWriter2.Write(ds, ms, CompressionMethod.None, null, wo);
 
          ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms, null, ro);
+         DataSet ds1 = ParquetReader2.Read(ms, null, ro);
 
          Assert.Equal(15, ds1.TotalRowCount);
          Assert.Equal(2, ds1.RowCount);
@@ -122,10 +122,10 @@ namespace Parquet.Test
          var ro = new ReaderOptions { Offset = -4, Count = 2 };
 
          var ms = new MemoryStream();
-         ParquetWriter.Write(ds, ms, CompressionMethod.None, null, wo);
+         ParquetWriter2.Write(ds, ms, CompressionMethod.None, null, wo);
 
          ms.Position = 0;
-         Assert.Throws<ParquetException>(() => ParquetReader.Read(ms, null, ro));
+         Assert.Throws<ParquetException>(() => ParquetReader2.Read(ms, null, ro));
       }
 
       [Fact]
@@ -134,10 +134,10 @@ namespace Parquet.Test
          DataSet ds = DataSetGenerator.Generate(10);
 
          var ms = new MemoryStream();
-         ParquetWriter.Write(ds, ms);
+         ParquetWriter2.Write(ds, ms);
 
          ms.Position = 0;
-         DataSet ds1 = ParquetReader.Read(ms);
+         DataSet ds1 = ParquetReader2.Read(ms);
          Assert.StartsWith("Parquet.Net", ds1.Metadata.CreatedBy);
       }
 
@@ -145,7 +145,7 @@ namespace Parquet.Test
       [Fact]
       public void Reads_compat_nation_impala_file()
       {
-         DataSet nation = ParquetReader.Read(OpenTestFile("nation.impala.parquet"));
+         DataSet nation = ParquetReader2.Read(OpenTestFile("nation.impala.parquet"));
 
          Assert.Equal(25, nation.RowCount);
       }
@@ -159,7 +159,7 @@ namespace Parquet.Test
           *    45 pages (0-44)
           */
 
-         DataSet customer = ParquetReader.Read(OpenTestFile("customer.impala.parquet"));
+         DataSet customer = ParquetReader2.Read(OpenTestFile("customer.impala.parquet"));
 
          Assert.Equal(150000, customer.RowCount);
       }
@@ -190,7 +190,7 @@ root
          */
 
 
-         DataSet ds = ParquetReader.Read(OpenTestFile("nested.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("nested.parquet"));
 
          //much easier to compare mad nestness with .ToString(), but will break when it changes
          Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", ds[0].ToString());
@@ -200,7 +200,7 @@ root
       [Fact]
       public void Reads_list_of_structures()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("repeatedstruct.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("repeatedstruct.parquet"));
 
          Assert.Equal("{[{UK;London};{US;New York}];1}", ds[0].ToString());
       }
@@ -215,7 +215,7 @@ root
 |-- id: long (nullable = true)
           */
 
-         DataSet ds = ParquetReader.Read(OpenTestFile("simplerepeated.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("simplerepeated.parquet"));
 
          Assert.Equal(2, ds.Schema.Length);
          Assert.Equal(SchemaType.List, ds.Schema[0].SchemaType);
@@ -245,7 +245,7 @@ root
          //Assert.Throws<NotSupportedException>(() => ParquetReader.Read(OpenTestFile("simplenested.parquet")));
          //return;
 
-         DataSet ds = ParquetReader.Read(OpenTestFile("simplenested.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("simplenested.parquet"));
 
          Assert.Equal(1, ds.RowCount);
          Assert.Equal(2, ds.FieldCount);
@@ -270,7 +270,7 @@ root
       [Fact]
       public void Read_simple_map()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("map.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("map.parquet"));
 
          Field ms = ds.Schema[1];
          Assert.Equal("numbers", ms.Name);
@@ -281,7 +281,7 @@ root
       [Fact]
       public void Read_hardcoded_decimal()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("complex-primitives.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("complex-primitives.parquet"));
 
          Assert.Equal((decimal)1.2, ds[0][1]);
       }
@@ -301,13 +301,13 @@ root
       [Fact]
       public void Read_all_nulls_no_booleans()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("all_nulls_no_booleans.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("all_nulls_no_booleans.parquet"));
       }
 
       [Fact]
       public void Read_all_nulls_file()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("all_nulls.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("all_nulls.parquet"));
 
          Assert.Equal(1, ds.Schema.Length);
          Assert.Equal("lognumber", ds.Schema[0].Name);
@@ -318,13 +318,13 @@ root
       [Fact]
       public void Read_all_nulls_decimal_column()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("decimalnulls.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("decimalnulls.parquet"));
       }
 
       [Fact]
       public void Read_all_legacy_decimals()
       {
-         DataSet ds = ParquetReader.Read(OpenTestFile("decimallegacy.parquet"));
+         DataSet ds = ParquetReader2.Read(OpenTestFile("decimallegacy.parquet"));
 
          Row row = ds[0];
          Assert.Equal(1, (int)row[0]);
@@ -342,7 +342,7 @@ root
             Columns = new[] { "n_name", "n_regionkey" }
          };
 
-         DataSet ds = ParquetReader.Read(OpenTestFile("nation.impala.parquet"), null, options);
+         DataSet ds = ParquetReader2.Read(OpenTestFile("nation.impala.parquet"), null, options);
 
          Assert.Equal(2, ds.FieldCount);
       }

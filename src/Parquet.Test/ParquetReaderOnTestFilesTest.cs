@@ -39,7 +39,7 @@ namespace Parquet.Test
       {
          using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (var r = new ParquetReader2(s))
             {
                DataSet ds = r.Read();
             }
@@ -52,7 +52,7 @@ namespace Parquet.Test
          DateTimeOffset offset, offset2;
          using (Stream s = OpenTestFile("dates.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (var r = new ParquetReader2(s))
             {
                DataSet ds = r.Read();
                offset = (DateTimeOffset)ds[0][1];

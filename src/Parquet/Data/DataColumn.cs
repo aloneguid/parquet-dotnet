@@ -10,7 +10,7 @@ namespace Parquet.Data
    /// The primary low-level structure to hold data for a parqut column.
    /// Handles internal data composition/decomposition to enrich with custom data Parquet format requires.
    /// </summary>
-   internal class DataColumn
+   public class DataColumn
    {
       private DataColumn(DataField field)
       {
@@ -20,6 +20,12 @@ namespace Parquet.Data
          HasRepetitions = field.IsArray;
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="field"></param>
+      /// <param name="data"></param>
+      /// <param name="repetitionLevels"></param>
       public DataColumn(DataField field, Array data, int[] repetitionLevels = null) : this(field)
       {
          Data = data ?? throw new ArgumentNullException(nameof(data));
@@ -52,12 +58,24 @@ namespace Parquet.Data
          RepetitionLevels = repetitionLevels;
       }
 
+      /// <summary>
+      /// Column data
+      /// </summary>
       public Array Data { get; private set; }
 
+      /// <summary>
+      /// Repetition levels if any.
+      /// </summary>
       public int[] RepetitionLevels { get; private set; }
 
+      /// <summary>
+      /// Data field
+      /// </summary>
       public DataField Field { get; private set; }
 
+      /// <summary>
+      /// 
+      /// </summary>
       public bool HasRepetitions { get; private set; }
 
       private static Array UnpackDefinitions(DataField df, Array src, int[] definitonLevels, int maxDefinitionLevel)

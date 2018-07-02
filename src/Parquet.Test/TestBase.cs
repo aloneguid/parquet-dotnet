@@ -25,7 +25,7 @@ namespace Parquet.Test
             ms.Position = 0;
 
             // read first gow group and first column
-            using (var reader = new ParquetReader3(ms))
+            using (var reader = new ParquetReader(ms))
             {
                if (reader.RowGroupCount == 0) return null;
                ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
@@ -46,7 +46,7 @@ namespace Parquet.Test
          {
             // write single value
 
-            using (var writer = new ParquetWriter3(new Schema(field), ms))
+            using (var writer = new ParquetWriter(new Schema(field), ms))
             {
                writer.CompressionMethod = compressionMethod;
 
@@ -68,7 +68,7 @@ namespace Parquet.Test
             // read back single value
 
             ms.Position = 0;
-            using (var reader = new ParquetReader3(ms))
+            using (var reader = new ParquetReader(ms))
             {
                using (ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0))
                {

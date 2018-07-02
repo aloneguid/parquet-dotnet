@@ -103,7 +103,7 @@ namespace Parquet.Test.Reader
       {
          using (Stream s = OpenTestFile(name))
          {
-            return ParquetReader.Read(s, new ParquetOptions { TreatByteArrayAsString = true });
+            return ParquetReader2.Read(s, new ParquetOptions { TreatByteArrayAsString = true });
          }
       }
 

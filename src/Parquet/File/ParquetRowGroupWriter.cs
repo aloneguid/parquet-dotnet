@@ -7,7 +7,10 @@ using Parquet.File.Values;
 
 namespace Parquet.File
 {
-   internal class ParquetRowGroupWriter : IDisposable
+   /// <summary>
+   /// 
+   /// </summary>
+   public class ParquetRowGroupWriter : IDisposable
    {
       private readonly Schema _schema;
       private readonly Stream _stream;
@@ -44,6 +47,10 @@ namespace Parquet.File
          _thschema = _footer.GetWriteableSchema().ToList();
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="column"></param>
       public void Write(DataColumn column)
       {
          if (column == null) throw new ArgumentNullException(nameof(column));
@@ -60,6 +67,9 @@ namespace Parquet.File
          _thriftRowGroup.Columns.Add(chunk);
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
       public void Dispose()
       {
          //todo: check if all columns are present
