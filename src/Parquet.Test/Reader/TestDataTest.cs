@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using Xunit;
@@ -102,12 +102,6 @@ namespace Parquet.Test.Reader
       }
 
       [Fact]
-      public void Alltypes_dictionary_no_strings()
-      {
-         ParquetReader.Read(OpenTestFile("alltypes_dictionary.plain.parquet")); //test that this doesn't crash
-      }
-
-      [Fact]
       public void Alltypes_dictionary_no_compression_by_spark()
       {
          CompareFiles("alltypes_dictionary", "plain-spark21",
@@ -178,4 +172,3 @@ namespace Parquet.Test.Reader
       }
    }
 }
-*/

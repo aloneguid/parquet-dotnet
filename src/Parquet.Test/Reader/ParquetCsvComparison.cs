@@ -1,6 +1,8 @@
-﻿/*using NetBox.FileFormats;
+﻿using NetBox.FileFormats;
 using Parquet.Data;
+using Parquet.File;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,69 +18,55 @@ namespace Parquet.Test.Reader
    {
       protected void CompareFiles(string baseName, string encoding, params Type[] columnTypes)
       {
-         DataSet parquet = ReadParquet($"{baseName}.{encoding}.parquet");
-         DataSet csv = ReadCsv($"{baseName}.csv");
+         DataColumn[] parquet = ReadParquet($"{baseName}.{encoding}.parquet");
+         DataColumn[] csv = ReadCsv($"{baseName}.csv");
          Compare(parquet, csv, columnTypes);
       }
 
-      private void Compare(DataSet parquet, DataSet csv, Type[] columnTypes)
+      private void Compare(DataColumn[] parquet, DataColumn[] csv, Type[] columnTypes)
       {
          //compar number of columns is the same
-         Assert.Equal(parquet.FieldCount, csv.FieldCount);
+         Assert.Equal(parquet.Length, csv.Length);
 
          //compare column names
-         foreach(string pq in parquet.Schema.FieldNames)
+         for(int i = 0; i < parquet.Length; i++)
          {
-            Assert.Contains(pq, csv.Schema.FieldNames);
+            Assert.Contains(csv, dc => dc.Field.Name == parquet[i].Field.Name);
          }
 
          //compare column values one by one
-         Assert.True(columnTypes.Length == csv.FieldCount,
-            $"incorrect type count, expected {csv.Count} but found {columnTypes.Length}");
-
-         //compare individual rows
-         for(int i = 0; i < parquet.RowCount; i++)
+         for(int ci = 0; ci < parquet.Length; ci++)
          {
-            Row pr = parquet[i];
-            Row cr = csv[i];
+            DataColumn pc = parquet[ci];
+            DataColumn cc = csv[ci];
 
-            //validate actual values
-            Compare(parquet.Schema, pr, cr);
-         }
-      }
-
-      private void Compare(Schema schema, Row pc, Row cc)
-      {
-         for(int i = 0; i < pc.Length; i++)
-         {
-            //todo: this comparison needs to be improved, probably doesn't handle nulls etc.
-
-            Field se = schema.Fields[i];
-            Type clrType = DataTypeFactory.Match(se).ClrType;
-
-            object pv = pc[i];
-            object cv = ChangeType(cc[i], clrType);
-
-            if (pv == null)
+            for(int ri = 0; ri < pc.Data.Length; ri++)
             {
-               bool isCsvNull =
-                  cv == null ||
-                  (cv is string s && s == string.Empty);
+               Type clrType = pc.Field.ClrType;
+               object pv = pc.Data.GetValue(ri);
+               object cv = ChangeType(cc.Data.GetValue(ri), clrType);
 
-               Assert.True(isCsvNull,
-                  $"expected null value in column {se.Name}, value #{i}");
-            }
-            else
-            {
-               if (clrType == typeof(string))
+               if (pv == null)
                {
-                  Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
-                     $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
+                  bool isCsvNull =
+                     cv == null ||
+                     (cv is string s && s == string.Empty);
+
+                  Assert.True(isCsvNull,
+                     $"expected null value in column {pc.Field.Name}, value #{ri}");
                }
                else
                {
-                  Assert.True(pv.Equals(cv),
-                     $"expected {cv} but was {pv} in column {se.Name}, value #{i}");
+                  if (clrType == typeof(string))
+                  {
+                     Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
+                        $"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                  }
+                  else
+                  {
+                     Assert.True(pv.Equals(cv),
+                        $"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                  }
                }
             }
          }
@@ -99,35 +87,53 @@ namespace Parquet.Test.Reader
          return Convert.ChangeType(v, t);
       }
 
-      private DataSet ReadParquet(string name)
+      private DataColumn[] ReadParquet(string name)
       {
          using (Stream s = OpenTestFile(name))
          {
-            return ParquetReader2.Read(s, new ParquetOptions { TreatByteArrayAsString = true });
+            using (var pr = new ParquetReader(s, new ParquetOptions { TreatByteArrayAsString = true }))
+            {
+               using (ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0))
+               {
+                  return pr.Schema.GetDataFields()
+                     .Select(df => rgr.ReadColumn(df))
+                     .ToArray();
+               }
+            }
          }
       }
 
-      private DataSet ReadCsv(string name)
+      private DataColumn[] ReadCsv(string name)
       {
-         DataSet result;
+         var columns = new List<List<string>>();
+
+         string[] columnNames = null;
 
          using (Stream fs = OpenTestFile(name))
          {
             var reader = new CsvReader(fs, Encoding.UTF8);
 
             //header
-            string[] columnNames = reader.ReadNextRow();
-            result = new DataSet(new Schema(columnNames.Select(n => new DataField(n, DataType.String))));
+            columnNames = reader.ReadNextRow();
+            columns.AddRange(columnNames.Select(n => new List<string>()));
 
             //values
             string[] values;
             while((values = reader.ReadNextRow()) != null)
             {
-               var row = new Row(values);
-               result.Add(row);
+               for(int i = 0; i < values.Length; i++)
+               {
+                  List<string> column = columns[i];
+                  column.Add(values[i]);
+               }
             }
          }
-         return result;
+
+         //compose result
+         return
+            columnNames.Select((n, i) => new DataColumn(new DataField<string>(n), columns[i].ToArray()))
+            .ToArray();
       }
+
    }
-}*/
+}

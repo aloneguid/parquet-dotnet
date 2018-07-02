@@ -27,22 +27,6 @@ namespace Parquet
          }
       }
 
-      public static void Trim(this IList list, int offset, int count)
-      {
-         TrimHead(list, list.Count - offset);
-         TrimTail(list, count);
-      }
-
-      public static void AddOneByOne(this IList dest, IList source)
-      {
-         if (source == null) return;
-
-         foreach(object o in source)
-         {
-            dest.Add(o);
-         }
-      }
-
       /// <summary>
       /// Batch through IEnumerable without going to the beginning every time. May need optimisations but OK so far.
       /// </summary>

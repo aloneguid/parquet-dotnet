@@ -56,14 +56,6 @@ namespace Parquet
          return string.Join(Schema.PathSeparator, path);
       }
 
-      public static void AddRange<TKey, TValue>(this IDictionary<TKey, TValue> target, IDictionary<TKey, TValue> source)
-      {
-         foreach(KeyValuePair<TKey, TValue> kvp in source)
-         {
-            target[kvp.Key] = kvp.Value;
-         }
-      }
-
       public static Exception NotImplementedForPotentialAssholesAndMoaners(string reason)
       {
          int hour = DateTime.Now.Hour;
