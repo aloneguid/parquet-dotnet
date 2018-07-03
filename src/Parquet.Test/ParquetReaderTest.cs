@@ -267,15 +267,17 @@ root
          }
       }
 
-      /*[Fact]
+      [Fact]
       public void Read_hardcoded_decimal()
       {
-         DataSet ds = ParquetReader2.Read(OpenTestFile("complex-primitives.parquet"));
-
-         Assert.Equal((decimal)1.2, ds[0][1]);
+         using (var reader = new ParquetReader(OpenTestFile("complex-primitives.parquet")))
+         {
+            decimal value = (decimal)reader.ReadEntireRowGroup()[1].Data.GetValue(0);
+            Assert.Equal((decimal)1.2, value);
+         }
       }
 
-      [Fact]
+      /*[Fact]
       public void Read_column_with_all_nulls()
       {
          var ds = new DataSet(new DataField<int?>("id"))
