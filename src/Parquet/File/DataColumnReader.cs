@@ -125,9 +125,7 @@ namespace Parquet.File
          {
             using (var dataReader = new BinaryReader(pageStream))
             {
-               dictionary = Array.CreateInstance(
-                  _dataField.ClrType,
-                  (int)_thriftColumnChunk.Meta_data.Num_values);
+               dictionary = _dataTypeHandler.GetArray((int)_thriftColumnChunk.Meta_data.Num_values, false, false);
 
                dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0, _parquetOptions);
 
@@ -203,7 +201,7 @@ namespace Parquet.File
          switch (encoding)
          {
             case Thrift.Encoding.PLAIN:
-               if (values == null) values = Array.CreateInstance(_dataField.ClrType, (int)maxValues);
+               if (values == null) values = _dataTypeHandler.GetArray((int)maxValues, false, false);
                valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset, _parquetOptions);
                break;
 
