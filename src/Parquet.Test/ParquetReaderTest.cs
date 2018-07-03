@@ -254,18 +254,20 @@ root
          Assert.Equal("{{United Kingdom;True;London};1}", ds[0].ToString());*/
       }
 
-      /*[Fact]
+      [Fact]
       public void Read_simple_map()
       {
-         DataSet ds = ParquetReader2.Read(OpenTestFile("map.parquet"));
+         using (var reader = new ParquetReader(OpenTestFile("map.parquet"), leaveStreamOpen: false))
+         {
+            DataColumn[] data = reader.ReadEntireRowGroup();
 
-         Field ms = ds.Schema[1];
-         Assert.Equal("numbers", ms.Name);
-
-         Assert.Equal("{1;[1=>one;2=>two;3=>three]}", ds[0].ToString());
+            Assert.Equal(new int?[] { 1 }, data[0].Data);
+            Assert.Equal(new int[] { 1, 2, 3 }, data[1].Data);
+            Assert.Equal(new string[] { "one", "two", "three" }, data[2].Data);
+         }
       }
 
-      [Fact]
+      /*[Fact]
       public void Read_hardcoded_decimal()
       {
          DataSet ds = ParquetReader2.Read(OpenTestFile("complex-primitives.parquet"));
