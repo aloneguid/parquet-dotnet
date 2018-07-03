@@ -11,12 +11,12 @@ namespace Parquet.Serialization
    /// <summary>
    /// Extracts data from CLR structures
    /// </summary>
-   internal class ColumnExtractor
+   internal class DataColumnBuilder
    {
       /// <summary>
-      /// Creates a new instnce of <see cref="ColumnExtractor"/>
+      /// Creates a new instnce of <see cref="DataColumnBuilder"/>
       /// </summary>
-      public ColumnExtractor()
+      public DataColumnBuilder()
       {
          
       }
@@ -27,14 +27,15 @@ namespace Parquet.Serialization
       /// <typeparam name="TClass">Class type</typeparam>
       /// <param name="classInstances">Collection of class instances</param>
       /// <param name="schema">Schema to operate on</param>
-      public IReadOnlyCollection<DataColumn> ExtractColumns<TClass>(IEnumerable<TClass> classInstances, Schema schema)
+      public IReadOnlyCollection<DataColumn> BuildColumns<TClass>(IReadOnlyCollection<TClass> classInstances, Schema schema)
       {
          List<DataField> dataFields = schema.GetDataFields();
 
-         IColumnClrMapper valuesExtractor = new SlowReflectionColumnClrMapper(typeof(TClass));
-         IReadOnlyCollection<DataColumn> result = valuesExtractor.ExtractDataColumns(dataFields, classInstances);
+         var bridge = new ClrBridge(typeof(TClass));
 
-         return result;
+         return dataFields
+            .Select(df => bridge.BuildColumn(df, classInstances, classInstances.Count))
+            .ToList();
       }
    }
 }

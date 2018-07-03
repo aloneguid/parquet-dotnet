@@ -32,14 +32,14 @@ namespace Parquet
 
          if (writerOptions == null) writerOptions = new WriterOptions();
 
-         var extractor = new ColumnExtractor();
+         var extractor = new DataColumnBuilder();
          using (var writer = new ParquetWriter(schema, destination, writerOptions: writerOptions))
          {
             writer.CompressionMethod = compressionMethod;
 
             foreach(IEnumerable<T> batch in objectInstances.Batch(writerOptions.RowGroupsSize))
             {
-               IReadOnlyCollection<DataColumn> columns = extractor.ExtractColumns(batch, schema);
+               IReadOnlyCollection<DataColumn> columns = extractor.BuildColumns(batch.ToList(), schema);
 
                using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batch.Count()))
                {
@@ -58,7 +58,7 @@ namespace Parquet
       {
          var result = new List<T>();
 
-         IColumnClrMapper mapper = new SlowReflectionColumnClrMapper(typeof(T));
+         var bridge = new ClrBridge(typeof(T));
 
          using (var reader = new ParquetReader(input))
          {
@@ -73,7 +73,7 @@ namespace Parquet
                      .Select(df => groupReader.ReadColumn(df))
                      .ToList();
 
-                  IReadOnlyCollection<T> groupClrObjects = mapper.CreateClassInstances<T>(groupColumns);
+                  IReadOnlyCollection<T> groupClrObjects = bridge.CreateClassInstances<T>(groupColumns);
 
                   result.AddRange(groupClrObjects);
                }
