@@ -1,64 +1,38 @@
-﻿/*using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.IO;
 using Parquet.Data;
 using Xunit;
 
 namespace Parquet.Test
 {
-   public class StructureTest
+   public class StructureTest : TestBase
    {
       [Fact]
       public void Simple_structure_write_read()
       {
-         var ds = new DataSet(
+         var schema = new Schema(
             new DataField<string>("name"),
             new StructField("address",
                new DataField<string>("line1"),
                new DataField<string>("postcode")
             ));
 
-         ds.Add("Ivan", new Row("Woods", "postcode"));
-         Assert.Equal(1, ds.RowCount);
-         Assert.Equal(2, ds.FieldCount);
+         var ms = new MemoryStream();
+         ms.WriteSingleRowGroupParquetFile(schema, 1,
+            new DataColumn(new DataField<string>("name"), new[] { "Ivan" }),
+            new DataColumn(new DataField<string>("line1"), new[] { "woods" }),
+            new DataColumn(new DataField<string>("postcode"), new[] { "postcode" }));
+         ms.Position = 0;
 
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+         ms.ReadSingleRowGroupFile(out Schema readSchema, out DataColumn[] readColumns);
 
-         Assert.Equal("{Ivan;{Woods;postcode}}", ds1[0].ToString());
+         Assert.Equal("Ivan", readColumns[0].Data.GetValue(0));
+         Assert.Equal("woods", readColumns[1].Data.GetValue(0));
+         Assert.Equal("postcode", readColumns[2].Data.GetValue(0));
       }
 
 
-      [Fact]
-      public void Structure_nested_into_structure_write_read()
-      {
-         var ds = new DataSet(
-            new DataField<string>("name"),
-            new StructField("address",
-               new DataField<string>("name"),
-               new StructField("lines",
-                  new DataField<string>("line1"),
-                  new DataField<string>("line2"))));
-
-         ds.Add("Ivan", new Row("Primary", new Row("line1", "line2")));
-
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
-
-         Assert.Equal("{Ivan;{Primary;{line1;line2}}}", ds1[0].ToString());
-      }
-
-      [Fact]
-      public void Structure_with_three_level_nesting()
-      {
-         var ds = new DataSet(
-            new DataField<string>("name"),
-            new StructField("address",
-               new DataField<string>("name"),
-               new StructField("lines",
-                  new DataField<string>("line1"),
-                  new StructField("line2",
-                     new DataField<string>("here")))));
-         ds.Add("Ivan", new Row("Primary", new Row("line1", new Row("here"))));
-         Assert.Equal("{Ivan;{Primary;{line1;{here}}}}", ds.WriteReadFirstRow());
-      }
-
+      /*[Fact]
       [Fact]
       public void Structure_with_repeated_field_writes_reads()
       {
@@ -106,6 +80,6 @@ namespace Parquet.Test
 
          Assert.Equal("{Ivan;[{[{1}]}]}", ds1[0].ToString());
 
-      }
+      }*/
    }
-}*/
+}

@@ -10,9 +10,12 @@ namespace Parquet
    /// <summary>
    /// Defines extension methods to simplify Parquet usage (experimental v3)
    /// </summary>
-   internal static class ParquetExtensions
+   public static class ParquetExtensions
    {
-      public static void WriteSingleRowGroup(this Stream stream, Schema schema, int rowCount, params DataColumn[] columns)
+      /// <summary>
+      /// Writes a file with a single row group
+      /// </summary>
+      public static void WriteSingleRowGroupParquetFile(this Stream stream, Schema schema, int rowCount, params DataColumn[] columns)
       {
          using (var writer = new ParquetWriter(schema, stream))
          {
@@ -27,5 +30,29 @@ namespace Parquet
          }
       }
 
+      /// <summary>
+      /// Reads the first row group from a file
+      /// </summary>
+      /// <param name="stream"></param>
+      /// <param name="schema"></param>
+      /// <param name="columns"></param>
+      public static void ReadSingleRowGroupFile(this Stream stream, out Schema schema, out DataColumn[] columns)
+      {
+         using (var reader = new ParquetReader(stream))
+         {
+            schema = reader.Schema;
+
+            using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
+            {
+               List<DataField> dataFields = schema.GetDataFields();
+               columns = new DataColumn[dataFields.Count];
+
+               for(int i = 0; i < dataFields.Count; i++)
+               {
+                  columns[i] = rgr.ReadColumn(dataFields[i]);
+               }
+            }
+         }
+      }
    }
 }

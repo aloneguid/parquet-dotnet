@@ -101,6 +101,10 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
+      public abstract Array GetArray(int minCount, bool rent, bool isNullable);
+
+      public abstract void ReturnArray(Array array, bool isNullable);
+
       #endregion
 
    }

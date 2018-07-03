@@ -5,9 +5,6 @@ using System.IO;
 
 namespace Parquet.Data
 {
-   /// <summary>
-   /// Prototype: data type interface
-   /// </summary>
    interface IDataTypeHandler
    {
       /// <summary>
@@ -31,5 +28,9 @@ namespace Parquet.Data
       int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions);
 
       void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values);
+
+      Array GetArray(int minCount, bool rent, bool isNullable);
+
+      void ReturnArray(Array array, bool isNullable);
    }
 }

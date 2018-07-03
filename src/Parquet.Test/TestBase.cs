@@ -16,12 +16,12 @@ namespace Parquet.Test
          return ResourceReader.Open(name);
       }
 
-      internal DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn)
+      protected DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn)
       {
          using (var ms = new MemoryStream())
          {
             // write with built-in extension method
-            ms.WriteSingleRowGroup(new Schema(field), rowCount, dataColumn);
+            ms.WriteSingleRowGroupParquetFile(new Schema(field), rowCount, dataColumn);
             ms.Position = 0;
 
             // read first gow group and first column

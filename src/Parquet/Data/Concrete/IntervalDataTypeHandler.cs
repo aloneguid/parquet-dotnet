@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
-using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete
 {
@@ -26,7 +25,7 @@ namespace Parquet.Data.Concrete
          tse.Type_length = 12;
       }
 
-      public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
          int typeLength = tse.Type_length;
          if (typeLength == 0) return 0;

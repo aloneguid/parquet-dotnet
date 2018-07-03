@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
-using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete
 {
@@ -57,7 +56,7 @@ namespace Parquet.Data.Concrete
 
       }
 
-      public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
          switch(tse.Type)
          {
