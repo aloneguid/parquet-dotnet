@@ -10,10 +10,22 @@ using Parquet.Serialization.Values;
 namespace Parquet
 {
    /// <summary>
-   /// v3 experimental!
+   /// High-level object oriented API for Apache Parquet
    /// </summary>
-   internal static class ParquetConvert
+   public static class ParquetConvert
    {
+      /// <summary>
+      /// Serialises a collection of classes into a Parquet stream
+      /// </summary>
+      /// <typeparam name="T">Class type</typeparam>
+      /// <param name="objectInstances">Collection of classes</param>
+      /// <param name="destination">Destination stream</param>
+      /// <param name="schema">Optional schema to use. When not specified the class schema will be discovered and everything possible will be
+      /// written to the stream. If you want to write only a subset of class properties please specify the schema yourself.
+      /// </param>
+      /// <param name="writerOptions"><see cref="WriterOptions"/></param>
+      /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
+      /// <returns></returns>
       public static Schema Serialize<T>(IEnumerable<T> objectInstances, Stream destination,
          Schema schema = null,
          WriterOptions writerOptions = null,
@@ -54,6 +66,36 @@ namespace Parquet
          return schema;
       }
 
+      /// <summary>
+      /// Serialises a collection of classes into a Parquet file
+      /// </summary>
+      /// <typeparam name="T">Class type</typeparam>
+      /// <param name="objectInstances">Collection of classes</param>
+      /// <param name="filePath">Destination file path</param>
+      /// <param name="schema">Optional schema to use. When not specified the class schema will be discovered and everything possible will be
+      /// written to the stream. If you want to write only a subset of class properties please specify the schema yourself.
+      /// </param>
+      /// <param name="writerOptions"><see cref="WriterOptions"/></param>
+      /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
+      /// <returns></returns>
+      public static Schema Serialize<T>(IEnumerable<T> objectInstances, string filePath,
+         Schema schema = null,
+         WriterOptions writerOptions = null,
+         CompressionMethod compressionMethod = CompressionMethod.Snappy)
+         where T : new()
+      {
+         using (Stream destination = System.IO.File.Create(filePath))
+         {
+            return Serialize<T>(objectInstances, destination, schema, writerOptions, compressionMethod);
+         }
+      }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <typeparam name="T"></typeparam>
+      /// <param name="input"></param>
+      /// <returns></returns>
       public static IEnumerable<T> Deserialize<T>(Stream input) where T : new()
       {
          var result = new List<T>();

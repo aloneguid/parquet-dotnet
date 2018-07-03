@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,11 +25,9 @@ namespace Parquet.Test
          {
             Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.None);
 
-            //F.WriteAllBytes("c:\\tmp\\ser.parquet", ms.ToArray());
-
             ms.Position = 0;
 
-            using (var reader = new ParquetReader3(ms))
+            using (var reader = new ParquetReader(ms))
             {
                Assert.Equal(1, reader.RowGroupCount);
 
@@ -54,4 +52,4 @@ namespace Parquet.Test
       }
 
    }
-}*/
+}
