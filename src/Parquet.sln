@@ -13,9 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4
 		..\doc\complex-struct.md = ..\doc\complex-struct.md
 		..\doc\dataset.md = ..\doc\dataset.md
 		..\doc\features.md = ..\doc\features.md
-		..\doc\json.md = ..\doc\json.md
 		..\doc\parquet-getting-started.md = ..\doc\parquet-getting-started.md
-		..\doc\performance.md = ..\doc\performance.md
 		..\doc\reading.md = ..\doc\reading.md
 		..\README.md = ..\README.md
 		..\doc\schema.md = ..\doc\schema.md
@@ -55,9 +53,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpArrow.Test", "SharpArrow.Test\SharpArrow.Test.csproj", "{FC48854B-6732-4BCD-B6D3-F6AC35231EF0}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -95,6 +90,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B5C12140-A3BF-47C9-A4AD-91F7C4682804}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

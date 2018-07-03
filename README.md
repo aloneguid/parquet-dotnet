@@ -2,6 +2,8 @@
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
+> This version is a complete redesign of Parquet library and is not compatible with V2. To see documentation for the previous major version please [follow this link](https://github.com/elastacloud/parquet-dotnet/tree/final-v2)
+
 ## Status
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
@@ -30,8 +32,6 @@ This project is aimed to fix this problem. We support all the popular server and
   - [Structures](doc/complex-struct.md)
   - [Maps](doc/complex-map.md)
   - [Lists](doc/complex-list.md)
-- [Performance Tuning](doc/performance.md)
-- [JSON Support](doc/json.md)
 
 You can track the [amount of features we have implemented so far](doc/features.md).
 
