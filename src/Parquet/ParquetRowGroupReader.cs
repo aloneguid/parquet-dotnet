@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
+using Parquet.File;
 
-namespace Parquet.File
+namespace Parquet
 {
    /// <summary>
    /// Reader for Parquet row groups

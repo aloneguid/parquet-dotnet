@@ -1,6 +1,5 @@
-﻿/*using System;
+﻿using System;
 using System.IO;
-using NetBox.Generator;
 using NetBox.IO;
 using Parquet.Data;
 using Xunit;
@@ -10,28 +9,53 @@ namespace Parquet.Test
    public class NonSeekableWriterTest
    {
       [Fact]
-      public void Write_in_small_chunks_to_forward_only_stream()
+      public void Write_multiple_row_groups_to_forward_only_stream()
       {
          var ms = new MemoryStream();
          var forwardOnly = new WriteableNonSeekableStream(ms);
 
-         var ds = new DataSet(
+         var schema = new Schema(
             new DataField<int>("id"),
             new DataField<string>("nonsense"));
-         ds.Add(1, RandomGenerator.RandomString);
 
-         using (var writer = new ParquetWriter2(forwardOnly))
+         using (var writer = new ParquetWriter(schema, forwardOnly))
          {
-            writer.Write(ds);
-            writer.Write(ds);
-            writer.Write(ds);
+            using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(1))
+            {
+               rgw.Write(new DataColumn((DataField)schema[0], new[] { 1 }));
+               rgw.Write(new DataColumn((DataField)schema[1], new[] { "1" }));
+            }
+
+            using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(1))
+            {
+               rgw.Write(new DataColumn((DataField)schema[0], new[] { 2 }));
+               rgw.Write(new DataColumn((DataField)schema[1], new[] { "2" }));
+            }
          }
 
          ms.Position = 0;
-         DataSet ds1 = ParquetReader2.Read(ms);
+         using (var reader = new ParquetReader(ms))
+         {
+            Assert.Equal(2, reader.RowGroupCount);
 
-         Assert.Equal(3, ds1.RowCount);
+            using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
+            {
+               Assert.Equal(1, rgr.RowCount);
 
+               DataColumn column = rgr.ReadColumn((DataField)schema[0]);
+               Assert.Equal(1, column.Data.GetValue(0));
+            }
+
+            using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(1))
+            {
+               Assert.Equal(1, rgr.RowCount);
+
+               DataColumn column = rgr.ReadColumn((DataField)schema[0]);
+               Assert.Equal(2, column.Data.GetValue(0));
+
+            }
+
+         }
       }
 
       public class WriteableNonSeekableStream : DelegatedStream
@@ -57,4 +81,4 @@ namespace Parquet.Test
       }
 
    }
-}*/
+}

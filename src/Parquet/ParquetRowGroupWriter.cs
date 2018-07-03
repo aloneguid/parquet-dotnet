@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Parquet.Data;
+using Parquet.File;
 using Parquet.File.Values;
 
-namespace Parquet.File
+namespace Parquet
 {
    /// <summary>
    /// 
