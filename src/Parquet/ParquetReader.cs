@@ -89,6 +89,28 @@ namespace Parquet
          return _groupReaders[index];
       }
 
+      /// <summary>
+      /// Reads entire row group's data columns in one go.
+      /// </summary>
+      /// <param name="rowGroupIndex">Index of the row group. Default to the first row group if not specified.</param>
+      /// <returns></returns>
+      public DataColumn[] ReadEntireRowGroup(int rowGroupIndex = 0)
+      {
+         DataField[] dataFields = Schema.GetDataFields().ToArray();
+         DataColumn[] result = new DataColumn[dataFields.Length];
+
+         using (ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex))
+         {
+            for (int i = 0; i < dataFields.Length; i++)
+            {
+               DataColumn column = reader.ReadColumn(dataFields[i]);
+               result[i] = column;
+            }
+         }
+
+         return result;
+      }
+
       private void InitRowGroupReaders()
       {
          _groupReaders.Clear();

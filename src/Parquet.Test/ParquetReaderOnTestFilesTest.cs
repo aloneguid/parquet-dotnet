@@ -1,12 +1,10 @@
-/*using Parquet.Data;
+using Parquet.Data;
 using System;
 using System.IO;
 using Xunit;
 
 namespace Parquet.Test
 {
-   using F = System.IO.File;
-
    /// <summary>
    /// Tests a set of predefined test files that they read back correct
    /// </summary>
@@ -39,9 +37,9 @@ namespace Parquet.Test
       {
          using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
          {
-            using (var r = new ParquetReader2(s))
+            using (var r = new ParquetReader(s))
             {
-               DataSet ds = r.Read();
+               DataColumn[] columns = r.ReadEntireRowGroup();
             }
          }
       }
@@ -52,15 +50,16 @@ namespace Parquet.Test
          DateTimeOffset offset, offset2;
          using (Stream s = OpenTestFile("dates.parquet"))
          {
-            using (var r = new ParquetReader2(s))
+            using (var r = new ParquetReader(s))
             {
-               DataSet ds = r.Read();
-               offset = (DateTimeOffset)ds[0][1];
-               offset2 = (DateTimeOffset)ds[1][1];
+               DataColumn[] columns = r.ReadEntireRowGroup();
+
+               offset = (DateTimeOffset)(columns[1].Data.GetValue(0));
+               offset2 = (DateTimeOffset)(columns[1].Data.GetValue(1));
             }
          }
          Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
          Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
       }
    }
-}*/
+}
