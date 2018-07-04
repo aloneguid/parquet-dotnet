@@ -41,6 +41,11 @@ namespace Parquet.Data
          }
       }
 
+      public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel)
+      {
+         return UnpackDefinitions((TSystemType[])untypedSource, definitionLevels, maxDefinitionLevel);
+      }
+
       private TSystemType?[] UnpackDefinitions(TSystemType[] src, int[] definitionLevels, int maxDefinitionLevel)
       {
          TSystemType?[] result = (TSystemType?[])GetArray(definitionLevels.Length, false, true);

@@ -51,5 +51,10 @@ namespace Parquet.Data
       {
          throw new NotSupportedException();
       }
+
+      public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
+      {
+         throw new NotSupportedException();
+      }
    }
 }

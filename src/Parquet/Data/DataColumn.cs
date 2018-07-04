@@ -53,7 +53,7 @@ namespace Parquet.Data
          // 2. Apply definitions
          if(definitionLevels != null)
          {
-            Data = UnpackDefinitions(field, Data, definitionLevels, maxDefinitionLevel);
+            Data = _dataTypeHandler.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
          }
 
          // 3. Apply repetitions
@@ -79,24 +79,6 @@ namespace Parquet.Data
       /// 
       /// </summary>
       public bool HasRepetitions { get; private set; }
-
-      private static Array UnpackDefinitions(DataField df, Array src, int[] definitonLevels, int maxDefinitionLevel)
-      {
-         Array result = Array.CreateInstance(df.ClrNullableIfHasNullsType, definitonLevels.Length);
-
-         int isrc = 0;
-         for(int i = 0; i < definitonLevels.Length; i++)
-         {
-            int level = definitonLevels[i];
-
-            if(level == maxDefinitionLevel)
-            {
-               result.SetValue(src.GetValue(isrc++), i);
-            }
-         }
-
-         return result;
-      }
 
       internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount)
       {

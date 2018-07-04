@@ -27,6 +27,11 @@ namespace Parquet.Data.Concrete
          throw new NotImplementedException();
       }
 
+      public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
+      {
+         return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel);
+      }
+
       protected override byte[] ReadOne(BinaryReader reader)
       {
          int length = reader.ReadInt32();

@@ -105,6 +105,31 @@ namespace Parquet.Data
          return result;
       }
 
+      public abstract Array GetArray(int minCount, bool rent, bool isNullable);
+
+      public abstract void ReturnArray(Array array, bool isNullable);
+
+      public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
+
+      protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel)
+      {
+         T[] result = (T[])GetArray(definitionLevels.Length, false, true);
+
+         int isrc = 0;
+         for (int i = 0; i < definitionLevels.Length; i++)
+         {
+            int level = definitionLevels[i];
+
+            if (level == maxDefinitionLevel)
+            {
+               result[i] = src[isrc++];
+            }
+         }
+
+         return result;
+      }
+
+
       #region [ Reader / Writer Helpers ]
 
       protected virtual TSystemType ReadOne(BinaryReader reader)
@@ -116,10 +141,6 @@ namespace Parquet.Data
       {
          throw new NotSupportedException();
       }
-
-      public abstract Array GetArray(int minCount, bool rent, bool isNullable);
-
-      public abstract void ReturnArray(Array array, bool isNullable);
 
       #endregion
 
