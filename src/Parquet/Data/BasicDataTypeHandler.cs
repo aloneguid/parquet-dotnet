@@ -89,6 +89,22 @@ namespace Parquet.Data
          parent.Num_children += 1;
       }
 
+      public virtual Array MergeDictionary(Array untypedDictionary, int[] indexes)
+      {
+         TSystemType[] dictionary = (TSystemType[])untypedDictionary;
+         int length = indexes.Length;
+         TSystemType[] result = new TSystemType[length];
+
+         for (int i = 0; i < length; i++)
+         {
+            int index = indexes[i];
+            TSystemType value = dictionary[index];
+            result[i] = value;
+         }
+
+         return result;
+      }
+
       #region [ Reader / Writer Helpers ]
 
       protected virtual TSystemType ReadOne(BinaryReader reader)

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Parquet.Data
 {
@@ -44,6 +43,11 @@ namespace Parquet.Data
       }
 
       public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      {
+         throw new NotSupportedException();
+      }
+
+      public Array MergeDictionary(Array dictionary, int[] indexes)
       {
          throw new NotSupportedException();
       }

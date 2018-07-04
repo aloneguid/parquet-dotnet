@@ -32,5 +32,7 @@ namespace Parquet.Data
       Array GetArray(int minCount, bool rent, bool isNullable);
 
       void ReturnArray(Array array, bool isNullable);
+
+      Array MergeDictionary(Array dictionary, int[] indexes);
    }
 }

@@ -12,11 +12,13 @@ namespace Parquet.Data
    /// </summary>
    public class DataColumn
    {
+      private readonly IDataTypeHandler _dataTypeHandler;
+
       private DataColumn(DataField field)
       {
          Field = field ?? throw new ArgumentNullException(nameof(field));
 
-         IDataTypeHandler handler = DataTypeFactory.Match(field.DataType);
+         _dataTypeHandler = DataTypeFactory.Match(field.DataType);
          HasRepetitions = field.IsArray;
       }
 
@@ -45,7 +47,7 @@ namespace Parquet.Data
          // 1. Dictionary merge
          if (dictionary != null)
          {
-            Data = MergeDictionary(dictionary, dictionaryIndexes);
+            Data = _dataTypeHandler.MergeDictionary(dictionary, dictionaryIndexes);
          }
 
          // 2. Apply definitions
@@ -135,20 +137,6 @@ namespace Parquet.Data
                result.SetValue(value, ir++);
             }
          }
-         return result;
-      }
-
-      private Array MergeDictionary(Array dictionary, int[] indexes)
-      {
-         Array result = Array.CreateInstance(Field.ClrType, indexes.Length);
-
-         for(int i = 0; i < indexes.Length; i++)
-         {
-            int index = indexes[i];
-            object value = dictionary.GetValue(index);
-            result.SetValue(value, i);
-         }
-
          return result;
       }
    }
