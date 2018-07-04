@@ -5,24 +5,11 @@ using System.IO;
 
 namespace Parquet.Data.Concrete
 {
-    class ListDataTypeHandler : IDataTypeHandler
+    class ListDataTypeHandler : NonDataDataTypeHandler
     {
-        public ListDataTypeHandler()
-        {
-        }
+        public override SchemaType SchemaType => SchemaType.List;
 
-        public DataType DataType => DataType.Unspecified;
-
-        public SchemaType SchemaType => SchemaType.Struct;
-
-        public Type ClrType => null;
-
-        public IList CreateEmptyList(bool isNullable, bool isArray, int capacity)
-        {
-            throw new NotSupportedException();
-        }
-
-        public Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
+        public override Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount)
         {
             Thrift.SchemaElement tseList = schema[index];
 
@@ -34,7 +21,7 @@ namespace Parquet.Data.Concrete
             return listField;
         }
 
-        public void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
+        public override void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
         {
             ListField listField = (ListField)field;
 
@@ -61,34 +48,9 @@ namespace Parquet.Data.Concrete
             fieldHandler.CreateThrift(listField.Item, list, container);
         }
 
-        public Array GetArray(int minCount, bool rent, bool isNullable)
-        {
-            throw new NotSupportedException();
-        }
-
-        public bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions)
         {
             return tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.LIST;
-        }
-
-        public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-        {
-            throw new NotSupportedException();
-        }
-
-        public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
-        {
-            throw new NotSupportedException();
-        }
-
-        public void ReturnArray(Array array, bool isNullable)
-        {
-            throw new NotSupportedException();
-        }
-
-        public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
-        {
-            throw new NotSupportedException();
         }
     }
 }

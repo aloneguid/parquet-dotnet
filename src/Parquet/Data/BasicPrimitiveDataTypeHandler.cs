@@ -40,5 +40,24 @@ namespace Parquet.Data
             ArrayPool<TSystemType>.Shared.Return((TSystemType[])array);
          }
       }
+
+      private TSystemType?[] UnpackDefinitions(TSystemType[] src, int[] definitionLevels, int maxDefinitionLevel)
+      {
+         TSystemType?[] result = (TSystemType?[])GetArray(definitionLevels.Length, false, true);
+
+         int isrc = 0;
+         for (int i = 0; i < definitionLevels.Length; i++)
+         {
+            int level = definitionLevels[i];
+
+            if (level == maxDefinitionLevel)
+            {
+               result[i] = src[isrc++];
+            }
+         }
+
+         return result;
+
+      }
    }
 }
