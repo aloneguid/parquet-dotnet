@@ -92,6 +92,13 @@ namespace Parquet
             (ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>));
       }
 
+      public static bool IsSystemNullable(this Type t)
+      {
+         TypeInfo ti = t.GetTypeInfo();
+
+         return ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>);
+      }
+
       public static Type GetNonNullable(this Type t)
       {
          TypeInfo ti = t.GetTypeInfo();

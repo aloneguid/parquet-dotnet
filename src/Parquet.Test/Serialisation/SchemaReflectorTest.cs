@@ -3,12 +3,10 @@ using Parquet.Data;
 using Parquet.Serialization;
 using Xunit;
 
-namespace Parquet.Test
+namespace Parquet.Test.Serialisation
 {
    public class SchemaReflectorTest : TestBase
    {
-
-
       [Fact]
       public void I_can_infer_different_types()
       {

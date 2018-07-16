@@ -11,7 +11,7 @@ namespace Parquet.Serialization
    /// <summary>
    /// Extracts data from CLR structures
    /// </summary>
-   internal class DataColumnBuilder
+   class DataColumnBuilder
    {
       /// <summary>
       /// Creates a new instnce of <see cref="DataColumnBuilder"/>

@@ -9,7 +9,7 @@ using Parquet.File;
 using Xunit;
 using F = System.IO.File;
 
-namespace Parquet.Test
+namespace Parquet.Test.Serialisation
 {
    public class ParquetConvertTest : TestBase
    {
@@ -34,17 +34,26 @@ namespace Parquet.Test
                using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
                {
 
-                  DataColumn ids = rgr.ReadColumn(schema.DataFieldAt(0));
-                  DataColumn names = rgr.ReadColumn(schema.DataFieldAt(1));
+                  DataColumn idsColumn = rgr.ReadColumn(schema.DataFieldAt(0));
+                  DataColumn namesColumns = rgr.ReadColumn(schema.DataFieldAt(1));
 
-                  Assert.Equal(10, ids.Data.Length);
-                  Assert.Equal(10, names.Data.Length);
+                  Assert.Equal(10, idsColumn.Data.Length);
+                  Assert.Equal(10, namesColumns.Data.Length);
+
+                  int[] ids = (int[])idsColumn.Data;
+                  string[] names = (string[])namesColumns.Data;
+
+                  for(int i = 0; i < 10; i++)
+                  {
+                     Assert.Equal(i, ids[i]);
+                     Assert.Equal($"row {i}", names[i]);
+                  }
                }
             }
          }
       }
 
-      class SimpleStructure
+      public class SimpleStructure
       {
          public int Id { get; set; }
 
