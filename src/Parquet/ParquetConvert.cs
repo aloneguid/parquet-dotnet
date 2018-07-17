@@ -26,7 +26,7 @@ namespace Parquet
       /// <param name="writerOptions"><see cref="WriterOptions"/></param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <returns></returns>
-      public static Schema Serialize<T>(IEnumerable<T> objectInstances, Stream destination,
+      public static Schema Serialize<T>(T[] objectInstances, Stream destination,
          Schema schema = null,
          WriterOptions writerOptions = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy)
@@ -51,7 +51,7 @@ namespace Parquet
 
             foreach(IEnumerable<T> batch in objectInstances.Batch(writerOptions.RowGroupsSize))
             {
-               IReadOnlyCollection<DataColumn> columns = columnBuilder.BuildColumns(batch.ToList(), schema);
+               IReadOnlyCollection<DataColumn> columns = columnBuilder.BuildColumns(batch.ToArray(), schema);
 
                using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batch.Count()))
                {
@@ -78,7 +78,7 @@ namespace Parquet
       /// <param name="writerOptions"><see cref="WriterOptions"/></param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <returns></returns>
-      public static Schema Serialize<T>(IEnumerable<T> objectInstances, string filePath,
+      public static Schema Serialize<T>(T[] objectInstances, string filePath,
          Schema schema = null,
          WriterOptions writerOptions = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy)

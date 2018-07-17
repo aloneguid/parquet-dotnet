@@ -27,14 +27,14 @@ namespace Parquet.Serialization
       /// <typeparam name="TClass">Class type</typeparam>
       /// <param name="classInstances">Collection of class instances</param>
       /// <param name="schema">Schema to operate on</param>
-      public IReadOnlyCollection<DataColumn> BuildColumns<TClass>(IReadOnlyCollection<TClass> classInstances, Schema schema)
+      public IReadOnlyCollection<DataColumn> BuildColumns<TClass>(TClass[] classInstances, Schema schema)
       {
          List<DataField> dataFields = schema.GetDataFields();
 
          var bridge = new ClrBridge(typeof(TClass));
 
          return dataFields
-            .Select(df => bridge.BuildColumn(df, classInstances, classInstances.Count))
+            .Select(df => bridge.BuildColumn(df, classInstances, classInstances.Length))
             .ToList();
       }
    }

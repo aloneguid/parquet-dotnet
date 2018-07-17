@@ -19,7 +19,7 @@ namespace Parquet.Serialization.Values
          _classType = classType;
       }
 
-      public DataColumn BuildColumn(DataField field, IEnumerable classInstances, int classInstancesCount)
+      public DataColumn BuildColumn(DataField field, Array classInstances, int classInstancesCount)
       {
          Array data = Array.CreateInstance(field.ClrNullableIfHasNullsType, classInstancesCount);
          CollectorTag tag = GetCollectorTag(new CollectorKey(_classType, field));
@@ -71,7 +71,7 @@ namespace Parquet.Serialization.Values
 
          Type[] methodArgs = { typeof(object), typeof(object), typeof(int) };
          var runMethod = new DynamicMethod(
-            $"Get{classType.Name}{field.Name}",
+            $"Get{classType.Name}{field.Name}{Guid.NewGuid()}",
             typeof(int),
             methodArgs,
             GetType().GetTypeInfo().Module);

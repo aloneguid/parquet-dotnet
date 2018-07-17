@@ -16,10 +16,10 @@ namespace Parquet.Test.Serialisation
       [Fact]
       public void Serialise_single_row_group()
       {
-         List<SimpleStructure> structures = Enumerable
+         SimpleStructure[] structures = Enumerable
             .Range(0, 10)
             .Select(i => new SimpleStructure { Id = i, Name = $"row {i}" })
-            .ToList();
+            .ToArray();
 
          using (var ms = new MemoryStream())
          {
