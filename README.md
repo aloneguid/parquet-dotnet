@@ -2,7 +2,7 @@
 
 ![Icon](doc/img/dotnetlovesparquet.png)
 
-> This version is a complete redesign of Parquet library and is not compatible with V2. To see documentation for the previous major version please [follow this link](https://github.com/elastacloud/parquet-dotnet/tree/final-v2)
+> This documenation is for a Release Candiate of Parquet.Net v3 which is a complete redesign of Parquet library and is not compatible with V2. To see documentation for the latest stable version please [follow this link](https://github.com/elastacloud/parquet-dotnet/tree/final-v2).
 
 ## Status
 
@@ -23,6 +23,7 @@ This project is aimed to fix this problem. We support all the popular server and
 
 ## Index
 
+- [Getting Started](#getting-started)
 - [Reading Data](doc/reading.md) 
 - [Writing Data](doc/writing.md)
 - [DataSet](doc/dataset.md) 
@@ -114,5 +115,3 @@ Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/p
 We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
 
 For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
-
-> If you need to reference the latest preview version (published on every commit) please use the following NuGet Feed: https://ci.appveyor.com/nuget/parquet-dotnet

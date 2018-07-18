@@ -96,7 +96,7 @@ namespace Parquet
       /// <typeparam name="T"></typeparam>
       /// <param name="input"></param>
       /// <returns></returns>
-      public static IEnumerable<T> Deserialize<T>(Stream input) where T : new()
+      public static T[] Deserialize<T>(Stream input) where T : new()
       {
          var result = new List<T>();
 
@@ -111,18 +111,27 @@ namespace Parquet
             {
                using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(i))
                {
-                  List<DataColumn> groupColumns = dataFields
+                  DataColumn[] groupColumns = dataFields
                      .Select(df => groupReader.ReadColumn(df))
-                     .ToList();
+                     .ToArray();
 
-                  IReadOnlyCollection<T> groupClrObjects = bridge.CreateClassInstances<T>(groupColumns);
+                  T[] rb = new T[groupReader.RowCount];
+                  for(int ie = 0; ie < rb.Length; ie ++)
+                  {
+                     rb[ie] = new T();
+                  }
 
-                  result.AddRange(groupClrObjects);
+                  for(int ic = 0; ic < groupColumns.Length; ic++)
+                  {
+                     bridge.AssignColumn(groupColumns[ic], rb, rb.Length);
+                  }
+
+                  result.AddRange(rb);
                }
             }
          }
 
-         return result;
+         return result.ToArray();
       }
    }
 }

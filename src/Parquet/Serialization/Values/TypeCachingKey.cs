@@ -5,9 +5,9 @@ using Parquet.Data;
 
 namespace Parquet.Serialization.Values
 {
-   class CollectorKey : IEquatable<CollectorKey>
+   class TypeCachingKey : IEquatable<TypeCachingKey>
    {
-      public CollectorKey(Type classType, DataField field)
+      public TypeCachingKey(Type classType, DataField field)
       {
          ClassType = classType ?? throw new ArgumentNullException(nameof(classType));
          Field = field ?? throw new ArgumentNullException(nameof(field));
@@ -17,7 +17,7 @@ namespace Parquet.Serialization.Values
 
       public DataField Field { get; }
 
-      public bool Equals(CollectorKey other)
+      public bool Equals(TypeCachingKey other)
       {
          if (ReferenceEquals(other, null)) return false;
          if (ReferenceEquals(other, this)) return true;

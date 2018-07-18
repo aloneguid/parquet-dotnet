@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Parquet.Serialization.Values
+﻿namespace Parquet.Serialization.Values
 {
    class CollectorTag
    {
