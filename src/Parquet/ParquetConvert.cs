@@ -44,14 +44,20 @@ namespace Parquet
 
          if (writerOptions == null) writerOptions = new WriterOptions();
 
-         var columnBuilder = new DataColumnBuilder();
          using (var writer = new ParquetWriter(schema, destination, writerOptions: writerOptions))
          {
             writer.CompressionMethod = compressionMethod;
 
-            foreach(IEnumerable<T> batch in objectInstances.Batch(writerOptions.RowGroupsSize))
+            List<DataField> dataFields = schema.GetDataFields();
+
+            foreach (IEnumerable<T> batch in objectInstances.Batch(writerOptions.RowGroupsSize))
             {
-               IReadOnlyCollection<DataColumn> columns = columnBuilder.BuildColumns(batch.ToArray(), schema);
+               var bridge = new ClrBridge(typeof(T));
+               T[] batchArray = batch.ToArray();
+
+               DataColumn[] columns = dataFields
+                  .Select(df => bridge.BuildColumn(df, batchArray, batchArray.Length))
+                  .ToArray();
 
                using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batch.Count()))
                {
