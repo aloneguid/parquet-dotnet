@@ -8,25 +8,6 @@ namespace Parquet.File.Values
 {
    class RunLengthBitPackingHybridValuesWriter
    {
-      public static void Write(BinaryWriter writer, int bitWidth, IList data)
-      {
-         //int32 - length of data (we'll come back here so let's just write a zero)
-         long dataLengthOffset = writer.BaseStream.Position;
-         writer.Write((int)0);
-
-         //write actual data
-         var dataList = (List<int>)data;
-         WriteData(writer, dataList.ToArray(), dataList.Count, bitWidth);
-
-         //come back to write data length
-         long dataLength = writer.BaseStream.Position - dataLengthOffset - sizeof(int);
-         writer.BaseStream.Seek(dataLengthOffset, SeekOrigin.Begin);
-         writer.Write((int)dataLength);
-
-         //and jump back to the end again
-         writer.BaseStream.Seek(0, SeekOrigin.End);
-      }
-
       /// <summary>
       /// Writes to target stream without jumping around, therefore can be used in forward-only stream
       /// </summary>
@@ -98,13 +79,6 @@ namespace Parquet.File.Values
 
          WriteUnsignedVarInt(writer, header);
          WriteIntBytes(writer, value, byteWidth);
-      }
-
-      private void WriteBitpacked()
-      {
-         //int header = 0x1;
-
-         throw OtherExtensions.NotImplementedForPotentialAssholesAndMoaners("bitpacked encoding");
       }
 
       private static void WriteIntBytes(BinaryWriter writer, int value, int byteWidth)

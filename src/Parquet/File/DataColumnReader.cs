@@ -7,7 +7,6 @@ using Parquet.File.Values;
 
 namespace Parquet.File
 {
-   // v3 experimental !!!
    class DataColumnReader
    {
       private readonly DataField _dataField;

@@ -7,9 +7,6 @@ using Parquet.File.Streams;
 
 namespace Parquet.File
 {
-   /// <summary>
-   /// part of experiments
-   /// </summary>
    static class DataStreamFactory
    {
       private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> _compressionMethodToCodec = 

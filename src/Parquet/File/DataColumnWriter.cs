@@ -10,7 +10,6 @@ using Parquet.File.Values;
 
 namespace Parquet.File
 {
-   // v3 experimental !!!
    class DataColumnWriter
    {
       private readonly Stream _stream;

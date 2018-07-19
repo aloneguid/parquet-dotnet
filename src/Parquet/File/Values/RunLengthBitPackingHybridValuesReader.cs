@@ -11,14 +11,6 @@ namespace Parquet.File.Values
    //todo: this abstrtion is not useful and must die - create RLE encoding class instead for both reading and writing
    class RunLengthBitPackingHybridValuesReader
    {
-      public static List<int> Read(BinaryReader reader, int bitWidth)
-      {
-         int length = GetRemainingLength(reader);
-         var result = new List<int>();
-         ReadRleBitpackedHybrid(reader, bitWidth, length, result);
-         return result;
-      }
-
       public static int Read(BinaryReader reader, int bitWidth, int[] dest, int destOffset)
       {
          int length = GetRemainingLength(reader);
@@ -39,27 +31,6 @@ namespace Parquet.File.Values
        * rle-header := varint-encode( (number of times repeated) << 1)  
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
-
-      public static void ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, List<int> destination)
-      {
-         if (length == 0) length = reader.ReadInt32();
-
-         long start = reader.BaseStream.Position;
-         while (reader.BaseStream.Position - start < length)
-         {
-            int header = ReadUnsignedVarInt(reader);
-            bool isRle = (header & 1) == 0;
-
-            if (isRle)
-            {
-               ReadRle(header, reader, bitWidth, destination);
-            }
-            else
-            {
-               ReadBitpacked(header, reader, bitWidth, destination);
-            }
-         }
-      }
 
       public static int ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, int[] dest, int offset)
       {
@@ -120,50 +91,6 @@ namespace Parquet.File.Values
          }
 
          return offset - start;
-      }
-
-
-      //obsolete
-      private static void ReadBitpacked(int header, BinaryReader reader, int bitWidth, List<int> destination)
-      {
-         int groupCount = header >> 1;
-         int count = groupCount * 8;
-         int byteCount = (bitWidth * count) / 8;
-         //int byteCount2 = (int)Math.Ceiling(bitWidth * count / 8.0);
-
-         byte[] rawBytes = reader.ReadBytes(byteCount);
-         byteCount = rawBytes.Length;  //sometimes there will be less data available, typically on the last page
-
-         int mask = MaskForBits(bitWidth);
-
-         int i = 0;
-         int b = rawBytes[i];
-         int total = byteCount * 8;
-         int bwl = 8;
-         int bwr = 0;
-         while (total >= bitWidth)
-         {
-            if (bwr >= 8)
-            {
-               bwr -= 8;
-               bwl -= 8;
-               b >>= 8;
-            }
-            else if (bwl - bwr >= bitWidth)
-            {
-               int r = ((b >> bwr) & mask);
-               total -= bitWidth;
-               bwr += bitWidth;
-
-               destination.Add(r);
-            }
-            else if (i + 1 < byteCount)
-            {
-               i += 1;
-               b |= (rawBytes[i] << bwl);
-               bwl += 8;
-            }
-         }
       }
 
       private static int ReadBitpacked(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
