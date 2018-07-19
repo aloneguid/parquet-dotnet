@@ -44,10 +44,10 @@ namespace Parquet
 
             using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
             {
-               List<DataField> dataFields = schema.GetDataFields();
-               columns = new DataColumn[dataFields.Count];
+               DataField[] dataFields = schema.GetDataFields();
+               columns = new DataColumn[dataFields.Length];
 
-               for(int i = 0; i < dataFields.Count; i++)
+               for(int i = 0; i < dataFields.Length; i++)
                {
                   columns[i] = rgr.ReadColumn(dataFields[i]);
                }

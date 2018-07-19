@@ -23,6 +23,10 @@ namespace Parquet.Test
          Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.Data);
          Assert.Equal(new int[] { 0, 1, 0, 1 }, rc.RepetitionLevels);
 
+         // https://github.com/elastacloud/parquet-dotnet/blob/final-v2/src/Parquet/File/RepetitionPack.cs
+
+         // tests: https://github.com/elastacloud/parquet-dotnet/blob/final-v2/src/Parquet.Test/RepetitionsTest.cs
+
       }
    }
 }

@@ -6,7 +6,7 @@ namespace Parquet.File.Data
    {
       public byte[] Read(Stream source, int count)
       {
-         var result = new byte[count];
+         byte[] result = new byte[count];
 
          source.Read(result, 0, count);
 

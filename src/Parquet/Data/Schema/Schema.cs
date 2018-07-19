@@ -113,7 +113,7 @@ namespace Parquet.Data
       /// Gets a flat list of all data fields in this schema
       /// </summary>
       /// <returns></returns>
-      public List<DataField> GetDataFields()
+      public DataField[] GetDataFields()
       {
          var result = new List<DataField>();
 
@@ -149,7 +149,7 @@ namespace Parquet.Data
 
          traverse(Fields);
 
-         return result;
+         return result.ToArray();
       }
 
       /// <summary>

@@ -46,7 +46,7 @@ namespace Parquet
          {
             writer.CompressionMethod = compressionMethod;
 
-            List<DataField> dataFields = schema.GetDataFields();
+            DataField[] dataFields = schema.GetDataFields();
 
             foreach (IEnumerable<T> batch in objectInstances.Batch(rowGroupSize))
             {
@@ -107,7 +107,7 @@ namespace Parquet
          using (var reader = new ParquetReader(input))
          {
             Schema fileSchema = reader.Schema;
-            List<DataField> dataFields = fileSchema.GetDataFields();
+            DataField[] dataFields = fileSchema.GetDataFields();
 
             for(int i = 0; i < reader.RowGroupCount; i++)
             {

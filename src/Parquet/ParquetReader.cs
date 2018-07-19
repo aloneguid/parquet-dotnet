@@ -91,7 +91,7 @@ namespace Parquet
       /// <returns></returns>
       public DataColumn[] ReadEntireRowGroup(int rowGroupIndex = 0)
       {
-         DataField[] dataFields = Schema.GetDataFields().ToArray();
+         DataField[] dataFields = Schema.GetDataFields();
          DataColumn[] result = new DataColumn[dataFields.Length];
 
          using (ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex))

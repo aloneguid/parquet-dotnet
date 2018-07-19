@@ -18,7 +18,7 @@ namespace Parquet.Test
             {
                // get file schema (available straight after opening parquet reader)
                // however, get only data fields as only they contain data values
-               List<DataField> dataFields = parquetReader.Schema.GetDataFields();
+               DataField[] dataFields = parquetReader.Schema.GetDataFields();
 
                // enumerate through row groups in this file
                for (int i = 0; i < parquetReader.RowGroupCount; i++)
