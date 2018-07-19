@@ -2,46 +2,22 @@
 
 You can read the data by constructing an instance of [ParquetReader class](../src/Parquet/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
 
-Reading files is a multi stage process, giving you the full flexibility on what exactly to read from it.
+Reading files is a multi stage process, giving you the full flexibility on what exactly to read from it:
 
+1. Create `ParquetReader` from a source stream or open it with any utility method. Once the reader is open you can immediately access file schema and other global file options like key-value metadata and number of row groups.
+2. Open `RowGroupReader` by calling to `reader.OpenRowGroupReader(groupIndex)`. This class also exposes general row group properties like row count.
+3. Call `.Read()` on row group reader passing the *DataField* schema definition you wish to read.
+4. Returned `DataColumn` contains the column data. Important thing to note here is we automatically merge data and definition levels of the column so that `.Data` member of type `System.Array` contains actual usable column data. Note that we do not process *repetition levels* if the column is a part of a more complex structure, and you have to use them appropriately. Simple data columns do not contain *repetition levels*.
 
-## Reading parts of file
-
-### Offsets and Counts
-
-Parquet.Net supports reading portions of files using offset and count properties. In order to do that you need to pass `ReaderOptions` and specify the desired parameters. Every `Read` method supports those as optional parameters. 
-
-For example, to read `input.parquet` from rows 10 to 15 use the following code:
-
-```csharp
-var options = new ReaderOptions { Offset = 10, Count = 5};
-DataSet ds = ParquetReader.ReadFile("c:\\data\\input.parquet", null, options);
-```
-
-### Limiting by columns
-
-Parquet.Net allows you to read only a specific set of columns as well. This might come in handly when your dataset consists of a large amount of columns, or just as a parformance optimisation when you know beforehand which data you are interested in.
-
-Reading a subset of columns makes parquet reader completely ignore data in other columns which greatly improves data retreival speed.
-
-To set which columns to read, you have to pass their names to `ReaderOptions`, for example:
-
-```csharp
-var options = new ReaderOptions
-{
-   Columns = new[] { "n_name", "n_regionkey" }
-};
-
-DataSet ds = ParquetReader.ReadFile("path_to_file.parquet", null, options);
-```
+It's worth noting that *repetition levels* are only used for complex data types like arrays, list and maps. Processing them automatically would add an enormous performance overhead, therefore we are leaving it up to you to decide how to use them.
 
 ## Using format options
 
-When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](../src/Parquet/ParquetOptions.cs), however you can override them by passing to a `Read` method.
+When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](../src/Parquet/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
 
 For example, to force the reader to treat byte arrays as strings use the following code:
 
 ```csharp
 var options = new ParquetOptions { TreatByteArrayAsString = true };
-DataSet ds = ParquetReader.ReadFile("c:\\data\\input.parquet", options, null);
+var reader = new ParquetReader(stream, options);
 ```
