@@ -52,6 +52,8 @@ namespace Parquet
       {
          if (field == null) throw new ArgumentNullException(nameof(field));
 
+         ParquetEventSource.Current.ReadColumn(field.Path);
+
          if (!_pathToChunk.TryGetValue(field.Path, out Thrift.ColumnChunk columnChunk))
          {
             throw new NotImplementedException();
