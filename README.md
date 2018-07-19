@@ -1,6 +1,6 @@
 # Apache Parquet for .Net Platform
 
-![Icon](doc/img/best.jpg)
+![Icon](doc/img/best.png)
 
 > This documenation is for a Release Candiate of Parquet.Net v3 which is a complete redesign of Parquet library and is not compatible with V2. To see documentation for the latest stable version please [follow this link](https://github.com/elastacloud/parquet-dotnet/tree/final-v2).
 
