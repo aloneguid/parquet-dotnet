@@ -3,9 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
-using System.Collections;
-using Parquet.Data.Predicates;
-using System.Linq;
 
 namespace Parquet
 {
@@ -18,7 +15,6 @@ namespace Parquet
       private readonly Thrift.FileMetaData _meta;
       private readonly ThriftFooter _footer;
       private readonly ParquetOptions _parquetOptions;
-      private readonly ReaderOptions _readerOptions;
       private readonly List<ParquetRowGroupReader> _groupReaders = new List<ParquetRowGroupReader>();
       private readonly bool _leaveStreamOpen;
 
@@ -33,12 +29,11 @@ namespace Parquet
       /// </summary>
       /// <param name="input">Input stream, must be readable and seekable</param>
       /// <param name="parquetOptions">Optional reader options</param>
-      /// <param name="readerOptions">The reader options.</param>
       /// <param name="leaveStreamOpen">When true, leaves the stream passed in <paramref name="input"/> open after disposing the reader.</param>
       /// <exception cref="ArgumentNullException">input</exception>
       /// <exception cref="ArgumentException">stream must be readable and seekable - input</exception>
       /// <exception cref="IOException">not a Parquet file (size too small)</exception>
-      public ParquetReader(Stream input, ParquetOptions parquetOptions = null, ReaderOptions readerOptions = null, bool leaveStreamOpen = true) : this(input, true)
+      public ParquetReader(Stream input, ParquetOptions parquetOptions = null, bool leaveStreamOpen = true) : this(input, true)
       {
          
          if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
@@ -46,7 +41,6 @@ namespace Parquet
 
          ValidateFile();
          _parquetOptions = parquetOptions ?? new ParquetOptions();
-         _readerOptions = readerOptions ?? new ReaderOptions();
 
          //read metadata instantly, now
          _meta = ReadMetadata();
@@ -60,13 +54,12 @@ namespace Parquet
       /// </summary>
       /// <param name="filePath"></param>
       /// <param name="parquetOptions"></param>
-      /// <param name="readerOptions"></param>
       /// <returns></returns>
-      public static ParquetReader OpenFromFile(string filePath, ParquetOptions parquetOptions = null, ReaderOptions readerOptions = null)
+      public static ParquetReader OpenFromFile(string filePath, ParquetOptions parquetOptions = null)
       {
          Stream fs = System.IO.File.OpenRead(filePath);
 
-         return new ParquetReader(fs, parquetOptions, readerOptions, false);
+         return new ParquetReader(fs, parquetOptions, false);
       }
 
       /// <summary>

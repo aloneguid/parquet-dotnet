@@ -23,13 +23,13 @@ namespace Parquet
       /// <param name="schema">Optional schema to use. When not specified the class schema will be discovered and everything possible will be
       /// written to the stream. If you want to write only a subset of class properties please specify the schema yourself.
       /// </param>
-      /// <param name="writerOptions"><see cref="WriterOptions"/></param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
+      /// <param name="rowGroupSize"></param>
       /// <returns></returns>
       public static Schema Serialize<T>(T[] objectInstances, Stream destination,
          Schema schema = null,
-         WriterOptions writerOptions = null,
-         CompressionMethod compressionMethod = CompressionMethod.Snappy)
+         CompressionMethod compressionMethod = CompressionMethod.Snappy,
+         int rowGroupSize = 5000)
          where T : new()
       {
          if (objectInstances == null) throw new ArgumentNullException(nameof(objectInstances));
@@ -42,15 +42,13 @@ namespace Parquet
             schema = SchemaReflector.Reflect<T>();
          }
 
-         if (writerOptions == null) writerOptions = new WriterOptions();
-
-         using (var writer = new ParquetWriter(schema, destination, writerOptions: writerOptions))
+         using (var writer = new ParquetWriter(schema, destination))
          {
             writer.CompressionMethod = compressionMethod;
 
             List<DataField> dataFields = schema.GetDataFields();
 
-            foreach (IEnumerable<T> batch in objectInstances.Batch(writerOptions.RowGroupsSize))
+            foreach (IEnumerable<T> batch in objectInstances.Batch(rowGroupSize))
             {
                var bridge = new ClrBridge(typeof(T));
                T[] batchArray = batch.ToArray();
@@ -81,18 +79,16 @@ namespace Parquet
       /// <param name="schema">Optional schema to use. When not specified the class schema will be discovered and everything possible will be
       /// written to the stream. If you want to write only a subset of class properties please specify the schema yourself.
       /// </param>
-      /// <param name="writerOptions"><see cref="WriterOptions"/></param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <returns></returns>
       public static Schema Serialize<T>(T[] objectInstances, string filePath,
          Schema schema = null,
-         WriterOptions writerOptions = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy)
          where T : new()
       {
          using (Stream destination = System.IO.File.Create(filePath))
          {
-            return Serialize<T>(objectInstances, destination, schema, writerOptions, compressionMethod);
+            return Serialize<T>(objectInstances, destination, schema, compressionMethod);
          }
       }
 

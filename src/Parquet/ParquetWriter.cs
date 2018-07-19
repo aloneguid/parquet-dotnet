@@ -14,7 +14,6 @@ namespace Parquet
       private ThriftFooter _footer;
       private readonly Schema _schema;
       private readonly ParquetOptions _formatOptions;
-      private readonly WriterOptions _writerOptions;
       private bool _dataWritten;
 
       /// <summary>
@@ -28,11 +27,10 @@ namespace Parquet
       /// <param name="schema"></param>
       /// <param name="output">Writeable, seekable stream</param>
       /// <param name="formatOptions">Additional options</param>
-      /// <param name="writerOptions">The writer options.</param>
       /// <param name="append"></param>
       /// <exception cref="ArgumentNullException">Output is null.</exception>
       /// <exception cref="ArgumentException">Output stream is not writeable</exception>
-      public ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null, WriterOptions writerOptions = null, bool append = false)
+      public ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
          : base(new GapStream(output))
       {
          if (output == null) throw new ArgumentNullException(nameof(output));
@@ -40,7 +38,6 @@ namespace Parquet
          if (!output.CanWrite) throw new ArgumentException("stream is not writeable", nameof(output));
          _schema = schema ?? throw new ArgumentNullException(nameof(schema));
          _formatOptions = formatOptions ?? new ParquetOptions();
-         _writerOptions = writerOptions ?? new WriterOptions();
 
          PrepareFile(append);
       }
