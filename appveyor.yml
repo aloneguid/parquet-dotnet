@@ -15,8 +15,6 @@ before_build:
 
     dotnet housework author .\Parquet.csproj  ../../build.ini
 
-    dotnet housework author ..\Parquet.Json\Parquet.Json.csproj  ../../build.ini
-
     dotnet housework author ..\SharpArrow\SharpArrow.csproj  ../../build.ini
 
     dotnet housework substitute ThriftFooter.cs ../../build.ini -r
