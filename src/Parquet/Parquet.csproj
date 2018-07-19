@@ -10,12 +10,8 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>v2.1.3
-small improvement: Field.Path property is made public, Interval class is made public (#296)
-
- v2.1.2
- - bug fixed: appending to DataSets containing a MapField column was failing on schema comparison (#283)
-</PackageReleaseNotes>
+    <PackageReleaseNotes>3.0.0
+the first release of a major rewrite</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
      <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>

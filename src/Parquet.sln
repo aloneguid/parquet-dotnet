@@ -8,9 +8,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4B-4489-9EE7-C609A2C1BFBB}"
 	ProjectSection(SolutionItems) = preProject
 		..\doc\arrow.md = ..\doc\arrow.md
-		..\doc\complex-list.md = ..\doc\complex-list.md
-		..\doc\complex-map.md = ..\doc\complex-map.md
-		..\doc\complex-struct.md = ..\doc\complex-struct.md
 		..\doc\dataset.md = ..\doc\dataset.md
 		..\doc\features.md = ..\doc\features.md
 		..\doc\parquet-getting-started.md = ..\doc\parquet-getting-started.md
