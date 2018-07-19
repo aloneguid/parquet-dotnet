@@ -1,44 +1,13 @@
 # Writing Data
 
-You can write data by constructing an instance of [ParquetWriter class](../src/Parquet/ParquetWriter.cs) or using one of the helper classes. In the simplest case, to write a sample dataset to `c:\data\output.parquet` you would write the following code:
+You can write data by constructing an instance of [ParquetWriter class](../src/Parquet/ParquetWriter.cs) or using one of the helper classes.
 
-```csharp
-using System.IO;
-using Parquet;
-using Parquet.Data;
+Writing files is a multi stage process, giving you the full flexibility on what exactly to write to it:
 
-var ds = new DataSet(
-	new DataField<int>("id"),
-	new DataField<string>("city")
-);
+1. Create `ParquetWriter` passing it a *file schema* and a *writeable stream*. You should have declared file schema beforehand.
+2. Create a row group writer by calling to `writer.CreateRowGroup(rowSize)`.
+3. Keep calling `.Write()` by passing the data columns with data you want to write. Note that the order of data columns you are writing must match the order of data fields declared in the schema.
 
-ds.Add(1, "London");
-ds.Add(2, "Derby");
+## Appending to Files
 
-using(Stream fileStream = File.OpenWrite("c:\\data\\output.parquet"))
-{
-	using(var writer = new ParquetWriter(fileStream))
-	{
-		writer.Write(ds);
-	}
-}
-
-```
-
-[DataSet](../src/Parquet/Data/DataSet.cs) is a rich structure representing the data and is used extensively in Parquet.Net.
-
-You can also do the same thing simpler with a helper method
-
-```csharp
-using(Stream fileStream = File.OpenWrite("c:\\data\\output.parquet"))
-{
-	ParquetWriter.Write(ds, fileStream);
-}
-
-```
-
-## Settings writer options
-
-You can set some writer options by passing [WriterOptions](../src/Parquet/WriterOptions.cs) instance to `Write` methods, which at the moment are:
-
-- **RowGroupsSize** size of a row group when writing. Parquet internally can page file in row groups which can decrease the amount of RAM when making queries over the file in systems like Apache Spark. By default we set row group size to 5000 rows.
+todo: is implemented, need documenting

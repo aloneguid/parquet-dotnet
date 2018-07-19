@@ -29,7 +29,8 @@ This project is aimed to fix this problem. We support all the popular server and
 - [Fast Automatic Serialisation](doc/serialisation.md)
 - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
-- Advanced Types
+- Advanced Topics
+  - [Arrays](doc/complex-arrays.md) 
   - [Structures](doc/complex-struct.md)
   - [Maps](doc/complex-map.md)
   - [Lists](doc/complex-list.md)
