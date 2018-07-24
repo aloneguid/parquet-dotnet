@@ -24,9 +24,11 @@ namespace Parquet.Data
                : ArrayPool<TSystemType?>.Shared.Rent(minCount);
          }
 
-         return isNullable
-            ? Array.CreateInstance(typeof(TSystemType?), minCount)
-            : Array.CreateInstance(typeof(TSystemType), minCount);
+         if (isNullable)
+         {
+            return new TSystemType?[minCount];
+         }
+         return new TSystemType[minCount];
       }
 
       public override void ReturnArray(Array array, bool isNullable)
@@ -44,6 +46,15 @@ namespace Parquet.Data
       public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel)
       {
          return UnpackDefinitions((TSystemType[])untypedSource, definitionLevels, maxDefinitionLevel);
+      }
+
+      public override TypedArrayWrapper CreateTypedArrayWrapper(Array array, bool isNullable)
+      {
+         if (isNullable)
+         {
+            return TypedArrayWrapper.Create<TSystemType?>(array);
+         }
+         return TypedArrayWrapper.Create<TSystemType>(array);
       }
 
       private TSystemType?[] UnpackDefinitions(TSystemType[] src, int[] definitionLevels, int maxDefinitionLevel)

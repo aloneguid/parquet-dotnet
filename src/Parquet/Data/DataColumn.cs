@@ -84,28 +84,37 @@ namespace Parquet.Data
 
          if (!Field.HasNulls)
          {
-            for(int i = 0; i < Data.Length; i++)
-            {
-               pooledDefinitionLevels[i] = maxDefinitionLevel;
-            }
-
+            SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
             return Data;
          }
 
          //get count of nulls
          int nullCount = 0;
+         bool isNullable = Field.ClrType.IsNullable() || Data.GetType().GetElementType().IsNullable();
+
+         TypedArrayWrapper typedData = _dataTypeHandler.CreateTypedArrayWrapper(Data, isNullable);
          for(int i = 0; i < Data.Length; i++)
          {
-            bool isNull = (Data.GetValue(i) == null);
+            bool isNull = typedData.GetValue(i) == null;
             if (isNull) nullCount += 1;
          }
 
+         // if the field definition said there could be nulls, but weren't, don't incur the overhead of new array allocations and item copying
+         if (nullCount == 0)
+         {
+            SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
+            return Data;
+         }
+
          //pack
-         Array result = Array.CreateInstance(Field.ClrType, Data.Length - nullCount);
+         Array result = _dataTypeHandler.GetArray(Data.Length - nullCount, false, false);
+         TypedArrayWrapper typedResult = _dataTypeHandler.CreateTypedArrayWrapper(result, false);
+
          int ir = 0;
          for(int i = 0; i < Data.Length; i++)
          {
-            object value = Data.GetValue(i);
+            object value = typedData.GetValue(i);
+            
             if(value == null)
             {
                pooledDefinitionLevels[i] = 0;
@@ -113,10 +122,18 @@ namespace Parquet.Data
             else
             {
                pooledDefinitionLevels[i] = maxDefinitionLevel;
-               result.SetValue(value, ir++);
+               typedResult.SetValue(value, ir++);
             }
          }
          return result;
+      }
+
+      void SetPooledDefinitionLevels(int maxDefinitionLevel, int[] pooledDefinitionLevels)
+      {
+         for (int i = 0; i < Data.Length; i++)
+         {
+            pooledDefinitionLevels[i] = maxDefinitionLevel;
+         }
       }
    }
 }

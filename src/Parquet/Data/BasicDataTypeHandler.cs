@@ -70,7 +70,9 @@ namespace Parquet.Data
 
       public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
-         foreach(TSystemType one in values)
+         // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
+         var typedArray = (TSystemType[]) values;
+         foreach(TSystemType one in typedArray)
          {
             WriteOne(writer, one);
          }
@@ -110,6 +112,11 @@ namespace Parquet.Data
       public abstract void ReturnArray(Array array, bool isNullable);
 
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
+
+      public virtual TypedArrayWrapper CreateTypedArrayWrapper(Array array, bool isNullable)
+      {
+         return TypedArrayWrapper.Create<TSystemType>(array);
+      }
 
       protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel)
       {

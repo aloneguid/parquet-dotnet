@@ -88,8 +88,8 @@ namespace Parquet.Data.Concrete
          else
          {
             //transofrm to byte array first, as we need the length of the byte buffer, not string length
-            byte[] data = Encoding.UTF8.GetBytes(value);
-            writer.Write((int)data.Length);
+            byte[] data = E.GetBytes(value);
+            writer.Write(data.Length);
             writer.Write(data);
          }
       }
