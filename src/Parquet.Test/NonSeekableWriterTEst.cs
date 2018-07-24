@@ -22,14 +22,14 @@ namespace Parquet.Test
          {
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(1))
             {
-               rgw.Write(new DataColumn((DataField)schema[0], new[] { 1 }));
-               rgw.Write(new DataColumn((DataField)schema[1], new[] { "1" }));
+               rgw.WriteColumn(new DataColumn((DataField)schema[0], new[] { 1 }));
+               rgw.WriteColumn(new DataColumn((DataField)schema[1], new[] { "1" }));
             }
 
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(1))
             {
-               rgw.Write(new DataColumn((DataField)schema[0], new[] { 2 }));
-               rgw.Write(new DataColumn((DataField)schema[1], new[] { "2" }));
+               rgw.WriteColumn(new DataColumn((DataField)schema[0], new[] { 2 }));
+               rgw.WriteColumn(new DataColumn((DataField)schema[1], new[] { "2" }));
             }
          }
 

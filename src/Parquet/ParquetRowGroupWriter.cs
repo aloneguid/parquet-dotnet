@@ -9,7 +9,7 @@ using Parquet.File.Values;
 namespace Parquet
 {
    /// <summary>
-   /// 
+   /// Writer for Parquet row groups
    /// </summary>
    public class ParquetRowGroupWriter : IDisposable
    {
@@ -22,7 +22,7 @@ namespace Parquet
       private readonly int _rowCount;
       private readonly Thrift.RowGroup _thriftRowGroup;
       private readonly long _rgStartPos;
-      private readonly List<Thrift.SchemaElement> _thschema;
+      private readonly Thrift.SchemaElement[] _thschema;
       private int _colIdx;
 
       internal ParquetRowGroupWriter(Schema schema,
@@ -45,20 +45,24 @@ namespace Parquet
          _thriftRowGroup.Num_rows = _rowCount;
          _rgStartPos = _stream.Position;
          _thriftRowGroup.Columns = new List<Thrift.ColumnChunk>();
-         _thschema = _footer.GetWriteableSchema().ToList();
+         _thschema = _footer.GetWriteableSchema();
       }
 
       /// <summary>
       /// 
       /// </summary>
       /// <param name="column"></param>
-      public void Write(DataColumn column)
+      public void WriteColumn(DataColumn column)
       {
          if (column == null) throw new ArgumentNullException(nameof(column));
 
-         Thrift.SchemaElement tse = _thschema[_colIdx++];
+         Thrift.SchemaElement tse = _thschema[_colIdx];
+         if(!column.Field.Equals(tse))
+         {
+            throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{column.Field.Name}'", nameof(column));
+         }
          IDataTypeHandler dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
-         //todo: check if the column is in the right order
+         _colIdx += 1;
 
          List<string> path = _footer.GetPath(tse);
 
@@ -66,6 +70,7 @@ namespace Parquet
 
          Thrift.ColumnChunk chunk = writer.Write(path, column, dataTypeHandler);
          _thriftRowGroup.Columns.Add(chunk);
+
       }
 
       /// <summary>

@@ -37,6 +37,28 @@ namespace Parquet.Test
          }
       }
 
+      protected DataColumn[] WriteReadSingleRowGroup(Schema schema, DataColumn[] columns, int rowCount, out Schema readSchema)
+      {
+         using (var ms = new MemoryStream())
+         {
+            ms.WriteSingleRowGroupParquetFile(schema, rowCount, columns);
+            ms.Position = 0;
+
+            using (var reader = new ParquetReader(ms))
+            {
+               readSchema = reader.Schema;
+
+               using (ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0))
+               {
+                  return columns.Select(c =>
+                     rgReader.ReadColumn(c.Field))
+                     .ToArray();
+
+               }
+            }
+         }
+      }
+
       protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None)
       {
          //for sanity, use disconnected streams
@@ -56,7 +78,7 @@ namespace Parquet.Test
                   dataArray.SetValue(value, 0);
                   var column = new DataColumn(field, dataArray);
 
-                  rg.Write(column);
+                  rg.WriteColumn(column);
                }
             }
 

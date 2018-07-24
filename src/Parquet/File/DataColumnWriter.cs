@@ -114,6 +114,7 @@ namespace Parquet.File
                }
 
                pageStream.Flush();   //extremely important to flush the stream as some compression algorithms don't finish writing
+               pageStream.MarkWriteFinished();
                dataPageHeader.Uncompressed_page_size = (int)pageStream.Position;
             }
             dataPageHeader.Compressed_page_size = (int)ms.Position;

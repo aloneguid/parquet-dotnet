@@ -10,7 +10,11 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.0.0
+    <PackageReleaseNotes>3.0.1
+- improvement: better column validation in row group writer
+- bug fixed: Snappy compression writer fails on certain encodings (#315)
+
+3.0.0
 the first release of a major rewrite</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />

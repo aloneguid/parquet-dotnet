@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Parquet.Data;
 using Parquet.File;
 using Xunit;
@@ -7,22 +8,27 @@ namespace Parquet.Test
 {
    public class ListTest : TestBase
    {
-      /*[Fact]
+      [Fact]
       public void List_of_structures_writes_reads()
       {
-         var ds = new DataSet(
-            new DataField<int>("id"),
+         var idsch = new DataField<int>("id");
+         var cnamech = new DataField<string>("name");
+         var ccountrych = new DataField<string>("country");
+
+         var schema = new Schema(
+            idsch,
             new ListField("cities",
             new StructField("element",
-               new DataField<string>("name"),
-               new DataField<string>("country"))));
+               cnamech,
+               ccountrych)));
 
-         ds.Add(1, new[] { new Row("London", "UK"), new Row("New York", "US") });
+         var id = new DataColumn(idsch, new int[] { 1 });
+         var cname = new DataColumn(cnamech, new[] { "London", "New York" }, new[] { 0, 1 });
+         var ccountry = new DataColumn(ccountrych, new[] { "UK", "US" }, new[] { 0, 1 });
 
-         DataSet ds1 = DataSetGenerator.WriteRead(ds);
+         DataColumn[] readColumns = WriteReadSingleRowGroup(schema, new[] { id, cname, ccountry }, 1, out Schema readSchema);
 
-         Assert.Equal("{1;[{London;UK};{New York;US}]}", ds1[0].ToString());
-      }*/
+      }
 
       /*[Fact]
       public void List_of_elements_writes_reads()

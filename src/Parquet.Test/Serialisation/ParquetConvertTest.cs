@@ -27,7 +27,7 @@ namespace Parquet.Test.Serialisation
 
          using (var ms = new MemoryStream())
          {
-            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.None);
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy);
 
             ms.Position = 0;
 

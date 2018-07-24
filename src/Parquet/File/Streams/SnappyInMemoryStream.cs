@@ -11,12 +11,12 @@ namespace Parquet.File.Streams
    /// <summary>
    /// In-memory hacky implementation of Snappy streaming as Snappy.Sharp's implementation is a work in progress
    /// </summary>
-   class SnappyInMemoryStream : Stream
+   class SnappyInMemoryStream : Stream, IMarkStream
    {
       private readonly Stream _parent;
       private readonly CompressionMode _compressionMode;
       private readonly MemoryStream _ms;
-      private bool _flushed;
+      private bool _finishedForWriting;
 
       public SnappyInMemoryStream(Stream parent, CompressionMode compressionMode)
       {
@@ -43,9 +43,9 @@ namespace Parquet.File.Streams
 
       public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
-      public override void Flush()
+      public void MarkWriteFinished()
       {
-         if (_flushed) return;
+         if (_finishedForWriting) return;
 
          if(_compressionMode == CompressionMode.Compress)
          {
@@ -58,7 +58,7 @@ namespace Parquet.File.Streams
             _parent.Write(compressed, 0, length);
          }
 
-         _flushed = true;
+         _finishedForWriting = true;
       }
 
       protected override void Dispose(bool disposing)
@@ -93,11 +93,16 @@ namespace Parquet.File.Streams
          var snappyDecompressor = new SnappyDecompressor();
 
          byte[] buffer = ArrayPool<byte>.Shared.Rent((int)source.Length);
-         source.Read(buffer, 0, (int)source.Length);
+         int read = source.Read(buffer, 0, (int)source.Length);
          byte[] uncompressedBytes = snappyDecompressor.Decompress(buffer, 0, (int)source.Length);
          ArrayPool<byte>.Shared.Return(buffer);
          return new MemoryStream(uncompressedBytes);
 
+      }
+
+      public override void Flush()
+      {
+         
       }
    }
 }

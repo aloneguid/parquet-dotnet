@@ -32,6 +32,9 @@ namespace Parquet.Data
 
       internal virtual string PathPrefix { set { } }
 
+      // not in use
+      internal Thrift.SchemaElement NativeSchema { get; set; }
+
       /// <summary>
       /// Constructs a field with only requiremd parameters
       /// </summary>
@@ -43,7 +46,7 @@ namespace Parquet.Data
 
          if(Name.Contains(Schema.PathSeparator))
          {
-            throw new ArgumentException($"'{Schema.PathSeparator}' is not allowed in field name as it's used internally as path separator");
+            throw new ArgumentException($"'{Schema.PathSeparator}' is not allowed in field name as it's used in Apache Parquet format as field path separator.");
          }
 
          SchemaType = schemaType;
@@ -55,6 +58,13 @@ namespace Parquet.Data
       internal virtual void Assign(Field field)
       {
          //only used by some schema fields internally to help construct a field hierarchy
+      }
+
+      internal bool Equals(Thrift.SchemaElement tse)
+      {
+         if (ReferenceEquals(tse, null)) return false;
+
+         return tse.Name == Name;
       }
 
       #endregion

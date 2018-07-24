@@ -63,8 +63,8 @@ namespace Parquet.Test
                // create a new row group in the file
                using (ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup(2))
                {
-                  groupWriter.Write(idColumn);
-                  groupWriter.Write(cityColumn);
+                  groupWriter.WriteColumn(idColumn);
+                  groupWriter.WriteColumn(cityColumn);
                }
             }
          }

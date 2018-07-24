@@ -68,6 +68,8 @@ namespace Parquet.File
 
          _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
+         ParquetEventSource.Current.SeekColumn(_dataField.Path, fileOffset);
+
          var colData = new ColumnRawData();
          colData.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
@@ -98,8 +100,6 @@ namespace Parquet.File
          }
 
          // all the data is available here!
-
-         // todo: this is a simple hack for trivial tests to succeed
 
          return new DataColumn(
             _dataField, colData.values,
@@ -160,6 +160,8 @@ namespace Parquet.File
       {
          using (Stream pageStream = OpenDataPageStream(ph))
          {
+            ParquetEventSource.Current.OpenDataPage(_dataField.Path, _thriftColumnChunk.Meta_data.Codec.ToString(), pageStream.Length);
+
             using (var reader = new BinaryReader(pageStream))
             {
                if (_maxRepetitionLevel > 0)

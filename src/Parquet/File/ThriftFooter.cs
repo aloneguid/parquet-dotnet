@@ -128,15 +128,9 @@ namespace Parquet.File
          }
       }
 
-      public IEnumerable<Thrift.SchemaElement> GetWriteableSchema()
+      public Thrift.SchemaElement[] GetWriteableSchema()
       {
-         foreach(Thrift.SchemaElement tse in _fileMeta.Schema)
-         {
-            if(tse.__isset.type)
-            {
-               yield return tse;
-            }
-         }
+         return _fileMeta.Schema.Where(tse => tse.__isset.type).ToArray();
       }
 
       public Thrift.RowGroup AddRowGroup()

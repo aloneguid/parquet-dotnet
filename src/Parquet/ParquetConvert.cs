@@ -61,7 +61,7 @@ namespace Parquet
                {
                   foreach(DataColumn dataColumn in columns)
                   {
-                     groupWriter.Write(dataColumn);
+                     groupWriter.WriteColumn(dataColumn);
                   }
                }
             }

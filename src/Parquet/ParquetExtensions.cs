@@ -24,7 +24,7 @@ namespace Parquet
             {
                foreach(DataColumn column in columns)
                {
-                  rgw.Write(column);
+                  rgw.WriteColumn(column);
                }
             }
          }

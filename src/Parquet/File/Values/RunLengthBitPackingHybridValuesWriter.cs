@@ -27,7 +27,7 @@ namespace Parquet.File.Values
 
             //actual data
             ms.Position = 0;
-            ms.CopyTo(writer.BaseStream);
+            ms.CopyTo(writer.BaseStream); //warning! CopyTo performs .Flush internally
          }
       }
 

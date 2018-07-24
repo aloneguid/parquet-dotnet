@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Parquet.File.Streams
 {
-   class GapStream : Stream
+   class GapStream : Stream, IMarkStream
    {
       private readonly Stream _parent;
       private readonly long? _knownLength;
@@ -38,6 +38,14 @@ namespace Parquet.File.Streams
       public override void Flush()
       {
          _parent.Flush();
+      }
+
+      public void MarkWriteFinished()
+      {
+         if(_parent is IMarkStream markStream)
+         {
+            markStream.MarkWriteFinished();
+         }
       }
 
       public override int Read(byte[] buffer, int offset, int count)

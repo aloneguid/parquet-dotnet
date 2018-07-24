@@ -25,6 +25,8 @@ namespace Parquet
       [Event(1, Level = EventLevel.Informational, Message = "length: {2}, rows: {3}")]
       public void OpenStream(long length, bool leaveOpen, int rowGroupCount, long numRows)
       {
+         if (!IsEnabled()) return;
+
          WriteEvent(1, length, leaveOpen);
       }
 
@@ -34,6 +36,22 @@ namespace Parquet
          if (!IsEnabled()) return;
 
          WriteEvent(2, path);
+      }
+
+      [Event(3, Level = EventLevel.Verbose, Message = "seeking to column {0} start @ {1}")]
+      public void SeekColumn(string path, long offset)
+      {
+         if (!IsEnabled()) return;
+
+         WriteEvent(3, path, offset);
+      }
+
+      [Event(4, Level = EventLevel.Verbose, Message = "opened data page")]
+      public void OpenDataPage(string path, string compressionMethod, long length)
+      {
+         if (!IsEnabled()) return;
+
+         WriteEvent(4, path, compressionMethod, length);
       }
    }
 }
