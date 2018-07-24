@@ -30,5 +30,4 @@ test_script:
    dotnet test src\Parquet.Json.Test -c release
 artifacts:
 - path: src/Parquet/bin/**/*.nupkg
-- path: src/Parquet.Json/bin/**/*.nupkg
 deploy: off
