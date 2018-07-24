@@ -49,7 +49,24 @@ var column = new DataColumn(
    new int[] { 0, 1, 1, 0, 1, 0, 1, 1, 1 });
 ```
 
-Note that anything other than plain columns add a performance overhead due to obvious reasons for the need to pack and unpack data structures.
+### Empty Arrays
+
+Empty arrays can be represented by simply having no element in them. For instance
+
+```
+[1 2]
+[]
+[3 4]
+```
+
+Goes into following:
+
+```
+values:             [1 2 null 3 4]
+repetition levels:  [0 1 0    0 1]
+```
+
+> Note that anything other than plain columns add a performance overhead due to obvious reasons for the need to pack and unpack data structures.
 
 ## Structures
 
