@@ -26,6 +26,7 @@ This project is aimed to fix this problem. We support all the popular server and
 - [Getting Started](#getting-started)
 - [Reading Data](doc/reading.md) 
 - [Writing Data](doc/writing.md)
+- [Complex Types](doc/complex-types.md)
 - [Fast Automatic Serialisation](doc/serialisation.md)
 - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
