@@ -338,6 +338,28 @@ root
          Assert.Equal(2, ds.FieldCount);
       }*/
 
+
+      [Fact]
+      public void Reads_multi_page_file()
+      {
+         using (var reader = new ParquetReader(OpenTestFile("multi.page.parquet"), leaveStreamOpen: false))
+         {
+            DataColumn[] data = reader.ReadEntireRowGroup();
+            Assert.Equal(927861, data[0].Data.Length);
+
+            int[] firstColumn = (int[])data[0].Data;
+            Assert.Equal(30763, firstColumn[524286]);
+            Assert.Equal(30766, firstColumn[524287]);
+
+            //At row 524288 the data is split into another page
+            //The column makes use of a dictionary to reduce the number of values and the default dictionary index value is zero (i.e. the first record value)
+            Assert.NotEqual(firstColumn[0], firstColumn[524288]);
+
+            //The vlaue should be 30768
+            Assert.Equal(30768, firstColumn[524288]);
+         }
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)
