@@ -10,7 +10,11 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.0.2
+    <PackageReleaseNotes>
+3.0.3
+- critical bug fixed: reading parquet files with multiple pages doesn't read beyond 1st page (#318)
+    
+3.0.2
 - performance improvements (#317)
 
 3.0.1
