@@ -84,7 +84,7 @@ namespace Parquet.File
 
          while (true)
          {
-            int valuesSoFar = Math.Max(colData.indexes == null ? 0 : colData.indexes.Length, colData.values == null ? 0 : colData.values.Length);
+            int valuesSoFar = Math.Max(colData.indexes == null ? 0 : colData.indexesOffset, colData.values == null ? 0 : colData.values.Length);
             ReadDataPage(ph, colData, maxValues - valuesSoFar);
 
             pagesRead++;
