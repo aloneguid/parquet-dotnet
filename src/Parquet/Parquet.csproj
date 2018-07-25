@@ -10,7 +10,9 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>
+    <PackageReleaseNotes>3.0.4:
+- bug fixed: Cannot read schema where map elements are structures (#320)
+
 3.0.3
 - critical bug fixed: reading parquet files with multiple pages doesn't read beyond 1st page (#318)
     
