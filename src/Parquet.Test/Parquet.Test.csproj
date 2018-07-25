@@ -37,6 +37,7 @@
     <None Remove="data\mapinstruct.parquet" />
     <None Remove="data\map_array.parq" />
     <None Remove="data\mr_times.parq" />
+    <None Remove="data\multi.page.parquet" />
     <None Remove="data\nation.csv" />
     <None Remove="data\nation.dict.parquet" />
     <None Remove="data\nation.impala.parquet" />
@@ -133,6 +134,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="data\mr_times.parq">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="data\multi.page.parquet">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="data\nation.csv">

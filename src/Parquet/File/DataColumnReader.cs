@@ -84,14 +84,14 @@ namespace Parquet.File
 
          while (true)
          {
-            int valuesSoFar = Math.Max(colData.indexes == null ? 0 : colData.indexes.Length, colData.values == null ? 0 : colData.values.Length);
+            int valuesSoFar = Math.Max(colData.indexes == null ? 0 : colData.indexesOffset, colData.values == null ? 0 : colData.values.Length);
             ReadDataPage(ph, colData, maxValues - valuesSoFar);
 
             pagesRead++;
 
             int totalCount = Math.Max(
                (colData.values == null ? 0 : colData.values.Length) +
-               (colData.indexes == null ? 0 : colData.indexes.Length),
+               (colData.indexes == null ? 0 : colData.indexesOffset),
                (colData.definitions == null ? 0 : colData.definitions.Length));
             if (totalCount >= maxValues) break; //limit reached
 
