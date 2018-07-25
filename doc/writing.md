@@ -11,4 +11,53 @@ Writing files is a multi stage process, giving you the full flexibility on what 
 
 ## Appending to Files
 
-todo: is implemented, need documenting
+Appending to files is easy, however it's worth keeping in mind that *row groups are immutable* in parquet file, therefore you need to create a new row group in a file you wish to append to. The following code snippet illustrates this:
+
+```csharp
+//write a file with a single row group
+var id = new DataField<int>("id");
+var ms = new MemoryStream();
+
+using (var writer = new ParquetWriter(new Schema(id), ms))
+{
+   using (ParquetRowGroupWriter rg = writer.CreateRowGroup(2))
+   {
+      rg.WriteColumn(new DataColumn(id, new int[] { 1, 2 }));
+   }
+}
+
+//append to this file. Note that you cannot append to existing row group, therefore create a new one
+ms.Position = 0;
+using (var writer = new ParquetWriter(new Schema(id), ms, append: true))
+{
+   using (ParquetRowGroupWriter rg = writer.CreateRowGroup(2))
+   {
+      rg.WriteColumn(new DataColumn(id, new int[] { 3, 4 }));
+   }
+}
+
+//check that this file now contains two row groups and all the data is valid
+ms.Position = 0;
+using (var reader = new ParquetReader(ms))
+{
+   Assert.Equal(2, reader.RowGroupCount);
+
+   using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+   {
+      Assert.Equal(2, rg.RowCount);
+      Assert.Equal(new int[] { 1, 2 }, rg.ReadColumn(id).Data);
+   }
+
+   using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(1))
+   {
+      Assert.Equal(2, rg.RowCount);
+      Assert.Equal(new int[] { 3, 4 }, rg.ReadColumn(id).Data);
+   }
+
+}
+
+```
+
+Note that you have to specify that you are opening `ParquetWriter` in **append** mode in it's constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream posiition to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
+
+Please keep in mind that row groups are designed to hold a large amount of data (5'0000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
