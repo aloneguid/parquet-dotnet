@@ -52,12 +52,6 @@ namespace Parquet.Test
       }
 
       /*[Fact]
-      public void Opening_readable_and_seekable_stream_succeeds()
-      {
-         new ParquetReader2(new ReadableAndSeekableStream(new NonReadableSeekableStream("PAR1DATAPAR1".ToMemoryStream())));
-      }
-
-      [Fact]
       public void Read_from_offset_in_first_chunk()
       {
          DataSet ds = DataSetGenerator.Generate(30);
@@ -151,9 +145,9 @@ namespace Parquet.Test
       }*/
 
 
-      [Fact]
-      public void Reads_really_mad_nested_file()
-      {
+      //[Fact]
+      //public void Reads_really_mad_nested_file()
+      //{
          /* Spark schema:
 root
 |-- addresses: array (nullable = true)
@@ -176,13 +170,12 @@ root
 |    |    |-- min: long (nullable = true) 
          */
 
-
          /*DataSet ds = ParquetReader2.Read(OpenTestFile("nested.parquet"));
 
          //much easier to compare mad nestness with .ToString(), but will break when it changes
          Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", ds[0].ToString());
          Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", ds[1].ToString());*/
-      }
+      //}
 
       /*[Fact]
       public void Reads_list_of_structures()

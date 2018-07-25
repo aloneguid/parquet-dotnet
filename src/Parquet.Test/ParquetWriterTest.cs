@@ -25,25 +25,60 @@ namespace Parquet.Test
          }
       }
 
-      /*[Fact]
+      [Fact]
       public void Write_in_small_row_groups()
       {
-         var options = new WriterOptions { RowGroupsSize = 5 };
+         //write a single file having 3 row groups
+         var id = new DataField<int>("id");
+         var ms = new MemoryStream();
 
-         var ds = new DataSet(new DataField<int>("index"));
-         for(int i = 0; i < 103; i++)
+         using (var writer = new ParquetWriter(new Schema(id), ms))
          {
-            ds.Add(new Row(i));
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
+            {
+               rg.WriteColumn(new DataColumn(id, new int[] { 1 }));
+            }
+
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
+            {
+               rg.WriteColumn(new DataColumn(id, new int[] { 2 }));
+            }
+
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
+            {
+               rg.WriteColumn(new DataColumn(id, new int[] { 3 }));
+            }
+
          }
 
-         var ms = new MemoryStream();
-         ParquetWriter2.Write(ds, ms, CompressionMethod.None, null, options);
-
+         //read the file back and validate
          ms.Position = 0;
-         DataSet ds1 = ParquetReader2.Read(ms);
-         Assert.Equal(1, ds1.FieldCount);
-         Assert.Equal(103, ds1.RowCount);
-      }*/
+         using (var reader = new ParquetReader(ms))
+         {
+            Assert.Equal(3, reader.RowGroupCount);
+
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+            {
+               Assert.Equal(1, rg.RowCount);
+               DataColumn dc = rg.ReadColumn(id);
+               Assert.Equal(new int[] { 1 }, dc.Data);
+            }
+
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(1))
+            {
+               Assert.Equal(1, rg.RowCount);
+               DataColumn dc = rg.ReadColumn(id);
+               Assert.Equal(new int[] { 2 }, dc.Data);
+            }
+
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(2))
+            {
+               Assert.Equal(1, rg.RowCount);
+               DataColumn dc = rg.ReadColumn(id);
+               Assert.Equal(new int[] { 3 }, dc.Data);
+            }
+         }
+      }
 
       /*[Fact]
       public void Append_to_file_reads_all_dataset()
