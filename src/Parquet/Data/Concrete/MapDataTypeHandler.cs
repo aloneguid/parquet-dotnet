@@ -46,7 +46,7 @@ namespace Parquet.Data.Concrete
             container.Add(root);
 
             //key-value is a container for column of keys and column of values
-            var keyValue = new Thrift.SchemaElement(MapField._containerName)
+            var keyValue = new Thrift.SchemaElement(MapField.ContainerName)
             {
                 Num_children = 0, //is assigned by children
                 Repetition_type = Thrift.FieldRepetitionType.REPEATED
@@ -55,8 +55,8 @@ namespace Parquet.Data.Concrete
 
             //now add the key and value separately
             MapField mapField = field as MapField;
-            IDataTypeHandler keyHandler = DataTypeFactory.Match(mapField.Key.DataType);
-            IDataTypeHandler valueHandler = DataTypeFactory.Match(mapField.Value.DataType);
+            IDataTypeHandler keyHandler = DataTypeFactory.Match(mapField.Key);
+            IDataTypeHandler valueHandler = DataTypeFactory.Match(mapField.Value);
 
             keyHandler.CreateThrift(mapField.Key, keyValue, container);
             Thrift.SchemaElement tseKey = container[container.Count - 1];

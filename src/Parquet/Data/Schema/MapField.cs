@@ -9,27 +9,17 @@ namespace Parquet.Data
    /// </summary>
    public class MapField : Field
    {
-      internal const string _containerName = "key_value";
+      internal const string ContainerName = "key_value";
 
       /// <summary>
       /// Data field used as a key
       /// </summary>
-      public DataField Key { get; private set; }
+      public Field Key { get; private set; }
 
       /// <summary>
       /// Data field used as a value
       /// </summary>
-      public DataField Value { get; private set; }
-
-      /// <summary>
-      /// 
-      /// </summary>
-      public DataType KeyType => Key.DataType;
-
-      /// <summary>
-      /// 
-      /// </summary>
-      public DataType ValueType => Value.DataType;
+      public Field Value { get; private set; }
 
       /// <summary>
       /// Declares a map field
@@ -40,7 +30,7 @@ namespace Parquet.Data
          Key = keyField;
          Value = valueField;
 
-         Path = name.AddPath(_containerName);
+         Path = name.AddPath(ContainerName);
          Key.PathPrefix = Path;
          Value.PathPrefix = Path;
       }
@@ -54,11 +44,11 @@ namespace Parquet.Data
       {
          if(Key == null)
          {
-            Key = (DataField)se;
+            Key = se;
          }
          else if(Value == null)
          {
-            Value = (DataField)se;
+            Value = se;
          }
          else
          {
@@ -70,7 +60,7 @@ namespace Parquet.Data
       {
          set
          {
-            Path = value.AddPath(Name, _containerName);
+            Path = value.AddPath(Name, ContainerName);
             Key.PathPrefix = Path;
             Value.PathPrefix = Path;
          }
@@ -79,10 +69,15 @@ namespace Parquet.Data
       /// <summary>
       /// <see cref="Equals(object)"/>
       /// </summary>
-      public override bool Equals(Object obj)
+      public override bool Equals(object obj)
       {
+         if (ReferenceEquals(obj, null)) return false;
+         if (ReferenceEquals(obj, this)) return true;
+         if (obj.GetType() != typeof(MapField)) return false;
+
          MapField other = (MapField)obj;
-         return Name.Equals(other.Name) && KeyType.Equals(other.KeyType) && ValueType.Equals(other.ValueType);
+
+         return Name.Equals(other.Name) && Key.Equals(other.Key) && Value.Equals(other.Value);
       }
 
       /// <summary>
@@ -90,7 +85,7 @@ namespace Parquet.Data
       /// </summary>
       public override int GetHashCode()
       {
-         return Name.GetHashCode() * KeyType.GetHashCode() * ValueType.GetHashCode();
+         return Name.GetHashCode() * Key.GetHashCode() * Value.GetHashCode();
       }
    }
 }
