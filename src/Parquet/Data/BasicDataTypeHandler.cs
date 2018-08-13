@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Parquet.Data
 {
@@ -10,6 +12,7 @@ namespace Parquet.Data
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
+      private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
 
       public BasicDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
       {
@@ -111,11 +114,41 @@ namespace Parquet.Data
 
       public abstract void ReturnArray(Array array, bool isNullable);
 
+      public abstract Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength);
+
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
 
       public virtual TypedArrayWrapper CreateTypedArrayWrapper(Array array, bool isNullable)
       {
          return TypedArrayWrapper.Create<TSystemType>(array);
+      }
+
+      protected TNullable[] PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength)
+         where TNullable : class
+      {
+         definitionLevels = IntPool.Rent(data.Length);
+         definitionsLength = data.Length;
+
+         int nullCount = data.Count(i => i == null);
+         TNullable[] result = new TNullable[data.Length - nullCount];
+         int ir = 0;
+
+         for (int i = 0; i < data.Length; i++)
+         {
+            TNullable value = data[i];
+
+            if (value == null)
+            {
+               definitionLevels[i] = 0;
+            }
+            else
+            {
+               definitionLevels[i] = maxDefinitionLevel;
+               result[ir++] = value;
+            }
+         }
+
+         return result;
       }
 
       protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel)

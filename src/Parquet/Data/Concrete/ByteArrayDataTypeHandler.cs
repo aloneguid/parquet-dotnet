@@ -27,6 +27,11 @@ namespace Parquet.Data.Concrete
          throw new NotImplementedException();
       }
 
+      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
+      {
+         return PackDefinitions<byte[]>((byte[][])data, maxDefinitionLevel, out definitions, out definitionsLength);
+      }
+
       public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
       {
          return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel);

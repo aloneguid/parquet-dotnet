@@ -58,6 +58,11 @@ namespace Parquet.Data.Concrete
          SPool.Return((string[])array);
       }
 
+      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
+      {
+         return PackDefinitions<string>((string[])data, maxDefinitionLevel, out definitions, out definitionsLength);
+      }
+
       public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
       {
          return UnpackGenericDefinitions((string[])src, definitionLevels, maxDefinitionLevel);

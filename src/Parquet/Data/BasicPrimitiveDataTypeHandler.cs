@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Parquet.File;
 
 namespace Parquet.Data
@@ -10,6 +11,8 @@ namespace Parquet.Data
    abstract class BasicPrimitiveDataTypeHandler<TSystemType> : BasicDataTypeHandler<TSystemType>
       where TSystemType : struct
    {
+      private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
+
       public BasicPrimitiveDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
          : base(dataType, thriftType, convertedType)
       {
@@ -43,6 +46,11 @@ namespace Parquet.Data
          }
       }
 
+      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
+      {
+         return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength);
+      }
+
       public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel)
       {
          return UnpackDefinitions((TSystemType[])untypedSource, definitionLevels, maxDefinitionLevel);
@@ -74,6 +82,33 @@ namespace Parquet.Data
 
          return result;
 
+      }
+
+      private TSystemType[] PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength)
+      {
+         definitionLevels = IntPool.Rent(data.Length);
+         definitionsLength = data.Length;
+
+         int nullCount = data.Count(i => !i.HasValue);
+         TSystemType[] result = new TSystemType[data.Length - nullCount];
+         int ir = 0;
+
+         for(int i = 0; i < data.Length; i++)
+         {
+            TSystemType? value = data[i];
+
+            if(value == null)
+            {
+               definitionLevels[i] = 0;
+            }
+            else
+            {
+               definitionLevels[i] = maxDefinitionLevel;
+               result[ir++] = value.Value;
+            }
+         }
+
+         return result;
       }
    }
 }

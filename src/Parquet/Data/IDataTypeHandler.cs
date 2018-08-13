@@ -35,6 +35,8 @@ namespace Parquet.Data
 
       Array MergeDictionary(Array dictionary, int[] indexes);
 
+      Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int defiintionsLength);
+
       Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
 
       TypedArrayWrapper CreateTypedArrayWrapper(Array array, bool isNullable);
