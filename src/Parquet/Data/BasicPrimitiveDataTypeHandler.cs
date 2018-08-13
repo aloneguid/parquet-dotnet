@@ -56,15 +56,6 @@ namespace Parquet.Data
          return UnpackDefinitions((TSystemType[])untypedSource, definitionLevels, maxDefinitionLevel);
       }
 
-      public override TypedArrayWrapper CreateTypedArrayWrapper(Array array, bool isNullable)
-      {
-         if (isNullable)
-         {
-            return TypedArrayWrapper.Create<TSystemType?>(array);
-         }
-         return TypedArrayWrapper.Create<TSystemType>(array);
-      }
-
       private TSystemType?[] UnpackDefinitions(TSystemType[] src, int[] definitionLevels, int maxDefinitionLevel)
       {
          TSystemType?[] result = (TSystemType?[])GetArray(definitionLevels.Length, false, true);

@@ -118,11 +118,6 @@ namespace Parquet.Data
 
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
 
-      public virtual TypedArrayWrapper CreateTypedArrayWrapper(Array array, bool isNullable)
-      {
-         return TypedArrayWrapper.Create<TSystemType>(array);
-      }
-
       protected TNullable[] PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength)
          where TNullable : class
       {
