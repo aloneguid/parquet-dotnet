@@ -125,6 +125,41 @@ namespace Parquet.Test
 
          }
       }
+      
+      public readonly static IEnumerable<object[]> NullableColumnContentCases = new List<object[]>()
+      {
+         new object[] { new int?[] { 1, 2 } },
+         new object[] { new int?[] { null } },
+         new object[] { new int?[] { 1, null, 2 } },
+         new object[] { new int[] { 1, 2 } },
+      };
+
+      [Theory]
+      [MemberData(nameof(NullableColumnContentCases))]
+      public void Write_read_nullable_column(Array input) {
+         var id = new DataField<int?>("id");
+         var ms = new MemoryStream();
+
+         using (var writer = new ParquetWriter(new Schema(id), ms))
+         {
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup(input.Length))
+            {
+               rg.WriteColumn(new DataColumn(id, input));
+            }
+         }
+
+         ms.Position = 0;
+         using (var reader = new ParquetReader(ms))
+         {
+            Assert.Equal(1, reader.RowGroupCount);
+
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+            {
+               Assert.Equal(input.Length, rg.RowCount);
+               Assert.Equal(input, rg.ReadColumn(id).Data);
+            }
+         }
+      }
 
       /*[Fact]
       public void Append_to_file_with_different_schema_fails()

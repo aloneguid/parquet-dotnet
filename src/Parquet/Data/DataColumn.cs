@@ -82,7 +82,9 @@ namespace Parquet.Data
          pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
          definitionLevelCount = Data.Length;
 
-         if (!Field.HasNulls)
+         bool isNullable = Field.ClrType.IsNullable() || Data.GetType().GetElementType().IsNullable();
+
+         if (!Field.HasNulls || !isNullable)
          {
             SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
             return Data;
@@ -90,20 +92,11 @@ namespace Parquet.Data
 
          //get count of nulls
          int nullCount = 0;
-         bool isNullable = Field.ClrType.IsNullable() || Data.GetType().GetElementType().IsNullable();
-
          TypedArrayWrapper typedData = _dataTypeHandler.CreateTypedArrayWrapper(Data, isNullable);
          for(int i = 0; i < Data.Length; i++)
          {
             bool isNull = typedData.GetValue(i) == null;
             if (isNull) nullCount += 1;
-         }
-
-         // if the field definition said there could be nulls, but weren't, don't incur the overhead of new array allocations and item copying
-         if (nullCount == 0)
-         {
-            SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
-            return Data;
          }
 
          //pack

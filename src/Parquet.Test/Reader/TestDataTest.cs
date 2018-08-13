@@ -3,8 +3,11 @@ using System.IO;
 using System.Reflection;
 using Xunit;
 
+
 namespace Parquet.Test.Reader
 {
+   [UseCulture("en-US")]
+   // [UseCulture("da-DK")] // FAILS
    public class TestDataTest : ParquetCsvComparison
    {
       public TestDataTest()
