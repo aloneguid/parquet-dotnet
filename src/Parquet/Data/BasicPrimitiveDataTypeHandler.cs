@@ -34,18 +34,6 @@ namespace Parquet.Data
          return new TSystemType[minCount];
       }
 
-      public override void ReturnArray(Array array, bool isNullable)
-      {
-         if(isNullable)
-         {
-            ArrayPool<TSystemType?>.Shared.Return((TSystemType?[])array);
-         }
-         else
-         {
-            ArrayPool<TSystemType>.Shared.Return((TSystemType[])array);
-         }
-      }
-
       public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
       {
          return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength);

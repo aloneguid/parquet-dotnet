@@ -112,8 +112,6 @@ namespace Parquet.Data
 
       public abstract Array GetArray(int minCount, bool rent, bool isNullable);
 
-      public abstract void ReturnArray(Array array, bool isNullable);
-
       public abstract Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength);
 
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);

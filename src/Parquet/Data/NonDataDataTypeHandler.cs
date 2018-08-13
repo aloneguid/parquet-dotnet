@@ -37,11 +37,6 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
-      public void ReturnArray(Array array, bool isNullable)
-      {
-         throw new NotSupportedException();
-      }
-
       public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
       {
          throw new NotSupportedException();

@@ -22,11 +22,6 @@ namespace Parquet.Data.Concrete
          throw new NotImplementedException();
       }
 
-      public override void ReturnArray(Array array, bool isNullable)
-      {
-         throw new NotImplementedException();
-      }
-
       public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
       {
          return PackDefinitions<byte[]>((byte[][])data, maxDefinitionLevel, out definitions, out definitionsLength);

@@ -8,8 +8,8 @@ namespace Parquet.Data.Concrete
    class StringDataTypeHandler : BasicDataTypeHandler<string>
    {
       private static readonly Encoding E = Encoding.UTF8;
-      private static readonly ArrayPool<byte> Pool = ArrayPool<byte>.Shared;
-      private static readonly ArrayPool<string> SPool = ArrayPool<string>.Shared;
+      private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
+      private static readonly ArrayPool<string> _stringPool = ArrayPool<string>.Shared;
 
       public StringDataTypeHandler() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
       {
@@ -19,7 +19,7 @@ namespace Parquet.Data.Concrete
       {
          if (rent)
          {
-            return SPool.Rent(minCount);
+            return _stringPool.Rent(minCount);
          }
 
          return new string[minCount];
@@ -53,11 +53,6 @@ namespace Parquet.Data.Concrete
 
       }
 
-      public override void ReturnArray(Array array, bool isNullable)
-      {
-         SPool.Return((string[])array);
-      }
-
       public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
       {
          return PackDefinitions<string>((string[])data, maxDefinitionLevel, out definitions, out definitionsLength);
@@ -72,10 +67,10 @@ namespace Parquet.Data.Concrete
       {
          int length = reader.ReadInt32();
 
-         byte[] buffer = Pool.Rent(length);
+         byte[] buffer = _bytePool.Rent(length);
          reader.Read(buffer, 0, length);
          string s = E.GetString(buffer, 0, length);   //can't avoid this :(
-         Pool.Return(buffer);
+         _bytePool.Return(buffer);
 
          //non-optimised version
          //byte[] data = reader.ReadBytes(length);
