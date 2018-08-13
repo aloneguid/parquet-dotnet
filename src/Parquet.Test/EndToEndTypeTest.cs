@@ -102,7 +102,7 @@ namespace Parquet.Test
 
          bool equal = (input.expectedValue == null && actual == null || actual.Equals(input.expectedValue));
 
-         Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}");
+         Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}"); 
       }
    }
 }

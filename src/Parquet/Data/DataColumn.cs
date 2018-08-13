@@ -90,35 +90,7 @@ namespace Parquet.Data
             return Data;
          }
 
-         //get count of nulls
-         int nullCount = 0;
-         TypedArrayWrapper typedData = _dataTypeHandler.CreateTypedArrayWrapper(Data, isNullable);
-         for(int i = 0; i < Data.Length; i++)
-         {
-            bool isNull = typedData.GetValue(i) == null;
-            if (isNull) nullCount += 1;
-         }
-
-         //pack
-         Array result = _dataTypeHandler.GetArray(Data.Length - nullCount, false, false);
-         TypedArrayWrapper typedResult = _dataTypeHandler.CreateTypedArrayWrapper(result, false);
-
-         int ir = 0;
-         for(int i = 0; i < Data.Length; i++)
-         {
-            object value = typedData.GetValue(i);
-            
-            if(value == null)
-            {
-               pooledDefinitionLevels[i] = 0;
-            }
-            else
-            {
-               pooledDefinitionLevels[i] = maxDefinitionLevel;
-               typedResult.SetValue(value, ir++);
-            }
-         }
-         return result;
+         return _dataTypeHandler.PackDefinitions(Data, maxDefinitionLevel, out pooledDefinitionLevels, out definitionLevelCount);
       }
 
       void SetPooledDefinitionLevels(int maxDefinitionLevel, int[] pooledDefinitionLevels)

@@ -10,7 +10,11 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.0.4:
+    <PackageReleaseNotes>3.0.5:
+- #321 bug fixed: a nullable field should support all-non-nullable values 
+- performance improvement around packing definition levels
+
+3.0.4:
 - bug fixed: Cannot read schema where map elements are structures (#320)
 
 3.0.3
