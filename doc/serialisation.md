@@ -4,7 +4,7 @@ Parquet library is generally extremely flexible in terms of supporting internals
 
 For this reason the library implements a fast serialiser/deserialiser for parquet files.
 
-They both generate IL code in runtime for a class type to work with, therefore there is a tiny bit of a startup complation delay which in most cases is negligeble. Once the class is serialised at least once, further operations become blazingly fast. Note that this is still faster than reflection. In general, we see around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records).
+They both generate IL code in runtime for a class type to work with, therefore there is a tiny bit of a startup complation delay which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast. Note that this is still faster than reflection. In general, we see around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records).
 
 Both serialiser and deserialiser works with array of classes. Let's say you have the following class definition:
 
