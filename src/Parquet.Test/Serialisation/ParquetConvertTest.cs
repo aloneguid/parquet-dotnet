@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NetBox.Extensions;
@@ -14,7 +15,7 @@ namespace Parquet.Test.Serialisation
       {
          DateTime now = DateTime.Now;
 
-         SimpleStructure[] structures = Enumerable
+         IEnumerable<SimpleStructure> structures = Enumerable
             .Range(0, 10)
             .Select(i => new SimpleStructure
             {
@@ -22,23 +23,23 @@ namespace Parquet.Test.Serialisation
                NullableId = (i % 2 == 0) ? new int?() : new int?(i),
                Name = $"row {i}",
                Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
-            })
-            .ToArray();
+            });
 
          using (var ms = new MemoryStream())
          {
-            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy);
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
 
             ms.Position = 0;
 
             SimpleStructure[] structures2 = ParquetConvert.Deserialize<SimpleStructure>(ms);
 
-            for(int i = 0; i < 10; i++)
+            SimpleStructure[] structuresArray = structures.ToArray();
+            for (int i = 0; i < 10; i++)
             {
-               Assert.Equal(structures[i].Id, structures2[i].Id);
-               Assert.Equal(structures[i].NullableId, structures2[i].NullableId);
-               Assert.Equal(structures[i].Name, structures2[i].Name);
-               Assert.Equal(structures[i].Date, structures2[i].Date);
+               Assert.Equal(structuresArray[i].Id, structures2[i].Id);
+               Assert.Equal(structuresArray[i].NullableId, structures2[i].NullableId);
+               Assert.Equal(structuresArray[i].Name, structures2[i].Name);
+               Assert.Equal(structuresArray[i].Date, structures2[i].Date);
             }
 
          }

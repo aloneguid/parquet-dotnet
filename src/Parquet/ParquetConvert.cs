@@ -26,7 +26,7 @@ namespace Parquet
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <param name="rowGroupSize"></param>
       /// <returns></returns>
-      public static Schema Serialize<T>(T[] objectInstances, Stream destination,
+      public static Schema Serialize<T>(IEnumerable<T> objectInstances, Stream destination,
          Schema schema = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy,
          int rowGroupSize = 5000)
@@ -57,7 +57,7 @@ namespace Parquet
                   .Select(df => bridge.BuildColumn(df, batchArray, batchArray.Length))
                   .ToArray();
 
-               using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batch.Count()))
+               using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batchArray.Length))
                {
                   foreach(DataColumn dataColumn in columns)
                   {
@@ -81,14 +81,14 @@ namespace Parquet
       /// </param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <returns></returns>
-      public static Schema Serialize<T>(T[] objectInstances, string filePath,
+      public static Schema Serialize<T>(IEnumerable<T> objectInstances, string filePath,
          Schema schema = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy)
          where T : new()
       {
          using (Stream destination = System.IO.File.Create(filePath))
          {
-            return Serialize<T>(objectInstances, destination, schema, compressionMethod);
+            return Serialize(objectInstances, destination, schema, compressionMethod);
          }
       }
 
