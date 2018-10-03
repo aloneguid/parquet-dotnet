@@ -2,11 +2,9 @@
 
 ![Icon](doc/img/best.png)
 
-> This documenation is for a Release Candiate of Parquet.Net v3 which is a complete redesign of Parquet library and is not compatible with V2. To see documentation for the latest stable version please [follow this link](https://github.com/elastacloud/parquet-dotnet/tree/final-v2).
+Note that [Elastacloud](https://elastacloud.com/Home) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to [parquetsupport@elastacloud.com](mailto:parquetsupport@elastacloud.com).
 
 ![](doc/img/logo_ec.png)
-
-Note that [Elastacloud](https://elastacloud.com/Home) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to [parquetsupport@elastacloud.com](mailto:parquetsupport@elastacloud.com).
 
 ## Status
 

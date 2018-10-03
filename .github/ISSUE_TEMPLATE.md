@@ -1,15 +1,12 @@
 <!--
-   PLEASE NOTE THAT WE WILL CLOSE THE ISSUE IMMEDIATELY IF THERE IS NOT ENOUGH INFORMATION.
-
-   Please Note that Elastacloud (https://elastacloud.com) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to mailto:parquetsupport@elastacloud.com.
-
+   Please Note that Elastacloud (https://elastacloud.com) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to parquetsupport@elastacloud.com
 -->
 
 **Version:** Parquet.Net v...
 
 **Runtime Version:** .Net Framework v, .Net Core v etc.
 
-**OS:** Windows/Linux v
+**OS:** Windows/Linux/MacOSX v etc.
 
 #### Expected behavior
 
