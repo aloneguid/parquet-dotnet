@@ -66,6 +66,37 @@ namespace Parquet.Data
          }
       }
 
+      internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel)
+      {
+         int rl = parentRepetitionLevel;
+         int dl = parentDefinitionLevel;
+
+         //"container" is optional and adds on 1 DL
+         dl += 1;
+
+         //"key_value" is repeated therefore it adds on 1 RL + 1 DL
+         rl += 1;
+         dl += 1;
+
+         //push to children
+         Key.PropagateLevels(rl, dl);
+         Value.PropagateLevels(rl, dl);
+      }
+
+      /// <summary>
+      /// Creates an empty dictionary to keep values for this map field. Only works when both key and value are <see cref="DataField"/>
+      /// </summary>
+      /// <returns></returns>
+      internal IDictionary CreateSimpleDictionary()
+      {
+         Type genericType = typeof(Dictionary<,>);
+         Type concreteType = genericType.MakeGenericType(
+            ((DataField)Key).ClrNullableIfHasNullsType,
+            ((DataField)Value).ClrNullableIfHasNullsType);
+
+         return (IDictionary)Activator.CreateInstance(concreteType);
+      }
+
       /// <summary>
       /// <see cref="Equals(object)"/>
       /// </summary>

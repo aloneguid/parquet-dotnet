@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>netcoreapp2.1</TargetFramework>
+      <AssemblyName>parq</AssemblyName>
+
+      <!-- set it up as CLI global tool-->
+      <PackAsTool>true</PackAsTool>
+      <ToolCommandName>parq</ToolCommandName>
+      <PackageId>parq</PackageId>
+      <Description>Parq is a .NET Core global tool that is a console interface to the great open-source library Parquet.Net. Parq's version corresponds to the version of parquet.net library it's based upon.</Description>
+      <PackageReleaseNotes>3.1.0
+- the first release and a single command to show file schema</PackageReleaseNotes>
+   </PropertyGroup>
+
+   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+      <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+   </PropertyGroup>
+
+   <ItemGroup>
+     <PackageReference Include="Cpf.Core" Version="1.0.9" />
+     <PackageReference Include="LogMagic" Version="2.16.0" />
+     <PackageReference Include="LogMagic.Microsoft.Azure.ApplicationInsights" Version="2.16.0" />
+   </ItemGroup>
+
+   <ItemGroup>
+     <ProjectReference Include="..\Parquet\Parquet.csproj" />
+   </ItemGroup>
+
+   <ItemGroup>
+     <Compile Update="Help.Designer.cs">
+       <DesignTime>True</DesignTime>
+       <AutoGen>True</AutoGen>
+       <DependentUpon>Help.resx</DependentUpon>
+     </Compile>
+   </ItemGroup>
+
+   <ItemGroup>
+     <EmbeddedResource Update="Help.resx">
+       <Generator>ResXFileCodeGenerator</Generator>
+       <LastGenOutput>Help.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+   </ItemGroup>
+
+
+</Project>

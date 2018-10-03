@@ -34,7 +34,7 @@ namespace Parquet.Serialization
       {
          IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
 
-         return new Schema(properties.Select(GetField).Where(p => p != null));
+         return new Schema(properties.Select(GetField).Where(p => p != null).ToList());
       }
 
       /// <summary>

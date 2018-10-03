@@ -47,19 +47,19 @@ namespace Parquet.Data
          }
       }
 
+      internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel)
+      {
+         //struct is a container, it doesn't have any levels
+
+         foreach(Field f in Fields)
+         {
+            f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel);
+         }
+      }
+
       private StructField(string name) : base(name, SchemaType.Struct)
       {
 
-      }
-
-      /// <summary>
-      /// String representation
-      /// </summary>
-      public override string ToString()
-      {
-         string fields = string.Join(", ", Fields.Select(f => f.ToString()));
-
-         return $"{Name}: [{fields}]";
       }
 
       internal static StructField CreateWithNoElements(string name)

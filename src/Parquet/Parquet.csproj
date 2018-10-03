@@ -10,7 +10,12 @@ Works on all flavours of Windows and Linux. Compatible with iOS and Android via 
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.0.5:
+    <PackageReleaseNotes>3.1.0:
+- re-introducing utilities for row-based access allowing you to access and create parquet files in more readable format.
+- Field class now supports MaxRepetitionLevel and MaxDefinitionLevel
+- fixed bug #334 preventing reading generated files in Impala
+- parquet.net library supports SourceLink
+3.0.5:
 - #321 bug fixed: a nullable field should support all-non-nullable values 
 - performance improvement around packing definition levels
 
@@ -38,12 +43,18 @@ the first release of a major rewrite</PackageReleaseNotes>
 
    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+      <EmbedUntrackedSources>true</EmbedUntrackedSources>
+      <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
    </PropertyGroup>
+
+   <ItemGroup Condition="'$(Configuration)' == 'Release'">
+      <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All" />
+   </ItemGroup>
 
    <ItemGroup>
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-    <DotNetCliToolReference Include="dotnet-housework" Version="0.0.9" />
   </ItemGroup>
 
 </Project>

@@ -97,7 +97,7 @@ namespace Parquet.Data
       public virtual Array MergeDictionary(Array untypedDictionary, int[] indexes)
       {
          TSystemType[] dictionary = (TSystemType[])untypedDictionary;
-         int length = indexes.Length;
+         int length = indexes?.Length ?? 0;
          TSystemType[] result = new TSystemType[length];
 
          for (int i = 0; i < length; i++)

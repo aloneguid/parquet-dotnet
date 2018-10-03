@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
+using Parquet.Data.Rows;
 
 namespace Parquet
 {
@@ -64,6 +65,32 @@ namespace Parquet
          return new ParquetReader(fs, parquetOptions, false);
       }
 
+      #region [ Helpers ]
+
+      /// <summary>
+      /// Reads entire file as a table
+      /// </summary>
+      public static Table ReadTableFromFile(string filePath, ParquetOptions parquetOptions = null)
+      {
+         using (ParquetReader reader = OpenFromFile(filePath, parquetOptions))
+         {
+            return reader.ReadAsTable();
+         }
+      }
+
+      /// <summary>
+      /// Reads entire stream as a table
+      /// </summary>
+      public static Table ReadTableFromStream(Stream stream, ParquetOptions parquetOptions = null)
+      {
+         using (var reader = new ParquetReader(stream, parquetOptions))
+         {
+            return reader.ReadAsTable();
+         }
+      }
+
+      #endregion
+
       /// <summary>
       /// Gets the number of rows groups in this file
       /// </summary>
@@ -73,6 +100,8 @@ namespace Parquet
       /// Reader schema
       /// </summary>
       public Schema Schema => _footer.CreateModelSchema(_parquetOptions);
+
+      internal Thrift.FileMetaData ThriftMetadata => _meta;
 
       /// <summary>
       /// 

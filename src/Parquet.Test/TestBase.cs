@@ -1,11 +1,9 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using Parquet.Data;
-using Parquet.File;
-using Parquet.Test.data;
 using System.Linq;
 using F = System.IO.File;
+using Parquet.Data.Rows;
 
 namespace Parquet.Test
 {
@@ -13,15 +11,48 @@ namespace Parquet.Test
    {
       protected Stream OpenTestFile(string name)
       {
-         return ResourceReader.Open(name);
+         return F.OpenRead("./data/" + name);
       }
 
-      protected DataColumn WriteReadSingleColumn(DataField field, int rowCount, DataColumn dataColumn)
+      protected Table ReadTestFileAsTable(string name)
+      {
+         using (Stream s = OpenTestFile(name))
+         {
+            using (var reader = new ParquetReader(s))
+            {
+               return reader.ReadAsTable();
+            }
+         }
+      }
+
+      protected Table WriteRead(Table table, bool saveLocal = false)
+      {
+         var ms = new MemoryStream();
+
+         using (var writer = new ParquetWriter(table.Schema, ms))
+         {
+            writer.Write(table);
+         }
+
+         if(saveLocal)
+         {
+            F.WriteAllBytes("c:\\tmp\\test.parquet", ms.ToArray());
+         }
+
+         ms.Position = 0;
+
+         using (var reader = new ParquetReader(ms))
+         {
+            return reader.ReadAsTable();
+         }
+      }
+
+      protected DataColumn WriteReadSingleColumn(DataField field, DataColumn dataColumn)
       {
          using (var ms = new MemoryStream())
          {
             // write with built-in extension method
-            ms.WriteSingleRowGroupParquetFile(new Schema(field), rowCount, dataColumn);
+            ms.WriteSingleRowGroupParquetFile(new Schema(field), dataColumn);
             ms.Position = 0;
 
             // read first gow group and first column
@@ -37,11 +68,11 @@ namespace Parquet.Test
          }
       }
 
-      protected DataColumn[] WriteReadSingleRowGroup(Schema schema, DataColumn[] columns, int rowCount, out Schema readSchema)
+      protected DataColumn[] WriteReadSingleRowGroup(Schema schema, DataColumn[] columns, out Schema readSchema)
       {
          using (var ms = new MemoryStream())
          {
-            ms.WriteSingleRowGroupParquetFile(schema, rowCount, columns);
+            ms.WriteSingleRowGroupParquetFile(schema, columns);
             ms.Position = 0;
 
             using (var reader = new ParquetReader(ms))
@@ -72,7 +103,7 @@ namespace Parquet.Test
             {
                writer.CompressionMethod = compressionMethod;
 
-               using (ParquetRowGroupWriter rg = writer.CreateRowGroup(1))
+               using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
                {
                   Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);
                   dataArray.SetValue(value, 0);

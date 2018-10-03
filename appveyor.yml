@@ -7,27 +7,25 @@ configuration: Release
 platform: Any CPU
 before_build:
 - ps: >-
+    dotnet tool install -g housework -g
+
+    housework setbuildnumber %CiVersion% -s build.ini
+
+    housework author ./src/Parquet/Parquet.csproj -s build.ini
+
+    housework author ./src/SharpArrow/SharpArrow.csproj -s build.ini
+
+    housework author ./src/Parquet.CLI/Parquet.CLI.csproj -s build.ini
+
+    housework substitute ./src/Parquet/ThriftFooter.cs -s build.ini -r
+
     dotnet restore src/Parquet.sln
-
-    cd src/Parquet
-
-    dotnet housework setbuildnumber %CiVersion%  ../../build.ini
-
-    dotnet housework author .\Parquet.csproj  ../../build.ini
-
-    dotnet housework author ..\SharpArrow\SharpArrow.csproj  ../../build.ini
-
-    dotnet housework substitute ThriftFooter.cs ../../build.ini -r
-
-    cd ../..
 build:
   project: src/Parquet.sln
   verbosity: minimal
 test_script:
 - cmd: >-
    dotnet test src\Parquet.Test -c release
-
-   dotnet test src\Parquet.Json.Test -c release
 artifacts:
-- path: src/Parquet/bin/**/*.nupkg
+- path: src/**/*.nupkg
 deploy: off

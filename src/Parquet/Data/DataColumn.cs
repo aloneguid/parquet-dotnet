@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Linq;
 
 namespace Parquet.Data
 {
@@ -16,7 +17,6 @@ namespace Parquet.Data
          Field = field ?? throw new ArgumentNullException(nameof(field));
 
          _dataTypeHandler = DataTypeFactory.Match(field.DataType);
-         HasRepetitions = field.IsArray;
       }
 
       /// <summary>
@@ -48,7 +48,7 @@ namespace Parquet.Data
          }
 
          // 2. Apply definitions
-         if(definitionLevels != null)
+         if (definitionLevels != null)
          {
             Data = _dataTypeHandler.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
          }
@@ -58,7 +58,7 @@ namespace Parquet.Data
       }
 
       /// <summary>
-      /// Column data
+      /// Column data where definition levels are already applied
       /// </summary>
       public Array Data { get; private set; }
 
@@ -73,9 +73,10 @@ namespace Parquet.Data
       public DataField Field { get; private set; }
 
       /// <summary>
-      /// 
+      /// When true, this field has repetitions. It doesn't mean that it's an array though. This property simply checks that
+      /// repetition levels are present on this column.
       /// </summary>
-      public bool HasRepetitions { get; private set; }
+      public bool HasRepetitions => RepetitionLevels != null;
 
       internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount)
       {
@@ -99,6 +100,24 @@ namespace Parquet.Data
          {
             pooledDefinitionLevels[i] = maxDefinitionLevel;
          }
+      }
+
+      internal long CalculateRowCount()
+      {
+         if(Field.MaxRepetitionLevel > 0)
+         {
+            return RepetitionLevels.Count(rl => rl == 0);
+         }
+
+         return Data.Length;
+      }
+
+      /// <summary>
+      /// pretty print
+      /// </summary>
+      public override string ToString()
+      {
+         return Field.ToString();
       }
    }
 }

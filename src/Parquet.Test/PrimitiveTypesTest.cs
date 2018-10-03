@@ -24,7 +24,7 @@ namespace Parquet.Test
             data[i] = true;
          }
 
-         DataColumn read = WriteReadSingleColumn(id, count, new DataColumn(id, data));
+         DataColumn read = WriteReadSingleColumn(id, new DataColumn(id, data));
 
          for(int i = 0; i < count; i++)
          {

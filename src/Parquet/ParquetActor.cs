@@ -22,7 +22,7 @@ namespace Parquet
 
       internal ParquetActor(Stream fileStream)
       {
-         _fileStream = fileStream ?? throw new ArgumentNullException(nameof(_fileStream));
+         _fileStream = fileStream ?? throw new ArgumentNullException(nameof(fileStream));
       }
 
       /// <summary>

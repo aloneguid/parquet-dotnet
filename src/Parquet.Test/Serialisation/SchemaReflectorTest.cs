@@ -15,7 +15,7 @@ namespace Parquet.Test.Serialisation
          Schema schema = inferrer.Reflect();
 
          Assert.NotNull(schema);
-         Assert.Equal(4, schema.Length);
+         Assert.Equal(4, schema.Fields.Count);
 
          DataField id = (DataField)schema[0];
          Assert.Equal("Id", id.Name);

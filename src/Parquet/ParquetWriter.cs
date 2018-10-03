@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.File.Streams;
@@ -15,6 +17,7 @@ namespace Parquet
       private readonly Schema _schema;
       private readonly ParquetOptions _formatOptions;
       private bool _dataWritten;
+      private readonly List<ParquetRowGroupWriter> _openedWriters = new List<ParquetRowGroupWriter>();
 
       /// <summary>
       /// Type of compression to use, defaults to <see cref="CompressionMethod.Snappy"/>
@@ -43,15 +46,17 @@ namespace Parquet
       }
 
       /// <summary>
-      /// 
+      /// Creates a new row group and a writer for it.
       /// </summary>
-      /// <param name="rowCount"></param>
-      /// <returns></returns>
-      public ParquetRowGroupWriter CreateRowGroup(int rowCount)
+      public ParquetRowGroupWriter CreateRowGroup()
       {
          _dataWritten = true;
 
-         return new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, CompressionMethod, _formatOptions, rowCount);
+         var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, CompressionMethod, _formatOptions);
+
+         _openedWriters.Add(writer);
+
+         return writer;
       }
 
       private void PrepareFile(bool append)
@@ -109,6 +114,9 @@ namespace Parquet
       public void Dispose()
       {
          if (!_dataWritten) return;
+
+         //update row count (on append add row count to existing metadata)
+         _footer.Add(_openedWriters.Sum(w => w.RowCount ?? 0));
 
          //finalize file
          long size = _footer.Write(ThriftStream);

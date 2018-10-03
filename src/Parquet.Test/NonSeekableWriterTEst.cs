@@ -20,13 +20,13 @@ namespace Parquet.Test
 
          using (var writer = new ParquetWriter(schema, forwardOnly))
          {
-            using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(1))
+            using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
             {
                rgw.WriteColumn(new DataColumn((DataField)schema[0], new[] { 1 }));
                rgw.WriteColumn(new DataColumn((DataField)schema[1], new[] { "1" }));
             }
 
-            using (ParquetRowGroupWriter rgw = writer.CreateRowGroup(1))
+            using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
             {
                rgw.WriteColumn(new DataColumn((DataField)schema[0], new[] { 2 }));
                rgw.WriteColumn(new DataColumn((DataField)schema[1], new[] { "2" }));

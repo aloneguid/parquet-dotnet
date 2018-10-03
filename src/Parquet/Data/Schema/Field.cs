@@ -26,14 +26,21 @@ namespace Parquet.Data
       public string Path { get; internal set; }
 
       /// <summary>
+      /// Max repetition level
+      /// </summary>
+      public int MaxRepetitionLevel { get; internal set; }
+
+      /// <summary>
+      /// Max definition level
+      /// </summary>
+      public int MaxDefinitionLevel { get; internal set; }
+
+      /// <summary>
       /// Used internally for serialisation
       /// </summary>
       internal string ClrPropName { get; set; }
 
       internal virtual string PathPrefix { set { } }
-
-      // not in use
-      internal Thrift.SchemaElement NativeSchema { get; set; }
 
       /// <summary>
       /// Constructs a field with only requiremd parameters
@@ -55,6 +62,30 @@ namespace Parquet.Data
 
       #region [ Internal Helpers ]
 
+      /// <summary>
+      /// Called by schema when field hierarchy is constructed, so that fields can calculate levels as this is
+      /// done in reverse order of construction and needs to be done after data is ready
+      /// </summary>
+      internal abstract void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel);
+
+      internal int[] GenerateRepetitions(int count)
+      {
+         int[] rl = new int[count];
+
+         if(count > 0)
+         {
+            rl[0] = 0;
+         }
+
+         int mrl = MaxRepetitionLevel;
+         for(int i = 1; i < count; i++)
+         {
+            rl[i] = mrl;
+         }
+
+         return rl;
+      }
+
       internal virtual void Assign(Field field)
       {
          //only used by some schema fields internally to help construct a field hierarchy
@@ -68,5 +99,13 @@ namespace Parquet.Data
       }
 
       #endregion
+
+      /// <summary>
+      /// pretty prints
+      /// </summary>
+      public override string ToString()
+      {
+         return $"{SchemaType} {Path}";
+      }
    }
 }

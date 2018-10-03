@@ -31,7 +31,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_plain_no_compression()
       {
-         CompareFiles("alltypes", "plain",
+         CompareFiles("types/alltypes", "plain",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -48,7 +48,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_gzip_compression()
       {
-         CompareFiles("alltypes", "gzip",
+         CompareFiles("types/alltypes", "gzip",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -65,7 +65,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_snappy_compression()
       {
-         CompareFiles("alltypes", "snappy",
+         CompareFiles("types/alltypes", "snappy",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -90,7 +90,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression()
       {
-         CompareFiles("alltypes_dictionary", "plain",
+         CompareFiles("types/alltypes_dictionary", "plain",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -107,7 +107,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression_by_spark()
       {
-         CompareFiles("alltypes_dictionary", "plain-spark21",
+         CompareFiles("types/alltypes_dictionary", "plain-spark21",
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -124,7 +124,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_gzipped()
       {
-         CompareFiles("alltypes_dictionary", "gzip",
+         CompareFiles("types/alltypes_dictionary", "gzip",
             typeof(int?),
             typeof(bool?),
             typeof(int?),

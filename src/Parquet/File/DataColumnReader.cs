@@ -55,6 +55,8 @@ namespace Parquet.File
 
          _thriftStream = new ThriftStream(inputStream);
          _footer.GetLevels(_thriftColumnChunk, out int mrl, out int mdl);
+         _dataField.MaxRepetitionLevel = mrl;
+         _dataField.MaxDefinitionLevel = mdl;
          _maxRepetitionLevel = mrl;
          _maxDefinitionLevel = mdl;
          _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);

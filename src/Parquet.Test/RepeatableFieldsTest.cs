@@ -11,14 +11,13 @@ namespace Parquet.Test
       {
          // arrange 
          var field = new DataField<IEnumerable<int>>("items");
-         var field1 = new DataField("items", DataType.Int32, isArray: true);
          var column = new DataColumn(
             field,
             new int[] { 1, 2, 3, 4 },
             new int[] { 0, 1, 0, 1 });
 
          // act
-         DataColumn rc = WriteReadSingleColumn(field, 2, column);
+         DataColumn rc = WriteReadSingleColumn(field, column);
 
          // assert
          Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.Data);

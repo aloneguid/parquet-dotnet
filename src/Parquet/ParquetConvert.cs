@@ -57,7 +57,7 @@ namespace Parquet
                   .Select(df => bridge.BuildColumn(df, batchArray, batchArray.Length))
                   .ToArray();
 
-               using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup(batchArray.Length))
+               using (ParquetRowGroupWriter groupWriter = writer.CreateRowGroup())
                {
                   foreach(DataColumn dataColumn in columns)
                   {

@@ -56,36 +56,9 @@ namespace Parquet
          return string.Join(Schema.PathSeparator, path);
       }
 
-      public static Exception NotImplementedForPotentialAssholesAndMoaners(string reason)
+      public static Exception NotImplemented(string reason)
       {
-         int hour = DateTime.Now.Hour;
-
-         string appraisal;
-
-         if(hour >= 9 && hour <= 17)
-         {
-            int left = 17 - hour;
-            if(left > 3)
-            {
-               appraisal = $"there are still {left} hours left in this working day, you can do it today!";
-            }
-            else
-            {
-               appraisal = $"do it tomorrow, not enough time left today!";
-            }
-         }
-         else if(hour > 20 || hour < 4)
-         {
-            appraisal = "it's the night time, perfect time to work on it!";
-         }
-         else
-         {
-            appraisal = null;
-         }
-
-         if (appraisal != null) appraisal = $" {appraisal}.";
-
-         return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it, so be a Hero, do it, and raise a Pull Request on GitHub!{appraisal}");
+         return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, implemented it, and raise a PR, or contact parquetsupport@elastacloud.com for commercial support.");
       }
    }
 }

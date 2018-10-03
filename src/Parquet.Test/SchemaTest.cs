@@ -198,5 +198,61 @@ namespace Parquet.Test
          Assert.Equal("Parent.List.list.id", list.Item.Path);
       }
 
+      [Fact]
+      public void Plain_data_field_0R_0D()
+      {
+         var schema = new Schema(new DataField<int>("id"));
+
+         Assert.Equal(0, schema[0].MaxRepetitionLevel);
+         Assert.Equal(0, schema[0].MaxDefinitionLevel);
+      }
+
+      [Fact]
+      public void Plain_nullable_data_field_0R_1D()
+      {
+         var schema = new Schema(new DataField<int?>("id"));
+
+         Assert.Equal(0, schema[0].MaxRepetitionLevel);
+         Assert.Equal(1, schema[0].MaxDefinitionLevel);
+      }
+
+      [Fact]
+      public void Map_of_required_key_and_optional_value_1R2D_1R3D()
+      {
+         var schema = new Schema(
+            new MapField("numbers",
+               new DataField<int>("key"),
+               new DataField<string>("value")
+               ));
+
+         Field key = ((MapField)schema[0]).Key;
+         Field value = ((MapField)schema[0]).Value;
+
+         Assert.Equal(1, key.MaxRepetitionLevel);
+         Assert.Equal(2, key.MaxDefinitionLevel);
+
+         Assert.Equal(1, value.MaxRepetitionLevel);
+         Assert.Equal(3, value.MaxDefinitionLevel);
+      }
+
+      [Fact]
+      public void List_of_structures_valid_levels()
+      {
+         var idField = new DataField<int>("id");
+         var nameField = new DataField<string>("name");
+
+         var schema = new Schema(
+            new DataField<int>("id"),
+            new ListField("structs",
+               new StructField("mystruct",
+                  idField,
+                  nameField)));
+
+         Assert.Equal(1, idField.MaxRepetitionLevel);
+         Assert.Equal(2, idField.MaxDefinitionLevel);
+
+         Assert.Equal(1, nameField.MaxRepetitionLevel);
+         Assert.Equal(3, nameField.MaxDefinitionLevel);
+      }
    }
 }

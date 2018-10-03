@@ -61,7 +61,7 @@ namespace Parquet.Test
             using (var parquetWriter = new ParquetWriter(schema, fileStream))
             {
                // create a new row group in the file
-               using (ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup(2))
+               using (ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())
                {
                   groupWriter.WriteColumn(idColumn);
                   groupWriter.WriteColumn(cityColumn);

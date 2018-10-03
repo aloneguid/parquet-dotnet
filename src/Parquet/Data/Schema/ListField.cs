@@ -39,11 +39,23 @@ namespace Parquet.Data
          }
       }
 
-      /// <summary>
-      /// </summary>
-      public override string ToString()
+      internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel)
       {
-         return $"{Name}: ({Item})";
+         int rl = parentRepetitionLevel;
+         int dl = parentDefinitionLevel;
+
+         //"container" is optional, therefore +1 to DL
+         dl += 1;
+
+         //"list" is repeated, both get +1
+         rl += 1;
+         dl += 1;
+
+         MaxRepetitionLevel = rl;
+         MaxDefinitionLevel = dl;
+
+         //push to child item
+         Item.PropagateLevels(rl, dl);
       }
 
       internal static ListField CreateWithNoItem(string name)

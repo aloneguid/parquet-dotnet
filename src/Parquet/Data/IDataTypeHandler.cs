@@ -29,6 +29,13 @@ namespace Parquet.Data
 
       void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values);
 
+      /// <summary>
+      /// Creates or rents a native array
+      /// </summary>
+      /// <param name="minCount">Minimum element count. Realistically there could be more elements than you've asked for only when arrays are rented.</param>
+      /// <param name="rent">Rent or create</param>
+      /// <param name="isNullable">Nullable elements or not</param>
+      /// <returns></returns>
       Array GetArray(int minCount, bool rent, bool isNullable);
 
       Array MergeDictionary(Array dictionary, int[] indexes);
