@@ -40,7 +40,7 @@ namespace Parquet.CLI
             log.Trace("error in command {command}", cmd.Name, err);
          });
 
-         L.Config.WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9");
+         L.Config.WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9", flushOnWrite: true, quickPulse: false);
 
          using (L.Context(KnownProperty.OperationId, Guid.NewGuid().ToString()))
          {
