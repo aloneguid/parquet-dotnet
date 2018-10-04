@@ -11,5 +11,6 @@ namespace Parquet.CLI.Models
       public bool expandCells { get; set; }
       public bool displayNulls { get; set; }
       public string truncationIdentifier { get; set; }
+      public bool displayReferences { get; internal set; }
    }
 }

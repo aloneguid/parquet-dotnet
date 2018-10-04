@@ -106,6 +106,24 @@ namespace Parquet.CLI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays and interactive shell app for exploring the contents of the Parquet file. .
+        /// </summary>
+        internal static string Command_View_Description {
+            get {
+                return ResourceManager.GetString("Command_View_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display the full contents of the Parquet file. For larger files, screen wrapping may be an issue, so you should consider piping the result to a file and viewing that file independently of Parq..
+        /// </summary>
+        internal static string Command_ViewAll_Description {
+            get {
+                return ResourceManager.GetString("Command_ViewAll_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Expand Cells based on value length. Defaults to false..
         /// </summary>
         internal static string Command_ViewAll_Expand {

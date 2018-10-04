@@ -7,6 +7,7 @@ namespace Parquet.CLI.Commands
 {
    class SchemaCommand
    {
+      private static readonly ILog log = L.G(typeof(SchemaCommand));
       private readonly string _path;
 
       public SchemaCommand(string path)
@@ -16,6 +17,9 @@ namespace Parquet.CLI.Commands
 
       public void Execute()
       {
+         Telemetry.CommandExecuted("schema",
+            "path", _path);
+
          using (var time = new TimeMeasure())
          {
             using (var reader = ParquetReader.OpenFromFile(_path))

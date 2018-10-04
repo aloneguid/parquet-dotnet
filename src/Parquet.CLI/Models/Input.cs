@@ -11,6 +11,12 @@ namespace Parquet.CLI.Models
       NextSheet,
       PrevSheet,
       NextFold,
-      PrevFold
+      PrevFold,
+      CellReference
+   }
+   public class UserInput
+   {
+      public Input InputType { get; set; }
+      public string Reference { get; set; }
    }
 }
