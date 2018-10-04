@@ -135,7 +135,7 @@ Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/p
 
 ## Privacy
 
-Your privacy is important to us. Full details are specified in the [privacy statement](/docs/PRIVACY.md). 
+Your privacy is important to us. Full details are specified in the [privacy statement](/doc/PRIVACY.md). 
 
 ## Contributing
 
