@@ -133,6 +133,10 @@ using (Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet"))
 
 Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
 
+## Privacy
+
+Your privacy is important to us. Full details are specified in the [privacy statement](/docs/PRIVACY.md). 
+
 ## Contributing
 
 We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
