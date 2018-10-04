@@ -25,7 +25,7 @@ namespace Parquet.CLI
          {
             PoshWrite("{p}{a}{r}{q} v", ConsoleColor.Yellow, ConsoleColor.Red, ConsoleColor.Green, ConsoleColor.Blue);
             string[] pts = app.Version.Split('.');
-            for(int i = 0; i < pts.Length; i++)
+            for (int i = 0; i < pts.Length; i++)
             {
                if (i > 0)
                   Write(".", ConsoleColor.DarkGray);
@@ -40,7 +40,7 @@ namespace Parquet.CLI
             log.Trace("error in command {command}", cmd.Name, err);
          });
 
-         L.Config.WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9", flushOnWrite: true, quickPulse: false);
+         L.Config.WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9");
 
          using (L.Context(KnownProperty.OperationId, Guid.NewGuid().ToString()))
          {
@@ -97,9 +97,9 @@ namespace Parquet.CLI
             });
             */
 
-#if DEBUG
             app.Command("view-all", cmd =>
             {
+               cmd.Description = Help.Command_ViewAll_Description;
                Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
                Option<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
                Option<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
@@ -122,6 +122,7 @@ namespace Parquet.CLI
 
             app.Command("view", cmd =>
             {
+               cmd.Description = Help.Command_View_Description;
                Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
                Option<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
                Option<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
@@ -138,14 +139,13 @@ namespace Parquet.CLI
                      displayNulls = displayNulls,
                      displayTypes = displayTypes,
                      expandCells = expandCells,
-                     truncationIdentifier = truncationIdentifier
+                     truncationIdentifier = truncationIdentifier,
+                     displayReferences = false
                   };
 
                   new DisplayFullCommand<Views.InteractiveConsoleView>(path).Execute(settings);
                });
             });
-
-#endif
 
             int exitCode = app.Execute();
 

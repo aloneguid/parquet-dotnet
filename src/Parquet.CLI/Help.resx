@@ -132,6 +132,9 @@
   <data name="Command_Schema_Description" xml:space="preserve">
     <value>Displays parquet file schema as Parquet.Net sees it. Note that this is a simplified, human-readable version of the schema.</value>
   </data>
+  <data name="Command_ViewAll_Description" xml:space="preserve">
+    <value>Display the full contents of the Parquet file. For larger files, screen wrapping may be an issue, so you should consider piping the result to a file and viewing that file independently of Parq.</value>
+  </data>
   <data name="Command_ViewAll_Expand" xml:space="preserve">
     <value>Expand Cells based on value length. Defaults to false.</value>
   </data>
@@ -143,5 +146,8 @@
   </data>
   <data name="Command_ViewAll_Types" xml:space="preserve">
     <value>Display types in column headesr. Defaults to false.</value>
+  </data>
+  <data name="Command_View_Description" xml:space="preserve">
+    <value>Displays and interactive shell app for exploring the contents of the Parquet file. </value>
   </data>
 </root>
