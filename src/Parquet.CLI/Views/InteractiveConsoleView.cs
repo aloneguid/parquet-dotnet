@@ -38,14 +38,14 @@ namespace Parquet.CLI.Views
 
          _currentSheet = unreadSheets.Pop();
          _currentFold = unreadFolds.Pop();
-         DrawSheet(viewModel, _currentSheet, _currentFold, viewPort, settings.displayTypes, settings.displayNulls, settings.truncationIdentifier);
+         DrawSheet(viewModel, _currentSheet, _currentFold, viewPort, settings.displayTypes, settings.displayNulls, settings.truncationIdentifier, settings.displayReferences);
 
       }
 
-      public void Update(ViewModel viewModel, bool displayTypes, bool displayNulls, string truncationIdentifier)
+      public void Update(ViewModel viewModel, bool displayTypes, bool displayNulls, string truncationIdentifier, bool displayRefs)
       {
          Console.Clear();
-         DrawSheet(viewModel, _currentSheet, _currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+         DrawSheet(viewModel, _currentSheet, _currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
       }
 
       private Stack<ConsoleFold> GenerateFolds(ViewPort viewPort, int totalRowCount)
@@ -79,13 +79,13 @@ namespace Parquet.CLI.Views
          return viewPort.Height - 8;
       }
 
-      private void DrawSheet(ViewModel viewModel, ConsoleSheet currentSheet, ConsoleFold currentFold, ViewPort viewPort, bool displayTypes, bool displayNulls, string truncationIdentifier)
+      private void DrawSheet(ViewModel viewModel, ConsoleSheet currentSheet, ConsoleFold currentFold, ViewPort viewPort, bool displayTypes, bool displayNulls, string truncationIdentifier, bool displayRefs)
       {
          Console.Clear();
-         DrawLine(currentSheet, viewPort);
+         DrawLine(currentSheet, viewPort, displayRefs);
          WriteHeaderLine(currentSheet, viewPort, displayTypes);
          DrawLine(currentSheet, viewPort);
-         WriteValues(viewModel, currentSheet, currentFold, viewPort, displayNulls, truncationIdentifier);
+         WriteValues(viewModel, currentSheet, currentFold, viewPort, displayNulls, truncationIdentifier, displayRefs);
          DrawLine(currentSheet, viewPort);
          WriteSummary(viewModel, currentSheet, currentFold, displayNulls);
 
@@ -93,7 +93,7 @@ namespace Parquet.CLI.Views
          switch (input)
          {
             case Input.NoOp:
-               DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+               DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                break;
             case Input.Quit:
                break;
@@ -102,11 +102,11 @@ namespace Parquet.CLI.Views
                {
                   readSheets.Push(currentSheet);
                   ConsoleSheet nextPage = unreadSheets.Pop();
-                  DrawSheet(viewModel, nextPage, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+                  DrawSheet(viewModel, nextPage, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                else
                {
-                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                break;
             case Input.PrevSheet:
@@ -114,11 +114,11 @@ namespace Parquet.CLI.Views
                {
                   unreadSheets.Push(currentSheet);
                   ConsoleSheet lastPage = readSheets.Pop();
-                  DrawSheet(viewModel, lastPage, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+                  DrawSheet(viewModel, lastPage, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                else
                {
-                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                break;
             case Input.NextFold:
@@ -132,7 +132,7 @@ namespace Parquet.CLI.Views
                }
                else
                {
-                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                break;
             case Input.PrevFold:
@@ -146,7 +146,7 @@ namespace Parquet.CLI.Views
                }
                else
                {
-                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier);
+                  DrawSheet(viewModel, currentSheet, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                break;
          }
@@ -200,6 +200,10 @@ namespace Parquet.CLI.Views
          {
             return Input.PrevFold;
          }
+         //else if (LookupCols.Contains(key.Key))
+         //{
+         //first draw refs
+         //}
 
          return Input.NoOp;
       }
@@ -324,7 +328,7 @@ namespace Parquet.CLI.Views
          }
       }
 
-      private void WriteValues(ViewModel viewModel, ConsoleSheet columnsFitToScreen, ConsoleFold foldedRows, ViewPort viewPort, bool displayNulls, string truncationIdentifier)
+      private void WriteValues(ViewModel viewModel, ConsoleSheet columnsFitToScreen, ConsoleFold foldedRows, ViewPort viewPort, bool displayNulls, string truncationIdentifier, bool displayRefs)
       {
          for (int i = 0; i < viewModel.Rows.Count(); i++)
          {
@@ -367,21 +371,48 @@ namespace Parquet.CLI.Views
             Console.WriteLine();
          }
       }
-      private void DrawLine(ConsoleSheet consoleSheet, ViewPort viewPort)
+      private void DrawLine(ConsoleSheet consoleSheet, ViewPort viewPort, bool drawRefs = false)
       {
          Console.Write(cellDivider);
-         foreach (ColumnDetails column in consoleSheet.Columns)
+         for (int c = 0; c < consoleSheet.Columns.Count(); c++)
          {
+            ColumnDetails column = consoleSheet.Columns.ElementAt(c);
+
+            int columnNameLength = c.ToString().Length;
             if (IsOverlyLargeColumn(column, viewPort))
             {
-               for (int i = 0; i < viewPort.Width - (verticalSeparator.Length * 2) - Environment.NewLine.Length; i++)
+               for (int i = 0; i < ((viewPort.Width - (verticalSeparator.Length * 2) - Environment.NewLine.Length) / 2) - (columnNameLength / 2); i++)
+               {
+                  Console.Write(horizontalSeparator);
+               }
+               if (drawRefs)
+               {
+                  Console.Write(c.ToString());
+               }
+               else
+               {
+                  Console.Write(horizontalSeparator);
+               }
+               for (int i = 0; i < ((viewPort.Width - (verticalSeparator.Length * 2) - Environment.NewLine.Length) / 2) - (columnNameLength / 2) - ((columnNameLength + 1) % 2); i++)
                {
                   Console.Write(horizontalSeparator);
                }
             }
             else
             {
-               for (int i = 0; i < column.columnWidth; i++)
+               for (int i = 0; i < (column.columnWidth / 2) - (c.ToString().Length / 2); i++)
+               {
+                  Console.Write(horizontalSeparator);
+               }
+               if (drawRefs)
+               {
+                  Console.Write(c.ToString());
+               }
+               else
+               {
+                  Console.Write(horizontalSeparator);
+               }
+               for (int i = 0; i < (column.columnWidth / 2) - (c.ToString().Length / 2) - ((column.columnWidth + 1) % 2); i++)
                {
                   Console.Write(horizontalSeparator);
                }
