@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4
 		..\doc\features.md = ..\doc\features.md
 		..\doc\parq.md = ..\doc\parq.md
 		..\doc\parquet-getting-started.md = ..\doc\parquet-getting-started.md
+		..\doc\PRIVACY.md = ..\doc\PRIVACY.md
 		..\doc\reading.md = ..\doc\reading.md
 		..\README.md = ..\README.md
 		..\doc\rows.md = ..\doc\rows.md
