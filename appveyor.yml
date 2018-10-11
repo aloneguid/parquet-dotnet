@@ -4,7 +4,6 @@ pull_requests:
 skip_tags: true
 image: Visual Studio 2017
 configuration: Release
-platform: Any CPU
 before_build:
 - ps: >-
     dotnet tool install -g housework -g
