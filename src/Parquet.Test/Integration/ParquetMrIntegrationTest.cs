@@ -77,6 +77,11 @@ namespace Parquet.Test.Integration
 
          proc.WaitForExit();
 
+         if(proc.ExitCode != 0)
+         {
+            throw new Exception("process existed with code " + proc.ExitCode);
+         }
+
          return res.ToString().Trim();
       }
 
