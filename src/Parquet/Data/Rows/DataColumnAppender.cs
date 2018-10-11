@@ -27,11 +27,20 @@ namespace Parquet.Data.Rows
             if(!(value is string) && value is IEnumerable valueItems)
             {
                int rl = 0;
+               int count = 0;
                foreach (object valueItem in (IEnumerable)value)
                {
                   _values.Add(valueItem);
                   _rls.Add(rl);
                   rl = _dataField.MaxRepetitionLevel;
+                  count += 1;
+               }
+
+               if(count == 0)
+               {
+                  //handle empty collections
+                  _values.Add(null);
+                  _rls.Add(0);
                }
             }
             else

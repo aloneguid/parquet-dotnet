@@ -12,6 +12,9 @@ namespace Parquet.CLI
    /// <summary>
    /// This is a parquet.net dotnet CLI tool that can be installed globally. An ultimate replacement for "parq".
    /// It is very much in progress and in design.
+   /// 
+   /// It's using CPF library for handling console commands which is very fresh and unstable. Why? Because no one
+   /// ever 
    /// </summary>
    class Program
    {
@@ -20,7 +23,9 @@ namespace Parquet.CLI
       static int Main(string[] args)
       {
          var app = new Application("Parquet CLI (https://github.com/elastacloud/parquet-dotnet)");
-         ConfigureTelemetry(app);
+         ConfigureTelemetry(app, args);
+
+         LinePrimitive<bool> verboseOption = app.SharedOption<bool>("-d|--debug", Help.App_Verbose);
 
          app.OnBeforeExecuteCommand(cmd =>
          {
@@ -41,128 +46,112 @@ namespace Parquet.CLI
          app.OnError((cmd, err) =>
          {
             log.Trace("error in command {command}", cmd.Name, err);
+            return true;
          });
 
+         app.Command("schema", cmd =>
+         {
+            cmd.Description = Help.Command_Schema_Description;
+
+            LinePrimitive<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required().FileExists();
+
+            cmd.OnExecute(() =>
+            {
+               new SchemaCommand(path.Value).Execute();
+            });
+         });
+
+         app.Command("convert", cmd =>
+         {
+            cmd.Description = Help.Command_Convert_Description;
+
+            LinePrimitive<string> input = cmd.Argument<string>("input", Help.Command_Convert_Input).Required().FileExists();
+            //LinePrimitive<string> output = cmd.Argument<string>("output", Help.Command_Convert_Output);
+            //LinePrimitive<string> style = cmd.Option<string>("-s|--style", Help.Command_Convert_Style);
+            LinePrimitive<bool> pretty = cmd.Option<bool>("-p|--pretty", Help.Command_Convert_Pretty);
+
+            cmd.OnExecute(() =>
+            {
+               new ConvertCommand(input, null, null, pretty).Execute();
+            });
+         });
+
+         app.Command("view-all", cmd =>
+         {
+            cmd.Description = Help.Command_ViewAll_Description;
+            LinePrimitive<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required().FileExists();
+            LinePrimitive<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
+            LinePrimitive<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
+            LinePrimitive<bool> displayNulls = cmd.Option<bool>("-n|--nulls", Help.Command_ViewAll_Nulls, false);
+
+            cmd.OnExecute(() =>
+            {
+               ViewSettings settings = new ViewSettings
+               {
+                  displayMinWidth = displayMinWidth,
+                  displayNulls = displayNulls,
+                  displayTypes = false,
+                  expandCells = expandCells,
+                  truncationIdentifier = string.Empty
+               };
+
+               new DisplayFullCommand<Views.FullConsoleView>(path).Execute(settings);
+            });
+         });
+
+         app.Command("view", cmd =>
+         {
+            cmd.Description = Help.Command_View_Description;
+            LinePrimitive<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
+            LinePrimitive<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
+            LinePrimitive<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
+            LinePrimitive<bool> displayNulls = cmd.Option<bool>("-n|--nulls", Help.Command_ViewAll_Nulls, true);
+            LinePrimitive<bool> displayTypes = cmd.Option<bool>("-t|--types", Help.Command_ViewAll_Types, false);
+            LinePrimitive<string> truncationIdentifier = cmd.Option<string>("-u|--truncate", Help.Command_ViewAll_Types, "...");
+
+            cmd.OnExecute(() =>
+            {
+
+               ViewSettings settings = new ViewSettings
+               {
+                  displayMinWidth = displayMinWidth,
+                  displayNulls = displayNulls,
+                  displayTypes = displayTypes,
+                  expandCells = expandCells,
+                  truncationIdentifier = truncationIdentifier,
+                  displayReferences = false
+               };
+
+               new DisplayFullCommand<Views.InteractiveConsoleView>(path).Execute(settings);
+            });
+         });
+
+         int exitCode;
          using (L.Context(KnownProperty.OperationId, Guid.NewGuid().ToString()))
          {
-            app.Command("schema", cmd =>
-            {
-               cmd.Description = Help.Command_Schema_Description;
-
-               Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
-
-               cmd.OnExecute(() =>
-               {
-                  new SchemaCommand(path.Value).Execute();
-               });
-            });
-
-            /*app.Command("head", cmd =>
-            {
-               cmd.Description = Help.Command_Head_Description;
-
-               Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
-               Option<string> format = cmd.Option<string>("-f|--format", Help.Command_Head_Format);
-               Option<int> max = cmd.Option<int>("-m|--max", Help.Command_Head_Max, 100);
-
-               cmd.OnExecute(() =>
-               {
-                  new HeadCommand(path, max).Execute(format);
-               });
-            });
-
-            app.Command("to-json", cmd =>
-            {
-               Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
-
-               cmd.OnExecute(() =>
-               {
-                  new ConvertToJsonCommand(path).Execute();
-               });
-            });
-
-            app.Command("view-all", cmd =>
-            {
-               Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
-               Option<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
-               Option<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
-               Option<bool> displayNulls = cmd.Option<bool>("-n|--nulls", Help.Command_ViewAll_Nulls, false);
-
-               cmd.OnExecute(() =>
-               {
-                  new DisplayFullCommand(path).Execute(expandCells, displayMinWidth, displayNulls);
-               });
-            });
-            */
-
-            app.Command("view-all", cmd =>
-            {
-               cmd.Description = Help.Command_ViewAll_Description;
-               Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
-               Option<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
-               Option<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
-               Option<bool> displayNulls = cmd.Option<bool>("-n|--nulls", Help.Command_ViewAll_Nulls, false);
-
-               cmd.OnExecute(() =>
-               {
-                  ViewSettings settings = new ViewSettings
-                  {
-                     displayMinWidth = displayMinWidth,
-                     displayNulls = displayNulls,
-                     displayTypes = false,
-                     expandCells = expandCells,
-                     truncationIdentifier = string.Empty
-                  };
-
-                  new DisplayFullCommand<Views.FullConsoleView>(path).Execute(settings);
-               });
-            });
-
-            app.Command("view", cmd =>
-            {
-               cmd.Description = Help.Command_View_Description;
-               Argument<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required();
-               Option<bool> expandCells = cmd.Option<bool>("-e|--expand", Help.Command_ViewAll_Expand, false);
-               Option<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
-               Option<bool> displayNulls = cmd.Option<bool>("-n|--nulls", Help.Command_ViewAll_Nulls, true);
-               Option<bool> displayTypes = cmd.Option<bool>("-t|--types", Help.Command_ViewAll_Types, false);
-               Option<string> truncationIdentifier = cmd.Option<string>("-u|--truncate", Help.Command_ViewAll_Types, "...");
-
-               cmd.OnExecute(() =>
-               {
-
-                  ViewSettings settings = new ViewSettings
-                  {
-                     displayMinWidth = displayMinWidth,
-                     displayNulls = displayNulls,
-                     displayTypes = displayTypes,
-                     expandCells = expandCells,
-                     truncationIdentifier = truncationIdentifier,
-                     displayReferences = false
-                  };
-
-                  new DisplayFullCommand<Views.InteractiveConsoleView>(path).Execute(settings);
-               });
-            });
-
-            int exitCode = app.Execute();
-
-#if DEBUG
-            WriteLine("debug: press any key to close");
-            Console.ReadKey();
-#endif
-
-            return exitCode;
+            exitCode = app.Execute();
          }
+
+         L.Config.Shutdown();
+
+         return exitCode;
       }
 
-      private static void ConfigureTelemetry(Application app)
+      private static void ConfigureTelemetry(Application app, string[] args)
       {
          //let's see if we get complains about performance here, should be OK
+
+         /*
+          * If you're wondering whether hardcoding the key is good or not - it doesn't really matter. The worst you can _attempt_ to do
+          * is send us a lot of fake telemetry but we can live with it. Even if we would hide the key you could still do the same thing
+          * by launching application instead of calling appinsights REST API.
+          */
+
          L.Config
-            .WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9", flushOnWrite: true)
+            .WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9")
             .EnrichWith.Constant(KnownProperty.Version, app.Version);
 
+         Telemetry.CliInvoked(args);
       }
    }
 }

@@ -8,7 +8,7 @@
       <PackAsTool>true</PackAsTool>
       <ToolCommandName>parq</ToolCommandName>
       <PackageId>parq</PackageId>
-      <Description>Parq is a .NET Core global tool that is a console interface to the great open-source library Parquet.Net. Parq's version corresponds to the version of parquet.net library it's based upon.</Description>
+      <Description>Parq is a .NET Core global tool that is a console interface to the great open-source library Parquet.Net. Parq's version corresponds to the version of parquet.net library it's based upon. Parq is developed and maintained by Parquet.Net team.</Description>
       <PackageReleaseNotes>3.1.0
 - the first release and a single command to show file schema</PackageReleaseNotes>
    </PropertyGroup>
@@ -18,9 +18,9 @@
    </PropertyGroup>
 
    <ItemGroup>
-     <PackageReference Include="Cpf.Core" Version="1.0.9" />
-     <PackageReference Include="LogMagic" Version="2.16.0" />
-     <PackageReference Include="LogMagic.Microsoft.Azure.ApplicationInsights" Version="2.16.0" />
+     <PackageReference Include="Cpf.Core" Version="1.1.3" />
+     <PackageReference Include="LogMagic" Version="2.16.1" />
+     <PackageReference Include="LogMagic.Microsoft.Azure.ApplicationInsights" Version="2.16.1" />
    </ItemGroup>
 
    <ItemGroup>

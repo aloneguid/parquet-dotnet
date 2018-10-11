@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Parquet.Data;
 using Parquet.Data.Rows;
@@ -109,7 +110,7 @@ namespace Parquet.Test
          }
 
          //validate data
-         Assert.Equal(table.ToString(), table2.ToString());
+         Assert.Equal(table.ToString(), table2.ToString(), ignoreLineEndingDifferences: true);
       }
 
       #endregion
@@ -153,7 +154,7 @@ namespace Parquet.Test
             }
          }
 
-         Assert.Equal("{1;[{1;one};{2;two};{3;three}]}", t[0].ToString());
+         Assert.Equal("{'id': 1, 'numbers': [{'key': 1, 'value': 'one'}, {'key': 2, 'value': 'two'}, {'key': 3, 'value': 'three'}]}", t[0].ToString(), ignoreLineEndingDifferences: true);
       }
 
       [Fact]
@@ -176,7 +177,7 @@ namespace Parquet.Test
 
          Table table2 = WriteRead(table);
 
-         Assert.Equal(table.ToString(), table2.ToString());
+         Assert.Equal(table.ToString(), table2.ToString(), ignoreLineEndingDifferences: true);
       }
 
       #endregion
@@ -188,7 +189,8 @@ namespace Parquet.Test
       {
          Table t = ReadTestFileAsTable("struct_plain.parquet");
 
-         Assert.Equal("[{12345-6;{Ivan;Gavryliuk}};{12345-7;{Richard;Conway}}]", t.ToString());
+         Assert.Equal(@"{'isbn': '12345-6', 'author': {'firstName': 'Ivan', 'lastName': 'Gavryliuk'}}
+{'isbn': '12345-7', 'author': {'firstName': 'Richard', 'lastName': 'Conway'}}", t.ToString(), ignoreLineEndingDifferences: true);
       }
 
       [Fact]
@@ -207,7 +209,7 @@ namespace Parquet.Test
 
          Table table2 = WriteRead(table);
 
-         Assert.Equal(table.ToString(), table2.ToString());
+         Assert.Equal(table.ToString(), table2.ToString(), ignoreLineEndingDifferences: true);
       }
 
       [Fact]
@@ -223,7 +225,7 @@ namespace Parquet.Test
 
          Table t2 = WriteRead(t);
 
-         Assert.Equal("{Ivan;{Primary;[line1;line2]}}", t[0].ToString());
+         Assert.Equal("{'name': 'Ivan', 'address': {'name': 'Primary', 'lines': ['line1', 'line2']}}", t2.ToString(), ignoreLineEndingDifferences: true);
       }
 
       #endregion
@@ -242,7 +244,7 @@ namespace Parquet.Test
             }
          }
 
-         Assert.Equal("{[London;Derby;Paris;New York];1}", t[0].ToString());
+         Assert.Equal("{'cities': ['London', 'Derby', 'Paris', 'New York'], 'id': 1}", t[0].ToString(), ignoreLineEndingDifferences: true);
       }
 
       [Fact]
@@ -274,7 +276,7 @@ namespace Parquet.Test
          }
 
          //validate data
-         Assert.Equal(table.ToString(), table2.ToString());
+         Assert.Equal(table.ToString(), table2.ToString(), ignoreLineEndingDifferences: true);
       }
 
       [Fact]
@@ -290,7 +292,7 @@ namespace Parquet.Test
          }
 
          Assert.Single(t);
-         Assert.Equal("{[{UK;London};{US;New York}];1}", t[0].ToString());
+         Assert.Equal("{'cities': [{'country': 'UK', 'name': 'London'}, {'country': 'US', 'name': 'New York'}], 'id': 1}", t[0].ToString(), ignoreLineEndingDifferences: true);
       }
 
       [Fact]
@@ -308,25 +310,37 @@ namespace Parquet.Test
 
          Table t2 = WriteRead(t);
 
-         Assert.Equal(t.ToString(), t2.ToString());
+         Assert.Equal(t.ToString(), t2.ToString(), ignoreLineEndingDifferences: true);
       }
 
-      //[Fact]
-      public void List_of_elements_is_empty_reads_file()
+      [Fact]
+      public void List_of_elements_is_empty_read_from_Apache_Spark()
       {
-         Table t;
-         using (Stream stream = OpenTestFile("list_empty.parquet"))
-         {
-            using (var reader = new ParquetReader(stream))
-            {
-               t = reader.ReadAsTable();
-            }
-         }
+         Table t = ReadTestFileAsTable("list_empty.parquet");
 
-         Assert.Equal("{2;[]}", t[0].ToString());
+         Assert.Equal("{'id': 2, 'repeats1': []}", t[0].ToString(), ignoreLineEndingDifferences: true);
       }
 
-      //[Fact]
+      [Fact]
+      public void List_of_elements_empty_alternates_read_from_Apache_Spark()
+      {
+         /*
+          list data:
+          - 1: [1, 2, 3]
+          - 2: []
+          - 3: [1, 2, 3]
+          - 4: []
+          */
+
+         Table t = ReadTestFileAsTable("list_empty_alt.parquet");
+
+         Assert.Equal(@"{'id': 1, 'repeats2': ['1', '2', '3']}
+{'id': 2, 'repeats2': []}
+{'id': 3, 'repeats2': ['1', '2', '3']}
+{'id': 4, 'repeats2': []}", t.ToString(), ignoreLineEndingDifferences: true);
+      }
+
+      [Fact]
       public void List_of_elements_is_empty_writes_reads()
       {
          var t = new Table(
@@ -335,10 +349,10 @@ namespace Parquet.Test
                new DataField<string>("item")
             ));
          t.Add(1, new string[0]);
-         Assert.Equal("{1;[]}", WriteRead(t).ToString());
+         Assert.Equal("{'id': 1, 'strings': []}", WriteRead(t).ToString(), ignoreLineEndingDifferences: true);
       }
 
-      //[Fact]
+      [Fact]
       public void List_of_elements_with_some_items_empty_writes_reads()
       {
          var t = new Table(
@@ -353,10 +367,10 @@ namespace Parquet.Test
 
          Table t1 = WriteRead(t);
          Assert.Equal(4, t1.Count);
-         Assert.Equal("{1;[1;2;3]}", t1[0].ToString());
-         Assert.Equal("{2;[]}", t1[1].ToString());
-         Assert.Equal("{3;[1;2;3]}", t1[2].ToString());
-         Assert.Equal("{4;[]}", t1[3].ToString());
+         Assert.Equal(@"{'id': 1, 'strings': ['1', '2', '3']}
+{'id': 2, 'strings': []}
+{'id': 3, 'strings': ['1', '2', '3']}
+{'id': 4, 'strings': []}", t.ToString(), ignoreLineEndingDifferences: true);
 
       }
 
@@ -453,8 +467,8 @@ namespace Parquet.Test
          }
 
          Assert.Equal(2, t.Count);
-         Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", t[0].ToString());
-         Assert.Equal("{[{Dante Road;Head Office;[9;10;11;12;13;14;15;16;17;18];SE11};{Somewhere Else;Small Office;[6;7;19;20;21;22;23];TN19}];[London;Derby];this file contains all the permunations for nested structures and arrays to test Parquet parser;1;{51.2;66.3};{{2;1}}}", t[1].ToString());
+         Assert.Equal("{'addresses': [{'line1': 'Dante Road', 'name': 'Head Office', 'openingHours': [9, 10, 11, 12, 13, 14, 15, 16, 17, 18], 'postcode': 'SE11'}, {'line1': 'Somewhere Else', 'name': 'Small Office', 'openingHours': [6, 7, 19, 20, 21, 22, 23], 'postcode': 'TN19'}], 'cities': ['London', 'Derby'], 'comment': 'this file contains all the permunations for nested structures and arrays to test Parquet parser', 'id': 1, 'location': {'latitude': 51.2, 'longitude': 66.3}, 'price': {'lunch': {'max': 2, 'min': 1}}}", t[0].ToString());
+         Assert.Equal("{'addresses': [{'line1': 'Dante Road', 'name': 'Head Office', 'openingHours': [9, 10, 11, 12, 13, 14, 15, 16, 17, 18], 'postcode': 'SE11'}, {'line1': 'Somewhere Else', 'name': 'Small Office', 'openingHours': [6, 7, 19, 20, 21, 22, 23], 'postcode': 'TN19'}], 'cities': ['London', 'Derby'], 'comment': 'this file contains all the permunations for nested structures and arrays to test Parquet parser', 'id': 1, 'location': {'latitude': 51.2, 'longitude': 66.3}, 'price': {'lunch': {'max': 2, 'min': 1}}}", t[1].ToString());
       }
 
       #endregion
@@ -462,13 +476,16 @@ namespace Parquet.Test
       #region [ JSON Conversions ]
 
       [Fact]
-      public void JSON_reads_by_newtonsoft()
+      public void JSON_struct_plain_reads_by_newtonsoft()
       {
          Table t = ReadTestFileAsTable("struct_plain.parquet");
 
-         string json = t.ToString("j");
+         Assert.Equal("{'isbn': '12345-6', 'author': {'firstName': 'Ivan', 'lastName': 'Gavryliuk'}}", t[0].ToString("jsq"));
+         Assert.Equal("{'isbn': '12345-7', 'author': {'firstName': 'Richard', 'lastName': 'Conway'}}", t[1].ToString("jsq"));
 
-         object jsonObject = JsonConvert.DeserializeObject(json);
+         string[] jsons = t.ToString("j").Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+         jsons.Select(j => JsonConvert.DeserializeObject(j)).ToList();
       }
 
       #endregion

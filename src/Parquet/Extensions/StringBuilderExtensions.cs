@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Text;
 using Parquet.Data;
 using Parquet.Data.Rows;
@@ -10,29 +11,35 @@ namespace Parquet.Extensions
    {
       private const string BraceOpen = "{";
       private const string BraceClose = "}";
+      private const string JsonQuote = "\"";
+      private const string JsonSingleQuote = "'";
 
-      public static void StartArray(this StringBuilder sb, StringFormat sf)
+      public static void StartArray(this StringBuilder sb, StringFormat sf, int level)
       {
-         sb.Append("[");
-      }
-
-      public static void EndArray(this StringBuilder sb, StringFormat sf)
-      {
-         sb.Append("]");
-      }
-
-      public static void DivideObjects(this StringBuilder sb, StringFormat sf)
-      {
-         switch (sf)
+         if(level > 0)
          {
-            case StringFormat.Json:
-               sb.Append(",");
-               break;
-            default:
-               sb.Append(";");
-               break;
+            sb.Append("[");
          }
-         
+      }
+
+      public static void EndArray(this StringBuilder sb, StringFormat sf, int level)
+      {
+         if(level > 0)
+         {
+            sb.Append("]");
+         }
+      }
+
+      public static void DivideObjects(this StringBuilder sb, StringFormat sf, int level)
+      {
+         if (level > 0)
+         {
+            sb.Append(", ");
+         }
+         else
+         {
+            sb.AppendLine();
+         }         
       }
 
       public static void StartObject(this StringBuilder sb, StringFormat sf)
@@ -50,48 +57,52 @@ namespace Parquet.Extensions
          switch (sf)
          {
             case StringFormat.Json:
-               sb.Append("\"");
-               sb.Append(f?.Name ?? "?");
-               sb.Append("\": ");
+               if (f != null)
+               {
+                  sb.Append(JsonQuote);
+                  sb.Append(f?.Name ?? "?");
+                  sb.Append(JsonQuote);
+                  sb.Append(": ");
+               }
+               break;
+            case StringFormat.JsonSingleQuote:
+               if (f != null)
+               {
+                  sb.Append(JsonSingleQuote);
+                  sb.Append(f?.Name ?? "?");
+                  sb.Append(JsonSingleQuote);
+                  sb.Append(": ");
+               }
                break;
          }
       }
 
       public static void AppendNull(this StringBuilder sb, StringFormat sf)
       {
-         switch (sf)
-         {
-            case StringFormat.Json:
-               sb.Append("null");
-               break;
-            default:
-               sb.Append("<null>");
-               break;
-         }
+         sb.Append("null");
       }
 
       public static void Append(this StringBuilder sb, StringFormat sf, object value)
       {
-         switch (sf)
-         {
-            case StringFormat.Json:
-               EncodeJson(sb, value);
-               break;
-            default:
-               sb.Append(value.ToString());
-               break;
-         }
+         EncodeJson(sb, sf, value);
       }
 
-      private static void EncodeJson(StringBuilder sb, object value)
+      private static void EncodeJson(StringBuilder sb, StringFormat sf, object value)
       {
          Type t = value.GetType();
+         string quote = sf == StringFormat.Json ? JsonQuote : JsonSingleQuote;
 
          if (t == typeof(string))
          {
-            sb.Append("\"");
+            sb.Append(quote);
             sb.Append(HttpEncoder.JavaScriptStringEncode((string)value));
-            sb.Append("\"");
+            sb.Append(quote);
+         }
+         else if(t == typeof(DateTimeOffset))
+         {
+            sb.Append(quote);
+            sb.Append(value.ToString());
+            sb.Append(quote);
          }
          else
          {

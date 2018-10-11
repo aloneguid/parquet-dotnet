@@ -114,7 +114,7 @@ namespace Parquet.Data
 
       public abstract Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength);
 
-      public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
+      public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
 
       protected TNullable[] PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength)
          where TNullable : class
@@ -144,9 +144,10 @@ namespace Parquet.Data
          return result;
       }
 
-      protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel)
+      protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
       {
          T[] result = (T[])GetArray(definitionLevels.Length, false, true);
+         hasValueFlags = new bool[definitionLevels.Length];
 
          int isrc = 0;
          for (int i = 0; i < definitionLevels.Length; i++)

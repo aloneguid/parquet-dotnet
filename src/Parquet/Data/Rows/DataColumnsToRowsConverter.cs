@@ -30,6 +30,11 @@ namespace Parquet.Data.Rows
 
          ColumnsToRows(_schema.Fields, result, _totalRowRount);
 
+         foreach(Row row in result)
+         {
+            row.Schema = _schema.Fields;
+         }
+
          return result;
       }
 

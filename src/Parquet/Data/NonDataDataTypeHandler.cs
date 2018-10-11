@@ -52,7 +52,7 @@ namespace Parquet.Data
          throw new NotImplementedException();
       }
 
-      public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
+      public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
       {
          throw new NotSupportedException();
       }

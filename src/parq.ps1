@@ -1,0 +1,1 @@
+dotnet Parquet.CLI\bin\debug\netcoreapp2.1\parq.dll $args

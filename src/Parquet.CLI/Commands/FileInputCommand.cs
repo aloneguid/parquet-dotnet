@@ -18,22 +18,11 @@ namespace Parquet.CLI.Commands
 
       protected Table ReadTable()
       {
-         using (var message = new ProgressMessage($"reading {Path.GetFileName(_path)}"))
+         using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
          {
-            try
-            {
-               using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
-               {
-                  Table table = reader.ReadAsTable();
+            Table table = reader.ReadAsTable();
 
-                  return table;
-               }
-            }
-            catch(FileNotFoundException)
-            {
-               message.Fail("not found: " + _path);
-               throw;
-            }
+            return table;
          }
       }
    }

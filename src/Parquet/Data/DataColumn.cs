@@ -50,7 +50,9 @@ namespace Parquet.Data
          // 2. Apply definitions
          if (definitionLevels != null)
          {
-            Data = _dataTypeHandler.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
+            bool[] hasValueFlags;
+            Data = _dataTypeHandler.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel, out hasValueFlags);
+            HasValueFlags = hasValueFlags;
          }
 
          // 3. Apply repetitions
@@ -66,6 +68,8 @@ namespace Parquet.Data
       /// Repetition levels if any.
       /// </summary>
       public int[] RepetitionLevels { get; private set; }
+
+      internal bool[] HasValueFlags { get; set; }
 
       /// <summary>
       /// Data field

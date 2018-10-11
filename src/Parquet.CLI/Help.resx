@@ -117,17 +117,29 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="App_Verbose" xml:space="preserve">
+    <value>Display verbose output.</value>
+  </data>
   <data name="Argument_Path" xml:space="preserve">
     <value>Path to parquet file.</value>
   </data>
-  <data name="Command_Head_Description" xml:space="preserve">
-    <value>Displays first N rows of a parquet file.</value>
+  <data name="Command_Convert_Description" xml:space="preserve">
+    <value>Converts between file formats. Currently supports conversion from parquet to multiline json only. When launched prints json documents to the terminal.</value>
   </data>
-  <data name="Command_Head_Format" xml:space="preserve">
-    <value>Output format.</value>
+  <data name="Command_Convert_Input" xml:space="preserve">
+    <value>Path to input file, required.</value>
   </data>
-  <data name="Command_Head_Max" xml:space="preserve">
-    <value>Maximum number of rows to display. Hard limit is 100.</value>
+  <data name="Command_Convert_MaxRows" xml:space="preserve">
+    <value>Maximum amount of rows to fetch. By default all of the rows are processed.</value>
+  </data>
+  <data name="Command_Convert_Output" xml:space="preserve">
+    <value>Path to output file. If not specified, the result is printed to the console.</value>
+  </data>
+  <data name="Command_Convert_Pretty" xml:space="preserve">
+    <value>When set, colorises and idents output.</value>
+  </data>
+  <data name="Command_Convert_Style" xml:space="preserve">
+    <value>Output style. By default result is a multiline json document. Specify "single" to generate an array document with list of documents embedded, or "multiline" for a multiline json.</value>
   </data>
   <data name="Command_Schema_Description" xml:space="preserve">
     <value>Displays parquet file schema as Parquet.Net sees it. Note that this is a simplified, human-readable version of the schema.</value>

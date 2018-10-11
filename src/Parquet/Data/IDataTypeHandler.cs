@@ -42,6 +42,6 @@ namespace Parquet.Data
 
       Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int defiintionsLength);
 
-      Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
+      Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
    }
 }

@@ -15,13 +15,11 @@ Note that [Elastacloud](https://elastacloud.com/Home) provides commercial suppor
 - `.NET 4.5` and up.
 - `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
 
-Runs on all flavors of Windows, Linux, and mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/)
+Runs on all flavors of Windows, Linux, MacOSXm mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
 
 ## Why
 
-Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language (C# is just Java done right) working on all platforms and devices, we still don't have anything good in this area.
-
-This project is aimed to fix this problem. We support all the popular server and client operating systems, mobile devices, [gaming consoles](doc/xboxone.md) and everything that can run `.NET` which is quite a lot!
+Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language (C# is just Java done right) working on all platforms and devices, we still don't have anything good in this area. Note that [ParquetSharp](https://github.com/G-Research/ParquetSharp) provides a P/Invoke wrapper around parquet-cpp library, however it's a windows-only version with plenty of limitations around usability, is generally slower and leaks memory.
 
 ## Index
 
@@ -29,7 +27,7 @@ This project is aimed to fix this problem. We support all the popular server and
 - [Reading Data](doc/reading.md) 
 - [Writing Data](doc/writing.md)
 - [Complex Types](doc/complex-types.md)
-- [Utilities for row-based access](doc/rows.md)
+- [Row-Based API](doc/rows.md)
 - [Fast Automatic Serialisation](doc/serialisation.md)
 - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
@@ -128,6 +126,10 @@ using (Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet"))
    }
 }
 ```
+
+### Row-Based Access
+
+Parquet.Net includes [API for row-based access](doc/rows.md) that simplify parquet programming at the expense of memory, speed and flexibility. We recommend using column based approacha when you can (examples above) however if not possible use these API as we constantly optimise for speed and use them internally outselves in certain situations.
 
 ## License
 

@@ -21,6 +21,8 @@ namespace Parquet.Data.Rows
 
       }
 
+      internal IReadOnlyCollection<Field> Schema { get; set; }
+
       /// <summary>
       /// Creates a single cell row. Use this method to avoid overloading confusion.
       /// </summary>
@@ -175,32 +177,57 @@ namespace Parquet.Data.Rows
       }
 
       /// <summary>
-      /// 
+      /// Converts to internal format string
       /// </summary>
       /// <returns></returns>
       public override string ToString()
       {
+         return ToString(null);
+      }
+
+      /// <summary>
+      /// Convert to string with optional formatting
+      /// </summary>
+      /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
+      public string ToString(string format)
+      {
          var sb = new StringBuilder();
          
-         ToString(sb, StringFormat.Internal, 0, null);
+         ToString(sb, GetStringFormat(format), 1, Schema);
 
          return sb.ToString();
       }
 
+      internal static StringFormat GetStringFormat(string format)
+      {
+         StringFormat sf;
+         if (format == "j")
+            sf = StringFormat.Json;
+         else
+            sf = StringFormat.JsonSingleQuote;
+         return sf;
+      }
+
       internal void ToString(StringBuilder sb, StringFormat sf, int level, IReadOnlyCollection<Field> fields)
       {
+         ToString(sb, Values, sf, level, fields);
+      }
+
+      internal void ToString(StringBuilder sb, object[] values, StringFormat sf, int level, IReadOnlyCollection<Field> fields)
+      {
+         if (fields == null)
+         {
+            throw new ArgumentNullException(nameof(fields));
+         }
+
          sb.StartObject(sf);
 
          bool first = true;
-         IEnumerator<Field> fien = fields?.GetEnumerator();
-         bool finished = false;
-         foreach (object v in Values)
+         int nl = level + 1;
+         foreach (Tuple<object, Field> valueWithField in values.IterateWith(fields))
          {
-            if (!finished)
-            {
-               finished = fien?.MoveNext() ?? true;
-            }
-            Field f = finished ? null : fien?.Current;
+            object v = valueWithField.Item1;
+            Field f = valueWithField.Item2;
 
             if (first)
             {
@@ -208,51 +235,99 @@ namespace Parquet.Data.Rows
             }
             else
             {
-               sb.DivideObjects(sf);
+               sb.DivideObjects(sf, level);
             }
 
-            FormatValue(v, sb, sf, f, level + 1);
+            FormatValue(v, sb, sf, f, nl);
          }
 
          sb.EndObject(sf);
       }
 
-      private static void FormatValue(object v, StringBuilder sb, StringFormat sf, Field f, int level)
+      private void FormatValue(object v, StringBuilder sb, StringFormat sf, Field f, int level, bool appendPropertyName = true)
       {
-         sb.AppendPropertyName(sf, f);
+         if (appendPropertyName)
+         {
+            sb.AppendPropertyName(sf, f);
+         }
+
+         bool first = true;
 
          if (v == null)
          {
             sb.AppendNull(sf);
          }
-         else if (v is Row row)
+         else if(f != null)
          {
-            row.ToString(sb, sf, level, GetMoreFields(f));
-         }
-         else if ((!v.GetType().IsSimple()) && v is IEnumerable ien)
-         {
-            sb.StartArray(sf);
-            bool first = true;
-            foreach (object cv in ien)
+            switch (f.SchemaType)
             {
-               if (first)
-               {
-                  first = false;
-               }
-               else
-               {
-                  sb.DivideObjects(sf);
-               }
+               case SchemaType.Data:
+                  DataField df = (DataField)f;
+                  if(df.IsArray)
+                  {
+                     sb.StartArray(sf, level);
+                     foreach(object vb in (IEnumerable)v)
+                     {
+                        if (first)
+                           first = false;
+                        else
+                        {
+                           sb.DivideObjects(sf, level);
+                        }
 
-               FormatValue(cv, sb, sf, f, level + 1);
+                        sb.Append(sf, vb);
+                     }
+                     sb.EndArray(sf, level);
+                  }
+                  else
+                  {
+                     sb.Append(sf, v);
+                  }
+                  break;
+
+               case SchemaType.Struct:
+                  StructField stf = (StructField)f;
+                  ToString(sb, ((Row)v).Values, sf, level + 1, stf.Fields);
+                  break;
+
+               case SchemaType.Map:
+                  MapField mf = (MapField)f;
+                  sb.StartArray(sf, level);
+                  foreach(Row row in (IEnumerable)v)
+                  {
+                     if (first)
+                        first = false;
+                     else
+                        sb.DivideObjects(sf, level);
+
+                     ToString(sb, row.Values, sf, level + 1, new[] { mf.Key, mf.Value });
+                  }
+                  sb.EndArray(sf, level);
+                  break;
+
+               case SchemaType.List:
+                  ListField lf = (ListField)f;
+                  sb.StartArray(sf, level);
+                  foreach(object le in (IEnumerable)v)
+                  {
+                     if (first)
+                        first = false;
+                     else
+                        sb.DivideObjects(sf, level);
+
+                     FormatValue(le, sb, sf, lf.Item, level + 1, false);
+                  }
+                  sb.EndArray(sf, level);
+                  break;
+
+               default:
+                  throw new NotImplementedException(f.SchemaType.ToString());
             }
-            sb.EndArray(sf);
          }
          else
          {
-            sb.Append(sf, v);
+            throw new NotImplementedException("null schema, value: " + v);
          }
-
       }
 
       private static IReadOnlyCollection<Field> GetMoreFields(Field f)

@@ -3,18 +3,24 @@
     <TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
-    <Description>.NET library to read and write Apache Parquet files.
-Supports all parquet features, including maps, structs, lists, repeatable fields.
-Compatible with .NET 4.5 and .NET Standard 1.4 and up.
-Works on all flavours of Windows and Linux. Compatible with iOS and Android via Xamarin.</Description>
+    <Description>Pure .NET library to read and write Apache Parquet files, targeting .NET 4.5 and .NET Standand 1.4 and up. Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on thrid-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.</Description>
     <Company>Elastacloud</Company>
     <PackageId>Parquet.Net</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.1.0:
+    <PackageReleaseNotes>3.1.2:
+- new feature: replaced default ToString() method in Table and Row object to produce json (#346)
+- new feature: parquet CLI supports conversion from parquet to json (#341)
+
+3.1.1:
+parq cli improvements
+
+3.1.0:
 - re-introducing utilities for row-based access allowing you to access and create parquet files in more readable format.
 - Field class now supports MaxRepetitionLevel and MaxDefinitionLevel
 - fixed bug #334 preventing reading generated files in Impala
 - parquet.net library supports SourceLink
+
 3.0.5:
 - #321 bug fixed: a nullable field should support all-non-nullable values 
 - performance improvement around packing definition levels
@@ -39,6 +45,7 @@ the first release of a major rewrite</PackageReleaseNotes>
      <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>
      <DebugType>full</DebugType>
      <DebugSymbols>true</DebugSymbols>
+     <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone xbox</PackageTags>
   </PropertyGroup>
 
    <PropertyGroup Condition="'$(Configuration)' == 'Release'">

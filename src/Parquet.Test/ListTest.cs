@@ -38,7 +38,7 @@ namespace Parquet.Test
           - 4: []
           */
 
-         using (var reader = new ParquetReader(OpenTestFile("listofitems-empty-alternates.parquet")))
+         using (var reader = new ParquetReader(OpenTestFile("list_empty_alt.parquet")))
          {
             using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0))
             {

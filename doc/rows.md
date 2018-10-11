@@ -185,3 +185,19 @@ which essentially creates a list of structures with two fields - id and name in 
 t.Add(1, new[] { new Row(1, "Joe"), new Row(2, "Bloggs") });
 t.Add(2, new[] { new Row(3, "Star"), new Row(4, "Wars") });
 ```
+
+
+## ToString Overloads
+
+`.ToString()` overloads on both `Table` and `Row` format data in *single-line, single-quote JSON* for your convenience. For instance, `table.ToString()` may produce following results:
+
+```json
+{'id': 1, 'strings': ['1', '2', '3']}
+{'id': 2, 'strings': []}
+{'id': 3, 'strings': ['1', '2', '3']}
+{'id': 4, 'strings': []}
+```
+
+which means that this table contains 4 rows, each row is a single-line JSON document. All the rows are separated by a line break character. This decision was made based on the fact that multiline JSON can be read directly by Apache Spark, and it's much more easier to parse a large document by splitting it by line separator character to get the next row.
+
+Single quotes are chosen only based on the fact that in C# language it's hard to encode strings for tests with double quotes as you need to escape them. However, you can produce double quotes by using `ToString` overload and passing `"j"` as a format string, like `.ToString("j")`.

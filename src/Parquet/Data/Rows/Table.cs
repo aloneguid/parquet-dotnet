@@ -77,6 +77,7 @@ namespace Parquet.Data.Rows
          set
          {
             RowValidator.Validate(value, _dfs);
+            value.Schema = Schema.Fields;
             _rows[index] = value;
          }
       }
@@ -98,6 +99,7 @@ namespace Parquet.Data.Rows
       public void Add(Row item)
       {
          RowValidator.Validate(item, _dfs);
+         item.Schema = Schema.Fields;
 
          _rows.Add(item);
       }
@@ -270,44 +272,42 @@ namespace Parquet.Data.Rows
       #endregion
 
       /// <summary>
-      /// Formats rows
+      /// Converts table to multiline json. Only shows the first 10 rows as table may be large.
       /// </summary>
       /// <returns></returns>
       public override string ToString()
       {
-         return ToString(null, CultureInfo.CurrentCulture);
+         return ToString(null, 10);
       }
 
       /// <summary>
-      /// Converts to string with optional formatting
+      /// Converts to string with optional formatting.  Only shows the first 10 rows as table may be large.
       /// </summary>
-      /// <param name="format">null - internal format, j - one line json</param>
-      /// <returns></returns>
-      public string ToString(string format)
-      {
-         return ToString(format, CultureInfo.CurrentCulture);
-      }
-
-      /// <summary>
-      /// Converts to string with optional formatting
-      /// </summary>
-      /// <param name="format">null - internal format, j - one line json</param>
-      /// <param name="formatProvider"></param>
+      /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
+      /// <param name="formatProvider">Optaional format provider, not used at the moment</param>
       /// <returns></returns>
       public string ToString(string format, IFormatProvider formatProvider)
       {
-         if (formatProvider == null)
-            formatProvider = CultureInfo.CurrentCulture;
+         return ToString(format, 10);
+      }
 
-         StringFormat sf;
-         if (format == "j")
-            sf = StringFormat.Json;
-         else
-            sf = StringFormat.Internal;
+      /// <summary>
+      /// Converts to string with optional formatting.  Only shows the first 10 rows as table may be large.
+      /// </summary>
+      /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
+      /// <returns></returns>
+      public string ToString(string format)
+      {
+         return ToString(format, 10);
+      }
+
+      private string ToString(string format, int maxRows)
+      {
+         StringFormat sf = Row.GetStringFormat(format);
 
          var sb = new StringBuilder();
 
-         sb.StartArray(sf);
+         sb.StartArray(sf, 0);
 
          bool first = true;
          foreach (Row row in _rows)
@@ -318,13 +318,13 @@ namespace Parquet.Data.Rows
             }
             else
             {
-               sb.DivideObjects(sf);
+               sb.DivideObjects(sf, 0);
             }
 
             row.ToString(sb, sf, 1, Schema.Fields);
          }
 
-         sb.EndArray(sf);
+         sb.EndArray(sf, 0);
 
          return sb.ToString();
       }

@@ -13,8 +13,11 @@ namespace Parquet.CLI.Commands
     class DisplayFullCommand<TViewType> : FileInputCommand
                               where TViewType : IDrawViews, new()
     {
+      private readonly string _path;
+
       public DisplayFullCommand(string path) : base(path)
       {
+         _path = path;
       }
 
       public ViewModel Get(Table dataSet, bool expandCells, int displayMinWidth)
@@ -74,6 +77,9 @@ namespace Parquet.CLI.Commands
 
       internal void Execute(ViewSettings settings)
       {
+         Telemetry.CommandExecuted("view",
+            "path", _path);
+
          Table table = ReadTable();
          ViewModel viewModel = Get(table, settings.expandCells, settings.displayMinWidth);
          new TViewType().Draw(viewModel, settings);

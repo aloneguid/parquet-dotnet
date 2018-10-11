@@ -27,9 +27,9 @@ namespace Parquet.Data.Concrete
          return PackDefinitions<byte[]>((byte[][])data, maxDefinitionLevel, out definitions, out definitionsLength);
       }
 
-      public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
+      public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
       {
-         return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel);
+         return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel, out hasValueFlags);
       }
 
       protected override byte[] ReadOne(BinaryReader reader)

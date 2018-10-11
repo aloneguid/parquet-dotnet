@@ -65,7 +65,7 @@ namespace Parquet.Data.Rows
          {
             int rl = _rls[position];
 
-            if (rl == 0 && current.HasValues)
+            if (rl == 0 && (current.HasValues || current != result))
             {
                break;
             }
@@ -86,6 +86,12 @@ namespace Parquet.Data.Rows
          }
 
          cr = result.FirstChild?.Compact(_field.ClrNullableIfHasNullsType);
+
+         if(cr == null)
+         {
+            cr = Array.CreateInstance(_field.ClrNullableIfHasNullsType, 0);
+         }
+
          return read;
       }
 
