@@ -29,6 +29,9 @@ namespace Parquet.Test.Integration
       {
          string testFileName = Path.GetFullPath("temp.parquet");
 
+         if (F.Exists(testFileName))
+            F.Delete(testFileName);
+
          //produce file
          using (Stream s = F.OpenWrite(testFileName))
          {
@@ -61,15 +64,8 @@ namespace Parquet.Test.Integration
 
          var proc = new Process { StartInfo = psi };
 
-         try
-         {
-            if (!proc.Start())
-               return null;
-         }
-         catch (Exception)
-         {
+         if (!proc.Start())
             return null;
-         }
 
          var res = new StringBuilder();
 
@@ -97,5 +93,20 @@ namespace Parquet.Test.Integration
 
          CompareWithMr(table);
       }
+
+      [Fact]
+      public void Array_simple_integers()
+      {
+         var table = new Table(
+            new DataField<int>("id"),
+            new DataField<string[]>("categories")     //array field
+         );
+
+         table.Add(1, new[] { "1", "2", "3" });
+         table.Add(3, new[] { "3", "3", "3" });
+
+         CompareWithMr(table);
+      }
+
    }
 }
