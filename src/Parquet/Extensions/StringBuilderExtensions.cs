@@ -34,7 +34,15 @@ namespace Parquet.Extensions
       {
          if (level > 0)
          {
-            sb.Append(", ");
+            switch (sf)
+            {
+               case StringFormat.Json:
+                  sb.Append(",");
+                  break;
+               default:
+                  sb.Append(", ");
+                  break;
+            }
          }
          else
          {
@@ -62,7 +70,7 @@ namespace Parquet.Extensions
                   sb.Append(JsonQuote);
                   sb.Append(f?.Name ?? "?");
                   sb.Append(JsonQuote);
-                  sb.Append(": ");
+                  sb.Append(":");
                }
                break;
             case StringFormat.JsonSingleQuote:
