@@ -59,6 +59,7 @@ namespace Parquet.Test.Integration
             Arguments = arguments,
             UseShellExecute = false,
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             CreateNoWindow = true
          };
 
@@ -67,22 +68,29 @@ namespace Parquet.Test.Integration
          if (!proc.Start())
             return null;
 
-         var res = new StringBuilder();
+         var so = new StringBuilder();
+         var se = new StringBuilder();
 
          while (!proc.StandardOutput.EndOfStream)
          {
             string line = proc.StandardOutput.ReadLine();
-            res.AppendLine(line);
+            so.AppendLine(line);
+         }
+
+         while(!proc.StandardError.EndOfStream)
+         {
+            string line = proc.StandardError.ReadLine();
+            se.AppendLine(line);
          }
 
          proc.WaitForExit();
 
          if(proc.ExitCode != 0)
          {
-            throw new Exception("process existed with code " + proc.ExitCode);
+            throw new Exception("process existed with code " + proc.ExitCode + ", error: " + se.ToString());
          }
 
-         return res.ToString().Trim();
+         return so.ToString().Trim();
       }
 
       [Fact]
