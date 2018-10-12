@@ -1,4 +1,5 @@
 import pyarrow as pa
+#conda install pyarrow
 
 data = [
    pa.array([1, 2, 3, 4]),

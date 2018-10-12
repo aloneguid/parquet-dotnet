@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using FlatBuffers;
 using SharpArrow.Data;
@@ -42,17 +43,15 @@ namespace SharpArrow
 
     */
 
-   public class ArrowFile : IDisposable
+   class ArrowFile
    {
-      private readonly Stream _s;
-      private readonly BinaryReader _br;
       private const string MagicTag = "ARROW1";
       private readonly List<FB.Block> _blocks = new List<FB.Block>();
+      private readonly Memory<byte> _fileData;
 
-      public ArrowFile(Stream s)
+      public ArrowFile(Memory<byte> fileData)
       {
-         _s = s;
-         _br = new BinaryReader(_s);
+         _fileData = fileData;
 
          ReadBasics();
       }
@@ -63,23 +62,24 @@ namespace SharpArrow
 
       private void ReadBasics()
       {
-         _s.Seek(0, SeekOrigin.Begin);
-         ReadMagic(true);
+         Span<byte> span = _fileData.Span;
 
-         _s.Seek(-MagicTag.Length, SeekOrigin.End);
-         ReadMagic(false);
+         //check magic bytes at the beginning and the end of the file
+         CheckMagic(span.Slice(0, MagicTag.Length));
+         CheckMagic(span.Slice(span.Length - MagicTag.Length));
 
-         _s.Seek(-MagicTag.Length - 4, SeekOrigin.End);
-         int footerLength = _br.ReadInt32();
+         //get footer length
+         Span<byte> lengthSpan = span.Slice(span.Length - 4 - MagicTag.Length, 4);
+         int length = BitConverter.ToInt32(lengthSpan.ToArray(), 0);
 
-         _s.Seek(-MagicTag.Length - 4 - footerLength, SeekOrigin.End);
-         byte[] footerData = _br.ReadBytes(footerLength);
-         ReadFooter(footerData);
+         //get footer data
+         Span<byte> footer = span.Slice(span.Length - 4 - length - MagicTag.Length, length);
+         ReadFooter(footer);
       }
 
-      private void ReadFooter(byte[] data)
+      private void ReadFooter(Span<byte> data)
       {
-         FB.Footer root = FB.Footer.GetRootAsFooter(new ByteBuffer(data));
+         FB.Footer root = FB.Footer.GetRootAsFooter(new ByteBuffer(data.ToArray()));
 
          //read schema
          Schema = new Schema(root.Schema.GetValueOrDefault());
@@ -93,17 +93,12 @@ namespace SharpArrow
          }
       }
 
-      private void ReadMagic(bool pad)
+      private void CheckMagic(Span<byte> span)
       {
-         byte[] magic = _br.ReadBytes(MagicTag.Length);
-         string ms = Encoding.UTF8.GetString(magic);
+         byte[] sd = span.ToArray();
+         string ms = Encoding.UTF8.GetString(sd);
 
          if(ms != MagicTag) throw new IOException("not an Arrow file");
-
-         if (pad)
-         {
-            _s.Seek(8 - MagicTag.Length, SeekOrigin.Current);
-         }
       }
 
       public static void Int32()
@@ -115,10 +110,6 @@ namespace SharpArrow
 
          //
          byte[] buf = builder.SizedByteArray();
-      }
-
-      public void Dispose()
-      {
       }
    }
 }

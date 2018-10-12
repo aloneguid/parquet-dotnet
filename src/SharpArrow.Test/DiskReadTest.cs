@@ -11,7 +11,9 @@ namespace SharpArrow.Test
       [Fact]
       public void Read_simple_three_cols_schema()
       {
-         using (Stream s = GetDataFileStream("threecols.dat"))
+         Arrow.OpenFromFile(GetDataFilePath("threecols.dat"));
+
+         /*using (Stream s = GetDataFileStream("threecols.dat"))
          {
             using (var af = new ArrowFile(s))
             {
@@ -38,19 +40,7 @@ namespace SharpArrow.Test
                Assert.Equal(ArrowType.Bool, f2.Type);
 
             }
-         }
-      }
-
-      [Fact]
-      public void Read_simple_three_cols_data()
-      {
-         using (Stream s = GetDataFileStream("threecols.dat"))
-         {
-            using (var af = new ArrowFile(s))
-            {
-               //
-            }
-         }
+         }*/
       }
    }
 }
