@@ -5,7 +5,7 @@ namespace SharpArrow
 {
    public static class Arrow
    {
-      public static void OpenFromFile(string filePath)
+      public static ArrowFile OpenFromFile(string filePath)
       {
          if (filePath == null)
          {
@@ -14,7 +14,7 @@ namespace SharpArrow
 
          byte[] fileData = File.ReadAllBytes(filePath);
 
-         var file = new ArrowFile(fileData.AsMemory());
+         return new ArrowFile(fileData.AsMemory());
       }
    }
 }

@@ -43,11 +43,12 @@ namespace SharpArrow
 
     */
 
-   class ArrowFile
+   public class ArrowFile
    {
       private const string MagicTag = "ARROW1";
       private readonly List<FB.Block> _blocks = new List<FB.Block>();
       private readonly Memory<byte> _fileData;
+      private int _footerLength;
 
       public ArrowFile(Memory<byte> fileData)
       {
@@ -58,7 +59,13 @@ namespace SharpArrow
 
       public Schema Schema { get; private set; }
 
-      public int RecordBatchCount { get; private set; }
+      public ArrowStream GetStream()
+      {
+         Memory<byte> dataMemory = _fileData.Slice(8, _fileData.Length - MagicTag.Length - 4 - _footerLength);
+
+         //todo: extract relevant data from _fileData
+         return new ArrowStream(Schema, dataMemory);
+      }
 
       private void ReadBasics()
       {
@@ -70,10 +77,10 @@ namespace SharpArrow
 
          //get footer length
          Span<byte> lengthSpan = span.Slice(span.Length - 4 - MagicTag.Length, 4);
-         int length = BitConverter.ToInt32(lengthSpan.ToArray(), 0);
+         _footerLength = BitConverter.ToInt32(lengthSpan.ToArray(), 0);
 
          //get footer data
-         Span<byte> footer = span.Slice(span.Length - 4 - length - MagicTag.Length, length);
+         Span<byte> footer = span.Slice(span.Length - 4 - _footerLength - MagicTag.Length, _footerLength);
          ReadFooter(footer);
       }
 
@@ -99,17 +106,6 @@ namespace SharpArrow
          string ms = Encoding.UTF8.GetString(sd);
 
          if(ms != MagicTag) throw new IOException("not an Arrow file");
-      }
-
-      public static void Int32()
-      {
-         var builder = new FlatBufferBuilder(1024);
-
-         Offset<FB.Schema> schema = FB.Schema.CreateSchema(builder);
-
-
-         //
-         byte[] buf = builder.SizedByteArray();
       }
    }
 }

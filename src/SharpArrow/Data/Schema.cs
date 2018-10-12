@@ -19,6 +19,6 @@ namespace SharpArrow.Data
          }
       }
 
-      public IReadOnlyCollection<Field> Fields => _fields;
+      public Field[] Fields => _fields.ToArray();
    }
 }
