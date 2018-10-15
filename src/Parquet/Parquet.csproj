@@ -8,7 +8,10 @@
     <PackageId>Parquet.Net</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.1.2:
+    <PackageReleaseNotes>3.1.3, 3.1.4:
+- includes massive performance improvements in parquet reader, now we are faster than fastparquet (python lib)  
+
+3.1.2:
 - new feature: replaced default ToString() method in Table and Row object to produce json (#346)
 - new feature: parquet CLI supports conversion from parquet to json (#341)
 

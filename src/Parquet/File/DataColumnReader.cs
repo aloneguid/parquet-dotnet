@@ -122,15 +122,19 @@ namespace Parquet.File
 
          //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
 
-         using (Stream pageStream = OpenDataPageStream(ph))
+         using (BytesOwner bytes = ReadPageData(ph))
          {
-            using (var dataReader = new BinaryReader(pageStream))
+            //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
+            using (var ms = new MemoryStream(bytes.Memory.ToArray()))
             {
-               dictionary = _dataTypeHandler.GetArray((int)_thriftColumnChunk.Meta_data.Num_values, false, false);
+               using (var dataReader = new BinaryReader(ms))
+               {
+                  dictionary = _dataTypeHandler.GetArray((int)_thriftColumnChunk.Meta_data.Num_values, false, false);
 
-               dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0, _parquetOptions);
+                  dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0, _parquetOptions);
 
-               return true;
+                  return true;
+               }
             }
          }
       }
@@ -142,6 +146,13 @@ namespace Parquet.File
          Stream uncompressed = DataStreamFactory.CreateReader(window, _thriftColumnChunk.Meta_data.Codec, pageHeader.Uncompressed_page_size);
 
          return uncompressed;
+      }
+
+      private BytesOwner ReadPageData(Thrift.PageHeader pageHeader)
+      {
+         return DataStreamFactory.ReadPageData(
+            _inputStream, _thriftColumnChunk.Meta_data.Codec,
+            pageHeader.Compressed_page_size, pageHeader.Uncompressed_page_size);
       }
 
       private long GetFileOffset()
@@ -160,30 +171,36 @@ namespace Parquet.File
 
       private void ReadDataPage(Thrift.PageHeader ph, ColumnRawData cd, long maxValues)
       {
-         using (Stream pageStream = OpenDataPageStream(ph))
+         using (BytesOwner bytes = ReadPageData(ph))
          {
-            ParquetEventSource.Current.OpenDataPage(_dataField.Path, _thriftColumnChunk.Meta_data.Codec.ToString(), pageStream.Length);
-
-            using (var reader = new BinaryReader(pageStream))
+            //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
+            using (var ms = new MemoryStream(bytes.Memory.ToArray()))
             {
-               if (_maxRepetitionLevel > 0)
+               ParquetEventSource.Current.OpenDataPage(_dataField.Path, _thriftColumnChunk.Meta_data.Codec.ToString(), ms.Length);
+
+               using (var reader = new BinaryReader(ms))
                {
-                  //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
-                  if (cd.repetitions == null) cd.repetitions = new int[cd.maxCount];
+                  if (_maxRepetitionLevel > 0)
+                  {
+                     //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
+                     if (cd.repetitions == null)
+                        cd.repetitions = new int[cd.maxCount];
 
-                  cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset);
+                     cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset);
+                  }
+
+                  if (_maxDefinitionLevel > 0)
+                  {
+                     if (cd.definitions == null)
+                        cd.definitions = new int[cd.maxCount];
+
+                     cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset);
+                  }
+
+                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
+                     ref cd.values, ref cd.valuesOffset,
+                     ref cd.indexes, ref cd.indexesOffset);
                }
-
-               if (_maxDefinitionLevel > 0)
-               {
-                  if (cd.definitions == null) cd.definitions = new int[cd.maxCount];
-
-                  cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset);
-               }
-
-               ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
-                  ref cd.values, ref cd.valuesOffset,
-                  ref cd.indexes, ref cd.indexesOffset);
             }
          }
       }

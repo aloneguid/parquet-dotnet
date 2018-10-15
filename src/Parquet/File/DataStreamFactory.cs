@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using Parquet.File.Streams;
+using Snappy.Sharp;
 
 namespace Parquet.File
 {
@@ -61,6 +62,12 @@ namespace Parquet.File
             throw new NotSupportedException($"reader for compression '{compressionCodec}' is not supported.");
 
          byte[] data = BytesPool.Rent(compressedLength);
+         int read = nakedStream.Read(data, 0, compressedLength);
+
+         if(read != compressedLength)
+         {
+            throw new ParquetException($"expected {compressedLength} bytes in source stream but could read only {read}");
+         }
 
          switch (compressionMethod)
          {
@@ -70,8 +77,8 @@ namespace Parquet.File
             case CompressionMethod.Gzip:
                using (var source = new MemoryStream(data, 0, compressedLength))
                {
-                  byte[] udata = BytesPool.Rent(uncompressedLength);
-                  using (var dest = new MemoryStream(udata, 0, uncompressedLength))
+                  byte[] unGzData = BytesPool.Rent(uncompressedLength);
+                  using (var dest = new MemoryStream(unGzData, 0, uncompressedLength))
                   {
                      using (var gz = new GZipStream(source, CompressionMode.Decompress))
                      {
@@ -79,14 +86,17 @@ namespace Parquet.File
                      }
                   }
                   BytesPool.Return(data);
-                  data = udata;
+                  data = unGzData;
                }
                break;
             case CompressionMethod.Snappy:
-               throw new NotImplementedException();
+               var snappy = new SnappyDecompressor();
+               byte[] unSnapData = snappy.Decompress(BytesPool, data, 0, compressedLength);
+               BytesPool.Return(data);
+               data = unSnapData;
+               break;
             default:
                throw new NotSupportedException("method: " + compressionMethod);
-
          }
 
          return new BytesOwner(data, data.AsMemory(0, (int)uncompressedLength), d => BytesPool.Return(d));

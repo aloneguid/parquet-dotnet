@@ -2,5 +2,5 @@
 
 ||parquet.net|fastparquet|
 ||-----------|-----------|
-|read customer.impala.parquet|30ms|22ms|
+|read customer.impala.parquet|14ms|22ms|
 

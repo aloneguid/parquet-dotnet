@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Diagnostics;
 
 namespace Snappy.Sharp
@@ -30,15 +31,25 @@ namespace Snappy.Sharp
          return sum;
       }
 
-      public byte[] Decompress(byte[] compressed, int compressedOffset, int compressedSize)
+      public byte[] Decompress(ArrayPool<byte> bytePool, byte[] compressed, int compressedOffset, int compressedSize)
       {
          int[] sizeHeader = ReadUncompressedLength(compressed, compressedOffset);
-         byte[] data = new byte[sizeHeader[0]];
+         int outLength = sizeHeader[0];
 
-         Decompress(compressed, sizeHeader[1], compressedSize + compressedOffset - sizeHeader[1], data, 0, data.Length);
+         byte[] data = bytePool == null
+            ? new byte[outLength]
+            : bytePool.Rent(outLength);
+
+         Decompress(compressed, sizeHeader[1], compressedSize + compressedOffset - sizeHeader[1], data, 0, outLength);
 
          return data;
       }
+
+      public byte[] Decompress(byte[] compressed, int compressedOffset, int compressedSize)
+      {
+         return Decompress(null, compressed, compressedOffset, compressedSize);
+      }
+
       public int Decompress(byte[] input, int inputOffset, int inputSize, byte[] output, int outputOffset, int outputLimit)
       {
          int ipLimit = inputOffset + inputSize;
