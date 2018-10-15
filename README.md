@@ -23,6 +23,20 @@ Runs on all flavors of Windows, Linux, MacOSXm mobile devices (iOS, Android) via
 
 Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language (C# is just Java done right) working on all platforms and devices, we still don't have anything good in this area. Note that [ParquetSharp](https://github.com/G-Research/ParquetSharp) provides a P/Invoke wrapper around parquet-cpp library, however it's a windows-only version with plenty of limitations around usability, is generally slower and leaks memory.
 
+## Performance
+
+How do we compare to other parquet implementations? We are fast and getting faster with every release. Parquet.Net is dedicated to low memory footprint, small GC pressure and low CPU usage. In this test we are using a file with **8 columns** and **150'000** rows, and the result is:
+
+![Perf00](doc/img/perf00.png)
+
+| |Parquet.Net (.NET Core 2.1)|Fastparquet (python)|parquet-mr (Java)|
+|-|---------------------------|--------------------|-----------------|
+|Read|14ms|22ms|151ms|
+|Write (uncompressed)|4ms|26ms|617ms|
+|Write (gzip)|11ms|200ms|1'974ms|
+
+All the parties in this test were given 10 iteration and time was taken as an average. *Parquet-Mr* was even given a warm-up time being the slowest candidate, so it can fit on the chart.
+
 ## Index
 
 - [Getting Started](#getting-started)
