@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using LogMagic;
 using Parquet.Data;
 using Parquet.File;
@@ -14,9 +16,18 @@ namespace Parquet.Runner
          L.Config
             .WriteTo.PoshConsole();
 
-         ReadLargeFile();
+         var times = new List<TimeSpan>();
+         for (int i = 0; i < 10; i++)
+         {
+            using (var time = new TimeMeasure())
+            {
+               ReadLargeFile();
+               times.Add(time.Elapsed);
+               log.Trace("iteration #{0}: {1}", i, time.Elapsed);
+            }
+         }
 
-         log.Trace("done!");
+         log.Trace("mean: {0}", TimeSpan.FromTicks((long)times.Average(t => t.Ticks)));
          Console.ReadKey();
       }
 
@@ -25,15 +36,11 @@ namespace Parquet.Runner
       {
          using (var reader = ParquetReader.OpenFromFile(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true }))
          {
-            log.Trace("row groups: {0}", reader.RowGroupCount);
-
             using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
             {
                foreach(DataField field in reader.Schema.GetDataFields())
                {
                   DataColumn dataColumn = rgr.ReadColumn(field);
-
-                  log.Trace("col {0}, values: {1}", field, dataColumn.Data.Length);
                }
             }
          }

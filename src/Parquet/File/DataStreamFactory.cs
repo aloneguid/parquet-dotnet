@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -9,6 +10,8 @@ namespace Parquet.File
 {
    static class DataStreamFactory
    {
+      private static ArrayPool<byte> BytesPool = ArrayPool<byte>.Shared;
+
       private static readonly Dictionary<CompressionMethod, Thrift.CompressionCodec> _compressionMethodToCodec = 
          new Dictionary<CompressionMethod, Thrift.CompressionCodec>
       {
@@ -51,6 +54,44 @@ namespace Parquet.File
          return new GapStream(dest, leaveOpen: leaveNakedOpen);
       }
 
+      public static BytesOwner ReadPageData(Stream nakedStream, Thrift.CompressionCodec compressionCodec,
+         int compressedLength, int uncompressedLength)
+      {
+         if (!_codecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
+            throw new NotSupportedException($"reader for compression '{compressionCodec}' is not supported.");
+
+         byte[] data = BytesPool.Rent(compressedLength);
+
+         switch (compressionMethod)
+         {
+            case CompressionMethod.None:
+               //nothing to do, original data is the raw data
+               break;
+            case CompressionMethod.Gzip:
+               using (var source = new MemoryStream(data, 0, compressedLength))
+               {
+                  byte[] udata = BytesPool.Rent(uncompressedLength);
+                  using (var dest = new MemoryStream(udata, 0, uncompressedLength))
+                  {
+                     using (var gz = new GZipStream(source, CompressionMode.Decompress))
+                     {
+                        gz.CopyTo(dest);
+                     }
+                  }
+                  BytesPool.Return(data);
+                  data = udata;
+               }
+               break;
+            case CompressionMethod.Snappy:
+               throw new NotImplementedException();
+            default:
+               throw new NotSupportedException("method: " + compressionMethod);
+
+         }
+
+         return new BytesOwner(data, data.AsMemory(0, (int)uncompressedLength), d => BytesPool.Return(d));
+      }
+
       public static Stream CreateReader(Stream nakedStream, Thrift.CompressionCodec compressionCodec, long knownLength)
       {
          if (!_codecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
@@ -59,7 +100,7 @@ namespace Parquet.File
          return CreateReader(nakedStream, compressionMethod, knownLength);
       }
 
-      public static Stream CreateReader(Stream nakedStream, CompressionMethod compressionMethod, long knownLength)
+      private static Stream CreateReader(Stream nakedStream, CompressionMethod compressionMethod, long knownLength)
       {
          Stream dest = nakedStream;
 

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO;
 using System.Text;
+using Parquet.Extensions;
 
 namespace Parquet.Data.Concrete
 {
@@ -37,20 +38,39 @@ namespace Parquet.Data.Concrete
 
       public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
       {
+         int remLength = (int)(reader.BaseStream.Length - reader.BaseStream.Position);
+
+         if (remLength == 0)
+            return 0;
+
          string[] tdest = (string[])dest;
 
-         int totalLength = (int)reader.BaseStream.Length;
-         int idx = offset;
-         Stream s = reader.BaseStream;
+         //reading string one by one is extremely slow, read all data
 
-         while (s.Position < totalLength)
+         byte[] allBytes = _bytePool.Rent(remLength);
+         reader.BaseStream.Read(allBytes, 0, remLength);
+         int destIdx = offset;
+         try
          {
-            string element = ReadOne(reader);
-            tdest[idx++] = element;
+            Span<byte> span = allBytes.AsSpan(0, remLength);   //will be passed as input in future versions
+
+            int spanIdx = 0;
+
+            while(spanIdx < span.Length && destIdx < tdest.Length)
+            {
+               int length = span.Slice(spanIdx, 4).ReadInt32();
+               byte[] buffer = span.Slice(spanIdx + 4, length).ToArray();
+               string s = E.GetString(buffer, 0, length);
+               tdest[destIdx++] = s;
+               spanIdx = spanIdx + 4 + length;
+            }
+         }
+         finally
+         {
+            _bytePool.Return(allBytes);
          }
 
-         return idx - offset;
-
+         return destIdx - offset;
       }
 
       public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
