@@ -63,7 +63,6 @@ namespace SharpArrow
       {
          Memory<byte> dataMemory = _fileData.Slice(8, _fileData.Length - MagicTag.Length - 4 - _footerLength);
 
-         //todo: extract relevant data from _fileData
          return new ArrowStream(Schema, dataMemory);
       }
 

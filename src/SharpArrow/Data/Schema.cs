@@ -15,6 +15,12 @@ namespace SharpArrow.Data
          {
             FB.Field field = fbSchema.Fields(i).GetValueOrDefault();
 
+            for(int mi = 0; mi < field.CustomMetadataLength; mi++)
+            {
+               FB.KeyValue mkv = field.CustomMetadata(mi).GetValueOrDefault();
+            }
+            
+
             _fields.Add(new Field(field));
          }
       }
