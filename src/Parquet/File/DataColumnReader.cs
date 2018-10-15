@@ -139,15 +139,6 @@ namespace Parquet.File
          }
       }
 
-      private Stream OpenDataPageStream(Thrift.PageHeader pageHeader)
-      {
-         var window = new WindowedStream(_inputStream, pageHeader.Compressed_page_size);
-
-         Stream uncompressed = DataStreamFactory.CreateReader(window, _thriftColumnChunk.Meta_data.Codec, pageHeader.Uncompressed_page_size);
-
-         return uncompressed;
-      }
-
       private BytesOwner ReadPageData(Thrift.PageHeader pageHeader)
       {
          return DataStreamFactory.ReadPageData(

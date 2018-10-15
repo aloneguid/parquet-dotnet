@@ -29,6 +29,7 @@ namespace Parquet.File
             { Thrift.CompressionCodec.SNAPPY, CompressionMethod.Snappy }
          };
 
+      // this will eventually disappear once we fully migrate to System.Memory
       public static GapStream CreateWriter(
          Stream nakedStream, CompressionMethod compressionMethod,
          bool leaveNakedOpen)
@@ -100,36 +101,6 @@ namespace Parquet.File
          }
 
          return new BytesOwner(data, data.AsMemory(0, (int)uncompressedLength), d => BytesPool.Return(d));
-      }
-
-      public static Stream CreateReader(Stream nakedStream, Thrift.CompressionCodec compressionCodec, long knownLength)
-      {
-         if (!_codecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
-            throw new NotSupportedException($"reader for compression '{compressionCodec}' is not supported.");
-
-         return CreateReader(nakedStream, compressionMethod, knownLength);
-      }
-
-      private static Stream CreateReader(Stream nakedStream, CompressionMethod compressionMethod, long knownLength)
-      {
-         Stream dest = nakedStream;
-
-         switch(compressionMethod)
-         {
-            case CompressionMethod.Gzip:
-               dest = new GZipStream(nakedStream, CompressionMode.Decompress, false);
-               break;
-            case CompressionMethod.Snappy:
-               dest = new SnappyInMemoryStream(nakedStream, CompressionMode.Decompress);
-               break;
-            case CompressionMethod.None:
-               dest = nakedStream;
-               break;
-            default:
-               throw new NotImplementedException($"unknown compression method {compressionMethod}");
-         }
-
-         return new GapStream(dest, knownLength);
       }
    }
 }

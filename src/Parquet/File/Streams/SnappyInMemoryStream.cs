@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using Snappy.Sharp;
 
 namespace Parquet.File.Streams
