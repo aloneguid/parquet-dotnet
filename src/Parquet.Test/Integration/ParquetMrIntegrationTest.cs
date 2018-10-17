@@ -18,11 +18,16 @@ namespace Parquet.Test.Integration
    {
       private readonly string _toolsPath;
       private readonly string _toolsJarPath;
+      private readonly string _javaExecName;
 
       public ParquetMrIntegrationTest()
       {
          _toolsPath = Path.GetFullPath("..\\..\\..\\..\\..\\tools");
          _toolsJarPath = Path.Combine(_toolsPath, "parquet-tools-1.9.0.jar");
+
+         _javaExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
+            ? "java.exe"
+            : "java";
       }
 
       private void CompareWithMr(Table t)
@@ -47,7 +52,7 @@ namespace Parquet.Test.Integration
          //check we don't have a bug internally before launching MR
          Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
 
-         string mrJson = ExecAndGetOutput("java.exe", $"-jar {_toolsJarPath} cat -j {testFileName}");
+         string mrJson = ExecAndGetOutput(_javaExecName, $"-jar {_toolsJarPath} cat -j {testFileName}");
          Assert.Equal(t.ToString("j"), mrJson);
       }
 
