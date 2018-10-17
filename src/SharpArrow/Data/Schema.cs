@@ -11,15 +11,19 @@ namespace SharpArrow.Data
 
       internal Schema(FB.Schema fbSchema)
       {
-         for(int i = 0; i < fbSchema.FieldsLength; i++)
+         ReadFields(fbSchema);
+      }
+
+      private void ReadFields(FB.Schema fbSchema)
+      {
+         for (int i = 0; i < fbSchema.FieldsLength; i++)
          {
             FB.Field field = fbSchema.Fields(i).GetValueOrDefault();
 
-            for(int mi = 0; mi < field.CustomMetadataLength; mi++)
+            for (int mi = 0; mi < field.CustomMetadataLength; mi++)
             {
                FB.KeyValue mkv = field.CustomMetadata(mi).GetValueOrDefault();
             }
-            
 
             _fields.Add(new Field(field));
          }

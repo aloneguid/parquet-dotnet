@@ -35,5 +35,13 @@ namespace SharpArrow.Test
          Assert.Equal(ArrowType.Utf8, f1.Type);
          Assert.Equal(ArrowType.Bool, f2.Type);
       }
+
+      [Fact]
+      public void Read_data_in_thee_cols_file()
+      {
+         ArrowFile file = Arrow.OpenFromFile(GetDataFilePath("threecols.dat"));
+
+         file.TempTest();
+      }
    }
 }

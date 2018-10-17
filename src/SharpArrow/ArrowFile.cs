@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using FlatBuffers;
@@ -46,7 +47,8 @@ namespace SharpArrow
    public class ArrowFile
    {
       private const string MagicTag = "ARROW1";
-      private readonly List<FB.Block> _blocks = new List<FB.Block>();
+      private readonly List<FB.Block> _dictionaries = new List<FB.Block>();
+      private readonly List<FB.Block> _records = new List<FB.Block>();
       private readonly Memory<byte> _fileData;
       private int _footerLength;
 
@@ -54,7 +56,7 @@ namespace SharpArrow
       {
          _fileData = fileData;
 
-         ReadBasics();
+         ValidateFile();
       }
 
       public Schema Schema { get; private set; }
@@ -66,7 +68,28 @@ namespace SharpArrow
          return new ArrowStream(Schema, dataMemory);
       }
 
-      private void ReadBasics()
+      public void TempTest()
+      {
+         foreach (FB.Block block in _records)
+         {
+            /*
+             <metadata_size: int32>
+            <metadata_flatbuffer: bytes>
+            <padding>
+            <message body>
+            */
+
+
+            int length = BitConverter.ToInt32(_fileData.Slice(0, 4).Span.ToArray(), 0);
+
+            byte[] messageData = _fileData.Slice((int)block.Offset + 4, block.MetaDataLength).ToArray();
+            FB.Message message = FB.Message.GetRootAsMessage(new ByteBuffer(messageData));
+
+            new RecordBatch(message);
+         }
+      }
+
+      private void ValidateFile()
       {
          Span<byte> span = _fileData.Span;
 
@@ -78,7 +101,7 @@ namespace SharpArrow
          Span<byte> lengthSpan = span.Slice(span.Length - 4 - MagicTag.Length, 4);
          _footerLength = BitConverter.ToInt32(lengthSpan.ToArray(), 0);
 
-         //get footer data
+         //get footer data (file contains redundant copy of the schema)
          Span<byte> footer = span.Slice(span.Length - 4 - _footerLength - MagicTag.Length, _footerLength);
          ReadFooter(footer);
       }
@@ -95,8 +118,11 @@ namespace SharpArrow
          {
             FB.Block block = root.RecordBatches(i).GetValueOrDefault();
 
-            _blocks.Add(block);
+            _records.Add(block);
          }
+
+         if (root.DictionariesLength > 0)
+            throw new NotSupportedException();
       }
 
       private void CheckMagic(Span<byte> span)
