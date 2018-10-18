@@ -60,6 +60,8 @@ parq convert struct_plain.parquet -p
 
 As JSON is usually human readable you can use this command to view the file.
 
+By default **parq** displays the first 10 rows of the source file, however you can override it with `--max-rows` option.
+
 
 ### More Commands
 

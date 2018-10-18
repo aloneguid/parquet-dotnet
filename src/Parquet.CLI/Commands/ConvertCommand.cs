@@ -24,7 +24,7 @@ namespace Parquet.CLI.Commands
          _pretty = noColour;
       }
 
-      public void Execute()
+      public void Execute(int maxRows)
       {
          string sourceExtension = Path.GetExtension(_inputPath);
 
@@ -33,16 +33,17 @@ namespace Parquet.CLI.Commands
             throw new ArgumentException($"Don't know how to read {sourceExtension}");
          }
 
-         ConvertFromParquet();
+         ConvertFromParquet(maxRows);
       }
 
-      private void ConvertFromParquet()
+      private void ConvertFromParquet(int maxRows)
       {
          Telemetry.CommandExecuted("convert",
             "input", _inputPath,
             "output", _output,
             "style", _style,
-            "pretty", _pretty);
+            "pretty", _pretty,
+            "maxRows", maxRows);
 
          Table t = ReadTable();
 
@@ -54,6 +55,9 @@ namespace Parquet.CLI.Commands
          int i = 0;
          foreach(Row row in t)
          {
+            if (i >= maxRows)
+               break;
+
             string json = row.ToString("j");
 
             if(!_pretty)

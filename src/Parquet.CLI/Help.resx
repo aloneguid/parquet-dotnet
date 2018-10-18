@@ -130,7 +130,7 @@
     <value>Path to input file, required.</value>
   </data>
   <data name="Command_Convert_MaxRows" xml:space="preserve">
-    <value>Maximum amount of rows to fetch. By default all of the rows are processed.</value>
+    <value>Maximum amount of rows to fetch. By default the first 10 rows are shown.</value>
   </data>
   <data name="Command_Convert_Output" xml:space="preserve">
     <value>Path to output file. If not specified, the result is printed to the console.</value>

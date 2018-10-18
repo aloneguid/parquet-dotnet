@@ -97,7 +97,7 @@ namespace Parquet.CLI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Maximum amount of rows to fetch. By default all of the rows are processed..
+        ///   Looks up a localized string similar to Maximum amount of rows to fetch. By default the first 10 rows are shown..
         /// </summary>
         internal static string Command_Convert_MaxRows {
             get {
