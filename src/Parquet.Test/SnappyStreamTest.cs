@@ -11,7 +11,9 @@ namespace Parquet.Test
    {
       [Theory]
       [Repeat(100)]
-      public void Compress_decompress_random_byte_chunks()
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
+      public void Compress_decompress_random_byte_chunks(int index)
+#pragma warning restore xUnit1026 // Theory methods should use all of their parameters
       {
          byte[] stage1 = RandomGenerator.GetRandomBytes(2, 1000);
          byte[] stage2;

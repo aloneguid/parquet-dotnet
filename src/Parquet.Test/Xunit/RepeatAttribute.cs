@@ -23,7 +23,7 @@ namespace Parquet.Test.Xunit
 
       public override IEnumerable<object[]> GetData(MethodInfo testMethod)
       {
-         return Enumerable.Range(0, _count).Select(i => new object[i]);
+         return Enumerable.Range(0, _count).Select(i => new object[] { i });
       }
    }
 }
