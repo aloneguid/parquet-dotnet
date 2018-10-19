@@ -5,20 +5,16 @@ using FB = org.apache.arrow.flatbuf;
 
 namespace SharpArrow.Data
 {
-   public class RecordBatch
+   public class RecordBatch : Message
    {
-      private long _length;
+      private readonly List<FB.FieldNode> _nodes;
+      private readonly List<FB.Buffer> _buffers;
 
-      internal RecordBatch(FB.Message fb)
+      internal RecordBatch(FB.Message fbMessage) : base(fbMessage.BodyLength, fbMessage.HeaderType, fbMessage.Version)
       {
-         FB.RecordBatch fbRb = fb.Header<FB.RecordBatch>().GetValueOrDefault();
-
-         _length = fbRb.Length;
-
-         for(int i = 0; i < fbRb.NodesLength; i++)
-         {
-            FB.FieldNode fbNode = fbRb.Nodes(i).GetValueOrDefault();
-         }
+         FB.RecordBatch fb = fbMessage.Header<FB.RecordBatch>().GetValueOrDefault();
+         _nodes = fb.GetNodes();
+         _buffers = fb.GetBuffers();
       }
    }
 }

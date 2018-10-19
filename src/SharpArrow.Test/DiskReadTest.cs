@@ -41,7 +41,9 @@ namespace SharpArrow.Test
       {
          ArrowFile file = Arrow.OpenFromFile(GetDataFilePath("threecols.dat"));
 
-         file.TempTest();
+         ArrowStream stream = file.GetStream();
+
+         stream.TempTest();
       }
    }
 }

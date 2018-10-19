@@ -68,27 +68,6 @@ namespace SharpArrow
          return new ArrowStream(Schema, dataMemory);
       }
 
-      public void TempTest()
-      {
-         foreach (FB.Block block in _records)
-         {
-            /*
-             <metadata_size: int32>
-            <metadata_flatbuffer: bytes>
-            <padding>
-            <message body>
-            */
-
-
-            int length = BitConverter.ToInt32(_fileData.Slice(0, 4).Span.ToArray(), 0);
-
-            byte[] messageData = _fileData.Slice((int)block.Offset + 4, block.MetaDataLength).ToArray();
-            FB.Message message = FB.Message.GetRootAsMessage(new ByteBuffer(messageData));
-
-            new RecordBatch(message);
-         }
-      }
-
       private void ValidateFile()
       {
          Span<byte> span = _fileData.Span;
@@ -110,16 +89,11 @@ namespace SharpArrow
       {
          FB.Footer root = FB.Footer.GetRootAsFooter(new ByteBuffer(data.ToArray()));
 
-         //read schema
+         //read schema (redundant copy)
          Schema = new Schema(root.Schema.GetValueOrDefault());
 
-         //read list of blocks for convenience
-         for(int i = 0; i < root.RecordBatchesLength; i++)
-         {
-            FB.Block block = root.RecordBatches(i).GetValueOrDefault();
-
-            _records.Add(block);
-         }
+         List<FB.Block> blocks = root.GetRecordBatches();
+         _records.AddRange(blocks);
 
          if (root.DictionariesLength > 0)
             throw new NotSupportedException();

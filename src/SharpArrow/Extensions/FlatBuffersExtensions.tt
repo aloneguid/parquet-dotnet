@@ -1,0 +1,51 @@
+﻿<#@ template hostspecific="false" language="C#" #>
+<#@ output extension=".cs" #>
+<#
+   //from -> to
+   var mappings = new string[][]
+   {
+      new[] { "Footer", "Block", "RecordBatches" },
+      new[] { "RecordBatch", "FieldNode", "Nodes" },
+      new[] { "RecordBatch", "Buffer", "Buffers" }
+   };
+#>
+using System;
+using System.Collections.Generic;
+using System.Text;
+using FB = org.apache.arrow.flatbuf;
+
+/*
+ * Auto-generated, please modify the .tt file. For instructions refer to https://docs.microsoft.com/en-us/visualstudio/modeling/design-time-code-generation-by-using-t4-text-templates?view=vs-2017
+ */
+namespace SharpArrow.Data
+{
+   static class FlatBuffersExtensions
+   {
+<#
+foreach(string[] mapping in mappings)
+{
+   var elName = $"FB.{mapping[1]}";
+   var inputName = $"FB.{mapping[0]}";
+   var methodName = $"Get{mapping[2]}";
+#>
+
+      /// <summary>
+      /// Creates a list of <see cref="<#=elName#>"/>
+      /// </summary>
+      public static List<<#=elName#>> <#=methodName#>(this <#=inputName#> root)
+      {
+         int length = root.<#=mapping[2]#>Length;
+         var result = new List<<#=elName#>>(length);
+
+         for(int i = 0; i < length; i++)
+         {
+            <#=elName#> element = root.<#=mapping[2]#>(i).GetValueOrDefault();
+            result.Add(element);
+         }
+
+         return result;
+      }
+<#}
+#>
+   }
+}
