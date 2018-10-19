@@ -1,13 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-   <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-      <TargetFrameworks>netstandard1.4</TargetFrameworks>
-   </PropertyGroup>
-
-   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-      <TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
-   </PropertyGroup>
-
    <PropertyGroup>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
@@ -58,6 +50,14 @@ the first release of a major rewrite</PackageReleaseNotes>
      <DebugSymbols>true</DebugSymbols>
      <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone xbox</PackageTags>
   </PropertyGroup>
+
+   <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
+      <TargetFrameworks>netstandard1.4</TargetFrameworks>
+   </PropertyGroup>
+
+   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
+      <TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
+   </PropertyGroup>
 
    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
