@@ -16,13 +16,24 @@ namespace Parquet.CLI.Commands
          _path = path;
       }
 
-      protected Table ReadTable()
+      protected Table ReadTable(int maxRows = 10)
       {
-         using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
+         using (var msg = new ProgressMessage($"reading file ({maxRows} rows min)..."))
          {
-            Table table = reader.ReadAsTable();
+            try
+            {
+               using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
+               {
+                  Table table = reader.ReadAsTable();
 
-            return table;
+                  return table;
+               }
+            }
+            catch(Exception ex)
+            {
+               msg.Fail(ex.Message);
+               throw;
+            }
          }
       }
    }

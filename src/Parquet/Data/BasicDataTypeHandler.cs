@@ -62,7 +62,7 @@ namespace Parquet.Data
          int idx = offset;
          Stream s = reader.BaseStream;
 
-         while (s.Position < totalLength)
+         while (s.Position < totalLength && idx < dest.Length)
          {
             TSystemType element = ReadOne(reader);
             dest[idx++] = element;

@@ -45,11 +45,11 @@ namespace Parquet.CLI.Commands
             "pretty", _pretty,
             "maxRows", maxRows);
 
-         Table t = ReadTable();
+         Table t = ReadTable(maxRows);
 
          if(_pretty)
          {
-            WriteLine("[", BracketColor);
+            Write("[", BracketColor);
          }
 
          int i = 0;
@@ -63,10 +63,11 @@ namespace Parquet.CLI.Commands
             if(!_pretty)
             {
                WriteLine(json);
+               i++;
             }
             else
             {
-               WriteColorJson(json, ++i < t.Count);
+               WriteColorJson(json, ++i < t.Count && i < maxRows);
             }
          }
 
