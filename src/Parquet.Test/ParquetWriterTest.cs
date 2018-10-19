@@ -15,6 +15,7 @@ namespace Parquet.Test
 
          using (var writer = new ParquetWriter(schema, new MemoryStream()))
          {
+
             using (ParquetRowGroupWriter gw = writer.CreateRowGroup())
             {
                Assert.Throws<ArgumentException>(() =>
