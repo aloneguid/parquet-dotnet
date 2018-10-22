@@ -23,7 +23,7 @@ git checkout -b 325-add-japanese-translations
 
 ## 3. Get the fix working
 
-Make the changes and make sure they are working locally. In case of code changes we strongly advise to create a unit/integration test before finishing your work.
+Make the changes and make sure they are working locally. In case of code changes we strongly advise to create a unit/integration test before finishing your work. We will not accept any code (unless it's a trivial change or documentation) without any tests because we won't know if it fixes anything at all.
 
 ## 4. Make a Pull Request
 

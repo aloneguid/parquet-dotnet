@@ -1,5 +1,5 @@
 <!--
-   Please Note that Elastacloud (https://elastacloud.com) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to parquetsupport@elastacloud.com
+Note that this library is provided for you for FREE and it's fully OPEN-SOURCE. ALL of the code and services you get are done by authors in their free time and they are paid NOTHING for it. There is no guarantee that the issue you are raising will be looked at at all if there is not enough information, nor we have any timelines on WHEN it will be looked at. However you can email to parquetsupport@elastacloud.com for commercial support options. 
 -->
 
 **Version:** Parquet.Net v...
@@ -29,5 +29,4 @@ Please describe how **Parquet.Net** is behaving.
 //here
 ```
 
-- [ ] I'm attaching a sample .parquet file containing the problem.
-- [ ] I am happy to contribute to this repository by fixing this issue and raising a Pull Request (see [contribution guide](CONTRIBUTING.md))
+<!-- Attaching a .parquet file showing the problem is a great way to help speeding this up -->
