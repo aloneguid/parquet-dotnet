@@ -10,8 +10,8 @@ namespace Parquet.Serialization.Values
    class ClrBridge
    {
       private readonly Type _classType;
-      private readonly Dictionary<TypeCachingKey, CollectorTag> _collectorKeyToTag = new Dictionary<TypeCachingKey, CollectorTag>();
-      private readonly Dictionary<TypeCachingKey, AssignerTag> _assignerKeyToTag = new Dictionary<TypeCachingKey, AssignerTag>();
+      private static readonly Dictionary<TypeCachingKey, CollectorTag> _collectorKeyToTag = new Dictionary<TypeCachingKey, CollectorTag>();
+      private static readonly Dictionary<TypeCachingKey, AssignerTag> _assignerKeyToTag = new Dictionary<TypeCachingKey, AssignerTag>();
 
       public ClrBridge(Type classType)
       {
