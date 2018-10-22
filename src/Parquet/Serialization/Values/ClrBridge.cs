@@ -9,9 +9,12 @@ namespace Parquet.Serialization.Values
 {
    class ClrBridge
    {
+      public delegate void AssignArrayDelegate(object columnArray, object classInstances, int length);
+      public delegate void CollectArrayDelegate(object instances, object result, int length);
+
       private readonly Type _classType;
-      private static readonly Dictionary<TypeCachingKey, CollectorTag> _collectorKeyToTag = new Dictionary<TypeCachingKey, CollectorTag>();
-      private static readonly Dictionary<TypeCachingKey, AssignerTag> _assignerKeyToTag = new Dictionary<TypeCachingKey, AssignerTag>();
+      private static readonly Dictionary<TypeCachingKey, CollectArrayDelegate> _collectorKeyToTag = new Dictionary<TypeCachingKey, CollectArrayDelegate>();
+      private static readonly Dictionary<TypeCachingKey, AssignArrayDelegate> _assignerKeyToTag = new Dictionary<TypeCachingKey, AssignArrayDelegate>();
 
       public ClrBridge(Type classType)
       {
@@ -21,49 +24,39 @@ namespace Parquet.Serialization.Values
       public DataColumn BuildColumn(DataField field, Array classInstances, int classInstancesCount)
       {
          Array data = Array.CreateInstance(field.ClrNullableIfHasNullsType, classInstancesCount);
-         CollectorTag tag = GetCollectorTag(new TypeCachingKey(_classType, field));
-         tag.Collect(classInstances, data, classInstancesCount);
+         CollectArrayDelegate collect = GetCollector(new TypeCachingKey(_classType, field));
+         collect(classInstances, data, classInstancesCount);
 
          return new DataColumn(field, data);
       }
 
       public void AssignColumn(DataColumn dataColumn, Array classInstances, int classInstancesCount)
       {
-         AssignerTag tag = GetAssignerTag(new TypeCachingKey(_classType, dataColumn.Field));
-         tag.Assign(dataColumn.Data, classInstances, classInstancesCount);
+         AssignArrayDelegate assign = GetAssignerTag(new TypeCachingKey(_classType, dataColumn.Field));
+         assign(dataColumn.Data, classInstances, classInstancesCount);
       }
 
-      private CollectorTag GetCollectorTag(TypeCachingKey key)
+      private CollectArrayDelegate GetCollector(TypeCachingKey key)
       {
-         if(!_collectorKeyToTag.TryGetValue(key, out CollectorTag value))
+         if(!_collectorKeyToTag.TryGetValue(key, out CollectArrayDelegate value))
          {
-            value = new CollectorTag
-            {
-               Collect = CreateCollectorDelegate(key.ClassType, key.Field)
-            };
-
-            _collectorKeyToTag[key] = value;
+            _collectorKeyToTag[key] = value = CreateCollectorDelegate(key.ClassType, key.Field);
          }
 
          return value;
       }
 
-      private AssignerTag GetAssignerTag(TypeCachingKey key)
+      private AssignArrayDelegate GetAssignerTag(TypeCachingKey key)
       {
-         if(!_assignerKeyToTag.TryGetValue(key, out AssignerTag value))
+         if(!_assignerKeyToTag.TryGetValue(key, out AssignArrayDelegate value))
          {
-            value = new AssignerTag
-            {
-               Assign = CreateAssignerDelegate(key.ClassType, key.Field)
-            };
-
-            _assignerKeyToTag[key] = value;
+            _assignerKeyToTag[key] = value = CreateAssignerDelegate(key.ClassType, key.Field);
          }
 
          return value;
       }
 
-      private AssignerTag.AssignArrayDelegate CreateAssignerDelegate(Type classType, DataField field)
+      private AssignArrayDelegate CreateAssignerDelegate(Type classType, DataField field)
       {
          TypeInfo ti = classType.GetTypeInfo();
          PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
@@ -116,10 +109,10 @@ namespace Parquet.Serialization.Values
          il.Emit(Ret);
          // -- end of IL Code ---
 
-         return (AssignerTag.AssignArrayDelegate)runMethod.CreateDelegate(typeof(AssignerTag.AssignArrayDelegate));
+         return (AssignArrayDelegate)runMethod.CreateDelegate(typeof(AssignArrayDelegate));
       }
 
-      private CollectorTag.CollectArrayDelegate CreateCollectorDelegate(Type classType, DataField field)
+      private CollectArrayDelegate CreateCollectorDelegate(Type classType, DataField field)
       {
          TypeInfo ti = classType.GetTypeInfo();
          PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
@@ -174,7 +167,7 @@ namespace Parquet.Serialization.Values
          il.Emit(Ret);
          // -- end of IL Code ---
 
-         return (CollectorTag.CollectArrayDelegate)runMethod.CreateDelegate(typeof(CollectorTag.CollectArrayDelegate));
+         return (CollectArrayDelegate)runMethod.CreateDelegate(typeof(CollectArrayDelegate));
       }
    }
 }
