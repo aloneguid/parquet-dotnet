@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using Parquet.Data;
+using static System.Reflection.Emit.OpCodes;
 
 namespace Parquet.Serialization.Values
 {
@@ -80,41 +78,44 @@ namespace Parquet.Serialization.Values
             GetType().GetTypeInfo().Module);
 
          ILGenerator il = runMethod.GetILGenerator();
-         // -- IL Code ---
-         il.DeclareLocal(typeof(int));                          //loop counter
-         il.DeclareLocal(classType);                            //current element instance
-         il.DeclareLocal(field.ClrNullableIfHasNullsType);      //!!! specific to property type
 
-         using (il.Loop(OpCodes.Ldloc_0, OpCodes.Stloc_0, OpCodes.Ldarg_2))
+         LocalBuilder length = il.DeclareLocal(typeof(int));
+         LocalBuilder dataItem = il.DeclareLocal(field.ClrNullableIfHasNullsType);
+         LocalBuilder instanceItem = il.DeclareLocal(classType);
+
+         il.Emit(Ldarg_2);
+         il.Emit(Stloc, length.LocalIndex);
+
+         using (il.ForLoop(length, out LocalBuilder i))
          {
             //load data element
-            il.Emit(OpCodes.Ldarg_0);  //data array
-            il.Emit(OpCodes.Ldloc_0);  //index
+            il.Emit(Ldarg_0);  //data array
+            il.Emit(Ldloc, i.LocalIndex);  //index
             if (field.HasNulls && !field.ClrNullableIfHasNullsType.IsSystemNullable())
             {
-               il.Emit(OpCodes.Ldelem_Ref);
+               il.Emit(Ldelem_Ref);
             }
             else
             {
-               il.Emit(OpCodes.Ldelem, field.ClrNullableIfHasNullsType);
+               il.Emit(Ldelem, field.ClrNullableIfHasNullsType);
             }
-            il.Emit(OpCodes.Stloc_2);  //data value
+            il.Emit(Stloc, dataItem.LocalIndex);  //data value
 
             //load class element
-            il.Emit(OpCodes.Ldarg_1);  //classes array
-            il.Emit(OpCodes.Ldloc_0);  //index
-            il.Emit(OpCodes.Ldelem_Ref);
-            il.Emit(OpCodes.Stloc_1);  //class instance
+            il.Emit(Ldarg_1);  //classes array
+            il.Emit(Ldloc, i.LocalIndex);  //index
+            il.Emit(Ldelem_Ref);
+            il.Emit(Stloc, instanceItem.LocalIndex);  //class instance
 
             //assign data element to class property
-            il.Emit(OpCodes.Ldloc_1);  //element to make call on
-            il.Emit(OpCodes.Ldloc_2);  //data element
-            il.Emit(OpCodes.Callvirt, setValueMethod);
+            il.Emit(Ldloc, instanceItem.LocalIndex);  //element to make call on
+            il.Emit(Ldloc, dataItem.LocalIndex);  //data element
+            il.Emit(Callvirt, setValueMethod);
          }
 
-         //return loop counter
-         il.Emit(OpCodes.Ldloc_0);
-         il.Emit(OpCodes.Ret);
+         //return 0
+         il.Emit(Ldc_I4_0);
+         il.Emit(Ret);
          // -- end of IL Code ---
 
          return (AssignerTag.AssignArrayDelegate)runMethod.CreateDelegate(typeof(AssignerTag.AssignArrayDelegate));
@@ -136,40 +137,45 @@ namespace Parquet.Serialization.Values
          ILGenerator il = runMethod.GetILGenerator();
 
          // -- IL Code ---
-         il.DeclareLocal(typeof(int));                          //loop counter
-         il.DeclareLocal(classType);                            //current element instance
-         il.DeclareLocal(field.ClrNullableIfHasNullsType);      //!!! specific to property type
+         //il.DeclareLocal(typeof(int)); //loop counter
+         LocalBuilder length = il.DeclareLocal(typeof(int));
+         LocalBuilder instanceItem = il.DeclareLocal(classType);
+         LocalBuilder dataItem = il.DeclareLocal(field.ClrNullableIfHasNullsType);
 
-         using (il.Loop(OpCodes.Ldloc_0, OpCodes.Stloc_0, OpCodes.Ldarg_2))
+         il.Emit(Ldarg_2);
+         il.Emit(Stloc, length.LocalIndex);
+
+         using (il.ForLoop(length, out LocalBuilder i))
          {
             //get object instance from array
-            il.Emit(OpCodes.Ldarg_0);  //load array
-            il.Emit(OpCodes.Ldloc_0);  //load index
-            il.Emit(OpCodes.Ldelem_Ref);
-            il.Emit(OpCodes.Stloc_1);  //save element
+            il.Emit(Ldarg_0);  //load array
+            il.Emit(Ldloc, i.LocalIndex);  //load index
+            il.Emit(Ldelem_Ref);
+            il.Emit(Stloc, instanceItem.LocalIndex);  //save element
 
             //get the property value (first parameter - object instance)
-            il.Emit(OpCodes.Ldloc_1);  //load element
-            il.Emit(OpCodes.Callvirt, getValueMethod);
-            il.Emit(OpCodes.Stloc_2);  //save property value
+            il.Emit(Ldloc, instanceItem.LocalIndex);  //load element
+            il.Emit(Callvirt, getValueMethod);
+            il.Emit(Stloc, dataItem.LocalIndex);  //save property value
 
             //assign property value to array element
-            il.Emit(OpCodes.Ldarg_1);  //load destination array
-            il.Emit(OpCodes.Ldloc_0);  //load index
-            il.Emit(OpCodes.Ldloc_2);  //load element
+            il.Emit(Ldarg_1);  //load destination array
+            il.Emit(Ldloc, i.LocalIndex);  //load index
+            il.Emit(Ldloc, dataItem.LocalIndex);  //load element
             if (field.HasNulls && !field.ClrNullableIfHasNullsType.IsSystemNullable())
             {
-               il.Emit(OpCodes.Stelem_Ref);
+               il.Emit(Stelem_Ref);
             }
             else
             {
-               il.Emit(OpCodes.Stelem, field.ClrNullableIfHasNullsType);
+               il.Emit(Stelem, field.ClrNullableIfHasNullsType);
             }
+
          }
 
-         //return loop counter
-         il.Emit(OpCodes.Ldloc_0);
-         il.Emit(OpCodes.Ret);
+         //return 0
+         il.Emit(Ldc_I4_0);
+         il.Emit(Ret);
          // -- end of IL Code ---
 
          return (CollectorTag.CollectArrayDelegate)runMethod.CreateDelegate(typeof(CollectorTag.CollectArrayDelegate));
