@@ -28,12 +28,12 @@ namespace Parquet.Serialization
          getCurrentMethod = iEnumerator.GetDeclaredProperty(nameof(IEnumerator.Current)).GetMethod;
       }
 
-      public static IDisposable ForEachLoop<TElementType>(this ILGenerator il, LocalBuilder collection, out LocalBuilder currentElement)
+      public static IDisposable ForEachLoop(this ILGenerator il, Type elementType, LocalBuilder collection, out LocalBuilder currentElement)
       {
 
          Label lMoveNext = il.DefineLabel();
          Label lWork = il.DefineLabel();
-         currentElement = il.DeclareLocal(typeof(TElementType));
+         currentElement = il.DeclareLocal(elementType);
 
          //get collection enumerator
          LocalBuilder enumerator = il.DeclareLocal(typeof(IEnumerator));
@@ -56,7 +56,7 @@ namespace Parquet.Serialization
          //get current element
          il.Emit(Ldloc, enumerator.LocalIndex);
          il.Emit(Callvirt, getCurrentMethod);
-         il.Emit(Unbox_Any, typeof(TElementType));
+         il.Emit(Unbox_Any, elementType);
          il.Emit(Stloc, currentElement.LocalIndex);
 
          return il.After(() =>

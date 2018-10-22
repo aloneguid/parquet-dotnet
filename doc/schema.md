@@ -50,6 +50,14 @@ Writing a decimal by default uses precision 38 and scele 18, however you can set
 
 Note that AWS Athena, Impala and possibly other systems do not conform to Parquet specifications when reading decimal fields. If this is the case, you must use `DecimalDataField` explicitly and set `forceByteArrayEncoding` to `true`.
 
+For instance:
+
+```csharp
+new DecimalDataField("decInt32", 4, 1); // uses precision 4 and scale 1
+
+new DecimalDataField("decMinus", 10, 2, true); // uses precision 10 and scale 2, and enforces legacy decimal encoding that Impala understands
+```
+
 ## Repeatable Fields
 
 Parquet.Net supports repeatable fields i.e. fields that contain an array of values instead of just one single value.
