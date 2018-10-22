@@ -22,7 +22,7 @@ namespace Parquet.Serialization.Values
       {
          Array data = Array.CreateInstance(field.ClrNullableIfHasNullsType, classInstancesCount);
          CollectorTag tag = GetCollectorTag(new TypeCachingKey(_classType, field));
-         int collected = tag.Collect(classInstances, data, classInstancesCount);
+         tag.Collect(classInstances, data, classInstancesCount);
 
          return new DataColumn(field, data);
       }
@@ -30,7 +30,7 @@ namespace Parquet.Serialization.Values
       public void AssignColumn(DataColumn dataColumn, Array classInstances, int classInstancesCount)
       {
          AssignerTag tag = GetAssignerTag(new TypeCachingKey(_classType, dataColumn.Field));
-         int assigned = tag.Assign(dataColumn.Data, classInstances, classInstancesCount);
+         tag.Assign(dataColumn.Data, classInstances, classInstancesCount);
       }
 
       private CollectorTag GetCollectorTag(TypeCachingKey key)
@@ -73,7 +73,7 @@ namespace Parquet.Serialization.Values
          Type[] methodArgs = { typeof(object), typeof(object), typeof(int) };
          var runMethod = new DynamicMethod(
             $"Set{classType.Name}{field.Name}",
-            typeof(int),
+            typeof(void),
             methodArgs,
             GetType().GetTypeInfo().Module);
 
@@ -113,8 +113,6 @@ namespace Parquet.Serialization.Values
             il.Emit(Callvirt, setValueMethod);
          }
 
-         //return 0
-         il.Emit(Ldc_I4_0);
          il.Emit(Ret);
          // -- end of IL Code ---
 
@@ -130,7 +128,7 @@ namespace Parquet.Serialization.Values
          Type[] methodArgs = { typeof(object), typeof(object), typeof(int) };
          var runMethod = new DynamicMethod(
             $"Get{classType.Name}{field.Name}",
-            typeof(int),
+            typeof(void),
             methodArgs,
             GetType().GetTypeInfo().Module);
 
@@ -173,8 +171,6 @@ namespace Parquet.Serialization.Values
 
          }
 
-         //return 0
-         il.Emit(Ldc_I4_0);
          il.Emit(Ret);
          // -- end of IL Code ---
 

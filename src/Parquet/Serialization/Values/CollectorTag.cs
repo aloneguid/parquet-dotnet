@@ -2,7 +2,7 @@
 {
    class CollectorTag
    {
-      public delegate int CollectArrayDelegate(object instances, object result, int length);
+      public delegate void CollectArrayDelegate(object instances, object result, int length);
 
       public CollectArrayDelegate Collect { get; set; }
    }
