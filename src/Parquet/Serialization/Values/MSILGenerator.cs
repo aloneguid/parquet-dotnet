@@ -12,7 +12,8 @@ namespace Parquet.Serialization.Values
    {
       public delegate object PopulateListDelegate(object instances,
          object resultItemsList,
-         object resultRepetitionsList);
+         object resultRepetitionsList,
+         int maxRepetitionLevel);
 
       public delegate void AssignArrayDelegate(object columnArray,
          object classInstances,
@@ -24,7 +25,7 @@ namespace Parquet.Serialization.Values
 
       public PopulateListDelegate GenerateCollector(Type classType, DataField field)
       {
-         Type[] methodArgs = { typeof(object), typeof(object), typeof(object) };
+         Type[] methodArgs = { typeof(object), typeof(object), typeof(object), typeof(int) };
 
          TypeInfo ti = classType.GetTypeInfo();
          PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
@@ -56,6 +57,7 @@ namespace Parquet.Serialization.Values
          //arg 0 - collection of classes, clr objects
          //arg 1 - data items (typed list)
          //arg 2 - repetitions (optional)
+         //arg 3 - max repetition level
 
          //make collection a local variable
          LocalBuilder collection = il.DeclareLocal(classType);
@@ -67,15 +69,39 @@ namespace Parquet.Serialization.Values
 
          using (il.ForEachLoop(classType, collection, out LocalBuilder currentElement))
          {
-            //get current value
-            il.Emit(Ldloc, currentElement.LocalIndex);
-            il.Emit(Callvirt, getValueMethod);
-            il.Emit(Stloc, item.LocalIndex);
+            if (f.IsArray)
+            {
+               //currentElement is a nested array in this case
+               LocalBuilder array = il.DeclareLocal(typeof(object));
 
-            //store in destination list
-            il.Emit(Ldarg_1);
-            il.Emit(Ldloc, item.LocalIndex);
-            il.Emit(Callvirt, addToListMethod);
+               //get array and put into arrayElement
+               il.Emit(Ldloc, currentElement.LocalIndex);
+               il.Emit(Callvirt, getValueMethod);
+               il.Emit(Stloc, array.LocalIndex);
+
+               //enumerate this array
+               using (il.ForEachLoop(f.ClrNullableIfHasNullsType, array, out LocalBuilder arrayElement))
+               {
+                  //add each item into destination list
+
+                  //store in destination list
+                  il.Emit(Ldarg_1);
+                  il.CallVirt(addToListMethod, arrayElement);
+               }
+
+            }
+            else
+            {
+               //get current value
+               il.Emit(Ldloc, currentElement.LocalIndex);
+               il.Emit(Callvirt, getValueMethod);
+               il.Emit(Stloc, item.LocalIndex);
+
+               //store in destination list
+               il.Emit(Ldarg_1);
+               il.Emit(Ldloc, item.LocalIndex);
+               il.Emit(Callvirt, addToListMethod);
+            }
          }
 
          il.Emit(Ldc_I4_0);

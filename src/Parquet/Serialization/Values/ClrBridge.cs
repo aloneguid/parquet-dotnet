@@ -27,7 +27,8 @@ namespace Parquet.Serialization.Values
          }
 
          IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
-         object result = populateList(classInstances, resultList, null);
+         IList repLevelsList = field.IsArray ? new List<int>() : null;
+         object result = populateList(classInstances, resultList, repLevelsList, field.MaxRepetitionLevel);
 
          MethodInfo toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");
          object array = toArrayMethod.Invoke(resultList, null);

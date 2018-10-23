@@ -131,6 +131,29 @@ namespace Parquet.Serialization
          il.Emit(Newobj, constructors[0]);
       }
 
+      public static void LdLoc(this ILGenerator il, LocalBuilder local)
+      {
+         il.Emit(Ldloc, local.LocalIndex);
+      }
+
+      public static void StLoc(this ILGenerator il, LocalBuilder local)
+      {
+         il.Emit(Stloc, local.LocalIndex);
+      }
+
+      public static void CallVirt(this ILGenerator il, MethodInfo method, params LocalBuilder[] parameters)
+      {
+         if(parameters != null)
+         {
+            foreach(LocalBuilder localParameter in parameters)
+            {
+               il.Emit(Ldloc, localParameter.LocalIndex);
+            }
+         }
+
+         il.Emit(Callvirt, method);
+      }
+
       private static IDisposable After(this ILGenerator thisIl, Action ilAction)
       {
          return new CodeAfter(thisIl, ilAction);
