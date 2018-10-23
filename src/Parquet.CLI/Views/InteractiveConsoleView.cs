@@ -21,8 +21,7 @@ namespace Parquet.CLI.Views
       private ViewPort viewPort;
       private ConsoleSheet _currentSheet;
       private ConsoleFold _currentFold;
-
-      internal event EventHandler<ConsoleFold> FoldRequested;
+      private ViewSettings _settings;
 
       public InteractiveConsoleView()
       {
@@ -31,6 +30,7 @@ namespace Parquet.CLI.Views
 
       public void Draw(ViewModel viewModel, ViewSettings settings)
       {
+         _settings = settings;
          Console.Clear();
 
          unreadSheets = GenerateSheets(viewPort, viewModel.Columns, settings.displayMinWidth);
@@ -102,6 +102,8 @@ namespace Parquet.CLI.Views
                {
                   readSheets.Push(currentSheet);
                   ConsoleSheet nextPage = unreadSheets.Pop();
+                  _currentSheet = nextPage;
+
                   DrawSheet(viewModel, nextPage, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                else
@@ -114,6 +116,8 @@ namespace Parquet.CLI.Views
                {
                   unreadSheets.Push(currentSheet);
                   ConsoleSheet lastPage = readSheets.Pop();
+                  _currentSheet = lastPage;
+
                   DrawSheet(viewModel, lastPage, currentFold, viewPort, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                else
@@ -128,7 +132,7 @@ namespace Parquet.CLI.Views
                   ConsoleFold nextFold = unreadFolds.Pop();
                   _currentFold = nextFold;
 
-                  this.FoldRequested?.Invoke(this, nextFold);
+                  this.Update(viewModel, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                else
                {
@@ -142,7 +146,7 @@ namespace Parquet.CLI.Views
                   ConsoleFold lastFold = readFolds.Pop();
                   _currentFold = lastFold;
 
-                  this.FoldRequested?.Invoke(this, lastFold);
+                  this.Update(viewModel, displayTypes, displayNulls, truncationIdentifier, displayRefs);
                }
                else
                {
@@ -330,7 +334,7 @@ namespace Parquet.CLI.Views
 
       private void WriteValues(ViewModel viewModel, ConsoleSheet columnsFitToScreen, ConsoleFold foldedRows, ViewPort viewPort, bool displayNulls, string truncationIdentifier, bool displayRefs)
       {
-         for (int i = 0; i < viewModel.Rows.Count(); i++)
+         for (int i = foldedRows.IndexStart; i < foldedRows.IndexEnd; i++)
          {
             object[] row = viewModel.Rows.ElementAt(i);
             Console.Write(verticalSeparator);
