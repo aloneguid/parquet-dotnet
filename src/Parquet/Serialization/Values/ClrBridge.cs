@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -10,10 +11,9 @@ namespace Parquet.Serialization.Values
    class ClrBridge
    {
       public delegate void AssignArrayDelegate(object columnArray, object classInstances, int length);
-      public delegate void CollectArrayDelegate(object instances, object result, int length);
 
       private readonly Type _classType;
-      private static readonly Dictionary<TypeCachingKey, CollectArrayDelegate> _collectorKeyToTag = new Dictionary<TypeCachingKey, CollectArrayDelegate>();
+      private static readonly Dictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate> _collectorKeyToTag = new Dictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate>();
       private static readonly Dictionary<TypeCachingKey, AssignArrayDelegate> _assignerKeyToTag = new Dictionary<TypeCachingKey, AssignArrayDelegate>();
 
       public ClrBridge(Type classType)
@@ -23,27 +23,27 @@ namespace Parquet.Serialization.Values
 
       public DataColumn BuildColumn(DataField field, Array classInstances, int classInstancesCount)
       {
-         Array data = Array.CreateInstance(field.ClrNullableIfHasNullsType, classInstancesCount);
-         CollectArrayDelegate collect = GetCollector(new TypeCachingKey(_classType, field));
-         collect(classInstances, data, classInstancesCount);
+         var key = new TypeCachingKey(_classType, field);
 
-         return new DataColumn(field, data);
+         if(!_collectorKeyToTag.TryGetValue(key, out MSILGenerator.PopulateListDelegate populateList))
+         {
+            _collectorKeyToTag[key] = populateList = new MSILGenerator().GenerateCollector(_classType, field);
+         }
+
+         IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
+         object result = populateList(classInstances, resultList, null);
+
+         MethodInfo toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");
+         object array = toArrayMethod.Invoke(resultList, null);
+
+         return new DataColumn(field, (Array)array);
       }
 
       public void AssignColumn(DataColumn dataColumn, Array classInstances, int classInstancesCount)
       {
          AssignArrayDelegate assign = GetAssignerTag(new TypeCachingKey(_classType, dataColumn.Field));
+
          assign(dataColumn.Data, classInstances, classInstancesCount);
-      }
-
-      private CollectArrayDelegate GetCollector(TypeCachingKey key)
-      {
-         if(!_collectorKeyToTag.TryGetValue(key, out CollectArrayDelegate value))
-         {
-            _collectorKeyToTag[key] = value = CreateCollectorDelegate(key.ClassType, key.Field);
-         }
-
-         return value;
       }
 
       private AssignArrayDelegate GetAssignerTag(TypeCachingKey key)
@@ -112,62 +112,5 @@ namespace Parquet.Serialization.Values
          return (AssignArrayDelegate)runMethod.CreateDelegate(typeof(AssignArrayDelegate));
       }
 
-      private CollectArrayDelegate CreateCollectorDelegate(Type classType, DataField field)
-      {
-         TypeInfo ti = classType.GetTypeInfo();
-         PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
-         MethodInfo getValueMethod = pi.GetMethod;
-
-         Type[] methodArgs = { typeof(object), typeof(object), typeof(int) };
-         var runMethod = new DynamicMethod(
-            $"Get{classType.Name}{field.Name}",
-            typeof(void),
-            methodArgs,
-            GetType().GetTypeInfo().Module);
-
-         ILGenerator il = runMethod.GetILGenerator();
-
-         // -- IL Code ---
-         //il.DeclareLocal(typeof(int)); //loop counter
-         LocalBuilder length = il.DeclareLocal(typeof(int));
-         LocalBuilder instanceItem = il.DeclareLocal(classType);
-         LocalBuilder dataItem = il.DeclareLocal(field.ClrNullableIfHasNullsType);
-
-         il.Emit(Ldarg_2);
-         il.Emit(Stloc, length.LocalIndex);
-
-         using (il.ForLoop(length, out LocalBuilder i))
-         {
-            //get object instance from array
-            il.Emit(Ldarg_0);  //load array
-            il.Emit(Ldloc, i.LocalIndex);  //load index
-            il.Emit(Ldelem_Ref);
-            il.Emit(Stloc, instanceItem.LocalIndex);  //save element
-
-            //get the property value (first parameter - object instance)
-            il.Emit(Ldloc, instanceItem.LocalIndex);  //load element
-            il.Emit(Callvirt, getValueMethod);
-            il.Emit(Stloc, dataItem.LocalIndex);  //save property value
-
-            //assign property value to array element
-            il.Emit(Ldarg_1);  //load destination array
-            il.Emit(Ldloc, i.LocalIndex);  //load index
-            il.Emit(Ldloc, dataItem.LocalIndex);  //load element
-            if (field.HasNulls && !field.ClrNullableIfHasNullsType.IsSystemNullable())
-            {
-               il.Emit(Stelem_Ref);
-            }
-            else
-            {
-               il.Emit(Stelem, field.ClrNullableIfHasNullsType);
-            }
-
-         }
-
-         il.Emit(Ret);
-         // -- end of IL Code ---
-
-         return (CollectArrayDelegate)runMethod.CreateDelegate(typeof(CollectArrayDelegate));
-      }
    }
 }

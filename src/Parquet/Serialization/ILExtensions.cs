@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using static System.Reflection.Emit.OpCodes;
@@ -120,6 +122,13 @@ namespace Parquet.Serialization
             il.EmitWriteLine("for-end");
 #endif
          });
+      }
+
+      public static void CreateGenericList(this ILGenerator il, Type elementType)
+      {
+         List<ConstructorInfo> constructors = typeof(List<>).MakeGenericType(elementType).GetTypeInfo().DeclaredConstructors.ToList();
+
+         il.Emit(Newobj, constructors[0]);
       }
 
       private static IDisposable After(this ILGenerator thisIl, Action ilAction)

@@ -9,6 +9,16 @@ namespace Parquet
    static class TypeExtensions
    {
       /// <summary>
+      /// Creates a generic typed list of elements of this type.
+      /// </summary>
+      public static IList CreateGenericList(this Type t)
+      {
+         Type rt = typeof(List<>).MakeGenericType(t);
+
+         return (IList)Activator.CreateInstance(rt);
+      }
+
+      /// <summary>
       /// Checks if this type implements generic IEnumerable or an array.
       /// </summary>
       /// <param name="t"></param>
