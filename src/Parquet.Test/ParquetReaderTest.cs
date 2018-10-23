@@ -44,71 +44,7 @@ namespace Parquet.Test
       public void Opening_not_readable_but_seekable_stream_fails()
       {
          Assert.Throws<ArgumentException>(() => new ParquetReader(new NonReadableSeekableStream(new MemoryStream(RandomGenerator.GetRandomBytes(5, 6)))));
-      }
-
-      
-
-      [Fact]
-      public void Read_simple_list_with_one_item()
-      {
-         /*
-root
-|-- cities: array (nullable = true)
-|    |-- element: string (containsNull = true)
-|-- id: long (nullable = true)
-          */
-
-         /*DataSet ds = ParquetReader2.Read(OpenTestFile("simplerepeated.parquet"));
-
-         Assert.Equal(2, ds.Schema.Length);
-         Assert.Equal(SchemaType.List, ds.Schema[0].SchemaType);
-         Assert.Equal(SchemaType.Data, ds.Schema[1].SchemaType);
-
-         Assert.Equal("cities", ds.Schema[0].Name);
-         Assert.Equal("id", ds.Schema[1].Name);
-
-         Assert.Equal(ds[0][0], new[] { "London", "Derby", "Paris", "New York" });
-         Assert.Equal(1L, ds[0][1]);
-
-         Assert.Equal("{[London;Derby;Paris;New York];1}", ds[0].ToString());*/
-      }
-
-      [Fact]
-      public void Read_simple_structure()
-      {
-         /*
-          * root
-|-- city: struct (nullable = true)
-|    |-- country: string (nullable = true)
-|    |-- isCapital: boolean (nullable = true)
-|    |-- name: string (nullable = true)
-|-- id: long (nullable = true)
-          */
-
-         //Assert.Throws<NotSupportedException>(() => ParquetReader.Read(OpenTestFile("simplenested.parquet")));
-         //return;
-
-        /* DataSet ds = ParquetReader2.Read(OpenTestFile("simplenested.parquet"));
-
-         Assert.Equal(1, ds.RowCount);
-         Assert.Equal(2, ds.FieldCount);
-
-         Assert.Equal(SchemaType.Struct, ds.Schema[0].SchemaType);
-         Assert.Equal(SchemaType.Data, ds.Schema[1].SchemaType);
-
-         Assert.Equal("city", ds.Schema.FieldNames[0]);
-         Assert.Equal("id", ds.Schema.FieldNames[1]);
-
-         Row mr = ds[0];
-
-         Row city = mr.Get<Row>(0);
-         Assert.Equal("United Kingdom", city[0]);
-         Assert.True((bool)city[1]);
-         Assert.Equal("London", city[2]);
-
-         Assert.Equal(1L, mr[1]);
-         Assert.Equal("{{United Kingdom;True;London};1}", ds[0].ToString());*/
-      }
+      }     
 
       [Fact]
       public void Read_simple_map()
@@ -153,6 +89,12 @@ root
             //The vlaue should be 30768
             Assert.Equal(30768, firstColumn[524288]);
          }
+      }
+
+      //[Fact]
+      public void Issue()
+      {
+         ParquetReader.ReadTableFromFile("c:\\tmp\\a.parquet");
       }
 
       class ReadableNonSeekableStream : DelegatedStream

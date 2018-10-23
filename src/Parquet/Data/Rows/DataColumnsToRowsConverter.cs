@@ -79,8 +79,8 @@ namespace Parquet.Data.Rows
                   return false;
                }
                cell = dce.Current;
-               break;
 
+               break;
             case SchemaType.Map:
                bool mcok = TryBuildMapCell((MapField)f, out IList<Row> mcRows);
                cell = mcRows;
