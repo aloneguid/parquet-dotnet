@@ -45,6 +45,35 @@ namespace Parquet.Test.Serialisation
          }
       }
 
+      [Fact]
+      public void Serialize_deserialize_repeated_field()
+      {
+         IEnumerable<SimpleRepeated> structures = Enumerable
+            .Range(0, 10)
+            .Select(i => new SimpleRepeated
+            {
+               Id = i,
+               Areas = new int[] { i, 2, 3}
+            });
+
+         SimpleRepeated[] s = ConvertSerialiseDeserialise(structures);
+
+         Assert.Equal(10, s.Length);
+
+         Assert.Equal(0, s[0].Id);
+         Assert.Equal(1, s[1].Id);
+
+         Assert.Equal(new[] { 0, 2, 3 }, s[0].Areas);
+         Assert.Equal(new[] { 1, 2, 3 }, s[1].Areas);
+      }
+
+      public class SimpleRepeated
+      {
+         public int Id { get; set; }
+
+         public int[] Areas { get; set; }
+      }
+
       public class SimpleStructure
       {
          public int Id { get; set; }

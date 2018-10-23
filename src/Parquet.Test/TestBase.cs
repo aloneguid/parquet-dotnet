@@ -4,6 +4,7 @@ using Parquet.Data;
 using System.Linq;
 using F = System.IO.File;
 using Parquet.Data.Rows;
+using System.Collections.Generic;
 
 namespace Parquet.Test
 {
@@ -12,6 +13,18 @@ namespace Parquet.Test
       protected Stream OpenTestFile(string name)
       {
          return F.OpenRead("./data/" + name);
+      }
+
+      protected T[] ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T: new()
+      {
+         using (var ms = new MemoryStream())
+         {
+            Schema s = ParquetConvert.Serialize<T>(instances, ms);
+
+            ms.Position = 0;
+
+            return ParquetConvert.Deserialize<T>(ms);
+         }
       }
 
       protected Table ReadTestFileAsTable(string name)

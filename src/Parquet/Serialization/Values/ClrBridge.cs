@@ -2,9 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
 using Parquet.Data;
-using static System.Reflection.Emit.OpCodes;
 
 namespace Parquet.Serialization.Values
 {
