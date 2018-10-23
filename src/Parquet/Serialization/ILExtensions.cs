@@ -141,13 +141,29 @@ namespace Parquet.Serialization
          il.Emit(Stloc, local.LocalIndex);
       }
 
-      public static void CallVirt(this ILGenerator il, MethodInfo method, params LocalBuilder[] parameters)
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="il"></param>
+      /// <param name="method"></param>
+      /// <param name="parameters">List of parameters, OpCode and LocalBuilder are supported</param>
+      public static void CallVirt(this ILGenerator il, MethodInfo method, params object[] parameters)
       {
          if(parameters != null)
          {
-            foreach(LocalBuilder localParameter in parameters)
+            foreach(object param in parameters)
             {
-               il.Emit(Ldloc, localParameter.LocalIndex);
+               switch (param)
+               {
+                  case OpCode oc:
+                     il.Emit(oc);
+                     break;
+                  case LocalBuilder lb:
+                     il.Emit(Ldloc, lb.LocalIndex);
+                     break;
+                  default:
+                     throw new NotSupportedException("don't know how to treat parameter " + param?.GetType());
+               }
             }
          }
 

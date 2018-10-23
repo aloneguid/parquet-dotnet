@@ -27,13 +27,13 @@ namespace Parquet.Serialization.Values
          }
 
          IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
-         IList repLevelsList = field.IsArray ? new List<int>() : null;
+         List<int> repLevelsList = field.IsArray ? new List<int>() : null;
          object result = populateList(classInstances, resultList, repLevelsList, field.MaxRepetitionLevel);
 
          MethodInfo toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");
          object array = toArrayMethod.Invoke(resultList, null);
 
-         return new DataColumn(field, (Array)array);
+         return new DataColumn(field, (Array)array, repLevelsList?.ToArray());
       }
 
       public void AssignColumn(DataColumn dataColumn, Array classInstances, int classInstancesCount)

@@ -32,6 +32,7 @@ namespace Parquet.Serialization.Values
          MethodInfo getValueMethod = pi.GetMethod;
 
          MethodInfo addToListMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("Add");
+         MethodInfo addRepLevelMethod = typeof(List<int>).GetTypeInfo().GetDeclaredMethod("Add");
 
          var runMethod = new DynamicMethod(
             $"Get{classType.Name}{field.Path}",
@@ -44,7 +45,8 @@ namespace Parquet.Serialization.Values
          GenerateCollector(il, classType,
             field,
             getValueMethod,
-            addToListMethod);
+            addToListMethod,
+            addRepLevelMethod);
 
          return (PopulateListDelegate)runMethod.CreateDelegate(typeof(PopulateListDelegate));
       }
@@ -52,7 +54,8 @@ namespace Parquet.Serialization.Values
       private void GenerateCollector(ILGenerator il, Type classType,
          DataField f,
          MethodInfo getValueMethod,
-         MethodInfo addToListMethod)
+         MethodInfo addToListMethod,
+         MethodInfo addRepLevelMethod)
       {
          //arg 0 - collection of classes, clr objects
          //arg 1 - data items (typed list)
@@ -67,10 +70,21 @@ namespace Parquet.Serialization.Values
          //hold item
          LocalBuilder item = il.DeclareLocal(f.ClrNullableIfHasNullsType);
 
+         //current repetition level
+         LocalBuilder rl = null;
+         if(f.IsArray)
+         {
+            rl = il.DeclareLocal(typeof(int));
+         }
+
          using (il.ForEachLoop(classType, collection, out LocalBuilder currentElement))
          {
             if (f.IsArray)
             {
+               //reset repetition level to 0
+               il.Emit(Ldc_I4_0);
+               il.StLoc(rl);
+
                //currentElement is a nested array in this case
                LocalBuilder array = il.DeclareLocal(typeof(object));
 
@@ -82,11 +96,15 @@ namespace Parquet.Serialization.Values
                //enumerate this array
                using (il.ForEachLoop(f.ClrNullableIfHasNullsType, array, out LocalBuilder arrayElement))
                {
-                  //add each item into destination list
-
                   //store in destination list
-                  il.Emit(Ldarg_1);
-                  il.CallVirt(addToListMethod, arrayElement);
+                  il.CallVirt(addToListMethod, Ldarg_1, arrayElement);
+
+                  //add repetition level
+                  il.CallVirt(addRepLevelMethod, Ldarg_2, rl);
+
+                  //set repetition level to max
+                  il.Emit(Ldarg_3);
+                  il.StLoc(rl);
                }
 
             }
