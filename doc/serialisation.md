@@ -63,4 +63,8 @@ It supports the following properties:
 
 ## Limitations
 
-At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter). None of the complex types such as arrays etc. are supported. We would love to hear your feedback whether this functionality is required though!
+At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).
+
+
+
+None of the complex types such as arrays etc. are supported. We would love to hear your feedback whether this functionality is required though!

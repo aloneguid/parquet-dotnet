@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4
 		..\README.md = ..\README.md
 		..\doc\rows.md = ..\doc\rows.md
 		..\doc\schema.md = ..\doc\schema.md
+		..\doc\serialisation.md = ..\doc\serialisation.md
 		..\doc\types.md = ..\doc\types.md
 		..\doc\writing.md = ..\doc\writing.md
 		..\doc\xboxone.md = ..\doc\xboxone.md
@@ -58,9 +59,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.CLI", "Parquet.CLI\Parquet.CLI.csproj", "{F2C35F5E-E92E-47F8-945C-DC6726FC3CF6}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -102,6 +100,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B5C12140-A3BF-47C9-A4AD-91F7C4682804}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
