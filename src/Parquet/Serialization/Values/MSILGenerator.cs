@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using Parquet.Data;
+using Parquet.Data.Rows;
 using static System.Reflection.Emit.OpCodes;
 
 namespace Parquet.Serialization.Values
@@ -167,8 +169,31 @@ namespace Parquet.Serialization.Values
          if (field.IsArray)
          {
             LocalBuilder repItem = il.DeclareLocal(typeof(int));
+            LocalBuilder dce = il.DeclareLocal(typeof(DataColumnEnumerator));
 
-            
+            //we will use DataColumnEnumerator for complex types
+
+            //create an instance of it
+            il.Emit(Ldarg_0); //constructor argument
+            il.Emit(Newobj, typeof(DataColumnEnumerator).GetTypeInfo().DeclaredConstructors.First());
+            il.StLoc(dce);
+
+            LocalBuilder ci = il.DeclareLocal(typeof(int)); //class index
+            LocalBuilder classInstance = il.DeclareLocal(classType); //class instance
+
+            using (il.ForEachLoopFromEnumerator(typeof(object), dce, out LocalBuilder element))
+            {
+               //element should be an array for simple repeatables
+
+               //get class instance by index
+               il.GetArrayElement(Ldarg_1, ci, true, typeof(Array), classInstance);
+
+               //assign data item to class property
+               il.CallVirt(setValueMethod, classInstance, element);
+
+               il.Increment(ci);
+            }
+
          }
          else
          {

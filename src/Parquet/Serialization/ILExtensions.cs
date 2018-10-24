@@ -30,9 +30,48 @@ namespace Parquet.Serialization
          getCurrentMethod = iEnumerator.GetDeclaredProperty(nameof(IEnumerator.Current)).GetMethod;
       }
 
+      public static IDisposable ForEachLoopFromEnumerator(this ILGenerator il, Type elementType, LocalBuilder enumerator, out LocalBuilder currentElement)
+      {
+         Label lMoveNext = il.DefineLabel();
+         Label lWork = il.DefineLabel();
+         currentElement = il.DeclareLocal(elementType);
+
+         il.EmitWriteLine("foreach-begin");
+
+         //immediately move to "move next" to start enumeration
+         il.Emit(Br, lMoveNext);
+
+         //iteration work block
+         il.MarkLabel(lWork);
+#if DEBUG
+         il.EmitWriteLine("  foreach-loop");
+#endif
+
+         //get current element
+         il.Emit(Ldloc, enumerator.LocalIndex);
+         il.Emit(Callvirt, getCurrentMethod);
+         il.Emit(Unbox_Any, elementType);
+         il.Emit(Stloc, currentElement.LocalIndex);
+
+         return il.After(() =>
+         {
+            //"move next" block
+            il.MarkLabel(lMoveNext);
+            il.Emit(Ldloc, enumerator.LocalIndex);  //load enumerator as an argument
+            il.Emit(Callvirt, moveNextMethod);
+            il.Emit(Brtrue, lWork);   //if result is true, go to lWork
+
+            //otherwise, dispose enumerator and exit
+            //il.Emit(Ldloc, enumerator.LocalIndex);
+            //il.Emit(Callvirt, disposeMethod);
+#if DEBUG
+            il.EmitWriteLine("foreach-end");
+#endif
+         });
+      }
+
       public static IDisposable ForEachLoop(this ILGenerator il, Type elementType, LocalBuilder collection, out LocalBuilder currentElement)
       {
-
          Label lMoveNext = il.DefineLabel();
          Label lWork = il.DefineLabel();
          currentElement = il.DeclareLocal(elementType);
@@ -109,10 +148,7 @@ namespace Parquet.Serialization
          return il.After(() =>
          {
             //increment loop counter
-            il.Emit(Ldc_I4_1);
-            il.Emit(Ldloc, loopCounterAfter.LocalIndex);
-            il.Emit(Add);
-            il.Emit(Stloc, loopCounterAfter.LocalIndex);
+            il.Increment(loopCounterAfter);
 
             //loop again
             il.Emit(Br, lBody);
@@ -218,6 +254,14 @@ namespace Parquet.Serialization
          il.Emit(Stloc, elementReceiver.LocalIndex);  //data value
       }
 
+      public static void Increment(this ILGenerator il, LocalBuilder intItem)
+      {
+         //increment loop counter
+         il.Emit(Ldc_I4_1);
+         il.Emit(Ldloc, intItem.LocalIndex);
+         il.Emit(Add);
+         il.Emit(Stloc, intItem.LocalIndex);
+      }
 
       private static IDisposable After(this ILGenerator thisIl, Action ilAction)
       {
