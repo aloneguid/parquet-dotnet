@@ -36,7 +36,7 @@ namespace Parquet.Serialization.Values
          return new DataColumn(field, (Array)array, repLevelsList?.ToArray());
       }
 
-      public void AssignColumn(DataColumn dataColumn, Array classInstances, int classInstancesCount)
+      public void AssignColumn(DataColumn dataColumn, Array classInstances)
       {
          var key = new TypeCachingKey(_classType, dataColumn.Field);
 
@@ -45,7 +45,7 @@ namespace Parquet.Serialization.Values
             _assignerKeyToTag[key] = assignColumn = new MSILGenerator().GenerateAssigner(_classType, dataColumn.Field);
          }
 
-         assignColumn(dataColumn.Data, classInstances, classInstancesCount);
+         assignColumn(dataColumn.Data, dataColumn.RepetitionLevels, classInstances);
       }
    }
 }

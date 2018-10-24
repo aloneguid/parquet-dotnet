@@ -125,7 +125,7 @@ namespace Parquet
 
                   for(int ic = 0; ic < groupColumns.Length; ic++)
                   {
-                     bridge.AssignColumn(groupColumns[ic], rb, rb.Length);
+                     bridge.AssignColumn(groupColumns[ic], rb);
                   }
 
                   result.AddRange(rb);

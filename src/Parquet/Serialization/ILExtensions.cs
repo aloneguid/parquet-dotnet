@@ -170,6 +170,30 @@ namespace Parquet.Serialization
          il.Emit(Callvirt, method);
       }
 
+      public static void GetArrayLength(this ILGenerator il, OpCode loadArrayCode, LocalBuilder lengthReceiver)
+      {
+         il.Emit(loadArrayCode);
+         il.Emit(Ldlen);
+         il.Emit(Conv_I4);
+         il.StLoc(lengthReceiver);
+      }
+
+      public static void GetArrayElement(this ILGenerator il, OpCode loadArrayCode, LocalBuilder index, bool loadByRef, Type elementType, LocalBuilder elementReceiver)
+      {
+         //load data element
+         il.Emit(loadArrayCode);  //data array
+         il.Emit(Ldloc, index.LocalIndex);  //index
+         if (loadByRef)
+         {
+            il.Emit(Ldelem_Ref);
+         }
+         else
+         {
+            il.Emit(Ldelem, elementType);
+         }
+         il.Emit(Stloc, elementReceiver.LocalIndex);  //data value
+      }
+
       private static IDisposable After(this ILGenerator thisIl, Action ilAction)
       {
          return new CodeAfter(thisIl, ilAction);
