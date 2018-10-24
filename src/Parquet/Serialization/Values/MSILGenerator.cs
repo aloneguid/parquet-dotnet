@@ -16,8 +16,7 @@ namespace Parquet.Serialization.Values
          int maxRepetitionLevel);
 
       public delegate void AssignArrayDelegate(
-         Array values,
-         int[] repetitionLevels,
+         DataColumn column,
          Array classInstances);
 
       public MSILGenerator()
@@ -127,9 +126,11 @@ namespace Parquet.Serialization.Values
          il.Emit(Ret);
       }
 
-      public AssignArrayDelegate GenerateAssigner(Type classType, DataField field)
+      public AssignArrayDelegate GenerateAssigner(DataColumn dataColumn, Type classType)
       {
-         Type[] methodArgs = { typeof(Array), typeof(int[]), typeof(Array) };
+         DataField field = dataColumn.Field;
+
+         Type[] methodArgs = { typeof(DataColumn), typeof(Array) };
          var runMethod = new DynamicMethod(
             $"Set{classType.Name}{field.Name}",
             typeof(void),
@@ -138,46 +139,64 @@ namespace Parquet.Serialization.Values
 
          ILGenerator il = runMethod.GetILGenerator();
 
+         //set class property method
          TypeInfo ti = classType.GetTypeInfo();
          PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
          MethodInfo setValueMethod = pi.SetMethod;
 
+         TypeInfo dcti = dataColumn.GetType().GetTypeInfo();
+         MethodInfo getDataMethod = dcti.GetDeclaredProperty(nameof(DataColumn.Data)).GetMethod;
+         MethodInfo getRepsMethod = dcti.GetDeclaredProperty(nameof(DataColumn.RepetitionLevels)).GetMethod;
+
          GenerateAssigner(il, classType, field,
-            setValueMethod);
+            setValueMethod,
+            getDataMethod,
+            getRepsMethod);
 
          return (AssignArrayDelegate)runMethod.CreateDelegate(typeof(AssignArrayDelegate));
       }
 
       private void GenerateAssigner(ILGenerator il, Type classType, DataField field,
-         MethodInfo setValueMethod)
+         MethodInfo setValueMethod,
+         MethodInfo getDataMethod,
+         MethodInfo getRepsMethod)
       {
-         //arg 0 - datacolumn array (Array)
-         //arg 1 - repetition levels array (int[])
-         //arg 2 - class intances array (Array)
+         //arg 0 - DataColumn
+         //arg 1 - class intances array (Array)
 
-         //get length of values
-         LocalBuilder dataLength = il.DeclareLocal(typeof(int));
-         il.GetArrayLength(Ldarg_0, dataLength);
-
-         //get class array length
-         LocalBuilder classLength = il.DeclareLocal(typeof(int));
-         il.GetArrayLength(Ldarg_2, classLength);
-
-         LocalBuilder dataItem = il.DeclareLocal(field.ClrNullableIfHasNullsType);
-         bool dataIsRef = field.HasNulls && !field.ClrNullableIfHasNullsType.IsSystemNullable();
-
-         LocalBuilder classInstance = il.DeclareLocal(classType);
-
-         using (il.ForLoop(dataLength, out LocalBuilder i))
+         if (field.IsArray)
          {
-            //get data value
-            il.GetArrayElement(Ldarg_0, i, dataIsRef, field.ClrNullableIfHasNullsType, dataItem);
+            LocalBuilder repItem = il.DeclareLocal(typeof(int));
 
-            //get class instance
-            il.GetArrayElement(Ldarg_2, i, true, classType, classInstance);
+            
+         }
+         else
+         {
+            //get values
+            LocalBuilder data = il.DeclareLocal(typeof(Array));
+            il.CallVirt(getDataMethod, Ldarg_0);
+            il.StLoc(data);
 
-            //assign data item to class property
-            il.CallVirt(setValueMethod, classInstance, dataItem);
+            //get length of values
+            LocalBuilder dataLength = il.DeclareLocal(typeof(int));
+            il.GetArrayLength(data, dataLength);
+
+            LocalBuilder dataItem = il.DeclareLocal(field.ClrNullableIfHasNullsType);  //current value
+            bool dataIsRef = field.HasNulls && !field.ClrNullableIfHasNullsType.IsSystemNullable();
+
+            LocalBuilder classInstance = il.DeclareLocal(classType);
+
+            using (il.ForLoop(dataLength, out LocalBuilder iData))
+            {
+               //get data value
+               il.GetArrayElement(data, iData, dataIsRef, field.ClrNullableIfHasNullsType, dataItem);
+
+               //get class instance
+               il.GetArrayElement(Ldarg_1, iData, true, classType, classInstance);
+
+               //assign data item to class property
+               il.CallVirt(setValueMethod, classInstance, dataItem);
+            }
          }
 
          il.Emit(Ret);

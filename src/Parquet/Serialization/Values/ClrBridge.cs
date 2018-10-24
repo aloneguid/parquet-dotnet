@@ -42,10 +42,10 @@ namespace Parquet.Serialization.Values
 
          if(!_assignerKeyToTag.TryGetValue(key, out MSILGenerator.AssignArrayDelegate assignColumn))
          {
-            _assignerKeyToTag[key] = assignColumn = new MSILGenerator().GenerateAssigner(_classType, dataColumn.Field);
+            _assignerKeyToTag[key] = assignColumn = new MSILGenerator().GenerateAssigner(dataColumn, _classType);
          }
 
-         assignColumn(dataColumn.Data, dataColumn.RepetitionLevels, classInstances);
+         assignColumn(dataColumn, classInstances);
       }
    }
 }

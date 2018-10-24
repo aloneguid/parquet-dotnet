@@ -178,6 +178,14 @@ namespace Parquet.Serialization
          il.StLoc(lengthReceiver);
       }
 
+      public static void GetArrayLength(this ILGenerator il, LocalBuilder array, LocalBuilder lengthReceiver)
+      {
+         il.Emit(Ldloc, array.LocalIndex);
+         il.Emit(Ldlen);
+         il.Emit(Conv_I4);
+         il.StLoc(lengthReceiver);
+      }
+
       public static void GetArrayElement(this ILGenerator il, OpCode loadArrayCode, LocalBuilder index, bool loadByRef, Type elementType, LocalBuilder elementReceiver)
       {
          //load data element
@@ -193,6 +201,23 @@ namespace Parquet.Serialization
          }
          il.Emit(Stloc, elementReceiver.LocalIndex);  //data value
       }
+
+      public static void GetArrayElement(this ILGenerator il, LocalBuilder array, LocalBuilder index, bool loadByRef, Type elementType, LocalBuilder elementReceiver)
+      {
+         //load data element
+         il.Emit(Ldloc, array.LocalIndex);  //data array
+         il.Emit(Ldloc, index.LocalIndex);  //index
+         if (loadByRef)
+         {
+            il.Emit(Ldelem_Ref);
+         }
+         else
+         {
+            il.Emit(Ldelem, elementType);
+         }
+         il.Emit(Stloc, elementReceiver.LocalIndex);  //data value
+      }
+
 
       private static IDisposable After(this ILGenerator thisIl, Action ilAction)
       {
