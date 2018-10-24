@@ -8,7 +8,15 @@
     <PackageId>Parquet.Net</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.1.3, 3.1.4:
+    <PackageReleaseNotes>3.2.0:
+- new feature: POCO serialiser support for repeatable fields POCO (#358)
+- bug fixed: --max-rows 10 not honored by PARQ Global Tool 📺 (#357)
+- bug fixed: failure to read columns if data page is larger than it should be (supposably padded by Spark) 🐛
+(#330)
+- improvement: Limit number of rows printed by parq. By default only show the first 10 rows in PARQ Global Tool 📺
+(#351)
+
+3.1.3, 3.1.4:
 - includes massive performance improvements in parquet reader, now we are faster than fastparquet (python lib)  
 
 3.1.2:
