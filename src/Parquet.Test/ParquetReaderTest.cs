@@ -92,16 +92,6 @@ namespace Parquet.Test
          }
       }
 
-      [Fact]
-      public void Issue()
-      {
-         //"variants.list.element.priceSchedules.list.element"
-
-         Table t = ParquetReader.ReadTableFromFile("c:\\tmp\\a.parquet");
-
-         Assert.Equal("", t.ToString());
-      }
-
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)

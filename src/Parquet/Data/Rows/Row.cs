@@ -298,11 +298,14 @@ namespace Parquet.Data.Rows
 
                case SchemaType.Struct:
                   StructField stf = (StructField)f;
-                  if(!(v is Row sRow))
+                  if (!(v is Row sRow))
                   {
-                     throw new FormatException($"expected {typeof(Row)} at {f.Path} but found {v.GetType()}");
+                     //throw new FormatException($"expected {typeof(Row)} at {f.Path} but found {v.GetType()}");
                   }
-                  ToString(sb, sRow.Values, sf, level + 1, stf.Fields);
+                  else
+                  {
+                     ToString(sb, sRow.Values, sf, level + 1, stf.Fields);
+                  }
                   break;
 
                case SchemaType.Map:
