@@ -5,6 +5,7 @@ using System.IO;
 using Xunit;
 using NetBox.Extensions;
 using NetBox.Generator;
+using Parquet.Data.Rows;
 
 namespace Parquet.Test
 {
@@ -91,10 +92,14 @@ namespace Parquet.Test
          }
       }
 
-      //[Fact]
+      [Fact]
       public void Issue()
       {
-         ParquetReader.ReadTableFromFile("c:\\tmp\\a.parquet");
+         //"variants.list.element.priceSchedules.list.element"
+
+         Table t = ParquetReader.ReadTableFromFile("c:\\tmp\\a.parquet");
+
+         Assert.Equal("", t.ToString());
       }
 
       class ReadableNonSeekableStream : DelegatedStream

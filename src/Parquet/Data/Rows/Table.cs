@@ -77,7 +77,7 @@ namespace Parquet.Data.Rows
          set
          {
             RowValidator.Validate(value, _dfs);
-            value.Schema = Schema.Fields;
+            value.Schema = Schema.Fields.ToArray();
             _rows[index] = value;
          }
       }
@@ -99,7 +99,7 @@ namespace Parquet.Data.Rows
       public void Add(Row item)
       {
          RowValidator.Validate(item, _dfs);
-         item.Schema = Schema.Fields;
+         item.Schema = Schema.Fields.ToArray();
 
          _rows.Add(item);
       }
@@ -310,6 +310,7 @@ namespace Parquet.Data.Rows
          sb.StartArray(sf, 0);
 
          bool first = true;
+         int i = 0;
          foreach (Row row in _rows)
          {
             if (first)
@@ -321,7 +322,16 @@ namespace Parquet.Data.Rows
                sb.DivideObjects(sf, 0);
             }
 
-            row.ToString(sb, sf, 1, Schema.Fields);
+            try
+            {
+               row.ToString(sb, sf, 1, Schema.Fields);
+            }
+            catch(Exception ex)
+            {
+               throw new InvalidOperationException($"failed to convert row #{i}", ex);
+            }
+
+            i++;
          }
 
          sb.EndArray(sf, 0);
