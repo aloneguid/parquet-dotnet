@@ -108,7 +108,7 @@ namespace Parquet.CLI
             LinePrimitive<int> displayMinWidth = cmd.Option<int>("-m|--min", Help.Command_ViewAll_Min, 5);
             LinePrimitive<bool> displayNulls = cmd.Option<bool>("-n|--nulls", Help.Command_ViewAll_Nulls, true);
             LinePrimitive<bool> displayTypes = cmd.Option<bool>("-t|--types", Help.Command_ViewAll_Types, true);
-            LinePrimitive<string> truncationIdentifier = cmd.Option<string>("-u|--truncate", Help.Command_ViewAll_Types, "...");
+            LinePrimitive<string> truncationIdentifier = cmd.Option<string>("-u|--truncate", Help.Command_ViewAll_Types, defaultValue: "...");
 
             cmd.OnExecute(() =>
             {
@@ -119,7 +119,7 @@ namespace Parquet.CLI
                   displayNulls = displayNulls,
                   displayTypes = displayTypes,
                   expandCells = expandCells,
-                  truncationIdentifier = truncationIdentifier,
+                  truncationIdentifier = truncationIdentifier.Value ?? "...",
                   displayReferences = false
                };
 
