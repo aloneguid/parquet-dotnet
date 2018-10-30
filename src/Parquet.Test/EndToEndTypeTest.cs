@@ -2,12 +2,22 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Xunit;
 using Parquet.File.Values.Primitives;
 using NetBox.Extensions;
+using System.Linq;
 
 namespace Parquet.Test
 {
+   public static class TypeExtensions
+   {
+      public static bool IsArrayOf<T>(this Type type)
+      {
+         return type == typeof(T[]);
+      }
+   }
+
    public class EndToEndTypeTest : TestBase
    {
       private static Dictionary<string, (DataField field, object expectedValue)> _nameToData =
@@ -15,6 +25,7 @@ namespace Parquet.Test
          {
             ["plain string"] = (new DataField<string>("string"), "plain string"),
             ["unicode string"] = (new DataField<string>("unicode string"), "L'Oréal Paris"),
+            ["byte array"] = (new DataField<byte[]>("byte array"), Encoding.UTF8.GetBytes("raw byte string")),
             ["float"] = (new DataField<float>("float"), 1.23f),
             ["double"] = (new DataField<double>("double"), 10.44D),
             ["simple DateTime"] = (new DataField<DateTime>("datetime"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
@@ -61,6 +72,7 @@ namespace Parquet.Test
 
       [InlineData("plain string")]
       [InlineData("unicode string")]
+      [InlineData("byte array")]
       [InlineData("float")]
       [InlineData("double")]
       [InlineData("simple DateTime")]
@@ -100,9 +112,22 @@ namespace Parquet.Test
 
          object actual = WriteReadSingle(input.field, input.expectedValue);
 
-         bool equal = (input.expectedValue == null && actual == null || actual.Equals(input.expectedValue));
+         bool equal;
+         if (input.expectedValue == null && actual == null)
+         {
+            equal = true;
+         }
+         else if (actual.GetType().IsArrayOf<byte>() && input.expectedValue != null)
+         {
+            equal = ((byte[]) actual).SequenceEqual((byte[]) input.expectedValue);
+         }
+         else
+         {
+            equal = actual.Equals(input.expectedValue);
+         }
 
          Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}"); 
       }
+
    }
 }

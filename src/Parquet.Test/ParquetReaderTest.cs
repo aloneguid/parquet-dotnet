@@ -1,7 +1,9 @@
 ﻿using NetBox.IO;
 using Parquet.Data;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Xunit;
 using NetBox.Extensions;
 using NetBox.Generator;
@@ -87,9 +89,26 @@ namespace Parquet.Test
             //The column makes use of a dictionary to reduce the number of values and the default dictionary index value is zero (i.e. the first record value)
             Assert.NotEqual(firstColumn[0], firstColumn[524288]);
 
-            //The vlaue should be 30768
+            //The value should be 30768
             Assert.Equal(30768, firstColumn[524288]);
          }
+      }
+
+      [Fact]
+      public void Reads_byte_arrays()
+      {
+         byte[] nameValue;
+         byte[] expectedValue = Encoding.UTF8.GetBytes("ALGERIA");
+         using (var reader = new ParquetReader(OpenTestFile(@"real/nation.plain.parquet"), leaveStreamOpen: false))
+         {
+            DataColumn[] data = reader.ReadEntireRowGroup();
+
+            byte[][] nameColumn = (byte[][]) data[1].Data;
+            nameValue = nameColumn[0];
+            Assert.Equal<IEnumerable<byte>>(expectedValue, nameValue);
+
+         }
+         Assert.Equal<IEnumerable<byte>>(expectedValue, nameValue);
       }
 
       class ReadableNonSeekableStream : DelegatedStream
