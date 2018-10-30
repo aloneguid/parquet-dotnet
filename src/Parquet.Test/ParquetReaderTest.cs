@@ -7,6 +7,7 @@ using System.Text;
 using Xunit;
 using NetBox.Extensions;
 using NetBox.Generator;
+using Parquet.Data.Rows;
 
 namespace Parquet.Test
 {
@@ -108,12 +109,6 @@ namespace Parquet.Test
 
          }
          Assert.Equal<IEnumerable<byte>>(expectedValue, nameValue);
-      }
-
-      //[Fact]
-      public void Issue()
-      {
-         ParquetReader.ReadTableFromFile("c:\\tmp\\a.parquet");
       }
 
       class ReadableNonSeekableStream : DelegatedStream

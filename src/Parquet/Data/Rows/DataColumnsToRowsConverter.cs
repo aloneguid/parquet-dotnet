@@ -32,13 +32,13 @@ namespace Parquet.Data.Rows
 
          foreach(Row row in result)
          {
-            row.Schema = _schema.Fields;
+            row.Schema = _schema.Fields.ToArray();
          }
 
          return result;
       }
 
-      private void ColumnsToRows(IEnumerable<Field> fields, List<Row> result, long rowCount)
+      private void ColumnsToRows(IReadOnlyCollection<Field> fields, List<Row> result, long rowCount)
       {
          for(int rowIndex = 0; rowCount == -1 || rowIndex < rowCount; rowIndex++)
          {
@@ -49,7 +49,7 @@ namespace Parquet.Data.Rows
          }
       }
 
-      private bool TryBuildNextRow(IEnumerable<Field> fields, out Row row)
+      private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, out Row row)
       {
          var rowList = new List<object>();
          foreach(Field f in fields)
@@ -63,7 +63,7 @@ namespace Parquet.Data.Rows
             rowList.Add(cell);
          }
 
-         row = new Row(rowList);
+         row = new Row(fields, rowList);
          return true;
       }
 
@@ -82,8 +82,8 @@ namespace Parquet.Data.Rows
 
                break;
             case SchemaType.Map:
-               bool mcok = TryBuildMapCell((MapField)f, out IList<Row> mcRows);
-               cell = mcRows;
+               bool mcok = TryBuildMapCell((MapField)f, out IReadOnlyList<Row> mapRow);
+               cell = mapRow;
                return mcok;
 
             case SchemaType.Struct:
@@ -111,7 +111,7 @@ namespace Parquet.Data.Rows
 
          if(lf.Item.SchemaType != SchemaType.Data)
          {
-            cell = Slice(lf, (Row)cell);
+            cell = RowSlicer.Rotate((Row)cell);
          }
 
          return true;
@@ -122,7 +122,7 @@ namespace Parquet.Data.Rows
          return TryBuildNextRow(sf.Fields, out cell);
       }
 
-      private bool TryBuildMapCell(MapField mf, out IList<Row> rows)
+      private bool TryBuildMapCell(MapField mf, out IReadOnlyList<Row> rows)
       {
          if (!((mf.Key is DataField) && (mf.Value is DataField)))
             throw OtherExtensions.NotImplemented("complex maps");
@@ -137,68 +137,10 @@ namespace Parquet.Data.Rows
             throw new ParquetException("a map has no corresponding row");
          }
 
-         rows = Slice(mf, mapRow);
+         rows = RowSlicer.Rotate(mapRow);
 
          return true;
       }
-
-      /// <summary>
-      /// Slices rows represented as native data rows to more user-friendly representations. At the end of the day
-      /// this is the point of row-based parsing.
-      /// </summary>
-      private List<Row> Slice(Field f, Row nativeRow)
-      {
-         if (f.SchemaType == SchemaType.Map)
-         {
-            var rows = new List<Row>();
-
-            //map row contains exactly two cells -list of keys and list of values.
-
-            //columns of the row represent elements in the struct
-            IEnumerator[] columnEnumerators = nativeRow.Values
-               .Select(v => (IEnumerable)v)
-               .Select(i => i.GetEnumerator())
-               .ToArray();
-
-            while (columnEnumerators.All(i => i.MoveNext()))
-            {
-               rows.Add(new Row(columnEnumerators.Select(i => i.Current).ToArray()));
-            }
-
-            return rows;
-         }
-
-         if(f.SchemaType == SchemaType.List)
-         {
-            Field lfi = ((ListField)f).Item;
-
-            if(lfi.SchemaType == SchemaType.Struct)
-            {
-               //StructField sf = (StructField)lfi;
-
-               var rows = new List<Row>();
-               IEnumerator[] columnEnumerators = nativeRow.Values
-                  .Select(v => (IEnumerable)v)
-                  .Select(i => i.GetEnumerator())
-                  .ToArray();
-
-               while (columnEnumerators.All(i => i.MoveNext()))
-               {
-                  rows.Add(new Row(columnEnumerators.Select(i => i.Current).ToArray()));
-               }
-
-               return rows;
-            }
-            else
-            {
-               throw new NotSupportedException();
-            }
-
-         }
-
-         throw new NotSupportedException();
-      }
-
 
       private static void ValidateColumnsAreInSchema(Schema schema, DataColumn[] columns)
       {

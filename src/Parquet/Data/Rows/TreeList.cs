@@ -71,15 +71,27 @@ namespace Parquet.Data.Rows
       {
          if(_values != null)
          {
-            Array cellArray = Array.CreateInstance(clrType, _values.Count);
-            for(int i = 0; i < _values.Count; i++)
-            {
-               cellArray.SetValue(_values[i], i);
-            }
-            return cellArray;
+            return ValuesAs(clrType);
          }
 
          return new List<object>(_children.Select(c => c.Compact(clrType)));
+      }
+
+      public object ValuesAs(Type clrType)
+      {
+         Array cellArray = Array.CreateInstance(clrType, _values.Count);
+         for (int i = 0; i < _values.Count; i++)
+         {
+            cellArray.SetValue(_values[i], i);
+         }
+         return cellArray;
+      }
+
+      public object FinalValue(Type clrType)
+      {
+         return FirstChild == null
+            ? ((_values != null && _values[0] != null) ? ValuesAs(clrType) : null)
+            : FirstChild?.Compact(clrType);
       }
    }
 }

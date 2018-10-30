@@ -11,7 +11,7 @@ namespace Parquet.Data.Rows
    /// <summary>
    /// Represents a tabular row
    /// </summary>
-   public class Row : IEquatable<Row>
+   public class Row : IEquatable<Row>, IEnumerable<object>
    {
       /// <summary>
       /// Initializes a new instance of the <see cref="Row"/> class which has only one single column.
@@ -21,7 +21,8 @@ namespace Parquet.Data.Rows
 
       }
 
-      internal IReadOnlyCollection<Field> Schema { get; set; }
+      //eventually we can expose this externally, however it's not ready yet.
+      internal Field[] Schema { get; set; }
 
       /// <summary>
       /// Creates a single cell row. Use this method to avoid overloading confusion.
@@ -39,6 +40,11 @@ namespace Parquet.Data.Rows
          Values = values.ToArray();
       }
 
+      internal Row(IReadOnlyCollection<Field> schema, IEnumerable<object> values) : this(values)
+      {
+         Schema = schema?.ToArray();
+      }
+
       /// <summary>
       /// Initializes a new instance of the <see cref="Row"/> class.
       /// </summary>
@@ -50,7 +56,7 @@ namespace Parquet.Data.Rows
       /// <summary>
       /// Raw values
       /// </summary>
-      public object[] Values { get; }
+      public object[] Values { get; internal set; }
 
       /// <summary>
       /// Gets the number of values in this row
@@ -65,6 +71,10 @@ namespace Parquet.Data.Rows
          get
          {
             return Values[i];
+         }
+         set
+         {
+            Values[i] = value;
          }
       }
 
@@ -217,7 +227,8 @@ namespace Parquet.Data.Rows
       {
          if (fields == null)
          {
-            throw new ArgumentNullException(nameof(fields));
+            sb.AppendFormat("{0} value(s)", values?.Length ?? 0);
+            return;
          }
 
          sb.StartObject(sf);
@@ -287,7 +298,14 @@ namespace Parquet.Data.Rows
 
                case SchemaType.Struct:
                   StructField stf = (StructField)f;
-                  ToString(sb, ((Row)v).Values, sf, level + 1, stf.Fields);
+                  if (!(v is Row sRow))
+                  {
+                     //throw new FormatException($"expected {typeof(Row)} at {f.Path} but found {v.GetType()}");
+                  }
+                  else
+                  {
+                     ToString(sb, sRow.Values, sf, level + 1, stf.Fields);
+                  }
                   break;
 
                case SchemaType.Map:
@@ -405,5 +423,12 @@ namespace Parquet.Data.Rows
 
          return true;
       }
+
+      /// <summary>
+      /// Gets object enumerator
+      /// </summary>
+      public IEnumerator<object> GetEnumerator() => ((IEnumerable<object>)Values).GetEnumerator();
+
+      IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
    }
 }
