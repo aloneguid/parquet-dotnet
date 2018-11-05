@@ -8,6 +8,7 @@ namespace Parquet.Data.Rows
    /// <summary>
    /// Helps iterating over <see cref="DataColumn"/> returning either a singular value or an array if the column is repeated.
    /// </summary>
+   //[Obsolete("should only be used in MSIL helpers and be removed in future versions")]
    class DataColumnEnumerator : IEnumerator
    {
       private int _position = -1;

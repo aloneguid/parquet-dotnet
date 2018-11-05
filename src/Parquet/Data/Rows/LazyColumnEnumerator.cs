@@ -72,15 +72,15 @@ namespace Parquet.Data.Rows
       {
          //get the next window where RL drops down
 
-         int prl = _rls[++_offset];
+         int prl = -1;
 
          for(int i = _offset + 1; i < _startOffset + _count; i++)
          {
             int rl = _rls[i];
 
-            if(rl < prl)
+            if (prl != -1 && (rl != _maxRl && rl <= prl))
             {
-               Current = new LazyColumnEnumerator(_dc, _offset, i - _offset, _rl + 1);
+               Current = new LazyColumnEnumerator(_dc, _offset + 1, i - (_offset + 1), _rl + 1);
                _offset = i - 1;
                return;
             }
@@ -88,7 +88,7 @@ namespace Parquet.Data.Rows
             prl = rl;
          }
 
-         Current = new LazyColumnEnumerator(_dc, _offset, _count - _offset, _rl + 1);
+         Current = new LazyColumnEnumerator(_dc, _offset + 1, _count - (_offset + 1), _rl + 1);
          _offset = _startOffset + _count - 1;
       }
 
