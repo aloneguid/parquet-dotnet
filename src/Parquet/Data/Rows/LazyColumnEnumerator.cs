@@ -117,9 +117,16 @@ namespace Parquet.Data.Rows
 
             if (prl != -1 && (rl != _maxRl && rl <= prl && rl <= _rl))
             {
+               int count = i - _offset;
+               bool isEmpty = count == 1 && rl == 0;
+               if (isEmpty)
+               {
+                  count = 0;
+               }
+
                Current = new LazyColumnEnumerator(_dc,
                   _offset,
-                  i - _offset,
+                  count,
                   _rl + 1);
                _offset = i;
                return;
@@ -128,9 +135,15 @@ namespace Parquet.Data.Rows
             prl = rl;
          }
 
+         int finalCount = _count - (_offset - _start);
+         if(finalCount == 1 && prl == 0)
+         {
+            finalCount = 0;
+         }
+
          Current = new LazyColumnEnumerator(_dc,
             _offset,
-            _count - (_offset - _start),
+            finalCount,
             _rl + 1);
          _offset =  _start + _count; //make it big
       }

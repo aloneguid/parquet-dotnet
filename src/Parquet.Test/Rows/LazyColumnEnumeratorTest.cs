@@ -58,7 +58,7 @@ namespace Parquet.Test.Rows
       [Fact]
       public void Simple_array()
       {
-         var dc = new DataColumn(new DataField<int>("openingHours") { MaxRepetitionLevel = 1 },
+         var dc = new DataColumn(new DataField<int>("ids") { MaxRepetitionLevel = 1 },
          new[]
          {
             1, 2, 3, 4,
@@ -83,6 +83,38 @@ namespace Parquet.Test.Rows
          Assert.Equal(new[] { 1, 2, 3, 4 }, topLevel[0].ToDataArray());
          Assert.Equal(new[] { 5, 6 }, topLevel[1].ToDataArray());
 
+      }
+
+      [Fact]
+      public void Empty_list()
+      {
+         var dc = new DataColumn(new DataField<int?>("ids") { MaxRepetitionLevel = 1 },
+         new int?[]
+         {
+            1, 2,
+            null,
+            5, 6
+         },
+         null,
+         1,
+         new[]
+         {
+            0, 1,
+            0,
+            0, 1
+         },
+         2,
+         null,
+         null);
+
+         var e = new LazyColumnEnumerator(dc);
+
+         List<LazyColumnEnumerator> topLevel = e.ToEnumeratorList();
+         Assert.Equal(3, topLevel.Count);
+
+         Assert.Equal(2, topLevel[0].ToDataArray().Length);
+         Assert.Equal(0, topLevel[1].ToDataArray().Length);
+         Assert.Equal(2, topLevel[2].ToDataArray().Length);
       }
    }
 }
