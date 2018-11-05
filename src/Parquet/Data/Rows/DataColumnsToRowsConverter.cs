@@ -7,28 +7,33 @@ namespace Parquet.Data.Rows
 {
    class DataColumnsToRowsConverter
    {
-      private readonly Dictionary<string, DataColumnEnumerator> _pathToColumn = new Dictionary<string, DataColumnEnumerator>();
       private readonly Schema _schema;
+      private readonly DataColumn[] _columns;
       private readonly long _totalRowRount;
 
       public DataColumnsToRowsConverter(Schema schema, DataColumn[] columns, long totalRowRount)
       {
          ValidateColumnsAreInSchema(schema, columns);
 
-         foreach(DataColumn column in columns)
-         {
-            _pathToColumn[column.Field.Path] = new DataColumnEnumerator(column);
-         }
-
          _schema = schema;
+         _columns = columns;
          _totalRowRount = totalRowRount;
       }
 
       public IReadOnlyCollection<Row> Convert()
       {
+         var pathToColumn = new Dictionary<string, LazyColumnEnumerator>();
+         foreach (DataColumn column in _columns)
+         {
+            var en = new LazyColumnEnumerator(column);
+            en.Reset();
+
+            pathToColumn[column.Field.Path] = en;
+         }
+
          var result = new List<Row>();
 
-         ColumnsToRows(_schema.Fields, result, _totalRowRount);
+         ColumnsToRows(_schema.Fields, pathToColumn, result, _totalRowRount);
 
          foreach(Row row in result)
          {
@@ -38,23 +43,35 @@ namespace Parquet.Data.Rows
          return result;
       }
 
-      private void ColumnsToRows(IReadOnlyCollection<Field> fields, List<Row> result, long rowCount)
+      private void ColumnsToRows(IReadOnlyCollection<Field> fields, Dictionary<string, LazyColumnEnumerator> pathToColumn, List<Row> result, long rowCount)
       {
          for(int rowIndex = 0; rowCount == -1 || rowIndex < rowCount; rowIndex++)
          {
-            if (!TryBuildNextRow(fields, out Row row))
+            if (!TryBuildNextRow(fields, pathToColumn, out Row row))
                break;
 
             result.Add(row);
          }
       }
 
-      private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, out Row row)
+      private IReadOnlyList<Row> BuildRows(IReadOnlyCollection<Field> fields, Dictionary<string, LazyColumnEnumerator> pathToColumn)
+      {
+         var rows = new List<Row>();
+
+         while(TryBuildNextRow(fields, pathToColumn, out Row row))
+         {
+            rows.Add(row);
+         }
+
+         return rows;
+      }
+
+      private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, Dictionary<string, LazyColumnEnumerator> pathToColumn, out Row row)
       {
          var rowList = new List<object>();
          foreach(Field f in fields)
          {
-            if(!TryBuildNextCell(f, out object cell))
+            if(!TryBuildNextCell(f, pathToColumn, out object cell))
             {
                row = null;
                return false;
@@ -67,12 +84,13 @@ namespace Parquet.Data.Rows
          return true;
       }
 
-      private bool TryBuildNextCell(Field f, out object cell)
+      private bool TryBuildNextCell(Field f, Dictionary<string, LazyColumnEnumerator> pathToColumn, out object cell)
       {
          switch (f.SchemaType)
          {
             case SchemaType.Data:
-               DataColumnEnumerator dce = _pathToColumn[f.Path];
+               LazyColumnEnumerator dce = pathToColumn[f.Path];
+               //MoveNext returns either an element or a list-like structure for columns that are repeated
                if (!dce.MoveNext())
                {
                   cell = null;
@@ -82,17 +100,17 @@ namespace Parquet.Data.Rows
 
                break;
             case SchemaType.Map:
-               bool mcok = TryBuildMapCell((MapField)f, out IReadOnlyList<Row> mapRow);
+               bool mcok = TryBuildMapCell((MapField)f, pathToColumn, out IReadOnlyList<Row> mapRow);
                cell = mapRow;
                return mcok;
 
             case SchemaType.Struct:
-               bool scok = TryBuildStructCell((StructField)f, out Row scRow);
+               bool scok = TryBuildStructCell((StructField)f, pathToColumn, out Row scRow);
                cell = scRow;
                return scok;
 
             case SchemaType.List:
-               return TryBuildListCell((ListField)f, out cell);
+               return TryBuildListCell((ListField)f, pathToColumn, out cell);
 
             default:
                throw OtherExtensions.NotImplemented(f.SchemaType.ToString());
@@ -101,9 +119,9 @@ namespace Parquet.Data.Rows
          return true;
       }
 
-      private bool TryBuildListCell(ListField lf, out object cell)
+      private bool TryBuildListCell(ListField lf, Dictionary<string, LazyColumnEnumerator> pathToColumn, out object cell)
       {
-         if(!TryBuildNextCell(lf.Item, out cell))
+         if(!TryBuildNextCell(lf.Item, pathToColumn, out cell))
          {
             cell = null;
             return false;
@@ -117,29 +135,31 @@ namespace Parquet.Data.Rows
          return true;
       }
 
-      private bool TryBuildStructCell(StructField sf, out Row cell)
+      private bool TryBuildStructCell(StructField sf, Dictionary<string, LazyColumnEnumerator> pathToColumn, out Row cell)
       {
-         return TryBuildNextRow(sf.Fields, out cell);
+         return TryBuildNextRow(sf.Fields, pathToColumn, out cell);
       }
 
-      private bool TryBuildMapCell(MapField mf, out IReadOnlyList<Row> rows)
+      private bool TryBuildMapCell(MapField mf, Dictionary<string, LazyColumnEnumerator> pathToColumn, out IReadOnlyList<Row> rows)
       {
-         if (!((mf.Key is DataField) && (mf.Value is DataField)))
-            throw OtherExtensions.NotImplemented("complex maps");
+         //"cut into" the keys and values collection
+         LazyColumnEnumerator keysCollection = pathToColumn[mf.Key.Path];
+         LazyColumnEnumerator valuesCollection = pathToColumn[mf.Value.Path];
 
-         DataColumnEnumerator dceKey = _pathToColumn[mf.Key.Path];
-         DataColumnEnumerator dceValue = _pathToColumn[mf.Value.Path];
-
-         if(!TryBuildNextRow(
-            new[] { dceKey.DataColumn.Field, dceValue.DataColumn.Field },
-            out Row mapRow))
+         if(keysCollection.MoveNext() && valuesCollection.MoveNext())
          {
-            throw new ParquetException("a map has no corresponding row");
+            var ptc = new Dictionary<string, LazyColumnEnumerator>
+            {
+               [mf.Key.Path] = (LazyColumnEnumerator)keysCollection.Current,
+               [mf.Value.Path] = (LazyColumnEnumerator)valuesCollection.Current
+            };
+
+            rows = BuildRows(new[] { mf.Key, mf.Value }, ptc);
+            return true;
          }
 
-         rows = RowSlicer.Rotate(mapRow);
-
-         return true;
+         rows = null;
+         return false;
       }
 
       private static void ValidateColumnsAreInSchema(Schema schema, DataColumn[] columns)

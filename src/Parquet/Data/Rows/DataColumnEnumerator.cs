@@ -13,7 +13,6 @@ namespace Parquet.Data.Rows
       private int _position = -1;
       private readonly bool _isRepeated;
       private readonly Array _data;
-      private readonly int _mrl;
       private readonly int[] _rls;
       private readonly DataField _field;
       private readonly DataColumn _dc;
@@ -25,7 +24,6 @@ namespace Parquet.Data.Rows
          _rls = dataColumn.RepetitionLevels;
          _field = dataColumn.Field;
          _dc = dataColumn;
-         _mrl = _field.MaxRepetitionLevel;
       }
 
       public object Current { get; private set; }
