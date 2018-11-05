@@ -309,7 +309,7 @@ namespace Parquet.CLI.Views
                }
                Console.ForegroundColor = ConsoleColor.Blue;
 
-               if (column.columnWidth > column.type.ToString().Length + (verticalSeparator.Length * 2))
+               if (column.columnWidth >= column.type.ToString().Length + (verticalSeparator.Length * 2))
                {
                   Console.Write(column.type.ToString());
                }
