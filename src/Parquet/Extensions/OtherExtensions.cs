@@ -56,6 +56,28 @@ namespace Parquet
          return string.Join(Schema.PathSeparator, path);
       }
 
+      public static bool EqualTo(this Array left, Array right)
+      {
+         if (left.Length != right.Length)
+            return false;
+
+         for(int i = 0; i < left.Length; i++)
+         {
+            object il = left.GetValue(i);
+            object ir = right.GetValue(i);
+
+            if(il == null || ir == null)
+            {
+               return il == null && ir == null;
+            }
+
+            if (!il.Equals(ir))
+               return false;
+         }
+
+         return true;
+      }
+
       public static Exception NotImplemented(string reason)
       {
          return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, implemented it, and raise a PR, or contact parquetsupport@elastacloud.com for commercial support.");

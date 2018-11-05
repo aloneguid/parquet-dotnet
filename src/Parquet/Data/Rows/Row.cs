@@ -398,27 +398,49 @@ namespace Parquet.Data.Rows
             object v = Values[i];
             object ov = other.Values[i];
 
-            if(v == null || ov == null)
+            if(!Equal(v, ov, i, throwException))
             {
-               bool equal = v == null && ov == null;
-
-               if(!equal && throwException)
-               {
-                  throw new ArgumentException($"only one of the values is null at position {i}");
-               }
-
-               return equal;
-            }
-
-            if (!v.Equals(ov))
-            {
-               if(throwException)
-               {
-                  throw new ArgumentException($"values are not equal at position {i} ({v} != {ov})");
-               }
-
                return false;
             }
+         }
+
+         return true;
+      }
+
+      private bool Equal(object v, object ov, int position, bool throwException)
+      {
+         if (v == null || ov == null)
+         {
+            bool equal = v == null && ov == null;
+
+            if (!equal && throwException)
+            {
+               throw new ArgumentException($"only one of the values is null at position {position}");
+            }
+
+            return equal;
+         }
+
+         if (v.GetType().IsArray && ov.GetType().IsArray)
+         {
+            bool equal = ((Array)v).EqualTo((Array)ov);
+
+            if (!equal && throwException)
+            {
+               throw new ArgumentException($"arrays at position {position} are not equal");
+            }
+
+            return equal;
+         }
+
+         if (!v.Equals(ov))
+         {
+            if (throwException)
+            {
+               throw new ArgumentException($"values are not equal at position {position} ({v} != {ov})");
+            }
+
+            return false;
          }
 
          return true;
