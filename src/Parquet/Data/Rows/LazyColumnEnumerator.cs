@@ -42,7 +42,10 @@ namespace Parquet.Data.Rows
       public bool MoveNext()
       {
          if ((_offset + 1) >= (_startOffset + _count))
+         {
+            Current = null;
             return false;
+         }
 
          if(_rl == _maxRl)
          {
@@ -86,6 +89,7 @@ namespace Parquet.Data.Rows
          }
 
          Current = new LazyColumnEnumerator(_dc, _offset, _count - _offset, _rl + 1);
+         _offset = _startOffset + _count - 1;
       }
 
       public IEnumerator GetEnumerator()

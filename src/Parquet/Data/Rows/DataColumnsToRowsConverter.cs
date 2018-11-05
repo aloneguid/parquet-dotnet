@@ -121,16 +121,26 @@ namespace Parquet.Data.Rows
 
       private bool TryBuildListCell(ListField lf, Dictionary<string, LazyColumnEnumerator> pathToColumn, out object cell)
       {
-         if(!TryBuildNextCell(lf.Item, pathToColumn, out cell))
+         //As this is the list, all sub-columns of this list have to be cut into. This is essentially a more complicated version of
+         //the TryBuildMapCell method
+
+         var nestedPathTicks = pathToColumn
+            .Where(ptc => ptc.Key.StartsWith(lf.Path))
+            .Select(ptc => new { path = ptc.Key, collection = ptc.Value, moved = ptc.Value.MoveNext() })
+            .ToList();
+
+         if(nestedPathTicks.Any(t => !t.moved))
          {
             cell = null;
             return false;
          }
 
-         if(lf.Item.SchemaType != SchemaType.Data)
-         {
-            cell = RowSlicer.Rotate((Row)cell);
-         }
+         var nestedPathToColumn = nestedPathTicks
+            .ToDictionary(ptc => ptc.path, ptc => (LazyColumnEnumerator)ptc.collection.Current);
+
+         IReadOnlyList<Row> rows = BuildRows(new[] { lf.Item }, nestedPathToColumn);
+
+         cell = rows.Select(r => r[0]).ToArray();
 
          return true;
       }
