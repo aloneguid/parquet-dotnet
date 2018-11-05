@@ -8,13 +8,14 @@ namespace Parquet.Data.Rows
    class LazyColumnEnumerator : IEnumerable, IEnumerator
    {
       private readonly DataColumn _dc;
-      private readonly int _startOffset;
+      private readonly int _start;
       private int _offset;
       private readonly int _count;
       private readonly Array _data;
       private readonly int[] _rls;
       private readonly int _rl;
       private readonly int _maxRl;
+      private readonly bool _isData;
 
       public LazyColumnEnumerator(DataColumn dc) : this(dc, 0, dc.Data.Length, 0)
       {
@@ -27,21 +28,52 @@ namespace Parquet.Data.Rows
       {
          _dc = dc;
 
-         _startOffset = offset;
-         _offset = _startOffset - 1;
+         _start = offset;
+         _offset = _start;
          _count = count;
 
          _data = dc.Data;
          _rls = dc.RepetitionLevels;
          _rl = rl;
          _maxRl = dc.Field.MaxRepetitionLevel;
+
+         _isData = rl == _maxRl;
       }
 
       public object Current { get; private set; }
 
+      /// <summary>
+      /// Helper method to get all elements as a list of enumerators
+      /// </summary>
+      /// <returns></returns>
+      public List<LazyColumnEnumerator> ToEnumeratorList()
+      {
+         Reset();
+         var result = new List<LazyColumnEnumerator>();
+         while(MoveNext())
+         {
+            result.Add((LazyColumnEnumerator)Current);
+         }
+         return result;
+      }
+
+      public Array ToDataArray()
+      {
+         Array result = Array.CreateInstance(_dc.Field.ClrNullableIfHasNullsType, _count);
+
+         int i = 0;
+         Reset();
+         while(MoveNext())
+         {
+            result.SetValue(Current, i++);
+         }
+
+         return result;
+      }
+
       public bool MoveNext()
       {
-         if ((_offset + 1) >= (_startOffset + _count))
+         if (_offset >= (_start + _count))
          {
             Current = null;
             return false;
@@ -49,11 +81,14 @@ namespace Parquet.Data.Rows
 
          if(_rl == _maxRl)
          {
-            Current = _data.GetValue(++_offset);
+            //If you've reached the maximum repetition level the only thing you can do is read
+            //actual data from the allocated window.
+            //This gets invoked immediately for flat scalar types.
+            Current = _data.GetValue(_offset++);
          }
          else
          {
-            ReadCurrent();
+            ReadWindow();
          }
 
          return true;
@@ -61,35 +96,43 @@ namespace Parquet.Data.Rows
 
       public void Reset()
       {
-         _offset = _startOffset - 1;
+         _offset = _start;
       }
 
       /// <summary>
-      /// Reads current element using repetition and definition levels
+      /// Reads current element using repetition and definition levels. Given "current" repetiton level
+      /// skips over the nest level to create a "window" over appropriate nesting level. This creates an illusion of
+      /// nested enumerators so that you can build data structures from honestly flat parquet columns.
       /// </summary>
       /// <returns></returns>
-      private void ReadCurrent()
+      private void ReadWindow()
       {
          //get the next window where RL drops down
 
          int prl = -1;
 
-         for(int i = _offset + 1; i < _startOffset + _count; i++)
+         for(int i = _offset; i < _start + _count; i++)
          {
             int rl = _rls[i];
 
-            if (prl != -1 && (rl != _maxRl && rl <= prl))
+            if (prl != -1 && (rl != _maxRl && rl <= prl && rl <= _rl))
             {
-               Current = new LazyColumnEnumerator(_dc, _offset + 1, i - (_offset + 1), _rl + 1);
-               _offset = i - 1;
+               Current = new LazyColumnEnumerator(_dc,
+                  _offset,
+                  i - _offset,
+                  _rl + 1);
+               _offset = i;
                return;
             }
 
             prl = rl;
          }
 
-         Current = new LazyColumnEnumerator(_dc, _offset + 1, _count - (_offset + 1), _rl + 1);
-         _offset = _startOffset + _count - 1;
+         Current = new LazyColumnEnumerator(_dc,
+            _offset,
+            _count - (_offset - _start),
+            _rl + 1);
+         _offset =  _start + _count; //make it big
       }
 
       public IEnumerator GetEnumerator()
