@@ -22,7 +22,7 @@ namespace Parquet.Test.Integration
 
       public ParquetMrIntegrationTest()
       {
-         _toolsPath = Path.GetFullPath("..\\..\\..\\..\\..\\tools");
+         _toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
          _toolsJarPath = Path.Combine(_toolsPath, "parquet-tools-1.9.0.jar");
 
          _javaExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
