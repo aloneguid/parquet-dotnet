@@ -87,7 +87,11 @@ namespace Parquet.File.Values
 
          for(int i = 0; i < count; i++)
          {
-            dest[offset++] = value;
+            //as arrays are pre-allocated on max length and RLE can go over max length due to 8-bit boundary, do the check
+            if (offset < dest.Length)
+            {
+               dest[offset++] = value;
+            }
          }
 
          return offset - start;

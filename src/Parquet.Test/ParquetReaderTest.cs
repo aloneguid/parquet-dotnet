@@ -8,6 +8,7 @@ using Xunit;
 using NetBox.Extensions;
 using NetBox.Generator;
 using Parquet.Data.Rows;
+using System.Linq;
 
 namespace Parquet.Test
 {
@@ -109,6 +110,24 @@ namespace Parquet.Test
 
          }
          Assert.Equal<IEnumerable<byte>>(expectedValue, nameValue);
+      }
+
+      [Fact]
+      public void Read_multiple_data_pages()
+      {
+         using (var reader = new ParquetReader(OpenTestFile("/special/multi_data_page.parquet"), leaveStreamOpen: false))
+         {
+            DataColumn[] columns = reader.ReadEntireRowGroup();
+
+            string[] s = (string[])columns[0].Data;
+            double?[] d = (double?[])columns[1].Data;
+
+            for(int i = 0; i < s.Length; i++)
+            {
+               Assert.True(s[i] != null, "found null in s at " + i);
+               Assert.True(d[i] != null, "found null in d at " + i);
+            }
+         }
       }
 
       class ReadableNonSeekableStream : DelegatedStream

@@ -91,10 +91,21 @@ namespace Parquet.File
 
             pagesRead++;
 
+            /*int totalValueCount =
+               (colData.dictionary == null ? 0 : colData.indexesOffset) +
+               (colData.values == null ? 0 : colData.valuesOffset);
+
+            bool exhaused =
+               (totalValueCount >= maxValues) &&
+               (colData.definitions == null || colData.definitionsOffset >= maxValues);
+
+            if (exhaused)
+               break;*/
+
             int totalCount = Math.Max(
-               (colData.values == null ? 0 : colData.values.Length) +
+               (colData.values == null ? 0 : colData.valuesOffset) +
                (colData.indexes == null ? 0 : colData.indexesOffset),
-               (colData.definitions == null ? 0 : colData.definitions.Length));
+               (colData.definitions == null ? 0 : colData.definitionsOffset));
             if (totalCount >= maxValues) break; //limit reached
 
             ph = _thriftStream.Read<Thrift.PageHeader>();
