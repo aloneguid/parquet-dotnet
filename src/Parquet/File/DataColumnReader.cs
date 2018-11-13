@@ -199,7 +199,7 @@ namespace Parquet.File
                      cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset);
                   }
 
-                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues,
+                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, ph.Data_page_header.Num_values,
                      ref cd.values, ref cd.valuesOffset,
                      ref cd.indexes, ref cd.indexesOffset);
                }
@@ -214,7 +214,7 @@ namespace Parquet.File
          return RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, dest, offset);
       }
 
-      private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long maxValues,
+      private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long totalValues, long currValues,
          ref Array values, ref int valuesOffset,
          ref int[] indexes, ref int indexesOffset)
       {
@@ -223,18 +223,18 @@ namespace Parquet.File
          switch (encoding)
          {
             case Thrift.Encoding.PLAIN:
-               if (values == null) values = _dataTypeHandler.GetArray((int)maxValues, false, false);
+               if (values == null) values = _dataTypeHandler.GetArray((int)totalValues, false, false);
                valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset, _parquetOptions);
                break;
 
             case Thrift.Encoding.RLE:
-               if (indexes == null) indexes = new int[(int)maxValues];
+               if (indexes == null) indexes = new int[(int)totalValues];
                indexesOffset += RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, indexes, indexesOffset);
                break;
 
             case Thrift.Encoding.PLAIN_DICTIONARY:
-               if (indexes == null) indexes = new int[(int)maxValues];
-               indexesOffset += ReadPlainDictionary(reader, maxValues, indexes, indexesOffset);
+               if (indexes == null) indexes = new int[(int)totalValues];
+               indexesOffset += ReadPlainDictionary(reader, currValues, indexes, indexesOffset);
                break;
 
             default:
@@ -261,7 +261,10 @@ namespace Parquet.File
             offset += RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset);
          }
 
-         return offset - start;
+         // the above might end up reading a few more elements than what we should read
+         // Let's just fix the offset if we're over the total length
+         // todo: longs, ints - maybe return long?
+         return (offset - start > maxValues) ? (int)maxValues : (offset - start);
       }
 
       private static int GetRemainingLength(BinaryReader reader)

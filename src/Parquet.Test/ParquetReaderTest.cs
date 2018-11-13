@@ -2,6 +2,7 @@
 using Parquet.Data;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Xunit;
@@ -115,18 +116,29 @@ namespace Parquet.Test
       [Fact]
       public void Read_multiple_data_pages()
       {
-         using (var reader = new ParquetReader(OpenTestFile("/special/multi_data_page.parquet"), leaveStreamOpen: false))
+         using (var reader =
+            new ParquetReader(OpenTestFile("/special/multi_data_page.parquet"), leaveStreamOpen: false))
          {
             DataColumn[] columns = reader.ReadEntireRowGroup();
 
-            string[] s = (string[])columns[0].Data;
-            double?[] d = (double?[])columns[1].Data;
+            string[] s = (string[]) columns[0].Data;
+            double?[] d = (double?[]) columns[1].Data;
 
-            for(int i = 0; i < s.Length; i++)
+            // check for nulls (issue #370)
+            for (int i = 0; i < s.Length; i++)
             {
                Assert.True(s[i] != null, "found null in s at " + i);
                Assert.True(d[i] != null, "found null in d at " + i);
             }
+
+            // run aggregations checking row alignment (issue #371)
+            var seq = s.Zip(d.Cast<double>(), (w, v) => new {w, v})
+               .Where(p => p.w == "general")
+               .ToList();
+
+            // double matching is fuzzy, but matching strings is enough for this test
+            Assert.Equal("0.754359925788497", seq.Min(p => p.v).ToString(CultureInfo.InvariantCulture));
+            Assert.Equal("0.85776", seq.Max(p => p.v).ToString(CultureInfo.InvariantCulture));
          }
       }
 

@@ -85,13 +85,9 @@ namespace Parquet.File.Values
          byte[] data = reader.ReadBytes(width);
          int value = ReadIntOnBytes(data);
 
-         for(int i = 0; i < count; i++)
+         for (int i = 0; i < count; i++)
          {
-            //as arrays are pre-allocated on max length and RLE can go over max length due to 8-bit boundary, do the check
-            if (offset < dest.Length)
-            {
-               dest[offset++] = value;
-            }
+            dest[offset++] = value;
          }
 
          return offset - start;
