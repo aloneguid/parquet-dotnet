@@ -12,14 +12,16 @@ namespace Parquet.CLI.Models
       public string columnName { get; set; }
       public int columnWidth { get; set; }
 
-      public string GetFormattedValue(object rawValue, bool displayNulls)
+      public string GetFormattedValue(object rawValue, ViewPort viewPort, bool displayNulls, string verticalSeperator)
       {
          string value = Convert.ToString(rawValue);
          var formatted = new StringBuilder();
+         int targetWidth = columnWidth > viewPort.Width ? viewPort.Width - ((verticalSeperator.Length*2)+1) : columnWidth;
 
          if (displayNulls && rawValue == null)
          {
-            for (int k = 0; k < columnWidth - 6; k++)
+
+            for (int k = 0; k < targetWidth - 6; k++)
             {
                formatted.Append(" ");
             }
@@ -28,7 +30,7 @@ namespace Parquet.CLI.Models
             return formatted.ToString();
          }
 
-         int padReq = columnWidth - value.Length;
+         int padReq = targetWidth - value.Length;
          if (padReq > 0)
          {
             for (int k = 0; k < padReq; k++)
@@ -41,12 +43,12 @@ namespace Parquet.CLI.Models
          {
             if (columnWidth > 3)
             {
-               formatted.Append(value.Substring(0, columnWidth - 3));
+               formatted.Append(value.Substring(0, targetWidth - 3));
                formatted.Append("...");
             }
             else
             {
-               formatted.Append(value.Substring(0, columnWidth));
+               formatted.Append(value.Substring(0, targetWidth));
             }
          }
          else

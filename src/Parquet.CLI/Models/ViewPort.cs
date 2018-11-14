@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Parquet.CLI.Models
 {
-   internal class ViewPort
+   public class ViewPort
    {
       private int _height;
       private int _width;

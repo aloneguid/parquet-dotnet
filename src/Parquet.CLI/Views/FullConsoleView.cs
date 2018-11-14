@@ -65,7 +65,7 @@ namespace Parquet.CLI.Views
             {
                ColumnDetails header = viewModel.Columns.ElementAt(j);
 
-               Console.Write(header.GetFormattedValue(row[j], displayNulls));
+               Console.Write(header.GetFormattedValue(row[j], new ViewPort(), displayNulls, verticalSeparator));
                Console.Write(verticalSeparator);
             }
             Console.WriteLine();

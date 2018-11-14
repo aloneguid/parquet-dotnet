@@ -58,6 +58,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpArrow.Test", "SharpArr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.CLI", "Parquet.CLI\Parquet.CLI.csproj", "{F2C35F5E-E92E-47F8-945C-DC6726FC3CF6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.CLI.Test", "Parquet.CLI.Test\Parquet.CLI.Test.csproj", "{C69634C9-54BB-4788-9D2B-A29C1203F20A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +90,10 @@ Global
 		{F2C35F5E-E92E-47F8-945C-DC6726FC3CF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2C35F5E-E92E-47F8-945C-DC6726FC3CF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2C35F5E-E92E-47F8-945C-DC6726FC3CF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C69634C9-54BB-4788-9D2B-A29C1203F20A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C69634C9-54BB-4788-9D2B-A29C1203F20A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C69634C9-54BB-4788-9D2B-A29C1203F20A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C69634C9-54BB-4788-9D2B-A29C1203F20A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,6 +103,7 @@ Global
 		{CBF02EBF-EB36-42AA-8557-B95CEF5FD175} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 		{AB829BBB-EF87-4038-8D32-E1C1629F357C} = {60294E19-6F8D-4D78-9A62-C50489095484}
 		{FC48854B-6732-4BCD-B6D3-F6AC35231EF0} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
+		{C69634C9-54BB-4788-9D2B-A29C1203F20A} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B5C12140-A3BF-47C9-A4AD-91F7C4682804}
