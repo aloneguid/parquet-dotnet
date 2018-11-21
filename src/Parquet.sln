@@ -38,6 +38,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\.editorconfig = ..\.editorconfig
 		..\appveyor.yml = ..\appveyor.yml
 		..\build.ini = ..\build.ini
+		..\nuget.config = ..\nuget.config
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
@@ -58,7 +59,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpArrow.Test", "SharpArr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.CLI", "Parquet.CLI\Parquet.CLI.csproj", "{F2C35F5E-E92E-47F8-945C-DC6726FC3CF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.CLI.Test", "Parquet.CLI.Test\Parquet.CLI.Test.csproj", "{C69634C9-54BB-4788-9D2B-A29C1203F20A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.CLI.Test", "Parquet.CLI.Test\Parquet.CLI.Test.csproj", "{C69634C9-54BB-4788-9D2B-A29C1203F20A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
