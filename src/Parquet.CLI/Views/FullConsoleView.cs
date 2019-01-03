@@ -57,11 +57,11 @@ namespace Parquet.CLI.Views
 
       private void WriteValues(ViewModel viewModel, bool displayNulls)
       {
-         for (int i = 0; i < viewModel.Rows.Count(); i++)
+         for (int i = 0; i < viewModel.Rows.Count; i++)
          {
             object[] row = viewModel.Rows.ElementAt(i);
             Console.Write(verticalSeparator);
-            for (int j = 0; j < row.Length; j++)
+            for (int j = 0; j < viewModel.Columns.Count(); j++)
             {
                ColumnDetails header = viewModel.Columns.ElementAt(j);
 

@@ -97,6 +97,12 @@ namespace Parquet.Extensions
 
       private static void EncodeJson(StringBuilder sb, StringFormat sf, object value)
       {
+         if (value == null)
+         {
+            AppendNull(sb, sf);
+            return;
+         }
+
          Type t = value.GetType();
          string quote = sf == StringFormat.Json ? JsonQuote : JsonSingleQuote;
 
@@ -116,7 +122,6 @@ namespace Parquet.Extensions
          {
             sb.Append(value.ToString());
          }
-
       }
    }
 }
