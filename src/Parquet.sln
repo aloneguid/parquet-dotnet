@@ -36,9 +36,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{60294E19-6F8D-4D78-9A62-C50489095484}"
 	ProjectSection(SolutionItems) = preProject
 		..\.editorconfig = ..\.editorconfig
-		..\appveyor.yml = ..\appveyor.yml
 		..\build.ini = ..\build.ini
-		..\nuget.config = ..\nuget.config
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
