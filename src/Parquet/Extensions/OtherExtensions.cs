@@ -20,30 +20,26 @@ namespace Parquet
          return 1;
       }
 
-      public static DateTime FromUnixTime(this int unixTime)
+      public static DateTimeOffset FromUnixMilliseconds(this long unixMilliseconds)
       {
-         return UnixEpoch.AddDays(unixTime - 1);
+         return UnixEpoch.AddMilliseconds(unixMilliseconds);
       }
 
-      public static DateTime FromUnixTime(this long unixTime)
-      {
-         return UnixEpoch.AddSeconds(unixTime);
-      }
-
-      public static long ToUnixTime(this DateTimeOffset date)
-      {
-         return Convert.ToInt64((date - UnixEpoch).TotalSeconds);
-      }
-
-      public static double ToUnixDays(this DateTimeOffset dto)
+      public static long ToUnixMilliseconds(this DateTimeOffset dto)
       {
          TimeSpan diff = dto - UnixEpoch;
-         return diff.TotalDays;
+         return (long)diff.TotalMilliseconds;
       }
 
-      public static long GetUnixUnixTimeDays(this DateTime date)
+      public static DateTimeOffset FromUnixDays(this int unixDays)
       {
-         return Convert.ToInt64((date - UnixEpoch).TotalDays);
+         return UnixEpoch.AddDays(unixDays - 1);
+      }
+
+      public static int ToUnixDays(this DateTimeOffset dto)
+      {
+         TimeSpan diff = dto - UnixEpoch;
+         return (int)diff.TotalDays + 1;
       }
 
       public static string AddPath(this string s, params string[] parts)
@@ -61,12 +57,12 @@ namespace Parquet
          if (left.Length != right.Length)
             return false;
 
-         for(int i = 0; i < left.Length; i++)
+         for (int i = 0; i < left.Length; i++)
          {
             object il = left.GetValue(i);
             object ir = right.GetValue(i);
 
-            if(il == null || ir == null)
+            if (il == null || ir == null)
             {
                return il == null && ir == null;
             }

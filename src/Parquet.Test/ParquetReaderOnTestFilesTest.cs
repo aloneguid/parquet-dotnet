@@ -1,6 +1,7 @@
 using Parquet.Data;
 using System;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace Parquet.Test
@@ -60,6 +61,25 @@ namespace Parquet.Test
          }
          Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
          Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
+      }
+
+      [Fact]
+      public void DateTime_FromOtherSystem()
+      {
+         DateTimeOffset offset;
+         using (Stream s = OpenTestFile("datetime_other_system.parquet"))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               DataColumn[] columns = r.ReadEntireRowGroup();
+
+               DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
+               Assert.NotNull(as_at_date_col);
+
+               offset = (DateTimeOffset)(as_at_date_col.Data.GetValue(0));
+               Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset.Date);
+            }
+         }
       }
    }
 }

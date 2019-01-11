@@ -25,10 +25,10 @@ namespace Parquet.Data.Concrete
 
       private void ReadAsInt32(BinaryReader reader, IList result)
       {
-         while(reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
+         while (reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
          {
             int iv = reader.ReadInt32();
-            result.Add(iv.FromUnixTime());
+            result.Add(iv.FromUnixDays());
          }
       }
 
@@ -37,7 +37,7 @@ namespace Parquet.Data.Concrete
          while (reader.BaseStream.Position + 8 <= reader.BaseStream.Length)
          {
             long lv = reader.ReadInt64();
-            result.Add(lv.FromUnixTime());
+            result.Add(lv.FromUnixMilliseconds());
          }
       }
 
