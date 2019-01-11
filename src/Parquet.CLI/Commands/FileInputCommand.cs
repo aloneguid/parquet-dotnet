@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Cpf.Widgets;
 using Parquet.Data.Rows;
+using Table = Parquet.Data.Rows.Table;
 
 namespace Parquet.CLI.Commands
 {
@@ -34,6 +35,14 @@ namespace Parquet.CLI.Commands
                msg.Fail(ex.Message);
                throw;
             }
+         }
+      }
+
+      protected Thrift.FileMetaData ReadInternalMetadata()
+      {
+         using (var reader = ParquetReader.OpenFromFile(_path))
+         {
+            return reader.ThriftMetadata;
          }
       }
    }

@@ -1,5 +1,5 @@
-#pragma warning disable CS1587
-/**
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
@@ -19,11 +19,12 @@
  */
 namespace Thrift.Protocol
 {
-    interface TBase : TAbstractBase
-    {
+   public interface TBase : TAbstractBase
+   {
         ///
         /// Reads the TObject from the given input protocol.
         ///
         void Read(TProtocol tProtocol);
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

@@ -1,5 +1,5 @@
-#pragma warning disable CS1587
-/**
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
@@ -17,15 +17,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-using System;
 
 namespace Thrift.Protocol
 {
-    enum TMessageType
-    {
-        Call = 1,
-        Reply = 2,
-        Exception = 3,
-        Oneway = 4
-    }
+   public enum TMessageType
+   {
+      Call = 1,
+      Reply = 2,
+      Exception = 3,
+      Oneway = 4
+   }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

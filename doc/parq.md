@@ -62,6 +62,78 @@ As JSON is usually human readable you can use this command to view the file.
 
 By default **parq** displays the first 10 rows of the source file, however you can override it with `--max-rows` option.
 
+### Viewing Internal Metadata
+
+Internal metadata is grabbed from parquet file internals and describes pretty much everything we know about the file. This metadata is not by default exposed from Parquet.Net API as it's hard to work with from the user perspective, however it can be extremely useful for performance tuning and general understanding how a particular file is structured.
+
+To view this metadata, type
+
+```powershell
+parq meta <path-to-file>
+````
+
+sample output:
+
+```bash
+parq meta stats_test.parquet
+```
+
+```
+parq v1.0.0
+
+File Metadata
+Created By parquet-mr version 1.8.3 (build aef7230e114214b7cc962a8f3fc5aeed6ce80828)
+Total Rows 2
+Version    1
+
+Key-Value Metadata
+org.apache.spark.sql.parquet.row.metadata {"type":"struct","fields":[{"name":"isbn","type":"string","nullable":true,"metadata":{}},{"name":"author","type":"string","nullable":true,"metadata":{}}]}
+
+Row Groups
+
+  Row Group #0
+  Total Rows      2
+  Total Byte Size 162 (0.16 KiB)
+
+    Column #0
+    File Offset            4
+    File Path
+    Codec                  UNCOMPRESSED
+    Data Page Offset       4
+    Dictionary Page Offset 0
+    Index Page Offset      0
+    Encodings              RLE, PLAIN, BIT_PACKED
+    Total Values           2
+    Path in Schema         isbn
+    Compressed Size        67 (0.07 KiB)
+    Uncompressed Size      67 (0.07 KiB)
+    Type                   BYTE_ARRAY
+    Statistics
+      Null Count     0
+      Distinct Count undefined
+      Min            12345-6
+      Max            12345-7
+
+    Column #1
+    File Offset            71
+    File Path
+    Codec                  UNCOMPRESSED
+    Data Page Offset       71
+    Dictionary Page Offset 0
+    Index Page Offset      0
+    Encodings              RLE, PLAIN, BIT_PACKED
+    Total Values           2
+    Path in Schema         author
+    Compressed Size        95 (0.09 KiB)
+    Uncompressed Size      95 (0.09 KiB)
+    Type                   BYTE_ARRAY
+    Statistics
+      Null Count     0
+      Distinct Count undefined
+      Min            Ivan Gavryliuk
+      Max            Richard Conway
+
+```
 
 ### More Commands
 

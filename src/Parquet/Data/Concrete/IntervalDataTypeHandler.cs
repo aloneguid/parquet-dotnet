@@ -25,7 +25,7 @@ namespace Parquet.Data.Concrete
          tse.Type_length = 12;
       }
 
-      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset)
       {
          int typeLength = tse.Type_length;
          if (typeLength == 0) return 0;
@@ -46,7 +46,15 @@ namespace Parquet.Data.Concrete
          return idx - offset;
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      protected override Interval ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      {
+         int months = reader.ReadInt32();
+         int days = reader.ReadInt32();
+         int millis = reader.ReadInt32();
+         return new Interval(months, days, millis);
+      }
+
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
          foreach(Interval interval in values)
          {

@@ -11,7 +11,7 @@ namespace Parquet.Data.Concrete
       {
       }
 
-      protected override long ReadOne(BinaryReader reader)
+      protected override long ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
          return reader.ReadInt64();
       }

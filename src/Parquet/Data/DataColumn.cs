@@ -82,7 +82,7 @@ namespace Parquet.Data
       /// </summary>
       public bool HasRepetitions => RepetitionLevels != null;
 
-      internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount)
+      internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount, out int nullCount)
       {
          pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
          definitionLevelCount = Data.Length;
@@ -92,10 +92,11 @@ namespace Parquet.Data
          if (!Field.HasNulls || !isNullable)
          {
             SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
+            nullCount = 0; //definitely no nulls here
             return Data;
          }
 
-         return _dataTypeHandler.PackDefinitions(Data, maxDefinitionLevel, out pooledDefinitionLevels, out definitionLevelCount);
+         return _dataTypeHandler.PackDefinitions(Data, maxDefinitionLevel, out pooledDefinitionLevels, out definitionLevelCount, out nullCount);
       }
 
       void SetPooledDefinitionLevels(int maxDefinitionLevel, int[] pooledDefinitionLevels)

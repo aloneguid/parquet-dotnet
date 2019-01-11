@@ -61,6 +61,18 @@ namespace Parquet.CLI
             });
          });
 
+         app.Command("meta", cmd =>
+         {
+            cmd.Description = Help.Command_Meta_Description;
+
+            LinePrimitive<string> path = cmd.Argument<string>("path", Help.Argument_Path).Required().FileExists();
+
+            cmd.OnExecute(() =>
+            {
+               new MetaCommand(path).Execute();
+            });
+         });
+
          app.Command("convert", cmd =>
          {
             cmd.Description = Help.Command_Convert_Description;

@@ -160,6 +160,7 @@ namespace Parquet.File
             Thrift.Encoding.PLAIN
          };
          chunk.Meta_data.Path_in_schema = path;
+         chunk.Meta_data.Statistics = new Thrift.Statistics();
 
          return chunk;
       }

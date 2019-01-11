@@ -23,32 +23,9 @@ namespace Parquet.Data.Concrete
             (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
       }
 
-      private void ReadAsInt32(BinaryReader reader, IList result)
+      protected override DateTime ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
-         while (reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
-         {
-            int iv = reader.ReadInt32();
-            result.Add(iv.FromUnixDays());
-         }
-      }
-
-      private void ReadAsInt64(BinaryReader reader, IList result)
-      {
-         while (reader.BaseStream.Position + 8 <= reader.BaseStream.Length)
-         {
-            long lv = reader.ReadInt64();
-            result.Add(lv.FromUnixMilliseconds());
-         }
-      }
-
-      private void ReadAsInt96(BinaryReader reader, IList result)
-      {
-         while (reader.BaseStream.Position + 12 <= reader.BaseStream.Length)
-         {
-            var nano = new NanoTime(reader.ReadBytes(12), 0);
-            DateTimeOffset dt = nano;
-            result.Add(dt.UtcDateTime);
-         }
+         throw new NotSupportedException("this stub should never be called");
       }
    }
 }

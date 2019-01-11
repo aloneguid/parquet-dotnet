@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Parquet.File;
 
 namespace Parquet.Data
 {
@@ -34,9 +30,9 @@ namespace Parquet.Data
          return new TSystemType[minCount];
       }
 
-      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
+      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
-         return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength);
+         return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
       public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
@@ -70,12 +66,12 @@ namespace Parquet.Data
 
       }
 
-      private TSystemType[] PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength)
+      private TSystemType[] PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
       {
          definitionLevels = IntPool.Rent(data.Length);
          definitionsLength = data.Length;
 
-         int nullCount = data.Count(i => !i.HasValue);
+         nullCount = data.Count(i => !i.HasValue);
          TSystemType[] result = new TSystemType[data.Length - nullCount];
          int ir = 0;
 

@@ -113,7 +113,7 @@ namespace Parquet.Test.Rows
          Assert.Equal(3, topLevel.Count);
 
          Assert.Equal(2, topLevel[0].ToDataArray().Length);
-         Assert.Equal(0, topLevel[1].ToDataArray().Length);
+         Assert.Empty(topLevel[1].ToDataArray());
          Assert.Equal(2, topLevel[2].ToDataArray().Length);
       }
    }

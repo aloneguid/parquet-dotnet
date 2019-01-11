@@ -64,7 +64,7 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset)
       {
          decimal[] ddest = (decimal[])dest;
 
@@ -82,7 +82,29 @@ namespace Parquet.Data.Concrete
 
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      protected override decimal ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      {
+         switch (tse.Type)
+         {
+            case Thrift.Type.INT32:
+               decimal iscaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+               int iv = reader.ReadInt32();
+               decimal idv = iv * iscaleFactor;
+               return idv;
+            case Thrift.Type.INT64:
+               decimal lscaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+               long lv = reader.ReadInt64();
+               decimal ldv = lv * lscaleFactor;
+               return ldv;
+            case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+               byte[] itemData = reader.ReadBytes(tse.Type_length);
+               return new BigDecimal(itemData, tse);
+            default:
+               throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
+         }
+      }
+
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
          switch(tse.Type)
          {

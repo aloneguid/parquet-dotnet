@@ -1,6 +1,5 @@
-#pragma warning disable CS1587
-
-/**
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
@@ -29,20 +28,21 @@ using System.Text;
 
 namespace Thrift.Protocol
 {
-    struct TStruct
-    {
-        private string name;
+   public struct TStruct
+   {
+      private string name;
 
-        public TStruct(string name)
-            :this()
-        {
-            this.name = name;
-        }
+      public TStruct(string name)
+          : this()
+      {
+         this.name = name;
+      }
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
-    }
+      public string Name
+      {
+         get { return name; }
+         set { name = value; }
+      }
+   }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

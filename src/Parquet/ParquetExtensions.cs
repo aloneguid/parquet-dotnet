@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
 using Parquet.Data;
 using Parquet.Data.Rows;
 using Parquet.File;
@@ -114,6 +111,26 @@ namespace Parquet
          foreach (DataColumn dc in table.ExtractDataColumns())
          {
             writer.WriteColumn(dc);
+         }
+      }
+
+      /// <summary>
+      /// Decodes raw bytes from <see cref="Thrift.Statistics"/> into a CLR value
+      /// </summary>
+      public static object DecodeSingleStatsValue(this Thrift.FileMetaData fileMeta, Thrift.ColumnChunk columnChunk, byte[] rawBytes)
+      {
+         if (rawBytes == null || rawBytes.Length == 0) return null;
+
+         var footer = new ThriftFooter(fileMeta);
+         Thrift.SchemaElement schema = footer.GetSchemaElement(columnChunk);
+
+         IDataTypeHandler handler = DataTypeFactory.Match(schema, new ParquetOptions { TreatByteArrayAsString = true });
+
+         using (var ms = new MemoryStream(rawBytes))
+         using (var reader = new BinaryReader(ms))
+         {
+            object value = handler.Read(reader, schema, rawBytes.Length);
+            return value;
          }
       }
    }

@@ -133,6 +133,15 @@ namespace Parquet.CLI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays internal parquet metadata.
+        /// </summary>
+        internal static string Command_Meta_Description {
+            get {
+                return ResourceManager.GetString("Command_Meta_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Displays parquet file schema as Parquet.Net sees it. Note that this is a simplified, human-readable version of the schema..
         /// </summary>
         internal static string Command_Schema_Description {

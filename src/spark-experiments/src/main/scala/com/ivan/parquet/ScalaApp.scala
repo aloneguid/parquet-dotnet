@@ -31,9 +31,24 @@ object ScalaApp extends App {
          .parquet("c:\\tmp\\" + tag + ".parquet.folder")
    }
 
+   case class Book(isbn: String, author: String)
+
+   val ds = Seq(
+      Book("12345-6", "Ivan Gavryliuk"),
+      Book("12345-7", "Richard Conway")
+   ).toDS
+
+   ds.show
+   //ds.printSchema()
+   write(ds.toDF(), "stats")
+
+
+   /*
+
    val testFile = spark.read.parquet("c:\\tmp\\test.parquet")
    testFile.printSchema
    testFile.show(10, false)
+
 
    // PERF
 
@@ -92,7 +107,7 @@ object ScalaApp extends App {
    ds.show
    //ds.printSchema()
    write(ds.toDF, "struct_plain")*/
-
+*/
 
 
 }

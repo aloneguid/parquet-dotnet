@@ -1,6 +1,5 @@
-#pragma warning disable CS1587,IDE1006
-
-/**
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
@@ -29,33 +28,34 @@ using System.Text;
 
 namespace Thrift.Protocol
 {
-    struct TSet
-    {
-        private TType elementType;
-        private int count;
+   public struct TSet
+   {
+      private TType elementType;
+      private int count;
 
-        public TSet(TType elementType, int count)
-            :this()
-        {
-            this.elementType = elementType;
-            this.count = count;
-        }
+      public TSet(TType elementType, int count)
+          : this()
+      {
+         this.elementType = elementType;
+         this.count = count;
+      }
 
-        public TSet(TList list)
-            : this(list.ElementType, list.Count)
-        {
-        }
+      public TSet(TList list)
+          : this(list.ElementType, list.Count)
+      {
+      }
 
-        public TType ElementType
-        {
-            get { return elementType; }
-            set { elementType = value; }
-        }
+      public TType ElementType
+      {
+         get { return elementType; }
+         set { elementType = value; }
+      }
 
-        public int Count
-        {
-            get { return count; }
-            set { count = value; }
-        }
-    }
+      public int Count
+      {
+         get { return count; }
+         set { count = value; }
+      }
+   }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

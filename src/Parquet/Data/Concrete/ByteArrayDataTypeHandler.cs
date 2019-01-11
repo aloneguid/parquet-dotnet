@@ -32,7 +32,7 @@ namespace Parquet.Data.Concrete
                                  && !tse.__isset.converted_type;
       }
 
-      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset)
       {
          int remLength = (int)(reader.BaseStream.Length - reader.BaseStream.Position);
 
@@ -67,26 +67,28 @@ namespace Parquet.Data.Concrete
          return destIdx - offset;
       }
 
+      protected override byte[] ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      {
+         //length
+         if(length == -1) length = reader.ReadInt32();
+
+         //data
+         return reader.ReadBytes(length);
+      }
+
       public override Array MergeDictionary(Array dictionary, int[] indexes)
       {
          throw new NotImplementedException();
       }
 
-      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength)
+      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
-         return PackDefinitions<byte[]>((byte[][])data, maxDefinitionLevel, out definitions, out definitionsLength);
+         return PackDefinitions<byte[]>((byte[][])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
       public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
       {
          return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel, out hasValueFlags);
-      }
-
-      protected override byte[] ReadOne(BinaryReader reader)
-      {
-         int length = reader.ReadInt32();
-         byte[] data = reader.ReadBytes(length);
-         return data;
       }
 
       protected override void WriteOne(BinaryWriter writer, byte[] value)

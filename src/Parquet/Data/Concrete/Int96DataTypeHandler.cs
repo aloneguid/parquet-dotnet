@@ -19,7 +19,7 @@ namespace Parquet.Data.Concrete
          return tse.Type == Thrift.Type.INT96 && !formatOptions.TreatBigIntegersAsDates;
       }
 
-      protected override BigInteger ReadOne(BinaryReader reader)
+      protected override BigInteger ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
          byte[] data = reader.ReadBytes(12);
          var big = new BigInteger(data);

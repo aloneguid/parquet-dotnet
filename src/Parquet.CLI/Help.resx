@@ -141,6 +141,9 @@
   <data name="Command_Convert_Style" xml:space="preserve">
     <value>Output style. By default result is a multiline json document. Specify "single" to generate an array document with list of documents embedded, or "multiline" for a multiline json.</value>
   </data>
+  <data name="Command_Meta_Description" xml:space="preserve">
+    <value>Displays internal parquet metadata</value>
+  </data>
   <data name="Command_Schema_Description" xml:space="preserve">
     <value>Displays parquet file schema as Parquet.Net sees it. Note that this is a simplified, human-readable version of the schema.</value>
   </data>

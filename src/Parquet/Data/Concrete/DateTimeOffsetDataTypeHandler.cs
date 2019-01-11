@@ -56,7 +56,7 @@ namespace Parquet.Data.Concrete
 
       }
 
-      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public override int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset)
       {
          switch (tse.Type)
          {
@@ -71,7 +71,24 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      protected override DateTimeOffset ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      {
+         switch (tse.Type)
+         {
+            case Thrift.Type.INT32:
+               int iv = reader.ReadInt32();
+               return iv.FromUnixDays();
+            case Thrift.Type.INT64:
+               long lv = reader.ReadInt64();
+               return lv.FromUnixMilliseconds();
+            case Thrift.Type.INT96:
+               return new NanoTime(reader.ReadBytes(12), 0);
+            default:
+               throw new NotSupportedException();
+         }
+      }
+
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
          switch (tse.Type)
          {
@@ -86,15 +103,6 @@ namespace Parquet.Data.Concrete
                break;
             default:
                throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
-         }
-      }
-
-      private void ReadAsInt32(BinaryReader reader, IList result)
-      {
-         while (reader.BaseStream.Position + 4 <= reader.BaseStream.Length)
-         {
-            int iv = reader.ReadInt32();
-            result.Add(iv.FromUnixDays());
          }
       }
 

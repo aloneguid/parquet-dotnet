@@ -142,7 +142,7 @@ namespace Parquet.File
                {
                   dictionary = _dataTypeHandler.GetArray((int)_thriftColumnChunk.Meta_data.Num_values, false, false);
 
-                  dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0, _parquetOptions);
+                  dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0);
 
                   return true;
                }
@@ -224,7 +224,7 @@ namespace Parquet.File
          {
             case Thrift.Encoding.PLAIN:
                if (values == null) values = _dataTypeHandler.GetArray((int)totalValues, false, false);
-               valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset, _parquetOptions);
+               valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset);
                break;
 
             case Thrift.Encoding.RLE:

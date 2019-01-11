@@ -9,9 +9,10 @@ Note that [Elastacloud](https://elastacloud.com/Home) provides commercial suppor
 ## Status
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
-[![Build status](https://ci.appveyor.com/api/projects/status/w3o50mweytm85uxb/branch/master?svg=true)](https://ci.appveyor.com/project/aloneguid/parquet-dotnet/branch/master)
 
-Latest unstable versions are avaible on [this NuGet feed](https://ci.appveyor.com/nuget/parquet-dotnet) (it will also contain packages built from your PRs).
+| Core Build | Windows/Linux/Mac Tests |
+|------------|----------------|
+|[![Build status](https://aloneguid.visualstudio.com/Parquet.Net/_apis/build/status/Core%20Build)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=30)|[![Build status](https://aloneguid.visualstudio.com/Parquet.Net/_apis/build/status/Multi%20OS%20Tests)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=29)|
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5` and up.

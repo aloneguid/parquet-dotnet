@@ -40,4 +40,4 @@ val ds = Seq(
 
 ds.show
 //ds.printSchema()
-//write(df, "struct_plain")
+write(df, "struct_plain")

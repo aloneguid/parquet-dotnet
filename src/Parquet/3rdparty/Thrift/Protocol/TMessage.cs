@@ -1,5 +1,5 @@
-#pragma warning disable CS1587
-/**
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
@@ -27,36 +27,37 @@ using System.Text;
 
 namespace Thrift.Protocol
 {
-    struct TMessage
-    {
-        private string name;
-        private TMessageType type;
-        private int seqID;
+   public struct TMessage
+   {
+      private string name;
+      private TMessageType type;
+      private int seqID;
 
-        public TMessage(string name, TMessageType type, int seqid)
-            :this()
-        {
-            this.name = name;
-            this.type = type;
-            this.seqID = seqid;
-        }
+      public TMessage(string name, TMessageType type, int seqid)
+          : this()
+      {
+         this.name = name;
+         this.type = type;
+         this.seqID = seqid;
+      }
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
+      public string Name
+      {
+         get { return name; }
+         set { name = value; }
+      }
 
-        public TMessageType Type
-        {
-            get { return type; }
-            set { type = value; }
-        }
+      public TMessageType Type
+      {
+         get { return type; }
+         set { type = value; }
+      }
 
-        public int SeqID
-        {
-            get { return seqID; }
-            set { seqID = value; }
-        }
-    }
+      public int SeqID
+      {
+         get { return seqID; }
+         set { seqID = value; }
+      }
+   }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

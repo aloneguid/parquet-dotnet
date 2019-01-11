@@ -25,9 +25,17 @@ namespace Parquet.Data
 
       Type ClrType { get; }
 
-      int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions);
+      int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset);
 
-      void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values);
+      /// <summary>
+      /// Reads a single value from the current stream position. This shouldn't be used normally, however it's useful when decoding parquet stats.
+      /// </summary>
+      /// <param name="reader">Incoming data</param>
+      /// <param name="tse">Schema element</param>
+      /// <param name="length">Number of bytes to read (type specific). Pass -1 to read the length from incoming stream if you don't know how long the buffer is.</param>
+      object Read(BinaryReader reader, Thrift.SchemaElement tse, int length);
+
+      void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics);
 
       /// <summary>
       /// Creates or rents a native array
@@ -40,7 +48,7 @@ namespace Parquet.Data
 
       Array MergeDictionary(Array dictionary, int[] indexes);
 
-      Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int defiintionsLength);
+      Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int defiintionsLength, out int nullCount);
 
       Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
    }

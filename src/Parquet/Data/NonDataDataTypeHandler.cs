@@ -27,17 +27,12 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
-      public IList Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions)
-      {
-         throw new NotSupportedException();
-      }
+      public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset) => throw new NotSupportedException();
 
-      public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
-      {
-         throw new NotSupportedException();
-      }
+      public object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) => throw new NotSupportedException();
 
-      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+
+      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
          throw new NotSupportedException();
       }
@@ -47,7 +42,7 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
-      public Array PackDefinitions(Array data,  int maxDefiniionLevel, out int[] definitions, out int defiintionsLength)
+      public Array PackDefinitions(Array data,  int maxDefiniionLevel, out int[] definitions, out int defiintionsLength, out int nullCount)
       {
          throw new NotImplementedException();
       }
@@ -56,5 +51,6 @@ namespace Parquet.Data
       {
          throw new NotSupportedException();
       }
+
    }
 }

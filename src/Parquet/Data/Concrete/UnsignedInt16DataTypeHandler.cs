@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using Parquet.Data;
+﻿using System.IO;
 
 namespace Parquet.Data.Concrete
 {
@@ -11,7 +9,7 @@ namespace Parquet.Data.Concrete
 
       }
 
-      protected override ushort ReadOne(BinaryReader reader)
+      protected override ushort ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
          return reader.ReadUInt16();
       }

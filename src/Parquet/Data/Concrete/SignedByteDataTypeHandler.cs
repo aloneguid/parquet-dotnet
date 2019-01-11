@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Parquet.Data;
+﻿using System.IO;
 
 namespace Parquet.Data.Concrete
 {
@@ -14,7 +9,7 @@ namespace Parquet.Data.Concrete
 
       }
 
-      protected override sbyte ReadOne(BinaryReader reader)
+      protected override sbyte ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
          return reader.ReadSByte();
       }

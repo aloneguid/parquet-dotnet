@@ -51,12 +51,19 @@ namespace Parquet.Data
          return new DataField(tse.Name, DataType, hasNulls, isArray);
       }
 
-      public virtual int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset, ParquetOptions formatOptions)
+      public virtual int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset)
       {
-         return Read(tse, reader, formatOptions, (TSystemType[])dest, offset);
+         return Read(tse, reader, (TSystemType[])dest, offset);
       }
 
-      private int Read(Thrift.SchemaElement tse, BinaryReader reader, ParquetOptions formatOptions, TSystemType[] dest, int offset)
+      public virtual object Read(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      {
+         return ReadSingle(reader, tse, length);
+      }
+
+      protected abstract TSystemType ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length);
+
+      private int Read(Thrift.SchemaElement tse, BinaryReader reader, TSystemType[] dest, int offset)
       {
          int totalLength = (int)reader.BaseStream.Length;
          int idx = offset;
@@ -64,14 +71,14 @@ namespace Parquet.Data
 
          while (s.Position < totalLength && idx < dest.Length)
          {
-            TSystemType element = ReadOne(reader);
+            TSystemType element = ReadSingle(reader, tse, -1);  //potential performance hit on calling a method
             dest[idx++] = element;
          }
 
          return idx - offset;
       }
 
-      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
          // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
          var typedArray = (TSystemType[]) values;
@@ -112,17 +119,17 @@ namespace Parquet.Data
 
       public abstract Array GetArray(int minCount, bool rent, bool isNullable);
 
-      public abstract Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength);
+      public abstract Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
 
-      protected TNullable[] PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength)
+      protected TNullable[] PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
          where TNullable : class
       {
          definitionLevels = IntPool.Rent(data.Length);
          definitionsLength = data.Length;
 
-         int nullCount = data.Count(i => i == null);
+         nullCount = data.Count(i => i == null);
          TNullable[] result = new TNullable[data.Length - nullCount];
          int ir = 0;
 
@@ -165,11 +172,6 @@ namespace Parquet.Data
 
 
       #region [ Reader / Writer Helpers ]
-
-      protected virtual TSystemType ReadOne(BinaryReader reader)
-      {
-         throw new NotSupportedException();
-      }
 
       protected virtual void WriteOne(BinaryWriter writer, TSystemType value)
       {
