@@ -8,54 +8,7 @@
     <PackageId>Parquet.Net</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>3.2.3:
-- bug fixed: multiple nesting levels were not correctly read by row-based helpers (#363)
-- bug fixed: Equals method on Row didn't compare list elements correctly (#361)
-- bug fixed: multi-page columns were not read to end if their order is not what parquet-dotnet expects (#370)
-
-3.2.0:
-- new feature: POCO serialiser support for repeatable fields POCO (#358)
-- bug fixed: --max-rows 10 not honored by PARQ Global Tool 📺 (#357)
-- bug fixed: failure to read columns if data page is larger than it should be (supposably padded by Spark) 🐛
-(#330)
-- improvement: Limit number of rows printed by parq. By default only show the first 10 rows in PARQ Global Tool 📺
-(#351)
-
-3.1.3, 3.1.4:
-- includes massive performance improvements in parquet reader, now we are faster than fastparquet (python lib)  
-
-3.1.2:
-- new feature: replaced default ToString() method in Table and Row object to produce json (#346)
-- new feature: parquet CLI supports conversion from parquet to json (#341)
-
-3.1.1:
-parq cli improvements
-
-3.1.0:
-- re-introducing utilities for row-based access allowing you to access and create parquet files in more readable format.
-- Field class now supports MaxRepetitionLevel and MaxDefinitionLevel
-- fixed bug #334 preventing reading generated files in Impala
-- parquet.net library supports SourceLink
-
-3.0.5:
-- #321 bug fixed: a nullable field should support all-non-nullable values 
-- performance improvement around packing definition levels
-
-3.0.4:
-- bug fixed: Cannot read schema where map elements are structures (#320)
-
-3.0.3
-- critical bug fixed: reading parquet files with multiple pages doesn't read beyond 1st page (#318)
-    
-3.0.2
-- performance improvements (#317)
-
-3.0.1
-- improvement: better column validation in row group writer
-- bug fixed: Snappy compression writer fails on certain encodings (#315)
-
-3.0.0
-the first release of a major rewrite</PackageReleaseNotes>
+    <PackageReleaseNotes>see full release notes at https://github.com/elastacloud/parquet-dotnet/releases</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
      <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>

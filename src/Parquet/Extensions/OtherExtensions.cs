@@ -33,13 +33,13 @@ namespace Parquet
 
       public static DateTimeOffset FromUnixDays(this int unixDays)
       {
-         return UnixEpoch.AddDays(unixDays - 1);
+         return UnixEpoch.AddDays(unixDays);
       }
 
       public static int ToUnixDays(this DateTimeOffset dto)
       {
          TimeSpan diff = dto - UnixEpoch;
-         return (int)diff.TotalDays + 1;
+         return (int)diff.TotalDays;
       }
 
       public static string AddPath(this string s, params string[] parts)
