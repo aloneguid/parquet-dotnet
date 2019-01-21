@@ -38,7 +38,7 @@ namespace Parquet.File.Values
 
          long start = reader.BaseStream.Position;
          int startOffset = offset;
-         while (reader.BaseStream.Position - start < length)
+         while ((reader.BaseStream.Position - start < length))
          {
             int header = ReadUnsignedVarInt(reader);
             bool isRle = (header & 1) == 0;
@@ -85,7 +85,7 @@ namespace Parquet.File.Values
          byte[] data = reader.ReadBytes(width);
          int value = ReadIntOnBytes(data);
 
-         for (int i = 0; i < count; i++)
+         for (int i = 0; (i < count) && (offset < dest.Length); i++)
          {
             dest[offset++] = value;
          }
