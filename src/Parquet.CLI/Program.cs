@@ -1,10 +1,10 @@
 ﻿using System;
-using Cpf;
 using Cpf.App;
-using LogMagic;
-using LogMagic.Enrichers;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.Extensibility;
 using Parquet.CLI.Commands;
 using Parquet.CLI.Models;
+using Serilog;
 using static Cpf.PoshConsole;
 
 namespace Parquet.CLI
@@ -18,8 +18,6 @@ namespace Parquet.CLI
    /// </summary>
    class Program
    {
-      private static readonly ILog log = L.G(typeof(Program));
-
       static int Main(string[] args)
       {
          var app = new Application("Parquet CLI (https://github.com/elastacloud/parquet-dotnet)");
@@ -45,7 +43,7 @@ namespace Parquet.CLI
 
          app.OnError((cmd, err) =>
          {
-            log.Trace("error in command {command}", cmd.Name, err);
+            Log.Error(err, "error in command {command}", cmd.Name);
             return true;
          });
 
@@ -139,13 +137,9 @@ namespace Parquet.CLI
             });
          });
 
-         int exitCode;
-         using (L.Context(KnownProperty.OperationId, Guid.NewGuid().ToString()))
-         {
-            exitCode = app.Execute();
-         }
+         int exitCode = app.Execute();
 
-         L.Config.Shutdown();
+         Log.CloseAndFlush();
 
          return exitCode;
       }
@@ -160,9 +154,18 @@ namespace Parquet.CLI
           * by launching application instead of calling appinsights REST API.
           */
 
-         L.Config
-            .WriteTo.AzureApplicationInsights("0a310ae1-0f93-43fc-bfa1-62e92fc869b9")
-            .EnrichWith.Constant(KnownProperty.Version, app.Version);
+         /*var configuration = new TelemetryConfiguration
+         {
+            InstrumentationKey = "0a310ae1-0f93-43fc-bfa1-62e92fc869b9",
+            TelemetryChannel = new PersistenceChannel()
+         };*/
+
+         Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .Enrich.WithProperty("Version", app.Version)
+            .WriteTo.ApplicationInsightsTraces("0a310ae1-0f93-43fc-bfa1-62e92fc869b9")
+            .WriteTo.Trace()
+            .CreateLogger();
 
          Telemetry.CliInvoked(args);
       }

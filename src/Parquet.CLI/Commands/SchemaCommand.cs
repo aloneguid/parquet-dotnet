@@ -1,5 +1,4 @@
 ﻿using System;
-using LogMagic;
 using Parquet.Data;
 using static Cpf.PoshConsole;
 
@@ -7,7 +6,6 @@ namespace Parquet.CLI.Commands
 {
    class SchemaCommand
    {
-      private static readonly ILog log = L.G(typeof(SchemaCommand));
       private readonly string _path;
 
       public SchemaCommand(string path)
@@ -20,28 +18,21 @@ namespace Parquet.CLI.Commands
          Telemetry.CommandExecuted("schema",
             "path", _path);
 
-         using (var time = new TimeMeasure())
+         using (var reader = ParquetReader.OpenFromFile(_path))
          {
-            using (var reader = ParquetReader.OpenFromFile(_path))
-            {
-               Schema schema = reader.Schema;
+            Schema schema = reader.Schema;
 
-               PrintSchema(schema, time.Elapsed);
-            }
+            PrintSchema(schema);
          }
       }
 
-      private void PrintSchema(Schema schema, TimeSpan timeTaken)
+      private void PrintSchema(Schema schema)
       {
          foreach(Field field in schema.Fields)
          {
             PrintField(field, 0);
          }
 
-         WriteLine();
-         Write("reading schema took ", ConsoleColor.DarkGray);
-         Write(timeTaken.TotalMilliseconds.ToString(), ConsoleColor.Red);
-         Write("ms", ConsoleColor.DarkGray);
          WriteLine();
       }
 

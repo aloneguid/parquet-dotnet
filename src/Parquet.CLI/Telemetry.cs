@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using LogMagic;
+using Serilog;
 
 namespace Parquet.CLI
 {
@@ -10,24 +8,18 @@ namespace Parquet.CLI
    /// </summary>
    static class Telemetry
    {
-      private static readonly ILog log = L.G(typeof(Telemetry));
-
       public const string ExecuteCommand = "Exec";
 
       public static void CliInvoked(string[] args)
       {
-         log.Event("CliInvoked",
-            "OS", Environment.OSVersion.VersionString,
-            "RawArgs", string.Join(';', args));
+         Log.Information("CliInvoked (os: {os}, args: {args}",
+            Environment.OSVersion.VersionString,
+            string.Join(';', args));
       }
 
       public static void CommandExecuted(string name, params object[] properties)
       {
-         var psl = new List<object>(properties);
-         psl.Add("name");
-         psl.Add(name);
-
-         log.Event(ExecuteCommand, psl.ToArray());
+         Log.Information("command {command} executed", name);
       }
    }
 }

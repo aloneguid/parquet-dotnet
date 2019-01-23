@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using LogMagic;
+using NetBox.Performance;
 using Parquet.Data;
 using Parquet.File;
 using F = System.IO.File;
@@ -11,13 +11,8 @@ namespace Parquet.Runner
 {
    class Program
    {
-      private static readonly LogMagic.ILog log = LogMagic.L.G(typeof(Program));
-
       static void Main(string[] args)
       {
-         L.Config
-            .WriteTo.PoshConsole();
-
          var readTimes = new List<TimeSpan>();
          var uwts = new List<TimeSpan>();
          var gwts = new List<TimeSpan>();
@@ -27,10 +22,10 @@ namespace Parquet.Runner
             readTimes.Add(readTime);
             uwts.Add(uwt);
             gwts.Add(gwt);
-            log.Trace("iteration #{0}: {1}, uwp: {2}, gwt: {3}", i, readTime, uwt, gwt);
+            Console.WriteLine("iteration #{0}: {1}, uwp: {2}, gwt: {3}", i, readTime, uwt, gwt);
          }
 
-         log.Trace("mean(read): {0}, mean(uw): {1}, mean(gw): {2}",
+         Console.WriteLine("mean(read): {0}, mean(uw): {1}, mean(gw): {2}",
             TimeSpan.FromTicks((long)readTimes.Average(t => t.Ticks)),
             TimeSpan.FromTicks((long)uwts.Average(t => t.Ticks)),
             TimeSpan.FromTicks((long)gwts.Average(t => t.Ticks)));
