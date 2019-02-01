@@ -15,7 +15,6 @@ namespace Parquet.Data.Rows
       private readonly int[] _rls;
       private readonly int _rl;
       private readonly int _maxRl;
-      private readonly bool _isData;
 
       public LazyColumnEnumerator(DataColumn dc) : this(dc, 0, dc.Data.Length, 0)
       {
@@ -36,8 +35,6 @@ namespace Parquet.Data.Rows
          _rls = dc.RepetitionLevels;
          _rl = rl;
          _maxRl = dc.Field.MaxRepetitionLevel;
-
-         _isData = rl == _maxRl;
       }
 
       public object Current { get; private set; }
@@ -111,14 +108,25 @@ namespace Parquet.Data.Rows
 
          int prl = -1;
 
-         for(int i = _offset; i < _start + _count; i++)
+         for (int i = _offset; i < _start + _count; i++)
          {
             int rl = _rls[i];
 
-            if (prl != -1 && (rl != _maxRl && rl <= prl && rl <= _rl))
+            if (
+                  prl != -1 &&
+                  ((rl != _maxRl && rl <= prl && rl <= _rl) || rl == 0)
+            )
             {
                int count = i - _offset;
-               bool isEmpty = count == 1 && rl == 0;
+
+               //detecting empty list is not really possible in parquet
+               //we make an assumption that if RL is 0, list has one element and data element is zero it's empty
+               //it's a parquet format limitation
+               bool isEmpty = 
+                  count == 1 &&
+                  rl == 0 &&
+                  (_data.GetValue(_offset) == null);
+
                if (isEmpty)
                {
                   count = 0;
@@ -136,7 +144,7 @@ namespace Parquet.Data.Rows
          }
 
          int finalCount = _count - (_offset - _start);
-         if(finalCount == 1 && prl == 0)
+         if(finalCount == 1 && prl == 0 && (_data.GetValue(_offset) == null))
          {
             finalCount = 0;
          }
@@ -145,7 +153,7 @@ namespace Parquet.Data.Rows
             _offset,
             finalCount,
             _rl + 1);
-         _offset =  _start + _count; //make it big
+         _offset = _start + _count; //make it big
       }
 
       public IEnumerator GetEnumerator()
