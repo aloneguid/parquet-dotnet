@@ -152,5 +152,29 @@ namespace Parquet.Test.Rows
          Assert.Equal(4.9, list1[0], 3);
          Assert.Equal(1.6, list2[0], 3);
       }
+
+      [Fact]
+      public void List_of_one_element()
+      {
+         var dc = new DataColumn(new DataField("level2", DataType.String, isArray: true) { MaxRepetitionLevel = 2 },
+             new string[] { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j" },
+             new int[] { 0, 2, 2, 1, 2, 2, 2, 0, 1, 2 });
+
+         var e = new LazyColumnEnumerator(dc);
+
+         List<LazyColumnEnumerator> topLevel = e.ToEnumeratorList();
+         Assert.Equal(2, topLevel.Count);
+
+         List<LazyColumnEnumerator> row1 = topLevel[0].ToEnumeratorList();
+         List<LazyColumnEnumerator> row2 = topLevel[1].ToEnumeratorList();
+         Assert.Equal(2, row1.Count);
+         Assert.Equal(2, row2.Count);
+
+         Assert.Equal(new[] { "a", "b", "c" }, row1[0].ToDataArray());
+         Assert.Equal(new[] { "d", "e", "f", "g" }, row1[1].ToDataArray());
+
+         Assert.Equal(new[] { "h" }, row2[0].ToDataArray());
+         Assert.Equal(new[] { "i", "j" }, row2[1].ToDataArray());
+      }
    }
 }

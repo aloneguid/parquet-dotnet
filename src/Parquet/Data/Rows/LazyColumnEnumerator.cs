@@ -112,10 +112,7 @@ namespace Parquet.Data.Rows
          {
             int rl = _rls[i];
 
-            if (
-                  prl != -1 &&
-                  ((rl != _maxRl && rl <= prl && rl <= _rl) || rl == 0)
-            )
+            if (prl != -1 && rl != _maxRl && rl == _rl)
             {
                int count = i - _offset;
 
