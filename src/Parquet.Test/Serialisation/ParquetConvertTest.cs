@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using NetBox.Extensions;
 using Parquet.Data;
+using Parquet.Serialization;
 using Xunit;
 
 namespace Parquet.Test.Serialisation
@@ -67,6 +68,24 @@ namespace Parquet.Test.Serialisation
          Assert.Equal(new[] { 1, 2, 3 }, s[1].Areas);
       }
 
+      [Fact]
+      public void StructureWithDateTimeTest()
+      {
+         StructureWithDateTime Test = new StructureWithDateTime
+         {
+            Id = "1",
+            Value = "empty string",
+            CompletionDate = DateTime.Now,
+         };
+
+         Schema schema = SchemaReflector.Reflect<StructureWithDateTime>();
+
+         using (MemoryStream stream = new MemoryStream())
+         {
+            ParquetConvert.Serialize<StructureWithDateTime>(new StructureWithDateTime[] { Test }, stream, schema);
+         }
+      }
+
       public class SimpleRepeated
       {
          public int Id { get; set; }
@@ -85,5 +104,13 @@ namespace Parquet.Test.Serialisation
          public DateTimeOffset Date { get; set; }
       }
 
+      public class StructureWithDateTime
+      {
+         public string Id { get; set; }
+
+         public string Value { get; set; }
+
+         public DateTime CompletionDate { get; set; }
+      }
    }
 }
