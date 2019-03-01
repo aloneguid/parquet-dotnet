@@ -14,8 +14,10 @@ namespace Parquet.Serialization.Values
    {
       private static readonly TypeConversion[] conversions = new TypeConversion[]
       {
-         new DateTimeToDateTimeOffsetConversion(),
-         new DateTimeOffsetToDateTimeConversion(),
+         DateTimeToDateTimeOffsetConversion.Instance,
+         DateTimeOffsetToDateTimeConversion.Instance,
+         NullableDateTimeToDateTimeOffsetConversion.Instance,
+         NullableDateTimeOffsetToDateTimeConversion.Instance,
       };
 
       public delegate object PopulateListDelegate(object instances,
@@ -79,21 +81,12 @@ namespace Parquet.Serialization.Values
          il.Emit(Ldarg_0);
          il.Emit(Stloc, collection.LocalIndex);
 
-         //hold item
-         LocalBuilder item = il.DeclareLocal(f.ClrNullableIfHasNullsType);
-
-         //current repetition level
-         LocalBuilder rl = null;
-         if(f.IsArray)
-         {
-            rl = il.DeclareLocal(typeof(int));
-         }
-
          using (il.ForEachLoop(classType, collection, out LocalBuilder currentElement))
          {
             if (f.IsArray)
             {
                //reset repetition level to 0
+               LocalBuilder rl = il.DeclareLocal(typeof(int));
                il.Emit(Ldc_I4_0);
                il.StLoc(rl);
 
@@ -121,6 +114,9 @@ namespace Parquet.Serialization.Values
             }
             else
             {
+               //hold item
+               LocalBuilder item = il.DeclareLocal(f.ClrNullableIfHasNullsType);
+
                //get current value, converting if necessary
                il.Emit(Ldloc, currentElement.LocalIndex);
                il.Emit(Callvirt, getValueMethod);
@@ -163,7 +159,7 @@ namespace Parquet.Serialization.Values
          MethodInfo getDataMethod = dcti.GetDeclaredProperty(nameof(DataColumn.Data)).GetMethod;
          MethodInfo getRepsMethod = dcti.GetDeclaredProperty(nameof(DataColumn.RepetitionLevels)).GetMethod;
 
-         TypeConversion conversion = GetConversion(dataColumn.Field.ClrType, pi.PropertyType);
+         TypeConversion conversion = GetConversion(dataColumn.Field.ClrNullableIfHasNullsType, pi.PropertyType);
 
          GenerateAssigner(il, classType, field,
             setValueMethod,
@@ -210,7 +206,6 @@ namespace Parquet.Serialization.Values
 
                il.Increment(ci);
             }
-
          }
          else
          {
@@ -278,6 +273,8 @@ namespace Parquet.Serialization.Values
 
       sealed private class DateTimeToDateTimeOffsetConversion : TypeConversion<DateTime, DateTimeOffset>
       {
+         public static readonly TypeConversion<DateTime, DateTimeOffset> Instance = new DateTimeToDateTimeOffsetConversion();
+
          private static readonly ConstructorInfo method = typeof(DateTimeOffset).GetTypeInfo().DeclaredConstructors
             .First(c => c.GetParameters().Matches(new[] { typeof(DateTime) }));
 
@@ -289,19 +286,75 @@ namespace Parquet.Serialization.Values
 
       sealed class DateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset, DateTime>
       {
-         // Doesn't work for some reason :/
-         // private static readonly MethodInfo method = typeof(DateTimeOffset).GetTypeInfo().GetDeclaredProperty("DateTime").GetMethod;
-         private static readonly MethodInfo method = typeof(DateTimeOffsetToDateTimeConversion).GetTypeInfo().GetDeclaredMethod("From");
+         public static readonly TypeConversion<DateTimeOffset, DateTime> Instance = new DateTimeOffsetToDateTimeConversion();
+
+         private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("DateTimeFromDateTimeOffset");
 
          public override void Emit(ILGenerator il)
          {
             il.Emit(OpCodes.Call, method);
          }
+      }
 
-         public static DateTime From(DateTimeOffset value)
+      sealed private class NullableDateTimeToDateTimeOffsetConversion : TypeConversion<DateTime?, DateTimeOffset?>
+      {
+         public static readonly TypeConversion<DateTime?, DateTimeOffset?> Instance = new NullableDateTimeToDateTimeOffsetConversion();
+
+         private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableDateTimeOffsetFromDateTime");
+
+         public override void Emit(ILGenerator il)
          {
-            return value.DateTime;
+            il.Emit(OpCodes.Call, method);
          }
+      }
+
+      sealed class NullableDateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset?, DateTime?>
+      {
+         public static readonly TypeConversion<DateTimeOffset?, DateTime?> Instance = new NullableDateTimeOffsetToDateTimeConversion();
+
+         private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableDateTimeFromDateTimeOffset");
+
+         public override void Emit(ILGenerator il)
+         {
+            il.Emit(OpCodes.Call, method);
+         }
+      }
+   }
+
+   /// <summary>
+   /// This class is public to simplify use from Reflection
+   /// </summary>
+   public static class ConversionHelpers
+   {
+      /// <summary>
+      /// Convert DateTimeOffset to DateTime
+      /// </summary>
+      /// <param name="value">DateTimeOffset</param>
+      /// <returns>DateTime</returns>
+      public static DateTime DateTimeFromDateTimeOffset(DateTimeOffset value)
+      {
+         return value.DateTime;
+      }
+
+      /// <summary>
+      /// Convert DateTimeOffset? to DateTime?
+      /// </summary>
+      /// <param name="value">DateTimeOffset?</param>
+      /// <returns>DateTime?</returns>
+      public static DateTime? NullableDateTimeFromDateTimeOffset(DateTimeOffset? value)
+      {
+         return value?.DateTime;
+      }
+
+      /// <summary>
+      /// Convert DateTime? to DateTimeOffset?
+      /// </summary>
+      /// <param name="value">DateTime?</param>
+      /// <returns>DateTimeOffset?</returns>
+      public static DateTimeOffset? NullableDateTimeOffsetFromDateTime(DateTime? value)
+      {
+         if (value == null) { return null; }
+         return new DateTimeOffset(value.Value);
       }
    }
 }

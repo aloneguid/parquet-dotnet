@@ -71,25 +71,35 @@ namespace Parquet.Test.Serialisation
       [Fact]
       public void Serialize_structure_with_DateTime()
       {
-         StructureWithDateTime input = new StructureWithDateTime
+         TestRoundTripSerialization<DateTime>(DateTime.UtcNow.RoundToSecond());
+      }
+
+      [Fact]
+      public void Serialize_structure_with_nullable_DateTime()
+      {
+         TestRoundTripSerialization<DateTime?>(DateTime.UtcNow.RoundToSecond());
+         TestRoundTripSerialization<DateTime?>(null);
+      }
+
+      void TestRoundTripSerialization<T>(T value)
+      {
+         StructureWithTestType<T> input = new StructureWithTestType<T>
          {
             Id = "1",
-            Value = "empty string",
-            CompletionDate = DateTime.UtcNow.RoundToSecond(),
+            TestValue = value,
          };
 
-         Schema schema = SchemaReflector.Reflect<StructureWithDateTime>();
+         Schema schema = SchemaReflector.Reflect<StructureWithTestType<T>>();
 
          using (MemoryStream stream = new MemoryStream())
          {
-            ParquetConvert.Serialize<StructureWithDateTime>(new StructureWithDateTime[] { input }, stream, schema);
+            ParquetConvert.Serialize<StructureWithTestType<T>>(new StructureWithTestType<T>[] { input }, stream, schema);
 
             stream.Position = 0;
-            StructureWithDateTime[] output = ParquetConvert.Deserialize<StructureWithDateTime>(stream);
+            StructureWithTestType<T>[] output = ParquetConvert.Deserialize<StructureWithTestType<T>>(stream);
             Assert.Single(output);
             Assert.Equal("1", output[0].Id);
-            Assert.Equal("empty string", output[0].Value);
-            Assert.Equal(input.CompletionDate, output[0].CompletionDate);
+            Assert.Equal(value, output[0].TestValue);
          }
       }
 
@@ -111,13 +121,14 @@ namespace Parquet.Test.Serialisation
          public DateTimeOffset Date { get; set; }
       }
 
-      public class StructureWithDateTime
+      public class StructureWithTestType<T>
       {
+         T testValue;
+
          public string Id { get; set; }
 
-         public string Value { get; set; }
-
-         public DateTime CompletionDate { get; set; }
+         // public T TestValue { get; set; }
+         public T TestValue { get { return testValue; } set { testValue = value; } }
       }
    }
 }

@@ -36,7 +36,9 @@ namespace Parquet.Serialization
          Label lWork = il.DefineLabel();
          currentElement = il.DeclareLocal(elementType);
 
+#if DEBUG
          il.EmitWriteLine("foreach-begin");
+#endif
 
          //immediately move to "move next" to start enumeration
          il.Emit(Br, lMoveNext);
