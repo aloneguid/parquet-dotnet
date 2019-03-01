@@ -69,20 +69,27 @@ namespace Parquet.Test.Serialisation
       }
 
       [Fact]
-      public void StructureWithDateTimeTest()
+      public void Serialize_structure_with_DateTime()
       {
-         StructureWithDateTime Test = new StructureWithDateTime
+         StructureWithDateTime input = new StructureWithDateTime
          {
             Id = "1",
             Value = "empty string",
-            CompletionDate = DateTime.Now,
+            CompletionDate = DateTime.UtcNow.RoundToSecond(),
          };
 
          Schema schema = SchemaReflector.Reflect<StructureWithDateTime>();
 
          using (MemoryStream stream = new MemoryStream())
          {
-            ParquetConvert.Serialize<StructureWithDateTime>(new StructureWithDateTime[] { Test }, stream, schema);
+            ParquetConvert.Serialize<StructureWithDateTime>(new StructureWithDateTime[] { input }, stream, schema);
+
+            stream.Position = 0;
+            StructureWithDateTime[] output = ParquetConvert.Deserialize<StructureWithDateTime>(stream);
+            Assert.Single(output);
+            Assert.Equal("1", output[0].Id);
+            Assert.Equal("empty string", output[0].Value);
+            Assert.Equal(input.CompletionDate, output[0].CompletionDate);
          }
       }
 

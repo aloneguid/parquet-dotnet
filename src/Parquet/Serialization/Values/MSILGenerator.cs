@@ -12,6 +12,12 @@ namespace Parquet.Serialization.Values
 {
    class MSILGenerator
    {
+      private static readonly TypeConversion[] conversions = new TypeConversion[]
+      {
+         new DateTimeToDateTimeOffsetConversion(),
+         new DateTimeOffsetToDateTimeConversion(),
+      };
+
       public delegate object PopulateListDelegate(object instances,
          object resultItemsList,
          object resultRepetitionsList,
@@ -42,13 +48,16 @@ namespace Parquet.Serialization.Values
             methodArgs,
             GetType().GetTypeInfo().Module);
 
+         TypeConversion conversion = GetConversion(pi.PropertyType, field.ClrNullableIfHasNullsType);
+
          ILGenerator il = runMethod.GetILGenerator();
 
          GenerateCollector(il, classType,
             field,
             getValueMethod,
             addToListMethod,
-            addRepLevelMethod);
+            addRepLevelMethod,
+            conversion);
 
          return (PopulateListDelegate)runMethod.CreateDelegate(typeof(PopulateListDelegate));
       }
@@ -57,7 +66,8 @@ namespace Parquet.Serialization.Values
          DataField f,
          MethodInfo getValueMethod,
          MethodInfo addToListMethod,
-         MethodInfo addRepLevelMethod)
+         MethodInfo addRepLevelMethod,
+         TypeConversion conversion)
       {
          //arg 0 - collection of classes, clr objects
          //arg 1 - data items (typed list)
@@ -108,13 +118,16 @@ namespace Parquet.Serialization.Values
                   il.Emit(Ldarg_3);
                   il.StLoc(rl);
                }
-
             }
             else
             {
-               //get current value
+               //get current value, converting if necessary
                il.Emit(Ldloc, currentElement.LocalIndex);
                il.Emit(Callvirt, getValueMethod);
+               if (conversion != null)
+               {
+                  conversion.Emit(il);
+               }
                il.Emit(Stloc, item.LocalIndex);
 
                //store in destination list
@@ -150,10 +163,13 @@ namespace Parquet.Serialization.Values
          MethodInfo getDataMethod = dcti.GetDeclaredProperty(nameof(DataColumn.Data)).GetMethod;
          MethodInfo getRepsMethod = dcti.GetDeclaredProperty(nameof(DataColumn.RepetitionLevels)).GetMethod;
 
+         TypeConversion conversion = GetConversion(dataColumn.Field.ClrType, pi.PropertyType);
+
          GenerateAssigner(il, classType, field,
             setValueMethod,
             getDataMethod,
-            getRepsMethod);
+            getRepsMethod,
+            conversion);
 
          return (AssignArrayDelegate)runMethod.CreateDelegate(typeof(AssignArrayDelegate));
       }
@@ -161,7 +177,8 @@ namespace Parquet.Serialization.Values
       private void GenerateAssigner(ILGenerator il, Type classType, DataField field,
          MethodInfo setValueMethod,
          MethodInfo getDataMethod,
-         MethodInfo getRepsMethod)
+         MethodInfo getRepsMethod,
+         TypeConversion conversion)
       {
          //arg 0 - DataColumn
          //arg 1 - class intances array (Array)
@@ -219,12 +236,72 @@ namespace Parquet.Serialization.Values
                //get class instance
                il.GetArrayElement(Ldarg_1, iData, true, classType, classInstance);
 
+               il.LdLoc(classInstance);
+
+               //convert if necessary
+               if (conversion != null)
+               {
+                  il.LdLoc(dataItem);
+                  conversion.Emit(il);
+               }
+               else
+               {
+                  il.Emit(Ldloc, dataItem.LocalIndex);
+               }
+
                //assign data item to class property
-               il.CallVirt(setValueMethod, classInstance, dataItem);
+               il.Emit(Callvirt, setValueMethod);
             }
          }
 
          il.Emit(Ret);
+      }
+
+      private TypeConversion GetConversion(Type fromType, Type toType)
+      {
+         if (fromType == toType) { return null; }
+         return conversions.FirstOrDefault(c => c.FromType == fromType && c.ToType == toType);
+      }
+
+      private abstract class TypeConversion
+      {
+         public abstract Type FromType { get; }
+         public abstract Type ToType { get; }
+         public abstract void Emit(ILGenerator il);
+      }
+
+      private abstract class TypeConversion<TFrom, TTo> : TypeConversion
+      {
+         public override Type FromType { get { return typeof(TFrom); } }
+         public override Type ToType { get { return typeof(TTo); } }
+      }
+
+      sealed private class DateTimeToDateTimeOffsetConversion : TypeConversion<DateTime, DateTimeOffset>
+      {
+         private static readonly ConstructorInfo method = typeof(DateTimeOffset).GetTypeInfo().DeclaredConstructors
+            .First(c => c.GetParameters().Matches(new[] { typeof(DateTime) }));
+
+         public override void Emit(ILGenerator il)
+         {
+            il.Emit(OpCodes.Newobj, method);
+         }
+      }
+
+      sealed class DateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset, DateTime>
+      {
+         // Doesn't work for some reason :/
+         // private static readonly MethodInfo method = typeof(DateTimeOffset).GetTypeInfo().GetDeclaredProperty("DateTime").GetMethod;
+         private static readonly MethodInfo method = typeof(DateTimeOffsetToDateTimeConversion).GetTypeInfo().GetDeclaredMethod("From");
+
+         public override void Emit(ILGenerator il)
+         {
+            il.Emit(OpCodes.Call, method);
+         }
+
+         public static DateTime From(DateTimeOffset value)
+         {
+            return value.DateTime;
+         }
       }
    }
 }

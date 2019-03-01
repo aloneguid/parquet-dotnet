@@ -268,6 +268,22 @@ namespace Parquet.Serialization
          return new CodeAfter(thisIl, ilAction);
       }
 
+      public static bool Matches(this ParameterInfo[] parameters, Type[] types)
+      {
+         if (parameters.Length != types.Length)
+         {
+            return false;
+         }
+         for (int i = 0; i < parameters.Length; i++)
+         {
+            if (parameters[i].ParameterType != types[i])
+            {
+               return false;
+            }
+         }
+         return true;
+      }
+
       class CodeAfter : IDisposable
       {
          private readonly ILGenerator _il;
