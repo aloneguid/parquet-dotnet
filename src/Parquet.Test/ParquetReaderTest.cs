@@ -142,6 +142,27 @@ namespace Parquet.Test
          }
       }
 
+      [Fact]
+      public void ParquetReader_OpenFromFile_Close_Stream()
+      {
+         // copy a file to a temp location
+         var tempFile = Path.GetTempFileName();
+         using (var fr = OpenTestFile("map_simple.parquet"))
+         using (var fw = System.IO.File.OpenWrite(tempFile))
+         {
+            fr.CopyTo(fw);
+         }
+               
+         // open the copy
+         using (var reader = ParquetReader.OpenFromFile(tempFile))
+         {
+            // do nothing
+         }
+         
+         // now try to delete this temp file. If the stream is properly closed, this should succeed
+         System.IO.File.Delete(tempFile);
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)
