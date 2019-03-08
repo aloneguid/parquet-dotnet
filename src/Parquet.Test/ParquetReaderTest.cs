@@ -143,6 +143,25 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void ReadLargeTimestampData()
+      {
+         using (var reader = new ParquetReader(OpenTestFile("/mixed-dictionary-plain.parquet"), leaveStreamOpen: false))
+         {
+            DataColumn[] columns = reader.ReadEntireRowGroup();
+
+            DateTimeOffset?[] col0 = (DateTimeOffset?[])columns[0].Data;
+            Assert.Equal(440773, col0.Length);
+
+            long ticks = col0[0].Value.Ticks;
+            for (int i = 1; i < 132000; i++)
+            {
+               long now = col0[i].Value.Ticks;
+               Assert.NotEqual(ticks, now);
+            }
+         }
+      }
+
+      [Fact]
       public void ParquetReader_OpenFromFile_Close_Stream()
       {
          // copy a file to a temp location

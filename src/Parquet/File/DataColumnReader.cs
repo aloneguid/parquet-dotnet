@@ -31,7 +31,6 @@ namespace Parquet.File
          public int definitionsOffset;
 
          public int[] indexes;
-         public int indexesOffset;
 
          public Array values;
          public int valuesOffset;
@@ -86,8 +85,7 @@ namespace Parquet.File
 
          while (true)
          {
-            int valuesSoFar = Math.Max(colData.indexes == null ? 0 : colData.indexesOffset, colData.values == null ? 0 : colData.values.Length);
-            ReadDataPage(ph, colData, maxValues - valuesSoFar);
+            ReadDataPage(ph, colData, maxValues);
 
             pagesRead++;
 
@@ -103,8 +101,7 @@ namespace Parquet.File
                break;*/
 
             int totalCount = Math.Max(
-               (colData.values == null ? 0 : colData.valuesOffset) +
-               (colData.indexes == null ? 0 : colData.indexesOffset),
+               (colData.values == null ? 0 : colData.valuesOffset),
                (colData.definitions == null ? 0 : colData.definitionsOffset));
             if (totalCount >= maxValues) break; //limit reached
 
@@ -140,7 +137,7 @@ namespace Parquet.File
             {
                using (var dataReader = new BinaryReader(ms))
                {
-                  dictionary = _dataTypeHandler.GetArray((int)_thriftColumnChunk.Meta_data.Num_values, false, false);
+                  dictionary = _dataTypeHandler.GetArray(ph.Dictionary_page_header.Num_values, false, false);
 
                   dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0);
 
@@ -199,9 +196,7 @@ namespace Parquet.File
                      cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset);
                   }
 
-                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, ph.Data_page_header.Num_values,
-                     ref cd.values, ref cd.valuesOffset,
-                     ref cd.indexes, ref cd.indexesOffset);
+                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, ph.Data_page_header.Num_values, cd);
                }
             }
          }
@@ -214,27 +209,33 @@ namespace Parquet.File
          return RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, 0, dest, offset);
       }
 
-      private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long totalValues, long currValues,
-         ref Array values, ref int valuesOffset,
-         ref int[] indexes, ref int indexesOffset)
+      private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long totalValues, long currValues, ColumnRawData cd)
       {
          //dictionary encoding uses RLE to encode data
+
+         if (cd.values == null)
+         {
+            cd.values = _dataTypeHandler.GetArray((int)totalValues, false, false);
+         }
 
          switch (encoding)
          {
             case Thrift.Encoding.PLAIN:
-               if (values == null) values = _dataTypeHandler.GetArray((int)totalValues, false, false);
-               valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, values, valuesOffset);
+               cd.valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, cd.values, cd.valuesOffset);
                break;
 
             case Thrift.Encoding.RLE:
-               if (indexes == null) indexes = new int[(int)totalValues];
-               indexesOffset += RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, indexes, indexesOffset);
+               if (cd.indexes == null) cd.indexes = new int[(int)totalValues];
+               int indexCount = RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, cd.indexes, 0);
+               _dataTypeHandler.MergeDictionary(cd.dictionary, cd.indexes, cd.values, cd.valuesOffset, indexCount);
+               cd.valuesOffset += indexCount;
                break;
 
             case Thrift.Encoding.PLAIN_DICTIONARY:
-               if (indexes == null) indexes = new int[(int)totalValues];
-               indexesOffset += ReadPlainDictionary(reader, currValues, indexes, indexesOffset);
+               if (cd.indexes == null) cd.indexes = new int[(int)totalValues];
+               indexCount = ReadPlainDictionary(reader, currValues, cd.indexes, 0);
+               _dataTypeHandler.MergeDictionary(cd.dictionary, cd.indexes, cd.values, cd.valuesOffset, indexCount);
+               cd.valuesOffset += indexCount;
                break;
 
             default:

@@ -41,13 +41,7 @@ namespace Parquet.Data
       {
          Data = definedData;
 
-         // 1. Dictionary merge
-         if (dictionary != null)
-         {
-            Data = _dataTypeHandler.MergeDictionary(dictionary, dictionaryIndexes);
-         }
-
-         // 2. Apply definitions
+         // 1. Apply definitions
          if (definitionLevels != null)
          {
             bool[] hasValueFlags;
@@ -55,7 +49,7 @@ namespace Parquet.Data
             HasValueFlags = hasValueFlags;
          }
 
-         // 3. Apply repetitions
+         // 2. Apply repetitions
          RepetitionLevels = repetitionLevels;
       }
 
