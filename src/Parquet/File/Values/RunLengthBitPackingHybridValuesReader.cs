@@ -11,10 +11,10 @@ namespace Parquet.File.Values
    //todo: this abstrtion is not useful and must die - create RLE encoding class instead for both reading and writing
    class RunLengthBitPackingHybridValuesReader
    {
-      public static int Read(BinaryReader reader, int bitWidth, int[] dest, int destOffset)
+      public static int Read(BinaryReader reader, int bitWidth, int[] dest, int destOffset, int maxReadCount)
       {
          int length = GetRemainingLength(reader);
-         return ReadRleBitpackedHybrid(reader, bitWidth, length, dest, destOffset);
+         return ReadRleBitpackedHybrid(reader, bitWidth, length, dest, destOffset, maxReadCount);
       }
 
       /* from specs:
@@ -32,7 +32,7 @@ namespace Parquet.File.Values
        * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
        */
 
-      public static int ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, int[] dest, int offset)
+      public static int ReadRleBitpackedHybrid(BinaryReader reader, int bitWidth, int length, int[] dest, int offset, int pageSize)
       {
          if (length == 0) length = reader.ReadInt32();
 
@@ -45,11 +45,11 @@ namespace Parquet.File.Values
 
             if (isRle)
             {
-               offset += ReadRle(header, reader, bitWidth, dest, offset);
+               offset += ReadRle(header, reader, bitWidth, dest, offset, pageSize - (offset - startOffset));
             }
             else
             {
-               offset += ReadBitpacked(header, reader, bitWidth, dest, offset);
+               offset += ReadBitpacked(header, reader, bitWidth, dest, offset, pageSize - (offset - startOffset));
             }
          }
 
@@ -73,19 +73,20 @@ namespace Parquet.File.Values
          destination.AddRange(Enumerable.Repeat(value, count));
       }
 
-      private static int ReadRle(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
+      private static int ReadRle(int header, BinaryReader reader, int bitWidth, int[] dest, int offset, int maxItems)
       {
          // The count is determined from the header and the width is used to grab the
          // value that's repeated. Yields the value repeated count times.
 
          int start = offset;
-         int count = header >> 1;
-         if (count == 0) return 0; //important not to continue reading as will result in data corruption in data page further
-         int width = (bitWidth + 7) / 8; //round up to next byte
+         int headerCount = header >> 1;
+         if (headerCount == 0) return 0; // important not to continue reading as will result in data corruption in data page further
+         int count = Math.Min(headerCount, maxItems); // make sure we remain within bounds
+         int width = (bitWidth + 7) / 8; // round up to next byte
          byte[] data = reader.ReadBytes(width);
          int value = ReadIntOnBytes(data);
 
-         for (int i = 0; (i < count) && (offset < dest.Length); i++)
+         for (int i = 0; i < count; i++)
          {
             dest[offset++] = value;
          }
@@ -93,7 +94,7 @@ namespace Parquet.File.Values
          return offset - start;
       }
 
-      private static int ReadBitpacked(int header, BinaryReader reader, int bitWidth, int[] dest, int offset)
+      private static int ReadBitpacked(int header, BinaryReader reader, int bitWidth, int[] dest, int offset, int maxItems)
       {
          int start = offset;
          int groupCount = header >> 1;
@@ -111,7 +112,7 @@ namespace Parquet.File.Values
          int total = byteCount * 8;
          int bwl = 8;
          int bwr = 0;
-         while (total >= bitWidth && offset < dest.Length)
+         while (total >= bitWidth && (offset - start) < maxItems)
          {
             if (bwr >= 8)
             {
