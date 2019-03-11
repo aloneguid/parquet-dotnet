@@ -118,6 +118,10 @@ namespace Parquet.Extensions
             sb.Append(value.ToString());
             sb.Append(quote);
          }
+         else if(t == typeof(bool))
+         {
+            sb.Append((bool)value ? "true" : "false");
+         }
          else
          {
             sb.Append(value.ToString());

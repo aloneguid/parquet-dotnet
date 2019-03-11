@@ -511,23 +511,24 @@ namespace Parquet.Test.Rows
             new ListField("observations",
                new StructField("observation",
                   new DataField<DateTimeOffset>("date"),
+                  new DataField<bool>("bool"),
                   new DataField<IEnumerable<int?>>("values")))));
 
          DateTimeOffset defaultDate = new DateTimeOffset(2018, 1, 1, 1, 1, 1, TimeSpan.Zero);
 
          t.Add("London", new[]
          {
-            new Row(defaultDate, new int?[] { 1, 2, 3, 4, 5 })
+            new Row(defaultDate, true, new int?[] { 1, 2, 3, 4, 5 })
          });
 
          t.Add("Oslo", new[]
          {
-            new Row(defaultDate, new int?[] { null, null, null, null, null, null, null })
+            new Row(defaultDate, false, new int?[] { null, null, null, null, null, null, null })
          });
 
          string[] jsons = t.ToString("jsq").Split(new[] {Environment.NewLine}, StringSplitOptions.None);
-         Assert.Equal($"{{'name': 'London', 'observations': [{{'date': '{defaultDate}', 'values': [1, 2, 3, 4, 5]}}]}}", jsons[0]);
-         Assert.Equal($"{{'name': 'Oslo', 'observations': [{{'date': '{defaultDate}', 'values': [null, null, null, null, null, null, null]}}]}}", jsons[1]);
+         Assert.Equal($"{{'name': 'London', 'observations': [{{'date': '{defaultDate}', 'bool': true, 'values': [1, 2, 3, 4, 5]}}]}}", jsons[0]);
+         Assert.Equal($"{{'name': 'Oslo', 'observations': [{{'date': '{defaultDate}', 'bool': false, 'values': [null, null, null, null, null, null, null]}}]}}", jsons[1]);
       }
 
       #endregion
