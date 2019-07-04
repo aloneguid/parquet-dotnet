@@ -1,0 +1,148 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md
+      - /doc/**/*
+
+pr:
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md
+      - /doc/**/*
+
+variables:
+  - group: 'External Resources'
+  - name: vmImage
+    value: 'ubuntu-16.04'  # see https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml&viewFallbackFrom=vsts
+
+stages:
+- stage: Build
+  jobs:
+  - job: Core
+    displayName: 'Core Build'
+    pool:
+      vmImage: $(vmImage)
+
+    steps:
+
+    - task: petersendev.dotnet-global-tool-installer.DotnetGlobalToolInstaller.DotnetGlobalToolInstaller@0
+      displayName: 'install housework'
+      inputs:
+        name: housework
+
+    - script: 'housework author src/*.csproj -s build.ini -r'
+      displayName: 'author projects'
+
+    - script: 'housework substitute ./src/Parquet/ThriftFooter.cs -s build.ini -r'
+      displayName: 'subst sources'
+
+    - script: 'housework setbuildnumber %Version% -s build.ini'
+      displayName: 'set build number'
+
+    - script: 'housework pushvars Version -s build.ini'
+      displayName: 'push variables'
+
+
+    # init SonarCloud
+    #- task: SonarSource.sonarcloud.14d9cde6-c1da-4d55-aa01-2965cd301255.SonarCloudPrepare@1
+    #  displayName: 'Prepare analysis on SonarCloud'
+    #  inputs:
+    #    SonarCloud: SonarCloud
+    #    organization: aloneguid-github
+    #    projectKey: parquet_dotnet
+    #    projectName: 'Parquet.Net'
+    #    projectVersion: '$(Version)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'build all'
+      inputs:
+        projects: src/Parquet.sln
+        arguments: '-c release'
+
+    #- task: DotNetCoreCLI@2
+    #  displayName: 'Integration and Unit Test'
+    #  continueOnError: true
+    #  inputs:
+    #    command: test
+    #    projects: ./src/Parquet.sln
+    #    arguments: '-c release'
+
+    - task: CopyFiles@2
+      displayName: 'copy generated nugets'
+      inputs:
+        SourceFolder: src
+        Contents: '**/*.nupkg'
+        TargetFolder: ' $(build.artifactstagingdirectory)'
+        CleanTargetFolder: true
+        OverWrite: true
+        flattenFolders: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'publish nugets'
+      inputs:
+        ArtifactName: nuget
+
+    # finish Sonar analysis
+    #- task: SonarSource.sonarcloud.ce096e50-6155-4de8-8800-4221aaeed4a1.SonarCloudAnalyze@1
+    #  displayName: 'SonarQube: Run Code Analysis'
+    #- task: SonarSource.sonarcloud.38b27399-a642-40af-bb7d-9971f69712e8.SonarCloudPublish@1
+    #  displayName: 'SonarQube: Publish Quality Gate Result'
+
+- stage: Test
+  #condition: succeeded('Build')
+  dependsOn: [] # remove explicit dependency, so it runs in parallel
+  jobs:
+  - job: Platform
+    displayName: 'Tests'
+    strategy:
+      matrix:
+        Windows:
+           image: 'windows-2019'
+        Linux:
+           image: 'ubuntu-16.04'
+        MacOSX:
+           image: 'macOS-10.14'
+    pool:
+      vmImage: $(image)
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'run tests'
+      inputs:
+        command: test
+        projects: ./src/Parquet.sln
+        arguments: '-c release'
+
+- stage: Release
+  dependsOn: ['Build', 'Test']
+  condition: "and( eq(variables['Build.SourceBranch'], 'refs/heads/master'), succeeded('Build'), succeeded('Test') )"
+  jobs:
+  - deployment: NugetOrg
+    displayName: 'nuget.org public feed'
+    pool:
+      vmImage: $(vmImage)
+    environment: live
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'nuget'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          - task: NuGetCommand@2
+            displayName: nuget.org
+            inputs:
+              command: push
+              packagesToPush: '$(System.ArtifactsDirectory)/nuget/*.nupkg'
+              nuGetFeedType: external
+              publishFeedCredentials: 'nuget.org (aloneguid)'
+

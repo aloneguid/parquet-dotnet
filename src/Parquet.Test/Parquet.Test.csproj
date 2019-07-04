@@ -1,15 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-   <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-      <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-   </PropertyGroup>
 
-   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-      <TargetFrameworks>netcoreapp2.1;net452</TargetFrameworks>
-   </PropertyGroup>
-
-   <PropertyGroup>    
-    <SignAssembly>true</SignAssembly>    
+   <PropertyGroup>
+      <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
+      <SignAssembly>true</SignAssembly>    
     <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
