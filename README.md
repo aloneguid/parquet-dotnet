@@ -12,7 +12,7 @@ Note that [Elastacloud](https://elastacloud.com/Home) provides commercial suppor
 
 | Core Build | Windows/Linux/Mac Tests |
 |------------|----------------|
-|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/AllPublic/_build/latest?definitionId=57)|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=57)|
+|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/AllPublic/_build/latest?definitionId=58)|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=58)|
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5` and up.
