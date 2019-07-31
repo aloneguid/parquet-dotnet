@@ -201,6 +201,21 @@ namespace Parquet.Test
          System.IO.File.Delete(tempFile);
       }
 
+      [Fact]
+      public void ParquetReader_EmptyColumn()
+      {
+         using (var reader = new ParquetReader(OpenTestFile("emptycolumn.parquet"), leaveStreamOpen: false))
+         {
+            DataColumn[] columns = reader.ReadEntireRowGroup();
+            int?[] col0 = (int?[])columns[0].Data;
+            Assert.Equal(10, col0.Length);
+            foreach (int? value in col0)
+            {
+               Assert.Null(value);
+            }
+         }
+      }
+
       class ReadableNonSeekableStream : DelegatedStream
       {
          public ReadableNonSeekableStream(Stream master) : base(master)

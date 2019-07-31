@@ -109,8 +109,12 @@ namespace Parquet.Data
          for (int i = 0; i < length; i++)
          {
             int index = indexes[i];
-            TSystemType value = dictionary[index];
-            result[offset + i] = value;
+            if (index < dictionary.Length)
+            {
+               // may not be true when value is null
+               TSystemType value = dictionary[index];
+               result[offset + i] = value;
+            }
          }
 
          return result;
