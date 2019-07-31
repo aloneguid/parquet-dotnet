@@ -31,7 +31,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_plain_no_compression()
       {
-         CompareFiles("types/alltypes", "plain",
+         CompareFiles("types/alltypes", "plain", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -48,7 +48,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_gzip_compression()
       {
-         CompareFiles("types/alltypes", "gzip",
+         CompareFiles("types/alltypes", "gzip", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -65,7 +65,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_snappy_compression()
       {
-         CompareFiles("types/alltypes", "snappy",
+         CompareFiles("types/alltypes", "snappy", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -76,6 +76,56 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
+            typeof(DateTimeOffset?));
+      }
+
+      public void Alltypes_plain_no_compression_byte_arrays()
+      {
+         CompareFiles("types/alltypes", "plain", false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_gzip_compression_byte_arrays()
+      {
+         CompareFiles("types/alltypes", "gzip", false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_snappy_compression_byte_arrays()
+      {
+         CompareFiles("types/alltypes", "snappy", false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
             typeof(DateTimeOffset?));
       }
 
@@ -90,7 +140,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression()
       {
-         CompareFiles("types/alltypes_dictionary", "plain",
+         CompareFiles("types/alltypes_dictionary", "plain", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -107,7 +157,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression_by_spark()
       {
-         CompareFiles("types/alltypes_dictionary", "plain-spark21",
+         CompareFiles("types/alltypes_dictionary", "plain-spark21", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -124,7 +174,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_gzipped()
       {
-         CompareFiles("types/alltypes_dictionary", "gzip",
+         CompareFiles("types/alltypes_dictionary", "gzip", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -138,11 +188,62 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
+      [Fact]
+      public void Alltypes_dictionary_no_compression_byte_arrays()
+      {
+         CompareFiles("types/alltypes_dictionary", "plain", false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_dictionary_no_compression_by_spark_byte_arrays()
+      {
+         CompareFiles("types/alltypes_dictionary", "plain-spark21", false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
+            typeof(DateTimeOffset?));
+      }
+
+      [Fact]
+      public void Alltypes_dictionary_gzipped_byte_arrays()
+      {
+         CompareFiles("types/alltypes_dictionary", "gzip", false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
+            typeof(DateTimeOffset?));
+      }
+
 
       [Fact]
       public void Postcodes_sample_no_compression()
       {
-         CompareFiles("postcodes", "plain",
+         CompareFiles("postcodes", "plain", true,
             typeof(string),   //Postcode
             typeof(string),   //
             typeof(double?),

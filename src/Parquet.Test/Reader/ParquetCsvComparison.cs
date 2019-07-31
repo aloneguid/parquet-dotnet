@@ -16,9 +16,9 @@ namespace Parquet.Test.Reader
 {
    public class ParquetCsvComparison : TestBase
    {
-      protected void CompareFiles(string baseName, string encoding, params Type[] columnTypes)
+      protected void CompareFiles(string baseName, string encoding, bool treatByteArrayAsString, params Type[] columnTypes)
       {
-         DataColumn[] parquet = ReadParquet($"{baseName}.{encoding}.parquet");
+         DataColumn[] parquet = ReadParquet($"{baseName}.{encoding}.parquet", treatByteArrayAsString);
          DataColumn[] csv = ReadCsv($"{baseName}.csv");
          Compare(parquet, csv, columnTypes);
       }
@@ -62,6 +62,16 @@ namespace Parquet.Test.Reader
                      Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
                         $"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
                   }
+                  else if (clrType == typeof(byte[]))
+                  {
+                     byte[] pva = (byte[]) pv;
+                     byte[] cva = (byte[]) cv;
+                     Assert.True(pva.Length == cva.Length, $"expected length {cva.Length} but was {pva.Length} in column {pc.Field.Name}, value #{ri}");
+                     for (int i = 0; i < pva.Length; i++)
+                     {
+                        Assert.True(pva[i] == cva[i], $"expected {cva[i]} but was {pva[i]} in column {pc.Field.Name}, value #{ri}, array index {i}");
+                     }
+                  }
                   else
                   {
                      Assert.True(pv.Equals(cv),
@@ -84,14 +94,20 @@ namespace Parquet.Test.Reader
             return new DateTimeOffset(DateTime.Parse(so));
          }
 
+         if (t == typeof(byte[]))
+         {
+            string so = (string) v;
+            return Encoding.UTF8.GetBytes(so);
+         }
+
          return Convert.ChangeType(v, t);
       }
 
-      private DataColumn[] ReadParquet(string name)
+      private DataColumn[] ReadParquet(string name, bool treatByteArrayAsString)
       {
          using (Stream s = OpenTestFile(name))
          {
-            using (var pr = new ParquetReader(s, new ParquetOptions { TreatByteArrayAsString = true }))
+            using (var pr = new ParquetReader(s, new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString }))
             {
                using (ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0))
                {
