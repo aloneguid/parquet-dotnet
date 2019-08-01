@@ -100,7 +100,7 @@ stages:
   dependsOn: [] # remove explicit dependency, so it runs in parallel
   jobs:
   - job: Platform
-    displayName: 'Tests'
+    displayName: 'on'
     strategy:
       matrix:
         Windows:

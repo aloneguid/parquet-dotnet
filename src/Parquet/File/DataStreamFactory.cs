@@ -62,12 +62,20 @@ namespace Parquet.File
          if (!_codecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
             throw new NotSupportedException($"reader for compression '{compressionCodec}' is not supported.");
 
+         int totalBytesRead = 0;
+         int currentBytesRead = int.MinValue;
          byte[] data = BytesPool.Rent(compressedLength);
-         int read = nakedStream.Read(data, 0, compressedLength);
 
-         if(read != compressedLength)
+         // Some storage solutions (like Azure blobs) might require more than one 'Read' action to read the requested length.
+         while (totalBytesRead < compressedLength && currentBytesRead != 0)
          {
-            throw new ParquetException($"expected {compressedLength} bytes in source stream but could read only {read}");
+            currentBytesRead = nakedStream.Read(data, totalBytesRead, compressedLength - totalBytesRead);
+            totalBytesRead += currentBytesRead;
+         }
+
+         if (totalBytesRead != compressedLength)
+         {
+            throw new ParquetException($"expected {compressedLength} bytes in source stream but could read only {totalBytesRead}");
          }
 
          switch (compressionMethod)
