@@ -24,5 +24,10 @@ namespace Parquet.Serialization.Values
 
          return ClassType.Equals(other.ClassType) && Field.Equals(other.Field);
       }
+      
+      public override int GetHashCode()
+      {
+         return 31 * ClassType.GetHashCode() + Field.GetHashCode();
+      }
    }
 }
