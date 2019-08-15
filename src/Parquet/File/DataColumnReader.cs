@@ -196,6 +196,8 @@ namespace Parquet.File
                      cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
                   }
 
+                  if (ph.Data_page_header == null) throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+
                   ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, ph.Data_page_header.Num_values, cd);
                }
             }
