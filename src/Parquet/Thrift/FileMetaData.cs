@@ -92,6 +92,7 @@ namespace Parquet.Thrift
 
       public FileMetaData()
       {
+         this.Row_groups = new List<RowGroup>();
       }
 
       public FileMetaData(int version, List<SchemaElement> schema, long num_rows, List<RowGroup> row_groups) : this()

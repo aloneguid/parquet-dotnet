@@ -113,10 +113,11 @@ namespace Parquet
       /// </summary>
       public void Dispose()
       {
-         if (!_dataWritten) return;
-
-         //update row count (on append add row count to existing metadata)
-         _footer.Add(_openedWriters.Sum(w => w.RowCount ?? 0));
+         if (_dataWritten)
+         {
+            //update row count (on append add row count to existing metadata)
+            _footer.Add(_openedWriters.Sum(w => w.RowCount ?? 0));
+         }
 
          //finalize file
          long size = _footer.Write(ThriftStream);

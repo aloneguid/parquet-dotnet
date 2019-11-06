@@ -69,6 +69,16 @@ namespace Parquet.Test.Serialisation
       }
 
       [Fact]
+      public void Serialize_deserialize_empty_enumerable()
+      {
+         IEnumerable<SimpleRepeated> structures = Enumerable.Empty<SimpleRepeated>();
+
+         SimpleRepeated[] s = ConvertSerialiseDeserialise(structures);
+   
+         Assert.Equal(0, s.Length);
+      }
+
+      [Fact]
       public void Serialize_structure_with_DateTime()
       {
          TestRoundTripSerialization<DateTime>(DateTime.UtcNow.RoundToSecond());
