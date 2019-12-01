@@ -56,11 +56,10 @@ namespace Parquet.Data.Concrete
 
             int spanIdx = 0;
 
-            while(spanIdx < span.Length && destIdx < tdest.Length)
+            while (spanIdx < span.Length && destIdx < tdest.Length)
             {
                int length = span.Slice(spanIdx, 4).ReadInt32();
-               byte[] buffer = span.Slice(spanIdx + 4, length).ToArray();
-               string s = E.GetString(buffer, 0, length);
+               string s = E.GetString(allBytes, spanIdx + 4, length);
                tdest[destIdx++] = s;
                spanIdx = spanIdx + 4 + length;
             }
@@ -75,7 +74,7 @@ namespace Parquet.Data.Concrete
 
       protected override string ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
-         if(length == -1) length = reader.ReadInt32();
+         if (length == -1) length = reader.ReadInt32();
 
          byte[] data = reader.ReadBytes(length);
          return Encoding.UTF8.GetString(data);
