@@ -173,7 +173,7 @@ namespace Parquet.File
          using (BytesOwner bytes = ReadPageData(ph))
          {
             //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
-            using (var ms = new MemoryStream(bytes.Memory.ToArray()))
+            using (var ms = bytes.ToStream())
             {
                ParquetEventSource.Current.OpenDataPage(_dataField.Path, _thriftColumnChunk.Meta_data.Codec.ToString(), ms.Length);
 
