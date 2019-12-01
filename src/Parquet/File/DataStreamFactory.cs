@@ -108,7 +108,7 @@ namespace Parquet.File
                throw new NotSupportedException("method: " + compressionMethod);
          }
 
-         return new BytesOwner(data, data.AsMemory(0, (int)uncompressedLength), d => BytesPool.Return(d));
+         return new BytesOwner(data, 0, data.AsMemory(0, (int)uncompressedLength), d => BytesPool.Return(d));
       }
    }
 }
