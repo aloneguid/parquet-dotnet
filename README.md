@@ -2,17 +2,13 @@
 
 ![Icon](doc/img/best.png)
 
-Note that [Elastacloud](https://elastacloud.com/Home) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to [parquetsupport@elastacloud.com](mailto:parquetsupport@elastacloud.com).
-
-![](doc/img/logo_ec.png)
-
 ## Status
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 
 | Core Build | Windows/Linux/Mac Tests |
 |------------|----------------|
-|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/AllPublic/_build/latest?definitionId=58)|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=58)|
+|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/AllPublic/_build/latest?definitionId=67)|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=67)|
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5` and up.
