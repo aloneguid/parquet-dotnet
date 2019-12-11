@@ -4,8 +4,8 @@ First off, thank you for considering contributing to Parquet.Net. It's people li
 
 ## 1. Where do I go from here?
 
-If you've noticed a bug or have a question see if someone else in the community has already [created a ticket](https://github.com/elastacloud/parquet-dotnet/issues?q=something).
-If not, go ahead and [make one](https://github.com/elastacloud/parquet-dotnet/issues/new)!
+If you've noticed a bug or have a question see if someone else in the community has already [created a ticket](https://github.com/aloneguid/parquet-dotnet/issues?q=something).
+If not, go ahead and [make one](https://github.com/aloneguid/parquet-dotnet/issues/new)!
 
 ## 2. Fork & create a branch
 

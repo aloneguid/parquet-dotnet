@@ -1,6 +1,6 @@
 # Apache Parquet for .Net Platform
 
-![Icon](doc/img/best.png)
+![Icon](doc/img/banner.svg)
 
 ## Status
 
@@ -14,7 +14,7 @@
 - `.NET 4.5` and up.
 - `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
 
-Runs on all flavors of Windows, Linux, MacOSXm mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
+Runs on all flavors of Windows, Linux, MacOSX, mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
 
 > Performs integration tests with **parquet-mr** (original Java parquet implementation) to test for identical behavior. We are planning to add more third-party platforms integration as well.
 
@@ -55,15 +55,6 @@ All the parties in this test were given 10 iteration and time was taken as an av
 - **[parq!!!](doc/parq.md)**
 
 You can track the [amount of features we have implemented so far](doc/features.md).
-
-## Related Projects
-
-- [Apache Parquet viewer for Windows 10](https://github.com/aloneguid/parquet-viewer-uwp).
-- [Azure Data Lake Analytics Integration](https://github.com/elastacloud/datalake-extractor-parquet).
-
-Download Parquet Viewer from Windows 10 store:
-
-<a href="https://www.microsoft.com/store/apps/9pgb0m8z4j2t?ocid=badge"><img src="https://assets.windowsphone.com/f2f77ec7-9ba9-4850-9ebe-77e366d08adc/English_Get_it_Win_10_InvariantCulture_Default.png" alt="Get it on Windows 10" width="200" /></a>
 
 ## Getting started
 
@@ -154,7 +145,7 @@ Parquet.Net includes [API for row-based access](doc/rows.md) that simplify parqu
 
 ## License
 
-Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
+Parquet.Net is licensed under the [MIT license](https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE).
 
 ## Privacy
 
