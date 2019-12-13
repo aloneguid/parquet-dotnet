@@ -37,9 +37,9 @@ namespace Parquet.File
       {
          Stream dest;
 
-#if !NET14
+/*#if !NET14
          nakedStream = new BufferedStream(nakedStream); //optimise writer performance
-#endif
+#endif*/
 
          switch (compressionMethod)
          {
