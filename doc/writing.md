@@ -42,7 +42,7 @@ After constructing `ParquetWriter` you can optionally set compression method (`C
 
 - `None` for no compression. This is the fastest way to write files, however they may end up slightly larger.
 - `Snappy` is the default level and is a perfect balance between compression and speed.
-- `Gzip` is using gzip compression, is the slowest, however should produce the best results. Maximum (Optimal) compression settings is chosen, as if you are going for gzip, you are probably considering compression as your top priority.
+- `Gzip` is using gzip compression, is the slowest, however should produce the best results. Maximum (Optimal) compression settings is chosen, as if you are going for gzip, you are probably considering compression as your top priority. When using gzip, you can also specify *compression level* by setting `CompressionLevel` property on `ParquetWriter`. It's an integer property as it's specific to compression methods used, and for gzip has the following values: 0 - no compression, 1 - fastest, 2 - optimal.
 
 
 ## Appending to Files

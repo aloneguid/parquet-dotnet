@@ -2,8 +2,6 @@
 
    <PropertyGroup>
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
     <Description>Pure .NET library to read and write Apache Parquet files, targeting .NET 4.5 and .NET Standand 1.4 and up. Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on thrid-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.</Description>
     <Company>Ivan Gavryliuk</Company>
     <PackageId>Parquet.Net</PackageId>
@@ -28,6 +26,10 @@
    <ItemGroup Condition="'$(Configuration)' == 'Release'">
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All" />
    </ItemGroup>
+
+   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
+      <DefineConstants>NET14</DefineConstants>
+   </PropertyGroup>
 
    <ItemGroup>
     <PackageReference Include="System.Buffers" Version="4.5.0" />

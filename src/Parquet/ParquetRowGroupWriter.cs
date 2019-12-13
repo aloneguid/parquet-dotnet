@@ -11,13 +11,16 @@ namespace Parquet
    /// <summary>
    /// Writer for Parquet row groups
    /// </summary>
+#pragma warning disable CA1063 // Implement IDisposable Correctly
    public class ParquetRowGroupWriter : IDisposable
+#pragma warning restore CA1063 // Implement IDisposable Correctly
    {
       private readonly Schema _schema;
       private readonly Stream _stream;
       private readonly ThriftStream _thriftStream;
       private readonly ThriftFooter _footer;
       private readonly CompressionMethod _compressionMethod;
+      private readonly int _compressionLevel;
       private readonly ParquetOptions _formatOptions;
       private readonly Thrift.RowGroup _thriftRowGroup;
       private readonly long _rgStartPos;
@@ -29,6 +32,7 @@ namespace Parquet
          ThriftStream thriftStream,
          ThriftFooter footer, 
          CompressionMethod compressionMethod,
+         int compressionLevel,
          ParquetOptions formatOptions)
       {
          _schema = schema ?? throw new ArgumentNullException(nameof(schema));
@@ -36,6 +40,7 @@ namespace Parquet
          _thriftStream = thriftStream ?? throw new ArgumentNullException(nameof(thriftStream));
          _footer = footer ?? throw new ArgumentNullException(nameof(footer));
          _compressionMethod = compressionMethod;
+         _compressionLevel = compressionLevel;
          _formatOptions = formatOptions;
 
          _thriftRowGroup = _footer.AddRowGroup();
@@ -70,7 +75,9 @@ namespace Parquet
 
          List<string> path = _footer.GetPath(tse);
 
-         var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse, _compressionMethod, (int)RowCount.Value);
+         var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
+            _compressionMethod, _compressionLevel,
+            (int)RowCount.Value);
 
          Thrift.ColumnChunk chunk = writer.Write(path, column, dataTypeHandler);
          _thriftRowGroup.Columns.Add(chunk);
@@ -80,7 +87,9 @@ namespace Parquet
       /// <summary>
       /// 
       /// </summary>
+#pragma warning disable CA1063 // Implement IDisposable Correctly
       public void Dispose()
+#pragma warning restore CA1063 // Implement IDisposable Correctly
       {
          //todo: check if all columns are present
 

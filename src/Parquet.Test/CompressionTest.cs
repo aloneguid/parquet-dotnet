@@ -32,5 +32,17 @@ namespace Parquet.Test
          object actual = WriteReadSingle(new DataField<string>("id"), value, compressionMethod);
          Assert.Equal("five", actual);
       }
+
+      [Theory]
+      [InlineData(-1)]
+      [InlineData(0)]
+      [InlineData(1)]
+      [InlineData(2)]
+      public void Gzip_all_levels(int level)
+      {
+         const string value = "five";
+         object actual = WriteReadSingle(new DataField<string>("id"), value, CompressionMethod.Gzip, level);
+         Assert.Equal("five", actual);
+      }
    }
 }
