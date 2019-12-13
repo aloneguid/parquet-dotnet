@@ -37,7 +37,11 @@ namespace Parquet.File
       {
          Stream dest;
 
-         switch(compressionMethod)
+#if !NET14
+         nakedStream = new BufferedStream(nakedStream); //optimise writer performance
+#endif
+
+         switch (compressionMethod)
          {
             case CompressionMethod.Gzip:
                dest = new GZipStream(nakedStream, ToGzipCompressionLevel(compressionLevel), leaveNakedOpen);
@@ -53,7 +57,7 @@ namespace Parquet.File
             default:
                throw new NotImplementedException($"unknown compression method {compressionMethod}");
          }
-         
+
          return new GapStream(dest, leaveOpen: leaveNakedOpen);
       }
 
