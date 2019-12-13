@@ -1,12 +1,12 @@
-#trigger:
-#  batch: true
-#  branches:
-#    include:
-#      - master
-#  paths:
-#    exclude:
-#      - README.md
-#      - /doc/**/*
+trigger:
+  batch: true
+  branches:
+    include:
+      - develop
+  paths:
+    exclude:
+      - README.md
+      - /doc/**/*
 
 pr:
   branches:
