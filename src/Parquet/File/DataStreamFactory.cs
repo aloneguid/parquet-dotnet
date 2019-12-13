@@ -31,7 +31,8 @@ namespace Parquet.File
 
       // this will eventually disappear once we fully migrate to System.Memory
       public static GapStream CreateWriter(
-         Stream nakedStream, CompressionMethod compressionMethod,
+         Stream nakedStream,
+         CompressionMethod compressionMethod, int compressionLevel,
          bool leaveNakedOpen)
       {
          Stream dest;
@@ -39,7 +40,7 @@ namespace Parquet.File
          switch(compressionMethod)
          {
             case CompressionMethod.Gzip:
-               dest = new GZipStream(nakedStream, CompressionLevel.Optimal, leaveNakedOpen);
+               dest = new GZipStream(nakedStream, ToGzipCompressionLevel(compressionLevel), leaveNakedOpen);
                leaveNakedOpen = false;
                break;
             case CompressionMethod.Snappy:
@@ -54,6 +55,21 @@ namespace Parquet.File
          }
          
          return new GapStream(dest, leaveOpen: leaveNakedOpen);
+      }
+
+      private static CompressionLevel ToGzipCompressionLevel(int compressionLevel)
+      {
+         switch(compressionLevel)
+         {
+            case 0:
+               return CompressionLevel.NoCompression;
+            case 1:
+               return CompressionLevel.Fastest;
+            case 2:
+               return CompressionLevel.Optimal;
+            default:
+               return CompressionLevel.Optimal;
+         }
       }
 
       public static BytesOwner ReadPageData(Stream nakedStream, Thrift.CompressionCodec compressionCodec,

@@ -17,6 +17,7 @@ namespace Parquet.File
       private readonly ThriftFooter _footer;
       private readonly Thrift.SchemaElement _schemaElement;
       private readonly CompressionMethod _compressionMethod;
+      private readonly int _compressionLevel;
       private readonly int _rowCount;
 
       private struct PageTag
@@ -31,6 +32,7 @@ namespace Parquet.File
          ThriftFooter footer,
          Thrift.SchemaElement schemaElement,
          CompressionMethod compressionMethod,
+         int compressionLevel,
          int rowCount)
       {
          _stream = stream;
@@ -38,6 +40,7 @@ namespace Parquet.File
          _footer = footer;
          _schemaElement = schemaElement;
          _compressionMethod = compressionMethod;
+         _compressionLevel = compressionLevel;
          _rowCount = rowCount;
       }
 
@@ -81,7 +84,7 @@ namespace Parquet.File
             Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Data.Length);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-            using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, true))
+            using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, _compressionLevel, true))
             {
                using (var writer = new BinaryWriter(pageStream, Encoding.UTF8, true))
                {

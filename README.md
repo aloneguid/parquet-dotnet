@@ -24,9 +24,7 @@ Parquet library is mostly available for [Java](https://github.com/apache/parquet
 
 ## Who
 
-Parquet.Net is used by many small and large organisations for production workloads:
-
-[![SwiftKey](doc/img/client-swiftkey.png)](https://www.microsoft.com/en-us/swiftkey/about-us)
+Parquet.Net is used by many small and large organisations for production workloads. If you are one of them, please email [ivan@isolineltd.com](mailto:ivan@isolineltd.com) to be displayed here.
 
 ## Performance
 

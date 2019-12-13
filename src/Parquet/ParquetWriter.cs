@@ -11,7 +11,9 @@ namespace Parquet
    /// <summary>
    /// Implements Apache Parquet format writer
    /// </summary>
+#pragma warning disable CA1063 // Implement IDisposable Correctly
    public class ParquetWriter : ParquetActor, IDisposable
+#pragma warning restore CA1063 // Implement IDisposable Correctly
    {
       private ThriftFooter _footer;
       private readonly Schema _schema;
@@ -23,6 +25,12 @@ namespace Parquet
       /// Type of compression to use, defaults to <see cref="CompressionMethod.Snappy"/>
       /// </summary>
       public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
+
+      /// <summary>
+      /// Compression level to use, value is treated depending on compression algorithm. Defaults to -1
+      /// meaning default compression level.
+      /// </summary>
+      public int CompressionLevel { get; set; } = -1;
 
       /// <summary>
       /// Creates an instance of parquet writer on top of a stream
@@ -52,7 +60,8 @@ namespace Parquet
       {
          _dataWritten = true;
 
-         var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer, CompressionMethod, _formatOptions);
+         var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer,
+            CompressionMethod, CompressionLevel, _formatOptions);
 
          _openedWriters.Add(writer);
 
@@ -111,7 +120,9 @@ namespace Parquet
       /// <summary>
       /// Disposes the writer and writes the file footer.
       /// </summary>
+#pragma warning disable CA1063 // Implement IDisposable Correctly
       public void Dispose()
+#pragma warning restore CA1063 // Implement IDisposable Correctly
       {
          if (_dataWritten)
          {
