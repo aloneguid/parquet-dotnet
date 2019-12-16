@@ -5,26 +5,18 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Statistics per row group and per page
-  /// All fields are optional.
-  /// </summary>
+   /// <summary>
+   /// Statistics per row group and per page
+   /// All fields are optional.
+   /// </summary>
 
-  public partial class Statistics : TBase
+   public partial class Statistics : TBase
   {
     private byte[] _max;
     private byte[] _min;
