@@ -20,25 +20,34 @@ namespace Parquet.Thrift
 {
 
   /// <summary>
-  /// Wrapper struct to store key values
+  /// Crypto metadata for files with encrypted footer *
   /// </summary>
 
-  public partial class KeyValue : TBase
+  public partial class FileCryptoMetaData : TBase
   {
-    private string _value;
+    private byte[] _key_metadata;
 
-    public string Key { get; set; }
+    /// <summary>
+    /// Encryption algorithm. This field is only used for files
+    /// with encrypted footer. Files with plaintext footer store algorithm id
+    /// inside footer (FileMetaData structure).
+    /// </summary>
+    public EncryptionAlgorithm Encryption_algorithm { get; set; }
 
-    public string Value
+    /// <summary>
+    /// Retrieval metadata of key used for encryption of footer,
+    /// and (possibly) columns *
+    /// </summary>
+    public byte[] Key_metadata
     {
       get
       {
-        return _value;
+        return _key_metadata;
       }
       set
       {
-        __isset.@value = true;
-        this._value = value;
+        __isset.key_metadata = true;
+        this._key_metadata = value;
       }
     }
 
@@ -46,14 +55,14 @@ namespace Parquet.Thrift
     public Isset __isset;
 
     public struct Isset {
-      public bool @value;
+      public bool key_metadata;
     }
 
-    public KeyValue() {
+    public FileCryptoMetaData() {
     }
 
-    public KeyValue(string key) : this() {
-      this.Key = key;
+    public FileCryptoMetaData(EncryptionAlgorithm encryption_algorithm) : this() {
+      this.Encryption_algorithm = encryption_algorithm;
     }
 
     public void Read (TProtocol iprot)
@@ -61,7 +70,7 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_key = false;
+        bool isset_encryption_algorithm = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -73,16 +82,17 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.String) {
-                Key = iprot.ReadString();
-                isset_key = true;
+              if (field.Type == TType.Struct) {
+                Encryption_algorithm = new EncryptionAlgorithm();
+                Encryption_algorithm.Read(iprot);
+                isset_encryption_algorithm = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Value = iprot.ReadString();
+                Key_metadata = iprot.ReadBinary();
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -94,7 +104,7 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_key)
+        if (!isset_encryption_algorithm)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
@@ -107,21 +117,21 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyValue");
+        TStruct struc = new TStruct("FileCryptoMetaData");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "key";
-        field.Type = TType.String;
+        field.Name = "encryption_algorithm";
+        field.Type = TType.Struct;
         field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteString(Key);
+        Encryption_algorithm.Write(oprot);
         oprot.WriteFieldEnd();
-        if (Value != null && __isset.@value) {
-          field.Name = "value";
+        if (Key_metadata != null && __isset.key_metadata) {
+          field.Name = "key_metadata";
           field.Type = TType.String;
           field.ID = 2;
           oprot.WriteFieldBegin(field);
-          oprot.WriteString(Value);
+          oprot.WriteBinary(Key_metadata);
           oprot.WriteFieldEnd();
         }
         oprot.WriteFieldStop();
@@ -134,12 +144,12 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyValue(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      if (Value != null && __isset.@value) {
-        __sb.Append(", Value: ");
-        __sb.Append(Value);
+      StringBuilder __sb = new StringBuilder("FileCryptoMetaData(");
+      __sb.Append(", Encryption_algorithm: ");
+      __sb.Append(Encryption_algorithm== null ? "<null>" : Encryption_algorithm.ToString());
+      if (Key_metadata != null && __isset.key_metadata) {
+        __sb.Append(", Key_metadata: ");
+        __sb.Append(Key_metadata);
       }
       __sb.Append(")");
       return __sb.ToString();

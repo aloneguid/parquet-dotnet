@@ -19,11 +19,14 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
+  /// <summary>
+  /// Empty structs to use as logical type annotations
+  /// </summary>
 
-  public partial class IndexPageHeader : TBase
+  public partial class StringType : TBase
   {
 
-    public IndexPageHeader() {
+    public StringType() {
     }
 
     public void Read (TProtocol iprot)
@@ -59,7 +62,7 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("IndexPageHeader");
+        TStruct struc = new TStruct("StringType");
         oprot.WriteStructBegin(struc);
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -71,7 +74,7 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("IndexPageHeader(");
+      StringBuilder __sb = new StringBuilder("StringType(");
       __sb.Append(")");
       return __sb.ToString();
     }

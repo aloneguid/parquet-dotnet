@@ -20,10 +20,10 @@ namespace Parquet.Thrift
 {
 
 
-  public partial class IndexPageHeader : TBase
+  public partial class EnumType : TBase
   {
 
-    public IndexPageHeader() {
+    public EnumType() {
     }
 
     public void Read (TProtocol iprot)
@@ -59,7 +59,7 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("IndexPageHeader");
+        TStruct struc = new TStruct("EnumType");
         oprot.WriteStructBegin(struc);
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -71,7 +71,7 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("IndexPageHeader(");
+      StringBuilder __sb = new StringBuilder("EnumType(");
       __sb.Append(")");
       return __sb.ToString();
     }

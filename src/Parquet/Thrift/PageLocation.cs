@@ -19,36 +19,34 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Wrapper struct to specify sort order
-  /// </summary>
 
-  public partial class SortingColumn : TBase
+  public partial class PageLocation : TBase
   {
 
     /// <summary>
-    /// The column index (in this row group) *
+    /// Offset of the page in the file *
     /// </summary>
-    public int Column_idx { get; set; }
+    public long Offset { get; set; }
 
     /// <summary>
-    /// If true, indicates this column is sorted in descending order. *
+    /// Size of the page, including header. Sum of compressed_page_size and header
+    /// length
     /// </summary>
-    public bool Descending { get; set; }
+    public int Compressed_page_size { get; set; }
 
     /// <summary>
-    /// If true, nulls will come before non-null values, otherwise,
-    /// nulls go at the end.
+    /// Index within the RowGroup of the first row of the page; this means pages
+    /// change on record boundaries (r = 0).
     /// </summary>
-    public bool Nulls_first { get; set; }
+    public long First_row_index { get; set; }
 
-    public SortingColumn() {
+    public PageLocation() {
     }
 
-    public SortingColumn(int column_idx, bool descending, bool nulls_first) : this() {
-      this.Column_idx = column_idx;
-      this.Descending = descending;
-      this.Nulls_first = nulls_first;
+    public PageLocation(long offset, int compressed_page_size, long first_row_index) : this() {
+      this.Offset = offset;
+      this.Compressed_page_size = compressed_page_size;
+      this.First_row_index = first_row_index;
     }
 
     public void Read (TProtocol iprot)
@@ -56,9 +54,9 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_column_idx = false;
-        bool isset_descending = false;
-        bool isset_nulls_first = false;
+        bool isset_offset = false;
+        bool isset_compressed_page_size = false;
+        bool isset_first_row_index = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -70,25 +68,25 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.I32) {
-                Column_idx = iprot.ReadI32();
-                isset_column_idx = true;
+              if (field.Type == TType.I64) {
+                Offset = iprot.ReadI64();
+                isset_offset = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 2:
-              if (field.Type == TType.Bool) {
-                Descending = iprot.ReadBool();
-                isset_descending = true;
+              if (field.Type == TType.I32) {
+                Compressed_page_size = iprot.ReadI32();
+                isset_compressed_page_size = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 3:
-              if (field.Type == TType.Bool) {
-                Nulls_first = iprot.ReadBool();
-                isset_nulls_first = true;
+              if (field.Type == TType.I64) {
+                First_row_index = iprot.ReadI64();
+                isset_first_row_index = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -100,11 +98,11 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_column_idx)
+        if (!isset_offset)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
-        if (!isset_descending)
+        if (!isset_compressed_page_size)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
-        if (!isset_nulls_first)
+        if (!isset_first_row_index)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
@@ -117,26 +115,26 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("SortingColumn");
+        TStruct struc = new TStruct("PageLocation");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "column_idx";
-        field.Type = TType.I32;
+        field.Name = "offset";
+        field.Type = TType.I64;
         field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteI32(Column_idx);
+        oprot.WriteI64(Offset);
         oprot.WriteFieldEnd();
-        field.Name = "descending";
-        field.Type = TType.Bool;
+        field.Name = "compressed_page_size";
+        field.Type = TType.I32;
         field.ID = 2;
         oprot.WriteFieldBegin(field);
-        oprot.WriteBool(Descending);
+        oprot.WriteI32(Compressed_page_size);
         oprot.WriteFieldEnd();
-        field.Name = "nulls_first";
-        field.Type = TType.Bool;
+        field.Name = "first_row_index";
+        field.Type = TType.I64;
         field.ID = 3;
         oprot.WriteFieldBegin(field);
-        oprot.WriteBool(Nulls_first);
+        oprot.WriteI64(First_row_index);
         oprot.WriteFieldEnd();
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -148,13 +146,13 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("SortingColumn(");
-      __sb.Append(", Column_idx: ");
-      __sb.Append(Column_idx);
-      __sb.Append(", Descending: ");
-      __sb.Append(Descending);
-      __sb.Append(", Nulls_first: ");
-      __sb.Append(Nulls_first);
+      StringBuilder __sb = new StringBuilder("PageLocation(");
+      __sb.Append(", Offset: ");
+      __sb.Append(Offset);
+      __sb.Append(", Compressed_page_size: ");
+      __sb.Append(Compressed_page_size);
+      __sb.Append(", First_row_index: ");
+      __sb.Append(First_row_index);
       __sb.Append(")");
       return __sb.ToString();
     }
