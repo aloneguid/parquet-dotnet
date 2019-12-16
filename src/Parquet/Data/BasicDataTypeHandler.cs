@@ -80,17 +80,17 @@ namespace Parquet.Data
 
       public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
-         var hs = new HashSet<TSystemType>(this);
+         if(statistics != null)
+         {
+            statistics.Distinct_count = ((TSystemType[])values).Distinct().Count();
+         }
 
          // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
          var typedArray = (TSystemType[]) values;
          foreach(TSystemType one in typedArray)
          {
             WriteOne(writer, one);
-            hs.Add(one);
          }
-
-         statistics.Distinct_count = hs.Count;
       }
 
       public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)

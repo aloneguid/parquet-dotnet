@@ -15,6 +15,12 @@ namespace Parquet.Test
          public Array Data { get; set; }
 
          public long DistinctCount { get; set; }
+
+         public long NullCount { get; set; }
+
+         public object Min { get; set; }
+
+         public object Max { get; set; }
       }
 
       private static Dictionary<string, TestDesc> NameToTest = new Dictionary<string, TestDesc>
@@ -23,7 +29,16 @@ namespace Parquet.Test
          {
             Type = typeof(int),
             Data = new int[] { 4, 2, 1, 3, 1, 4 },
-            DistinctCount = 4
+            DistinctCount = 4,
+            Min = 1,
+            Max = 5
+         },
+         ["int?"] = new TestDesc
+         {
+            Type = typeof(int?),
+            Data = new int?[] { 4, 2, 1, 3, 1, null, 4 },
+            DistinctCount = 4,
+            NullCount = 1
          },
          ["string"] = new TestDesc
          {
@@ -59,6 +74,7 @@ namespace Parquet.Test
 
       [Theory]
       [InlineData("int")]
+      [InlineData("int?")]
       [InlineData("string")]
       [InlineData("float")]
       [InlineData("double")]
@@ -73,7 +89,7 @@ namespace Parquet.Test
 
          Assert.Equal(test.Data.Length, rc.CalculateRowCount());
          Assert.Equal(test.DistinctCount, rc.Statistics.DistinctCount);
-         Assert.Equal(0, rc.Statistics.NullCount);
+         Assert.Equal(test.NullCount, rc.Statistics.NullCount);
       }
    }
 }
