@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetBox" Version="2.1.7" />
+    <PackageReference Include="NetBox" Version="2.3.5" />
   </ItemGroup>
 
   <ItemGroup>

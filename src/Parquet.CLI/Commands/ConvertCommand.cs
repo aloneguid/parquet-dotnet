@@ -5,7 +5,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Parquet.Data.Rows;
 using NetBox.Extensions;
-using static Cpf.PoshConsole;
+using static NetBox.Terminal.PoshConsole;
 
 namespace Parquet.CLI.Commands
 {

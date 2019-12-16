@@ -1,10 +1,8 @@
 ﻿using System;
-using Cpf.App;
-using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.Extensibility;
+using NetBox.Terminal.App;
 using Parquet.CLI.Commands;
 using Serilog;
-using static Cpf.PoshConsole;
+using static NetBox.Terminal.PoshConsole;
 
 namespace Parquet.CLI
 {
@@ -19,7 +17,7 @@ namespace Parquet.CLI
    {
       static int Main(string[] args)
       {
-         var app = new Application("Parquet CLI (https://github.com/aloneguid/parquet-dotnet)");
+         var app = new Application("Parquet CLI (https://github.com/aloneguid/parquet-dotnet) by Ivan Gavryliuk.");
          ConfigureTelemetry(app, args);
 
          LinePrimitive<bool> verboseOption = app.SharedOption<bool>("-d|--debug", Help.App_Verbose);
@@ -112,7 +110,7 @@ namespace Parquet.CLI
          Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.WithProperty("Version", app.Version)
-            .WriteTo.ApplicationInsightsTraces("aaf3c0f7-dc49-466c-848d-49ccfcdf86fe")
+            .WriteTo.ApplicationInsights("aaf3c0f7-dc49-466c-848d-49ccfcdf86fe", TelemetryConverter.Events)
             .WriteTo.Trace()
             .CreateLogger();
 
