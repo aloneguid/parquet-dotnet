@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Cpf.Widgets;
+using NetBox.Terminal.Widgets;
 using Parquet.Data.Rows;
 using Table = Parquet.Data.Rows.Table;
 

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Cpf.Widgets;
-using static Cpf.PoshConsole;
+using static NetBox.Terminal.PoshConsole;
 using NetBox.Extensions;
-using System.Linq;
+using NetBox.Terminal.Widgets;
 
 namespace Parquet.CLI.Commands
 {
