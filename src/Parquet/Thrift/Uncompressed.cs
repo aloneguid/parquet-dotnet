@@ -19,11 +19,15 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
+  /// <summary>
+  /// The compression used in the Bloom filter.
+  /// 
+  /// </summary>
 
-  public partial class IndexPageHeader : TBase
+  public partial class Uncompressed : TBase
   {
 
-    public IndexPageHeader() {
+    public Uncompressed() {
     }
 
     public void Read (TProtocol iprot)
@@ -59,7 +63,7 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("IndexPageHeader");
+        TStruct struc = new TStruct("Uncompressed");
         oprot.WriteStructBegin(struc);
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -71,7 +75,7 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("IndexPageHeader(");
+      StringBuilder __sb = new StringBuilder("Uncompressed(");
       __sb.Append(")");
       return __sb.ToString();
     }

@@ -5,248 +5,352 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using Thrift;
+using Thrift.Collections;
+
 using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-   public class RowGroup : TBase
-   {
-      private List<SortingColumn> _sorting_columns;
 
-      public List<ColumnChunk> Columns { get; set; }
+  public partial class RowGroup : TBase
+  {
+    private List<SortingColumn> _sorting_columns;
+    private long _file_offset;
+    private long _total_compressed_size;
+    private short _ordinal;
 
-      /// <summary>
-      /// Total byte size of all the uncompressed column data in this row group *
-      /// </summary>
-      public long Total_byte_size { get; set; }
+    /// <summary>
+    /// Metadata for each column chunk in this row group.
+    /// This list must have the same order as the SchemaElement list in FileMetaData.
+    /// 
+    /// </summary>
+    public List<ColumnChunk> Columns { get; set; }
 
-      /// <summary>
-      /// Number of rows in this row group *
-      /// </summary>
-      public long Num_rows { get; set; }
+    /// <summary>
+    /// Total byte size of all the uncompressed column data in this row group *
+    /// </summary>
+    public long Total_byte_size { get; set; }
 
-      /// <summary>
-      /// If set, specifies a sort ordering of the rows in this RowGroup.
-      /// The sorting columns can be a subset of all the columns.
-      /// </summary>
-      public List<SortingColumn> Sorting_columns
+    /// <summary>
+    /// Number of rows in this row group *
+    /// </summary>
+    public long Num_rows { get; set; }
+
+    /// <summary>
+    /// If set, specifies a sort ordering of the rows in this RowGroup.
+    /// The sorting columns can be a subset of all the columns.
+    /// </summary>
+    public List<SortingColumn> Sorting_columns
+    {
+      get
       {
-         get
-         {
-            return _sorting_columns;
-         }
-         set
-         {
-            __isset.sorting_columns = true;
-            this._sorting_columns = value;
-         }
+        return _sorting_columns;
       }
-
-
-      public Isset __isset;
-
-
-
-      public struct Isset
+      set
       {
-         public bool sorting_columns;
+        __isset.sorting_columns = true;
+        this._sorting_columns = value;
       }
+    }
 
-      public RowGroup()
+    /// <summary>
+    /// Byte offset from beginning of file to first page (data or dictionary)
+    /// in this row group *
+    /// </summary>
+    public long File_offset
+    {
+      get
       {
+        return _file_offset;
       }
-
-      public RowGroup(List<ColumnChunk> columns, long total_byte_size, long num_rows) : this()
+      set
       {
-         this.Columns = columns;
-         this.Total_byte_size = total_byte_size;
-         this.Num_rows = num_rows;
+        __isset.file_offset = true;
+        this._file_offset = value;
       }
+    }
 
-      public void Read(TProtocol iprot)
+    /// <summary>
+    /// Total byte size of all compressed (and potentially encrypted) column data
+    /// in this row group *
+    /// </summary>
+    public long Total_compressed_size
+    {
+      get
       {
-         iprot.IncrementRecursionDepth();
-         try
-         {
-            bool isset_columns = false;
-            bool isset_total_byte_size = false;
-            bool isset_num_rows = false;
-            TField field;
-            iprot.ReadStructBegin();
-            while (true)
-            {
-               field = iprot.ReadFieldBegin();
-               if (field.Type == TType.Stop)
-               {
-                  break;
-               }
-               switch (field.ID)
-               {
-                  case 1:
-                     if (field.Type == TType.List)
-                     {
-                        {
-                           Columns = new List<ColumnChunk>();
-                           TList _list16 = iprot.ReadListBegin();
-                           for (int _i17 = 0; _i17 < _list16.Count; ++_i17)
-                           {
-                              ColumnChunk _elem18;
-                              _elem18 = new ColumnChunk();
-                              _elem18.Read(iprot);
-                              Columns.Add(_elem18);
-                           }
-                           iprot.ReadListEnd();
-                        }
-                        isset_columns = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 2:
-                     if (field.Type == TType.I64)
-                     {
-                        Total_byte_size = iprot.ReadI64();
-                        isset_total_byte_size = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 3:
-                     if (field.Type == TType.I64)
-                     {
-                        Num_rows = iprot.ReadI64();
-                        isset_num_rows = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 4:
-                     if (field.Type == TType.List)
-                     {
-                        {
-                           Sorting_columns = new List<SortingColumn>();
-                           TList _list19 = iprot.ReadListBegin();
-                           for (int _i20 = 0; _i20 < _list19.Count; ++_i20)
-                           {
-                              SortingColumn _elem21;
-                              _elem21 = new SortingColumn();
-                              _elem21.Read(iprot);
-                              Sorting_columns.Add(_elem21);
-                           }
-                           iprot.ReadListEnd();
-                        }
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  default:
-                     TProtocolUtil.Skip(iprot, field.Type);
-                     break;
-               }
-               iprot.ReadFieldEnd();
-            }
-            iprot.ReadStructEnd();
-            if (!isset_columns)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-            if (!isset_total_byte_size)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-            if (!isset_num_rows)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-         }
-         finally
-         {
-            iprot.DecrementRecursionDepth();
-         }
+        return _total_compressed_size;
       }
-
-      public void Write(TProtocol oprot)
+      set
       {
-         oprot.IncrementRecursionDepth();
-         try
-         {
-            TStruct struc = new TStruct("RowGroup");
-            oprot.WriteStructBegin(struc);
-            TField field = new TField();
-            field.Name = "columns";
-            field.Type = TType.List;
-            field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            {
-               oprot.WriteListBegin(new TList(TType.Struct, Columns.Count));
-               foreach (ColumnChunk _iter22 in Columns)
-               {
-                  _iter22.Write(oprot);
-               }
-               oprot.WriteListEnd();
-            }
-            oprot.WriteFieldEnd();
-            field.Name = "total_byte_size";
-            field.Type = TType.I64;
-            field.ID = 2;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI64(Total_byte_size);
-            oprot.WriteFieldEnd();
-            field.Name = "num_rows";
-            field.Type = TType.I64;
-            field.ID = 3;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI64(Num_rows);
-            oprot.WriteFieldEnd();
-            if (Sorting_columns != null && __isset.sorting_columns)
-            {
-               field.Name = "sorting_columns";
-               field.Type = TType.List;
-               field.ID = 4;
-               oprot.WriteFieldBegin(field);
-               {
-                  oprot.WriteListBegin(new TList(TType.Struct, Sorting_columns.Count));
-                  foreach (SortingColumn _iter23 in Sorting_columns)
+        __isset.total_compressed_size = true;
+        this._total_compressed_size = value;
+      }
+    }
+
+    /// <summary>
+    /// Row group ordinal in the file *
+    /// </summary>
+    public short Ordinal
+    {
+      get
+      {
+        return _ordinal;
+      }
+      set
+      {
+        __isset.ordinal = true;
+        this._ordinal = value;
+      }
+    }
+
+
+    public Isset __isset;
+
+    public struct Isset {
+      public bool sorting_columns;
+      public bool file_offset;
+      public bool total_compressed_size;
+      public bool ordinal;
+    }
+
+    public RowGroup() {
+    }
+
+    public RowGroup(List<ColumnChunk> columns, long total_byte_size, long num_rows) : this() {
+      this.Columns = columns;
+      this.Total_byte_size = total_byte_size;
+      this.Num_rows = num_rows;
+    }
+
+    public void Read (TProtocol iprot)
+    {
+      iprot.IncrementRecursionDepth();
+      try
+      {
+        bool isset_columns = false;
+        bool isset_total_byte_size = false;
+        bool isset_num_rows = false;
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
+        {
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            case 1:
+              if (field.Type == TType.List) {
+                {
+                  Columns = new List<ColumnChunk>();
+                  TList _list20 = iprot.ReadListBegin();
+                  for( int _i21 = 0; _i21 < _list20.Count; ++_i21)
                   {
-                     _iter23.Write(oprot);
+                    ColumnChunk _elem22;
+                    _elem22 = new ColumnChunk();
+                    _elem22.Read(iprot);
+                    Columns.Add(_elem22);
                   }
-                  oprot.WriteListEnd();
-               }
-               oprot.WriteFieldEnd();
-            }
-            oprot.WriteFieldStop();
-            oprot.WriteStructEnd();
-         }
-         finally
-         {
-            oprot.DecrementRecursionDepth();
-         }
+                  iprot.ReadListEnd();
+                }
+                isset_columns = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 2:
+              if (field.Type == TType.I64) {
+                Total_byte_size = iprot.ReadI64();
+                isset_total_byte_size = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 3:
+              if (field.Type == TType.I64) {
+                Num_rows = iprot.ReadI64();
+                isset_num_rows = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 4:
+              if (field.Type == TType.List) {
+                {
+                  Sorting_columns = new List<SortingColumn>();
+                  TList _list23 = iprot.ReadListBegin();
+                  for( int _i24 = 0; _i24 < _list23.Count; ++_i24)
+                  {
+                    SortingColumn _elem25;
+                    _elem25 = new SortingColumn();
+                    _elem25.Read(iprot);
+                    Sorting_columns.Add(_elem25);
+                  }
+                  iprot.ReadListEnd();
+                }
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 5:
+              if (field.Type == TType.I64) {
+                File_offset = iprot.ReadI64();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 6:
+              if (field.Type == TType.I64) {
+                Total_compressed_size = iprot.ReadI64();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 7:
+              if (field.Type == TType.I16) {
+                Ordinal = iprot.ReadI16();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            default: 
+              TProtocolUtil.Skip(iprot, field.Type);
+              break;
+          }
+          iprot.ReadFieldEnd();
+        }
+        iprot.ReadStructEnd();
+        if (!isset_columns)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_total_byte_size)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_num_rows)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
-
-      public override string ToString()
+      finally
       {
-         StringBuilder __sb = new StringBuilder("RowGroup(");
-         __sb.Append(", Columns: ");
-         __sb.Append(Columns);
-         __sb.Append(", Total_byte_size: ");
-         __sb.Append(Total_byte_size);
-         __sb.Append(", Num_rows: ");
-         __sb.Append(Num_rows);
-         if (Sorting_columns != null && __isset.sorting_columns)
-         {
-            __sb.Append(", Sorting_columns: ");
-            __sb.Append(Sorting_columns);
-         }
-         __sb.Append(")");
-         return __sb.ToString();
+        iprot.DecrementRecursionDepth();
       }
+    }
 
-   }
+    public void Write(TProtocol oprot) {
+      oprot.IncrementRecursionDepth();
+      try
+      {
+        TStruct struc = new TStruct("RowGroup");
+        oprot.WriteStructBegin(struc);
+        TField field = new TField();
+        field.Name = "columns";
+        field.Type = TType.List;
+        field.ID = 1;
+        oprot.WriteFieldBegin(field);
+        {
+          oprot.WriteListBegin(new TList(TType.Struct, Columns.Count));
+          foreach (ColumnChunk _iter26 in Columns)
+          {
+            _iter26.Write(oprot);
+          }
+          oprot.WriteListEnd();
+        }
+        oprot.WriteFieldEnd();
+        field.Name = "total_byte_size";
+        field.Type = TType.I64;
+        field.ID = 2;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI64(Total_byte_size);
+        oprot.WriteFieldEnd();
+        field.Name = "num_rows";
+        field.Type = TType.I64;
+        field.ID = 3;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI64(Num_rows);
+        oprot.WriteFieldEnd();
+        if (Sorting_columns != null && __isset.sorting_columns) {
+          field.Name = "sorting_columns";
+          field.Type = TType.List;
+          field.ID = 4;
+          oprot.WriteFieldBegin(field);
+          {
+            oprot.WriteListBegin(new TList(TType.Struct, Sorting_columns.Count));
+            foreach (SortingColumn _iter27 in Sorting_columns)
+            {
+              _iter27.Write(oprot);
+            }
+            oprot.WriteListEnd();
+          }
+          oprot.WriteFieldEnd();
+        }
+        if (__isset.file_offset) {
+          field.Name = "file_offset";
+          field.Type = TType.I64;
+          field.ID = 5;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteI64(File_offset);
+          oprot.WriteFieldEnd();
+        }
+        if (__isset.total_compressed_size) {
+          field.Name = "total_compressed_size";
+          field.Type = TType.I64;
+          field.ID = 6;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteI64(Total_compressed_size);
+          oprot.WriteFieldEnd();
+        }
+        if (__isset.ordinal) {
+          field.Name = "ordinal";
+          field.Type = TType.I16;
+          field.ID = 7;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteI16(Ordinal);
+          oprot.WriteFieldEnd();
+        }
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+      finally
+      {
+        oprot.DecrementRecursionDepth();
+      }
+    }
+
+    public override string ToString() {
+      StringBuilder __sb = new StringBuilder("RowGroup(");
+      __sb.Append(", Columns: ");
+      __sb.Append(Columns);
+      __sb.Append(", Total_byte_size: ");
+      __sb.Append(Total_byte_size);
+      __sb.Append(", Num_rows: ");
+      __sb.Append(Num_rows);
+      if (Sorting_columns != null && __isset.sorting_columns) {
+        __sb.Append(", Sorting_columns: ");
+        __sb.Append(Sorting_columns);
+      }
+      if (__isset.file_offset) {
+        __sb.Append(", File_offset: ");
+        __sb.Append(File_offset);
+      }
+      if (__isset.total_compressed_size) {
+        __sb.Append(", Total_compressed_size: ");
+        __sb.Append(Total_compressed_size);
+      }
+      if (__isset.ordinal) {
+        __sb.Append(", Ordinal: ");
+        __sb.Append(Ordinal);
+      }
+      __sb.Append(")");
+      return __sb.ToString();
+    }
+
+  }
 
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

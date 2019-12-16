@@ -5,349 +5,470 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using Thrift;
+using Thrift.Collections;
+
 using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-   /// <summary>
-   /// Description for file metadata
-   /// </summary>
-   public class FileMetaData : TBase
-   {
-      private List<KeyValue> _key_value_metadata;
-      private string _created_by;
+  /// <summary>
+  /// Description for file metadata
+  /// </summary>
 
-      /// <summary>
-      /// Version of this file *
-      /// </summary>
-      public int Version { get; set; }
+  public partial class FileMetaData : TBase
+  {
+    private List<KeyValue> _key_value_metadata;
+    private string _created_by;
+    private List<ColumnOrder> _column_orders;
+    private EncryptionAlgorithm _encryption_algorithm;
+    private byte[] _footer_signing_key_metadata;
 
-      /// <summary>
-      /// Parquet schema for this file.  This schema contains metadata for all the columns.
-      /// The schema is represented as a tree with a single root.  The nodes of the tree
-      /// are flattened to a list by doing a depth-first traversal.
-      /// The column metadata contains the path in the schema for that column which can be
-      /// used to map columns to nodes in the schema.
-      /// The first element is the root *
-      /// </summary>
-      public List<SchemaElement> Schema { get; set; }
+    /// <summary>
+    /// Version of this file *
+    /// </summary>
+    public int Version { get; set; }
 
-      /// <summary>
-      /// Number of rows in this file *
-      /// </summary>
-      public long Num_rows { get; set; }
+    /// <summary>
+    /// Parquet schema for this file.  This schema contains metadata for all the columns.
+    /// The schema is represented as a tree with a single root.  The nodes of the tree
+    /// are flattened to a list by doing a depth-first traversal.
+    /// The column metadata contains the path in the schema for that column which can be
+    /// used to map columns to nodes in the schema.
+    /// The first element is the root *
+    /// </summary>
+    public List<SchemaElement> Schema { get; set; }
 
-      /// <summary>
-      /// Row groups in this file *
-      /// </summary>
-      public List<RowGroup> Row_groups { get; set; }
+    /// <summary>
+    /// Number of rows in this file *
+    /// </summary>
+    public long Num_rows { get; set; }
 
-      /// <summary>
-      /// Optional key/value metadata *
-      /// </summary>
-      public List<KeyValue> Key_value_metadata
+    /// <summary>
+    /// Row groups in this file *
+    /// </summary>
+    public List<RowGroup> Row_groups { get; set; }
+
+    /// <summary>
+    /// Optional key/value metadata *
+    /// </summary>
+    public List<KeyValue> Key_value_metadata
+    {
+      get
       {
-         get
-         {
-            return _key_value_metadata;
-         }
-         set
-         {
-            __isset.key_value_metadata = true;
-            this._key_value_metadata = value;
-         }
+        return _key_value_metadata;
       }
+      set
+      {
+        __isset.key_value_metadata = true;
+        this._key_value_metadata = value;
+      }
+    }
 
       /// <summary>
       /// String for application that wrote this file.  This should be in the format
-      /// [Application] version [App Version] (build [App Build Hash]).
+      /// &lt;Application> version &lt;App Version&gt; (build &lt;App Build Hash>).
       /// e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55)
+      /// 
       /// </summary>
       public string Created_by
+    {
+      get
       {
-         get
-         {
-            return _created_by;
-         }
-         set
-         {
-            __isset.created_by = true;
-            this._created_by = value;
-         }
+        return _created_by;
       }
-
-
-      public Isset __isset;
-
-
-
-      public struct Isset
+      set
       {
-         public bool key_value_metadata;
-         public bool created_by;
+        __isset.created_by = true;
+        this._created_by = value;
       }
+    }
 
-      public FileMetaData()
+    /// <summary>
+    /// Sort order used for the min_value and max_value fields of each column in
+    /// this file. Sort orders are listed in the order matching the columns in the
+    /// schema. The indexes are not necessary the same though, because only leaf
+    /// nodes of the schema are represented in the list of sort orders.
+    /// 
+    /// Without column_orders, the meaning of the min_value and max_value fields is
+    /// undefined. To ensure well-defined behaviour, if min_value and max_value are
+    /// written to a Parquet file, column_orders must be written as well.
+    /// 
+    /// The obsolete min and max fields are always sorted by signed comparison
+    /// regardless of column_orders.
+    /// </summary>
+    public List<ColumnOrder> Column_orders
+    {
+      get
       {
-         this.Row_groups = new List<RowGroup>();
+        return _column_orders;
       }
-
-      public FileMetaData(int version, List<SchemaElement> schema, long num_rows, List<RowGroup> row_groups) : this()
+      set
       {
-         this.Version = version;
-         this.Schema = schema;
-         this.Num_rows = num_rows;
-         this.Row_groups = row_groups;
+        __isset.column_orders = true;
+        this._column_orders = value;
       }
+    }
 
-      public void Read(TProtocol iprot)
+    /// <summary>
+    /// Encryption algorithm. This field is set only in encrypted files
+    /// with plaintext footer. Files with encrypted footer store algorithm id
+    /// in FileCryptoMetaData structure.
+    /// </summary>
+    public EncryptionAlgorithm Encryption_algorithm
+    {
+      get
       {
-         iprot.IncrementRecursionDepth();
-         try
-         {
-            bool isset_version = false;
-            bool isset_schema = false;
-            bool isset_num_rows = false;
-            bool isset_row_groups = false;
-            TField field;
-            iprot.ReadStructBegin();
-            while (true)
-            {
-               field = iprot.ReadFieldBegin();
-               if (field.Type == TType.Stop)
-               {
-                  break;
-               }
-               switch (field.ID)
-               {
-                  case 1:
-                     if (field.Type == TType.I32)
-                     {
-                        Version = iprot.ReadI32();
-                        isset_version = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 2:
-                     if (field.Type == TType.List)
-                     {
-                        {
-                           Schema = new List<SchemaElement>();
-                           TList _list24 = iprot.ReadListBegin();
-                           for (int _i25 = 0; _i25 < _list24.Count; ++_i25)
-                           {
-                              SchemaElement _elem26;
-                              _elem26 = new SchemaElement();
-                              _elem26.Read(iprot);
-                              Schema.Add(_elem26);
-                           }
-                           iprot.ReadListEnd();
-                        }
-                        isset_schema = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 3:
-                     if (field.Type == TType.I64)
-                     {
-                        Num_rows = iprot.ReadI64();
-                        isset_num_rows = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 4:
-                     if (field.Type == TType.List)
-                     {
-                        {
-                           Row_groups = new List<RowGroup>();
-                           TList _list27 = iprot.ReadListBegin();
-                           for (int _i28 = 0; _i28 < _list27.Count; ++_i28)
-                           {
-                              RowGroup _elem29;
-                              _elem29 = new RowGroup();
-                              _elem29.Read(iprot);
-                              Row_groups.Add(_elem29);
-                           }
-                           iprot.ReadListEnd();
-                        }
-                        isset_row_groups = true;
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 5:
-                     if (field.Type == TType.List)
-                     {
-                        {
-                           Key_value_metadata = new List<KeyValue>();
-                           TList _list30 = iprot.ReadListBegin();
-                           for (int _i31 = 0; _i31 < _list30.Count; ++_i31)
-                           {
-                              KeyValue _elem32;
-                              _elem32 = new KeyValue();
-                              _elem32.Read(iprot);
-                              Key_value_metadata.Add(_elem32);
-                           }
-                           iprot.ReadListEnd();
-                        }
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  case 6:
-                     if (field.Type == TType.String)
-                     {
-                        Created_by = iprot.ReadString();
-                     }
-                     else
-                     {
-                        TProtocolUtil.Skip(iprot, field.Type);
-                     }
-                     break;
-                  default:
-                     TProtocolUtil.Skip(iprot, field.Type);
-                     break;
-               }
-               iprot.ReadFieldEnd();
-            }
-            iprot.ReadStructEnd();
-            if (!isset_version)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-            if (!isset_schema)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-            if (!isset_num_rows)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-            if (!isset_row_groups)
-               throw new TProtocolException(TProtocolException.INVALID_DATA);
-         }
-         finally
-         {
-            iprot.DecrementRecursionDepth();
-         }
+        return _encryption_algorithm;
       }
-
-      public void Write(TProtocol oprot)
+      set
       {
-         oprot.IncrementRecursionDepth();
-         try
-         {
-            TStruct struc = new TStruct("FileMetaData");
-            oprot.WriteStructBegin(struc);
-            TField field = new TField();
-            field.Name = "version";
-            field.Type = TType.I32;
-            field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32(Version);
-            oprot.WriteFieldEnd();
-            field.Name = "schema";
-            field.Type = TType.List;
-            field.ID = 2;
-            oprot.WriteFieldBegin(field);
-            {
-               oprot.WriteListBegin(new TList(TType.Struct, Schema.Count));
-               foreach (SchemaElement _iter33 in Schema)
-               {
-                  _iter33.Write(oprot);
-               }
-               oprot.WriteListEnd();
-            }
-            oprot.WriteFieldEnd();
-            field.Name = "num_rows";
-            field.Type = TType.I64;
-            field.ID = 3;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI64(Num_rows);
-            oprot.WriteFieldEnd();
-            field.Name = "row_groups";
-            field.Type = TType.List;
-            field.ID = 4;
-            oprot.WriteFieldBegin(field);
-            {
-               oprot.WriteListBegin(new TList(TType.Struct, Row_groups.Count));
-               foreach (RowGroup _iter34 in Row_groups)
-               {
-                  _iter34.Write(oprot);
-               }
-               oprot.WriteListEnd();
-            }
-            oprot.WriteFieldEnd();
-            if (Key_value_metadata != null && __isset.key_value_metadata)
-            {
-               field.Name = "key_value_metadata";
-               field.Type = TType.List;
-               field.ID = 5;
-               oprot.WriteFieldBegin(field);
-               {
-                  oprot.WriteListBegin(new TList(TType.Struct, Key_value_metadata.Count));
-                  foreach (KeyValue _iter35 in Key_value_metadata)
+        __isset.encryption_algorithm = true;
+        this._encryption_algorithm = value;
+      }
+    }
+
+    /// <summary>
+    /// Retrieval metadata of key used for signing the footer.
+    /// Used only in encrypted files with plaintext footer.
+    /// </summary>
+    public byte[] Footer_signing_key_metadata
+    {
+      get
+      {
+        return _footer_signing_key_metadata;
+      }
+      set
+      {
+        __isset.footer_signing_key_metadata = true;
+        this._footer_signing_key_metadata = value;
+      }
+    }
+
+
+    public Isset __isset;
+
+    public struct Isset {
+      public bool key_value_metadata;
+      public bool created_by;
+      public bool column_orders;
+      public bool encryption_algorithm;
+      public bool footer_signing_key_metadata;
+    }
+
+    public FileMetaData() {
+    }
+
+    public FileMetaData(int version, List<SchemaElement> schema, long num_rows, List<RowGroup> row_groups) : this() {
+      this.Version = version;
+      this.Schema = schema;
+      this.Num_rows = num_rows;
+      this.Row_groups = row_groups;
+    }
+
+    public void Read (TProtocol iprot)
+    {
+      iprot.IncrementRecursionDepth();
+      try
+      {
+        bool isset_version = false;
+        bool isset_schema = false;
+        bool isset_num_rows = false;
+        bool isset_row_groups = false;
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
+        {
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            case 1:
+              if (field.Type == TType.I32) {
+                Version = iprot.ReadI32();
+                isset_version = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 2:
+              if (field.Type == TType.List) {
+                {
+                  Schema = new List<SchemaElement>();
+                  TList _list48 = iprot.ReadListBegin();
+                  for( int _i49 = 0; _i49 < _list48.Count; ++_i49)
                   {
-                     _iter35.Write(oprot);
+                    SchemaElement _elem50;
+                    _elem50 = new SchemaElement();
+                    _elem50.Read(iprot);
+                    Schema.Add(_elem50);
                   }
-                  oprot.WriteListEnd();
-               }
-               oprot.WriteFieldEnd();
-            }
-            if (Created_by != null && __isset.created_by)
-            {
-               field.Name = "created_by";
-               field.Type = TType.String;
-               field.ID = 6;
-               oprot.WriteFieldBegin(field);
-               oprot.WriteString(Created_by);
-               oprot.WriteFieldEnd();
-            }
-            oprot.WriteFieldStop();
-            oprot.WriteStructEnd();
-         }
-         finally
-         {
-            oprot.DecrementRecursionDepth();
-         }
+                  iprot.ReadListEnd();
+                }
+                isset_schema = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 3:
+              if (field.Type == TType.I64) {
+                Num_rows = iprot.ReadI64();
+                isset_num_rows = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 4:
+              if (field.Type == TType.List) {
+                {
+                  Row_groups = new List<RowGroup>();
+                  TList _list51 = iprot.ReadListBegin();
+                  for( int _i52 = 0; _i52 < _list51.Count; ++_i52)
+                  {
+                    RowGroup _elem53;
+                    _elem53 = new RowGroup();
+                    _elem53.Read(iprot);
+                    Row_groups.Add(_elem53);
+                  }
+                  iprot.ReadListEnd();
+                }
+                isset_row_groups = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 5:
+              if (field.Type == TType.List) {
+                {
+                  Key_value_metadata = new List<KeyValue>();
+                  TList _list54 = iprot.ReadListBegin();
+                  for( int _i55 = 0; _i55 < _list54.Count; ++_i55)
+                  {
+                    KeyValue _elem56;
+                    _elem56 = new KeyValue();
+                    _elem56.Read(iprot);
+                    Key_value_metadata.Add(_elem56);
+                  }
+                  iprot.ReadListEnd();
+                }
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 6:
+              if (field.Type == TType.String) {
+                Created_by = iprot.ReadString();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 7:
+              if (field.Type == TType.List) {
+                {
+                  Column_orders = new List<ColumnOrder>();
+                  TList _list57 = iprot.ReadListBegin();
+                  for( int _i58 = 0; _i58 < _list57.Count; ++_i58)
+                  {
+                    ColumnOrder _elem59;
+                    _elem59 = new ColumnOrder();
+                    _elem59.Read(iprot);
+                    Column_orders.Add(_elem59);
+                  }
+                  iprot.ReadListEnd();
+                }
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 8:
+              if (field.Type == TType.Struct) {
+                Encryption_algorithm = new EncryptionAlgorithm();
+                Encryption_algorithm.Read(iprot);
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 9:
+              if (field.Type == TType.String) {
+                Footer_signing_key_metadata = iprot.ReadBinary();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            default: 
+              TProtocolUtil.Skip(iprot, field.Type);
+              break;
+          }
+          iprot.ReadFieldEnd();
+        }
+        iprot.ReadStructEnd();
+        if (!isset_version)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_schema)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_num_rows)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_row_groups)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
-
-      public override string ToString()
+      finally
       {
-         StringBuilder __sb = new StringBuilder("FileMetaData(");
-         __sb.Append(", Version: ");
-         __sb.Append(Version);
-         __sb.Append(", Schema: ");
-         __sb.Append(Schema);
-         __sb.Append(", Num_rows: ");
-         __sb.Append(Num_rows);
-         __sb.Append(", Row_groups: ");
-         __sb.Append(Row_groups);
-         if (Key_value_metadata != null && __isset.key_value_metadata)
-         {
-            __sb.Append(", Key_value_metadata: ");
-            __sb.Append(Key_value_metadata);
-         }
-         if (Created_by != null && __isset.created_by)
-         {
-            __sb.Append(", Created_by: ");
-            __sb.Append(Created_by);
-         }
-         __sb.Append(")");
-         return __sb.ToString();
+        iprot.DecrementRecursionDepth();
       }
+    }
 
-   }
+    public void Write(TProtocol oprot) {
+      oprot.IncrementRecursionDepth();
+      try
+      {
+        TStruct struc = new TStruct("FileMetaData");
+        oprot.WriteStructBegin(struc);
+        TField field = new TField();
+        field.Name = "version";
+        field.Type = TType.I32;
+        field.ID = 1;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI32(Version);
+        oprot.WriteFieldEnd();
+        field.Name = "schema";
+        field.Type = TType.List;
+        field.ID = 2;
+        oprot.WriteFieldBegin(field);
+        {
+          oprot.WriteListBegin(new TList(TType.Struct, Schema.Count));
+          foreach (SchemaElement _iter60 in Schema)
+          {
+            _iter60.Write(oprot);
+          }
+          oprot.WriteListEnd();
+        }
+        oprot.WriteFieldEnd();
+        field.Name = "num_rows";
+        field.Type = TType.I64;
+        field.ID = 3;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteI64(Num_rows);
+        oprot.WriteFieldEnd();
+        field.Name = "row_groups";
+        field.Type = TType.List;
+        field.ID = 4;
+        oprot.WriteFieldBegin(field);
+        {
+          oprot.WriteListBegin(new TList(TType.Struct, Row_groups.Count));
+          foreach (RowGroup _iter61 in Row_groups)
+          {
+            _iter61.Write(oprot);
+          }
+          oprot.WriteListEnd();
+        }
+        oprot.WriteFieldEnd();
+        if (Key_value_metadata != null && __isset.key_value_metadata) {
+          field.Name = "key_value_metadata";
+          field.Type = TType.List;
+          field.ID = 5;
+          oprot.WriteFieldBegin(field);
+          {
+            oprot.WriteListBegin(new TList(TType.Struct, Key_value_metadata.Count));
+            foreach (KeyValue _iter62 in Key_value_metadata)
+            {
+              _iter62.Write(oprot);
+            }
+            oprot.WriteListEnd();
+          }
+          oprot.WriteFieldEnd();
+        }
+        if (Created_by != null && __isset.created_by) {
+          field.Name = "created_by";
+          field.Type = TType.String;
+          field.ID = 6;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteString(Created_by);
+          oprot.WriteFieldEnd();
+        }
+        if (Column_orders != null && __isset.column_orders) {
+          field.Name = "column_orders";
+          field.Type = TType.List;
+          field.ID = 7;
+          oprot.WriteFieldBegin(field);
+          {
+            oprot.WriteListBegin(new TList(TType.Struct, Column_orders.Count));
+            foreach (ColumnOrder _iter63 in Column_orders)
+            {
+              _iter63.Write(oprot);
+            }
+            oprot.WriteListEnd();
+          }
+          oprot.WriteFieldEnd();
+        }
+        if (Encryption_algorithm != null && __isset.encryption_algorithm) {
+          field.Name = "encryption_algorithm";
+          field.Type = TType.Struct;
+          field.ID = 8;
+          oprot.WriteFieldBegin(field);
+          Encryption_algorithm.Write(oprot);
+          oprot.WriteFieldEnd();
+        }
+        if (Footer_signing_key_metadata != null && __isset.footer_signing_key_metadata) {
+          field.Name = "footer_signing_key_metadata";
+          field.Type = TType.String;
+          field.ID = 9;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteBinary(Footer_signing_key_metadata);
+          oprot.WriteFieldEnd();
+        }
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+      finally
+      {
+        oprot.DecrementRecursionDepth();
+      }
+    }
+
+    public override string ToString() {
+      StringBuilder __sb = new StringBuilder("FileMetaData(");
+      __sb.Append(", Version: ");
+      __sb.Append(Version);
+      __sb.Append(", Schema: ");
+      __sb.Append(Schema);
+      __sb.Append(", Num_rows: ");
+      __sb.Append(Num_rows);
+      __sb.Append(", Row_groups: ");
+      __sb.Append(Row_groups);
+      if (Key_value_metadata != null && __isset.key_value_metadata) {
+        __sb.Append(", Key_value_metadata: ");
+        __sb.Append(Key_value_metadata);
+      }
+      if (Created_by != null && __isset.created_by) {
+        __sb.Append(", Created_by: ");
+        __sb.Append(Created_by);
+      }
+      if (Column_orders != null && __isset.column_orders) {
+        __sb.Append(", Column_orders: ");
+        __sb.Append(Column_orders);
+      }
+      if (Encryption_algorithm != null && __isset.encryption_algorithm) {
+        __sb.Append(", Encryption_algorithm: ");
+        __sb.Append(Encryption_algorithm== null ? "<null>" : Encryption_algorithm.ToString());
+      }
+      if (Footer_signing_key_metadata != null && __isset.footer_signing_key_metadata) {
+        __sb.Append(", Footer_signing_key_metadata: ");
+        __sb.Append(Footer_signing_key_metadata);
+      }
+      __sb.Append(")");
+      return __sb.ToString();
+    }
+
+  }
 
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

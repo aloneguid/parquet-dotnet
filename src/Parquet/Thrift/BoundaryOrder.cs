@@ -8,12 +8,15 @@
 
 namespace Parquet.Thrift
 {
-  public enum PageType
+  /// <summary>
+  /// Enum to annotate whether lists of min/max elements inside ColumnIndex
+  /// are ordered and if so, in which direction.
+  /// </summary>
+  public enum BoundaryOrder
   {
-    DATA_PAGE = 0,
-    INDEX_PAGE = 1,
-    DICTIONARY_PAGE = 2,
-    DATA_PAGE_V2 = 3,
+    UNORDERED = 0,
+    ASCENDING = 1,
+    DESCENDING = 2,
   }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

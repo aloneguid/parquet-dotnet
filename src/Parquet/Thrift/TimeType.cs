@@ -20,40 +20,24 @@ namespace Parquet.Thrift
 {
 
   /// <summary>
-  /// Wrapper struct to store key values
+  /// Time logical type annotation
+  /// 
+  /// Allowed for physical types: INT32 (millis), INT64 (micros, nanos)
   /// </summary>
 
-  public partial class KeyValue : TBase
+  public partial class TimeType : TBase
   {
-    private string _value;
 
-    public string Key { get; set; }
+    public bool IsAdjustedToUTC { get; set; }
 
-    public string Value
-    {
-      get
-      {
-        return _value;
-      }
-      set
-      {
-        __isset.@value = true;
-        this._value = value;
-      }
+    public TimeUnit Unit { get; set; }
+
+    public TimeType() {
     }
 
-
-    public Isset __isset;
-
-    public struct Isset {
-      public bool @value;
-    }
-
-    public KeyValue() {
-    }
-
-    public KeyValue(string key) : this() {
-      this.Key = key;
+    public TimeType(bool isAdjustedToUTC, TimeUnit unit) : this() {
+      this.IsAdjustedToUTC = isAdjustedToUTC;
+      this.Unit = unit;
     }
 
     public void Read (TProtocol iprot)
@@ -61,7 +45,8 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_key = false;
+        bool isset_isAdjustedToUTC = false;
+        bool isset_unit = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -73,16 +58,18 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.String) {
-                Key = iprot.ReadString();
-                isset_key = true;
+              if (field.Type == TType.Bool) {
+                IsAdjustedToUTC = iprot.ReadBool();
+                isset_isAdjustedToUTC = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 2:
-              if (field.Type == TType.String) {
-                Value = iprot.ReadString();
+              if (field.Type == TType.Struct) {
+                Unit = new TimeUnit();
+                Unit.Read(iprot);
+                isset_unit = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -94,7 +81,9 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_key)
+        if (!isset_isAdjustedToUTC)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_unit)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
@@ -107,23 +96,21 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyValue");
+        TStruct struc = new TStruct("TimeType");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "key";
-        field.Type = TType.String;
+        field.Name = "isAdjustedToUTC";
+        field.Type = TType.Bool;
         field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteString(Key);
+        oprot.WriteBool(IsAdjustedToUTC);
         oprot.WriteFieldEnd();
-        if (Value != null && __isset.@value) {
-          field.Name = "value";
-          field.Type = TType.String;
-          field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Value);
-          oprot.WriteFieldEnd();
-        }
+        field.Name = "unit";
+        field.Type = TType.Struct;
+        field.ID = 2;
+        oprot.WriteFieldBegin(field);
+        Unit.Write(oprot);
+        oprot.WriteFieldEnd();
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
       }
@@ -134,13 +121,11 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyValue(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      if (Value != null && __isset.@value) {
-        __sb.Append(", Value: ");
-        __sb.Append(Value);
-      }
+      StringBuilder __sb = new StringBuilder("TimeType(");
+      __sb.Append(", IsAdjustedToUTC: ");
+      __sb.Append(IsAdjustedToUTC);
+      __sb.Append(", Unit: ");
+      __sb.Append(Unit== null ? "<null>" : Unit.ToString());
       __sb.Append(")");
       return __sb.ToString();
     }

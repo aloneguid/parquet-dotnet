@@ -19,26 +19,29 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Wrapper struct to store key values
-  /// </summary>
 
-  public partial class KeyValue : TBase
+  public partial class EncryptionWithColumnKey : TBase
   {
-    private string _value;
+    private byte[] _key_metadata;
 
-    public string Key { get; set; }
+    /// <summary>
+    /// Column path in schema *
+    /// </summary>
+    public List<string> Path_in_schema { get; set; }
 
-    public string Value
+    /// <summary>
+    /// Retrieval metadata of column encryption key *
+    /// </summary>
+    public byte[] Key_metadata
     {
       get
       {
-        return _value;
+        return _key_metadata;
       }
       set
       {
-        __isset.@value = true;
-        this._value = value;
+        __isset.key_metadata = true;
+        this._key_metadata = value;
       }
     }
 
@@ -46,14 +49,14 @@ namespace Parquet.Thrift
     public Isset __isset;
 
     public struct Isset {
-      public bool @value;
+      public bool key_metadata;
     }
 
-    public KeyValue() {
+    public EncryptionWithColumnKey() {
     }
 
-    public KeyValue(string key) : this() {
-      this.Key = key;
+    public EncryptionWithColumnKey(List<string> path_in_schema) : this() {
+      this.Path_in_schema = path_in_schema;
     }
 
     public void Read (TProtocol iprot)
@@ -61,7 +64,7 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_key = false;
+        bool isset_path_in_schema = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -73,16 +76,26 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.String) {
-                Key = iprot.ReadString();
-                isset_key = true;
+              if (field.Type == TType.List) {
+                {
+                  Path_in_schema = new List<string>();
+                  TList _list16 = iprot.ReadListBegin();
+                  for( int _i17 = 0; _i17 < _list16.Count; ++_i17)
+                  {
+                    string _elem18;
+                    _elem18 = iprot.ReadString();
+                    Path_in_schema.Add(_elem18);
+                  }
+                  iprot.ReadListEnd();
+                }
+                isset_path_in_schema = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Value = iprot.ReadString();
+                Key_metadata = iprot.ReadBinary();
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -94,7 +107,7 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_key)
+        if (!isset_path_in_schema)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
@@ -107,21 +120,28 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyValue");
+        TStruct struc = new TStruct("EncryptionWithColumnKey");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "key";
-        field.Type = TType.String;
+        field.Name = "path_in_schema";
+        field.Type = TType.List;
         field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteString(Key);
+        {
+          oprot.WriteListBegin(new TList(TType.String, Path_in_schema.Count));
+          foreach (string _iter19 in Path_in_schema)
+          {
+            oprot.WriteString(_iter19);
+          }
+          oprot.WriteListEnd();
+        }
         oprot.WriteFieldEnd();
-        if (Value != null && __isset.@value) {
-          field.Name = "value";
+        if (Key_metadata != null && __isset.key_metadata) {
+          field.Name = "key_metadata";
           field.Type = TType.String;
           field.ID = 2;
           oprot.WriteFieldBegin(field);
-          oprot.WriteString(Value);
+          oprot.WriteBinary(Key_metadata);
           oprot.WriteFieldEnd();
         }
         oprot.WriteFieldStop();
@@ -134,12 +154,12 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyValue(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      if (Value != null && __isset.@value) {
-        __sb.Append(", Value: ");
-        __sb.Append(Value);
+      StringBuilder __sb = new StringBuilder("EncryptionWithColumnKey(");
+      __sb.Append(", Path_in_schema: ");
+      __sb.Append(Path_in_schema);
+      if (Key_metadata != null && __isset.key_metadata) {
+        __sb.Append(", Key_metadata: ");
+        __sb.Append(Key_metadata);
       }
       __sb.Append(")");
       return __sb.ToString();

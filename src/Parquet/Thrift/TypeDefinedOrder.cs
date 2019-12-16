@@ -19,11 +19,14 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
+  /// <summary>
+  /// Empty struct to signal the order defined by the physical or logical type
+  /// </summary>
 
-  public partial class IndexPageHeader : TBase
+  public partial class TypeDefinedOrder : TBase
   {
 
-    public IndexPageHeader() {
+    public TypeDefinedOrder() {
     }
 
     public void Read (TProtocol iprot)
@@ -59,7 +62,7 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("IndexPageHeader");
+        TStruct struc = new TStruct("TypeDefinedOrder");
         oprot.WriteStructBegin(struc);
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -71,7 +74,7 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("IndexPageHeader(");
+      StringBuilder __sb = new StringBuilder("TypeDefinedOrder(");
       __sb.Append(")");
       return __sb.ToString();
     }

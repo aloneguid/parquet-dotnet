@@ -20,10 +20,10 @@ namespace Parquet.Thrift
 {
 
 
-  public partial class IndexPageHeader : TBase
+  public partial class ListType : TBase
   {
 
-    public IndexPageHeader() {
+    public ListType() {
     }
 
     public void Read (TProtocol iprot)
@@ -59,7 +59,7 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("IndexPageHeader");
+        TStruct struc = new TStruct("ListType");
         oprot.WriteStructBegin(struc);
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -71,7 +71,7 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("IndexPageHeader(");
+      StringBuilder __sb = new StringBuilder("ListType(");
       __sb.Append(")");
       return __sb.ToString();
     }

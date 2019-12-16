@@ -19,41 +19,21 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Wrapper struct to store key values
-  /// </summary>
 
-  public partial class KeyValue : TBase
-  {
-    private string _value;
+   public partial class OffsetIndex : TBase
+   {
 
-    public string Key { get; set; }
+      /// <summary>
+      /// PageLocations, ordered by increasing PageLocation.offset. It is required
+      /// that page_locations[i].first_row_index &lt; page_locations[i+1].first_row_index.
+      /// </summary>
+      public List<PageLocation> Page_locations { get; set; }
 
-    public string Value
-    {
-      get
-      {
-        return _value;
-      }
-      set
-      {
-        __isset.@value = true;
-        this._value = value;
-      }
+    public OffsetIndex() {
     }
 
-
-    public Isset __isset;
-
-    public struct Isset {
-      public bool @value;
-    }
-
-    public KeyValue() {
-    }
-
-    public KeyValue(string key) : this() {
-      this.Key = key;
+    public OffsetIndex(List<PageLocation> page_locations) : this() {
+      this.Page_locations = page_locations;
     }
 
     public void Read (TProtocol iprot)
@@ -61,7 +41,7 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_key = false;
+        bool isset_page_locations = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -73,16 +53,20 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.String) {
-                Key = iprot.ReadString();
-                isset_key = true;
-              } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
-              }
-              break;
-            case 2:
-              if (field.Type == TType.String) {
-                Value = iprot.ReadString();
+              if (field.Type == TType.List) {
+                {
+                  Page_locations = new List<PageLocation>();
+                  TList _list28 = iprot.ReadListBegin();
+                  for( int _i29 = 0; _i29 < _list28.Count; ++_i29)
+                  {
+                    PageLocation _elem30;
+                    _elem30 = new PageLocation();
+                    _elem30.Read(iprot);
+                    Page_locations.Add(_elem30);
+                  }
+                  iprot.ReadListEnd();
+                }
+                isset_page_locations = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -94,7 +78,7 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_key)
+        if (!isset_page_locations)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
@@ -107,23 +91,22 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyValue");
+        TStruct struc = new TStruct("OffsetIndex");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "key";
-        field.Type = TType.String;
+        field.Name = "page_locations";
+        field.Type = TType.List;
         field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteString(Key);
-        oprot.WriteFieldEnd();
-        if (Value != null && __isset.@value) {
-          field.Name = "value";
-          field.Type = TType.String;
-          field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Value);
-          oprot.WriteFieldEnd();
+        {
+          oprot.WriteListBegin(new TList(TType.Struct, Page_locations.Count));
+          foreach (PageLocation _iter31 in Page_locations)
+          {
+            _iter31.Write(oprot);
+          }
+          oprot.WriteListEnd();
         }
+        oprot.WriteFieldEnd();
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
       }
@@ -134,13 +117,9 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyValue(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      if (Value != null && __isset.@value) {
-        __sb.Append(", Value: ");
-        __sb.Append(Value);
-      }
+      StringBuilder __sb = new StringBuilder("OffsetIndex(");
+      __sb.Append(", Page_locations: ");
+      __sb.Append(Page_locations);
       __sb.Append(")");
       return __sb.ToString();
     }

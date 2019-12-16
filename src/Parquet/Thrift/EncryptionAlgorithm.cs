@@ -19,26 +19,35 @@ using Thrift.Transport;
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Wrapper struct to store key values
-  /// </summary>
 
-  public partial class KeyValue : TBase
+  public partial class EncryptionAlgorithm : TBase
   {
-    private string _value;
+    private AesGcmV1 _AES_GCM_V1;
+    private AesGcmCtrV1 _AES_GCM_CTR_V1;
 
-    public string Key { get; set; }
-
-    public string Value
+    public AesGcmV1 AES_GCM_V1
     {
       get
       {
-        return _value;
+        return _AES_GCM_V1;
       }
       set
       {
-        __isset.@value = true;
-        this._value = value;
+        __isset.AES_GCM_V1 = true;
+        this._AES_GCM_V1 = value;
+      }
+    }
+
+    public AesGcmCtrV1 AES_GCM_CTR_V1
+    {
+      get
+      {
+        return _AES_GCM_CTR_V1;
+      }
+      set
+      {
+        __isset.AES_GCM_CTR_V1 = true;
+        this._AES_GCM_CTR_V1 = value;
       }
     }
 
@@ -46,14 +55,11 @@ namespace Parquet.Thrift
     public Isset __isset;
 
     public struct Isset {
-      public bool @value;
+      public bool AES_GCM_V1;
+      public bool AES_GCM_CTR_V1;
     }
 
-    public KeyValue() {
-    }
-
-    public KeyValue(string key) : this() {
-      this.Key = key;
+    public EncryptionAlgorithm() {
     }
 
     public void Read (TProtocol iprot)
@@ -61,7 +67,6 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_key = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -73,16 +78,17 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.String) {
-                Key = iprot.ReadString();
-                isset_key = true;
+              if (field.Type == TType.Struct) {
+                AES_GCM_V1 = new AesGcmV1();
+                AES_GCM_V1.Read(iprot);
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 2:
-              if (field.Type == TType.String) {
-                Value = iprot.ReadString();
+              if (field.Type == TType.Struct) {
+                AES_GCM_CTR_V1 = new AesGcmCtrV1();
+                AES_GCM_CTR_V1.Read(iprot);
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -94,8 +100,6 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_key)
-          throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
       {
@@ -107,21 +111,23 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyValue");
+        TStruct struc = new TStruct("EncryptionAlgorithm");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "key";
-        field.Type = TType.String;
-        field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Key);
-        oprot.WriteFieldEnd();
-        if (Value != null && __isset.@value) {
-          field.Name = "value";
-          field.Type = TType.String;
+        if (AES_GCM_V1 != null && __isset.AES_GCM_V1) {
+          field.Name = "AES_GCM_V1";
+          field.Type = TType.Struct;
+          field.ID = 1;
+          oprot.WriteFieldBegin(field);
+          AES_GCM_V1.Write(oprot);
+          oprot.WriteFieldEnd();
+        }
+        if (AES_GCM_CTR_V1 != null && __isset.AES_GCM_CTR_V1) {
+          field.Name = "AES_GCM_CTR_V1";
+          field.Type = TType.Struct;
           field.ID = 2;
           oprot.WriteFieldBegin(field);
-          oprot.WriteString(Value);
+          AES_GCM_CTR_V1.Write(oprot);
           oprot.WriteFieldEnd();
         }
         oprot.WriteFieldStop();
@@ -134,12 +140,19 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyValue(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      if (Value != null && __isset.@value) {
-        __sb.Append(", Value: ");
-        __sb.Append(Value);
+      StringBuilder __sb = new StringBuilder("EncryptionAlgorithm(");
+      bool __first = true;
+      if (AES_GCM_V1 != null && __isset.AES_GCM_V1) {
+        if(!__first) { __sb.Append(", "); }
+        __first = false;
+        __sb.Append("AES_GCM_V1: ");
+        __sb.Append(AES_GCM_V1== null ? "<null>" : AES_GCM_V1.ToString());
+      }
+      if (AES_GCM_CTR_V1 != null && __isset.AES_GCM_CTR_V1) {
+        if(!__first) { __sb.Append(", "); }
+        __first = false;
+        __sb.Append("AES_GCM_CTR_V1: ");
+        __sb.Append(AES_GCM_CTR_V1== null ? "<null>" : AES_GCM_CTR_V1.ToString());
       }
       __sb.Append(")");
       return __sb.ToString();

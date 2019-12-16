@@ -20,35 +20,26 @@ namespace Parquet.Thrift
 {
 
   /// <summary>
-  /// Wrapper struct to specify sort order
+  /// Integer logical type annotation
+  /// 
+  /// bitWidth must be 8, 16, 32, or 64.
+  /// 
+  /// Allowed for physical types: INT32, INT64
   /// </summary>
 
-  public partial class SortingColumn : TBase
+  public partial class IntType : TBase
   {
 
-    /// <summary>
-    /// The column index (in this row group) *
-    /// </summary>
-    public int Column_idx { get; set; }
+    public sbyte BitWidth { get; set; }
 
-    /// <summary>
-    /// If true, indicates this column is sorted in descending order. *
-    /// </summary>
-    public bool Descending { get; set; }
+    public bool IsSigned { get; set; }
 
-    /// <summary>
-    /// If true, nulls will come before non-null values, otherwise,
-    /// nulls go at the end.
-    /// </summary>
-    public bool Nulls_first { get; set; }
-
-    public SortingColumn() {
+    public IntType() {
     }
 
-    public SortingColumn(int column_idx, bool descending, bool nulls_first) : this() {
-      this.Column_idx = column_idx;
-      this.Descending = descending;
-      this.Nulls_first = nulls_first;
+    public IntType(sbyte bitWidth, bool isSigned) : this() {
+      this.BitWidth = bitWidth;
+      this.IsSigned = isSigned;
     }
 
     public void Read (TProtocol iprot)
@@ -56,9 +47,8 @@ namespace Parquet.Thrift
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_column_idx = false;
-        bool isset_descending = false;
-        bool isset_nulls_first = false;
+        bool isset_bitWidth = false;
+        bool isset_isSigned = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -70,25 +60,17 @@ namespace Parquet.Thrift
           switch (field.ID)
           {
             case 1:
-              if (field.Type == TType.I32) {
-                Column_idx = iprot.ReadI32();
-                isset_column_idx = true;
+              if (field.Type == TType.Byte) {
+                BitWidth = iprot.ReadByte();
+                isset_bitWidth = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
               break;
             case 2:
               if (field.Type == TType.Bool) {
-                Descending = iprot.ReadBool();
-                isset_descending = true;
-              } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
-              }
-              break;
-            case 3:
-              if (field.Type == TType.Bool) {
-                Nulls_first = iprot.ReadBool();
-                isset_nulls_first = true;
+                IsSigned = iprot.ReadBool();
+                isset_isSigned = true;
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -100,11 +82,9 @@ namespace Parquet.Thrift
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_column_idx)
+        if (!isset_bitWidth)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
-        if (!isset_descending)
-          throw new TProtocolException(TProtocolException.INVALID_DATA);
-        if (!isset_nulls_first)
+        if (!isset_isSigned)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
@@ -117,26 +97,20 @@ namespace Parquet.Thrift
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("SortingColumn");
+        TStruct struc = new TStruct("IntType");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "column_idx";
-        field.Type = TType.I32;
+        field.Name = "bitWidth";
+        field.Type = TType.Byte;
         field.ID = 1;
         oprot.WriteFieldBegin(field);
-        oprot.WriteI32(Column_idx);
+        oprot.WriteByte(BitWidth);
         oprot.WriteFieldEnd();
-        field.Name = "descending";
+        field.Name = "isSigned";
         field.Type = TType.Bool;
         field.ID = 2;
         oprot.WriteFieldBegin(field);
-        oprot.WriteBool(Descending);
-        oprot.WriteFieldEnd();
-        field.Name = "nulls_first";
-        field.Type = TType.Bool;
-        field.ID = 3;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBool(Nulls_first);
+        oprot.WriteBool(IsSigned);
         oprot.WriteFieldEnd();
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
@@ -148,13 +122,11 @@ namespace Parquet.Thrift
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("SortingColumn(");
-      __sb.Append(", Column_idx: ");
-      __sb.Append(Column_idx);
-      __sb.Append(", Descending: ");
-      __sb.Append(Descending);
-      __sb.Append(", Nulls_first: ");
-      __sb.Append(Nulls_first);
+      StringBuilder __sb = new StringBuilder("IntType(");
+      __sb.Append(", BitWidth: ");
+      __sb.Append(BitWidth);
+      __sb.Append(", IsSigned: ");
+      __sb.Append(IsSigned);
       __sb.Append(")");
       return __sb.ToString();
     }
