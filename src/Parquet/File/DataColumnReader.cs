@@ -118,9 +118,12 @@ namespace Parquet.File
             colData.dictionary,
             colData.indexes);
 
-         finalColumn.Statistics = new DataColumnStatistics(
-            _thriftColumnChunk.Meta_data.Statistics.Null_count,
-            _thriftColumnChunk.Meta_data.Statistics.Distinct_count);
+         if (_thriftColumnChunk.Meta_data.Statistics != null)
+         {
+            finalColumn.Statistics = new DataColumnStatistics(
+               _thriftColumnChunk.Meta_data.Statistics.Null_count,
+               _thriftColumnChunk.Meta_data.Statistics.Distinct_count);
+         }
 
          return finalColumn;
       }

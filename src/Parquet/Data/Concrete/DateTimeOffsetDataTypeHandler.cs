@@ -90,6 +90,11 @@ namespace Parquet.Data.Concrete
 
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
+         if (statistics != null)
+         {
+            statistics.Distinct_count = ((IEnumerable<DateTimeOffset>)values).Distinct(this).Count();
+         }
+
          switch (tse.Type)
          {
             case Thrift.Type.INT32:
