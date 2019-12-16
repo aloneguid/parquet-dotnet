@@ -111,12 +111,18 @@ namespace Parquet.File
 
          // all the data is available here!
 
-         return new DataColumn(
+         var finalColumn = new DataColumn(
             _dataField, colData.values,
             colData.definitions, _maxDefinitionLevel,
             colData.repetitions, _maxRepetitionLevel,
             colData.dictionary,
             colData.indexes);
+
+         finalColumn.Statistics = new DataColumnStatistics(
+            _thriftColumnChunk.Meta_data.Statistics.Null_count,
+            _thriftColumnChunk.Meta_data.Statistics.Distinct_count);
+
+         return finalColumn;
       }
 
       private bool TryReadDictionaryPage(Thrift.PageHeader ph, out Array dictionary, out int dictionaryOffset)

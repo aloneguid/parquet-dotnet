@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Parquet.Data
 {
+   /// <summary>
+   /// Handler for built-in data types in .NET
+   /// </summary>
    abstract class BasicPrimitiveDataTypeHandler<TSystemType> : BasicDataTypeHandler<TSystemType>
       where TSystemType : struct
    {
       private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
+      private static readonly IComparer<TSystemType> Comparer = Comparer<TSystemType>.Default;
+      private static readonly IEqualityComparer<TSystemType> EqualityComparer = EqualityComparer<TSystemType>.Default;
 
       public BasicPrimitiveDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null)
          : base(dataType, thriftType, convertedType)
@@ -91,6 +97,16 @@ namespace Parquet.Data
          }
 
          return result;
+      }
+
+      public override int Compare(TSystemType x, TSystemType y)
+      {
+         return Comparer.Compare(x, y);
+      }
+
+      public override bool Equals(TSystemType x, TSystemType y)
+      {
+         return EqualityComparer.Equals(x, y);
       }
    }
 }

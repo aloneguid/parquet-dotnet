@@ -104,5 +104,15 @@ namespace Parquet.Data.Concrete
             writer.Write(data);
          }
       }
+
+      public override int Compare(string x, string y)
+      {
+         return string.Compare(x, y);
+      }
+
+      public override bool Equals(string x, string y)
+      {
+         return string.Equals(x, y);
+      }
    }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 namespace Parquet.Data
 {
 
-   abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler
+   abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler, IComparer<TSystemType>, IEqualityComparer<TSystemType>
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
@@ -80,12 +80,17 @@ namespace Parquet.Data
 
       public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
+         var hs = new HashSet<TSystemType>(this);
+
          // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
          var typedArray = (TSystemType[]) values;
          foreach(TSystemType one in typedArray)
          {
             WriteOne(writer, one);
+            hs.Add(one);
          }
+
+         statistics.Distinct_count = hs.Count;
       }
 
       public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
@@ -181,7 +186,18 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
+
       #endregion
 
+      /// <summary>
+      /// less than 0 - x &lt; y
+      /// 0 - x == y
+      /// greater than 0 - x &gt; y
+      /// </summary>
+      public abstract int Compare(TSystemType x, TSystemType y);
+
+      public abstract bool Equals(TSystemType x, TSystemType y);
+
+      public int GetHashCode(TSystemType x) => x.GetHashCode();
    }
 }

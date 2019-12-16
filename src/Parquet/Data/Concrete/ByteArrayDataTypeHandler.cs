@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
@@ -90,6 +87,16 @@ namespace Parquet.Data.Concrete
       {
          writer.Write(value.Length);
          writer.Write(value);
+      }
+
+      public override int Compare(byte[] x, byte[] y)
+      {
+         return 0;
+      }
+
+      public override bool Equals(byte[] x, byte[] y)
+      {
+         return x == y;
       }
    }
 }
