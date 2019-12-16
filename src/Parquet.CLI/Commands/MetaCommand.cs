@@ -108,8 +108,10 @@ namespace Parquet.CLI.Commands
          var t = new Table("name", "value");
          t.AddRow("Null Count", stats.__isset.null_count ? stats.Null_count.ToString() : undefined);
          t.AddRow("Distinct Count", stats.__isset.distinct_count ? stats.Distinct_count.ToString() : undefined);
-         t.AddRow("Min", stats.__isset.min ? fileMeta.DecodeSingleStatsValue(column, stats.Min) : undefined);
-         t.AddRow("Max", stats.__isset.max ? fileMeta.DecodeSingleStatsValue(column, stats.Max) : undefined);
+         t.AddRow("Min", stats.__isset.min_value ? fileMeta.DecodeSingleStatsValue(column, stats.Min_value) : undefined);
+         t.AddRow("Max", stats.__isset.max_value ? fileMeta.DecodeSingleStatsValue(column, stats.Max_value) : undefined);
+         t.AddRow("Min (legacy)", stats.__isset.min ? fileMeta.DecodeSingleStatsValue(column, stats.Min) : undefined);
+         t.AddRow("Max (legacy)", stats.__isset.max ? fileMeta.DecodeSingleStatsValue(column, stats.Max) : undefined);
          t.Render(false, 6, T.HeadingTextColor, T.NormalTextColor);
       }
    }
