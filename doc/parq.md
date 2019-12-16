@@ -134,7 +134,3 @@ Row Groups
       Max            Richard Conway
 
 ```
-
-### More Commands
-
-They are coming soon, please leave your comments in the issue tracker in terms of what you would like to see next.
