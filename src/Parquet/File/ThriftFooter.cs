@@ -245,6 +245,7 @@ namespace Parquet.File
          var meta = new Thrift.FileMetaData();
          meta.Version = 1;
          meta.Schema = new List<Thrift.SchemaElement>();
+         meta.Row_groups = new List<Thrift.RowGroup>();
 
          Thrift.SchemaElement root = AddRoot(meta.Schema);
          CreateThriftSchema(schema.Fields, root, meta.Schema);
