@@ -8,10 +8,12 @@
       /// <summary>
       /// 
       /// </summary>
-      public DataColumnStatistics(long nullCount, long distinctCount)
+      public DataColumnStatistics(long nullCount, long distinctCount, object minValue, object maxValue)
       {
          NullCount = nullCount;
          DistinctCount = distinctCount;
+         MinValue = minValue;
+         MaxValue = maxValue;
       }
 
       /// <summary>
@@ -23,5 +25,15 @@
       /// Number of distinct values
       /// </summary>
       public long DistinctCount { get; }
+
+      /// <summary>
+      /// Minimum value, casted to CLR type
+      /// </summary>
+      public object MinValue { get; }
+
+      /// <summary>
+      /// Maximum value, casted to CLR type
+      /// </summary>
+      public object MaxValue { get; }
    }
 }

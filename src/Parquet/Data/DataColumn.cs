@@ -79,7 +79,7 @@ namespace Parquet.Data
       /// <summary>
       /// Basic statistics for this data column (populated on read)
       /// </summary>
-      public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0);
+      public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0, null, null);
 
       internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount, out int nullCount)
       {

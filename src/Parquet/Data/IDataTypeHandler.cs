@@ -51,5 +51,7 @@ namespace Parquet.Data
       Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
       Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
+
+      object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
    }
 }

@@ -98,5 +98,15 @@ namespace Parquet.Data.Concrete
       {
          return x == y;
       }
+
+      public override byte[] PlainEncode(Thrift.SchemaElement tse, byte[] x)
+      {
+         return x;
+      }
+
+      public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded)
+      {
+         return encoded;
+      }
    }
 }

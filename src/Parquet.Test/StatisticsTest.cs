@@ -28,8 +28,9 @@ namespace Parquet.Test
          ["int"] = new TestDesc
          {
             Type = typeof(int),
-            Data = new int[] { 4, 2, 1, 3, 1, 4 },
-            DistinctCount = 4,
+            Data = new int[] { 4, 2, 1, 3, 5, 1, 4 },
+            NullCount = 0,
+            DistinctCount = 5,
             Min = 1,
             Max = 5
          },
@@ -38,25 +39,36 @@ namespace Parquet.Test
             Type = typeof(int?),
             Data = new int?[] { 4, 2, 1, 3, 1, null, 4 },
             DistinctCount = 4,
-            NullCount = 1
+            NullCount = 1,
+            Min = 1,
+            Max = 4
          },
          ["string"] = new TestDesc
          {
             Type = typeof(string),
             Data = new string[] { "one", "two", "one" },
-            DistinctCount = 2
+            NullCount = 0,
+            DistinctCount = 2,
+            Min = "one",
+            Max = "two"
          },
          ["float"] = new TestDesc
          {
             Type = typeof(float),
             Data = new float[] { 1.23f, 2.1f, 0.5f, 0.5f },
-            DistinctCount = 3
+            DistinctCount = 3,
+            NullCount = 0,
+            Min = 0.5f,
+            Max = 2.1f
          },
          ["double"] = new TestDesc
          {
             Type = typeof(double),
             Data = new double[] { 1.23D, 2.1D, 0.5D, 0.5D },
-            DistinctCount = 3
+            DistinctCount = 3,
+            NullCount = 0,
+            Min = 0.5D,
+            Max = 2.1D
          },
          ["dateTime"] = new TestDesc
          {
@@ -68,7 +80,10 @@ namespace Parquet.Test
                new DateTimeOffset(new DateTime(2019, 12, 15)),
                new DateTimeOffset(new DateTime(2019, 12, 17))
             },
-            DistinctCount = 3
+            DistinctCount = 3,
+            NullCount = 0,
+            Min = new DateTimeOffset(new DateTime(2019, 12, 15)),
+            Max = new DateTimeOffset(new DateTime(2019, 12, 17))
          }
       };
 
@@ -90,6 +105,8 @@ namespace Parquet.Test
          Assert.Equal(test.Data.Length, rc.CalculateRowCount());
          Assert.Equal(test.DistinctCount, rc.Statistics.DistinctCount);
          Assert.Equal(test.NullCount, rc.Statistics.NullCount);
+         Assert.Equal(test.Min, rc.Statistics.MinValue);
+         Assert.Equal(test.Max, rc.Statistics.MaxValue);
       }
    }
 }

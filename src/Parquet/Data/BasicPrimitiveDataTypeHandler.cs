@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Parquet.Data
@@ -107,6 +108,34 @@ namespace Parquet.Data
       public override bool Equals(TSystemType x, TSystemType y)
       {
          return EqualityComparer.Equals(x, y);
+      }
+
+      public override byte[] PlainEncode(Thrift.SchemaElement tse, TSystemType x)
+      {
+         using(var ms = new MemoryStream())
+         {
+            using(var bs = new BinaryWriter(ms))
+            {
+               WriteOne(bs, x);
+            }
+
+            return ms.ToArray();
+         }
+      }
+
+      public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded)
+      {
+         if (encoded == null) return null;
+
+         using(var ms = new MemoryStream(encoded))
+         {
+            using(var br = new BinaryReader(ms))
+            {
+               TSystemType element = ReadSingle(br, null, -1);
+               return element;
+            }
+         }
+
       }
    }
 }

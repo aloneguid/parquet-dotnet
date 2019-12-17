@@ -52,5 +52,6 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
+      public object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) => throw new NotImplementedException();
    }
 }

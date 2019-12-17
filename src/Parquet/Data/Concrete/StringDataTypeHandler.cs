@@ -114,5 +114,32 @@ namespace Parquet.Data.Concrete
       {
          return string.Equals(x, y);
       }
+
+      public override byte[] PlainEncode(Thrift.SchemaElement tse, string x)
+      {
+         using (var ms = new MemoryStream())
+         {
+            using (var bs = new BinaryWriter(ms))
+            {
+               WriteOne(bs, x);
+            }
+
+            return ms.ToArray();
+         }
+      }
+
+      public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded)
+      {
+         if (encoded == null) return null;
+
+         using (var ms = new MemoryStream(encoded))
+         {
+            using (var br = new BinaryReader(ms))
+            {
+               string element = ReadSingle(br, null, -1);
+               return element;
+            }
+         }
+      }
    }
 }

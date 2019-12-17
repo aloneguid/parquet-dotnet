@@ -80,17 +80,50 @@ namespace Parquet.Data
 
       public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
       {
-         if(statistics != null)
-         {
-            statistics.Distinct_count = ((TSystemType[])values).Distinct().Count();
-         }
-
          // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
          var typedArray = (TSystemType[]) values;
          foreach(TSystemType one in typedArray)
          {
             WriteOne(writer, one);
          }
+
+         // calculate statistics if required
+         if (statistics != null)
+         {
+            //number of distinct values
+            statistics.Distinct_count = ((TSystemType[])values).Distinct(this).Count();
+
+            TSystemType min = default;
+            TSystemType max = default;
+            for(int i = 0; i < typedArray.Length; i++)
+            {
+               if(i == 0)
+               {
+                  min = typedArray[0];
+                  max = typedArray[0];
+               }
+               else
+               {
+                  TSystemType current = typedArray[i];
+                  int cmin = Compare(min, current);
+                  int cmax = Compare(max, current);
+
+                  if(cmin > 0)
+                  {
+                     min = current;
+                  }
+
+                  if(cmax < 0)
+                  {
+                     max = current;
+                  }
+               }
+            }
+            statistics.Min_value = PlainEncode(tse, min);
+            statistics.Max_value = PlainEncode(tse, max);
+
+         }
+
       }
 
       public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
@@ -199,5 +232,9 @@ namespace Parquet.Data
       public abstract bool Equals(TSystemType x, TSystemType y);
 
       public int GetHashCode(TSystemType x) => x.GetHashCode();
+
+      public abstract byte[] PlainEncode(Thrift.SchemaElement tse, TSystemType x);
+
+      public abstract object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
    }
 }
