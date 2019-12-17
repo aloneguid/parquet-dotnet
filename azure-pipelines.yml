@@ -2,22 +2,20 @@ trigger:
   batch: true
   branches:
     include:
-      - master
       - develop
   paths:
     exclude:
       - README.md
-      - /doc/**/*
+      - doc/**/*
 
 pr:
   branches:
     include:
       - master
-      - develop
   paths:
     exclude:
       - README.md
-      - /doc/**/*
+      - doc/**/*
 
 variables:
   - group: 'External Resources'
@@ -51,30 +49,11 @@ stages:
     - script: 'housework pushvars Version -s build.ini'
       displayName: 'push variables'
 
-
-    # init SonarCloud
-    #- task: SonarSource.sonarcloud.14d9cde6-c1da-4d55-aa01-2965cd301255.SonarCloudPrepare@1
-    #  displayName: 'Prepare analysis on SonarCloud'
-    #  inputs:
-    #    SonarCloud: SonarCloud
-    #    organization: aloneguid-github
-    #    projectKey: parquet_dotnet
-    #    projectName: 'Parquet.Net'
-    #    projectVersion: '$(Version)'
-
     - task: DotNetCoreCLI@2
       displayName: 'build all'
       inputs:
         projects: src/Parquet.sln
         arguments: '-c release'
-
-    #- task: DotNetCoreCLI@2
-    #  displayName: 'Integration and Unit Test'
-    #  continueOnError: true
-    #  inputs:
-    #    command: test
-    #    projects: ./src/Parquet.sln
-    #    arguments: '-c release'
 
     - task: CopyFiles@2
       displayName: 'copy generated nugets'
@@ -87,15 +66,18 @@ stages:
         flattenFolders: true
 
     - task: PublishBuildArtifacts@1
-      displayName: 'publish nugets'
+      displayName: 'archive nugets'
       inputs:
         ArtifactName: nuget
 
-    # finish Sonar analysis
-    #- task: SonarSource.sonarcloud.ce096e50-6155-4de8-8800-4221aaeed4a1.SonarCloudAnalyze@1
-    #  displayName: 'SonarQube: Run Code Analysis'
-    #- task: SonarSource.sonarcloud.38b27399-a642-40af-bb7d-9971f69712e8.SonarCloudPublish@1
-    #  displayName: 'SonarQube: Publish Quality Gate Result'
+    - task: NuGetCommand@2
+      displayName: 'push to internal feed'
+      inputs:
+        command: 'push'
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+        nuGetFeedType: 'internal'
+        publishVstsFeed: '4bab84c0-90f7-4425-afc6-ba077aa9757e/941c9975-4811-42dd-bd79-3cf33878bf77'
+        allowPackageConflicts: true
 
 - stage: Test
   #condition: succeeded('Build')
