@@ -71,6 +71,7 @@ stages:
         ArtifactName: nuget
 
     - task: NuGetCommand@2
+      condition: "ne(variables['Build.SourceBranch'], 'refs/heads/master')"
       displayName: 'push to internal feed'
       inputs:
         command: 'push'
