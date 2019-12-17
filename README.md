@@ -1,4 +1,4 @@
-# Apache Parquet for .Net Platform
+﻿# Apache Parquet for .Net Platform
 
 ![Icon](doc/img/banner.svg)
 
@@ -6,9 +6,16 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 
-| Core Build | Windows/Linux/Mac Tests |
+**Parquet.Net is developed mostly by myself, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor me, please click the `Sponsor` button above and choose one of the available options.💰**
+
+![](doc/img/supportme.png)
+
+
+
+| Build | Test |
 |------------|----------------|
-|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/AllPublic/_build/latest?definitionId=67)|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=67)|
+|![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/aloneguid/4bab84c0-90f7-4425-afc6-ba077aa9757e/67/master?label=master)<br>![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/aloneguid/4bab84c0-90f7-4425-afc6-ba077aa9757e/67/develop?label=develop)|![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28Linux%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28Windows%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28MacOSX%29)<br><br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/develop?label=develop%20%28Linux%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/develop?label=develop%20%28Windows%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/develop?label=develop%20%28MacOSX%29)|
+
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 - `.NET 4.5` and up.
@@ -51,6 +58,7 @@ All the parties in this test were given 10 iteration and time was taken as an av
 - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
 - **[parq!!!](doc/parq.md)**
+- [Sponsorship](#sponsorship)
 
 You can track the [amount of features we have implemented so far](doc/features.md).
 
@@ -154,3 +162,23 @@ Your privacy is important to us. Full details are specified in the [privacy stat
 We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
 
 For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
+
+## Sponsorship
+
+This framework is free and can be used for free, open source and commercial applications. Parquet.Net (all code, NuGets and binaries) are under the [MIT License (MIT)](https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE). It's battle-tested and used by many awesome people and organisations. So hit the magic ⭐️ button, we appreciate it!!! 🙏 Thx!
+
+The core team members, Parquet.Net contributors and contributors in the ecosystem do this open source work in their free time. If you use Parquet.Net, and you'd like us to invest more time on it, please donate by pressing the ❤ **Sponsor** button on top of this page. This project increases your income/productivity/usabilty too.
+
+If your company/project is using Parquet.Net we'd be happy to list your logo here on the front page with your kind permission, absolutely for free. Please contact [ivan@isolineltd.com](mailto:ivan@isolineltd.com) with details and graphics attached.
+
+### Why charge/sponsor for open source?
+
+ * [Open-Source Maintainers are Jerks! | Nick Randolph & Geoffrey Huntley](https://vimeo.com/296579853)
+ * [FOSS is free as in toilet | Geoffroy Couprie](http://unhandledexpression.com/general/2018/11/27/foss-is-free-as-in-toilet.html)
+ * [How to Charge for your Open Source | Mike Perham](https://www.mikeperham.com/2015/11/23/how-to-charge-for-your-open-source/)
+ * [Sustain OSS: The Report](https://sustainoss.org/assets/pdf/SustainOSS-west-2017-report.pdf)
+ * [Open Source Maintainers Owe You Nothing | Mike McQuaid](https://mikemcquaid.com/2018/03/19/open-source-maintainers-owe-you-nothing/)
+ * [Who should fund open source projects? | Jane Elizabeth](https://jaxenter.com/who-funds-open-source-projects-133222.html)
+ * [Apply at OSS Inc today| Ryan Chenkie](https://twitter.com/ryanchenkie/status/1067801413974032385)
+ * [The Ethics of Unpaid Labor and the OSS Community | Ashe Dryden](https://www.ashedryden.com/blog/the-ethics-of-unpaid-labor-and-the-oss-community)
+
