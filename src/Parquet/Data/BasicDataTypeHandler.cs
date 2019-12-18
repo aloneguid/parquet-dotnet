@@ -78,7 +78,7 @@ namespace Parquet.Data
          return idx - offset;
       }
 
-      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
+      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
       {
          // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
          var typedArray = (TSystemType[]) values;
@@ -91,7 +91,7 @@ namespace Parquet.Data
          if (statistics != null)
          {
             //number of distinct values
-            statistics.Distinct_count = ((TSystemType[])values).Distinct(this).Count();
+            statistics.DistinctCount = ((TSystemType[])values).Distinct(this).Count();
 
             TSystemType min = default;
             TSystemType max = default;
@@ -119,9 +119,8 @@ namespace Parquet.Data
                   }
                }
             }
-            statistics.Min_value = PlainEncode(tse, min);
-            statistics.Max_value = PlainEncode(tse, max);
-
+            statistics.MinValue = min;
+            statistics.MaxValue = max;
          }
 
       }
@@ -234,6 +233,13 @@ namespace Parquet.Data
       public int GetHashCode(TSystemType x) => x.GetHashCode();
 
       public abstract byte[] PlainEncode(Thrift.SchemaElement tse, TSystemType x);
+
+      public byte[] PlainEncode(Thrift.SchemaElement tse, object x)
+      {
+         if (x == null) return null;
+
+         return PlainEncode(tse, (TSystemType)x);
+      }
 
       public abstract object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
    }

@@ -15,7 +15,7 @@ namespace Parquet.Data
 
       public abstract SchemaType SchemaType { get; }
 
-      public Type ClrType => null;
+      public System.Type ClrType => null;
 
       public abstract Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);
 
@@ -32,7 +32,7 @@ namespace Parquet.Data
       public object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) => throw new NotSupportedException();
 
 
-      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
+      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
       {
          throw new NotSupportedException();
       }
@@ -53,5 +53,7 @@ namespace Parquet.Data
       }
 
       public object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) => throw new NotImplementedException();
+
+      public byte[] PlainEncode(Thrift.SchemaElement tse, object x) => throw new NotImplementedException();
    }
 }

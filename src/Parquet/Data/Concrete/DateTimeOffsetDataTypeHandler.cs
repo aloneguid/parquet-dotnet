@@ -90,7 +90,7 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
       {
          switch (tse.Type)
          {
@@ -109,9 +109,9 @@ namespace Parquet.Data.Concrete
 
          if (statistics != null && values.Count > 0)
          {
-            statistics.Distinct_count = ((IEnumerable<DateTimeOffset>)values).Distinct(this).Count();
-            statistics.Min_value = PlainEncode(tse, ((IEnumerable<DateTimeOffset>)values).Min());
-            statistics.Max_value = PlainEncode(tse, ((IEnumerable<DateTimeOffset>)values).Max());
+            statistics.DistinctCount = ((IEnumerable<DateTimeOffset>)values).Distinct(this).Count();
+            statistics.MinValue = ((IEnumerable<DateTimeOffset>)values).Min();
+            statistics.MaxValue = ((IEnumerable<DateTimeOffset>)values).Max();
          }
       }
 
