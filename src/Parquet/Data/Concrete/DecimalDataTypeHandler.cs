@@ -104,7 +104,7 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
       {
          switch(tse.Type)
          {

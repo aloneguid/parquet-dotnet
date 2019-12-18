@@ -24,7 +24,6 @@ namespace Parquet.Test
          var ccountry = new DataColumn(ccountrych, new[] { "UK", "US" }, new[] { 0, 1 });
 
          DataColumn[] readColumns = WriteReadSingleRowGroup(schema, new[] { id, cname, ccountry }, out Schema readSchema);
-
       }
 
       [Fact]

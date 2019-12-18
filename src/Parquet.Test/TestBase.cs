@@ -68,6 +68,8 @@ namespace Parquet.Test
             ms.WriteSingleRowGroupParquetFile(new Schema(field), dataColumn);
             ms.Position = 0;
 
+            //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+
             // read first gow group and first column
             using (var reader = new ParquetReader(ms))
             {

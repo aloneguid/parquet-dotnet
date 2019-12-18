@@ -2,6 +2,7 @@ trigger:
   batch: true
   branches:
     include:
+      - master
       - develop
   paths:
     exclude:
@@ -12,6 +13,7 @@ pr:
   branches:
     include:
       - master
+      - develop
   paths:
     exclude:
       - README.md

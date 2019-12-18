@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
+using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete
 {
@@ -42,7 +43,7 @@ namespace Parquet.Data.Concrete
          return reader.ReadBoolean();
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
       {
          int n = 0;
          byte b = 0;
@@ -69,5 +70,9 @@ namespace Parquet.Data.Concrete
 
          writer.Write(buffer);
       }
+
+      public override byte[] PlainEncode(SchemaElement tse, bool x) => null;
+
+      public override object PlainDecode(SchemaElement tse, byte[] encoded) => null;
    }
 }
