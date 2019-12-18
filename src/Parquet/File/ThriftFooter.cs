@@ -173,7 +173,8 @@ namespace Parquet.File
             Encoding = Thrift.Encoding.PLAIN,
             Definition_level_encoding = Thrift.Encoding.RLE,
             Repetition_level_encoding = Thrift.Encoding.RLE,
-            Num_values = valueCount
+            Num_values = valueCount,
+            Statistics = new Thrift.Statistics()
          };
 
          return ph;

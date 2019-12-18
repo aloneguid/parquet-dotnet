@@ -5,25 +5,17 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using Thrift;
-using Thrift.Collections;
-
 using Thrift.Protocol;
-using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-  /// <summary>
-  /// Data page header
-  /// </summary>
+   /// <summary>
+   /// Data page header
+   /// </summary>
 
-  public partial class DataPageHeader : TBase
+   public partial class DataPageHeader : TBase
   {
     private Statistics _statistics;
 

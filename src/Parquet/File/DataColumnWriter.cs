@@ -55,6 +55,7 @@ namespace Parquet.File
          //this count must be set to number of all values in the column, including nulls.
          //for hierarchy/repeated columns this is a count of flattened list, including nulls.
          chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
+         ph.Data_page_header.Statistics = chunk.Meta_data.Statistics;   //todo: workaround
 
          //the following counters must include both data size and header size
          chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);

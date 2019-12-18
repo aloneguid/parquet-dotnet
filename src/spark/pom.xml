@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <scala.version>2.12.8</scala.version>
-        <scala.compat.version>2.12.8</scala.compat.version>
-        <scala.binary.version>2.12</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+        <scala.compat.version>2.11.8</scala.compat.version>
+        <scala.binary.version>2.11</scala.binary.version>
     </properties>
 
     <groupId>parquet</groupId>
