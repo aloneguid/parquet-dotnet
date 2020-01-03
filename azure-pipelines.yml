@@ -75,6 +75,7 @@ stages:
     - task: NuGetCommand@2
       condition: "ne(variables['Build.SourceBranch'], 'refs/heads/master')"
       displayName: 'push to internal feed'
+      continueOnError: true
       inputs:
         command: 'push'
         packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
