@@ -72,12 +72,27 @@ namespace Parquet.Data.Concrete
          return destIdx - offset;
       }
 
-      protected override string ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      private static string ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length, bool hasLengthPrefix)
       {
-         if (length == -1) length = reader.ReadInt32();
+         if (length == -1)
+         {
+            if (hasLengthPrefix)
+            {
+               length = reader.ReadInt32();
+            }
+            else
+            {
+               length = (int)reader.BaseStream.Length;
+            }
+         }
 
          byte[] data = reader.ReadBytes(length);
          return Encoding.UTF8.GetString(data);
+      }
+
+      protected override string ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
+      {
+         return ReadSingle(reader, tse, length, true);
       }
 
       public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
@@ -90,19 +105,30 @@ namespace Parquet.Data.Concrete
          return UnpackGenericDefinitions((string[])src, definitionLevels, maxDefinitionLevel, out hasValueFlags);
       }
 
-      protected override void WriteOne(BinaryWriter writer, string value)
+      private static void WriteOne(BinaryWriter writer, string value, bool includeLengthPrefix)
       {
          if (value == null || value.Length == 0)
          {
-            writer.Write((int)0);
+            if (includeLengthPrefix)
+            {
+               writer.Write((int)0);
+            }
          }
          else
          {
             //transofrm to byte array first, as we need the length of the byte buffer, not string length
             byte[] data = E.GetBytes(value);
-            writer.Write(data.Length);
+            if (includeLengthPrefix)
+            {
+               writer.Write(data.Length);
+            }
             writer.Write(data);
          }
+      }
+
+      protected override void WriteOne(BinaryWriter writer, string value)
+      {
+         WriteOne(writer, value, true);
       }
 
       public override int Compare(string x, string y)
@@ -121,7 +147,7 @@ namespace Parquet.Data.Concrete
          {
             using (var bs = new BinaryWriter(ms))
             {
-               WriteOne(bs, x);
+               WriteOne(bs, x, false);
             }
 
             return ms.ToArray();
@@ -136,7 +162,7 @@ namespace Parquet.Data.Concrete
          {
             using (var br = new BinaryReader(ms))
             {
-               string element = ReadSingle(br, null, -1);
+               string element = ReadSingle(br, null, -1, false);
                return element;
             }
          }
