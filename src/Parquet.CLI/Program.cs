@@ -17,7 +17,7 @@ namespace Parquet.CLI
    {
       static int Main(string[] args)
       {
-         var app = new Application("Parquet CLI (https://github.com/aloneguid/parquet-dotnet) by Ivan Gavryliuk.");
+         var app = new Application("Parquet CLI (https://github.com/aloneguid/parquet-dotnet) by Ivan Gavryliuk (@aloneguid).");
          ConfigureTelemetry(app, args);
 
          LinePrimitive<bool> verboseOption = app.SharedOption<bool>("-d|--debug", Help.App_Verbose);
