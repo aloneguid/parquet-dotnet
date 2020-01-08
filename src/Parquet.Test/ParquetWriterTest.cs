@@ -226,5 +226,34 @@ namespace Parquet.Test
             }
          }
       }
+
+      [Fact]
+      public void CustomMetadata_can_write_and_read()
+      {
+         var ms = new MemoryStream();
+         var id = new DataField<int>("id");
+
+         //write
+         using (var writer = new ParquetWriter(new Schema(id), ms))
+         {
+            writer.CustomMetadata = new Dictionary<string, string>
+            {
+               ["key1"] = "value1",
+               ["key2"] = "value2"
+            };
+
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
+            {
+               rg.WriteColumn(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+            }
+         }
+
+         //read back
+         using (var reader = new ParquetReader(ms))
+         {
+            Assert.Equal("value1", reader.CustomMetadata["key1"]);
+            Assert.Equal("value2", reader.CustomMetadata["key2"]);
+         }
+      }
    }
 }

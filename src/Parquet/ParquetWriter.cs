@@ -68,6 +68,15 @@ namespace Parquet
          return writer;
       }
 
+      /// <summary>
+      /// Gets custom key-value pairs for metadata
+      /// </summary>
+      public IReadOnlyDictionary<string, string> CustomMetadata
+      {
+         get => _footer.CustomMetadata;
+         set { _footer.CustomMetadata = value.ToDictionary(p => p.Key, p => p.Value); }
+      }
+
       private void PrepareFile(bool append)
       {
          if (append)

@@ -36,7 +36,6 @@ namespace Parquet
       /// <exception cref="IOException">not a Parquet file (size too small)</exception>
       public ParquetReader(Stream input, ParquetOptions parquetOptions = null, bool leaveStreamOpen = true) : this(input, leaveStreamOpen)
       {
-         
          if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
          if (_input.Length <= 8) throw new IOException("not a Parquet file (size too small)");
 
@@ -64,6 +63,12 @@ namespace Parquet
 
          return new ParquetReader(fs, parquetOptions, false);
       }
+
+      /// <summary>
+      /// Gets custom key-value pairs for metadata
+      /// </summary>
+      public Dictionary<string, string> CustomMetadata => _footer.CustomMetadata;
+
 
       #region [ Helpers ]
 

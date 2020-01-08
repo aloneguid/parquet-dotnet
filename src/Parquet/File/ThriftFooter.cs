@@ -43,7 +43,7 @@ namespace Parquet.File
          }
          get
          {
-            if (_fileMeta.Key_value_metadata == null || _fileMeta.Key_value_metadata.Count == 0) return null;
+            if (_fileMeta.Key_value_metadata == null || _fileMeta.Key_value_metadata.Count == 0) return new Dictionary<string, string>();
 
             return _fileMeta.Key_value_metadata.ToDictionary(kv => kv.Key, kv => kv.Value);
          }
