@@ -115,24 +115,6 @@ namespace Parquet.CLI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When set, colorises and idents output..
-        /// </summary>
-        internal static string Command_Convert_Pretty {
-            get {
-                return ResourceManager.GetString("Command_Convert_Pretty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Output style. By default result is a multiline json document. Specify &quot;single&quot; to generate an array document with list of documents embedded, or &quot;multiline&quot; for a multiline json..
-        /// </summary>
-        internal static string Command_Convert_Style {
-            get {
-                return ResourceManager.GetString("Command_Convert_Style", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Displays internal parquet metadata.
         /// </summary>
         internal static string Command_Meta_Description {

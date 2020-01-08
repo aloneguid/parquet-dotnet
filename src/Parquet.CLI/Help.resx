@@ -135,12 +135,6 @@
   <data name="Command_Convert_Output" xml:space="preserve">
     <value>Path to output file. If not specified, the result is printed to the console.</value>
   </data>
-  <data name="Command_Convert_Pretty" xml:space="preserve">
-    <value>When set, colorises and idents output.</value>
-  </data>
-  <data name="Command_Convert_Style" xml:space="preserve">
-    <value>Output style. By default result is a multiline json document. Specify "single" to generate an array document with list of documents embedded, or "multiline" for a multiline json.</value>
-  </data>
   <data name="Command_Meta_Description" xml:space="preserve">
     <value>Displays internal parquet metadata</value>
   </data>

@@ -73,14 +73,11 @@ namespace Parquet.CLI
             cmd.Description = Help.Command_Convert_Description;
 
             LinePrimitive<string> input = cmd.Argument<string>("input", Help.Command_Convert_Input).Required().FileExists();
-            //LinePrimitive<string> output = cmd.Argument<string>("output", Help.Command_Convert_Output);
-            //LinePrimitive<string> style = cmd.Option<string>("-s|--style", Help.Command_Convert_Style);
-            LinePrimitive<bool> pretty = cmd.Option<bool>("-p|--pretty", Help.Command_Convert_Pretty);
             LinePrimitive<int> maxRows = cmd.Option<int>("-m|--max-rows", Help.Command_Convert_MaxRows, 10);
 
             cmd.OnExecute(() =>
             {
-               new ConvertCommand(input, null, null, pretty).Execute(maxRows);
+               new ConvertCommand(input).Execute(maxRows);
             });
          });
 
