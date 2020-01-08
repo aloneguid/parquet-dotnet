@@ -18,23 +18,24 @@ namespace Parquet.CLI.Commands
          _inputPath = input;
       }
 
-      public void Execute(int maxRows)
+      public void Execute(int maxRows, string format)
       {
-         string sourceExtension = Path.GetExtension(_inputPath);
-
-         if(sourceExtension != ".parquet")
+         string fmt = format switch
          {
-            throw new ArgumentException($"Don't know how to read {sourceExtension}");
-         }
+            "json" => "j",
+            "csv" => "c",
+            _ => throw new ArgumentException($"unknown format '{format}'")
+         };
 
-         ConvertFromParquet(maxRows);
+         ConvertFromParquet(maxRows, fmt);
       }
 
-      private void ConvertFromParquet(int maxRows)
+      private void ConvertFromParquet(int maxRows, string fmt)
       {
          Telemetry.CommandExecuted("convert",
             "input", _inputPath,
-            "maxRows", maxRows);
+            "maxRows", maxRows,
+            "fmt", fmt);
 
          Table t = ReadTable(maxRows);
 
@@ -44,7 +45,7 @@ namespace Parquet.CLI.Commands
             if (i >= maxRows)
                break;
 
-            string json = row.ToString("j");
+            string json = row.ToString(fmt, i);
 
             WriteLine(json);
             i++;

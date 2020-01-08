@@ -74,10 +74,11 @@ namespace Parquet.CLI
 
             LinePrimitive<string> input = cmd.Argument<string>("input", Help.Command_Convert_Input).Required().FileExists();
             LinePrimitive<int> maxRows = cmd.Option<int>("-m|--max-rows", Help.Command_Convert_MaxRows, 10);
+            LinePrimitive<string> format = cmd.Option<string>("-f|--format", Help.Command_Convert_Format, "json");
 
             cmd.OnExecute(() =>
             {
-               new ConvertCommand(input).Execute(maxRows);
+               new ConvertCommand(input).Execute(maxRows, format);
             });
          });
 
