@@ -97,3 +97,34 @@ using (var reader = new ParquetReader(ms))
 Note that you have to specify that you are opening `ParquetWriter` in **append** mode in it's constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream posiition to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
 
 Please keep in mind that row groups are designed to hold a large amount of data (5'0000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
+
+### Custom Metadata
+
+To read and write custom file metadata, you can use `CustomMetadata` property on `ParquetFileReader` and `ParquetFileWriter`, i.e.
+
+```csharp
+var ms = new MemoryStream();
+var id = new DataField<int>("id");
+
+//write
+using (var writer = new ParquetWriter(new Schema(id), ms))
+{
+   writer.CustomMetadata = new Dictionary<string, string>
+   {
+      ["key1"] = "value1",
+      ["key2"] = "value2"
+   };
+
+   using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
+   {
+      rg.WriteColumn(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+   }
+}
+
+//read back
+using (var reader = new ParquetReader(ms))
+{
+   Assert.Equal("value1", reader.CustomMetadata["key1"]);
+   Assert.Equal("value2", reader.CustomMetadata["key2"]);
+}
+```
