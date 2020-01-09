@@ -36,6 +36,9 @@ namespace Parquet.Extensions
          {
             switch (sf)
             {
+               case StringFormat.Csv:
+                  sb.Append(",");
+                  break;
                case StringFormat.Json:
                   sb.Append(",");
                   break;
@@ -52,12 +55,14 @@ namespace Parquet.Extensions
 
       public static void StartObject(this StringBuilder sb, StringFormat sf)
       {
-         sb.Append("{");
+         if(sf == StringFormat.Json || sf == StringFormat.JsonSingleQuote)
+            sb.Append("{");
       }
 
       public static void EndObject(this StringBuilder sb, StringFormat sf)
       {
-         sb.Append("}");
+         if (sf == StringFormat.Json || sf == StringFormat.JsonSingleQuote)
+            sb.Append("}");
       }
 
       public static void AppendPropertyName(this StringBuilder sb, StringFormat sf, Field f)
@@ -87,12 +92,29 @@ namespace Parquet.Extensions
 
       public static void AppendNull(this StringBuilder sb, StringFormat sf)
       {
-         sb.Append("null");
+         if (sf != StringFormat.Csv)
+         {
+            sb.Append("null");
+         }
       }
 
       public static void Append(this StringBuilder sb, StringFormat sf, object value)
       {
-         EncodeJson(sb, sf, value);
+         if (sf == StringFormat.Json || sf == StringFormat.JsonSingleQuote)
+         {
+            EncodeJson(sb, sf, value);
+         }
+         else if(sf == StringFormat.Csv)
+         {
+            EncodeCsv(sb, sf, value);
+         }
+      }
+
+      private static void EncodeCsv(StringBuilder sb, StringFormat sf, object value)
+      {
+         if (value == null) return;
+
+         sb.Append(value.ToString());
       }
 
       private static void EncodeJson(StringBuilder sb, StringFormat sf, object value)

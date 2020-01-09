@@ -201,21 +201,45 @@ namespace Parquet.Data.Rows
       /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
       public string ToString(string format)
       {
+         return ToString(format, 0);
+      }
+
+      /// <summary>
+      /// Convert to string with optional formatting
+      /// </summary>
+      /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
+      /// <param name="rowIndex">Optional row index. In case of CSV output, index of 0 prints header row</param>
+      public string ToString(string format, int rowIndex)
+      {
          var sb = new StringBuilder();
-         
-         ToString(sb, GetStringFormat(format), 1, Schema);
+
+         StringFormat sf = GetStringFormat(format);
+
+         if (sf == StringFormat.Csv && rowIndex == 0)
+         {
+            //print headers
+            int i = 0;
+            foreach (Field f in Schema)
+            {
+               if (i++ > 0) sb.Append(",");
+               sb.Append(f.Name);
+            }
+            sb.AppendLine();
+         }
+
+         ToString(sb, sf, 1, Schema);
 
          return sb.ToString();
       }
 
       internal static StringFormat GetStringFormat(string format)
       {
-         StringFormat sf;
-         if (format == "j")
-            sf = StringFormat.Json;
-         else
-            sf = StringFormat.JsonSingleQuote;
-         return sf;
+         return format switch
+         {
+            "j" => StringFormat.Json,
+            "c" => StringFormat.Csv,
+            _ => StringFormat.JsonSingleQuote
+         };
       }
 
       internal void ToString(StringBuilder sb, StringFormat sf, int level, IReadOnlyCollection<Field> fields)

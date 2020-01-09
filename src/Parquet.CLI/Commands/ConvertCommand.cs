@@ -12,45 +12,32 @@ namespace Parquet.CLI.Commands
    class ConvertCommand : FileInputCommand
    {
       private readonly string _inputPath;
-      private readonly string _output;
-      private readonly string _style;
-      private readonly bool _pretty;
 
-      public ConvertCommand(string input, string output, string style, bool noColour) : base(input)
+      public ConvertCommand(string input) : base(input)
       {
          _inputPath = input;
-         _output = output;
-         _style = style;
-         _pretty = noColour;
       }
 
-      public void Execute(int maxRows)
+      public void Execute(int maxRows, string format)
       {
-         string sourceExtension = Path.GetExtension(_inputPath);
-
-         if(sourceExtension != ".parquet")
+         string fmt = format switch
          {
-            throw new ArgumentException($"Don't know how to read {sourceExtension}");
-         }
+            "json" => "j",
+            "csv" => "c",
+            _ => throw new ArgumentException($"unknown format '{format}'")
+         };
 
-         ConvertFromParquet(maxRows);
+         ConvertFromParquet(maxRows, fmt);
       }
 
-      private void ConvertFromParquet(int maxRows)
+      private void ConvertFromParquet(int maxRows, string fmt)
       {
          Telemetry.CommandExecuted("convert",
             "input", _inputPath,
-            "output", _output,
-            "style", _style,
-            "pretty", _pretty,
-            "maxRows", maxRows);
+            "maxRows", maxRows,
+            "fmt", fmt);
 
          Table t = ReadTable(maxRows);
-
-         if(_pretty)
-         {
-            Write("[", BracketColor);
-         }
 
          int i = 0;
          foreach(Row row in t)
@@ -58,40 +45,10 @@ namespace Parquet.CLI.Commands
             if (i >= maxRows)
                break;
 
-            string json = row.ToString("j");
+            string json = row.ToString(fmt, i);
 
-            if(!_pretty)
-            {
-               WriteLine(json);
-               i++;
-            }
-            else
-            {
-               WriteColorJson(json, ++i < t.Count && i < maxRows);
-            }
-         }
-
-         if (_pretty)
-         {
-            WriteLine("]", BracketColor);
-         }
-      }
-
-      private const ConsoleColor BracketColor = ConsoleColor.DarkGray;
-      private const ConsoleColor QuoteColor = ConsoleColor.Yellow;
-      private const ConsoleColor PropertyNameColor = ConsoleColor.Green;
-      private const ConsoleColor ValueColor = ConsoleColor.White;
-
-      private void WriteColorJson(string json, bool hasMore)
-      {
-         JToken jt = JToken.Parse(json);
-
-         Write(jt.ToString(Formatting.Indented));
-
-         if(hasMore)
-         {
-            Write(",");
-            WriteLine();
+            WriteLine(json);
+            i++;
          }
       }
    }
