@@ -254,5 +254,14 @@ namespace Parquet.Test
          Assert.Equal(1, nameField.MaxRepetitionLevel);
          Assert.Equal(3, nameField.MaxDefinitionLevel);
       }
+
+      [Fact]
+      public void Issue22()
+      {
+         var reader = ParquetReader.OpenFromFile(@"C:\tmp\ReadParquet\res\doesntWork.snappy.parquet");
+         //var reader = ParquetReader.OpenFromFile(@"C:\tmp\ReadParquet\res\works.snappy.parquet");
+
+         Schema schema = reader.Schema;
+      }
    }
 }
