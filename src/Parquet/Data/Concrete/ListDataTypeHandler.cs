@@ -14,6 +14,30 @@ namespace Parquet.Data.Concrete
          Thrift.SchemaElement tseList = schema[index];
 
          ListField listField = ListField.CreateWithNoItem(tseList.Name);
+
+         //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
+
+         Thrift.SchemaElement tseRepeated = schema[index + 1];
+
+         //Rule 1. If the repeated field is not a group, then its type is the element type and elements are required.
+         //not implemented
+
+         //Rule 2. If the repeated field is a group with multiple fields, then its type is the element type and elements are required.
+         //not implemented
+
+         //Rule 3. f the repeated field is a group with one field and is named either array or uses
+         //the LIST-annotated group's name with _tuple appended then the repeated type is the element
+         //type and elements are required.
+
+         // "group with one field and is named either array":
+         if(tseList.Num_children == 1 && tseRepeated.Name == "array")
+         {
+            listField.Path = tseList.Name;
+            index += 1; //only skip this element
+            ownedChildCount = 1;
+            return listField;
+         }
+
          //as we are skipping elements set path hint
          listField.Path = $"{tseList.Name}{Schema.PathSeparator}{schema[index + 1].Name}";
          index += 2;          //skip this element and child container
