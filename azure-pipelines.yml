@@ -34,6 +34,11 @@ stages:
 
     steps:
 
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.x'
+
     - task: petersendev.dotnet-global-tool-installer.DotnetGlobalToolInstaller.DotnetGlobalToolInstaller@0
       displayName: 'install housework'
       inputs:
@@ -100,6 +105,10 @@ stages:
     pool:
       vmImage: $(image)
     steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.x'
     - task: DotNetCoreCLI@2
       displayName: 'run tests'
       inputs:
