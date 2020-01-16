@@ -2,10 +2,11 @@
 using System;
 using Xunit;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Parquet.Test
 {
-   public class SchemaTest
+   public class SchemaTest : TestBase
    {
       [Fact]
       public void Creating_element_with_unsupported_type_throws_exception()
@@ -256,12 +257,28 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Issue22()
+      public void BackwardCompat_list_with_one_array()
       {
-         var reader = ParquetReader.OpenFromFile(@"C:\tmp\ReadParquet\res\doesntWork.snappy.parquet");
-         //var reader = ParquetReader.OpenFromFile(@"C:\tmp\ReadParquet\res\works.snappy.parquet");
+         using (Stream input = OpenTestFile("legacy-list-onearray.parquet"))
+         {
+            using (var reader = new ParquetReader(input))
+            {
+               Schema schema = reader.Schema;
 
-         Schema schema = reader.Schema;
+               //validate schema
+               Assert.Equal("impurityStats", schema[3].Name);
+               Assert.Equal(SchemaType.List, schema[3].SchemaType);
+               Assert.Equal("gain", schema[4].Name);
+               Assert.Equal(SchemaType.Data, schema[4].SchemaType);
+
+               //smoke test we can read it
+               using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+               {
+                  DataColumn values4 = rg.ReadColumn((DataField)schema[4]);
+               }
+            }
+         }
+
       }
    }
 }
