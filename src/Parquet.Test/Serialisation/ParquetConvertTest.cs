@@ -45,6 +45,48 @@ namespace Parquet.Test.Serialisation
 
          }
       }
+      [Fact]
+      public void Serialise_read_and_deserialise_by_rowgroup()
+      {
+         DateTime now = DateTime.Now;
+
+         IEnumerable<SimpleStructure> structures = Enumerable
+            .Range(0, 10)
+            .Select(i => new SimpleStructure
+            {
+               Id = i,
+               NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+               Name = $"row {i}",
+               Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+            });
+
+         using (var ms = new MemoryStream())
+         {
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            ms.Position = 0;
+
+            SimpleStructure[] structuresArray = structures.ToArray();
+            int rowGroupCount = 5; //based on our test input. 10 records with rowgroup size 2.
+            for(int r = 0; r < rowGroupCount; r++)
+            {
+               SimpleStructure[] rowGroupRecords = ParquetConvert.Deserialize<SimpleStructure>(ms, rowGroupIndex: r);
+               Assert.Equal(2, rowGroupRecords.Length);
+
+               Assert.Equal(structuresArray[2*r].Id, rowGroupRecords[0].Id);
+               Assert.Equal(structuresArray[2*r].NullableId, rowGroupRecords[0].NullableId);
+               Assert.Equal(structuresArray[2*r].Name, rowGroupRecords[0].Name);
+               Assert.Equal(structuresArray[2*r].Date, rowGroupRecords[0].Date);
+               Assert.Equal(structuresArray[2*r+1].Id, rowGroupRecords[1].Id);
+               Assert.Equal(structuresArray[2*r+1].NullableId, rowGroupRecords[1].NullableId);
+               Assert.Equal(structuresArray[2*r+1].Name, rowGroupRecords[1].Name);
+               Assert.Equal(structuresArray[2*r+1].Date, rowGroupRecords[1].Date);
+
+            }
+            Assert.Throws<ArgumentOutOfRangeException>("index",() => ParquetConvert.Deserialize<SimpleStructure>(ms, 5));
+            Assert.Throws<ArgumentOutOfRangeException>("index",() => ParquetConvert.Deserialize<SimpleStructure>(ms, 99999));
+         }
+      }
 
       [Fact]
       public void Serialize_deserialize_repeated_field()
