@@ -61,6 +61,20 @@ class MyClass
 It supports the following properties:
 - **Name** overrides column name in the parquet file.
 
+### Ignoring properties while serializing
+
+You can ignore few properties from serialization process by decorating them with `ParquetIgnore` attribute.
+
+ with `[ParquetIgnore]` attribute:
+
+```csharp
+class MyClass
+{
+   [ParquetIgnore]
+   public int Id { get; set; }
+}
+```
+
 ## Limitations
 
 At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).
