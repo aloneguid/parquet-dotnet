@@ -79,7 +79,7 @@ namespace Parquet.CLI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Converts between file formats. Currently supports conversion from parquet to multiline json only. When launched prints json documents to the terminal..
+        ///   Looks up a localized string similar to Converts between file formats. Supports conversion from parquet to multiline json or csv. When launched prints converted documents to the terminal..
         /// </summary>
         internal static string Command_Convert_Description {
             get {

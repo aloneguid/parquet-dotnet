@@ -120,6 +120,11 @@ namespace Parquet.Data
          return result.ToArray();
       }
 
+      internal DataField FindDataField(string path)
+      {
+         return GetDataFields().FirstOrDefault(f => f.Path == path);
+      }
+
       /// <summary>
       /// Indicates whether the current object is equal to another object of the same type.
       /// </summary>

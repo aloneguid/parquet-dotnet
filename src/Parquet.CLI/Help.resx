@@ -124,7 +124,7 @@
     <value>Path to parquet file.</value>
   </data>
   <data name="Command_Convert_Description" xml:space="preserve">
-    <value>Converts between file formats. Currently supports conversion from parquet to multiline json only. When launched prints json documents to the terminal.</value>
+    <value>Converts between file formats. Supports conversion from parquet to multiline json or csv. When launched prints converted documents to the terminal.</value>
   </data>
   <data name="Command_Convert_Format" xml:space="preserve">
     <value>Output format. By default uses 'json'. Supports 'json' or 'csv'.</value>
