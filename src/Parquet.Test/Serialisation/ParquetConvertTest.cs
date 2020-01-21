@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NetBox.Extensions;
+using Parquet.Attributes;
 using Parquet.Data;
 using Parquet.Serialization;
 using Xunit;
@@ -42,7 +43,34 @@ namespace Parquet.Test.Serialisation
                Assert.Equal(structuresArray[i].Name, structures2[i].Name);
                Assert.Equal(structuresArray[i].Date, structures2[i].Date);
             }
+         }
+      }
 
+      [Fact]
+      public void Serialise_deserialise_renamed_column()
+      {
+         IEnumerable<SimpleRenamed> structures = Enumerable
+            .Range(0, 10)
+            .Select(i => new SimpleRenamed
+            {
+               Id = i,
+               PersonName = $"row {i}"
+            });
+
+         using (var ms = new MemoryStream())
+         {
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            ms.Position = 0;
+
+            SimpleRenamed[] structures2 = ParquetConvert.Deserialize<SimpleRenamed>(ms);
+
+            SimpleRenamed[] structuresArray = structures.ToArray();
+            for (int i = 0; i < 10; i++)
+            {
+               Assert.Equal(structuresArray[i].Id, structures2[i].Id);
+               Assert.Equal(structuresArray[i].PersonName, structures2[i].PersonName);
+            }
          }
       }
 
@@ -129,6 +157,14 @@ namespace Parquet.Test.Serialisation
          public string Name { get; set; }
 
          public DateTimeOffset Date { get; set; }
+      }
+
+      public class SimpleRenamed
+      {
+         public int Id { get; set; }
+
+         [ParquetColumn("Name")]
+         public string PersonName { get; set; }
       }
 
       public class StructureWithTestType<T>

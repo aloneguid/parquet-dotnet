@@ -139,11 +139,13 @@ namespace Parquet.Serialization.Values
 
       public AssignArrayDelegate GenerateAssigner(DataColumn dataColumn, Type classType)
       {
-         DataField field = dataColumn.Field;
+         DataField fileField = dataColumn.Field;
+         Schema typeSchema = SchemaReflector.Reflect(classType);
+         DataField typeField = typeSchema.FindDataField(fileField.Path);
 
          Type[] methodArgs = { typeof(DataColumn), typeof(Array) };
          var runMethod = new DynamicMethod(
-            $"Set{classType.Name}{field.Name}",
+            $"Set{classType.Name}{typeField.ClrPropName}",
             typeof(void),
             methodArgs,
             GetType().GetTypeInfo().Module);
@@ -152,7 +154,7 @@ namespace Parquet.Serialization.Values
 
          //set class property method
          TypeInfo ti = classType.GetTypeInfo();
-         PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
+         PropertyInfo pi = ti.GetDeclaredProperty(typeField.ClrPropName ?? typeField.Name);
          MethodInfo setValueMethod = pi.SetMethod;
 
          TypeInfo dcti = dataColumn.GetType().GetTypeInfo();
@@ -161,7 +163,7 @@ namespace Parquet.Serialization.Values
 
          TypeConversion conversion = GetConversion(dataColumn.Field.ClrNullableIfHasNullsType, pi.PropertyType);
 
-         GenerateAssigner(il, classType, field,
+         GenerateAssigner(il, classType, typeField,
             setValueMethod,
             getDataMethod,
             getRepsMethod,

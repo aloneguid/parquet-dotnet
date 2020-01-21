@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -13,6 +14,7 @@ namespace Parquet.Serialization
    public class SchemaReflector
    {
       private readonly TypeInfo _classType;
+      private static readonly ConcurrentDictionary<Type, Schema> _cachedReflectedSchemas = new ConcurrentDictionary<Type, Schema>();
 
       /// <summary>
       /// </summary>
@@ -44,7 +46,17 @@ namespace Parquet.Serialization
       /// <returns></returns>
       public static Schema Reflect<T>()
       {
-         return new SchemaReflector(typeof(T)).Reflect();
+         return _cachedReflectedSchemas.GetOrAdd(typeof(T), t => new SchemaReflector(typeof(T)).Reflect());
+      }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="classType"></param>
+      /// <returns></returns>
+      public static Schema Reflect(Type classType)
+      {
+         return _cachedReflectedSchemas.GetOrAdd(classType, t => new SchemaReflector(classType).Reflect());
       }
 
       private Field GetField(PropertyInfo property)
