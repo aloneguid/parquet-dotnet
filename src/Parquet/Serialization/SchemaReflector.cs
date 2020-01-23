@@ -34,7 +34,7 @@ namespace Parquet.Serialization
       /// <returns></returns>
       public Schema Reflect()
       {
-         IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
+         IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties.Where(pickSerializableProperties);
 
          return new Schema(properties.Select(GetField).Where(p => p != null).ToList());
       }
@@ -80,5 +80,8 @@ namespace Parquet.Serialization
          r.ClrPropName = property.Name;
          return r;
       }
+
+      Func<PropertyInfo, bool> pickSerializableProperties = (PropertyInfo arg) => !arg.CustomAttributes.Any(p => p.AttributeType == typeof(ParquetIgnoreAttribute));
+
    }
 }

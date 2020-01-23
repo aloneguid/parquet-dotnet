@@ -13,6 +13,54 @@ namespace Parquet.Test.Serialisation
    public class ParquetConvertTest : TestBase
    {
       [Fact]
+      public void Serialise_Should_Exclude_IgnoredProperties_while_serialized_to_parquetfile()
+      {
+         DateTime now = DateTime.Now;
+
+         IEnumerable<StructureWithIgnoredProperties> structures = Enumerable
+            .Range(0, 10)
+            .Select(i => new StructureWithIgnoredProperties
+            {
+               Id = i,
+               Name = $"row {i}",
+               SSN = "000-00-0000",
+               NonNullableDecimal = 100.534M,
+               NullableDecimal = 99.99M,
+               NonNullableDateTime = DateTime.Now,
+               NullableDateTime = DateTime.Now,
+               NullableInt = 111,
+               NonNullableInt = 222
+            }) ;
+
+         using (var ms = new MemoryStream())
+         {
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            ms.Position = 0;
+
+            StructureWithIgnoredProperties[] structures2 = ParquetConvert.Deserialize<StructureWithIgnoredProperties>(ms);
+
+            StructureWithIgnoredProperties[] structuresArray = structures.ToArray();
+            Func<Type, Object> GetDefaultValue = (type) => type.IsValueType ? Activator.CreateInstance(type) : null;
+
+            for (int i = 0; i < 10; i++)
+            {
+               Assert.Equal(structuresArray[i].Id, structures2[i].Id);
+               Assert.Equal(structuresArray[i].Name, structures2[i].Name);
+               //As serialization ignored these below properties, deserilizing these should always be null(or type's default value).
+               Assert.Equal(structures2[i].SSN, GetDefaultValue(typeof(string)));
+               Assert.Equal(structures2[i].NonNullableInt, GetDefaultValue(typeof(int)));
+               Assert.Equal(structures2[i].NullableInt, GetDefaultValue(typeof(int?)));
+               Assert.Equal(structures2[i].NonNullableDecimal, GetDefaultValue(typeof(decimal)));
+               Assert.Equal(structures2[i].NullableDecimal, GetDefaultValue(typeof(decimal?)));
+               Assert.Equal(structures2[i].NonNullableDateTime, GetDefaultValue(typeof(DateTime)));
+               Assert.Equal(structures2[i].NullableDateTime, GetDefaultValue(typeof(DateTime?)));
+            }
+
+         }
+      }
+
+      [Fact]
       public void Serialise_deserialise_all_types()
       {
          DateTime now = DateTime.Now;
@@ -199,6 +247,30 @@ namespace Parquet.Test.Serialisation
          public string Name { get; set; }
 
          public DateTimeOffset Date { get; set; }
+      }
+      public class StructureWithIgnoredProperties
+      {
+         public int Id { get; set; }
+         public string Name { get; set; }
+
+         [ParquetIgnore]
+         public string SSN { get; set; }
+
+         [ParquetIgnore]
+         public DateTime NonNullableDateTime { get; set; }
+         [ParquetIgnore]
+         public DateTime? NullableDateTime { get; set; }
+
+         [ParquetIgnore]
+         public int NonNullableInt { get; set; }
+
+         [ParquetIgnore]
+         public int? NullableInt { get; set; }
+
+         [ParquetIgnore]
+         public decimal NonNullableDecimal { get; set; }
+         [ParquetIgnore]
+         public decimal? NullableDecimal { get; set; }
       }
 
       public class SimpleRenamed
