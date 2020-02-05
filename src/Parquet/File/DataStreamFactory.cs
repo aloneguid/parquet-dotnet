@@ -3,9 +3,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
+using IronSnappy;
 using Parquet.File.Streams;
-using Snappy.Sharp;
 
 namespace Parquet.File
 {
@@ -85,6 +84,7 @@ namespace Parquet.File
          int totalBytesRead = 0;
          int currentBytesRead = int.MinValue;
          byte[] data = BytesPool.Rent(compressedLength);
+         bool dataRented = true;
 
          // Some storage solutions (like Azure blobs) might require more than one 'Read' action to read the requested length.
          while (totalBytesRead < compressedLength && currentBytesRead != 0)
@@ -119,16 +119,16 @@ namespace Parquet.File
                }
                break;
             case CompressionMethod.Snappy:
-               var snappy = new SnappyDecompressor();
-               byte[] unSnapData = snappy.Decompress(BytesPool, data, 0, compressedLength);
+               byte[] uncompressed = Snappy.Decode(data.AsSpan(0, compressedLength));
                BytesPool.Return(data);
-               data = unSnapData;
+               data = uncompressed;
+               dataRented = false;
                break;
             default:
                throw new NotSupportedException("method: " + compressionMethod);
          }
 
-         return new BytesOwner(data, 0, data.AsMemory(0, (int)uncompressedLength), d => BytesPool.Return(d));
+         return new BytesOwner(data, 0, data.AsMemory(0, uncompressedLength), d => BytesPool.Return(d), dataRented);
       }
    }
 }
