@@ -6,7 +6,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) ![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)
 
-> Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor me, please click the `Sponsor` button above and choose one of the available options.💰 I can also provide commercial support from my own limited company, please contact ivan@isolineltd.com for more information.
+> Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor me, please click the `Sponsor` button above and choose one of the available options.💰 I can also provide commercial support from my own limited company, please contact ivan.gavryliuk@outlook.com for more information.
 
 | Build | Test |
 |------------|----------------|
@@ -27,7 +27,7 @@ Parquet library is mostly available for [Java](https://github.com/apache/parquet
 
 ## Who
 
-Parquet.Net is used by many small and large organisations for production workloads. If you are one of them, please email [ivan@isolineltd.com](mailto:ivan@isolineltd.com) to be displayed here.
+Parquet.Net is used by many small and large organisations for production workloads. If you are one of them, please email [ivan.gavryliuk@outlook.com](mailto:ivan.gavryliuk@outlook.com) to be displayed here.
 
 ## Performance
 
@@ -165,7 +165,7 @@ This framework is free and can be used for free, open source and commercial appl
 
 The core team members, Parquet.Net contributors and contributors in the ecosystem do this open source work in their free time. If you use Parquet.Net, and you'd like us to invest more time on it, please donate by pressing the ❤ **Sponsor** button on top of this page. This project increases your income/productivity/usabilty too.
 
-If your company/project is using Parquet.Net we'd be happy to list your logo here on the front page with your kind permission, absolutely for free. Please contact [ivan@isolineltd.com](mailto:ivan@isolineltd.com) with details and graphics attached.
+If your company/project is using Parquet.Net we'd be happy to list your logo here on the front page with your kind permission, absolutely for free. Please contact [ivan.gavryliuk@outlook.com](mailto:ivan.gavryliuk@outlook.com) with details and graphics attached.
 
 ### Why charge/sponsor for open source?
 
