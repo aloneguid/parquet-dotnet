@@ -20,8 +20,9 @@ namespace Parquet.Data.Rows
          _isRepeated = dataField.MaxRepetitionLevel > 0;
       }
 
-      public void Add(object value, int level, int index)
+      public void Add(object value, int level, LevelIndex[] indexes)
       {
+         int index = indexes[indexes.Length - 1].Index;
          if (_isRepeated)
          {
             if(!(value is string) && value is IEnumerable valueItems)
