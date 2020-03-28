@@ -389,6 +389,32 @@ namespace Parquet.Test.Rows
 
       }
 
+      [Fact]
+      public void List_of_lists_read_write_structures()
+      {
+         var t = new Table(
+             new DataField<int>("id"),
+             new ListField(
+                 "items",
+                 new StructField(
+                     "item",
+                     new DataField<int>("id"),
+                     new ListField(
+                         "values",
+                         new DataField<string>("value")))));
+
+         t.Add(0, new[]
+         {
+            new Row(0, new[] { "0,0,0", "0,0,1", "0,0,2" }),
+            new Row(1, new[] { "0,1,0", "0,1,1", "0,1,2" }),
+            new Row(2, new[] { "0,2,0", "0,2,1", "0,2,2" }),
+         });
+
+         Table t1 = WriteRead(t);
+         Assert.Equal(3, ((object[])t1[0][1]).Length);
+         Assert.Equal(t.ToString(), t1.ToString(), ignoreLineEndingDifferences: true);
+      }
+
       #endregion
 
       #region [ Mixed ]
