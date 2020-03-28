@@ -45,7 +45,7 @@ namespace Parquet.Data.Rows
             switch (f.SchemaType)
             {
                case SchemaType.Data:
-                  ProcessDataValue(f, row[cellIndex], level, indexes);
+                  ProcessDataValue(f, row[cellIndex], indexes);
                   break;
 
                case SchemaType.Map:
@@ -87,7 +87,7 @@ namespace Parquet.Data.Rows
          {
             case SchemaType.Data:
                //list has a special case for simple elements where they are not wrapped in rows
-               ProcessDataValue(f, cellValue, level, indexes);
+               ProcessDataValue(f, cellValue, indexes);
                break;
             case SchemaType.Struct:
                ProcessRows(((StructField)f).Fields, (IReadOnlyCollection<Row>)cellValue, level, indexes);
@@ -97,7 +97,7 @@ namespace Parquet.Data.Rows
          }
       }
 
-      private void ProcessDataValue(Field f, object value, int level, LevelIndex[] indexes)
+      private void ProcessDataValue(Field f, object value, LevelIndex[] indexes)
       {
          //prepare value appender
          if(!_pathToDataColumn.TryGetValue(f.Path, out DataColumnAppender appender))
@@ -106,7 +106,7 @@ namespace Parquet.Data.Rows
             _pathToDataColumn[f.Path] = appender;
          }
 
-         appender.Add(value, level, indexes);
+         appender.Add(value, indexes);
       }
    }
 }
