@@ -120,7 +120,7 @@ namespace Parquet
       public static T[] Append<T>(this T[] array, T value)
       {
          int length = array?.Length ?? 0;
-         var newArray = new T[array.Length + 1];
+         var newArray = new T[length + 1];
 
          if (length > 0)
             array.CopyTo(newArray, 0);
