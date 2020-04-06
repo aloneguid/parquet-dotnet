@@ -116,5 +116,18 @@ namespace Parquet
 
          IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
       }
+
+      public static T[] Append<T>(this T[] array, T value)
+      {
+         int length = array?.Length ?? 0;
+         var newArray = new T[length + 1];
+
+         if (length > 0)
+            array.CopyTo(newArray, 0);
+
+         newArray[newArray.Length - 1] = value;
+
+         return newArray;
+      }
    }
 }
