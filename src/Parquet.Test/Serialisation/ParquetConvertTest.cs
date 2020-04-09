@@ -209,6 +209,48 @@ namespace Parquet.Test.Serialisation
          TestRoundTripSerialization<DateTime?>(null);
       }
 
+      [Fact]
+      public void Serialise_groups()
+      {
+         DateTime now = DateTime.Now;
+
+         IEnumerable<SimpleStructure> structures = Enumerable
+            .Range(start: 0, count: 10)
+            .Select(i => new SimpleStructure
+            {
+               Id = i,
+               NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+               Name = $"row {i}",
+               Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+            });
+
+         using (var ms = new MemoryStream())
+         {
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            ms.Position = 0;
+
+            SimpleStructure[/*Groups*/][] groups2 = ParquetConvert.DeserializeGroups<SimpleStructure>(ms).ToArray();
+            Assert.Equal(10/2, groups2.Length); //groups = count/rowGroupSize
+
+            SimpleStructure[] structuresArray = structures.ToArray();
+
+            SimpleStructure[] structures2 = (
+               from g in groups2
+               from s in g
+               select s
+            ).ToArray();
+
+            for (int i = 0; i < 10; i++)
+            {
+               Assert.Equal(structuresArray[i].Id, structures2[i].Id);
+               Assert.Equal(structuresArray[i].NullableId, structures2[i].NullableId);
+               Assert.Equal(structuresArray[i].Name, structures2[i].Name);
+               Assert.Equal(structuresArray[i].Date, structures2[i].Date);
+            }
+         }
+      }
+
       void TestRoundTripSerialization<T>(T value)
       {
          StructureWithTestType<T> input = new StructureWithTestType<T>
