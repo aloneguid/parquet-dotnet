@@ -131,8 +131,8 @@ namespace Parquet.Data.Rows
 
          if(nestedPathTicks.Any(t => !t.moved))
          {
-            cell = null;
-            return false;
+            cell = new Row[0];
+            return true;
          }
 
          var nestedPathToColumn = nestedPathTicks
