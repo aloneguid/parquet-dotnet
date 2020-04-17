@@ -22,7 +22,7 @@ namespace Parquet.Data.Rows
          ProcessRows(_schema.Fields, _rows, 0, Array.Empty<LevelIndex>());
 
          List<DataColumn> result = _schema.GetDataFields()
-            .Select(df => _pathToDataColumn[df.Path].ToDataColumn())
+            .Select(df => GetAppender(df).ToDataColumn())
             .ToList();
 
          return result;
@@ -99,6 +99,11 @@ namespace Parquet.Data.Rows
 
       private void ProcessDataValue(Field f, object value, LevelIndex[] indexes)
       {
+         GetAppender(f).Add(value, indexes);
+      }
+
+      private DataColumnAppender GetAppender(Field f)
+      {
          //prepare value appender
          if(!_pathToDataColumn.TryGetValue(f.Path, out DataColumnAppender appender))
          {
@@ -106,7 +111,7 @@ namespace Parquet.Data.Rows
             _pathToDataColumn[f.Path] = appender;
          }
 
-         appender.Add(value, indexes);
+         return appender;
       }
    }
 }
