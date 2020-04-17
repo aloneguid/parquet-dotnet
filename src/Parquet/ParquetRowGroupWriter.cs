@@ -62,7 +62,8 @@ namespace Parquet
 
          if (RowCount == null)
          {
-            RowCount = column.CalculateRowCount();
+            if (column.Data.Length > 0 || column.Field.MaxRepetitionLevel == 0)
+               RowCount = column.CalculateRowCount();
          }
 
          Thrift.SchemaElement tse = _thschema[_colIdx];
@@ -77,7 +78,7 @@ namespace Parquet
 
          var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
             _compressionMethod, _compressionLevel,
-            (int)RowCount.Value);
+            (int)(RowCount ?? 0));
 
          Thrift.ColumnChunk chunk = writer.Write(path, column, dataTypeHandler);
          _thriftRowGroup.Columns.Add(chunk);
