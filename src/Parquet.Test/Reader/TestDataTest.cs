@@ -79,6 +79,7 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
+      [Fact]
       public void Alltypes_plain_no_compression_byte_arrays()
       {
          CompareFiles("types/alltypes", "plain", false,
