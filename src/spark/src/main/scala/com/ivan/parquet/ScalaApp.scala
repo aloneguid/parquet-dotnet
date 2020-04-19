@@ -14,6 +14,7 @@ object ScalaApp extends App {
    import spark.implicits._
 
    def write(df: DataFrame, tag: String): Unit = {
+      
       df
          .repartition(1)
          .write
