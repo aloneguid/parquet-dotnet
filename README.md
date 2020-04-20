@@ -6,7 +6,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) ![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)
 
-> Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor me, please click the `Sponsor` button above and choose one of the available options.💰
+> Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor this project, please click the `Sponsor` button above and choose one of the available options.💰
 
 | Build | Test |
 |------------|----------------|
