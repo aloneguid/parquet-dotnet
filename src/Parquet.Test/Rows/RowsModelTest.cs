@@ -389,6 +389,68 @@ namespace Parquet.Test.Rows
 
       }
 
+      [Fact]
+      public void List_of_lists_read_write_structures()
+      {
+         var t = new Table(
+             new DataField<int>("id"),
+             new ListField(
+                 "items",
+                 new StructField(
+                     "item",
+                     new DataField<int>("id"),
+                     new ListField(
+                         "values",
+                         new DataField<string>("value")))));
+
+         t.Add(0, new[]
+         {
+            new Row(0, new[] { "0,0,0", "0,0,1", "0,0,2" }),
+            new Row(1, new[] { "0,1,0", "0,1,1", "0,1,2" }),
+            new Row(2, new[] { "0,2,0", "0,2,1", "0,2,2" }),
+         });
+
+         Table t1 = WriteRead(t);
+         Assert.Equal(3, ((object[])t1[0][1]).Length);
+         Assert.Equal(t.ToString(), t1.ToString(), ignoreLineEndingDifferences: true);
+      }
+
+      [Fact]
+      public void List_of_structures_is_empty_read_write_structures()
+      {
+         Table t = new Table(
+            new DataField<int>("id"),
+            new ListField("structs",
+               new StructField("mystruct",
+                  new DataField<int>("id"),
+                  new DataField<string>("name"))));
+
+         t.Add(1, new Row[0]);
+         t.Add(2, new Row[0]);
+
+         Table t2 = WriteRead(t);
+
+         Assert.Equal(t.ToString(), t2.ToString(), ignoreLineEndingDifferences: true);
+      }
+
+      [Fact]
+      public void List_of_structures_is_empty_as_first_field_read_write_structures()
+      {
+         Table t = new Table(
+            new ListField("structs",
+               new StructField("mystruct",
+                  new DataField<int>("id"),
+                  new DataField<string>("name"))),
+            new DataField<int>("id"));
+
+         t.Add(new Row[0], 1);
+         t.Add(new Row[0], 2);
+
+         Table t2 = WriteRead(t);
+
+         Assert.Equal(t.ToString(), t2.ToString(), ignoreLineEndingDifferences: true);
+      }
+
       #endregion
 
       #region [ Mixed ]

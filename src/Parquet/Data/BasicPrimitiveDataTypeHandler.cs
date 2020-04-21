@@ -131,7 +131,7 @@ namespace Parquet.Data
          {
             using(var br = new BinaryReader(ms))
             {
-               TSystemType element = ReadSingle(br, null, -1);
+               TSystemType element = ReadSingle(br, tse, -1);
                return element;
             }
          }

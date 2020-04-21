@@ -147,5 +147,45 @@ namespace Parquet
             return rb;
          }
       }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <typeparam name="T"></typeparam>
+      /// <param name="input"></param>
+      /// <returns></returns>
+      public static IEnumerable<T[]> DeserializeGroups<T>(Stream input) where T : new()
+      {
+         var bridge = new ClrBridge(typeof(T));
+
+         using (var reader = new ParquetReader(input))
+         {
+            Schema fileSchema = reader.Schema;
+            DataField[] dataFields = fileSchema.GetDataFields();
+
+            for (int i = 0; i < reader.RowGroupCount; i++)
+            {
+               using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(i))
+               {
+                  DataColumn[] groupColumns = dataFields
+                     .Select(df => groupReader.ReadColumn(df))
+                     .ToArray();
+
+                  T[] rb = new T[groupReader.RowCount];
+                  for (int ie = 0; ie < rb.Length; ie++)
+                  {
+                     rb[ie] = new T();
+                  }
+
+                  for (int ic = 0; ic < groupColumns.Length; ic++)
+                  {
+                     bridge.AssignColumn(groupColumns[ic], rb);
+                  }
+
+                  yield return rb;
+               }
+            }
+         }
+      }
    }
 }

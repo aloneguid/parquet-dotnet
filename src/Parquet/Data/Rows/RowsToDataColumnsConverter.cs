@@ -19,25 +19,25 @@ namespace Parquet.Data.Rows
 
       public IReadOnlyCollection<DataColumn> Convert()
       {
-         ProcessRows(_schema.Fields, _rows, 0);
+         ProcessRows(_schema.Fields, _rows, 0, Array.Empty<LevelIndex>());
 
          List<DataColumn> result = _schema.GetDataFields()
-            .Select(df => _pathToDataColumn[df.Path].ToDataColumn())
+            .Select(df => GetAppender(df).ToDataColumn())
             .ToList();
 
          return result;
       }
 
-      private void ProcessRows(IReadOnlyCollection<Field> fields, IReadOnlyCollection<Row> rows, int level)
+      private void ProcessRows(IReadOnlyCollection<Field> fields, IReadOnlyCollection<Row> rows, int level, LevelIndex[] indexes)
       {
          int i = 0;
          foreach(Row row in rows)
          {
-            ProcessRow(fields, row, level, i++);
+            ProcessRow(fields, row, level, indexes.Append(new LevelIndex(level, i++)));
          }
       }
 
-      private void ProcessRow(IReadOnlyCollection<Field> fields, Row row, int level, int index)
+      private void ProcessRow(IReadOnlyCollection<Field> fields, Row row, int level, LevelIndex[] indexes)
       {
          int cellIndex = 0;
          foreach(Field f in fields)
@@ -45,19 +45,19 @@ namespace Parquet.Data.Rows
             switch (f.SchemaType)
             {
                case SchemaType.Data:
-                  ProcessDataValue(f, row[cellIndex], level, index);
+                  ProcessDataValue(f, row[cellIndex], indexes);
                   break;
 
                case SchemaType.Map:
-                  ProcessMap((MapField)f, (IReadOnlyCollection<Row>)row[cellIndex], level + 1);
+                  ProcessMap((MapField)f, (IReadOnlyCollection<Row>)row[cellIndex], level + 1, indexes);
                   break;
 
                case SchemaType.Struct:
-                  ProcessRow(((StructField)f).Fields, (Row)row[cellIndex], level + 1, index);
+                  ProcessRow(((StructField)f).Fields, (Row)row[cellIndex], level + 1, indexes);
                   break;
 
                case SchemaType.List:
-                  ProcessList((ListField)f, row[cellIndex], level + 1, index);
+                  ProcessList((ListField)f, row[cellIndex], level + 1, indexes);
                   break;
 
                default:
@@ -68,7 +68,7 @@ namespace Parquet.Data.Rows
          }
       }
 
-      private void ProcessMap(MapField mapField, IReadOnlyCollection<Row> mapRows, int level)
+      private void ProcessMap(MapField mapField, IReadOnlyCollection<Row> mapRows, int level, LevelIndex[] indexes)
       {
          var fields = new Field[] { mapField.Key, mapField.Value };
 
@@ -76,10 +76,10 @@ namespace Parquet.Data.Rows
          var valueCell = mapRows.Select(r => r[1]).ToList();
          var row = new Row(keyCell, valueCell);
 
-         ProcessRow(fields, row, level, 0);
+         ProcessRow(fields, row, level, indexes);
       }
 
-      private void ProcessList(ListField listField, object cellValue, int level, int index)
+      private void ProcessList(ListField listField, object cellValue, int level, LevelIndex[] indexes)
       {
          Field f = listField.Item;
 
@@ -87,17 +87,22 @@ namespace Parquet.Data.Rows
          {
             case SchemaType.Data:
                //list has a special case for simple elements where they are not wrapped in rows
-               ProcessDataValue(f, cellValue, level, index);
+               ProcessDataValue(f, cellValue, indexes);
                break;
             case SchemaType.Struct:
-               ProcessRows(((StructField)f).Fields, (IReadOnlyCollection<Row>)cellValue, level + 1);
+               ProcessRows(((StructField)f).Fields, (IReadOnlyCollection<Row>)cellValue, level, indexes);
                break;
             default:
                throw new NotSupportedException();
          }
       }
 
-      private void ProcessDataValue(Field f, object value, int level, int index)
+      private void ProcessDataValue(Field f, object value, LevelIndex[] indexes)
+      {
+         GetAppender(f).Add(value, indexes);
+      }
+
+      private DataColumnAppender GetAppender(Field f)
       {
          //prepare value appender
          if(!_pathToDataColumn.TryGetValue(f.Path, out DataColumnAppender appender))
@@ -106,7 +111,7 @@ namespace Parquet.Data.Rows
             _pathToDataColumn[f.Path] = appender;
          }
 
-         appender.Add(value, level, index);
+         return appender;
       }
    }
 }

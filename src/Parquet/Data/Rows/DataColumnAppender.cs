@@ -11,8 +11,7 @@ namespace Parquet.Data.Rows
       private readonly List<object> _values = new List<object>();
       private readonly List<int> _rls = new List<int>();
       private readonly bool _isRepeated;
-      private int _lastIndex;
-      private int _lastLevel;
+      private LevelIndex[] _lastIndexes;
 
       public DataColumnAppender(DataField dataField)
       {
@@ -20,13 +19,14 @@ namespace Parquet.Data.Rows
          _isRepeated = dataField.MaxRepetitionLevel > 0;
       }
 
-      public void Add(object value, int level, int index)
+      public void Add(object value, LevelIndex[] indexes)
       {
          if (_isRepeated)
          {
+            int rl = GetRepetitionLevel(indexes, _lastIndexes);
+
             if(!(value is string) && value is IEnumerable valueItems)
             {
-               int rl = 0;
                int count = 0;
                foreach (object valueItem in (IEnumerable)value)
                {
@@ -45,14 +45,11 @@ namespace Parquet.Data.Rows
             }
             else
             {
-               int rl = index == 0 ? 0 : _dataField.MaxRepetitionLevel;
-
                _values.Add(value);
                _rls.Add(rl);
             }
 
-            _lastLevel = level;
-            _lastIndex = index;
+            _lastIndexes = indexes;
          }
          else
          {
@@ -75,5 +72,16 @@ namespace Parquet.Data.Rows
       }
 
       public override string ToString() => _dataField.ToString();
+
+      private static int GetRepetitionLevel(LevelIndex[] currentIndexes, LevelIndex[] lastIndexes)
+      {
+         for (int i = 0; i < (lastIndexes?.Length ?? 0); i++)
+         {
+            if (currentIndexes[i].Index != lastIndexes[i].Index)
+               return lastIndexes[i].Level;
+         }
+
+         return 0;
+      }
    }
 }
