@@ -152,4 +152,5 @@ stages:
               tag: '$(Build.BuildNumber)'
               changeLogCompareToRelease: 'lastFullRelease'
               changeLogType: 'issueBased'
+              changeLogLabels: '[{ "label" : "enhancement", "displayName" : "Enhancements", "state" : "closed" }, { "label" : "bug", "displayName" : "Bugs", "state" : "closed" }]'
 
