@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using NetBox.Performance;
 using Parquet.Data;
-using Parquet.File;
 using F = System.IO.File;
 
 namespace Parquet.Runner
@@ -12,6 +11,36 @@ namespace Parquet.Runner
    class Program
    {
       static void Main(string[] args)
+      {
+         //CompressOld("c:\\tmp\\DSL.svg", "c:\\tmp\\DSL.svg.oldsnappy");
+         //CompressNew("c:\\tmp\\DSL.svg", "c:\\tmp\\DSL.svg.newsnappy");
+
+         //CompressOld("c:\\tmp\\rfc8660long.txt", "c:\\tmp\\rfc8660long.txt.oldsnappy");
+         CompressNew("c:\\tmp\\rfc8660long.txt", "c:\\tmp\\rfc8660long.txt.newsnappy");
+      }
+
+      static void CompressNew(string src, string dest)
+      {
+         using (FileStream streamDest = F.OpenWrite(dest))
+         {
+            using (Stream streamSnappy = IronSnappy.Snappy.OpenWriter(streamDest))
+            {
+               using(FileStream streamSrc = F.OpenRead(src))
+               {
+                  using(var time = new TimeMeasure())
+                  {
+                     streamSrc.CopyTo(streamSnappy);
+
+                     TimeSpan duration = time.Elapsed;
+
+                     Console.WriteLine($"new: {src} => {dest}. {duration} {new FileInfo(dest).Length}");
+                  }
+               }
+            }
+         }
+      }
+
+      private static void Perf()
       {
          var readTimes = new List<TimeSpan>();
          var uwts = new List<TimeSpan>();
@@ -29,8 +58,8 @@ namespace Parquet.Runner
             TimeSpan.FromTicks((long)readTimes.Average(t => t.Ticks)),
             TimeSpan.FromTicks((long)uwts.Average(t => t.Ticks)),
             TimeSpan.FromTicks((long)gwts.Average(t => t.Ticks)));
-      }
 
+      }
 
       private static void ReadLargeFile(out TimeSpan readTime,
          out TimeSpan uncompressedWriteTime,

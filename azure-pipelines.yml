@@ -144,12 +144,13 @@ stages:
               publishFeedCredentials: 'nuget.org (aloneguid)'
           - task: GitHubRelease@1
             inputs:
-               gitHubConnection: 'aloneguid'
-               repositoryName: 'aloneguid/parquet-dotnet'
-               action: 'create'
-               target: '$(Build.SourceVersion)'
-               tagSource: 'userSpecifiedTag'
-               tag: '$(Build.BuildNumber)'
-               changeLogCompareToRelease: 'lastFullRelease'
-               changeLogType: 'commitBased'
+              gitHubConnection: 'aloneguid'
+              repositoryName: 'aloneguid/parquet-dotnet'
+              action: 'create'
+              target: '$(Build.SourceVersion)'
+              tagSource: 'userSpecifiedTag'
+              tag: '$(Build.BuildNumber)'
+              changeLogCompareToRelease: 'lastFullRelease'
+              changeLogType: 'issueBased'
+              changeLogLabels: '[{ "label" : "enhancement", "displayName" : "Enhancements", "state" : "closed" }, { "label" : "bug", "displayName" : "Bugs", "state" : "closed" }]'
 
