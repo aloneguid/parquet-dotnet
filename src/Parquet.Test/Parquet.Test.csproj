@@ -6,6 +6,10 @@
       <LangVersion>latest</LangVersion>
    </PropertyGroup>
 
+   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+      <TargetFrameworks>netcoreapp3.0;net461</TargetFrameworks>
+   </PropertyGroup>
+
    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
       <DebugType>portable</DebugType>
       <DebugSymbols>true</DebugSymbols>
