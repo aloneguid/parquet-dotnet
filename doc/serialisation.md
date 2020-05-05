@@ -51,6 +51,33 @@ If you have a huge parquet file(~10million records), you can also retrieve recor
 ```csharp
 SimpleStructure[] structures = ParquetConvert.Deserialize<SimpleStructure>(stream,rowGroupIndex);
 ```
+### Deserialize only few properties:
+
+If you have a parquet file with huge number of columns and you only need few columns for processing, you can retrieve required columns only as described in the below code snippet.
+```csharp
+class MyClass
+{
+   public int Id { get; set; }
+   public string Name{get;set;}
+   public string Address{get;set;}
+   public int Age{get;set;}
+}
+class MyClassV1
+{
+   public string Name { get; set; }
+}
+SimpleStructure[] structures = Enumerable
+   .Range(0, 1000)
+   .Select(i => new SimpleStructure
+   {
+      Id = i,
+      Name = $"row {i}",
+   })
+   .ToArray();
+ParquetConvert.Serialize(structures, stream);
+
+MyClassV1[] v1structures = ParquetConvert.Deserialize<MyClassV1>(stream,rowGroupIndex);
+```
 
 ## Customising Serialisation
 
