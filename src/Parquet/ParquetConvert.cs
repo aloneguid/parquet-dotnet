@@ -104,7 +104,7 @@ namespace Parquet
          var result = new List<T>();
          using (var reader = new ParquetReader(input))
          {
-            Schema fileSchema = reader.Schema;
+            Schema fileSchema = new SchemaReflector(typeof(T)).Reflect();
             DataField[] dataFields = fileSchema.GetDataFields();
 
             if (rowGroupIndex == -1) //Means read all row groups.
