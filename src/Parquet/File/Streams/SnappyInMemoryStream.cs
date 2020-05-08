@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.IO;
 using System.IO.Compression;
-using Snappy.Sharp;
+using IronSnappy;
 
 namespace Parquet.File.Streams
 {
@@ -47,13 +47,8 @@ namespace Parquet.File.Streams
 
          if(_compressionMode == CompressionMode.Compress)
          {
-            //compress memory buffer and write to destination
-            var snappyCompressor = new SnappyCompressor();
-            int uncompressedLength = (int)_ms.Length;
-            int compressedSize = snappyCompressor.MaxCompressedLength(uncompressedLength);
-            byte[] compressed = new byte[compressedSize];
-            int length = snappyCompressor.Compress(_ms.ToArray(), 0, uncompressedLength, compressed);
-            _parent.Write(compressed, 0, length);
+            byte[] compressed = Snappy.Encode(_ms.ToArray());
+            _parent.Write(compressed, 0, compressed.Length);
          }
 
          _finishedForWriting = true;
@@ -88,14 +83,11 @@ namespace Parquet.File.Streams
 
       private MemoryStream DecompressFromStream(Stream source)
       {
-         var snappyDecompressor = new SnappyDecompressor();
-
          byte[] buffer = ArrayPool<byte>.Shared.Rent((int)source.Length);
-         int read = source.Read(buffer, 0, (int)source.Length);
-         byte[] uncompressedBytes = snappyDecompressor.Decompress(buffer, 0, (int)source.Length);
+         source.Read(buffer, 0, (int)source.Length);
+         byte[] uncompressedBytes = Snappy.Decode(buffer.AsSpan(0, (int)source.Length));
          ArrayPool<byte>.Shared.Return(buffer);
          return new MemoryStream(uncompressedBytes);
-
       }
 
       public override void Flush()

@@ -1,6 +1,6 @@
 ﻿using System;
 using Parquet.Data;
-using static Cpf.PoshConsole;
+using static NetBox.Terminal.PoshConsole;
 
 namespace Parquet.CLI.Commands
 {

@@ -68,6 +68,8 @@ namespace Parquet.Test
             ms.WriteSingleRowGroupParquetFile(new Schema(field), dataColumn);
             ms.Position = 0;
 
+            //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+
             // read first gow group and first column
             using (var reader = new ParquetReader(ms))
             {
@@ -105,7 +107,7 @@ namespace Parquet.Test
          }
       }
 
-      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None)
+      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None, int compressionLevel = -1)
       {
          //for sanity, use disconnected streams
          byte[] data;
@@ -117,6 +119,7 @@ namespace Parquet.Test
             using (var writer = new ParquetWriter(new Schema(field), ms))
             {
                writer.CompressionMethod = compressionMethod;
+               writer.CompressionLevel = compressionLevel;
 
                using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
                {

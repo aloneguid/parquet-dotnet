@@ -99,6 +99,22 @@ namespace Parquet.Test.Integration
       }
 
       [Fact]
+      public void Integers_all_types()
+      {
+         var table = new Table(new DataField<sbyte>("int8"), new DataField<byte>("uint8"),
+            new DataField<short>("int16"), new DataField<ushort>("uint16"),
+            new DataField<int>("int32"), new DataField<long>("int64"));
+
+         //generate fake data
+         for (int i = 0; i < 1000; i++)
+         {
+            table.Add(new Row((sbyte) (i % 127 - 255), (byte) (i % 255), (short) i, (ushort) i, i, (long) i));
+         }
+
+         CompareWithMr(table);
+      }
+
+      [Fact]
       public void Flat_simple_table()
       {
          var table = new Table(new DataField<int>("id"), new DataField<string>("city"));

@@ -19,7 +19,7 @@ namespace Parquet.CLI {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Help {
@@ -79,11 +79,20 @@ namespace Parquet.CLI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Converts between file formats. Currently supports conversion from parquet to multiline json only. When launched prints json documents to the terminal..
+        ///   Looks up a localized string similar to Converts between file formats. Supports conversion from parquet to multiline json or csv. When launched prints converted documents to the terminal..
         /// </summary>
         internal static string Command_Convert_Description {
             get {
                 return ResourceManager.GetString("Command_Convert_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Output format. By default uses &apos;json&apos;. Supports &apos;json&apos; or &apos;csv&apos;..
+        /// </summary>
+        internal static string Command_Convert_Format {
+            get {
+                return ResourceManager.GetString("Command_Convert_Format", resourceCulture);
             }
         }
         
@@ -102,33 +111,6 @@ namespace Parquet.CLI {
         internal static string Command_Convert_MaxRows {
             get {
                 return ResourceManager.GetString("Command_Convert_MaxRows", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Path to output file. If not specified, the result is printed to the console..
-        /// </summary>
-        internal static string Command_Convert_Output {
-            get {
-                return ResourceManager.GetString("Command_Convert_Output", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to When set, colorises and idents output..
-        /// </summary>
-        internal static string Command_Convert_Pretty {
-            get {
-                return ResourceManager.GetString("Command_Convert_Pretty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Output style. By default result is a multiline json document. Specify &quot;single&quot; to generate an array document with list of documents embedded, or &quot;multiline&quot; for a multiline json..
-        /// </summary>
-        internal static string Command_Convert_Style {
-            get {
-                return ResourceManager.GetString("Command_Convert_Style", resourceCulture);
             }
         }
         

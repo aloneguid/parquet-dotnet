@@ -13,7 +13,7 @@ namespace Parquet.Data.Rows
    /// </summary>
    public class Table : IList<Row>, IEquatable<Table>, IFormattable
    {
-      //dev: for reference from previous stable version see https://github.com/elastacloud/parquet-dotnet/tree/final-v2/src/Parquet/Data       
+      //dev: for reference from previous stable version see https://github.com/aloneguid/parquet-dotnet/tree/final-v2/src/Parquet/Data       
 
       private readonly List<Row> _rows = new List<Row>();
       private readonly Field[] _dfs;

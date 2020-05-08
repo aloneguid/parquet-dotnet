@@ -1,7 +1,3 @@
-<!--
-Note that this library is provided for you for FREE and it's fully OPEN-SOURCE. ALL of the code and services you get are done by authors in their free time and they are paid NOTHING for it. There is no guarantee that the issue you are raising will be looked at at all if there is not enough information, nor we have any timelines on WHEN it will be looked at. However you can email to parquetsupport@elastacloud.com for commercial support options. 
--->
-
 **Version:** Parquet.Net v...
 
 **Runtime Version:** .Net Framework v, .Net Core v etc.

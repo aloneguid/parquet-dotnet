@@ -15,15 +15,28 @@ namespace Parquet.Thrift
    /// Statistics per row group and per page
    /// All fields are optional.
    /// </summary>
-   public class Statistics : TBase
+
+   public partial class Statistics : TBase
    {
       private byte[] _max;
       private byte[] _min;
       private long _null_count;
       private long _distinct_count;
+      private byte[] _max_value;
+      private byte[] _min_value;
 
       /// <summary>
-      /// min and max value of the column, encoded in PLAIN encoding
+      /// DEPRECATED: min and max value of the column. Use min_value and max_value.
+      /// 
+      /// Values are encoded using PLAIN encoding, except that variable-length byte
+      /// arrays do not include a length prefix.
+      /// 
+      /// These fields encode min and max values determined by signed comparison
+      /// only. New files should use the correct order for a column's logical type
+      /// and store the values in the min_value and max_value fields.
+      /// 
+      /// To support older readers, these may be set when the column order is
+      /// signed.
       /// </summary>
       public byte[] Max
       {
@@ -83,10 +96,40 @@ namespace Parquet.Thrift
          }
       }
 
+      /// <summary>
+      /// Min and max values for the column, determined by its ColumnOrder.
+      /// 
+      /// Values are encoded using PLAIN encoding, except that variable-length byte
+      /// arrays do not include a length prefix.
+      /// </summary>
+      public byte[] Max_value
+      {
+         get
+         {
+            return _max_value;
+         }
+         set
+         {
+            __isset.max_value = true;
+            this._max_value = value;
+         }
+      }
+
+      public byte[] Min_value
+      {
+         get
+         {
+            return _min_value;
+         }
+         set
+         {
+            __isset.min_value = true;
+            this._min_value = value;
+         }
+      }
+
 
       public Isset __isset;
-
-
 
       public struct Isset
       {
@@ -94,6 +137,8 @@ namespace Parquet.Thrift
          public bool min;
          public bool null_count;
          public bool distinct_count;
+         public bool max_value;
+         public bool min_value;
       }
 
       public Statistics()
@@ -150,6 +195,26 @@ namespace Parquet.Thrift
                      if (field.Type == TType.I64)
                      {
                         Distinct_count = iprot.ReadI64();
+                     }
+                     else
+                     {
+                        TProtocolUtil.Skip(iprot, field.Type);
+                     }
+                     break;
+                  case 5:
+                     if (field.Type == TType.String)
+                     {
+                        Max_value = iprot.ReadBinary();
+                     }
+                     else
+                     {
+                        TProtocolUtil.Skip(iprot, field.Type);
+                     }
+                     break;
+                  case 6:
+                     if (field.Type == TType.String)
+                     {
+                        Min_value = iprot.ReadBinary();
                      }
                      else
                      {
@@ -214,6 +279,24 @@ namespace Parquet.Thrift
                oprot.WriteI64(Distinct_count);
                oprot.WriteFieldEnd();
             }
+            if (Max_value != null && __isset.max_value)
+            {
+               field.Name = "max_value";
+               field.Type = TType.String;
+               field.ID = 5;
+               oprot.WriteFieldBegin(field);
+               oprot.WriteBinary(Max_value);
+               oprot.WriteFieldEnd();
+            }
+            if (Min_value != null && __isset.min_value)
+            {
+               field.Name = "min_value";
+               field.Type = TType.String;
+               field.ID = 6;
+               oprot.WriteFieldBegin(field);
+               oprot.WriteBinary(Min_value);
+               oprot.WriteFieldEnd();
+            }
             oprot.WriteFieldStop();
             oprot.WriteStructEnd();
          }
@@ -254,6 +337,20 @@ namespace Parquet.Thrift
             __first = false;
             __sb.Append("Distinct_count: ");
             __sb.Append(Distinct_count);
+         }
+         if (Max_value != null && __isset.max_value)
+         {
+            if (!__first) { __sb.Append(", "); }
+            __first = false;
+            __sb.Append("Max_value: ");
+            __sb.Append(Max_value);
+         }
+         if (Min_value != null && __isset.min_value)
+         {
+            if (!__first) { __sb.Append(", "); }
+            __first = false;
+            __sb.Append("Min_value: ");
+            __sb.Append(Min_value);
          }
          __sb.Append(")");
          return __sb.ToString();

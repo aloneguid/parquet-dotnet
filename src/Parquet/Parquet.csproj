@@ -1,21 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-    <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\pqnet.snk</AssemblyOriginatorKeyFile>
-    <Description>Pure .NET library to read and write Apache Parquet files, targeting .NET 4.5 and .NET Standand 1.4 and up. Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on thrid-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.</Description>
-    <Company>Elastacloud</Company>
+    <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <Description>Pure managed .NET library to read and write Apache Parquet files, targeting .NET Standand 1.4 and up.
+
+Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on thrid-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.</Description>
+    <Company>Ivan Gavryliuk</Company>
     <PackageId>Parquet.Net</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageReleaseNotes>see full release notes at https://github.com/elastacloud/parquet-dotnet/releases</PackageReleaseNotes>
+    <PackageReleaseNotes>see full release notes at https://github.com/aloneguid/parquet-dotnet/releases</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
      <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>
      <DebugType>full</DebugType>
      <DebugSymbols>true</DebugSymbols>
      <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone xbox</PackageTags>
+      <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -26,13 +27,18 @@
    </PropertyGroup>
 
    <ItemGroup Condition="'$(Configuration)' == 'Release'">
-      <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All" />
+      <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
    </ItemGroup>
 
+   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
+      <DefineConstants>NET14</DefineConstants>
+   </PropertyGroup>
+
    <ItemGroup>
+    <PackageReference Include="IronSnappy" Version="1.1.0" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
-    <PackageReference Include="System.Memory" Version="4.5.1" />
-    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
   </ItemGroup>
 
 </Project>

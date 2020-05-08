@@ -76,7 +76,7 @@ namespace Parquet
 
       public static Exception NotImplemented(string reason)
       {
-         return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, implemented it, and raise a PR, or contact parquetsupport@elastacloud.com for commercial support.");
+         return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, implemented it, and raise a PR, or contact ivan@isolineltd.com for more support options.");
       }
    }
 }

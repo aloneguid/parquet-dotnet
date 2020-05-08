@@ -11,12 +11,12 @@ namespace Parquet.Data.Concrete
 
       protected override sbyte ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
-         return reader.ReadSByte();
+         return (sbyte) reader.ReadInt32();
       }
 
       protected override void WriteOne(BinaryWriter writer, sbyte value)
       {
-         writer.Write(value);
+         writer.Write((int) value);
       }
    }
 }

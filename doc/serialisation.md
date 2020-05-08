@@ -45,6 +45,12 @@ In order to deserialise this file back to array of classes you would write the f
 ```csharp
 SimpleStructure[] structures = ParquetConvert.Deserialize<SimpleStructure>(stream);
 ```
+### Retrieve and Deserialize records by RowGroup:
+
+If you have a huge parquet file(~10million records), you can also retrieve records by rowgroup index (which could help to keep low memory footprint as you don't load everything into memory).
+```csharp
+SimpleStructure[] structures = ParquetConvert.Deserialize<SimpleStructure>(stream,rowGroupIndex);
+```
 
 ## Customising Serialisation
 
@@ -60,6 +66,20 @@ class MyClass
 
 It supports the following properties:
 - **Name** overrides column name in the parquet file.
+
+### Ignoring properties while serializing
+
+You can ignore few properties from serialization process by decorating them with `ParquetIgnore` attribute.
+
+ with `[ParquetIgnore]` attribute:
+
+```csharp
+class MyClass
+{
+   [ParquetIgnore]
+   public int Id { get; set; }
+}
+```
 
 ## Limitations
 

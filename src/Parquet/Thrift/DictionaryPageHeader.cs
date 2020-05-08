@@ -5,16 +5,22 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using Thrift;
+using Thrift.Collections;
+
 using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-   /// <summary>
-   /// TODO: *
-   /// </summary>
-   class DictionaryPageHeader : TBase
+
+  public partial class DictionaryPageHeader : TBase
   {
     private bool _is_sorted;
 
@@ -48,9 +54,7 @@ namespace Parquet.Thrift
 
 
     public Isset __isset;
-    
-    
-    
+
     public struct Isset {
       public bool is_sorted;
     }

@@ -17,6 +17,7 @@ namespace Parquet.File
       private readonly ThriftFooter _footer;
       private readonly Thrift.SchemaElement _schemaElement;
       private readonly CompressionMethod _compressionMethod;
+      private readonly int _compressionLevel;
       private readonly int _rowCount;
 
       private struct PageTag
@@ -31,6 +32,7 @@ namespace Parquet.File
          ThriftFooter footer,
          Thrift.SchemaElement schemaElement,
          CompressionMethod compressionMethod,
+         int compressionLevel,
          int rowCount)
       {
          _stream = stream;
@@ -38,6 +40,7 @@ namespace Parquet.File
          _footer = footer;
          _schemaElement = schemaElement;
          _compressionMethod = compressionMethod;
+         _compressionLevel = compressionLevel;
          _rowCount = rowCount;
       }
 
@@ -47,11 +50,14 @@ namespace Parquet.File
          Thrift.PageHeader ph = _footer.CreateDataPage(column.Data.Length);
          _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
-         List<PageTag> pages = WriteColumn(column, _schemaElement, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel, chunk.Meta_data.Statistics);
+         List<PageTag> pages = WriteColumn(column, _schemaElement, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel);
+         //generate stats for column chunk
+         chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
 
          //this count must be set to number of all values in the column, including nulls.
          //for hierarchy/repeated columns this is a count of flattened list, including nulls.
          chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
+         ph.Data_page_header.Statistics = chunk.Meta_data.Statistics;   //simply copy statistics to page header
 
          //the following counters must include both data size and header size
          chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
@@ -64,8 +70,7 @@ namespace Parquet.File
          Thrift.SchemaElement tse,
          IDataTypeHandler dataTypeHandler,
          int maxRepetitionLevel,
-         int maxDefinitionLevel,
-         Thrift.Statistics statistics)
+         int maxDefinitionLevel)
       {
          var pages = new List<PageTag>();
 
@@ -81,7 +86,7 @@ namespace Parquet.File
             Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Data.Length);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-            using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, true))
+            using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, _compressionLevel, true))
             {
                using (var writer = new BinaryWriter(pageStream, Encoding.UTF8, true))
                {
@@ -97,7 +102,7 @@ namespace Parquet.File
                      data = column.PackDefinitions(maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelsLength, out int nullCount);
 
                      //last chance to capture null count as null data is compressed now
-                     statistics.Null_count = nullCount;
+                     column.Statistics.NullCount = nullCount;
 
                      try
                      {
@@ -114,10 +119,10 @@ namespace Parquet.File
                   else
                   {
                      //no defitions means no nulls
-                     statistics.Null_count = 0;
+                     column.Statistics.NullCount = 0;
                   }
 
-                  dataTypeHandler.Write(tse, writer, data, statistics);
+                  dataTypeHandler.Write(tse, writer, data, column.Statistics);
 
                   writer.Flush();
                }
@@ -129,14 +134,12 @@ namespace Parquet.File
             dataPageHeader.Compressed_page_size = (int)ms.Position;
 
             //write the header in
+            dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
             int headerSize = _thriftStream.Write(dataPageHeader);
             ms.Position = 0;
             ms.CopyTo(_stream);
 
-            dataPageHeader.Data_page_header.Statistics = new Thrift.Statistics
-            {
-               Distinct_count = statistics.Distinct_count
-            };
+
             var dataTag = new PageTag
             {
                HeaderMeta = dataPageHeader,

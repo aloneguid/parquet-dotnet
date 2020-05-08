@@ -21,3 +21,15 @@ For example, to force the reader to treat byte arrays as strings use the followi
 var options = new ParquetOptions { TreatByteArrayAsString = true };
 var reader = new ParquetReader(stream, options);
 ```
+
+## Metadata
+
+To read custom metadata you can access the `CustomMetadata` property on `ParquetReader`:
+
+```csharp
+using (var reader = new ParquetReader(ms))
+{
+   Assert.Equal("value1", reader.CustomMetadata["key1"]);
+   Assert.Equal("value2", reader.CustomMetadata["key2"]);
+}
+```

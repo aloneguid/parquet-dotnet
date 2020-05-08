@@ -43,6 +43,7 @@ namespace Parquet.Test
             //Expected: 2017-07-13T10:58:44.3767154+00:00
             //Actual:   2017-07-12T10:58:44.3770000+00:00
             ["dateTimeOffset"] = (new DataField<DateTimeOffset>("dateTimeOffset"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
+            ["dateTimeOffsetWithOffset"] = (new DataField<DateTimeOffset>("dateTimeOffsetWithOffset"), new DateTimeOffset(new DateTime(2001, 12, 1, 0, 10, 0, DateTimeKind.Unspecified), TimeSpan.FromHours(3))),
             ["impala date"] = (new DateTimeDataField("dateImpala", DateTimeFormat.Impala), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
             ["dateDateAndTime"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
             // don't want any excess info in the offset INT32 doesn't contain or care about this data 
@@ -86,6 +87,7 @@ namespace Parquet.Test
       [InlineData("negative decimal")]
 
       [InlineData("dateTimeOffset")]
+      [InlineData("dateTimeOffsetWithOffset")]
       [InlineData("impala date")]
       [InlineData("dateDateAndTime")]
       [InlineData("dateDate")]

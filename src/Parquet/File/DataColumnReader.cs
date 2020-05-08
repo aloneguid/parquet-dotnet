@@ -111,12 +111,23 @@ namespace Parquet.File
 
          // all the data is available here!
 
-         return new DataColumn(
+         var finalColumn = new DataColumn(
             _dataField, colData.values,
             colData.definitions, _maxDefinitionLevel,
             colData.repetitions, _maxRepetitionLevel,
             colData.dictionary,
             colData.indexes);
+
+         if (_thriftColumnChunk.Meta_data.Statistics != null)
+         {
+            finalColumn.Statistics = new DataColumnStatistics(
+               _thriftColumnChunk.Meta_data.Statistics.Null_count,
+               _thriftColumnChunk.Meta_data.Statistics.Distinct_count,
+               _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Min_value),
+               _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Max_value));
+         }
+
+         return finalColumn;
       }
 
       private bool TryReadDictionaryPage(Thrift.PageHeader ph, out Array dictionary, out int dictionaryOffset)

@@ -5,13 +5,19 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using Thrift;
+using Thrift.Collections;
 using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
-
-   class PageHeader : TBase
+  public partial class PageHeader : TBase
   {
     private int _crc;
     private DataPageHeader _data_page_header;
@@ -32,13 +38,34 @@ namespace Parquet.Thrift
     public int Uncompressed_page_size { get; set; }
 
     /// <summary>
-    /// Compressed page size in bytes (not including this header) *
+    /// Compressed (and potentially encrypted) page size in bytes, not including this header *
     /// </summary>
     public int Compressed_page_size { get; set; }
 
     /// <summary>
-    /// 32bit crc for the data below. This allows for disabling checksumming in HDFS
-    /// if only a few pages needs to be read
+    /// The 32bit CRC for the page, to be be calculated as follows:
+    /// - Using the standard CRC32 algorithm
+    /// - On the data only, i.e. this header should not be included. 'Data'
+    ///   hereby refers to the concatenation of the repetition levels, the
+    ///   definition levels and the column value, in this exact order.
+    /// - On the encoded versions of the repetition levels, definition levels and
+    ///   column values
+    /// - On the compressed versions of the repetition levels, definition levels
+    ///   and column values where possible;
+    ///   - For v1 data pages, the repetition levels, definition levels and column
+    ///     values are always compressed together. If a compression scheme is
+    ///     specified, the CRC shall be calculated on the compressed version of
+    ///     this concatenation. If no compression scheme is specified, the CRC
+    ///     shall be calculated on the uncompressed version of this concatenation.
+    ///   - For v2 data pages, the repetition levels and definition levels are
+    ///     handled separately from the data and are never compressed (only
+    ///     encoded). If a compression scheme is specified, the CRC shall be
+    ///     calculated on the concatenation of the uncompressed repetition levels,
+    ///     uncompressed definition levels and the compressed column values.
+    ///     If no compression scheme is specified, the CRC shall be calculated on
+    ///     the uncompressed concatenation.
+    /// If enabled, this allows for disabling checksumming in HDFS if only a few
+    /// pages need to be read.
     /// 
     /// </summary>
     public int Crc
@@ -107,10 +134,7 @@ namespace Parquet.Thrift
     }
 
 
-    public Isset __isset;
-    
-    
-    
+    public Isset __isset;
     public struct Isset {
       public bool crc;
       public bool data_page_header;

@@ -138,10 +138,10 @@ namespace Parquet.Test
 
             // double matching is fuzzy, but matching strings is enough for this test
             // ground truth was computed using Spark
-            Assert.Equal("26706.6185312147", seq.Sum(p => p.v).ToString(CultureInfo.InvariantCulture));
-            Assert.Equal("0.808287234987281", seq.Average(p => p.v).ToString(CultureInfo.InvariantCulture));
-            Assert.Equal("0.71523915461624", seq.Min(p => p.v).ToString(CultureInfo.InvariantCulture));
-            Assert.Equal("0.867111980015206", seq.Max(p => p.v).ToString(CultureInfo.InvariantCulture));
+            Assert.Equal(26706.6185312147, seq.Sum(p => p.v), 5);
+            Assert.Equal(0.808287234987281, seq.Average(p => p.v), 5);
+            Assert.Equal(0.71523915461624, seq.Min(p => p.v), 5);
+            Assert.Equal(0.867111980015206, seq.Max(p => p.v), 5);
          }
       }
       
@@ -175,7 +175,7 @@ namespace Parquet.Test
          using (var reader = new ParquetReader(OpenTestFile("/special/multi_page_bit_packed_near_page_border.parquet")))
          {
             DataColumn[] columns = reader.ReadEntireRowGroup();
-            var data = (string[])columns[0].Data;
+            string[] data = (string[])columns[0].Data;
          
             // ground truth from spark
             Assert.Equal(30855, data.Count(string.IsNullOrEmpty));
@@ -208,9 +208,9 @@ namespace Parquet.Test
       public void ParquetReader_OpenFromFile_Close_Stream()
       {
          // copy a file to a temp location
-         var tempFile = Path.GetTempFileName();
-         using (var fr = OpenTestFile("map_simple.parquet"))
-         using (var fw = System.IO.File.OpenWrite(tempFile))
+         string tempFile = Path.GetTempFileName();
+         using (Stream fr = OpenTestFile("map_simple.parquet"))
+         using (FileStream fw = System.IO.File.OpenWrite(tempFile))
          {
             fr.CopyTo(fw);
          }

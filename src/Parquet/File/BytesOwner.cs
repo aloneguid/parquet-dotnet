@@ -13,13 +13,15 @@ namespace Parquet.File
       private readonly byte[] _bytes;  //original memory buffer
       private readonly int startOffset;
       private readonly Action<byte[]> _disposeAction;
+      private readonly bool _dispose;
 
-      public BytesOwner(byte[] bytes, int startOffset, Memory<byte> memory, Action<byte[]> disposeAction)
+      public BytesOwner(byte[] bytes, int startOffset, Memory<byte> memory, Action<byte[]> disposeAction, bool dispose)
       {
          _bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
          this.startOffset = startOffset;
          Memory = memory;
          _disposeAction = disposeAction ?? throw new ArgumentNullException(nameof(disposeAction));
+         _dispose = dispose;
       }
 
       public Memory<byte> Memory { get; }
@@ -40,7 +42,10 @@ namespace Parquet.File
 
       public void Dispose()
       {
-         _disposeAction(_bytes);
+         if (_dispose)
+         {
+            _disposeAction(_bytes);
+         }
       }
    }
 }

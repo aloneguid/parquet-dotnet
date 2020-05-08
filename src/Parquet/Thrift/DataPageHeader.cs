@@ -14,7 +14,8 @@ namespace Parquet.Thrift
    /// <summary>
    /// Data page header
    /// </summary>
-   class DataPageHeader : TBase
+
+   public partial class DataPageHeader : TBase
   {
     private Statistics _statistics;
 
@@ -62,9 +63,7 @@ namespace Parquet.Thrift
 
 
     public Isset __isset;
-    
-    
-    
+
     public struct Isset {
       public bool statistics;
     }

@@ -8,7 +8,7 @@ using System.Linq;
 namespace Parquet.Data
 {
 
-   abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler
+   abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler, IComparer<TSystemType>, IEqualityComparer<TSystemType>
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
@@ -78,7 +78,7 @@ namespace Parquet.Data
          return idx - offset;
       }
 
-      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, Thrift.Statistics statistics)
+      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
       {
          // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
          var typedArray = (TSystemType[]) values;
@@ -86,6 +86,43 @@ namespace Parquet.Data
          {
             WriteOne(writer, one);
          }
+
+         // calculate statistics if required
+         if (statistics != null)
+         {
+            //number of distinct values
+            statistics.DistinctCount = ((TSystemType[])values).Distinct(this).Count();
+
+            TSystemType min = default;
+            TSystemType max = default;
+            for(int i = 0; i < typedArray.Length; i++)
+            {
+               if(i == 0)
+               {
+                  min = typedArray[0];
+                  max = typedArray[0];
+               }
+               else
+               {
+                  TSystemType current = typedArray[i];
+                  int cmin = Compare(min, current);
+                  int cmax = Compare(max, current);
+
+                  if(cmin > 0)
+                  {
+                     min = current;
+                  }
+
+                  if(cmax < 0)
+                  {
+                     max = current;
+                  }
+               }
+            }
+            statistics.MinValue = min;
+            statistics.MaxValue = max;
+         }
+
       }
 
       public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
@@ -181,7 +218,29 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
+
       #endregion
 
+      /// <summary>
+      /// less than 0 - x &lt; y
+      /// 0 - x == y
+      /// greater than 0 - x &gt; y
+      /// </summary>
+      public abstract int Compare(TSystemType x, TSystemType y);
+
+      public abstract bool Equals(TSystemType x, TSystemType y);
+
+      public int GetHashCode(TSystemType x) => x.GetHashCode();
+
+      public abstract byte[] PlainEncode(Thrift.SchemaElement tse, TSystemType x);
+
+      public byte[] PlainEncode(Thrift.SchemaElement tse, object x)
+      {
+         if (x == null) return null;
+
+         return PlainEncode(tse, (TSystemType)x);
+      }
+
+      public abstract object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
    }
 }

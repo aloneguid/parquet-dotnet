@@ -1,24 +1,23 @@
-# Apache Parquet for .Net Platform
+﻿# Apache Parquet for .Net Platform
 
-![Icon](doc/img/best.png)
-
-Note that [Elastacloud](https://elastacloud.com/Home) provides commercial support for Parquet.Net, therefore if you need any professional advise or speedy development of new features and bugfixes please write to [parquetsupport@elastacloud.com](mailto:parquetsupport@elastacloud.com).
-
-![](doc/img/logo_ec.png)
+![Icon](doc/img/banner.svg)
 
 ## Status
 
-[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) ![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)
 
-| Core Build | Windows/Linux/Mac Tests |
+> Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor this project, please click the `Sponsor` button above and choose one of the available options.💰
+
+| Build | Test |
 |------------|----------------|
-|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/AllPublic/_build/latest?definitionId=58)|[![Build status](https://aloneguid.visualstudio.com/AllPublic/_apis/build/status/Parquet.Net)](https://aloneguid.visualstudio.com/Parquet.Net/_build/latest?definitionId=58)|
+|![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/aloneguid/4bab84c0-90f7-4425-afc6-ba077aa9757e/67/master?label=master) ![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/aloneguid/4bab84c0-90f7-4425-afc6-ba077aa9757e/67/develop?label=develop)|![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28Linux%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28Windows%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28MacOSX%29)<br><br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/develop?label=develop%20%28Linux%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/develop?label=develop%20%28Windows%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/develop?label=develop%20%28MacOSX%29)|
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
+
 - `.NET 4.5` and up.
 - `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
 
-Runs on all flavors of Windows, Linux, MacOSXm mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
+Runs on all flavors of Windows, Linux, MacOSX, mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
 
 > Performs integration tests with **parquet-mr** (original Java parquet implementation) to test for identical behavior. We are planning to add more third-party platforms integration as well.
 
@@ -28,9 +27,7 @@ Parquet library is mostly available for [Java](https://github.com/apache/parquet
 
 ## Who
 
-Parquet.Net is used by many small and large organisations for production workloads:
-
-[![SwiftKey](doc/img/client-swiftkey.png)](https://www.microsoft.com/en-us/swiftkey/about-us)
+Parquet.Net is used by many small and large organisations for production workloads. If you are one of them, please email [ivan.gavryliuk@outlook.com](mailto:ivan.gavryliuk@outlook.com) to be displayed here.
 
 ## Performance
 
@@ -57,17 +54,9 @@ All the parties in this test were given 10 iteration and time was taken as an av
 - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
 - **[parq!!!](doc/parq.md)**
+- [Sponsorship](#sponsorship)
 
 You can track the [amount of features we have implemented so far](doc/features.md).
-
-## Related Projects
-
-- [Apache Parquet viewer for Windows 10](https://github.com/aloneguid/parquet-viewer-uwp).
-- [Azure Data Lake Analytics Integration](https://github.com/elastacloud/datalake-extractor-parquet).
-
-Download Parquet Viewer from Windows 10 store:
-
-<a href="https://www.microsoft.com/store/apps/9pgb0m8z4j2t?ocid=badge"><img src="https://assets.windowsphone.com/f2f77ec7-9ba9-4850-9ebe-77e366d08adc/English_Get_it_Win_10_InvariantCulture_Default.png" alt="Get it on Windows 10" width="200" /></a>
 
 ## Getting started
 
@@ -158,7 +147,7 @@ Parquet.Net includes [API for row-based access](doc/rows.md) that simplify parqu
 
 ## License
 
-Parquet.Net is licensed under the [MIT license](https://github.com/elastacloud/parquet-dotnet/blob/master/LICENSE).
+Parquet.Net is licensed under the [MIT license](https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE).
 
 ## Privacy
 
@@ -169,3 +158,23 @@ Your privacy is important to us. Full details are specified in the [privacy stat
 We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
 
 For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
+
+## Sponsorship
+
+This framework is free and can be used for free, open source and commercial applications. Parquet.Net (all code, NuGets and binaries) are under the [MIT License (MIT)](https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE). It's battle-tested and used by many awesome people and organisations. So hit the magic ⭐️ button, we appreciate it!!! 🙏 Thx!
+
+The core team members, Parquet.Net contributors and contributors in the ecosystem do this open source work in their free time. If you use Parquet.Net, and you'd like us to invest more time on it, please donate by pressing the ❤ **Sponsor** button on top of this page. This project increases your income/productivity/usabilty too.
+
+If your company/project is using Parquet.Net we'd be happy to list your logo here on the front page with your kind permission, absolutely for free. Please contact [ivan.gavryliuk@outlook.com](mailto:ivan.gavryliuk@outlook.com) with details and graphics attached.
+
+### Why charge/sponsor for open source?
+
+ * [Open-Source Maintainers are Jerks! | Nick Randolph & Geoffrey Huntley](https://vimeo.com/296579853)
+ * [FOSS is free as in toilet | Geoffroy Couprie](http://unhandledexpression.com/general/2018/11/27/foss-is-free-as-in-toilet.html)
+ * [How to Charge for your Open Source | Mike Perham](https://www.mikeperham.com/2015/11/23/how-to-charge-for-your-open-source/)
+ * [Sustain OSS: The Report](https://sustainoss.org/assets/pdf/SustainOSS-west-2017-report.pdf)
+ * [Open Source Maintainers Owe You Nothing | Mike McQuaid](https://mikemcquaid.com/2018/03/19/open-source-maintainers-owe-you-nothing/)
+ * [Who should fund open source projects? | Jane Elizabeth](https://jaxenter.com/who-funds-open-source-projects-133222.html)
+ * [Apply at OSS Inc today| Ryan Chenkie](https://twitter.com/ryanchenkie/status/1067801413974032385)
+ * [The Ethics of Unpaid Labor and the OSS Community | Ashe Dryden](https://www.ashedryden.com/blog/the-ethics-of-unpaid-labor-and-the-oss-community)
+

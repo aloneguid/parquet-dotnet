@@ -5,19 +5,28 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using Thrift;
+using Thrift.Collections;
+
 using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Parquet.Thrift
 {
 
-   /// <summary>
-   /// New page format alowing reading levels without decompressing the data
-   /// Repetition and definition levels are uncompressed
-   /// The remaining section containing the data is compressed if is_compressed is true
-   /// 
-   /// </summary>
-   class DataPageHeaderV2 : TBase
+  /// <summary>
+  /// New page format allowing reading levels without decompressing the data
+  /// Repetition and definition levels are uncompressed
+  /// The remaining section containing the data is compressed if is_compressed is true
+  /// 
+  /// </summary>
+
+  public partial class DataPageHeaderV2 : TBase
   {
     private bool _is_compressed;
     private Statistics _statistics;
@@ -46,12 +55,12 @@ namespace Parquet.Thrift
     public Encoding Encoding { get; set; }
 
     /// <summary>
-    /// length of the repetition levels
+    /// length of the definition levels
     /// </summary>
     public int Definition_levels_byte_length { get; set; }
 
     /// <summary>
-    /// length of the definition levels
+    /// length of the repetition levels
     /// </summary>
     public int Repetition_levels_byte_length { get; set; }
 
@@ -93,9 +102,7 @@ namespace Parquet.Thrift
 
 
     public Isset __isset;
-    
-    
-    
+
     public struct Isset {
       public bool is_compressed;
       public bool statistics;

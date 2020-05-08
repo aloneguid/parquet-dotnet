@@ -43,7 +43,7 @@ namespace Parquet.File
          }
          get
          {
-            if (_fileMeta.Key_value_metadata == null || _fileMeta.Key_value_metadata.Count == 0) return null;
+            if (_fileMeta.Key_value_metadata == null || _fileMeta.Key_value_metadata.Count == 0) return new Dictionary<string, string>();
 
             return _fileMeta.Key_value_metadata.ToDictionary(kv => kv.Key, kv => kv.Value);
          }
@@ -173,7 +173,8 @@ namespace Parquet.File
             Encoding = Thrift.Encoding.PLAIN,
             Definition_level_encoding = Thrift.Encoding.RLE,
             Repetition_level_encoding = Thrift.Encoding.RLE,
-            Num_values = valueCount
+            Num_values = valueCount,
+            Statistics = new Thrift.Statistics()
          };
 
          return ph;
@@ -245,6 +246,7 @@ namespace Parquet.File
          var meta = new Thrift.FileMetaData();
          meta.Version = 1;
          meta.Schema = new List<Thrift.SchemaElement>();
+         meta.Row_groups = new List<Thrift.RowGroup>();
 
          Thrift.SchemaElement root = AddRoot(meta.Schema);
          CreateThriftSchema(schema.Fields, root, meta.Schema);

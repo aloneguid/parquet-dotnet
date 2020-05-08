@@ -5,7 +5,7 @@ You can write data by constructing an instance of [ParquetWriter class](../src/P
 Writing files is a multi stage process, giving you the full flexibility on what exactly to write to it:
 
 1. Create `ParquetWriter` passing it a *file schema* and a *writeable stream*. You should have declared file schema beforehand.
-2. Create a row group writer by calling to `writer.CreateRowGroup(rowSize)`.
+2. Create a row group writer by calling to `writer.CreateRowGroup()`.
 3. Keep calling `.Write()` by passing the data columns with data you want to write. Note that the order of data columns you are writing must match the order of data fields declared in the schema.
 4. When required, repeat from step (2) to create more row groups. It's not recommended to have more than 5'000 rows in a single row group for performance reasons.
 
@@ -42,7 +42,7 @@ After constructing `ParquetWriter` you can optionally set compression method (`C
 
 - `None` for no compression. This is the fastest way to write files, however they may end up slightly larger.
 - `Snappy` is the default level and is a perfect balance between compression and speed.
-- `Gzip` is using gzip compression, is the slowest, however should produce the best results. Maximum (Optimal) compression settings is chosen, as if you are going for gzip, you are probably considering compression as your top priority.
+- `Gzip` is using gzip compression, is the slowest, however should produce the best results. Maximum (Optimal) compression settings is chosen, as if you are going for gzip, you are probably considering compression as your top priority. When using gzip, you can also specify *compression level* by setting `CompressionLevel` property on `ParquetWriter`. It's an integer property as it's specific to compression methods used, and for gzip has the following values: 0 - no compression, 1 - fastest, 2 - optimal.
 
 
 ## Appending to Files
@@ -97,3 +97,34 @@ using (var reader = new ParquetReader(ms))
 Note that you have to specify that you are opening `ParquetWriter` in **append** mode in it's constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream posiition to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
 
 Please keep in mind that row groups are designed to hold a large amount of data (5'0000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
+
+### Custom Metadata
+
+To read and write custom file metadata, you can use `CustomMetadata` property on `ParquetFileReader` and `ParquetFileWriter`, i.e.
+
+```csharp
+var ms = new MemoryStream();
+var id = new DataField<int>("id");
+
+//write
+using (var writer = new ParquetWriter(new Schema(id), ms))
+{
+   writer.CustomMetadata = new Dictionary<string, string>
+   {
+      ["key1"] = "value1",
+      ["key2"] = "value2"
+   };
+
+   using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
+   {
+      rg.WriteColumn(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+   }
+}
+
+//read back
+using (var reader = new ParquetReader(ms))
+{
+   Assert.Equal("value1", reader.CustomMetadata["key1"]);
+   Assert.Equal("value2", reader.CustomMetadata["key2"]);
+}
+```

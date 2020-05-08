@@ -3,6 +3,7 @@
    enum StringFormat
    {
       JsonSingleQuote,
-      Json
+      Json,
+      Csv
    }
 }
