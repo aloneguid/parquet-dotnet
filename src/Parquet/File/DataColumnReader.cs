@@ -198,7 +198,11 @@ namespace Parquet.File
 
                   if (ph.Data_page_header == null) throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
 
-                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, ph.Data_page_header.Num_values, cd);
+                  // if statistics are defined, use null count to determine the exact number of items we should read
+                  // however, I don't know if all parquet files with null values have stats defined. Maybe a better solution would
+                  // be using a count of defined values (from reading definitions?) 
+                  int maxReadCount = ph.Data_page_header.Num_values - (int)(ph.Data_page_header.Statistics?.Null_count ?? 0);
+                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
                }
             }
          }
