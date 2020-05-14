@@ -98,6 +98,11 @@
       /// <summary>
       /// Interval
       /// </summary>
-      Interval
+      Interval,
+
+      /// <summary>
+      /// TimeSpan
+      /// </summary>
+      TimeSpan,
    }
 }
