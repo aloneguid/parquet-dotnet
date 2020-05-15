@@ -1,4 +1,5 @@
 ﻿using System;
+using Parquet.Data;
 
 namespace Parquet.Attributes
 {
@@ -29,5 +30,15 @@ namespace Parquet.Attributes
       /// Column name. When undefined a default propety name is used which is simply the declared property name on the class.
       /// </summary>
       public string Name { get; set; }
+
+      /// <summary>
+      /// TmeSpanFormat. MilliSeconds or MicroSeconds
+      /// </summary>
+      public TimeSpanFormat TimeSpanFormat { get; set; }
+
+      /// <summary>
+      /// DateTimeFormat. Impala or DateAndTime or Date
+      /// </summary>
+      public DateTimeFormat DateTimeFormat { get; set; }
    }
 }
