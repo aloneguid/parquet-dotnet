@@ -78,8 +78,13 @@ namespace Parquet.Serialization
             property.PropertyType   //use CLR type here as DF constructor will figure out nullability and other parameters
          );
 
-         if (columnAttr != null && handler.ClrType == typeof(TimeSpan))
-            r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
+         if (columnAttr != null)
+         {
+            if (handler.ClrType == typeof(TimeSpan))
+               r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
+            if (handler.ClrType == typeof(DateTime) || handler.ClrType == typeof(DateTimeOffset))
+               r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.HasNulls, r.IsArray);
+         }
 
          r.ClrPropName = property.Name;
 
