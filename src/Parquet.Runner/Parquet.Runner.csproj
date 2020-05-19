@@ -1,16 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>netcoreapp3.1</TargetFramework>
 
-  <ItemGroup>
-    <PackageReference Include="NetBox" Version="2.3.5" />
-  </ItemGroup>
+      <SignAssembly>true</SignAssembly>
+      <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Parquet\Parquet.csproj" />
-  </ItemGroup>
+   <ItemGroup>
+      <PackageReference Include="NetBox" Version="2.3.5" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <ProjectReference Include="..\Parquet\Parquet.csproj" />
+   </ItemGroup>
 
 </Project>
