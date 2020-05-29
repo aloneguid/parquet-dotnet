@@ -127,7 +127,7 @@ var cityColumn = new DataColumn(
 // create file schema
 var schema = new Schema(idColumn.Field, cityColumn.Field);
 
-using (Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet"))
+using (Stream fileStream = System.IO.File.Create("c:\\test.parquet"))
 {
    using (var parquetWriter = new ParquetWriter(schema, fileStream))
    {
