@@ -155,7 +155,7 @@ Your privacy is important to us. Full details are specified in the [privacy stat
 
 ## Contributing
 
-We are desparately looking for new contributors to this projects. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
+We are desperately looking for new contributors to this project. It's getting a lot of good use in small to large organisations, however parquet format is complicated and we're out of resources to fix all the issues.
 
 For details on how to start see [this guide](.github/CONTRIBUTING.md). If you are a developer who is interested in Parquet development please [read this guide](doc/parquet-getting-started.md)
 
@@ -163,7 +163,7 @@ For details on how to start see [this guide](.github/CONTRIBUTING.md). If you ar
 
 This framework is free and can be used for free, open source and commercial applications. Parquet.Net (all code, NuGets and binaries) are under the [MIT License (MIT)](https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE). It's battle-tested and used by many awesome people and organisations. So hit the magic ⭐️ button, we appreciate it!!! 🙏 Thx!
 
-The core team members, Parquet.Net contributors and contributors in the ecosystem do this open source work in their free time. If you use Parquet.Net, and you'd like us to invest more time on it, please donate by pressing the ❤ **Sponsor** button on top of this page. This project increases your income/productivity/usabilty too.
+The core team members, Parquet.Net contributors and contributors in the ecosystem do this open source work in their free time. If you use Parquet.Net, and you'd like us to invest more time on it, please donate by pressing the ❤ **Sponsor** button on top of this page. This project increases your income/productivity/usability too.
 
 If your company/project is using Parquet.Net we'd be happy to list your logo here on the front page with your kind permission, absolutely for free. Please contact [ivan.gavryliuk@outlook.com](mailto:ivan.gavryliuk@outlook.com) with details and graphics attached.
 
@@ -175,6 +175,6 @@ If your company/project is using Parquet.Net we'd be happy to list your logo her
  * [Sustain OSS: The Report](https://sustainoss.org/assets/pdf/SustainOSS-west-2017-report.pdf)
  * [Open Source Maintainers Owe You Nothing | Mike McQuaid](https://mikemcquaid.com/2018/03/19/open-source-maintainers-owe-you-nothing/)
  * [Who should fund open source projects? | Jane Elizabeth](https://jaxenter.com/who-funds-open-source-projects-133222.html)
- * [Apply at OSS Inc today| Ryan Chenkie](https://twitter.com/ryanchenkie/status/1067801413974032385)
+ * [Apply at OSS Inc today | Ryan Chenkie](https://twitter.com/ryanchenkie/status/1067801413974032385)
  * [The Ethics of Unpaid Labor and the OSS Community | Ashe Dryden](https://www.ashedryden.com/blog/the-ethics-of-unpaid-labor-and-the-oss-community)
 
