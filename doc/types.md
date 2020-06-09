@@ -10,10 +10,12 @@ Parquet.Net tries to fit natively into .NET environment and map built-in CLR typ
 |System.Int16 (short)|INT_32|INT_16|
 |System.UInt16 (ushort)|INT_32|UINT_16|
 |System.Int32 (int)|INT32||
+|System.UInt32 (uint)|INT32|UINT_32|
 |System.Boolean (bool)|BOOLEAN||
 |System.String (string)|BYTE_ARRAY|UTF8|
 |System.Single (float)|FLOAT||
 |System.Int64 (long)|INT64||
+|System.UInt64 (ulong)|INT64|UINT_64|
 |System.Double (double)|DOUBLE||
 |System.Decimal (decimal)|BYTE_ARRAY|DECIMAL|
 |System.DateTimeOffset (DateTimeOffset)|INT96|
