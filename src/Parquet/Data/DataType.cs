@@ -56,9 +56,19 @@
       Int32,
 
       /// <summary>
+      /// 32 bit unsigned integer
+      /// </summary>
+      UnsignedInt32,
+
+      /// <summary>
       /// 64 bit integer
       /// </summary>
       Int64,
+
+      /// <summary>
+      /// 64 bit unsigned integer
+      /// </summary>
+      UnsignedInt64,
 
       /// <summary>
       /// 96 bit integer

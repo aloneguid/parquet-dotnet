@@ -62,6 +62,16 @@ namespace Parquet.Test
             ["short max value"] = (new DataField<short>("short"), short.MaxValue),
             ["unsigned short min value"] = (new DataField<ushort>("ushort"), ushort.MinValue),
             ["unsigned short max value"] = (new DataField<ushort>("ushort"), ushort.MaxValue),
+            
+            ["int min value"] = (new DataField<int>("int"), int.MinValue),
+            ["int max value"] = (new DataField<int>("int"), int.MaxValue),
+            ["unsigned int min value"] = (new DataField<uint>("uint"), uint.MinValue),
+            ["unsigned int max value"] = (new DataField<uint>("uint"), uint.MaxValue),
+
+            ["long min value"] = (new DataField<long>("long"), long.MinValue),
+            ["long max value"] = (new DataField<long>("long"), long.MaxValue),
+            ["unsigned long min value"] = (new DataField<ulong>("ulong"), ulong.MinValue),
+            ["unsigned long max value"] = (new DataField<ulong>("ulong"), ulong.MaxValue),
 
             ["nullable decimal"] = (new DecimalDataField("decimal?", 4, 1, true, true), null),
             ["nullable DateTime"] = (new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null),
@@ -105,6 +115,16 @@ namespace Parquet.Test
       [InlineData("short max value")]
       [InlineData("unsigned short min value")]
       [InlineData("unsigned short max value")]
+
+      [InlineData("int min value")]
+      [InlineData("int max value")]
+      [InlineData("unsigned int min value")]
+      [InlineData("unsigned int max value")]
+
+      [InlineData("long min value")]
+      [InlineData("long max value")]
+      [InlineData("unsigned long min value")]
+      [InlineData("unsigned long max value")]
 
       [InlineData("nullable decimal")]
       [InlineData("nullable DateTime")]
