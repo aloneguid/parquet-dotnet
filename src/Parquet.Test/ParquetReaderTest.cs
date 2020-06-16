@@ -144,6 +144,30 @@ namespace Parquet.Test
             Assert.Equal(0.867111980015206, seq.Max(p => p.v), 5);
          }
       }
+      
+      [Fact]
+      public void Read_multi_page_dictionary_with_nulls()
+      {
+         using (var reader = new ParquetReader(OpenTestFile("/special/multi_page_dictionary_with_nulls.parquet")))
+         {
+            DataColumn[] columns = reader.ReadEntireRowGroup();
+            var rg = reader.OpenRowGroupReader(0);
+
+            // reading columns
+            var data = (string[]) columns[0].Data;
+         
+            // ground truth from spark
+            // check page boundary (first page contains 107432 rows)
+            Assert.Equal("xc3w4eudww", data[107432]);
+            Assert.Equal("bpywp4wtwk", data[107433]);
+            Assert.Equal("z6x8652rle", data[107434]);
+
+            // check near the end of the file
+            Assert.Null(data[310028]);
+            Assert.Equal("wok86kie6c", data[310029]);
+            Assert.Equal("le9i7kbbib", data[310030]);
+         }
+      }
 
       [Fact]
       public void Read_bit_packed_at_page_boundary()
