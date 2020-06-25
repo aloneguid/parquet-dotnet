@@ -66,7 +66,7 @@ stages:
       displayName: 'copy generated nugets'
       inputs:
         SourceFolder: src
-        Contents: '**/*.nupkg'
+        Contents: '**/*.*nupkg'
         TargetFolder: ' $(build.artifactstagingdirectory)'
         CleanTargetFolder: true
         OverWrite: true
@@ -83,7 +83,7 @@ stages:
       continueOnError: true
       inputs:
         command: 'push'
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
         nuGetFeedType: 'internal'
         publishVstsFeed: '4bab84c0-90f7-4425-afc6-ba077aa9757e/941c9975-4811-42dd-bd79-3cf33878bf77'
         allowPackageConflicts: true

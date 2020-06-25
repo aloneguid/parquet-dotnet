@@ -23,6 +23,10 @@
       <!-- Sign with a fake no password signature for convenience. Note this is not a proof of anything.-->
       <SignAssembly>true</SignAssembly>
       <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
       
    </PropertyGroup>
 
