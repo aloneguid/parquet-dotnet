@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
 using Parquet.Data.Rows;
+using System.Threading.Tasks;
 
 namespace Parquet
 {
    /// <summary>
    /// Implements Apache Parquet format reader, experimental version for next major release.
    /// </summary>
-   public class ParquetReader : ParquetActor, IDisposable
+   public class ParquetReader : ParquetActor, IAsyncDisposable
    {
       private readonly Stream _input;
       private readonly Thrift.FileMetaData _meta;
@@ -43,7 +44,7 @@ namespace Parquet
          _parquetOptions = parquetOptions ?? new ParquetOptions();
 
          //read metadata instantly, now
-         _meta = ReadMetadata();
+         _meta = ReadMetadataAsync().GetAwaiter().GetResult();//TODO we need to change to private ctor and create a async factory method
          _footer = new ThriftFooter(_meta);
 
          ParquetEventSource.Current.OpenStream(input.Length, leaveStreamOpen, _meta.Row_groups.Count, _meta.Num_rows);
@@ -75,22 +76,22 @@ namespace Parquet
       /// <summary>
       /// Reads entire file as a table
       /// </summary>
-      public static Table ReadTableFromFile(string filePath, ParquetOptions parquetOptions = null)
+      public static async Task<Table> ReadTableFromFileAsync(string filePath, ParquetOptions parquetOptions = null)
       {
-         using (ParquetReader reader = OpenFromFile(filePath, parquetOptions))
+         await using (ParquetReader reader = OpenFromFile(filePath, parquetOptions))
          {
-            return reader.ReadAsTable();
+            return await reader.ReadAsTableAsync().ConfigureAwait(false);
          }
       }
 
       /// <summary>
       /// Reads entire stream as a table
       /// </summary>
-      public static Table ReadTableFromStream(Stream stream, ParquetOptions parquetOptions = null)
+      public static async Task<Table> ReadTableFromStreamAsync(Stream stream, ParquetOptions parquetOptions = null)
       {
-         using (var reader = new ParquetReader(stream, parquetOptions))
+         await using (var reader = new ParquetReader(stream, parquetOptions))
          {
-            return reader.ReadAsTable();
+            return await reader.ReadAsTableAsync().ConfigureAwait(false);
          }
       }
 
@@ -126,7 +127,7 @@ namespace Parquet
       /// </summary>
       /// <param name="rowGroupIndex">Index of the row group. Default to the first row group if not specified.</param>
       /// <returns></returns>
-      public DataColumn[] ReadEntireRowGroup(int rowGroupIndex = 0)
+      public async Task<DataColumn[]> ReadEntireRowGroupAsync(int rowGroupIndex = 0)
       {
          DataField[] dataFields = Schema.GetDataFields();
          DataColumn[] result = new DataColumn[dataFields.Length];
@@ -135,7 +136,7 @@ namespace Parquet
          {
             for (int i = 0; i < dataFields.Length; i++)
             {
-               DataColumn column = reader.ReadColumn(dataFields[i]);
+               DataColumn column = await reader.ReadColumnAsync(dataFields[i]).ConfigureAwait(false);
                result[i] = column;
             }
          }
@@ -156,11 +157,17 @@ namespace Parquet
       /// <summary>
       /// Disposes 
       /// </summary>
-      public void Dispose()
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+      public async ValueTask DisposeAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
       {
          if(!_leaveStreamOpen)
          {
+#if NETSTANDARD2_0
             _input.Dispose();
+#else
+            await _input.DisposeAsync().ConfigureAwait(false);
+#endif
          }
       }
    }

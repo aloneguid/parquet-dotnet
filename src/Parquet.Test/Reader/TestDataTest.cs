@@ -31,7 +31,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_plain_no_compression()
       {
-         CompareFiles("types/alltypes", "plain", true,
+         CompareFilesAsync("types/alltypes", "plain", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -48,7 +48,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_gzip_compression()
       {
-         CompareFiles("types/alltypes", "gzip", true,
+         CompareFilesAsync("types/alltypes", "gzip", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -65,7 +65,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_snappy_compression()
       {
-         CompareFiles("types/alltypes", "snappy", true,
+         CompareFilesAsync("types/alltypes", "snappy", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -82,7 +82,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_plain_no_compression_byte_arrays()
       {
-         CompareFiles("types/alltypes", "plain", false,
+         CompareFilesAsync("types/alltypes", "plain", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -99,7 +99,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_gzip_compression_byte_arrays()
       {
-         CompareFiles("types/alltypes", "gzip", false,
+         CompareFilesAsync("types/alltypes", "gzip", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -116,7 +116,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_snappy_compression_byte_arrays()
       {
-         CompareFiles("types/alltypes", "snappy", false,
+         CompareFilesAsync("types/alltypes", "snappy", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -141,7 +141,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression()
       {
-         CompareFiles("types/alltypes_dictionary", "plain", true,
+         CompareFilesAsync("types/alltypes_dictionary", "plain", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -158,7 +158,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression_by_spark()
       {
-         CompareFiles("types/alltypes_dictionary", "plain-spark21", true,
+         CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -175,7 +175,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_gzipped()
       {
-         CompareFiles("types/alltypes_dictionary", "gzip", true,
+         CompareFilesAsync("types/alltypes_dictionary", "gzip", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -192,7 +192,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression_byte_arrays()
       {
-         CompareFiles("types/alltypes_dictionary", "plain", false,
+         CompareFilesAsync("types/alltypes_dictionary", "plain", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -209,7 +209,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_no_compression_by_spark_byte_arrays()
       {
-         CompareFiles("types/alltypes_dictionary", "plain-spark21", false,
+         CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -226,7 +226,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Alltypes_dictionary_gzipped_byte_arrays()
       {
-         CompareFiles("types/alltypes_dictionary", "gzip", false,
+         CompareFilesAsync("types/alltypes_dictionary", "gzip", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -244,7 +244,7 @@ namespace Parquet.Test.Reader
       [Fact]
       public void Postcodes_sample_no_compression()
       {
-         CompareFiles("postcodes", "plain", true,
+         CompareFilesAsync("postcodes", "plain", true,
             typeof(string),   //Postcode
             typeof(string),   //
             typeof(double?),

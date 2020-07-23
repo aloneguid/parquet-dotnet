@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Data;
 
@@ -54,9 +55,9 @@ namespace Parquet.File
          _fileMeta.Num_rows += totalRowCount;
       }
 
-      public long Write(ThriftStream thriftStream)
+      public async Task<long> WriteAsync(ThriftStream thriftStream)
       {
-         return thriftStream.Write(_fileMeta);
+         return await thriftStream.WriteAsync(_fileMeta).ConfigureAwait(false);
       }
 
       public Thrift.SchemaElement GetSchemaElement(Thrift.ColumnChunk columnChunk)

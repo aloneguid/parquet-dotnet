@@ -1,6 +1,8 @@
 ﻿using System.IO;
+using System.Threading.Tasks;
 using Thrift.Protocol;
 using Thrift.Transport;
+using Thrift.Transport.Client;
 
 namespace Parquet.File
 {
@@ -15,7 +17,7 @@ namespace Parquet.File
       public ThriftStream(Stream s)
       {
          _s = s;
-         TTransport transport = new TStreamTransport(s, s);
+         TTransport transport = new TStreamTransport(s, s, null);
          _protocol = new TCompactProtocol(transport);
       }
 
@@ -24,10 +26,10 @@ namespace Parquet.File
       /// </summary>
       /// <typeparam name="T"></typeparam>
       /// <returns></returns>
-      public T Read<T>() where T : TBase, new()
+      public async Task<T> ReadAsync<T>() where T : TBase, new()
       {
          var res = new T();
-         res.Read(_protocol);
+         await res.ReadAsync(_protocol).ConfigureAwait(false) ;
          return res;
       }
 
@@ -38,11 +40,11 @@ namespace Parquet.File
       /// <param name="obj"></param>
       /// <param name="rewind">When true, rewinds to the original position before writing</param>
       /// <returns>Actual size of the object written</returns>
-      public int Write<T>(T obj, bool rewind = false) where T : TBase, new()
+      public async Task<int> WriteAsync<T>(T obj, bool rewind = false) where T : TBase, new()
       {
          _s.Flush();
          long startPos = _s.Position;
-         obj.Write(_protocol);
+         await obj.WriteAsync(_protocol).ConfigureAwait(false);
          _s.Flush();
          long size = _s.Position - startPos;
          if (rewind) _s.Seek(startPos, SeekOrigin.Begin);

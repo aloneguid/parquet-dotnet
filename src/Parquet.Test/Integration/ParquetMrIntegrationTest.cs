@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Data.Rows;
 using Xunit;
@@ -30,7 +31,7 @@ namespace Parquet.Test.Integration
             : "java";
       }
 
-      private void CompareWithMr(Table t)
+      private async Task CompareWithMrAsync(Table t)
       {
          string testFileName = Path.GetFullPath("temp.parquet");
 
@@ -40,14 +41,14 @@ namespace Parquet.Test.Integration
          //produce file
          using (Stream s = F.OpenWrite(testFileName))
          {
-            using (var writer = new ParquetWriter(t.Schema, s))
+            await using (var writer = new ParquetWriter(t.Schema, s))
             {
-               writer.Write(t);
+               await writer.WriteAsync(t).ConfigureAwait(false);
             }
          }
 
          //read back
-         Table t2 = ParquetReader.ReadTableFromFile(testFileName);
+         Table t2 = await ParquetReader.ReadTableFromFileAsync(testFileName).ConfigureAwait(false);
 
          //check we don't have a bug internally before launching MR
          Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
@@ -99,7 +100,7 @@ namespace Parquet.Test.Integration
       }
 
       [Fact]
-      public void Integers_all_types()
+      public async Task Integers_all_typesAsync()
       {
          var table = new Table(new DataField<sbyte>("int8"), new DataField<byte>("uint8"),
             new DataField<short>("int16"), new DataField<ushort>("uint16"),
@@ -111,11 +112,11 @@ namespace Parquet.Test.Integration
             table.Add(new Row((sbyte) (i % 127 - 255), (byte) (i % 255), (short) i, (ushort) i, i, (long) i));
          }
 
-         CompareWithMr(table);
+         await CompareWithMrAsync(table).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Flat_simple_table()
+      public async Task Flat_simple_tableAsync()
       {
          var table = new Table(new DataField<int>("id"), new DataField<string>("city"));
 
@@ -125,11 +126,11 @@ namespace Parquet.Test.Integration
             table.Add(new Row(i, "record#" + i));
          }
 
-         CompareWithMr(table);
+         await CompareWithMrAsync(table).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Array_simple_integers()
+      public async Task Array_simple_integersAsync()
       {
          var table = new Table(
             new DataField<int>("id"),
@@ -139,7 +140,7 @@ namespace Parquet.Test.Integration
          table.Add(1, new[] { "1", "2", "3" });
          table.Add(3, new[] { "3", "3", "3" });
 
-         CompareWithMr(table);
+         await CompareWithMrAsync(table).ConfigureAwait(false);
       }
 
    }

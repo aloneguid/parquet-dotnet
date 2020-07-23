@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
 
@@ -48,7 +49,7 @@ namespace Parquet
       /// </summary>
       /// <param name="field"></param>
       /// <returns></returns>
-      public DataColumn ReadColumn(DataField field)
+      public async Task<DataColumn> ReadColumnAsync(DataField field)
       {
          if (field == null) throw new ArgumentNullException(nameof(field));
 
@@ -61,7 +62,7 @@ namespace Parquet
 
          var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
 
-         return columnReader.Read();
+         return await columnReader.ReadAsync().ConfigureAwait(false);
       }
 
       /// <summary>

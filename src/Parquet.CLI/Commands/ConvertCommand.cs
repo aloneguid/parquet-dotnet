@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using Parquet.Data.Rows;
 using NetBox.Extensions;
 using static NetBox.Terminal.PoshConsole;
+using System.Threading.Tasks;
 
 namespace Parquet.CLI.Commands
 {
@@ -18,7 +19,7 @@ namespace Parquet.CLI.Commands
          _inputPath = input;
       }
 
-      public void Execute(int maxRows, string format)
+      public async Task ExecuteAsync(int maxRows, string format)
       {
          string fmt = format switch
          {
@@ -27,17 +28,17 @@ namespace Parquet.CLI.Commands
             _ => throw new ArgumentException($"unknown format '{format}'")
          };
 
-         ConvertFromParquet(maxRows, fmt);
+         await ConvertFromParquetAsync(maxRows, fmt);
       }
 
-      private void ConvertFromParquet(int maxRows, string fmt)
+      private async Task ConvertFromParquetAsync(int maxRows, string fmt)
       {
          Telemetry.CommandExecuted("convert",
             "input", _inputPath,
             "maxRows", maxRows,
             "fmt", fmt);
 
-         Table t = ReadTable(maxRows);
+         Table t = await ReadTableAsync(maxRows).ConfigureAwait(false);
 
          int i = 0;
          foreach(Row row in t)

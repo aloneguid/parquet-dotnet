@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Parquet.File;
 
 namespace Parquet
@@ -50,11 +51,11 @@ namespace Parquet
             throw new IOException($"not a Parquet file(head is '{stail}')");
       }
 
-      internal Thrift.FileMetaData ReadMetadata()
+      internal async Task<Thrift.FileMetaData> ReadMetadataAsync()
       {
          GoBeforeFooter();
 
-         return ThriftStream.Read<Thrift.FileMetaData>();
+         return await ThriftStream.ReadAsync<Thrift.FileMetaData>().ConfigureAwait(false);
       }
 
       internal void GoToBeginning()

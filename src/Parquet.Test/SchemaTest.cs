@@ -3,6 +3,7 @@ using System;
 using Xunit;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Parquet.Test
 {
@@ -257,11 +258,11 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void BackwardCompat_list_with_one_array()
+      public async Task BackwardCompat_list_with_one_arrayAsync()
       {
          using (Stream input = OpenTestFile("legacy-list-onearray.parquet"))
          {
-            using (var reader = new ParquetReader(input))
+            await using (var reader = new ParquetReader(input))
             {
                Schema schema = reader.Schema;
 
@@ -274,7 +275,7 @@ namespace Parquet.Test
                //smoke test we can read it
                using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
                {
-                  DataColumn values4 = rg.ReadColumn((DataField)schema[4]);
+                  DataColumn values4 = await rg.ReadColumnAsync((DataField)schema[4]).ConfigureAwait(false);
                }
             }
          }

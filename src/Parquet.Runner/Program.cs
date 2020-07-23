@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using NetBox.Performance;
 using Parquet.Data;
 using F = System.IO.File;
@@ -40,14 +41,14 @@ namespace Parquet.Runner
          }
       }
 
-      private static void Perf()
+      private static async Task PerfAsync()
       {
          var readTimes = new List<TimeSpan>();
          var uwts = new List<TimeSpan>();
          var gwts = new List<TimeSpan>();
          for (int i = 0; i < 10; i++)
          {
-            ReadLargeFile(out TimeSpan readTime, out TimeSpan uwt, out TimeSpan gwt);
+            (TimeSpan readTime, TimeSpan uwt, TimeSpan gwt) = await ReadLargeFileAsync().ConfigureAwait(false);
             readTimes.Add(readTime);
             uwts.Add(uwt);
             gwts.Add(gwt);
@@ -61,16 +62,16 @@ namespace Parquet.Runner
 
       }
 
-      private static void ReadLargeFile(out TimeSpan readTime,
-         out TimeSpan uncompressedWriteTime,
-         out TimeSpan gzipWriteTime)
+      private static async Task<(TimeSpan ReadTime, TimeSpan UncompressedWriteTime, TimeSpan GzipWriteTime)>ReadLargeFileAsync() //TODO changed the signature because async methods cannot have out params, need to validate
       {
+         TimeSpan readTime, uncompressedWriteTime, gzipWriteTime;
+
          Schema schema;
          DataColumn[] columns;
 
          using (var time = new TimeMeasure())
          {
-            using (var reader = ParquetReader.OpenFromFile(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true }))
+            await using (var reader = ParquetReader.OpenFromFile(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true }))
             {
                schema = reader.Schema;
                var cl = new List<DataColumn>();
@@ -79,7 +80,7 @@ namespace Parquet.Runner
                {
                   foreach (DataField field in reader.Schema.GetDataFields())
                   {
-                     DataColumn dataColumn = rgr.ReadColumn(field);
+                     DataColumn dataColumn = await rgr.ReadColumnAsync(field).ConfigureAwait(false);
                      cl.Add(dataColumn);
                   }
                }
@@ -92,14 +93,14 @@ namespace Parquet.Runner
          {
             using (var time = new TimeMeasure())
             {
-               using (var writer = new ParquetWriter(schema, dest))
+               await using (var writer = new ParquetWriter(schema, dest))
                {
                   writer.CompressionMethod = CompressionMethod.None;
                   using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
                   {
                      foreach (DataColumn dc in columns)
                      {
-                        rg.WriteColumn(dc);
+                        await rg.WriteColumnAsync(dc).ConfigureAwait(false);
                      }
                   }
                }
@@ -113,14 +114,14 @@ namespace Parquet.Runner
          {
             using (var time = new TimeMeasure())
             {
-               using (var writer = new ParquetWriter(schema, dest))
+               await using (var writer = new ParquetWriter(schema, dest))
                {
                   writer.CompressionMethod = CompressionMethod.Gzip;
                   using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
                   {
                      foreach (DataColumn dc in columns)
                      {
-                        rg.WriteColumn(dc);
+                        await rg.WriteColumnAsync(dc).ConfigureAwait(false);
                      }
                   }
                }
@@ -129,6 +130,7 @@ namespace Parquet.Runner
             }
          }
 
+         return (readTime, uncompressedWriteTime, gzipWriteTime);
       }
    }
 }

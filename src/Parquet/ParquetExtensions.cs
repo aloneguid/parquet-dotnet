@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Data.Rows;
 using Parquet.File;
@@ -14,16 +15,16 @@ namespace Parquet
       /// <summary>
       /// Writes a file with a single row group
       /// </summary>
-      public static void WriteSingleRowGroupParquetFile(this Stream stream, Schema schema, params DataColumn[] columns)
+      public static async Task WriteSingleRowGroupParquetFileAsync(this Stream stream, Schema schema, params DataColumn[] columns)
       {
-         using (var writer = new ParquetWriter(schema, stream))
+         await using (var writer = new ParquetWriter(schema, stream))
          {
             writer.CompressionMethod = CompressionMethod.None;
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
             {
                foreach(DataColumn column in columns)
                {
-                  rgw.WriteColumn(column);
+                  await rgw.WriteColumnAsync(column).ConfigureAwait(false);
                }
             }
          }
@@ -33,23 +34,23 @@ namespace Parquet
       /// Reads the first row group from a file
       /// </summary>
       /// <param name="stream"></param>
-      /// <param name="schema"></param>
-      /// <param name="columns"></param>
-      public static void ReadSingleRowGroupParquetFile(this Stream stream, out Schema schema, out DataColumn[] columns)
+      public static async Task<(Schema Schema, DataColumn[] Columns)> ReadSingleRowGroupParquetFileAsync(this Stream stream) //TODO changed the signature because async methods cannot have out params, need to validate
       {
-         using (var reader = new ParquetReader(stream))
+         await using (var reader = new ParquetReader(stream))
          {
-            schema = reader.Schema;
+            Schema schema = reader.Schema;
 
             using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
             {
                DataField[] dataFields = schema.GetDataFields();
-               columns = new DataColumn[dataFields.Length];
+               var columns = new DataColumn[dataFields.Length];
 
                for(int i = 0; i < dataFields.Length; i++)
                {
-                  columns[i] = rgr.ReadColumn(dataFields[i]);
+                  columns[i] = await rgr.ReadColumnAsync(dataFields[i]).ConfigureAwait(false);
                }
+
+               return (schema, columns);
             }
          }
       }
@@ -59,11 +60,11 @@ namespace Parquet
       /// </summary>
       /// <param name="writer"></param>
       /// <param name="table"></param>
-      public static void Write(this ParquetWriter writer, Table table)
+      public static async Task WriteAsync(this ParquetWriter writer, Table table)
       {
          using (ParquetRowGroupWriter rowGroupWriter = writer.CreateRowGroup())
          {
-            rowGroupWriter.Write(table);
+            await rowGroupWriter.WriteAsync(table).ConfigureAwait(false);
          }
       }
 
@@ -72,7 +73,7 @@ namespace Parquet
       /// </summary>
       /// <param name="reader">Open reader</param>
       /// <returns></returns>
-      public static Table ReadAsTable(this ParquetReader reader)
+      public static async Task<Table> ReadAsTableAsync(this ParquetReader reader)
       {
          Table result = null;
 
@@ -80,7 +81,14 @@ namespace Parquet
          {
             using (ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i))
             {
-               DataColumn[] allData = reader.Schema.GetDataFields().Select(df => rowGroupReader.ReadColumn(df)).ToArray();
+               DataField[] temp = reader.Schema.GetDataFields();
+
+               DataColumn[] allData = new DataColumn[temp.Length];
+               
+               for (int j = 0; j < temp.Length; j++)
+               {
+                  allData[j] = await rowGroupReader.ReadColumnAsync(temp[j]).ConfigureAwait(false);
+               }
 
                var t = new Table(reader.Schema, allData, rowGroupReader.RowCount);
 
@@ -106,11 +114,11 @@ namespace Parquet
       /// </summary>
       /// <param name="writer"></param>
       /// <param name="table"></param>
-      public static void Write(this ParquetRowGroupWriter writer, Table table)
+      public static async Task WriteAsync(this ParquetRowGroupWriter writer, Table table)
       {
          foreach (DataColumn dc in table.ExtractDataColumns())
          {
-            writer.WriteColumn(dc);
+            await writer.WriteColumnAsync(dc).ConfigureAwait(false);
          }
       }
 

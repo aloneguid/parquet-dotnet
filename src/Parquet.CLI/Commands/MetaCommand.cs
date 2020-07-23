@@ -2,6 +2,7 @@
 using static NetBox.Terminal.PoshConsole;
 using NetBox.Extensions;
 using NetBox.Terminal.Widgets;
+using System.Threading.Tasks;
 
 namespace Parquet.CLI.Commands
 {
@@ -13,9 +14,9 @@ namespace Parquet.CLI.Commands
             "path", path);
       }
 
-      public void Execute()
+      public async Task ExecuteAsync()
       {
-         Thrift.FileMetaData fileMeta = ReadInternalMetadata();
+         Thrift.FileMetaData fileMeta = await ReadInternalMetadataAsync().ConfigureAwait(false);
 
          //root metadata
          WriteLine("File Metadata", T.HeadingTextColor);

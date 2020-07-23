@@ -1,4 +1,4 @@
-..\tools\thrift-0.10.0.exe --gen csharp -out ..\src\ ..\src\Parquet\Thrift\parquet.thrift
+..\tools\thrift-0.13.0.exe --gen netstd -out ..\src\ ..\src\Parquet\Thrift\parquet.thrift
 
 # and then:
 

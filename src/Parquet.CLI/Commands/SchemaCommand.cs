@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Parquet.Data;
 using static NetBox.Terminal.PoshConsole;
 
@@ -13,12 +14,12 @@ namespace Parquet.CLI.Commands
          _path = path ?? throw new ArgumentNullException(nameof(path));
       }
 
-      public void Execute()
+      public async Task ExecuteAsync()
       {
          Telemetry.CommandExecuted("schema",
             "path", _path);
 
-         using (var reader = ParquetReader.OpenFromFile(_path))
+         await using (var reader = ParquetReader.OpenFromFile(_path))
          {
             Schema schema = reader.Schema;
 

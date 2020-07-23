@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using NetBox.IO;
 using Parquet.Data;
 using Xunit;
@@ -9,7 +10,7 @@ namespace Parquet.Test
    public class NonSeekableWriterTest
    {
       [Fact]
-      public void Write_multiple_row_groups_to_forward_only_stream()
+      public async Task Write_multiple_row_groups_to_forward_only_streamAsync()
       {
          var ms = new MemoryStream();
          var forwardOnly = new WriteableNonSeekableStream(ms);
@@ -18,23 +19,23 @@ namespace Parquet.Test
             new DataField<int>("id"),
             new DataField<string>("nonsense"));
 
-         using (var writer = new ParquetWriter(schema, forwardOnly))
+         await using (var writer = new ParquetWriter(schema, forwardOnly))
          {
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
             {
-               rgw.WriteColumn(new DataColumn((DataField)schema[0], new[] { 1 }));
-               rgw.WriteColumn(new DataColumn((DataField)schema[1], new[] { "1" }));
+               await rgw.WriteColumnAsync(new DataColumn((DataField)schema[0], new[] { 1 })).ConfigureAwait(false);
+               await rgw.WriteColumnAsync(new DataColumn((DataField)schema[1], new[] { "1" })).ConfigureAwait(false);
             }
 
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
             {
-               rgw.WriteColumn(new DataColumn((DataField)schema[0], new[] { 2 }));
-               rgw.WriteColumn(new DataColumn((DataField)schema[1], new[] { "2" }));
+               await rgw.WriteColumnAsync(new DataColumn((DataField)schema[0], new[] { 2 })).ConfigureAwait(false);
+               await rgw.WriteColumnAsync(new DataColumn((DataField)schema[1], new[] { "2" })).ConfigureAwait(false);
             }
          }
 
          ms.Position = 0;
-         using (var reader = new ParquetReader(ms))
+         await using (var reader = new ParquetReader(ms))
          {
             Assert.Equal(2, reader.RowGroupCount);
 
@@ -42,7 +43,7 @@ namespace Parquet.Test
             {
                Assert.Equal(1, rgr.RowCount);
 
-               DataColumn column = rgr.ReadColumn((DataField)schema[0]);
+               DataColumn column = await rgr.ReadColumnAsync((DataField)schema[0]).ConfigureAwait(false);
                Assert.Equal(1, column.Data.GetValue(0));
             }
 
@@ -50,7 +51,7 @@ namespace Parquet.Test
             {
                Assert.Equal(1, rgr.RowCount);
 
-               DataColumn column = rgr.ReadColumn((DataField)schema[0]);
+               DataColumn column = await rgr.ReadColumnAsync((DataField)schema[0]).ConfigureAwait(false);
                Assert.Equal(2, column.Data.GetValue(0));
 
             }

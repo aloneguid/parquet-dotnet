@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 using F = System.IO.File;
 using Path = System.IO.Path;
@@ -16,9 +17,9 @@ namespace Parquet.Test.Reader
 {
    public class ParquetCsvComparison : TestBase
    {
-      protected void CompareFiles(string baseName, string encoding, bool treatByteArrayAsString, params Type[] columnTypes)
+      protected async Task CompareFilesAsync(string baseName, string encoding, bool treatByteArrayAsString, params Type[] columnTypes)
       {
-         DataColumn[] parquet = ReadParquet($"{baseName}.{encoding}.parquet", treatByteArrayAsString);
+         DataColumn[] parquet = await ReadParquetAsync($"{baseName}.{encoding}.parquet", treatByteArrayAsString).ConfigureAwait(false);
          DataColumn[] csv = ReadCsv($"{baseName}.csv");
          Compare(parquet, csv, columnTypes);
       }
@@ -103,17 +104,23 @@ namespace Parquet.Test.Reader
          return Convert.ChangeType(v, t);
       }
 
-      private DataColumn[] ReadParquet(string name, bool treatByteArrayAsString)
+      private async Task<DataColumn[]> ReadParquetAsync(string name, bool treatByteArrayAsString)
       {
          using (Stream s = OpenTestFile(name))
          {
-            using (var pr = new ParquetReader(s, new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString }))
+            await using (var pr = new ParquetReader(s, new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString }))
             {
                using (ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0))
                {
-                  return pr.Schema.GetDataFields()
-                     .Select(df => rgr.ReadColumn(df))
-                     .ToArray();
+                  DataField[] dataFields = pr.Schema.GetDataFields();
+                  var columns = new DataColumn[dataFields.Length];
+
+                  for (int i = 0; i < dataFields.Length; i++)
+                  {
+                     columns[i] = await rgr.ReadColumnAsync(dataFields[i]).ConfigureAwait(false);
+                  }
+
+                  return columns;
                }
             }
          }

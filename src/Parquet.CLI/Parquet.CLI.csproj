@@ -19,7 +19,7 @@
 
    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-      <TargetFrameworks>netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
+      <TargetFrameworks>netcoreapp2.1;</TargetFrameworks>
    </PropertyGroup>
 
    <ItemGroup>

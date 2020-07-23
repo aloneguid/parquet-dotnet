@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.File.Values;
@@ -56,7 +57,7 @@ namespace Parquet
       /// file schema.
       /// </summary>
       /// <param name="column"></param>
-      public void WriteColumn(DataColumn column)
+      public async Task WriteColumnAsync(DataColumn column)
       {
          if (column == null) throw new ArgumentNullException(nameof(column));
 
@@ -80,7 +81,7 @@ namespace Parquet
             _compressionMethod, _compressionLevel,
             (int)(RowCount ?? 0));
 
-         Thrift.ColumnChunk chunk = writer.Write(path, column, dataTypeHandler);
+         Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, dataTypeHandler).ConfigureAwait(false);
          _thriftRowGroup.Columns.Add(chunk);
 
       }

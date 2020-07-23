@@ -52,7 +52,7 @@ namespace Parquet.CLI
 
             cmd.OnExecute(() =>
             {
-               new SchemaCommand(path.Value).Execute();
+               new SchemaCommand(path.Value).ExecuteAsync().GetAwaiter().GetResult();//TODO NetBox.Terminal.App.Application doesn't support async
             });
          });
 
@@ -64,7 +64,7 @@ namespace Parquet.CLI
 
             cmd.OnExecute(() =>
             {
-               new MetaCommand(path).Execute();
+               new MetaCommand(path).ExecuteAsync().GetAwaiter().GetResult();//TODO NetBox.Terminal.App.Application doesn't support async
             });
          });
 
@@ -78,7 +78,7 @@ namespace Parquet.CLI
 
             cmd.OnExecute(() =>
             {
-               new ConvertCommand(input).Execute(maxRows, format);
+               new ConvertCommand(input).ExecuteAsync(maxRows, format).GetAwaiter().GetResult();//TODO NetBox.Terminal.App.Application doesn't support async
             });
          });
 

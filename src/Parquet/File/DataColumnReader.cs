@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Streams;
 using Parquet.File.Values;
@@ -62,7 +63,7 @@ namespace Parquet.File
          _dataTypeHandler = DataTypeFactory.Match(_thriftSchemaElement, _parquetOptions);
       }
 
-      public DataColumn Read()
+      public async Task<DataColumn> ReadAsync()
       {
          long fileOffset = GetFileOffset();
          long maxValues = _thriftColumnChunk.Meta_data.Num_values;
@@ -75,10 +76,10 @@ namespace Parquet.File
          colData.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
          //there can be only one dictionary page in column
-         Thrift.PageHeader ph = _thriftStream.Read<Thrift.PageHeader>();
+         Thrift.PageHeader ph = await _thriftStream.ReadAsync<Thrift.PageHeader>().ConfigureAwait(false);
          if (TryReadDictionaryPage(ph, out colData.dictionary, out colData.dictionaryOffset))
          {
-            ph = _thriftStream.Read<Thrift.PageHeader>();
+            ph = await _thriftStream.ReadAsync<Thrift.PageHeader>().ConfigureAwait(false);
          }
 
          int pagesRead = 0;
@@ -105,7 +106,7 @@ namespace Parquet.File
                (colData.definitions == null ? 0 : colData.definitionsOffset));
             if (totalCount >= maxValues) break; //limit reached
 
-            ph = _thriftStream.Read<Thrift.PageHeader>();
+            ph = await _thriftStream.ReadAsync<Thrift.PageHeader>().ConfigureAwait(false);
             if (ph.Type != Thrift.PageType.DATA_PAGE) break;
          }
 

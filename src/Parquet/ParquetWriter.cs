@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.File.Streams;
@@ -12,7 +13,7 @@ namespace Parquet
    /// Implements Apache Parquet format writer
    /// </summary>
 #pragma warning disable CA1063 // Implement IDisposable Correctly
-   public class ParquetWriter : ParquetActor, IDisposable
+   public class ParquetWriter : ParquetActor, IAsyncDisposable
 #pragma warning restore CA1063 // Implement IDisposable Correctly
    {
       private ThriftFooter _footer;
@@ -50,7 +51,7 @@ namespace Parquet
          _schema = schema ?? throw new ArgumentNullException(nameof(schema));
          _formatOptions = formatOptions ?? new ParquetOptions();
 
-         PrepareFile(append);
+         PrepareFileAsync(append).GetAwaiter().GetResult();//TODO we need to change to private ctor and create a async factory method
       }
 
       /// <summary>
@@ -77,7 +78,7 @@ namespace Parquet
          set { _footer.CustomMetadata = value.ToDictionary(p => p.Key, p => p.Value); }
       }
 
-      private void PrepareFile(bool append)
+      private async Task PrepareFileAsync(bool append)
       {
          if (append)
          {
@@ -85,7 +86,7 @@ namespace Parquet
 
             ValidateFile();
 
-            Thrift.FileMetaData fileMeta = ReadMetadata();
+            Thrift.FileMetaData fileMeta = await ReadMetadataAsync().ConfigureAwait(false);
             _footer = new ThriftFooter(fileMeta);
 
             ValidateSchemasCompatible(_footer, _schema);
@@ -130,7 +131,7 @@ namespace Parquet
       /// Disposes the writer and writes the file footer.
       /// </summary>
 #pragma warning disable CA1063 // Implement IDisposable Correctly
-      public void Dispose()
+      public async ValueTask DisposeAsync()
 #pragma warning restore CA1063 // Implement IDisposable Correctly
       {
          if (_dataWritten)
@@ -140,7 +141,7 @@ namespace Parquet
          }
 
          //finalize file
-         long size = _footer.Write(ThriftStream);
+         long size = await _footer.WriteAsync(ThriftStream).ConfigureAwait(false);
 
          //metadata size
          Writer.Write((int)size);  //4 bytes

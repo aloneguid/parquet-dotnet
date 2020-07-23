@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.Serialization;
@@ -26,7 +27,7 @@ namespace Parquet
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <param name="rowGroupSize"></param>
       /// <returns></returns>
-      public static Schema Serialize<T>(IEnumerable<T> objectInstances, Stream destination,
+      public static async Task<Schema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
          Schema schema = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy,
          int rowGroupSize = 5000)
@@ -42,7 +43,7 @@ namespace Parquet
             schema = SchemaReflector.Reflect<T>();
          }
 
-         using (var writer = new ParquetWriter(schema, destination))
+         await using (var writer = new ParquetWriter(schema, destination))
          {
             writer.CompressionMethod = compressionMethod;
 
@@ -61,7 +62,7 @@ namespace Parquet
                {
                   foreach(DataColumn dataColumn in columns)
                   {
-                     groupWriter.WriteColumn(dataColumn);
+                     await groupWriter.WriteColumnAsync(dataColumn).ConfigureAwait(false);
                   }
                }
             }
@@ -81,14 +82,14 @@ namespace Parquet
       /// </param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <returns></returns>
-      public static Schema Serialize<T>(IEnumerable<T> objectInstances, string filePath,
+      public static async Task<Schema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
          Schema schema = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy)
          where T : new()
       {
          using (Stream destination = System.IO.File.Create(filePath))
          {
-            return Serialize(objectInstances, destination, schema, compressionMethod);
+            return await SerializeAsync(objectInstances, destination, schema, compressionMethod).ConfigureAwait(false);
          }
       }
 
@@ -99,10 +100,10 @@ namespace Parquet
       /// <param name="input"></param>
       /// <param name="rowGroupIndex"></param>
       /// <returns></returns>
-      public static T[] Deserialize<T>(Stream input, int rowGroupIndex=-1) where T : new()
+      public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex=-1) where T : new()
       {
          var result = new List<T>();
-         using (var reader = new ParquetReader(input))
+         await using (var reader = new ParquetReader(input))
          {
             Schema fileSchema = new SchemaReflector(typeof(T)).Reflect();
             DataField[] dataFields = fileSchema.GetDataFields();
@@ -111,28 +112,31 @@ namespace Parquet
             {
                for (int i = 0; i < reader.RowGroupCount; i++)
                {
-                  T[] currentRowGroupRecords = ReadAndDeserializeByRowGroup<T>(i, reader, dataFields);
+                  T[] currentRowGroupRecords = await ReadAndDeserializeByRowGroupAsync<T>(i, reader, dataFields).ConfigureAwait(false);
                   result.AddRange(currentRowGroupRecords);
                }
             }
             else //read specific rowgroup.
             {
-               T[] currentRowGroupRecords = ReadAndDeserializeByRowGroup<T>(rowGroupIndex, reader, dataFields);
+               T[] currentRowGroupRecords = await ReadAndDeserializeByRowGroupAsync<T>(rowGroupIndex, reader, dataFields).ConfigureAwait(false);
                result.AddRange(currentRowGroupRecords);
             }
          }
          return result.ToArray();
       }
 
-      private static T[] ReadAndDeserializeByRowGroup<T>(int rowGroupIndex, ParquetReader reader, DataField[] dataFields) where T : new()
+      private static async Task<T[]> ReadAndDeserializeByRowGroupAsync<T>(int rowGroupIndex, ParquetReader reader, DataField[] dataFields) where T : new()
       {
          var bridge = new ClrBridge(typeof(T));
 
          using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(rowGroupIndex))
          {
-            DataColumn[] groupColumns = dataFields
-               .Select(df => groupReader.ReadColumn(df))
-               .ToArray();
+            DataColumn[] groupColumns = new DataColumn[dataFields.Length];
+
+            for (int j = 0; j < dataFields.Length; j++)
+            {
+               groupColumns[j] = await groupReader.ReadColumnAsync(dataFields[j]).ConfigureAwait(false);
+            }
 
             T[] rb = new T[groupReader.RowCount];
             for (int ie = 0; ie < rb.Length; ie++)
@@ -154,11 +158,11 @@ namespace Parquet
       /// <typeparam name="T"></typeparam>
       /// <param name="input"></param>
       /// <returns></returns>
-      public static IEnumerable<T[]> DeserializeGroups<T>(Stream input) where T : new()
+      public static async IAsyncEnumerable<T[]> DeserializeGroupsAsync<T>(Stream input) where T : new()
       {
          var bridge = new ClrBridge(typeof(T));
 
-         using (var reader = new ParquetReader(input))
+         await using (var reader = new ParquetReader(input))
          {
             Schema fileSchema = reader.Schema;
             DataField[] dataFields = fileSchema.GetDataFields();
@@ -167,9 +171,12 @@ namespace Parquet
             {
                using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(i))
                {
-                  DataColumn[] groupColumns = dataFields
-                     .Select(df => groupReader.ReadColumn(df))
-                     .ToArray();
+                  DataColumn[] groupColumns = new DataColumn[dataFields.Length];
+
+                  for (int j = 0; j < dataFields.Length; j++)
+                  {
+                     groupColumns[j] = await groupReader.ReadColumnAsync(dataFields[j]).ConfigureAwait(false);
+                  }
 
                   T[] rb = new T[groupReader.RowCount];
                   for (int ie = 0; ie < rb.Length; ie++)

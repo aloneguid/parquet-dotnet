@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using NetBox.Terminal.Widgets;
 using Parquet.Data.Rows;
 using Table = Parquet.Data.Rows.Table;
@@ -17,15 +18,15 @@ namespace Parquet.CLI.Commands
          _path = path;
       }
 
-      protected Table ReadTable(int maxRows = 10)
+      protected async Task<Table> ReadTableAsync(int maxRows = 10)
       {
          using (var msg = new ProgressMessage($"reading file ({maxRows} rows min)..."))
          {
             try
             {
-               using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
+               await using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
                {
-                  Table table = reader.ReadAsTable();
+                  Table table = await reader.ReadAsTableAsync().ConfigureAwait(false);
 
                   return table;
                }
@@ -38,9 +39,9 @@ namespace Parquet.CLI.Commands
          }
       }
 
-      protected Thrift.FileMetaData ReadInternalMetadata()
+      protected async Task<Thrift.FileMetaData> ReadInternalMetadataAsync()
       {
-         using (var reader = ParquetReader.OpenFromFile(_path))
+         await using (var reader = ParquetReader.OpenFromFile(_path))
          {
             return reader.ThriftMetadata;
          }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Xunit;
@@ -12,7 +13,7 @@ namespace Parquet.Test
       [Theory]
       [InlineData(100)]
       [InlineData(1000)]
-      public void Write_loads_of_booleans_all_true(int count)
+      public async Task Write_loads_of_booleans_all_trueAsync(int count)
       {
          var id = new DataField<bool>("enabled");
          var schema = new Schema(id);
@@ -24,7 +25,7 @@ namespace Parquet.Test
             data[i] = true;
          }
 
-         DataColumn read = WriteReadSingleColumn(id, new DataColumn(id, data));
+         DataColumn read = await WriteReadSingleColumnAsync(id, new DataColumn(id, data)).ConfigureAwait(false);
 
          for(int i = 0; i < count; i++)
          {
@@ -35,17 +36,17 @@ namespace Parquet.Test
 
       [Theory]
       [InlineData(100)]
-      public void Write_bunch_of_uints(uint count)
+      public async Task Write_bunch_of_uintsAsync(uint count)
       {
          var id = new DataField<uint>("uint");
 
-         var data = new uint[count];
+         uint[] data = new uint[count];
          for (uint i = 0; i < count; i++)
          {
             data[i] = uint.MaxValue - i;
          }
 
-         DataColumn read = WriteReadSingleColumn(id, new DataColumn(id, data));
+         DataColumn read = await WriteReadSingleColumnAsync(id, new DataColumn(id, data)).ConfigureAwait(false);
          for (uint i = 0; i < count; i++)
          {
             uint result = (uint)read.Data.GetValue(i);
@@ -55,17 +56,17 @@ namespace Parquet.Test
 
       [Theory]
       [InlineData(100)]
-      public void Write_bunch_of_ulongs(ulong count)
+      public async Task Write_bunch_of_ulongsAsync(ulong count)
       {
          var id = new DataField<ulong>("longs");
 
-         var data = new ulong[count];
+         ulong[] data = new ulong[count];
          for (uint i = 0; i < count; i++)
          {
             data[i] = ulong.MaxValue - i;
          }
 
-         DataColumn read = WriteReadSingleColumn(id, new DataColumn(id, data));
+         DataColumn read = await WriteReadSingleColumnAsync(id, new DataColumn(id, data)).ConfigureAwait(false);
          for (uint i = 0; i < count; i++)
          {
             ulong result = (ulong)read.Data.GetValue(i);

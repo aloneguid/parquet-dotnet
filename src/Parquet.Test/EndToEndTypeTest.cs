@@ -132,11 +132,11 @@ namespace Parquet.Test
       [InlineData("bool")]
       [InlineData("nullable bool")]
 
-      public void Type_writes_and_reads_end_to_end(string name)
+      public async System.Threading.Tasks.Task Type_writes_and_reads_end_to_endAsync(string name)
       {
          (DataField field, object expectedValue) input = _nameToData[name];
 
-         object actual = WriteReadSingle(input.field, input.expectedValue);
+         object actual = await WriteReadSingleAsync(input.field, input.expectedValue).ConfigureAwait(false);
 
          bool equal;
          if (input.expectedValue == null && actual == null)

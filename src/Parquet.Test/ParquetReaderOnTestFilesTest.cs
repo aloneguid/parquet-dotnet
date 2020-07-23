@@ -2,6 +2,7 @@ using Parquet.Data;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Parquet.Test
@@ -34,26 +35,26 @@ namespace Parquet.Test
       };
 
       [Fact]
-      public void FixedLenByteArray_dictionary()
+      public async Task FixedLenByteArray_dictionaryAsync()
       {
          using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            await using (var r = new ParquetReader(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync().ConfigureAwait(false);
             }
          }
       }
 
       [Fact]
-      public void Datetypes_all()
+      public async Task Datetypes_allAsync()
       {
          DateTimeOffset offset, offset2;
          using (Stream s = OpenTestFile("dates.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            await using (var r = new ParquetReader(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync().ConfigureAwait(false);
 
                offset = (DateTimeOffset)(columns[1].Data.GetValue(0));
                offset2 = (DateTimeOffset)(columns[1].Data.GetValue(1));
@@ -64,14 +65,14 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void DateTime_FromOtherSystem()
+      public async Task DateTime_FromOtherSystemAsync()
       {
          DateTimeOffset offset;
          using (Stream s = OpenTestFile("datetime_other_system.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            await using (var r = new ParquetReader(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync().ConfigureAwait(false);
 
                DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
                Assert.NotNull(as_at_date_col);

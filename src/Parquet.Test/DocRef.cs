@@ -2,19 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Parquet.Data;
 
 namespace Parquet.Test
 {
    class DocRef
    {
-      public void ReadIntro()
+      public async Task ReadIntroAsync()
       {
          // open file stream
          using (Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet"))
          {
             // open parquet file reader
-            using (var parquetReader = new ParquetReader(fileStream))
+            await using (var parquetReader = new ParquetReader(fileStream))
             {
                // get file schema (available straight after opening parquet reader)
                // however, get only data fields as only they contain data values
@@ -28,7 +29,12 @@ namespace Parquet.Test
                   {
                      // read all columns inside each row group (you have an option to read only
                      // required columns if you need to.
-                     DataColumn[] columns = dataFields.Select(groupReader.ReadColumn).ToArray();
+                     DataColumn[] columns = new DataColumn[dataFields.Length];
+
+                     for (int j = 0; j < dataFields.Length; j++)
+                     {
+                        columns[j] = await groupReader.ReadColumnAsync(dataFields[j]).ConfigureAwait(false);
+                     }
 
                      // get first column, for instance
                      DataColumn firstColumn = columns[0];
@@ -42,7 +48,7 @@ namespace Parquet.Test
          }
       }
 
-      public void WriteIntro()
+      public async Task WriteIntroAsync()
       {
          //create data columns with schema metadata and the data you need
          var idColumn = new DataColumn(
@@ -58,13 +64,13 @@ namespace Parquet.Test
 
          using (Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet"))
          {
-            using (var parquetWriter = new ParquetWriter(schema, fileStream))
+            await using (var parquetWriter = new ParquetWriter(schema, fileStream))
             {
                // create a new row group in the file
                using (ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())
                {
-                  groupWriter.WriteColumn(idColumn);
-                  groupWriter.WriteColumn(cityColumn);
+                  await groupWriter.WriteColumnAsync(idColumn).ConfigureAwait(false);
+                  await groupWriter.WriteColumnAsync(cityColumn).ConfigureAwait(false);
                }
             }
          }

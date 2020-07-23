@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-      <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;netstandard2.1</TargetFrameworks>
+      <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
       <Description>
          Pure managed .NET library to read and write Apache Parquet files, targeting .NET Standand 1.4 and up.
 
@@ -54,6 +54,7 @@
       <PackageReference Include="System.Buffers" Version="4.5.1" />
       <PackageReference Include="System.Memory" Version="4.5.4" />
       <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+      <PackageReference Include="Thrift" Version="0.14.0" />
    </ItemGroup>
 
 </Project>
