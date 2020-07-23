@@ -25,9 +25,9 @@ namespace Parquet.Data
       public bool IsArray { get; }
 
       /// <summary>
-      /// CLR type of this column. Not sure whether to expose this externally yet.
+      /// CLR type of this column.
       /// </summary>
-      internal Type ClrType { get; private set; }
+      public Type ClrType { get; private set; }
 
       internal Type ClrNullableIfHasNullsType { get; private set; }
 
