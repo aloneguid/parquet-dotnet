@@ -29,7 +29,7 @@ namespace Parquet.Data
       /// </summary>
       public Type ClrType { get; private set; }
 
-      internal Type ClrNullableIfHasNullsType { get; private set; }
+      public Type ClrNullableIfHasNullsType { get; private set; }
 
       /// <summary>
       /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
