@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Xunit;
 
 
@@ -29,9 +30,9 @@ namespace Parquet.Test.Reader
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// </summary>
       [Fact]
-      public void Alltypes_plain_no_compression()
+      public async Task Alltypes_plain_no_compression()
       {
-         CompareFilesAsync("types/alltypes", "plain", true,
+         await CompareFilesAsync("types/alltypes", "plain", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -42,13 +43,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_gzip_compression()
+      public async Task Alltypes_gzip_compressionAsync()
       {
-         CompareFilesAsync("types/alltypes", "gzip", true,
+         await CompareFilesAsync("types/alltypes", "gzip", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -59,13 +60,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_snappy_compression()
+      public async Task Alltypes_snappy_compressionAsync()
       {
-         CompareFilesAsync("types/alltypes", "snappy", true,
+         await CompareFilesAsync("types/alltypes", "snappy", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -76,13 +77,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_plain_no_compression_byte_arrays()
+      public async Task Alltypes_plain_no_compression_byte_arraysAsync()
       {
-         CompareFilesAsync("types/alltypes", "plain", false,
+         await CompareFilesAsync("types/alltypes", "plain", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -93,13 +94,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(byte[]),
             typeof(byte[]),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_gzip_compression_byte_arrays()
+      public async Task Alltypes_gzip_compression_byte_arraysAsync()
       {
-         CompareFilesAsync("types/alltypes", "gzip", false,
+         await CompareFilesAsync("types/alltypes", "gzip", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -110,13 +111,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(byte[]),
             typeof(byte[]),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_snappy_compression_byte_arrays()
+      public async Task Alltypes_snappy_compression_byte_arraysAsync()
       {
-         CompareFilesAsync("types/alltypes", "snappy", false,
+         await CompareFilesAsync("types/alltypes", "snappy", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -127,7 +128,7 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(byte[]),
             typeof(byte[]),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       /// <summary>
@@ -139,9 +140,9 @@ namespace Parquet.Test.Reader
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// </summary>
       [Fact]
-      public void Alltypes_dictionary_no_compression()
+      public async Task Alltypes_dictionary_no_compressionAsync()
       {
-         CompareFilesAsync("types/alltypes_dictionary", "plain", true,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -152,13 +153,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_dictionary_no_compression_by_spark()
+      public async Task Alltypes_dictionary_no_compression_by_sparkAsync()
       {
-         CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", true,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -169,13 +170,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_dictionary_gzipped()
+      public async Task Alltypes_dictionary_gzippedAsync()
       {
-         CompareFilesAsync("types/alltypes_dictionary", "gzip", true,
+         await CompareFilesAsync("types/alltypes_dictionary", "gzip", true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -186,13 +187,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_dictionary_no_compression_byte_arrays()
+      public async Task Alltypes_dictionary_no_compression_byte_arraysAsync()
       {
-         CompareFilesAsync("types/alltypes_dictionary", "plain", false,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -203,13 +204,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(byte[]),
             typeof(byte[]),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_dictionary_no_compression_by_spark_byte_arrays()
+      public async Task Alltypes_dictionary_no_compression_by_spark_byte_arraysAsync()
       {
-         CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", false,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -220,13 +221,13 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(byte[]),
             typeof(byte[]),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
       [Fact]
-      public void Alltypes_dictionary_gzipped_byte_arrays()
+      public async Task Alltypes_dictionary_gzipped_byte_arraysAsync()
       {
-         CompareFilesAsync("types/alltypes_dictionary", "gzip", false,
+         await CompareFilesAsync("types/alltypes_dictionary", "gzip", false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -237,14 +238,14 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(byte[]),
             typeof(byte[]),
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset?)).ConfigureAwait(false);
       }
 
 
       [Fact]
-      public void Postcodes_sample_no_compression()
+      public async Task Postcodes_sample_no_compressionAsync()
       {
-         CompareFilesAsync("postcodes", "plain", true,
+         await CompareFilesAsync("postcodes", "plain", true,
             typeof(string),   //Postcode
             typeof(string),   //
             typeof(double?),
@@ -273,7 +274,7 @@ namespace Parquet.Test.Reader
             typeof(string),
             typeof(int?),
             typeof(int?),
-            typeof(string));
+            typeof(string)).ConfigureAwait(false);
       }
    }
 }
