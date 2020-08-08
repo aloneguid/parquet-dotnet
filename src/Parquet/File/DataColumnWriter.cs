@@ -138,7 +138,7 @@ namespace Parquet.File
             dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
             int headerSize = await _thriftStream.WriteAsync(dataPageHeader).ConfigureAwait(false);
             ms.Position = 0;
-            ms.CopyTo(_stream);
+            await ms.CopyToAsync(_stream).ConfigureAwait(false);
 
 
             var dataTag = new PageTag

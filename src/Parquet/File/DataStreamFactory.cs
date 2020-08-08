@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
 using IronSnappy;
 using Parquet.File.Streams;
 
@@ -75,7 +76,7 @@ namespace Parquet.File
          }
       }
 
-      public static BytesOwner ReadPageData(Stream nakedStream, Thrift.CompressionCodec compressionCodec,
+      public static async Task<BytesOwner> ReadPageDataAsync(Stream nakedStream, Thrift.CompressionCodec compressionCodec,
          int compressedLength, int uncompressedLength)
       {
          if (!_codecToCompressionMethod.TryGetValue(compressionCodec, out CompressionMethod compressionMethod))
@@ -89,7 +90,7 @@ namespace Parquet.File
          // Some storage solutions (like Azure blobs) might require more than one 'Read' action to read the requested length.
          while (totalBytesRead < compressedLength && currentBytesRead != 0)
          {
-            currentBytesRead = nakedStream.Read(data, totalBytesRead, compressedLength - totalBytesRead);
+            currentBytesRead = await nakedStream.ReadAsync(data, totalBytesRead, compressedLength - totalBytesRead);
             totalBytesRead += currentBytesRead;
          }
 
