@@ -71,7 +71,7 @@ namespace Parquet.Runner
 
          using (var time = new TimeMeasure())
          {
-            await using (var reader = ParquetReader.OpenFromFile(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true }))
+            await using (ParquetReader reader = await ParquetReader.OpenFromFileAsync(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true }))
             {
                schema = reader.Schema;
                var cl = new List<DataColumn>();
@@ -93,7 +93,7 @@ namespace Parquet.Runner
          {
             using (var time = new TimeMeasure())
             {
-               await using (var writer = new ParquetWriter(schema, dest))
+               await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(schema, dest))
                {
                   writer.CompressionMethod = CompressionMethod.None;
                   using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
@@ -114,7 +114,7 @@ namespace Parquet.Runner
          {
             using (var time = new TimeMeasure())
             {
-               await using (var writer = new ParquetWriter(schema, dest))
+               await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(schema, dest))
                {
                   writer.CompressionMethod = CompressionMethod.Gzip;
                   using (ParquetRowGroupWriter rg = writer.CreateRowGroup())

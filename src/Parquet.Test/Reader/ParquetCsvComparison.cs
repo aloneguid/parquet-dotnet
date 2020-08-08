@@ -108,7 +108,7 @@ namespace Parquet.Test.Reader
       {
          using (Stream s = OpenTestFile(name))
          {
-            await using (var pr = new ParquetReader(s, new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString }))
+            await using (ParquetReader pr = await ParquetReader.OpenFromStreamAsync(s, new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString }))
             {
                using (ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0))
                {

@@ -19,7 +19,7 @@ namespace Parquet.CLI.Commands
          Telemetry.CommandExecuted("schema",
             "path", _path);
 
-         await using (var reader = ParquetReader.OpenFromFile(_path))
+         await using (ParquetReader reader = await ParquetReader.OpenFromFileAsync(_path))
          {
             Schema schema = reader.Schema;
 

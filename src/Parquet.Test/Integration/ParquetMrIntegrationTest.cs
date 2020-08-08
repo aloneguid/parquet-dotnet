@@ -41,7 +41,7 @@ namespace Parquet.Test.Integration
          //produce file
          using (Stream s = F.OpenWrite(testFileName))
          {
-            await using (var writer = new ParquetWriter(t.Schema, s))
+            await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(t.Schema, s))
             {
                await writer.WriteAsync(t).ConfigureAwait(false);
             }

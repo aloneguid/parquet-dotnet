@@ -262,7 +262,7 @@ namespace Parquet.Test
       {
          using (Stream input = OpenTestFile("legacy-list-onearray.parquet"))
          {
-            await using (var reader = new ParquetReader(input))
+            await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(input))
             {
                Schema schema = reader.Schema;
 

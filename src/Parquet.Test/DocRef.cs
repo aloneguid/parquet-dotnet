@@ -15,7 +15,7 @@ namespace Parquet.Test
          using (Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet"))
          {
             // open parquet file reader
-            await using (var parquetReader = new ParquetReader(fileStream))
+            await using (ParquetReader parquetReader = await ParquetReader.OpenFromStreamAsync(fileStream))
             {
                // get file schema (available straight after opening parquet reader)
                // however, get only data fields as only they contain data values
@@ -64,7 +64,7 @@ namespace Parquet.Test
 
          using (Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet"))
          {
-            await using (var parquetWriter = new ParquetWriter(schema, fileStream))
+            await using (ParquetWriter parquetWriter = await ParquetWriter.CreateParquetWriterAsync(schema, fileStream))
             {
                // create a new row group in the file
                using (ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())

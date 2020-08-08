@@ -38,7 +38,7 @@ namespace Parquet.Test
           - 4: []
           */
 
-         await using (var reader = new ParquetReader(OpenTestFile("list_empty_alt.parquet")))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(OpenTestFile("list_empty_alt.parquet")))
          {
             using (ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0))
             {

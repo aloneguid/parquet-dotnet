@@ -32,7 +32,7 @@ namespace Parquet.Test
       {
          using (Stream s = OpenTestFile(name))
          {
-            await using (var reader = new ParquetReader(s))
+            await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(s))
             {
                return await reader.ReadAsTableAsync().ConfigureAwait(false);
             }
@@ -43,7 +43,7 @@ namespace Parquet.Test
       {
          var ms = new MemoryStream();
 
-         await using (var writer = new ParquetWriter(table.Schema, ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(table.Schema, ms))
          {
             await writer.WriteAsync(table).ConfigureAwait(false);
          }
@@ -55,7 +55,7 @@ namespace Parquet.Test
 
          ms.Position = 0;
 
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             return await reader.ReadAsTableAsync().ConfigureAwait(false);
          }
@@ -72,7 +72,7 @@ namespace Parquet.Test
             //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
 
             // read first gow group and first column
-            await using (var reader = new ParquetReader(ms))
+            await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
             {
                if (reader.RowGroupCount == 0) return null;
                ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
@@ -95,7 +95,7 @@ namespace Parquet.Test
 
             //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
 
-            await using (var reader = new ParquetReader(ms))
+            await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
             {
                readSchema = reader.Schema;
 
@@ -123,7 +123,7 @@ namespace Parquet.Test
          {
             // write single value
 
-            await using (var writer = new ParquetWriter(new Schema(field), ms))
+            await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(field), ms))
             {
                writer.CompressionMethod = compressionMethod;
                writer.CompressionLevel = compressionLevel;
@@ -146,7 +146,7 @@ namespace Parquet.Test
             // read back single value
 
             ms.Position = 0;
-            await using (var reader = new ParquetReader(ms))
+            await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
             {
                using (ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0))
                {

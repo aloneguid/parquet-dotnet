@@ -17,7 +17,7 @@ namespace Parquet
       /// </summary>
       public static async Task WriteSingleRowGroupParquetFileAsync(this Stream stream, Schema schema, params DataColumn[] columns)
       {
-         await using (var writer = new ParquetWriter(schema, stream))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(schema, stream))
          {
             writer.CompressionMethod = CompressionMethod.None;
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
@@ -36,7 +36,7 @@ namespace Parquet
       /// <param name="stream"></param>
       public static async Task<(Schema Schema, DataColumn[] Columns)> ReadSingleRowGroupParquetFileAsync(this Stream stream) //TODO changed the signature because async methods cannot have out params, need to validate
       {
-         await using (var reader = new ParquetReader(stream))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(stream))
          {
             Schema schema = reader.Schema;
 

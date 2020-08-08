@@ -19,7 +19,7 @@ namespace Parquet.Test
             new DataField<int>("id"),
             new DataField<string>("nonsense"));
 
-         await using (var writer = new ParquetWriter(schema, forwardOnly))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(schema, forwardOnly))
          {
             using (ParquetRowGroupWriter rgw = writer.CreateRowGroup())
             {
@@ -35,7 +35,7 @@ namespace Parquet.Test
          }
 
          ms.Position = 0;
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal(2, reader.RowGroupCount);
 

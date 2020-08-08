@@ -14,16 +14,22 @@ namespace Parquet
    public class ParquetReader : ParquetActor, IAsyncDisposable
    {
       private readonly Stream _input;
-      private readonly Thrift.FileMetaData _meta;
-      private readonly ThriftFooter _footer;
+      private /*readonly*/ Thrift.FileMetaData _meta;
+      private /*readonly*/ ThriftFooter _footer;
       private readonly ParquetOptions _parquetOptions;
       private readonly List<ParquetRowGroupReader> _groupReaders = new List<ParquetRowGroupReader>();
       private readonly bool _leaveStreamOpen;
 
-      private ParquetReader(Stream input, bool leaveStreamOpen) : base(input)
+      private ParquetReader(Stream input, ParquetOptions parquetOptions, bool leaveStreamOpen) : base(input)
       {
          _input = input ?? throw new ArgumentNullException(nameof(input));
          _leaveStreamOpen = leaveStreamOpen;
+
+         if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
+         if (_input.Length <= 8) throw new IOException("not a Parquet file (size too small)");
+
+         ValidateFile();
+         _parquetOptions = parquetOptions ?? new ParquetOptions();
       }
 
       /// <summary>
@@ -35,21 +41,19 @@ namespace Parquet
       /// <exception cref="ArgumentNullException">input</exception>
       /// <exception cref="ArgumentException">stream must be readable and seekable - input</exception>
       /// <exception cref="IOException">not a Parquet file (size too small)</exception>
-      public ParquetReader(Stream input, ParquetOptions parquetOptions = null, bool leaveStreamOpen = true) : this(input, leaveStreamOpen)
+      public static async Task<ParquetReader> OpenFromStreamAsync(Stream input, ParquetOptions parquetOptions = null, bool leaveStreamOpen = true)
       {
-         if (!input.CanRead || !input.CanSeek) throw new ArgumentException("stream must be readable and seekable", nameof(input));
-         if (_input.Length <= 8) throw new IOException("not a Parquet file (size too small)");
-
-         ValidateFile();
-         _parquetOptions = parquetOptions ?? new ParquetOptions();
+         ParquetReader instance = new ParquetReader(input, parquetOptions, leaveStreamOpen);
 
          //read metadata instantly, now
-         _meta = ReadMetadataAsync().GetAwaiter().GetResult();//TODO we need to change to private ctor and create a async factory method
-         _footer = new ThriftFooter(_meta);
+         instance._meta = await instance.ReadMetadataAsync();
+         instance._footer = new ThriftFooter(instance._meta);
 
-         ParquetEventSource.Current.OpenStream(input.Length, leaveStreamOpen, _meta.Row_groups.Count, _meta.Num_rows);
+         ParquetEventSource.Current.OpenStream(input.Length, leaveStreamOpen, instance._meta.Row_groups.Count, instance._meta.Num_rows);
 
-         InitRowGroupReaders();
+         instance.InitRowGroupReaders();
+
+         return instance;
       }
 
       /// <summary>
@@ -58,11 +62,11 @@ namespace Parquet
       /// <param name="filePath"></param>
       /// <param name="parquetOptions"></param>
       /// <returns></returns>
-      public static ParquetReader OpenFromFile(string filePath, ParquetOptions parquetOptions = null)
+      public static async Task<ParquetReader> OpenFromFileAsync(string filePath, ParquetOptions parquetOptions = null)
       {
          Stream fs = System.IO.File.OpenRead(filePath);
 
-         return new ParquetReader(fs, parquetOptions, false);
+         return await OpenFromStreamAsync(fs, parquetOptions, false);
       }
 
       /// <summary>
@@ -78,7 +82,7 @@ namespace Parquet
       /// </summary>
       public static async Task<Table> ReadTableFromFileAsync(string filePath, ParquetOptions parquetOptions = null)
       {
-         await using (ParquetReader reader = OpenFromFile(filePath, parquetOptions))
+         await using (ParquetReader reader = await OpenFromFileAsync(filePath, parquetOptions))
          {
             return await reader.ReadAsTableAsync().ConfigureAwait(false);
          }
@@ -89,7 +93,7 @@ namespace Parquet
       /// </summary>
       public static async Task<Table> ReadTableFromStreamAsync(Stream stream, ParquetOptions parquetOptions = null)
       {
-         await using (var reader = new ParquetReader(stream, parquetOptions))
+         await using (ParquetReader reader = await OpenFromStreamAsync(stream, parquetOptions))
          {
             return await reader.ReadAsTableAsync().ConfigureAwait(false);
          }

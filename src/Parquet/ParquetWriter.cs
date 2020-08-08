@@ -39,10 +39,9 @@ namespace Parquet
       /// <param name="schema"></param>
       /// <param name="output">Writeable, seekable stream</param>
       /// <param name="formatOptions">Additional options</param>
-      /// <param name="append"></param>
       /// <exception cref="ArgumentNullException">Output is null.</exception>
       /// <exception cref="ArgumentException">Output stream is not writeable</exception>
-      public ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
+      private ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null)
          : base(new GapStream(output))
       {
          if (output == null) throw new ArgumentNullException(nameof(output));
@@ -51,7 +50,23 @@ namespace Parquet
          _schema = schema ?? throw new ArgumentNullException(nameof(schema));
          _formatOptions = formatOptions ?? new ParquetOptions();
 
-         PrepareFileAsync(append).GetAwaiter().GetResult();//TODO we need to change to private ctor and create a async factory method
+         
+      }
+
+      /// <summary>
+      /// Creates an instance of parquet writer on top of a stream
+      /// </summary>
+      /// <param name="schema"></param>
+      /// <param name="output">Writeable, seekable stream</param>
+      /// <param name="formatOptions">Additional options</param>
+      /// <param name="append"></param>
+      /// <exception cref="ArgumentNullException">Output is null.</exception>
+      /// <exception cref="ArgumentException">Output stream is not writeable</exception>
+      public static async Task<ParquetWriter> CreateParquetWriterAsync(Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
+      {
+         var instance = new ParquetWriter(schema, output, formatOptions);
+         await instance.PrepareFileAsync(append);
+         return instance;
       }
 
       /// <summary>

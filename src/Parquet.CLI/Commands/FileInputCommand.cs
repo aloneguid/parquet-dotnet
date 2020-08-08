@@ -24,7 +24,7 @@ namespace Parquet.CLI.Commands
          {
             try
             {
-               await using (var reader = ParquetReader.OpenFromFile(_path, new ParquetOptions { TreatByteArrayAsString = true }))
+               await using (ParquetReader reader = await ParquetReader.OpenFromFileAsync(_path, new ParquetOptions { TreatByteArrayAsString = true }))
                {
                   Table table = await reader.ReadAsTableAsync().ConfigureAwait(false);
 
@@ -41,7 +41,7 @@ namespace Parquet.CLI.Commands
 
       protected async Task<Thrift.FileMetaData> ReadInternalMetadataAsync()
       {
-         await using (var reader = ParquetReader.OpenFromFile(_path))
+         await using (ParquetReader reader = await ParquetReader.OpenFromFileAsync(_path))
          {
             return reader.ThriftMetadata;
          }

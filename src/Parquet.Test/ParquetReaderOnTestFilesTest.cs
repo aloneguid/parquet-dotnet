@@ -39,7 +39,7 @@ namespace Parquet.Test
       {
          using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
          {
-            await using (var r = new ParquetReader(s))
+            await using (ParquetReader r = await ParquetReader.OpenFromStreamAsync(s))
             {
                DataColumn[] columns = await r.ReadEntireRowGroupAsync().ConfigureAwait(false);
             }
@@ -52,7 +52,7 @@ namespace Parquet.Test
          DateTimeOffset offset, offset2;
          using (Stream s = OpenTestFile("dates.parquet"))
          {
-            await using (var r = new ParquetReader(s))
+            await using (ParquetReader r = await ParquetReader.OpenFromStreamAsync(s))
             {
                DataColumn[] columns = await r.ReadEntireRowGroupAsync().ConfigureAwait(false);
 
@@ -70,7 +70,7 @@ namespace Parquet.Test
          DateTimeOffset offset;
          using (Stream s = OpenTestFile("datetime_other_system.parquet"))
          {
-            await using (var r = new ParquetReader(s))
+            await using (ParquetReader r = await ParquetReader.OpenFromStreamAsync(s))
             {
                DataColumn[] columns = await r.ReadEntireRowGroupAsync().ConfigureAwait(false);
 

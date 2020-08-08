@@ -14,7 +14,7 @@ namespace Parquet.Test
       {
          var schema = new Schema(new DataField<int>("id"), new DataField<int>("id2"));
 
-         await using (var writer = new ParquetWriter(schema, new MemoryStream()))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(schema, new MemoryStream()))
          {
 
             using (ParquetRowGroupWriter gw = writer.CreateRowGroup())
@@ -33,7 +33,7 @@ namespace Parquet.Test
          var id = new DataField<int>("id");
          var ms = new MemoryStream();
 
-         await using (var writer = new ParquetWriter(new Schema(id), ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms))
          {
             using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
             {
@@ -54,7 +54,7 @@ namespace Parquet.Test
 
          //read the file back and validate
          ms.Position = 0;
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal(3, reader.RowGroupCount);
 
@@ -88,7 +88,7 @@ namespace Parquet.Test
          var id = new DataField<int>("id");
          var ms = new MemoryStream();
 
-         await using (var writer = new ParquetWriter(new Schema(id), ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms))
          {
             using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
             {
@@ -98,7 +98,7 @@ namespace Parquet.Test
 
          //append to this file. Note that you cannot append to existing row group, therefore create a new one
          ms.Position = 0;
-         await using (var writer = new ParquetWriter(new Schema(id), ms, append: true))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms, append: true))
          {
             using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
             {
@@ -108,7 +108,7 @@ namespace Parquet.Test
 
          //check that this file now contains two row groups and all the data is valid
          ms.Position = 0;
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal(2, reader.RowGroupCount);
 
@@ -142,7 +142,7 @@ namespace Parquet.Test
          var id = new DataField<int?>("id");
          var ms = new MemoryStream();
 
-         await using (var writer = new ParquetWriter(new Schema(id), ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms))
          {
             using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
             {
@@ -151,7 +151,7 @@ namespace Parquet.Test
          }
 
          ms.Position = 0;
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal(1, reader.RowGroupCount);
 
@@ -170,7 +170,7 @@ namespace Parquet.Test
          var id = new DataField<int>("id");
 
          //write
-         await using (var writer = new ParquetWriter(new Schema(id), ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms))
          {
             using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
             {
@@ -179,7 +179,7 @@ namespace Parquet.Test
          }
 
          //read back
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal(4, reader.ThriftMetadata.Num_rows);
 
@@ -197,7 +197,7 @@ namespace Parquet.Test
          var id = new DataField<int>("id");
 
          //write
-         await using (var writer = new ParquetWriter(new Schema(id), ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms))
          {
             using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
             {
@@ -211,7 +211,7 @@ namespace Parquet.Test
          }
 
          //read back
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal(6, reader.ThriftMetadata.Num_rows);
 
@@ -234,7 +234,7 @@ namespace Parquet.Test
          var id = new DataField<int>("id");
 
          //write
-         await using (var writer = new ParquetWriter(new Schema(id), ms))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(new Schema(id), ms))
          {
             writer.CustomMetadata = new Dictionary<string, string>
             {
@@ -249,7 +249,7 @@ namespace Parquet.Test
          }
 
          //read back
-         await using (var reader = new ParquetReader(ms))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(ms))
          {
             Assert.Equal("value1", reader.CustomMetadata["key1"]);
             Assert.Equal("value2", reader.CustomMetadata["key2"]);

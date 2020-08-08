@@ -43,7 +43,7 @@ namespace Parquet
             schema = SchemaReflector.Reflect<T>();
          }
 
-         await using (var writer = new ParquetWriter(schema, destination))
+         await using (ParquetWriter writer = await ParquetWriter.CreateParquetWriterAsync(schema, destination))
          {
             writer.CompressionMethod = compressionMethod;
 
@@ -103,7 +103,7 @@ namespace Parquet
       public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex=-1) where T : new()
       {
          var result = new List<T>();
-         await using (var reader = new ParquetReader(input))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(input))
          {
             Schema fileSchema = new SchemaReflector(typeof(T)).Reflect();
             DataField[] dataFields = fileSchema.GetDataFields();
@@ -162,7 +162,7 @@ namespace Parquet
       {
          var bridge = new ClrBridge(typeof(T));
 
-         await using (var reader = new ParquetReader(input))
+         await using (ParquetReader reader = await ParquetReader.OpenFromStreamAsync(input))
          {
             Schema fileSchema = reader.Schema;
             DataField[] dataFields = fileSchema.GetDataFields();
