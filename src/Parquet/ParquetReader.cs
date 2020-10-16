@@ -12,6 +12,28 @@ namespace Parquet
    /// </summary>
    public class ParquetReader : ParquetActor, IDisposable
    {
+      /// <summary>
+      /// In order to reduce the number of same-string
+      /// allocations, a running cache of recent strings
+      /// for a single column can be maintained and when
+      /// the same string is referenced again, the already
+      /// allocated string will be reused.
+      ///
+      /// This changes the look-back of how many strings to cache.
+      /// There is an inflection point where it will slow down parsing
+      /// as the match is a linear search through an array.
+      /// However, larger values will reduce memory if there
+      /// are many scattered common strings. A value of 1-5 is very
+      /// fast but will only catch the strings which repeat in a long series.
+      /// A value of 100 slows down but is a much more aggressive string reuse
+      /// and can reduce memory consumption.
+      ///
+      /// Default is 50 -- It gives good a good speed improvement. A value of 5
+      /// will eek out slightly better performance if you have long runs of repeated
+      /// strings.
+      /// </summary>
+      public static int StringCacheSize = 50;
+
       private readonly Stream _input;
       private readonly Thrift.FileMetaData _meta;
       private readonly ThriftFooter _footer;

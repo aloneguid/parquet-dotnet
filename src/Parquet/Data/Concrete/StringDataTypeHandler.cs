@@ -45,11 +45,20 @@ namespace Parquet.Data.Concrete
 
          string[] tdest = (string[])dest;
 
+         // The string cache. Because spans cannot be stored outside a method,
+         // the cache is per-column.
+         int ringIndex = 0; // We treat the arrays as ring buffers.
+         string[] previousStrings = new string[Parquet.ParquetReader.StringCacheSize];
+         int[] previousIndexes = new int[Parquet.ParquetReader.StringCacheSize];
+         int[] previousLengths = new int[Parquet.ParquetReader.StringCacheSize];
+         bool foundCachedString = false;
+         
          //reading string one by one is extremely slow, read all data
 
          byte[] allBytes = _bytePool.Rent(remLength);
          reader.BaseStream.Read(allBytes, 0, remLength);
          int destIdx = offset;
+         string s; // less IL if the local variable is defined outside the loop.
          try
          {
             Span<byte> span = allBytes.AsSpan(0, remLength);   //will be passed as input in future versions
@@ -59,7 +68,32 @@ namespace Parquet.Data.Concrete
             while (spanIdx < span.Length && destIdx < tdest.Length)
             {
                int length = span.Slice(spanIdx, 4).ReadInt32();
-               string s = E.GetString(allBytes, spanIdx + 4, length);
+               foundCachedString = false;
+               for(int idx = 0; idx < Parquet.ParquetReader.StringCacheSize; idx++)
+               {
+                  // NOTE: https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
+                  // Sequence.Equal uses unsafe for the comparison, so it is really fast.
+                  if(length == previousLengths[idx] && span.Slice(spanIdx + 4, length).SequenceEqual(span.Slice(previousIndexes[idx] + 4, length)))
+                  {
+                     foundCachedString = true;
+                     tdest[destIdx++] = previousStrings[idx];
+                     spanIdx = spanIdx + 4 + length;
+                     break;
+                  }
+               }
+
+               if(foundCachedString){
+                  continue;
+               }
+
+               s = E.GetString(allBytes, spanIdx + 4, length);
+               previousStrings[ringIndex] = s;
+               previousIndexes[ringIndex] = spanIdx;
+               previousLengths[ringIndex] = length;
+               ringIndex += 1;
+               if(ringIndex >= Parquet.ParquetReader.StringCacheSize){
+                  ringIndex = 0;
+               }
                tdest[destIdx++] = s;
                spanIdx = spanIdx + 4 + length;
             }
