@@ -255,5 +255,48 @@ namespace Parquet.Test
             Assert.Equal("value2", reader.CustomMetadata["key2"]);
          }
       }
+      
+      [Fact]
+      public void String_allocation_reduction_correct_strings()
+      {
+         //write a file with a single row group
+         var str = new DataField<string>("str");
+         var ms = new MemoryStream();
+         
+         var string1 = "SomeString1";
+         var string2 = "SomeString2";
+         var string3 = "xomeString1";
+         var repeats = 100;
+         var data = new string[repeats * 3];
+         Array.Fill<string>(data, string1, 0, repeats);
+         Array.Fill<string>(data, string2, repeats, repeats);
+         Array.Fill<string>(data, string3, repeats * 2, repeats);
+               
+         using (var writer = new ParquetWriter(new Schema(str), ms))
+         {
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
+            {
+               rg.WriteColumn(new DataColumn(str, data));
+            }
+         }
+
+         //check that this file now contains strings where we expect
+         ms.Position = 0;
+         using (var reader = new ParquetReader(ms))
+         {
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+            {
+               Assert.Equal(repeats * 3, rg.RowCount);
+               var parquetData = (string[])rg.ReadColumn(str).Data;
+               Assert.Equal(string1, parquetData[0]);
+               Assert.Equal(string1, parquetData[repeats - 1]);
+               Assert.Equal(string2, parquetData[repeats]);
+               Assert.Equal(string2, parquetData[repeats * 2 - 1]);
+               Assert.Equal(string3, parquetData[repeats * 2]);
+               Assert.Equal(string3, parquetData[repeats * 3 - 1]);               
+            }
+         }
+      }
+
    }
 }
