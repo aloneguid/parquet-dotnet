@@ -288,12 +288,18 @@ namespace Parquet.Test
             {
                Assert.Equal(repeats * 3, rg.RowCount);
                var parquetData = (string[])rg.ReadColumn(str).Data;
+
                Assert.Equal(string1, parquetData[0]);
                Assert.Equal(string1, parquetData[repeats - 1]);
+               Assert.True(ReferenceEquals(parquetData[0], parquetData[repeats - 1]));
+
                Assert.Equal(string2, parquetData[repeats]);
                Assert.Equal(string2, parquetData[repeats * 2 - 1]);
+               Assert.True(ReferenceEquals(parquetData[repeats], parquetData[repeats * 2 - 1]));
+
                Assert.Equal(string3, parquetData[repeats * 2]);
                Assert.Equal(string3, parquetData[repeats * 3 - 1]);               
+               Assert.True(ReferenceEquals(parquetData[repeats * 2], parquetData[repeats * 3 - 1]));
             }
          }
       }
