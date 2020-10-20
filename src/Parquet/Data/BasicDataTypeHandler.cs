@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Parquet.Data
 {
@@ -78,51 +76,12 @@ namespace Parquet.Data
          return idx - offset;
       }
 
-      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
-         // casing to an array of TSystemType means we avoid Array.GetValue calls, which are slow
-         var typedArray = (TSystemType[]) values;
-         foreach(TSystemType one in typedArray)
+         foreach (TSystemType one in values.GetValues(statistics, this, this))
          {
             WriteOne(writer, one);
          }
-
-         // calculate statistics if required
-         if (statistics != null)
-         {
-            //number of distinct values
-            statistics.DistinctCount = ((TSystemType[])values).Distinct(this).Count();
-
-            TSystemType min = default;
-            TSystemType max = default;
-            for(int i = 0; i < typedArray.Length; i++)
-            {
-               if(i == 0)
-               {
-                  min = typedArray[0];
-                  max = typedArray[0];
-               }
-               else
-               {
-                  TSystemType current = typedArray[i];
-                  int cmin = Compare(min, current);
-                  int cmax = Compare(max, current);
-
-                  if(cmin > 0)
-                  {
-                     min = current;
-                  }
-
-                  if(cmax < 0)
-                  {
-                     max = current;
-                  }
-               }
-            }
-            statistics.MinValue = min;
-            statistics.MaxValue = max;
-         }
-
       }
 
       public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
@@ -159,18 +118,18 @@ namespace Parquet.Data
 
       public abstract Array GetArray(int minCount, bool rent, bool isNullable);
 
-      public abstract Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
+      public abstract ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
 
-      protected TNullable[] PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
+      protected ArrayView PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
          where TNullable : class
       {
          definitionLevels = IntPool.Rent(data.Length);
          definitionsLength = data.Length;
 
-         nullCount = data.Count(i => i == null);
-         TNullable[] result = new TNullable[data.Length - nullCount];
+         nullCount = 0;
+         TNullable[] result = new TNullable[data.Length];
          int ir = 0;
 
          for (int i = 0; i < data.Length; i++)
@@ -180,6 +139,7 @@ namespace Parquet.Data
             if (value == null)
             {
                definitionLevels[i] = 0;
+               nullCount++;
             }
             else
             {
@@ -187,8 +147,8 @@ namespace Parquet.Data
                result[ir++] = value;
             }
          }
-
-         return result;
+         
+         return new ArrayView(result, data.Length - nullCount);
       }
 
       protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)

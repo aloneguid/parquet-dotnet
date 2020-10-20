@@ -95,7 +95,7 @@ namespace Parquet.Data.Concrete
          return ReadSingle(reader, tse, length, true);
       }
 
-      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public override ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
          return PackDefinitions<string>((string[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }

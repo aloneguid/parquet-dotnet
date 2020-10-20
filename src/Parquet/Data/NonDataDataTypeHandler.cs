@@ -32,7 +32,7 @@ namespace Parquet.Data
       public object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) => throw new NotSupportedException();
 
 
-      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
          throw new NotSupportedException();
       }
@@ -42,7 +42,7 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
-      public Array PackDefinitions(Array data,  int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public ArrayView PackDefinitions(Array data,  int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
          throw new NotImplementedException();
       }

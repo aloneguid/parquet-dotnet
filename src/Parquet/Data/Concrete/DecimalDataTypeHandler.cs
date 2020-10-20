@@ -104,7 +104,7 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
          switch(tse.Type)
          {
@@ -147,10 +147,10 @@ namespace Parquet.Data.Concrete
       }
 
 
-      private void WriteAsInt32(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      private void WriteAsInt32(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values)
       {
          double scaleFactor = Math.Pow(10, tse.Scale);
-         foreach (decimal d in values)
+         foreach (decimal d in values.GetValues<decimal>())
          {
             try
             {
@@ -190,11 +190,11 @@ namespace Parquet.Data.Concrete
       }
 
 
-      private void WriteAsInt64(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      private void WriteAsInt64(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values)
       {
          double scaleFactor = Math.Pow(10, tse.Scale);
 
-         foreach (decimal d in values)
+         foreach (decimal d in values.GetValues<decimal>())
          {
             try
             {
@@ -242,9 +242,9 @@ namespace Parquet.Data.Concrete
          return offset - start;
       }
 
-      private void WriteAsFixedLengthByteArray(Thrift.SchemaElement tse, BinaryWriter writer, IList values)
+      private void WriteAsFixedLengthByteArray(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values)
       {
-         foreach (decimal d in values)
+         foreach (decimal d in values.GetValues<decimal>())
          {
             var bd = new BigDecimal(d, tse.Precision, tse.Scale);
             byte[] itemData = bd.ToByteArray();
