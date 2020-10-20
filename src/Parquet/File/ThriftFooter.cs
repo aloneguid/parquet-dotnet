@@ -11,10 +11,12 @@ namespace Parquet.File
    class ThriftFooter
    {
       private readonly Thrift.FileMetaData _fileMeta;
+      private readonly ThriftSchemaTree _tree;
 
       public ThriftFooter(Thrift.FileMetaData fileMeta)
       {
          _fileMeta = fileMeta ?? throw new ArgumentNullException(nameof(fileMeta));
+         _tree = new ThriftSchemaTree(_fileMeta.Schema);
       }
 
       public ThriftFooter(Schema schema, long totalRowCount)
@@ -28,6 +30,7 @@ namespace Parquet.File
          _fileMeta.Num_rows = totalRowCount;
 
          _fileMeta.Created_by = $"Parquet.Net version %Version% (build %Git.LongCommitHash%)";
+         _tree = new ThriftSchemaTree(_fileMeta.Schema);
       }
 
       public Dictionary<string, string> CustomMetadata
@@ -84,10 +87,9 @@ namespace Parquet.File
 
       public List<string> GetPath(Thrift.SchemaElement schemaElement)
       {
-         var tree = new ThriftSchemaTree(_fileMeta.Schema);
          var path = new List<string>();
 
-         ThriftSchemaTree.Node wrapped = tree.Find(schemaElement);
+         ThriftSchemaTree.Node wrapped = _tree.Find(schemaElement);
          while(wrapped.parent != null)
          {
             path.Add(wrapped.element.Name);
