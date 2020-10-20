@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.IO;
 using System.Text;
-using Parquet.Extensions;
 
 namespace Parquet.Data.Concrete
 {
@@ -11,7 +10,7 @@ namespace Parquet.Data.Concrete
       private static readonly Encoding E = Encoding.UTF8;
       private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
       private static readonly ArrayPool<string> _stringPool = ArrayPool<string>.Shared;
-
+      
       public StringDataTypeHandler() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
       {
       }
@@ -97,7 +96,7 @@ namespace Parquet.Data.Concrete
 
       public override ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
-         return PackDefinitions<string>((string[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
+         return PackDefinitions((string[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
       public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
@@ -133,12 +132,12 @@ namespace Parquet.Data.Concrete
 
       public override int Compare(string x, string y)
       {
-         return string.Compare(x, y);
+         return string.CompareOrdinal(x, y);
       }
 
       public override bool Equals(string x, string y)
       {
-         return string.Equals(x, y);
+         return string.CompareOrdinal(x, y) == 0;
       }
 
       public override byte[] PlainEncode(Thrift.SchemaElement tse, string x)
