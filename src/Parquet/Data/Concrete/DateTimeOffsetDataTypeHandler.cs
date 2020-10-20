@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
@@ -90,28 +91,21 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
          switch (tse.Type)
          {
             case Thrift.Type.INT32:
-               WriteAsInt32(writer, values);
+               WriteAsInt32(writer, values, statistics);
                break;
             case Thrift.Type.INT64:
-               WriteAsInt64(writer, values);
+               WriteAsInt64(writer, values, statistics);
                break;
             case Thrift.Type.INT96:
-               WriteAsInt96(writer, values);
+               WriteAsInt96(writer, values, statistics);
                break;
             default:
                throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
-         }
-
-         if (statistics != null && values.Count > 0)
-         {
-            statistics.DistinctCount = ((IEnumerable<DateTimeOffset>)values).Distinct(this).Count();
-            statistics.MinValue = ((IEnumerable<DateTimeOffset>)values).Min();
-            statistics.MaxValue = ((IEnumerable<DateTimeOffset>)values).Max();
          }
       }
 
@@ -133,9 +127,9 @@ namespace Parquet.Data.Concrete
          return e;
       }
 
-      private static void WriteAsInt32(BinaryWriter writer, IList values)
+      private void WriteAsInt32(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (DateTimeOffset dto in values)
+         foreach (DateTimeOffset dto in values.GetValues(dataColumnStatistics, this, this))
          {
             WriteAsInt32(writer, dto);
          }
@@ -174,9 +168,9 @@ namespace Parquet.Data.Concrete
          return idx - offset;
       }
 
-      private static void WriteAsInt64(BinaryWriter writer, IList values)
+      private void WriteAsInt64(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (DateTimeOffset dto in values)
+         foreach (DateTimeOffset dto in values.GetValues(dataColumnStatistics, this, this))
          {
             WriteAsInt64(writer, dto);
          }
@@ -213,9 +207,9 @@ namespace Parquet.Data.Concrete
          return dt;
       }
 
-      private static void WriteAsInt96(BinaryWriter writer, IList values)
+      private void WriteAsInt96(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (DateTimeOffset dto in values)
+         foreach (DateTimeOffset dto in values.GetValues<DateTimeOffset>(dataColumnStatistics, this, this))
          {
             WriteAsInt96(writer, dto);
          }

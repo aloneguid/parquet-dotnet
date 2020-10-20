@@ -84,25 +84,18 @@ namespace Parquet.Data.Concrete
          }
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
          switch (tse.Type)
          {
             case Thrift.Type.INT32:
-               WriteAsInt32(writer, values);
+               WriteAsInt32(writer, values, statistics);
                break;
             case Thrift.Type.INT64:
-               WriteAsInt64(writer, values);
+               WriteAsInt64(writer, values, statistics);
                break;
             default:
                throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
-         }
-
-         if (statistics != null && values.Count > 0)
-         {
-            statistics.DistinctCount = ((IEnumerable<TimeSpan>)values).Distinct(this).Count();
-            statistics.MinValue = ((IEnumerable<TimeSpan>)values).Min();
-            statistics.MaxValue = ((IEnumerable<TimeSpan>)values).Max();
          }
       }
 
@@ -125,9 +118,9 @@ namespace Parquet.Data.Concrete
          return e;
       }
 
-      private static void WriteAsInt32(BinaryWriter writer, IList values)
+      private void WriteAsInt32(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (TimeSpan dto in values)
+         foreach (TimeSpan dto in values.GetValues(dataColumnStatistics, this, this))
          {
             WriteAsInt32(writer, dto);
          }
@@ -166,9 +159,9 @@ namespace Parquet.Data.Concrete
          return idx - offset;
       }
 
-      private static void WriteAsInt64(BinaryWriter writer, IList values)
+      private void WriteAsInt64(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (TimeSpan dto in values)
+         foreach (TimeSpan dto in values.GetValues(dataColumnStatistics, this, this))
          {
             WriteAsInt64(writer, dto);
          }

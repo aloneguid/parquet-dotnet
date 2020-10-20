@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -95,7 +94,7 @@ namespace Parquet.File
                      WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
                   }
 
-                  Array data = column.Data;
+                  ArrayView data = new ArrayView(column.Data);
 
                   if (maxDefinitionLevel > 0)
                   {

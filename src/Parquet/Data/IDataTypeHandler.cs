@@ -35,7 +35,7 @@ namespace Parquet.Data
       /// <param name="length">Number of bytes to read (type specific). Pass -1 to read the length from incoming stream if you don't know how long the buffer is.</param>
       object Read(BinaryReader reader, Thrift.SchemaElement tse, int length);
 
-      void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics);
+      void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics);
 
       /// <summary>
       /// Creates or rents a native array
@@ -48,7 +48,7 @@ namespace Parquet.Data
 
       Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length);
 
-      Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
+      ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
       Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
 

@@ -81,7 +81,7 @@ namespace Parquet.Data
       /// </summary>
       public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0, null, null);
 
-      internal Array PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount, out int nullCount)
+      internal ArrayView PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount, out int nullCount)
       {
          pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Data.Length);
          definitionLevelCount = Data.Length;
@@ -92,7 +92,7 @@ namespace Parquet.Data
          {
             SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
             nullCount = 0; //definitely no nulls here
-            return Data;
+            return new ArrayView(Data);
          }
 
          return _dataTypeHandler.PackDefinitions(Data, maxDefinitionLevel, out pooledDefinitionLevels, out definitionLevelCount, out nullCount);

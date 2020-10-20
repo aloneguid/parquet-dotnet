@@ -54,9 +54,9 @@ namespace Parquet.Data.Concrete
          return new Interval(months, days, millis);
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
-         foreach(Interval interval in values)
+         foreach(Interval interval in values.GetValues<Interval>())
          {
             writer.Write(interval.Months);
             writer.Write(interval.Days);

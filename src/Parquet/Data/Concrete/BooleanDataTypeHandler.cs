@@ -43,14 +43,14 @@ namespace Parquet.Data.Concrete
          return reader.ReadBoolean();
       }
 
-      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, IList values, DataColumnStatistics statistics)
+      public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
          int n = 0;
          byte b = 0;
          byte[] buffer = new byte[values.Count / 8 + 1];
          int ib = 0;
 
-         foreach (bool flag in values)
+         foreach (bool flag in values.GetValues<bool>())
          {
             if (flag)
             {

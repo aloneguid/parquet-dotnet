@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Parquet.Data
 {
@@ -37,7 +36,7 @@ namespace Parquet.Data
          return new TSystemType[minCount];
       }
 
-      public override Array PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public override ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
          return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
@@ -73,15 +72,15 @@ namespace Parquet.Data
 
       }
 
-      private TSystemType[] PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
+      private ArrayView PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
       {
          definitionLevels = IntPool.Rent(data.Length);
          definitionsLength = data.Length;
 
-         nullCount = data.Count(i => !i.HasValue);
-         TSystemType[] result = new TSystemType[data.Length - nullCount];
+         TSystemType[] result = new TSystemType[data.Length];
          int ir = 0;
-
+         nullCount = 0;
+         
          for(int i = 0; i < data.Length; i++)
          {
             TSystemType? value = data[i];
@@ -89,6 +88,7 @@ namespace Parquet.Data
             if(value == null)
             {
                definitionLevels[i] = 0;
+               nullCount++;
             }
             else
             {
@@ -96,8 +96,8 @@ namespace Parquet.Data
                result[ir++] = value.Value;
             }
          }
-
-         return result;
+         
+         return new ArrayView(result, data.Length - nullCount);
       }
 
       public override int Compare(TSystemType x, TSystemType y)
