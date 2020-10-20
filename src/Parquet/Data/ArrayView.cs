@@ -9,6 +9,7 @@ namespace Parquet.Data
    class ArrayView
    {
       private readonly Array _array;
+      private bool _consumed;
 
       public ArrayView(Array array)
       {
@@ -29,6 +30,7 @@ namespace Parquet.Data
 
       public IEnumerable<T> GetValuesAndReturnArray<T>()
       {
+         AssertNotConsumed();
          T[] typed = (T[]) _array;
          for (int i = 0; i < Count; i++)
          {
@@ -36,10 +38,12 @@ namespace Parquet.Data
          }
 
          ReturnArray();
+         _consumed = true;
       }
 
       public IEnumerable<T> GetValuesAndReturnArray<T>(DataColumnStatistics statistics, IEqualityComparer<T> equalityComparer, IComparer<T> comparer)
       {
+         AssertNotConsumed();
          T[] typed = (T[]) _array;
          if (statistics == null)
          {
@@ -95,6 +99,15 @@ namespace Parquet.Data
          statistics.DistinctCount = hashSet.Count;
 
          ReturnArray();
+         _consumed = true;
+      }
+
+      void AssertNotConsumed()
+      {
+         if (_consumed)
+         {
+            throw new InvalidOperationException("Cannot call GetValuesAndReturnArray twice");
+         }
       }
    }
 }
