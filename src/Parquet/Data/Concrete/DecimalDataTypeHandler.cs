@@ -150,7 +150,7 @@ namespace Parquet.Data.Concrete
       private void WriteAsInt32(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values)
       {
          double scaleFactor = Math.Pow(10, tse.Scale);
-         foreach (decimal d in values.GetValues<decimal>())
+         foreach (decimal d in values.GetValuesAndReturnArray<decimal>())
          {
             try
             {
@@ -194,7 +194,7 @@ namespace Parquet.Data.Concrete
       {
          double scaleFactor = Math.Pow(10, tse.Scale);
 
-         foreach (decimal d in values.GetValues<decimal>())
+         foreach (decimal d in values.GetValuesAndReturnArray<decimal>())
          {
             try
             {
@@ -244,7 +244,7 @@ namespace Parquet.Data.Concrete
 
       private void WriteAsFixedLengthByteArray(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values)
       {
-         foreach (decimal d in values.GetValues<decimal>())
+         foreach (decimal d in values.GetValuesAndReturnArray<decimal>())
          {
             var bd = new BigDecimal(d, tse.Precision, tse.Scale);
             byte[] itemData = bd.ToByteArray();

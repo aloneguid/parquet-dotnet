@@ -129,7 +129,7 @@ namespace Parquet.Data.Concrete
 
       private void WriteAsInt32(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (DateTimeOffset dto in values.GetValues(dataColumnStatistics, this, this))
+         foreach (DateTimeOffset dto in values.GetValuesAndReturnArray(dataColumnStatistics, this, this))
          {
             WriteAsInt32(writer, dto);
          }
@@ -170,7 +170,7 @@ namespace Parquet.Data.Concrete
 
       private void WriteAsInt64(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (DateTimeOffset dto in values.GetValues(dataColumnStatistics, this, this))
+         foreach (DateTimeOffset dto in values.GetValuesAndReturnArray(dataColumnStatistics, this, this))
          {
             WriteAsInt64(writer, dto);
          }
@@ -209,7 +209,7 @@ namespace Parquet.Data.Concrete
 
       private void WriteAsInt96(BinaryWriter writer, ArrayView values, DataColumnStatistics dataColumnStatistics)
       {
-         foreach (DateTimeOffset dto in values.GetValues<DateTimeOffset>(dataColumnStatistics, this, this))
+         foreach (DateTimeOffset dto in values.GetValuesAndReturnArray<DateTimeOffset>(dataColumnStatistics, this, this))
          {
             WriteAsInt96(writer, dto);
          }

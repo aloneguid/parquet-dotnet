@@ -56,7 +56,7 @@ namespace Parquet.Data.Concrete
 
       public override void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
-         foreach(Interval interval in values.GetValues<Interval>())
+         foreach(Interval interval in values.GetValuesAndReturnArray<Interval>())
          {
             writer.Write(interval.Months);
             writer.Write(interval.Days);
