@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Parquet.Data;
 using Parquet.File.Data;
+using Parquet.Thrift;
 
 namespace Parquet.File
 {
@@ -107,14 +108,16 @@ namespace Parquet.File
 
          int i = 0;
          List<string> path = columnChunk.Meta_data.Path_in_schema;
+         int fieldCount = _fileMeta.Schema.Count;
 
          foreach (string pp in path)
          {
-            while(i < _fileMeta.Schema.Count)
+            while(i < fieldCount)
             {
-               if(_fileMeta.Schema[i].Name == pp)
+               SchemaElement schemaElement = _fileMeta.Schema[i];
+               if(string.CompareOrdinal(schemaElement.Name, pp) == 0)
                {
-                  Thrift.SchemaElement se = _fileMeta.Schema[i];
+                  Thrift.SchemaElement se = schemaElement;
 
                   bool repeated = (se.__isset.repetition_type && se.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
                   bool defined = (se.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
