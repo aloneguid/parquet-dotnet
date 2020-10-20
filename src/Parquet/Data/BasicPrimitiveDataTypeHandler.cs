@@ -77,7 +77,7 @@ namespace Parquet.Data
          definitionLevels = IntPool.Rent(data.Length);
          definitionsLength = data.Length;
 
-         TSystemType[] result = new TSystemType[data.Length];
+         WritableArrayView<TSystemType> result = ArrayView.CreateWritable<TSystemType>(data.Length);
          int ir = 0;
          nullCount = 0;
          
@@ -96,8 +96,8 @@ namespace Parquet.Data
                result[ir++] = value.Value;
             }
          }
-         
-         return new ArrayView(result, data.Length - nullCount);
+
+         return result;
       }
 
       public override int Compare(TSystemType x, TSystemType y)

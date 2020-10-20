@@ -78,7 +78,7 @@ namespace Parquet.Data
 
       public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
       {
-         foreach (TSystemType one in values.GetValues(statistics, this, this))
+         foreach (TSystemType one in values.GetValuesAndReturnArray(statistics, this, this))
          {
             WriteOne(writer, one);
          }
@@ -129,7 +129,7 @@ namespace Parquet.Data
          definitionsLength = data.Length;
 
          nullCount = 0;
-         TNullable[] result = new TNullable[data.Length];
+         WritableArrayView<TNullable> result = ArrayView.CreateWritable<TNullable>(data.Length);
          int ir = 0;
 
          for (int i = 0; i < data.Length; i++)
@@ -147,8 +147,8 @@ namespace Parquet.Data
                result[ir++] = value;
             }
          }
-         
-         return new ArrayView(result, data.Length - nullCount);
+
+         return result;
       }
 
       protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)

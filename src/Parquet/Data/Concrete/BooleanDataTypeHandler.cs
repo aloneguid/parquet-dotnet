@@ -50,7 +50,7 @@ namespace Parquet.Data.Concrete
          byte[] buffer = new byte[values.Count / 8 + 1];
          int ib = 0;
 
-         foreach (bool flag in values.GetValues<bool>())
+         foreach (bool flag in values.GetValuesAndReturnArray<bool>())
          {
             if (flag)
             {

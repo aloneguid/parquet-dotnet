@@ -8,30 +8,37 @@ namespace Parquet.Data
    /// </summary>
    class ArrayView
    {
-      readonly Array _array;
+      private readonly Array _array;
 
-      public ArrayView(Array array, int count)
+      public ArrayView(Array array)
       {
-         Count = count;
+         Count = array.Length;
          _array = array;
       }
 
-      public ArrayView(Array array) : this(array, array.Length)
+      public static WritableArrayView<T> CreateWritable<T>(int length)
+      {
+         return new WritableArrayView<T>(length);
+      }
+
+      public virtual int Count { get; }
+
+      protected virtual void ReturnArray()
       {
       }
 
-      public int Count { get; }
-
-      public IEnumerable<T> GetValues<T>()
+      public IEnumerable<T> GetValuesAndReturnArray<T>()
       {
          T[] typed = (T[]) _array;
          for (int i = 0; i < Count; i++)
          {
             yield return typed[i];
          }
+
+         ReturnArray();
       }
 
-      public IEnumerable<T> GetValues<T>(DataColumnStatistics statistics, IEqualityComparer<T> equalityComparer, IComparer<T> comparer)
+      public IEnumerable<T> GetValuesAndReturnArray<T>(DataColumnStatistics statistics, IEqualityComparer<T> equalityComparer, IComparer<T> comparer)
       {
          T[] typed = (T[]) _array;
          if (statistics == null)
@@ -40,6 +47,8 @@ namespace Parquet.Data
             {
                yield return typed[i];
             }
+
+            ReturnArray();
 
             yield break;
          }
@@ -56,7 +65,7 @@ namespace Parquet.Data
          {
             T current = typed[i];
             yield return current;
-            
+
             hashSet.Add(current);
 
             if (i == 0)
@@ -84,6 +93,8 @@ namespace Parquet.Data
          statistics.MinValue = min;
          statistics.MaxValue = max;
          statistics.DistinctCount = hashSet.Count;
+
+         ReturnArray();
       }
    }
 }
