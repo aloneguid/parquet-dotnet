@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Parquet.Data;
 using Parquet.File.Data;
 using Parquet.Thrift;
@@ -284,6 +283,8 @@ namespace Parquet.File
 
       class ThriftSchemaTree
       {
+         readonly Dictionary<SchemaElement, Node> _memoizedFindResults = new Dictionary<SchemaElement, Node>();
+         
          public class Node
          {
             public Thrift.SchemaElement element;
@@ -303,7 +304,13 @@ namespace Parquet.File
 
          public Node Find(Thrift.SchemaElement tse)
          {
-            return Find(root, tse);
+            if (_memoizedFindResults.TryGetValue(tse, out Node node))
+            {
+               return node;
+            }
+            node = Find(root, tse);
+            _memoizedFindResults.Add(tse, node);
+            return node;
          }
 
          private Node Find(Node root, Thrift.SchemaElement tse)
