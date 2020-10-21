@@ -100,6 +100,9 @@ namespace Parquet.File
          return path;
       }
 
+      // could use value tuple, would that nuget ref be ok to bring in?
+      readonly Dictionary<StringListComparer, Tuple<int, int>> _memoizedLevels = new Dictionary<StringListComparer, Tuple<int, int>>();
+
       public void GetLevels(Thrift.ColumnChunk columnChunk, out int maxRepetitionLevel, out int maxDefinitionLevel)
       {
          maxRepetitionLevel = 0;
@@ -107,6 +110,15 @@ namespace Parquet.File
 
          int i = 0;
          List<string> path = columnChunk.Meta_data.Path_in_schema;
+
+         var comparer = new StringListComparer(path);
+         if (_memoizedLevels.TryGetValue(comparer, out Tuple<int, int> t))
+         {
+            maxRepetitionLevel = t.Item1;
+            maxDefinitionLevel = t.Item2;
+            return;
+         }
+
          int fieldCount = _fileMeta.Schema.Count;
 
          foreach (string pp in path)
@@ -130,6 +142,8 @@ namespace Parquet.File
                i++;
             }
          }
+         
+         _memoizedLevels.Add(comparer, Tuple.Create(maxRepetitionLevel, maxDefinitionLevel));
       }
 
       public Thrift.SchemaElement[] GetWriteableSchema()
