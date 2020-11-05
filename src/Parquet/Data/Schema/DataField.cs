@@ -29,6 +29,9 @@ namespace Parquet.Data
       /// </summary>
       public Type ClrType { get; private set; }
 
+      /// <summary>
+      /// Unsupported, use at your own risk!
+      /// </summary>
       public Type ClrNullableIfHasNullsType { get; private set; }
 
       /// <summary>
