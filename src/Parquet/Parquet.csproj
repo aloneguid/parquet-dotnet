@@ -27,7 +27,7 @@ Linux, Windows and Mac are first class citizens, but also works everywhere .NET 
       <SymbolPackageFormat>snupkg</SymbolPackageFormat>
       <Authors>Ivan Gavryliuk (@aloneguid)</Authors>
       <Product />
-      <PackageLicenseExpression>https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE</PackageLicenseExpression>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/aloneguid/parquet-dotnet</PackageProjectUrl>
       <RepositoryUrl>https://github.com/aloneguid/parquet-dotnet</RepositoryUrl>
       <RepositoryType>GitHub</RepositoryType>
