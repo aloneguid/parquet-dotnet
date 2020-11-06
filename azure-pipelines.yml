@@ -22,7 +22,11 @@ pr:
 variables:
   - group: 'External Resources'
   - name: vmImage
-    value: 'ubuntu-16.04'  # see https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml&viewFallbackFrom=vsts
+    value: 'ubuntu-latest'  # see https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml&viewFallbackFrom=vsts
+  - name: v
+    value: 3.8.0
+  - name: av
+    value: 3.0.0
 
 stages:
 - stage: Build
@@ -34,33 +38,13 @@ stages:
 
     steps:
 
-    - task: UseDotNet@2
-      inputs:
-        packageType: 'sdk'
-        version: '3.x'
-
-    - task: petersendev.dotnet-global-tool-installer.DotnetGlobalToolInstaller.DotnetGlobalToolInstaller@0
-      displayName: 'install housework'
-      inputs:
-        name: housework
-
-    - script: 'housework author src/*.csproj -s build.ini -r'
-      displayName: 'author projects'
-
-    - script: 'housework substitute ./src/Parquet/ThriftFooter.cs -s build.ini -r'
-      displayName: 'subst sources'
-
-    - script: 'housework setbuildnumber %Version% -s build.ini'
-      displayName: 'set build number'
-
-    - script: 'housework pushvars Version -s build.ini'
-      displayName: 'push variables'
+    - script: echo "##vso[build.updatebuildnumber]$(pv)"
 
     - task: DotNetCoreCLI@2
       displayName: 'build all'
       inputs:
         projects: src/Parquet.sln
-        arguments: '-c release'
+        arguments: '-c release /p:Version=$(v) /p:FileVersion=$(v) /p:AssemblyVersion=$(av)'
 
     - task: CopyFiles@2
       displayName: 'copy generated nugets'
