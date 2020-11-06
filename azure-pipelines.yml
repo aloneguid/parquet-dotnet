@@ -38,7 +38,7 @@ stages:
 
     steps:
 
-    - script: echo "##vso[build.updatebuildnumber]$(pv)"
+    - script: echo "##vso[build.updatebuildnumber]$(v)"
 
     - task: DotNetCoreCLI@2
       displayName: 'build all'
