@@ -16,6 +16,46 @@ namespace Parquet.Test
    public class ParquetReaderTest : TestBase
    {
       [Fact]
+      public void Reads_out_of_order()
+      {
+         using var reader = new ParquetReader(
+            OpenTestFile("running_numbers_spark.gz.parquet"), 
+            leaveStreamOpen: false);
+
+         DataColumn[] data = reader.ReadEntireRowGroup();
+         int expectedRows = 10000;
+
+         int[] runningNumbers = ((int[])data[0].Data).ToArray();
+         string[] text = ((string[])data[1].Data).ToArray();
+
+         Assert.Equal(expectedRows, runningNumbers.Length);
+         Assert.Equal(expectedRows, text.Length);
+
+         for (int i = 0; i < expectedRows; i++)
+         {
+            int num = runningNumbers[i];
+            if (num % 100 == 0)
+            {
+               Assert.Null(text[i]);
+            }
+            else
+            {
+               int txtIndex = num % 10;
+               string expected = string.Join("", Enumerable.Repeat(txtIndex.ToString() + ", ", 1000));
+               string actual = text[i];
+
+               Assert.True(expected == actual, @$"Text doesn't match at Row {i}: 
+expected: 
+{expected}
+
+actual:
+{actual}");
+            }
+
+         }
+      }
+
+      [Fact]
       public void Opening_null_stream_fails()
       {
          Assert.Throws<ArgumentNullException>(() => new ParquetReader(null));
