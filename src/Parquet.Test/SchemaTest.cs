@@ -134,12 +134,6 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Cannot_use_dots_in_field_names()
-      {
-         Assert.Throws<ArgumentException>(() => new DataField<int>("one.two"));
-      }
-
-      [Fact]
       public void Identical_structs_field_are_equal()
       {
          Assert.Equal(
