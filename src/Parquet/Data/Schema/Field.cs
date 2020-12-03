@@ -50,12 +50,6 @@ namespace Parquet.Data
       protected Field(string name, SchemaType schemaType)
       {
          Name = name ?? throw new ArgumentNullException(nameof(name));
-
-         if(Name.Contains(Schema.PathSeparator))
-         {
-            throw new ArgumentException($"'{Schema.PathSeparator}' is not allowed in field name as it's used in Apache Parquet format as field path separator.");
-         }
-
          SchemaType = schemaType;
          Path = name;
       }
