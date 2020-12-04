@@ -25,11 +25,13 @@ namespace Parquet
       /// </param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
       /// <param name="rowGroupSize"></param>
+      /// <param name="append"></param>
       /// <returns></returns>
       public static Schema Serialize<T>(IEnumerable<T> objectInstances, Stream destination,
          Schema schema = null,
          CompressionMethod compressionMethod = CompressionMethod.Snappy,
-         int rowGroupSize = 5000)
+         int rowGroupSize = 5000,
+         bool append = false)
          where T : new()
       {
          if (objectInstances == null) throw new ArgumentNullException(nameof(objectInstances));
@@ -42,7 +44,7 @@ namespace Parquet
             schema = SchemaReflector.Reflect<T>();
          }
 
-         using (var writer = new ParquetWriter(schema, destination))
+         using (var writer = new ParquetWriter(schema, destination, append: append))
          {
             writer.CompressionMethod = compressionMethod;
 
@@ -80,15 +82,19 @@ namespace Parquet
       /// written to the stream. If you want to write only a subset of class properties please specify the schema yourself.
       /// </param>
       /// <param name="compressionMethod"><see cref="CompressionMethod"/></param>
+      /// <param name="rowGroupSize"></param>
+      /// <param name="append"></param>
       /// <returns></returns>
       public static Schema Serialize<T>(IEnumerable<T> objectInstances, string filePath,
          Schema schema = null,
-         CompressionMethod compressionMethod = CompressionMethod.Snappy)
+         CompressionMethod compressionMethod = CompressionMethod.Snappy,
+         int rowGroupSize = 5000,
+         bool append = false)
          where T : new()
       {
          using (Stream destination = System.IO.File.Create(filePath))
          {
-            return Serialize(objectInstances, destination, schema, compressionMethod);
+            return Serialize(objectInstances, destination, schema, compressionMethod, rowGroupSize, append);
          }
       }
 
