@@ -95,6 +95,54 @@ namespace Parquet.Test.Serialisation
       }
 
       [Fact]
+      public void Serialize_append_deserialise()
+      {
+         DateTime now = DateTime.Now;
+
+         IEnumerable<SimpleStructure> structures = Enumerable
+            .Range(0, 5)
+            .Select(i => new SimpleStructure
+            {
+               Id = i,
+               NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+               Name = $"row {i}",
+               Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+            });
+
+         IEnumerable<SimpleStructure> appendStructures = Enumerable
+            .Range(5, 5)
+            .Select(i => new SimpleStructure
+            {
+               Id = i,
+               NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+               Name = $"row {i}",
+               Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+            });
+
+         using (var ms = new MemoryStream())
+         {
+            ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            ParquetConvert.Serialize(appendStructures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2, append: true);
+
+            ms.Position = 0;
+
+            SimpleStructure[] structures2 = ParquetConvert.Deserialize<SimpleStructure>(ms);
+
+            SimpleStructure[] structuresArray = structures.Concat(appendStructures).ToArray();
+
+            Assert.Equal(structuresArray.Length, structures2.Length);
+            for (int i = 0; i < structuresArray.Length; i++)
+            {
+               Assert.Equal(structuresArray[i].Id, structures2[i].Id);
+               Assert.Equal(structuresArray[i].NullableId, structures2[i].NullableId);
+               Assert.Equal(structuresArray[i].Name, structures2[i].Name);
+               Assert.Equal(structuresArray[i].Date, structures2[i].Date);
+            }
+         }
+      }
+
+      [Fact]
       public void Serialise_deserialise_renamed_column()
       {
          IEnumerable<SimpleRenamed> structures = Enumerable
