@@ -40,6 +40,11 @@ stages:
 
     - script: echo "##vso[build.updatebuildnumber]$(v)"
 
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '5.x'
+
     - task: DotNetCoreCLI@2
       displayName: 'build all'
       inputs:
@@ -92,7 +97,7 @@ stages:
     - task: UseDotNet@2
       inputs:
         packageType: 'sdk'
-        version: '3.x'
+        version: '5.x'
     - task: DotNetCoreCLI@2
       displayName: 'run tests'
       inputs:
