@@ -108,7 +108,6 @@ namespace Parquet.CLI
          Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.WithProperty("Version", app.Version)
-            .WriteTo.ApplicationInsights("aaf3c0f7-dc49-466c-848d-49ccfcdf86fe", TelemetryConverter.Events)
             .WriteTo.Trace()
             .CreateLogger();
 
