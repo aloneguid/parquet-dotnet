@@ -66,17 +66,6 @@ stages:
       inputs:
         ArtifactName: nuget
 
-    - task: NuGetCommand@2
-      condition: "ne(variables['Build.SourceBranch'], 'refs/heads/master')"
-      displayName: 'push to internal feed'
-      continueOnError: true
-      inputs:
-        command: 'push'
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
-        nuGetFeedType: 'internal'
-        publishVstsFeed: '4bab84c0-90f7-4425-afc6-ba077aa9757e/941c9975-4811-42dd-bd79-3cf33878bf77'
-        allowPackageConflicts: true
-
 - stage: Test
   #condition: succeeded('Build')
   dependsOn: [] # remove explicit dependency, so it runs in parallel
