@@ -118,4 +118,4 @@ stages:
               command: 'push'
               packagesToPush: '$(System.ArtifactsDirectory)/nuget/*.nupkg'
               nuGetFeedType: 'external'
-              publishFeedCredentials: 'nuget.org (aloneguid)'
+              publishFeedCredentials: 'nuget.org'
