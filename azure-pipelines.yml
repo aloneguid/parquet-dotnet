@@ -115,7 +115,7 @@ stages:
           - task: NuGetCommand@2
             displayName: nuget.org
             inputs:
-              command: push
+              command: 'push'
               packagesToPush: '$(System.ArtifactsDirectory)/nuget/*.nupkg'
-              nuGetFeedType: external
+              nuGetFeedType: 'external'
               publishFeedCredentials: 'nuget.org (aloneguid)'
