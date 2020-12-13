@@ -108,7 +108,7 @@ namespace Parquet.File.Values
          int mask = MaskForBits(bitWidth);
 
          int i = 0;
-         int b = rawBytes[i];
+         uint b = rawBytes[i];
          int total = byteCount * 8;
          int bwl = 8;
          int bwr = 0;
@@ -122,7 +122,7 @@ namespace Parquet.File.Values
             }
             else if (bwl - bwr >= bitWidth)
             {
-               int r = ((b >> bwr) & mask);
+               int r = (int)((b >> bwr) & mask);
                total -= bitWidth;
                bwr += bitWidth;
 
@@ -131,7 +131,7 @@ namespace Parquet.File.Values
             else if (i + 1 < byteCount)
             {
                i += 1;
-               b |= (rawBytes[i] << bwl);
+               b |= (uint)(rawBytes[i] << bwl);
                bwl += 8;
             }
          }
