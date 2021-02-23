@@ -23,7 +23,7 @@ variables:
   - name: vmImage
     value: 'ubuntu-latest'  # see https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml&viewFallbackFrom=vsts
   - name: v
-    value: 3.8.4
+    value: 3.8.5
   - name: av
     value: 3.0.0
 
