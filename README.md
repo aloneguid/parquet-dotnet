@@ -8,10 +8,6 @@
 
 > Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor this project, please click the `Sponsor` button above and choose one of the available options.💰
 
-| Build | Test |
-|------------|----------------|
-|![Azure DevOps builds (branch)](https://img.shields.io/azure-devops/build/aloneguid/4bab84c0-90f7-4425-afc6-ba077aa9757e/67/master?label=master)|![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28Linux%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28Windows%29)<br>![Azure DevOps tests (branch)](https://img.shields.io/azure-devops/tests/aloneguid/AllPublic/67/master?label=master%20%28MacOSX%29)|
-
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 
 - `.NET 4.5` and up.
