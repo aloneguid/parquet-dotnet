@@ -277,7 +277,11 @@ namespace Parquet.File
          }
          else
          {
-            offset += RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset, maxReadCount);
+            int length = GetRemainingLength(reader);
+            if (length != 0)
+            {
+               offset += RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset, maxReadCount);
+            }
          }
 
          return offset - start;
