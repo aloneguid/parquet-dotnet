@@ -274,7 +274,7 @@ namespace Parquet.File
 
       private Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container)
       {
-         var root = new Thrift.SchemaElement("parquet-dotnet-schema");
+         var root = new Thrift.SchemaElement("root");
          container.Add(root);
          return root;
       }

@@ -265,8 +265,10 @@ namespace Parquet.File
          int start = offset;
          int bitWidth = reader.ReadByte();
 
+         int length = GetRemainingLength(reader);
+
          //when bit width is zero reader must stop and just repeat zero maxValue number of times
-         if (bitWidth == 0)
+         if (bitWidth == 0 || length == 0)
          {
             for (int i = 0; i < maxReadCount; i++)
             {
