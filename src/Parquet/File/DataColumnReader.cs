@@ -277,7 +277,6 @@ namespace Parquet.File
          }
          else
          {
-            int length = GetRemainingLength(reader);
             if (length != 0)
             {
                offset += RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset, maxReadCount);
