@@ -10,10 +10,13 @@
 
 **Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 
-- `.NET 4.5` and up.
+- `.NET 5.0`
 - `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
+- `.NET 4.6.1` and up via `.NET Standard 1.4`
 
 Runs on all flavors of Windows, Linux, MacOSX, mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
+
+Support for Tizen and Web Assembly is coming.
 
 > Performs integration tests with **parquet-mr** (original Java parquet implementation) to test for identical behavior. We are planning to add more third-party platforms integration as well.
 
@@ -49,7 +52,6 @@ All the parties in this test were given 10 iteration and time was taken as an av
 - [Fast Automatic Serialisation](doc/serialisation.md)
 - [Declaring Schema](doc/schema.md)
   - [Supported Types](doc/types.md)
-- **[parq!!!](doc/parq.md)**
 - [Sponsorship](#sponsorship)
 
 You can track the [amount of features we have implemented so far](doc/features.md).
