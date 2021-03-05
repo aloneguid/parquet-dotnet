@@ -1,8 +1,0 @@
-# Performance
-
-
-
-## Compression
-
-### Snappy
-

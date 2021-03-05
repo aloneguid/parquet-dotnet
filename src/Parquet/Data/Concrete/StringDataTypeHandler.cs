@@ -7,9 +7,11 @@ namespace Parquet.Data.Concrete
 {
    class StringDataTypeHandler : BasicDataTypeHandler<string>
    {
-      private static readonly Encoding E = Encoding.UTF8;
+      private static readonly UTF8Encoding E = new UTF8Encoding();
       private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
       private static readonly ArrayPool<string> _stringPool = ArrayPool<string>.Shared;
+
+      private static byte[] _encodingBuf;
       
       public StringDataTypeHandler() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8)
       {
@@ -116,12 +118,26 @@ namespace Parquet.Data.Concrete
          else
          {
             //transofrm to byte array first, as we need the length of the byte buffer, not string length
-            byte[] data = E.GetBytes(value);
+
+            int needLength = value.Length * 3;
+            if(_encodingBuf == null || _encodingBuf.Length < needLength)
+            {
+               if(_encodingBuf != null)
+               {
+                  _bytePool.Return(_encodingBuf);
+               }
+
+               _encodingBuf = _bytePool.Rent(needLength);
+            }
+
+            // this can write directly to buffer after I kill binarystream
+            int bytesWritten = E.GetBytes(value, 0, value.Length, _encodingBuf, 0);
+
             if (includeLengthPrefix)
             {
-               writer.Write(data.Length);
+               writer.Write(bytesWritten);
             }
-            writer.Write(data);
+            writer.Write(_encodingBuf, 0, bytesWritten);
          }
       }
 

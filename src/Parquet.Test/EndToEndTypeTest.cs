@@ -1,11 +1,9 @@
 ﻿using Parquet.Data;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using Xunit;
 using Parquet.File.Values.Primitives;
-using NetBox.Extensions;
 using System.Linq;
 
 namespace Parquet.Test

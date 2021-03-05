@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NetBox.Extensions;
 using Parquet.Attributes;
 using Parquet.Data;
 using Parquet.Serialization;

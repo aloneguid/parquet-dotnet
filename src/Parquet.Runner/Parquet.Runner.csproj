@@ -9,7 +9,7 @@
    </PropertyGroup>
 
    <ItemGroup>
-      <PackageReference Include="NetBox" Version="2.5.1" />
+     <Compile Include="..\Parquet.Test\Extensions\NetBox.cs" Link="NetBox.cs" />
    </ItemGroup>
 
    <ItemGroup>

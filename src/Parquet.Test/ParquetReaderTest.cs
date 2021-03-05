@@ -6,7 +6,6 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Xunit;
-using NetBox.Extensions;
 using NetBox.Generator;
 using Parquet.Data.Rows;
 using System.Linq;
@@ -151,10 +150,10 @@ namespace Parquet.Test
          using (var reader = new ParquetReader(OpenTestFile("/special/multi_page_dictionary_with_nulls.parquet")))
          {
             DataColumn[] columns = reader.ReadEntireRowGroup();
-            var rg = reader.OpenRowGroupReader(0);
+            ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
 
             // reading columns
-            var data = (string[]) columns[0].Data;
+            string[] data = (string[]) columns[0].Data;
          
             // ground truth from spark
             // check page boundary (first page contains 107432 rows)

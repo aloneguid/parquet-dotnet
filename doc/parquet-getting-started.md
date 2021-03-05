@@ -25,6 +25,5 @@ There are already working implementations in other languages we find useful to c
 
 ## 3rd Party Libraries
 
-[Snappy Sharp](https://github.com/jeffesp/Snappy.Sharp) is used to compress and decompress via Snappy Algorithm
-
+[Snappy Sharp](https://github.com/jeffesp/Snappy.Sharp) was used to compress and decompress via Snappy Algorithm. It is now replaced by my own implementation [IronSnappy](https://github.com/aloneguid/IronSnappy).
 

@@ -1,4 +1,4 @@
-﻿# Apache Parquet for .Net Platform
+# Apache Parquet for .Net Platform
 
 ![Icon](doc/img/banner.svg)
 
@@ -6,23 +6,23 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) ![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)
 
-> Parquet.Net is developed *mostly by myself*, and although I'm trying to invest some time in this project, it's not always possible to cut out time from my daily job or evenings. If you feel you'd like to sponsor this project, please click the `Sponsor` button above and choose one of the available options.💰
+**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
 
-**Fully managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports:
-
-- `.NET 5.0`
+- `.NET 5.0`, `.NET Core 3.1 (LTS)`, `.NET Core 2.1 (LTS)`.
 - `.NET Standard 1.4` and up (for those who are in a tank that means it supports `.NET Core` (all versions) implicitly)
-- `.NET 4.6.1` and up via `.NET Standard 1.4`
+- `.NET 4.6.1` and up via `.NET Standard 1.4`. 
 
-Runs on all flavors of Windows, Linux, MacOSX, mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
+Runs on all flavours of Windows, Linux, MacOS, mobile devices (iOS, Android) via [Xamarin](https://www.xamarin.com/), [gaming consoles](doc/xboxone.md) or anywhere .NET Standard runs which is a lot!
 
-Support for Tizen and Web Assembly is coming.
+Support Web Assembly is coming (email me if you are interested in details).
 
-> Performs integration tests with **parquet-mr** (original Java parquet implementation) to test for identical behavior. We are planning to add more third-party platforms integration as well.
+> Performs integration tests with **parquet-mr** (original Java parquet implementation) to test for identical behaviour. I am planning to add more third-party platforms integration as well.
 
 ## Why
 
-Parquet library is mostly available for [Java](https://github.com/apache/parquet-mr), [C++](https://github.com/apache/parquet-cpp) and [Python](https://github.com/dask/fastparquet), which somewhat limits .NET/C# platform in big data applications. Whereas C# is a beautiful language (C# is just Java done right) working on all platforms and devices, we still don't have anything good in this area. Note that [ParquetSharp](https://github.com/G-Research/ParquetSharp) provides a P/Invoke wrapper around parquet-cpp library, however it's a windows-only version with plenty of limitations around usability, is generally slower and leaks memory.
+Parquet is a de facto physical storage format in big data applications, including [Apache Spark](https://spark.apache.org/), as well as newly emerging [Delta Lake](https://delta.io/) and lakehouse architectures. It's really easy to read and write data if you are using one of those platforms, however outside of them using Parquet is very hard or impossible. The easiest way to read and write parquet is [using PyArrow](https://arrow.apache.org/docs/python/parquet.html), and good luck with any other approach (Java or C++ versions are unusable in their raw form).
+
+Note that [ParquetSharp](https://github.com/G-Research/ParquetSharp) provides a P/Invoke wrapper around parquet-cpp library with [all the consequences](doc/parquetsharp.md).
 
 ## Who
 
@@ -58,7 +58,7 @@ You can track the [amount of features we have implemented so far](doc/features.m
 
 ## Getting started
 
-**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net). All the code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package. This also means the library works on **Windows**, **Linux** and **MacOS X**.
+**Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net). All the code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package. This also means the library works on **Windows**, **Linux** and **MacOS X** (including M1).
 
 ### General
 
@@ -141,15 +141,16 @@ using (Stream fileStream = System.IO.File.Create("c:\\test.parquet"))
 
 ### Row-Based Access
 
-Parquet.Net includes [API for row-based access](doc/rows.md) that simplify parquet programming at the expense of memory, speed and flexibility. We recommend using column based approacha when you can (examples above) however if not possible use these API as we constantly optimise for speed and use them internally outselves in certain situations.
+Parquet.Net includes [API for row-based access](doc/rows.md) that simplify parquet programming at the expense of memory, speed and flexibility. We recommend using column based approach when you can (examples above) however if not possible use these API as we constantly optimise for speed and use them internally ourselves in certain situations.
 
-## License
+## Who Uses Parquet.Net?
 
-Parquet.Net is licensed under the [MIT license](https://github.com/aloneguid/parquet-dotnet/blob/master/LICENSE).
+- [ML.NET](https://github.com/dotnet/machinelearning).
+- Some parts of the popular [RavenDB NoSQL](https://ravendb.net/) database engine.
+- Native Windows [Parquet Viewer app](https://github.com/mukunku/ParquetViewer).
+- [Recfluence](https://github.com/markledwich2/Recfluence) YouTube analytics.
 
-## Privacy
-
-Your privacy is important to us. Full details are specified in the [privacy statement](/doc/PRIVACY.md). 
+and [many more](https://github.com/aloneguid/parquet-dotnet/network/dependents). Want to be listed here? Just raise a PR.
 
 ## Contributing
 
@@ -164,15 +165,3 @@ This framework is free and can be used for free, open source and commercial appl
 The core team members, Parquet.Net contributors and contributors in the ecosystem do this open source work in their free time. If you use Parquet.Net, and you'd like us to invest more time on it, please donate by pressing the ❤ **Sponsor** button on top of this page. This project increases your income/productivity/usability too.
 
 If your company/project is using Parquet.Net we'd be happy to list your logo here on the front page with your kind permission, absolutely for free. Please contact [ivan.gavryliuk@outlook.com](mailto:ivan.gavryliuk@outlook.com) with details and graphics attached.
-
-### Why charge/sponsor for open source?
-
- * [Open-Source Maintainers are Jerks! | Nick Randolph & Geoffrey Huntley](https://vimeo.com/296579853)
- * [FOSS is free as in toilet | Geoffroy Couprie](http://unhandledexpression.com/general/2018/11/27/foss-is-free-as-in-toilet.html)
- * [How to Charge for your Open Source | Mike Perham](https://www.mikeperham.com/2015/11/23/how-to-charge-for-your-open-source/)
- * [Sustain OSS: The Report](https://sustainoss.org/assets/pdf/SustainOSS-west-2017-report.pdf)
- * [Open Source Maintainers Owe You Nothing | Mike McQuaid](https://mikemcquaid.com/2018/03/19/open-source-maintainers-owe-you-nothing/)
- * [Who should fund open source projects? | Jane Elizabeth](https://jaxenter.com/who-funds-open-source-projects-133222.html)
- * [Apply at OSS Inc today | Ryan Chenkie](https://twitter.com/ryanchenkie/status/1067801413974032385)
- * [The Ethics of Unpaid Labor and the OSS Community | Ashe Dryden](https://www.ashedryden.com/blog/the-ethics-of-unpaid-labor-and-the-oss-community)
-
