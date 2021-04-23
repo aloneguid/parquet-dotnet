@@ -84,6 +84,8 @@ namespace Parquet.Serialization
                r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
             if (handler.ClrType == typeof(DateTime) || handler.ClrType == typeof(DateTimeOffset))
                r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.HasNulls, r.IsArray);
+            if (handler.ClrType == typeof(decimal))
+               r = new DecimalDataField(r.Name, columnAttr.DecimalPrecision, columnAttr.DecimalScale, columnAttr.DecimalForceByteArrayEncoding, r.HasNulls, r.IsArray);
          }
 
          r.ClrPropName = property.Name;
