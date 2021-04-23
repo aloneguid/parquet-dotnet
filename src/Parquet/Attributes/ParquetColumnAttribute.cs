@@ -40,5 +40,20 @@ namespace Parquet.Attributes
       /// DateTimeFormat. Impala or DateAndTime or Date
       /// </summary>
       public DateTimeFormat DateTimeFormat { get; set; }
+
+      /// <summary>
+      /// Precision for decimal fields
+      /// </summary>
+      public int DecimalPrecision { get; set; }
+
+      /// <summary>
+      /// Scale for decimal fields
+      /// </summary>
+      public int DecimalScale { get; set; }
+
+      /// <summary>
+      /// Should this decimal field force byte array encoding?
+      /// </summary>
+      public bool DecimalForceByteArrayEncoding { get; set; }
    }
 }
