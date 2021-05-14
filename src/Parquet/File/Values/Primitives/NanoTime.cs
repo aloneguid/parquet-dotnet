@@ -50,12 +50,12 @@ namespace Parquet.File.Values.Primitives
          int Month = (int)(J + 2 - 12 * L);
          int Year = (int)(100 * (N - 49) + I + L);
 
-         double ms = nanoTime._timeOfDayNanos / 1000000D;
+         long timeOfDayTicks = nanoTime._timeOfDayNanos / 100;
 
          var result = new DateTimeOffset(Year, Month, Day,
             0, 0, 0,
             TimeSpan.Zero);
-         result = result.AddMilliseconds(ms);
+         result = result.AddTicks(timeOfDayTicks);
 
          return result;
       }
