@@ -64,7 +64,7 @@ namespace Parquet.Data
       /// <summary>
       /// Data field
       /// </summary>
-      public DataField Field { get; private set; }
+      public DataField Field { get; set; }
 
       /// <summary>
       /// When true, this field has repetitions. It doesn't mean that it's an array though. This property simply checks that
