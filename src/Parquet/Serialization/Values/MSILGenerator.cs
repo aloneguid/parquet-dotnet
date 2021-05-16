@@ -18,6 +18,7 @@ namespace Parquet.Serialization.Values
          DateTimeOffsetToDateTimeConversion.Instance,
          NullableDateTimeToDateTimeOffsetConversion.Instance,
          NullableDateTimeOffsetToDateTimeConversion.Instance,
+         NullableBooleanToBooleanConversion.Instance
       };
 
       public delegate object PopulateListDelegate(object instances,
@@ -139,9 +140,7 @@ namespace Parquet.Serialization.Values
 
       public AssignArrayDelegate GenerateAssigner(DataColumn dataColumn, Type classType)
       {
-         DataField fileField = dataColumn.Field;
-         Schema typeSchema = SchemaReflector.Reflect(classType);
-         DataField typeField = typeSchema.FindDataField(fileField.Path);
+         DataField typeField = dataColumn.Field;
 
          Type[] methodArgs = { typeof(DataColumn), typeof(Array) };
          var runMethod = new DynamicMethod(
@@ -321,6 +320,18 @@ namespace Parquet.Serialization.Values
             il.Emit(OpCodes.Call, method);
          }
       }
+
+      sealed class NullableBooleanToBooleanConversion : TypeConversion<Boolean?, Boolean>
+      {
+         public static readonly TypeConversion<Boolean?, Boolean> Instance = new NullableBooleanToBooleanConversion();
+
+         private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableBooleanToBooleanConversion");
+
+         public override void Emit(ILGenerator il)
+         {
+            il.Emit(OpCodes.Call, method);
+         }
+      }
    }
 
    /// <summary>
@@ -357,6 +368,18 @@ namespace Parquet.Serialization.Values
       {
          if (value == null) { return null; }
          return new DateTimeOffset(value.Value);
+      }
+
+      /// <summary>
+      /// Convert Boolean? to Boolean
+      /// </summary>
+      /// <param name="value">Boolean?</param>
+      /// <returns>Boolean</returns>
+      public static Boolean NullableBooleanToBooleanConversion(Boolean? value)
+      {
+         if (!value.HasValue) { return false; }
+         return value.Value;
+
       }
    }
 }

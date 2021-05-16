@@ -127,6 +127,13 @@ namespace Parquet.File
                _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Max_value));
          }
 
+         // Fix for nullable booleans
+         if (finalColumn.Data.GetType().GetElementType() == typeof(Boolean?))
+         {
+            finalColumn.Field.ClrNullableIfHasNullsType = DataTypeFactory.Match(finalColumn.Field.DataType).ClrType.GetNullable();
+            _dataField.ClrNullableIfHasNullsType = DataTypeFactory.Match(finalColumn.Field.DataType).ClrType.GetNullable();
+         }
+
          return finalColumn;
       }
 
