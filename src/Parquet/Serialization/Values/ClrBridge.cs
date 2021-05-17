@@ -11,7 +11,7 @@ namespace Parquet.Serialization.Values
    {
       private readonly Type _classType;
       private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate> _collectorKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate>();
-      private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate> _assignerKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate>();
+      //private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate> _assignerKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate>();
 
       public ClrBridge(Type classType)
       {
@@ -37,7 +37,7 @@ namespace Parquet.Serialization.Values
       public void AssignColumn(DataColumn dataColumn, Array classInstances)
       {
          var key = new TypeCachingKey(_classType, dataColumn.Field);
-         MSILGenerator.AssignArrayDelegate assignColumn = _assignerKeyToTag.GetOrAdd(key, (_) => new MSILGenerator().GenerateAssigner(dataColumn, _classType));
+         MSILGenerator.AssignArrayDelegate assignColumn = new MSILGenerator().GenerateAssigner(dataColumn, _classType);
          assignColumn(dataColumn, classInstances);
       }
    }
