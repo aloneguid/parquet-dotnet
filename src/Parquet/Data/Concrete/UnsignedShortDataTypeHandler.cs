@@ -1,11 +1,10 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace Parquet.Data.Concrete
 {
-   class UnsignedInt16DataTypeHandler : BasicPrimitiveDataTypeHandler<UInt16>
+   class UnsignedShortDataTypeHandler : BasicPrimitiveDataTypeHandler<ushort>
    {
-      public UnsignedInt16DataTypeHandler() : base(DataType.UnsignedInt16, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16)
+      public UnsignedShortDataTypeHandler() : base(DataType.UnsignedShort, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16)
       {
 
       }
