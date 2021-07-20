@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Parquet.Data;
 using Parquet.Data.Rows;
@@ -56,6 +57,37 @@ namespace Parquet.Test.Rows
 
          //validate data
          Assert.True(table.Equals(table2, true));
+      }
+
+      [Fact]
+      public async Task Flat_concurrent_write_read()
+      {
+         var schema = new Schema(
+            new DataField<int>("id"),
+            new DataField<string>("city"));
+
+         var inputTables = new List<Table>();
+         for (int i = 0; i < 10; i++)
+         {
+            var table = new Table(schema);
+            for (int j = 0; j < 10; j++)
+            {
+               table.Add(new Row(i, $"record#{i},{j}"));
+            }
+
+            inputTables.Add(table);
+         }
+
+         var tasks = inputTables
+               .Select(t => Task.Run(() => WriteRead(t)))
+               .ToArray();
+
+         var outputTables = await Task.WhenAll(tasks);
+
+         for (int i = 0; i < inputTables.Count; i++)
+         {
+            Assert.True(inputTables[i].Equals(outputTables[i], true));
+         }
       }
 
       #endregion
