@@ -17,6 +17,7 @@
 
    <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="Sylvan.Data.Csv" Version="1.1.9" />
       <PackageReference Include="System.ValueTuple" Version="4.5.0" />
       <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
       <PackageReference Include="xunit" Version="2.4.1" />
