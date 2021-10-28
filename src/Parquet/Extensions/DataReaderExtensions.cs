@@ -256,6 +256,18 @@ namespace Parquet.Extensions
       /// Writes the data from a DbDataReader as a parquet stream.
       /// </summary>
       /// <param name="reader">The DbDataReader containing the data to write.</param>
+      /// <param name="filename">The name of the file to write to.</param>
+      /// <param name="rowGroupSize">The size of the parquet row groups to write.</param>
+      public static void WriteParquet(this DbDataReader reader, string filename, int rowGroupSize = 0x10000)
+      {
+         using Stream stream = System.IO.File.Create(filename);
+         WriteParquet(reader, stream, rowGroupSize);
+      }
+
+      /// <summary>
+      /// Writes the data from a DbDataReader as a parquet stream.
+      /// </summary>
+      /// <param name="reader">The DbDataReader containing the data to write.</param>
       /// <param name="stream">The streamto write to.</param>
       /// <param name="rowGroupSize">The size of the parquet row groups to write.</param>
       public static void WriteParquet(this DbDataReader reader, Stream stream, int rowGroupSize = 0x10000)
