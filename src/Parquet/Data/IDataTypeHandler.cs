@@ -50,7 +50,7 @@ namespace Parquet.Data
 
       ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
-      Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags);
+      Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
 
       byte[] PlainEncode(Thrift.SchemaElement tse, object x);
 
