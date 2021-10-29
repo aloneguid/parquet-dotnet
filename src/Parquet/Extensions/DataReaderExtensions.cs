@@ -32,8 +32,8 @@ namespace Parquet.Extensions
          public abstract Array CreateDataArray(int length);
          public abstract void Process(DbDataReader reader, int ordinal, Array dataArray, int idx);
 
-         public static ColumnHandler String = new ColumnHandler<string>();
-         public static ColumnHandler Binary = new ColumnHandler<byte[]>();
+         public static ColumnHandler String = new StringColumnHandler();
+         public static ColumnHandler Binary = new BinaryColumnHandler();
          public static ColumnHandler Bool = new BoolColumnHandler();
          public static ColumnHandler NullableBool = new NullableBoolColumnHandler();
          public static ColumnHandler Byte = new ByteColumnHandler();
@@ -76,6 +76,17 @@ namespace Parquet.Extensions
          public virtual T GetValue(DbDataReader reader, int ordinal)
          {
             return reader.GetFieldValue<T>(ordinal);
+         }
+      }
+
+      class StringColumnHandler : ColumnHandler<string>
+      {
+         public override string GetValue(DbDataReader reader, int ordinal)
+         {
+            return
+                reader.IsDBNull(ordinal)
+                ? null
+                : reader.GetString(ordinal);
          }
       }
 
@@ -130,7 +141,7 @@ namespace Parquet.Extensions
       {
          public override short GetValue(DbDataReader reader, int ordinal)
          {
-            return reader.GetByte(ordinal);
+            return reader.GetInt16(ordinal);
          }
       }
 
@@ -376,7 +387,7 @@ namespace Parquet.Extensions
             // we need to allocate a properly sized array and copy the data.
             // Ideally, there would be a DataColumn overload that accepted
             // an oversized array and a count, but I didn't want to change the public API
-            if(count < dataArray.Length)
+            if (count < dataArray.Length)
             {
                Array temp = col.writer.CreateDataArray(count);
                Array.Copy(dataArray, temp, count);
@@ -388,4 +399,5 @@ namespace Parquet.Extensions
       }
    }
 }
+
 #endif
