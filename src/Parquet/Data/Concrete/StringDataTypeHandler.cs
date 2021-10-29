@@ -99,9 +99,9 @@ namespace Parquet.Data.Concrete
          return PackDefinitions((string[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
-      public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
+      public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
       {
-         return UnpackGenericDefinitions((string[])src, definitionLevels, maxDefinitionLevel, out hasValueFlags);
+         return UnpackGenericDefinitions((string[])src, definitionLevels, maxDefinitionLevel);
       }
 
       private static void WriteOne(BinaryWriter writer, string value, bool includeLengthPrefix)

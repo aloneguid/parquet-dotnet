@@ -41,15 +41,14 @@ namespace Parquet.Data
          return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
-      public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
+      public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel)
       {
-         return UnpackDefinitions((TSystemType[])untypedSource, definitionLevels, maxDefinitionLevel, out hasValueFlags);
+         return UnpackDefinitions((TSystemType[])untypedSource, definitionLevels, maxDefinitionLevel);
       }
 
-      private TSystemType?[] UnpackDefinitions(TSystemType[] src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
+      private TSystemType?[] UnpackDefinitions(TSystemType[] src, int[] definitionLevels, int maxDefinitionLevel)
       {
          TSystemType?[] result = (TSystemType?[])GetArray(definitionLevels.Length, false, true);
-         hasValueFlags = new bool[definitionLevels.Length];
 
          int isrc = 0;
          for (int i = 0; i < definitionLevels.Length; i++)
@@ -59,17 +58,9 @@ namespace Parquet.Data
             if (level == maxDefinitionLevel)
             {
                result[i] = src[isrc++];
-               hasValueFlags[i] = true;
             }
-            else if(level == 0)
-            {
-               hasValueFlags[i] = true;
-            }
-
          }
-
          return result;
-
       }
 
       private ArrayView PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
