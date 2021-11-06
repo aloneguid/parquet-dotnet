@@ -10,11 +10,17 @@ namespace Parquet.Attributes
    public class ParquetColumnAttribute : Attribute
    {
       /// <summary>
-      /// Creates a new instance of the attribute clas
+      /// Creates a new instance of the attribute class
       /// </summary>
       public ParquetColumnAttribute()
       {
+         //Make the Defaults Explicit (vs implicit by simply being the first Enum); this helps make hte code easier to reason about and less brittle.
+         TimeSpanFormat = TimeSpanFormat.MilliSeconds;
+         DateTimeFormat = DateTimeFormat.Impala;
 
+         //NOTE: We implement the original defaults from parquet-dotnet before release v3.9 to achieve proper backwards compatibility!
+         DecimalPrecision = DecimalFormatDefaults.DefaultPrecision;
+         DecimalScale = DecimalFormatDefaults.DefaultScale;
       }
 
       /// <summary>
@@ -22,6 +28,7 @@ namespace Parquet.Attributes
       /// </summary>
       /// <param name="name">Column name</param>
       public ParquetColumnAttribute(string name)
+         : this()
       {
          Name = name;
       }
