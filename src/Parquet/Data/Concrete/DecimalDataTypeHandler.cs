@@ -58,8 +58,8 @@ namespace Parquet.Data.Concrete
          else
          {
             //set defaults
-            tse.Precision = 38;
-            tse.Scale = 18;
+            tse.Precision = DecimalFormatDefaults.DefaultPrecision;
+            tse.Scale = DecimalFormatDefaults.DefaultScale;
             tse.Type_length = 16;
          }
       }
