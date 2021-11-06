@@ -14,7 +14,8 @@ namespace Parquet.Attributes
       /// </summary>
       public ParquetColumnAttribute()
       {
-         //Make the Defaults Explicit (vs implicit by simply being the first Enum); this helps make the code easier to reason about decrease risk from future changes.
+         //Make the Defaults Explicit (vs implicit by simply being the first Enum); this helps make the code easier
+         // to reason about decrease risk from future changes.
          TimeSpanFormat = TimeSpanFormat.MilliSeconds;
          DateTimeFormat = DateTimeFormat.Impala;
 
