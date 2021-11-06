@@ -14,7 +14,7 @@ namespace Parquet.Attributes
       /// </summary>
       public ParquetColumnAttribute()
       {
-         //Make the Defaults Explicit (vs implicit by simply being the first Enum); this helps make hte code easier to reason about and less brittle.
+         //Make the Defaults Explicit (vs implicit by simply being the first Enum); this helps make the code easier to reason about decrease risk from future changes.
          TimeSpanFormat = TimeSpanFormat.MilliSeconds;
          DateTimeFormat = DateTimeFormat.Impala;
 
@@ -34,7 +34,7 @@ namespace Parquet.Attributes
       }
 
       /// <summary>
-      /// Column name. When undefined a default propety name is used which is simply the declared property name on the class.
+      /// Column name. When undefined a default property name is used which is simply the declared property name on the class.
       /// </summary>
       public string Name { get; set; }
 
