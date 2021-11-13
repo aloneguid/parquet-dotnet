@@ -3,6 +3,7 @@ using System;
 using Xunit;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Data.Rows;
 
 namespace Parquet.Test
 {
@@ -33,7 +34,7 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void Schemas_idential_equal()
+      public void Schemas_identical_equal()
       {
          var schema1 = new Schema(new DataField<int>("id"), new DataField<string>("city"));
          var schema2 = new Schema(new DataField<int>("id"), new DataField<string>("city"));

@@ -3,6 +3,7 @@ using Parquet.Data;
 using System.IO;
 using Xunit;
 using System.Collections.Generic;
+using Parquet.Data.Rows;
 
 namespace Parquet.Test
 {
@@ -126,7 +127,46 @@ namespace Parquet.Test
 
          }
       }
-      
+
+      [Fact]
+      public void Append_To_File_After_Schema_Field_Equable_Hotfix()
+      {
+         var schema1 = new Schema(new DataField<int>("id"), new DataField("quantity", DataType.Int16, hasNulls: true));
+         var schema2 = new Schema(new DataField<int>("id"), new DataField("quantity", DataType.Int16, hasNulls: true));
+
+         Assert.True(schema1.Equals(schema2));
+
+         if (System.IO.File.Exists("./test.txt"))
+         { System.IO.File.Delete("./text.txt"); }
+
+         int count = 0;
+         bool append = false;
+         while (count < 2)
+         {
+            if (count == 1) { append = true; }
+
+            Int32 intValue = 1;
+            Int16? shortValue = 2;
+            var table = new Table(schema1)
+            {
+               new Row(
+                  new object[] { intValue, shortValue })
+            };
+
+            using FileStream fileStream = System.IO.File.Open("./test.txt", FileMode.OpenOrCreate);
+            using var parquetWriter = new ParquetWriter(schema1, fileStream, append: append)
+            {
+               CompressionMethod = CompressionMethod.Snappy,
+               CompressionLevel = -1,
+            };
+
+            using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
+
+            groupWriter.Write(table);
+            count++;
+         }
+      }
+
       public readonly static IEnumerable<object[]> NullableColumnContentCases = new List<object[]>()
       {
          new object[] { new int?[] { 1, 2 } },

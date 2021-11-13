@@ -149,8 +149,7 @@ namespace Parquet.Data
                || field.ClrPropName != otherField.ClrPropName
                || field.Path != otherField.Path
                || field.MaxDefinitionLevel != otherField.MaxDefinitionLevel
-               || field.MaxRepetitionLevel != otherField.MaxRepetitionLevel
-               )
+               || field.MaxRepetitionLevel != otherField.MaxRepetitionLevel)
             {
                return false;
             }
