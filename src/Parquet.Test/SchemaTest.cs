@@ -3,7 +3,6 @@ using System;
 using Xunit;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Data.Rows;
 
 namespace Parquet.Test
 {
