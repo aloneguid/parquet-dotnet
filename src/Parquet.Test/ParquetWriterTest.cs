@@ -164,6 +164,60 @@ namespace Parquet.Test
       }
 
       [Fact]
+      public void Writes_only_beginning_of_array()
+      {
+         var ms = new MemoryStream();
+         var id = new DataField<int>("id");
+
+         //write
+         using (var writer = new ParquetWriter(new Schema(id), ms))
+         {
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
+            {
+               rg.WriteColumn(new DataColumn(id, new[] { 1, 2, 3, 4 }, 0, 3));
+            }
+         }
+
+         //read back
+         using (var reader = new ParquetReader(ms))
+         {
+            Assert.Equal(3, reader.ThriftMetadata.Num_rows);
+
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+            {
+               Assert.Equal(new int[] { 1, 2, 3 }, rg.ReadColumn(id).Data);
+            }
+         }
+      }
+
+      [Fact]
+      public void Writes_only_end_of_array()
+      {
+         var ms = new MemoryStream();
+         var id = new DataField<int>("id");
+
+         //write
+         using (var writer = new ParquetWriter(new Schema(id), ms))
+         {
+            using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
+            {
+               rg.WriteColumn(new DataColumn(id, new[] { 1, 2, 3, 4 }, 1, 3));
+            }
+         }
+
+         //read back
+         using (var reader = new ParquetReader(ms))
+         {
+            Assert.Equal(3, reader.ThriftMetadata.Num_rows);
+
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0))
+            {
+               Assert.Equal(new int[] { 2, 3, 4 }, rg.ReadColumn(id).Data);
+            }
+         }
+      }
+
+      [Fact]
       public void FileMetadata_sets_num_rows_on_file_and_row_group()
       {
          var ms = new MemoryStream();

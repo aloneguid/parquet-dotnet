@@ -36,9 +36,9 @@ namespace Parquet.Data
          return new TSystemType[minCount];
       }
 
-      public override ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public override ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
-         return PackDefinitions((TSystemType?[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
+         return PackDefinitions((TSystemType?[])data, offset, count, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
       public override Array UnpackDefinitions(Array untypedSource, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
@@ -72,27 +72,28 @@ namespace Parquet.Data
 
       }
 
-      private ArrayView PackDefinitions(TSystemType?[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
+      private ArrayView PackDefinitions(TSystemType?[] data, int offset, int count, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
       {
-         definitionLevels = IntPool.Rent(data.Length);
-         definitionsLength = data.Length;
+         definitionLevels = IntPool.Rent(count);
+         definitionsLength = count;
 
-         WritableArrayView<TSystemType> result = ArrayView.CreateWritable<TSystemType>(data.Length);
+         WritableArrayView<TSystemType> result = ArrayView.CreateWritable<TSystemType>(count);
          int ir = 0;
          nullCount = 0;
-         
-         for(int i = 0; i < data.Length; i++)
+
+         int y = 0;
+         for (int i = offset; i < (offset + count); i++, y++)
          {
             TSystemType? value = data[i];
 
             if(value == null)
             {
-               definitionLevels[i] = 0;
+               definitionLevels[y] = 0;
                nullCount++;
             }
             else
             {
-               definitionLevels[i] = maxDefinitionLevel;
+               definitionLevels[y] = maxDefinitionLevel;
                result[ir++] = value.Value;
             }
          }
