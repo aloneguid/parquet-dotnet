@@ -73,9 +73,9 @@ namespace Parquet.Data.Concrete
          return reader.ReadBytes(length);
       }
 
-      public override ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public override ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
-         return PackDefinitions((byte[][])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
+         return PackDefinitions((byte[][])data, offset, count, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
       public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)

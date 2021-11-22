@@ -62,7 +62,7 @@ namespace Parquet
 
          if (RowCount == null)
          {
-            if (column.Data.Length > 0 || column.Field.MaxRepetitionLevel == 0)
+            if (column.Count > 0 || column.Field.MaxRepetitionLevel == 0)
                RowCount = column.CalculateRowCount();
          }
 
