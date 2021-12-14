@@ -1,30 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29123.88
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32002.185
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A0507D42-940E-4EF9-BD33-46BB6561A2F5}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{C2CC1962-DE4B-4489-9EE7-C609A2C1BFBB}"
-	ProjectSection(SolutionItems) = preProject
-		..\doc\arrow.md = ..\doc\arrow.md
-		..\doc\complex-types.md = ..\doc\complex-types.md
-		..\doc\dataset.md = ..\doc\dataset.md
-		..\doc\diagrams.vsdx = ..\doc\diagrams.vsdx
-		..\doc\features.md = ..\doc\features.md
-		..\doc\parq.md = ..\doc\parq.md
-		..\doc\parquet-getting-started.md = ..\doc\parquet-getting-started.md
-		..\doc\perf.md = ..\doc\perf.md
-		..\doc\PRIVACY.md = ..\doc\PRIVACY.md
-		..\doc\reading.md = ..\doc\reading.md
-		..\README.md = ..\README.md
-		..\doc\rows.md = ..\doc\rows.md
-		..\doc\schema.md = ..\doc\schema.md
-		..\doc\serialisation.md = ..\doc\serialisation.md
-		..\doc\types.md = ..\doc\types.md
-		..\doc\writing.md = ..\doc\writing.md
-		..\doc\xboxone.md = ..\doc\xboxone.md
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.Test", "Parquet.Test\Parquet.Test.csproj", "{8B0A6566-6722-4550-8EF2-1D91DF188F9B}"
 EndProject
