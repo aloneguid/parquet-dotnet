@@ -7,7 +7,7 @@ using Parquet.Data;
 
 namespace Parquet.Serialization.Values
 {
-   class ClrBridge
+   internal class ClrBridge
    {
       private readonly Type _classType;
       private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate> _collectorKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate>();
@@ -25,7 +25,9 @@ namespace Parquet.Serialization.Values
          MSILGenerator.PopulateListDelegate populateList = _collectorKeyToTag.GetOrAdd(key, (_) => new MSILGenerator().GenerateCollector(_classType, field));
 
          IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
-         List<int> repLevelsList = field.IsArray ? new List<int>() : null;
+         Type prop = key.ClassType.GetProperty(field.ClrPropName).PropertyType;
+         bool underlyingTypeIsCollection = typeof(Array).IsAssignableFrom(prop) || (prop.IsGenericType && typeof(IEnumerable).IsAssignableFrom(prop));
+         List<int> repLevelsList = field.IsArray || underlyingTypeIsCollection ? new List<int>() : null;
          object result = populateList(classInstances, resultList, repLevelsList, field.MaxRepetitionLevel);
 
          MethodInfo toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");

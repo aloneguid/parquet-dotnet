@@ -1,16 +1,16 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using Parquet.Data;
 using Parquet.Data.Rows;
 using static System.Reflection.Emit.OpCodes;
 
 namespace Parquet.Serialization.Values
 {
-   class MSILGenerator
+   internal class MSILGenerator
    {
       private static readonly TypeConversion[] conversions = new TypeConversion[]
       {
@@ -84,7 +84,9 @@ namespace Parquet.Serialization.Values
 
          using (il.ForEachLoop(classType, collection, out LocalBuilder currentElement))
          {
-            if (f.IsArray)
+            Type prop = classType.GetProperty(f.ClrPropName).PropertyType;
+            bool underlyingTypeIsCollection = typeof(Array).IsAssignableFrom(prop) || (prop.IsGenericType && typeof(IEnumerable).IsAssignableFrom(prop));
+            if (f.IsArray || underlyingTypeIsCollection)
             {
                //reset repetition level to 0
                LocalBuilder rl = il.DeclareLocal(typeof(int));
@@ -272,7 +274,7 @@ namespace Parquet.Serialization.Values
          public override Type ToType { get { return typeof(TTo); } }
       }
 
-      sealed private class DateTimeToDateTimeOffsetConversion : TypeConversion<DateTime, DateTimeOffset>
+      private sealed class DateTimeToDateTimeOffsetConversion : TypeConversion<DateTime, DateTimeOffset>
       {
          public static readonly TypeConversion<DateTime, DateTimeOffset> Instance = new DateTimeToDateTimeOffsetConversion();
 
@@ -285,7 +287,7 @@ namespace Parquet.Serialization.Values
          }
       }
 
-      sealed class DateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset, DateTime>
+      private sealed class DateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset, DateTime>
       {
          public static readonly TypeConversion<DateTimeOffset, DateTime> Instance = new DateTimeOffsetToDateTimeConversion();
 
@@ -297,7 +299,7 @@ namespace Parquet.Serialization.Values
          }
       }
 
-      sealed private class NullableDateTimeToDateTimeOffsetConversion : TypeConversion<DateTime?, DateTimeOffset?>
+      private sealed class NullableDateTimeToDateTimeOffsetConversion : TypeConversion<DateTime?, DateTimeOffset?>
       {
          public static readonly TypeConversion<DateTime?, DateTimeOffset?> Instance = new NullableDateTimeToDateTimeOffsetConversion();
 
@@ -309,7 +311,7 @@ namespace Parquet.Serialization.Values
          }
       }
 
-      sealed class NullableDateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset?, DateTime?>
+      private sealed class NullableDateTimeOffsetToDateTimeConversion : TypeConversion<DateTimeOffset?, DateTime?>
       {
          public static readonly TypeConversion<DateTimeOffset?, DateTime?> Instance = new NullableDateTimeOffsetToDateTimeConversion();
 
