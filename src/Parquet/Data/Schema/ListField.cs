@@ -8,6 +8,11 @@ namespace Parquet.Data
    /// </summary>
    public class ListField : Field, IEquatable<ListField>
    {
+      /// <summary>
+      /// Default container name for a list
+      /// </summary>
+      public const string DefaultContainerName = "list";
+
       internal string ContainerName { get; set; }
 
       /// <summary>
@@ -21,9 +26,25 @@ namespace Parquet.Data
       /// <param name="name">Field name</param>
       /// <param name="item">Field representing list element</param>
       /// <param name="containerName">Container name</param>
-      public ListField(string name, Field item, string containerName = "list") : this(name)
+      public ListField(string name, Field item, string containerName = DefaultContainerName) : this(name)
       {
          Item = item ?? throw new ArgumentNullException(nameof(item));
+         ContainerName = containerName;
+         PathPrefix = null;
+      }
+
+      /// <summary>
+      /// Creates a new instance of <see cref="ListField"/>
+      /// </summary>
+      /// <param name="name">Field name</param>
+      /// <param name="dataType">Native Parquet type</param>
+      /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
+      /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
+      /// <param name="containerName">Container name</param>
+      /// <param name="elementName">Element name</param>
+      public ListField(string name, DataType dataType, bool hasNulls, string propertyName = null, string containerName = "list", string elementName = null) : this(name)
+      {
+         Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
          ContainerName = containerName;
          PathPrefix = null;
       }
