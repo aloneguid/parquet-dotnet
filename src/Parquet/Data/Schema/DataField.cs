@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using Parquet.File;
 
 namespace Parquet.Data
@@ -38,7 +39,7 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Field name</param>
       /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
-      public DataField(string name, Type clrType)
+      public DataField(string name, Type clrType) 
          : this(name,
               Discover(clrType).dataType,
               Discover(clrType).hasNulls,
@@ -101,15 +102,8 @@ namespace Parquet.Data
       /// </returns>
       public bool Equals(DataField other)
       {
-         if (ReferenceEquals(null, other))
-         {
-            return false;
-         }
-
-         if (ReferenceEquals(this, other))
-         {
-            return true;
-         }
+         if (ReferenceEquals(null, other)) return false;
+         if (ReferenceEquals(this, other)) return true;
 
          //todo: check equality for child elements
 
@@ -121,28 +115,17 @@ namespace Parquet.Data
       }
 
       /// <summary>
-      /// Determines whether the specified <see cref="object" />, is equal to this instance.
+      /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
       /// </summary>
-      /// <param name="obj">The <see cref="object" /> to compare with this instance.</param>
+      /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
       /// <returns>
-      ///   <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
+      ///   <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
       /// </returns>
       public override bool Equals(object obj)
       {
-         if (ReferenceEquals(null, obj))
-         {
-            return false;
-         }
-
-         if (ReferenceEquals(this, obj))
-         {
-            return true;
-         }
-
-         if (!(obj is DataField))
-         {
-            return false;
-         }
+         if (ReferenceEquals(null, obj)) return false;
+         if (ReferenceEquals(this, obj)) return true;
+         if (!(obj is DataField)) return false;
 
          return Equals((DataField)obj);
       }
@@ -193,10 +176,7 @@ namespace Parquet.Data
          }
 
          IDataTypeHandler handler = DataTypeFactory.Match(baseType);
-         if (handler == null)
-         {
-            DataTypeFactory.ThrowClrTypeNotSupported(baseType);
-         }
+         if (handler == null) DataTypeFactory.ThrowClrTypeNotSupported(baseType);
 
          return new CInfo
          {

@@ -88,7 +88,7 @@ namespace Parquet.Data
 
       internal override void Assign(Field field)
       {
-         if (Item != null)
+         if(Item != null)
          {
             throw new InvalidOperationException($"item was already assigned to this list ({Name}), somethin is terribly wrong because a list can only have one item.");
          }
@@ -100,15 +100,8 @@ namespace Parquet.Data
       /// </summary>
       public bool Equals(ListField other)
       {
-         if (ReferenceEquals(null, other))
-         {
-            return false;
-         }
-
-         if (ReferenceEquals(this, other))
-         {
-            return true;
-         }
+         if (ReferenceEquals(null, other)) return false;
+         if (ReferenceEquals(this, other)) return true;
 
          return Name.Equals(other.Name) && Item.Equals(other.Item);
       }
@@ -117,20 +110,9 @@ namespace Parquet.Data
       /// </summary>
       public override bool Equals(object obj)
       {
-         if (ReferenceEquals(null, obj))
-         {
-            return false;
-         }
-
-         if (ReferenceEquals(this, obj))
-         {
-            return true;
-         }
-
-         if (obj.GetType() != GetType())
-         {
-            return false;
-         }
+         if (ReferenceEquals(null, obj)) return false;
+         if (ReferenceEquals(this, obj)) return true;
+         if (obj.GetType() != GetType()) return false;
 
          return Equals((ListField)obj);
       }

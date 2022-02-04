@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Parquet.Data.Concrete
 {
-   internal class ListDataTypeHandler : NonDataDataTypeHandler
+   class ListDataTypeHandler : NonDataDataTypeHandler
    {
       public override SchemaType SchemaType => SchemaType.List;
 
@@ -10,7 +13,7 @@ namespace Parquet.Data.Concrete
       {
          Thrift.SchemaElement tseList = schema[index];
 
-         var listField = ListField.CreateWithNoItem(tseList.Name);
+         ListField listField = ListField.CreateWithNoItem(tseList.Name);
 
          //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
 
@@ -27,7 +30,7 @@ namespace Parquet.Data.Concrete
          //type and elements are required.
 
          // "group with one field and is named either array":
-         if (tseList.Num_children == 1 && tseRepeated.Name == "array")
+         if(tseList.Num_children == 1 && tseRepeated.Name == "array")
          {
             listField.Path = tseList.Name;
             index += 1; //only skip this element
@@ -44,7 +47,7 @@ namespace Parquet.Data.Concrete
 
       public override void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         var listField = (ListField)field;
+         ListField listField = (ListField)field;
 
          parent.Num_children += 1;
 
