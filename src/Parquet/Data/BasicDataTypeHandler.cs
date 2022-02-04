@@ -5,8 +5,7 @@ using System.IO;
 
 namespace Parquet.Data
 {
-
-   abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler, IComparer<TSystemType>, IEqualityComparer<TSystemType>
+   internal abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler, IComparer<TSystemType>, IEqualityComparer<TSystemType>
    {
       private readonly Thrift.Type _thriftType;
       private readonly Thrift.ConvertedType? _convertedType;
@@ -86,11 +85,19 @@ namespace Parquet.Data
 
       public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         DataField sef = (DataField)se;
-         var tse = new Thrift.SchemaElement(se.Name);
-         tse.Type = _thriftType;
-         if (_convertedType != null) tse.Converted_type = _convertedType.Value;
-         tse.Repetition_type = sef.IsArray
+         var sef = (DataField)se;
+         var tse = new Thrift.SchemaElement(se.Name)
+         {
+            Type = _thriftType
+         };
+         if (_convertedType != null)
+         {
+            tse.Converted_type = _convertedType.Value;
+         }
+
+         bool isList = container.Count > 1 && container[^2].Converted_type == Thrift.ConvertedType.LIST;
+
+         tse.Repetition_type = sef.IsArray && !isList
             ? Thrift.FieldRepetitionType.REPEATED
             : (sef.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
          container.Add(tse);
@@ -99,8 +106,8 @@ namespace Parquet.Data
 
       public virtual Array MergeDictionary(Array untypedDictionary, int[] indexes, Array data, int offset, int length)
       {
-         TSystemType[] dictionary = (TSystemType[])untypedDictionary;
-         TSystemType[] result = (TSystemType[])data;
+         var dictionary = (TSystemType[])untypedDictionary;
+         var result = (TSystemType[])data;
 
          for (int i = 0; i < length; i++)
          {
@@ -153,7 +160,7 @@ namespace Parquet.Data
 
       protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel)
       {
-         T[] result = (T[])GetArray(definitionLevels.Length, false, true);
+         var result = (T[])GetArray(definitionLevels.Length, false, true);
 
          int isrc = 0;
          for (int i = 0; i < definitionLevels.Length; i++)
@@ -195,7 +202,10 @@ namespace Parquet.Data
 
       public byte[] PlainEncode(Thrift.SchemaElement tse, object x)
       {
-         if (x == null) return null;
+         if (x == null)
+         {
+            return null;
+         }
 
          return PlainEncode(tse, (TSystemType)x);
       }

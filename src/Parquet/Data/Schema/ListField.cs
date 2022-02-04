@@ -8,7 +8,7 @@ namespace Parquet.Data
    /// </summary>
    public class ListField : Field, IEquatable<ListField>
    {
-      internal const string _containerName = "list";
+      internal string ContainerName { get; set; }
 
       /// <summary>
       /// Item contained within this list
@@ -20,9 +20,11 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Field name</param>
       /// <param name="item">Field representing list element</param>
-      public ListField(string name, Field item) : this(name)
+      /// <param name="containerName">Container name</param>
+      public ListField(string name, Field item, string containerName = "list") : this(name)
       {
          Item = item ?? throw new ArgumentNullException(nameof(item));
+         ContainerName = containerName;
          PathPrefix = null;
       }
 
@@ -34,7 +36,7 @@ namespace Parquet.Data
       {
          set
          {
-            Path = value.AddPath(Name, _containerName);
+            Path = value.AddPath(Name, ContainerName);
             Item.PathPrefix = Path;
          }
       }
@@ -65,7 +67,7 @@ namespace Parquet.Data
 
       internal override void Assign(Field field)
       {
-         if(Item != null)
+         if (Item != null)
          {
             throw new InvalidOperationException($"item was already assigned to this list ({Name}), somethin is terribly wrong because a list can only have one item.");
          }
@@ -77,8 +79,15 @@ namespace Parquet.Data
       /// </summary>
       public bool Equals(ListField other)
       {
-         if (ReferenceEquals(null, other)) return false;
-         if (ReferenceEquals(this, other)) return true;
+         if (ReferenceEquals(null, other))
+         {
+            return false;
+         }
+
+         if (ReferenceEquals(this, other))
+         {
+            return true;
+         }
 
          return Name.Equals(other.Name) && Item.Equals(other.Item);
       }
@@ -87,9 +96,20 @@ namespace Parquet.Data
       /// </summary>
       public override bool Equals(object obj)
       {
-         if (ReferenceEquals(null, obj)) return false;
-         if (ReferenceEquals(this, obj)) return true;
-         if (obj.GetType() != GetType()) return false;
+         if (ReferenceEquals(null, obj))
+         {
+            return false;
+         }
+
+         if (ReferenceEquals(this, obj))
+         {
+            return true;
+         }
+
+         if (obj.GetType() != GetType())
+         {
+            return false;
+         }
 
          return Equals((ListField)obj);
       }

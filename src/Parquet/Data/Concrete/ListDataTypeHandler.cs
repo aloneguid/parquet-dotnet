@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 
 namespace Parquet.Data.Concrete
 {
-   class ListDataTypeHandler : NonDataDataTypeHandler
+   internal class ListDataTypeHandler : NonDataDataTypeHandler
    {
       public override SchemaType SchemaType => SchemaType.List;
 
@@ -13,7 +10,7 @@ namespace Parquet.Data.Concrete
       {
          Thrift.SchemaElement tseList = schema[index];
 
-         ListField listField = ListField.CreateWithNoItem(tseList.Name);
+         var listField = ListField.CreateWithNoItem(tseList.Name);
 
          //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
 
@@ -30,7 +27,7 @@ namespace Parquet.Data.Concrete
          //type and elements are required.
 
          // "group with one field and is named either array":
-         if(tseList.Num_children == 1 && tseRepeated.Name == "array")
+         if (tseList.Num_children == 1 && tseRepeated.Name == "array")
          {
             listField.Path = tseList.Name;
             index += 1; //only skip this element
@@ -47,7 +44,7 @@ namespace Parquet.Data.Concrete
 
       public override void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container)
       {
-         ListField listField = (ListField)field;
+         var listField = (ListField)field;
 
          parent.Num_children += 1;
 
@@ -61,7 +58,7 @@ namespace Parquet.Data.Concrete
          container.Add(root);
 
          //add field container
-         var list = new Thrift.SchemaElement("list")
+         var list = new Thrift.SchemaElement(listField.ContainerName)
          {
             Repetition_type = Thrift.FieldRepetitionType.REPEATED
          };
