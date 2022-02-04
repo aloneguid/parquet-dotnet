@@ -176,6 +176,70 @@ namespace Parquet.Test.Serialisation
          }
       }
       [Fact]
+      public void Serialise_deserialise_listfield_column()
+      {
+         IEnumerable<SimpleWithListField> structures = Enumerable
+            .Range(0, 10)
+            .Select(i => new SimpleWithListField
+            {
+               col1 = new int[] { i - 1, i, i + 1 },
+               col2 = new int[] { 10 + i - 1, 10 + i, 10 + i + 1 },
+               col3 = new int[] { 100 + i - 1, 100 + i, 100 + i + 1 }
+            });
+
+         using (var ms = new MemoryStream())
+         {
+            Schema schema = ParquetConvert.Serialize(structures, ms, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2000);
+
+            Assert.Collection(schema.Fields,
+               (col) =>
+               {
+                  if (!(col is ListField f))
+                  {
+                     Assert.True(false, $"{col.Name} is not a ListField");
+                  }
+                  else
+                  {
+                     Assert.Equal("col1", f.Name);
+                     Assert.Equal("bag", f.ContainerName);
+                     Assert.Equal("array_element", f.Item.Name);
+                     Assert.Equal("col1", f.Item.ClrPropName);
+                  }
+               },
+               (col) =>
+               {
+                  if (!(col is ListField f))
+                  {
+                     Assert.True(false, $"{col.Name} is not a ListField");
+                  }
+                  else
+                  {
+                     Assert.Equal("col2", f.Name);
+                     Assert.Equal("list", f.ContainerName);
+                     Assert.Equal("col2", f.Item.Name);
+                     Assert.Equal("col2", f.Item.ClrPropName);
+                  }
+               },
+               (col) =>
+               {
+                  Assert.True(col is DataField, $"{col.Name} is not a ListField");
+               }
+            );
+
+            ms.Position = 0;
+
+            SimpleWithListField[] structures2 = ParquetConvert.Deserialize<SimpleWithListField>(ms);
+
+            SimpleWithListField[] structuresArray = structures.ToArray();
+            for (int i = 0; i < 10; i++)
+            {
+               Assert.True(Enumerable.SequenceEqual(structuresArray[i].col1, structures2[i].col1));
+               Assert.True(Enumerable.SequenceEqual(structuresArray[i].col2, structures2[i].col2));
+               Assert.True(Enumerable.SequenceEqual(structuresArray[i].col3, structures2[i].col3));
+            }
+         }
+      }
+      [Fact]
       public void Serialise_all_but_deserialise_only_few_properties()
       {
          DateTime now = DateTime.Now;
@@ -422,6 +486,16 @@ namespace Parquet.Test.Serialisation
          //Validate Backwards compatibility of default Decimal Precision and Scale values broken in v3.9.
          [ParquetColumn("DecimalColumnRenamed")]
          public decimal? NullableDecimal { get; set; }
+      }
+
+      public class SimpleWithListField
+      {
+         [ParquetColumn(UseListField = true, ListContainerName = "bag", ListElementName = "array_element")]
+         public int[] col1 { get; set; }
+         [ParquetColumn(UseListField = true)]
+         public int[] col2 { get; set; }
+         [ParquetColumn]
+         public int[] col3 { get; set; }
       }
 
       public class StructureWithTestType<T>

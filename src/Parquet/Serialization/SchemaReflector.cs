@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +29,7 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      ///
+      /// 
       /// </summary>
       /// <returns></returns>
       public Schema Reflect()
@@ -41,7 +40,7 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      ///
+      /// 
       /// </summary>
       /// <typeparam name="T"></typeparam>
       /// <returns></returns>
@@ -51,7 +50,7 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      ///
+      /// 
       /// </summary>
       /// <param name="classType"></param>
       /// <returns></returns>
@@ -63,24 +62,12 @@ namespace Parquet.Serialization
       private Field GetField(PropertyInfo property)
       {
          Type pt = property.PropertyType;
-         if (pt.IsNullable())
-         {
-            pt = pt.GetNonNullable();
-         }
-
-         Type prop = property.PropertyType;
-         bool underlyingTypeIsCollection = typeof(Array).IsAssignableFrom(prop) || (prop.IsGenericType && typeof(IEnumerable).IsAssignableFrom(prop));
-         if (pt.IsArray || underlyingTypeIsCollection)
-         {
-            pt = pt.HasElementType ? pt.GetElementType() : pt.GetGenericArguments()[0];
-         }
+         if(pt.IsNullable()) pt = pt.GetNonNullable();
+         if(pt.TryExtractEnumerableType(out Type t)) pt = t;
 
          IDataTypeHandler handler = DataTypeFactory.Match(pt);
 
-         if (handler == null)
-         {
-            return null;
-         }
+         if (handler == null) return null;
 
          ParquetColumnAttribute columnAttr = property.GetCustomAttribute<ParquetColumnAttribute>();
 
@@ -94,24 +81,14 @@ namespace Parquet.Serialization
          if (columnAttr != null)
          {
             if (columnAttr.UseListField)
-            {
                return new ListField(r.Name, handler.DataType, r.HasNulls, property.Name, columnAttr.ListContainerName, columnAttr.ListElementName);
-            }
 
             if (handler.ClrType == typeof(TimeSpan))
-            {
                r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
-            }
-
             if (handler.ClrType == typeof(DateTime) || handler.ClrType == typeof(DateTimeOffset))
-            {
                r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.HasNulls, r.IsArray);
-            }
-
             if (handler.ClrType == typeof(decimal))
-            {
                r = new DecimalDataField(r.Name, columnAttr.DecimalPrecision, columnAttr.DecimalScale, columnAttr.DecimalForceByteArrayEncoding, r.HasNulls, r.IsArray);
-            }
          }
 
          r.ClrPropName = property.Name;
@@ -119,7 +96,7 @@ namespace Parquet.Serialization
          return r;
       }
 
-      private readonly Func<PropertyInfo, bool> pickSerializableProperties = (PropertyInfo arg) => !arg.CustomAttributes.Any(p => p.AttributeType == typeof(ParquetIgnoreAttribute));
+      Func<PropertyInfo, bool> pickSerializableProperties = (PropertyInfo arg) => !arg.CustomAttributes.Any(p => p.AttributeType == typeof(ParquetIgnoreAttribute));
 
    }
 }
