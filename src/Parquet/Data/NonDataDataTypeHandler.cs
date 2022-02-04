@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -47,7 +46,7 @@ namespace Parquet.Data
          throw new NotImplementedException();
       }
 
-      public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel, out bool[] hasValueFlags)
+      public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
       {
          throw new NotSupportedException();
       }

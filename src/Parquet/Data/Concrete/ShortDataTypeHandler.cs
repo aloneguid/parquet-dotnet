@@ -4,21 +4,21 @@ using Parquet.Data;
 
 namespace Parquet.Data.Concrete
 {
-   class Int16DataTypeHandler : BasicPrimitiveDataTypeHandler<Int16>
+   class ShortDataTypeHandler : BasicPrimitiveDataTypeHandler<short>
    {
-      public Int16DataTypeHandler() : base(DataType.Int16, Thrift.Type.INT32, Thrift.ConvertedType.INT_16)
+      public ShortDataTypeHandler() : base(DataType.Short, Thrift.Type.INT32, Thrift.ConvertedType.INT_16)
       {
 
       }
 
       protected override short ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length)
       {
-         return (short) reader.ReadInt32();
+         return (short)reader.ReadInt32();
       }
 
       protected override void WriteOne(BinaryWriter writer, short value)
       {
-         writer.Write((int) value);
+         writer.Write((int)value);
       }
    }
 }

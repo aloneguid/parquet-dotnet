@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NetBox.Extensions;
 using Parquet.Attributes;
 using Parquet.Data;
 using Parquet.Serialization;
@@ -150,7 +149,8 @@ namespace Parquet.Test.Serialisation
             .Select(i => new SimpleRenamed
             {
                Id = i,
-               PersonName = $"row {i}"
+               PersonName = $"row {i}",
+               NullableDecimal = (i % 3 == 0) ? null : (decimal)i / 3
             });
 
          using (var ms = new MemoryStream())
@@ -161,11 +161,17 @@ namespace Parquet.Test.Serialisation
 
             SimpleRenamed[] structures2 = ParquetConvert.Deserialize<SimpleRenamed>(ms);
 
+            var formatDecimal = new Func<decimal?, decimal?>(d => d.HasValue
+               ? Math.Round(d.Value, 18, MidpointRounding.ToZero)
+               : d
+            );
+
             SimpleRenamed[] structuresArray = structures.ToArray();
             for (int i = 0; i < 10; i++)
             {
                Assert.Equal(structuresArray[i].Id, structures2[i].Id);
                Assert.Equal(structuresArray[i].PersonName, structures2[i].PersonName);
+               Assert.Equal(formatDecimal(structuresArray[i].NullableDecimal), formatDecimal(structures2[i].NullableDecimal));
             }
          }
       }
@@ -412,6 +418,10 @@ namespace Parquet.Test.Serialisation
 
          [ParquetColumn("Name")]
          public string PersonName { get; set; }
+
+         //Validate Backwards compatibility of default Decimal Precision and Scale values broken in v3.9.
+         [ParquetColumn("DecimalColumnRenamed")]
+         public decimal? NullableDecimal { get; set; }
       }
 
       public class StructureWithTestType<T>

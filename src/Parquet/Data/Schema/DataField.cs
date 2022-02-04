@@ -53,8 +53,8 @@ namespace Parquet.Data
       /// </summary>
       /// <param name="name">Field name.</param>
       /// <param name="dataType">Native Parquet type</param>
-      /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space comparing to non-nullable.</param>
-      /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in .NET</param>
+      /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
+      /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in C#.</param>
       public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false) : base(name, SchemaType.Data)
       {
          DataType = dataType;

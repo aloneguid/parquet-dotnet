@@ -16,7 +16,25 @@ namespace Parquet.Runner
          //CompressNew("c:\\tmp\\DSL.svg", "c:\\tmp\\DSL.svg.newsnappy");
 
          //CompressOld("c:\\tmp\\rfc8660long.txt", "c:\\tmp\\rfc8660long.txt.oldsnappy");
-         CompressNew("c:\\tmp\\rfc8660long.txt", "c:\\tmp\\rfc8660long.txt.newsnappy");
+         //CompressNew("c:\\tmp\\rfc8660long.txt", "c:\\tmp\\rfc8660long.txt.newsnappy");
+         ReadPerf();
+      }
+
+      private static void ReadPerf()
+      {
+         using (var reader = ParquetReader.OpenFromFile(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\customer.impala.parquet", new ParquetOptions { TreatByteArrayAsString = true }))
+         {
+            var cl = new List<DataColumn>();
+
+            using (ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0))
+            {
+               foreach (DataField field in reader.Schema.GetDataFields())
+               {
+                  DataColumn dataColumn = rgr.ReadColumn(field);
+                  cl.Add(dataColumn);
+               }
+            }
+         }
       }
 
       static void CompressNew(string src, string dest)

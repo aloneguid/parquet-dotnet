@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-      <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
+      <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;netstandard2.1;netcoreapp2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
       <Description>Pure managed .NET library to read and write Apache Parquet files, targeting .NET Standand 1.4 and up.
 
-Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on thrid-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.</Description>
+Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on third-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.</Description>
       <Company></Company>
       <PackageId>Parquet.Net</PackageId>
       <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -46,20 +46,22 @@ Linux, Windows and Mac are first class citizens, but also works everywhere .NET 
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
    </ItemGroup>
 
-   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
-      <DefineConstants>NET14</DefineConstants>
-   </PropertyGroup>
-
-   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.4|AnyCPU'">
-     <OutputPath>bin\</OutputPath>
-   </PropertyGroup>
-
    <ItemGroup>
       <PackageReference Include="IronSnappy" Version="1.3.0" />
-      <PackageReference Include="System.Buffers" Version="4.5.1" />
-      <PackageReference Include="System.Memory" Version="4.5.4" />
+   </ItemGroup>
+   
+   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
       <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
    </ItemGroup>
+   
+   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+      <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+   </ItemGroup>
+
+   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+      <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+   </ItemGroup>
+
 
    <ItemGroup>
      <None Include="..\icon.png">
