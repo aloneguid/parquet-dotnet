@@ -108,7 +108,7 @@ namespace Parquet.Data
          //todo: check equality for child elements
 
          return
-            string.Equals(Name, other.Name) &&
+            string.Equals(Path, other.Path) &&
             DataType.Equals(other.DataType) &&
             HasNulls == other.HasNulls &&
             IsArray == other.IsArray;
@@ -138,7 +138,7 @@ namespace Parquet.Data
       /// </returns>
       public override int GetHashCode()
       {
-         return Name.GetHashCode() * DataType.GetHashCode();
+         return Path.GetHashCode() * DataType.GetHashCode();
       }
 
       #region [ Type Resolution ]

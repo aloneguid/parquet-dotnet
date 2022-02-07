@@ -42,7 +42,7 @@ namespace Parquet.Data
       /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
       /// <param name="containerName">Container name</param>
       /// <param name="elementName">Element name</param>
-      public ListField(string name, DataType dataType, bool hasNulls, string propertyName = null, string containerName = "list", string elementName = null) : this(name)
+      public ListField(string name, DataType dataType, bool hasNulls = true, string propertyName = null, string containerName = "list", string elementName = null) : this(name)
       {
          Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
          ContainerName = containerName;
