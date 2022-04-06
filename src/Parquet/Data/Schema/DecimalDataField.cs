@@ -26,16 +26,18 @@ namespace Parquet.Data
       /// Constructs class instance
       /// </summary>
       /// <param name="name">The name of the column</param>
-      /// <param name="precision">Cusom precision</param>
+      /// <param name="precision">Custom precision</param>
       /// <param name="scale">Custom scale</param>
       /// <param name="forceByteArrayEncoding">Whether to force decimal type encoding as fixed bytes. Hive and Impala only understands decimals when forced to true.</param>
       /// <param name="hasNulls">Is 'decimal?'</param>
       /// <param name="isArray">Indicates whether this field is repeatable.</param>
-      public DecimalDataField(string name, int precision, int scale, bool forceByteArrayEncoding = false, bool hasNulls = true, bool isArray = false)
+      public DecimalDataField(string name, int precision, int scale = 0, bool forceByteArrayEncoding = false, bool hasNulls = true, bool isArray = false)
          : base(name, DataType.Decimal, hasNulls, isArray)
       {
-         if (precision < 1) throw new ArgumentException("precision cannot be less than 1", nameof(precision));
-         if (scale < 1) throw new ArgumentException("scale cannot be less than 1", nameof(scale));
+         // see https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal for more details.
+         if (precision < 1) throw new ArgumentException("precision is required and must be a non-zero positive integer", nameof(precision));
+         if (scale < 0) throw new ArgumentException("scale must be zero or a positive integer", nameof(scale));
+         if (scale >= precision) throw new ArgumentException("scale must be less than the precision", nameof(scale));
 
          Precision = precision;
          Scale = scale;
