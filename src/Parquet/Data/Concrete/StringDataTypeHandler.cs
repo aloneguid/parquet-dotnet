@@ -116,12 +116,21 @@ namespace Parquet.Data.Concrete
          else
          {
             //transofrm to byte array first, as we need the length of the byte buffer, not string length
-            byte[] data = E.GetBytes(value);
-            if (includeLengthPrefix)
+            byte[] data = _bytePool.Rent(E.GetByteCount(value));
+            try
             {
-               writer.Write(data.Length);
+               int bytesWritten = E.GetBytes(value, 0, value.Length, data, 0);
+               if (includeLengthPrefix)
+               {
+                  writer.Write(bytesWritten);
+               }
+
+               writer.Write(data, 0, bytesWritten);
             }
-            writer.Write(data);
+            finally
+            {
+               _bytePool.Return(data);
+            }
          }
       }
 
