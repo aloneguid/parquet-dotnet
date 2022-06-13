@@ -81,5 +81,24 @@ namespace Parquet.Test
             }
          }
       }
+      [Fact]
+      public void OptionalValues_WithoutStatistics()
+      {
+         using (Stream s = OpenTestFile("test-optionals-without-stats.parquet"))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
+               DataColumn value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
+               Assert.NotNull(id_col);
+               Assert.NotNull(value_col);
+
+               int index = Enumerable.Range(0, id_col.Data.Length).First(i => (long)id_col.Data.GetValue(i) == 20908539289);
+
+               Assert.Equal(0, value_col.Data.GetValue(index));
+            }
+         }
+      }
    }
 }
