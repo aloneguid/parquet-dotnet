@@ -100,5 +100,21 @@ namespace Parquet.Test
             }
          }
       }
+      [Fact]
+      public void Issue164()
+      {
+         using (Stream s = OpenTestFile("issue-164.parquet"))
+         {
+            using (var r = new ParquetReader(s))
+            {
+               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn id_col = columns[0];
+               DataColumn cls_value_8 = columns[9];
+               int index = Enumerable.Range(0, id_col.Data.Length).First(i => (int)id_col.Data.GetValue(i) == 256779);
+               Assert.Equal("MOSTRUÁRIO-000", cls_value_8.Data.GetValue(index));
+
+            }
+         }
+      }
    }
 }
