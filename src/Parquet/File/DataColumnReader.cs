@@ -207,7 +207,8 @@ namespace Parquet.File
 
                      int offsetBeforeReading = cd.definitionsOffset;
                      cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
-                     if(ph.Data_page_header.Statistics == null)
+                     // if no statistics are available, we use the number of values expected, based on the definitions
+                     if (ph.Data_page_header.Statistics == null)
                      {
                         valueCount = cd.definitions
                            .Skip(offsetBeforeReading).Take(cd.definitionsOffset - offsetBeforeReading)
@@ -217,8 +218,8 @@ namespace Parquet.File
 
                   if (ph.Data_page_header == null) throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
 
-                  // if statistics are defined, use null count to determine the exact number of items we should read
-                  // if no statistics are available, we use the number of values expected, based on the definitions
+                  // if statistics are defined, use null count to determine the exact number of items we should read,
+                  // otherwise the previously counted value from definitions
                   int maxReadCount = ph.Data_page_header.Statistics == null ? valueCount
                      : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
                   ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
