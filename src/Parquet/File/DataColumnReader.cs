@@ -207,8 +207,12 @@ namespace Parquet.File
 
                      int offsetBeforeReading = cd.definitionsOffset;
                      cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
-                     valueCount = cd.definitions.Skip(offsetBeforeReading).Take(cd.definitionsOffset - offsetBeforeReading)
-                        .Count(v => v > 0);
+                     if(ph.Data_page_header.Statistics == null)
+                     {
+                        valueCount = cd.definitions
+                           .Skip(offsetBeforeReading).Take(cd.definitionsOffset - offsetBeforeReading)
+                           .Count(v => v > 0);
+                     }
                   }
 
                   if (ph.Data_page_header == null) throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
@@ -217,7 +221,7 @@ namespace Parquet.File
                   // if no statistics are available, we use the number of values expected, based on the definitions
                   int maxReadCount = ph.Data_page_header.Statistics == null ? valueCount
                      : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
-                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, valueCount, cd);
+                  ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
                }
             }
          }
