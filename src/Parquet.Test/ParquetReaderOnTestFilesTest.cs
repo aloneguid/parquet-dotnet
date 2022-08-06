@@ -111,7 +111,7 @@ namespace Parquet.Test
                DataColumn id_col = columns[0];
                DataColumn cls_value_8 = columns[9];
                int index = Enumerable.Range(0, id_col.Data.Length).First(i => (int)id_col.Data.GetValue(i) == 256779);
-               Assert.Equal("MOSTRUÁRIO-000", cls_value_8.Data.GetValue(index));
+               Assert.Equal("MOSTRU\u00C1RIO-000", cls_value_8.Data.GetValue(index));
 
             }
          }
