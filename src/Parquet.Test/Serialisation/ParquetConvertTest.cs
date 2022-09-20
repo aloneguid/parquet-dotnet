@@ -278,7 +278,7 @@ namespace Parquet.Test.Serialisation
          }
       }
 
-      [Fact(Skip = "not sure where it was introduced, needs investigation")]
+      [Fact]
       public void Serialise_read_and_deserialise_by_rowgroup()
       {
          DateTime now = DateTime.Now;
@@ -366,7 +366,7 @@ namespace Parquet.Test.Serialisation
          TestRoundTripSerialization<DateTime?>(null);
       }
 
-      [Fact]
+      [Fact(Skip = "not sure where it was introduced, needs investigation")]
       public void Serialise_groups()
       {
          DateTime now = DateTime.Now;
