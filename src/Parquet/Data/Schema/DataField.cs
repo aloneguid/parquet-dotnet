@@ -32,7 +32,7 @@ namespace Parquet.Data
       /// <summary>
       /// Unsupported, use at your own risk!
       /// </summary>
-      public Type ClrNullableIfHasNullsType { get; private set; }
+      public Type ClrNullableIfHasNullsType { get; set; }
 
       /// <summary>
       /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
@@ -55,11 +55,13 @@ namespace Parquet.Data
       /// <param name="dataType">Native Parquet type</param>
       /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
       /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in C#.</param>
-      public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false) : base(name, SchemaType.Data)
+      /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
+      public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false, string propertyName = null) : base(name, SchemaType.Data)
       {
          DataType = dataType;
          HasNulls = hasNulls;
          IsArray = isArray;
+         ClrPropName = propertyName;
 
          MaxRepetitionLevel = isArray ? 1 : 0;
 
@@ -106,7 +108,7 @@ namespace Parquet.Data
          //todo: check equality for child elements
 
          return
-            string.Equals(Name, other.Name) &&
+            string.Equals(Path, other.Path) &&
             DataType.Equals(other.DataType) &&
             HasNulls == other.HasNulls &&
             IsArray == other.IsArray;
@@ -136,7 +138,7 @@ namespace Parquet.Data
       /// </returns>
       public override int GetHashCode()
       {
-         return Name.GetHashCode() * DataType.GetHashCode();
+         return Path.GetHashCode() * DataType.GetHashCode();
       }
 
       #region [ Type Resolution ]

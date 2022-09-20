@@ -47,7 +47,7 @@ namespace Parquet
          if (shead != MagicString)
             throw new IOException($"not a Parquet file(head is '{shead}')");
          if (stail != MagicString)
-            throw new IOException($"not a Parquet file(head is '{stail}')");
+            throw new IOException($"not a Parquet file(tail is '{stail}')");
       }
 
       internal Thrift.FileMetaData ReadMetadata()

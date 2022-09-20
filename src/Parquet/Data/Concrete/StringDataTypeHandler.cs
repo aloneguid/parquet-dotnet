@@ -94,9 +94,9 @@ namespace Parquet.Data.Concrete
          return ReadSingle(reader, tse, length, true);
       }
 
-      public override ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public override ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
-         return PackDefinitions((string[])data, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
+         return PackDefinitions((string[])data, offset, count, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
       }
 
       public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
@@ -116,12 +116,21 @@ namespace Parquet.Data.Concrete
          else
          {
             //transofrm to byte array first, as we need the length of the byte buffer, not string length
-            byte[] data = E.GetBytes(value);
-            if (includeLengthPrefix)
+            byte[] data = _bytePool.Rent(E.GetByteCount(value));
+            try
             {
-               writer.Write(data.Length);
+               int bytesWritten = E.GetBytes(value, 0, value.Length, data, 0);
+               if (includeLengthPrefix)
+               {
+                  writer.Write(bytesWritten);
+               }
+
+               writer.Write(data, 0, bytesWritten);
             }
-            writer.Write(data);
+            finally
+            {
+               _bytePool.Return(data);
+            }
          }
       }
 

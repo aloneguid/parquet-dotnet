@@ -11,9 +11,10 @@ namespace Parquet.Data
       private readonly Array _array;
       private bool _consumed;
 
-      public ArrayView(Array array)
+      public ArrayView(Array array, int offset, int count)
       {
-         Count = array.Length;
+         Offset = offset;
+         Count = count;
          _array = array;
       }
 
@@ -24,6 +25,8 @@ namespace Parquet.Data
 
       public virtual int Count { get; }
 
+      public int Offset { get; }
+
       protected virtual void ReturnArray()
       {
       }
@@ -32,7 +35,7 @@ namespace Parquet.Data
       {
          AssertNotConsumed();
          T[] typed = (T[]) _array;
-         for (int i = 0; i < Count; i++)
+         for (int i = Offset; i < Offset+Count; i++)
          {
             yield return typed[i];
          }
@@ -47,7 +50,7 @@ namespace Parquet.Data
          T[] typed = (T[]) _array;
          if (statistics == null)
          {
-            for (int i = 0; i < Count; i++)
+            for (int i = Offset; i < Offset+Count; i++)
             {
                yield return typed[i];
             }
@@ -65,14 +68,14 @@ namespace Parquet.Data
 
          T min = default;
          T max = default;
-         for (int i = 0; i < Count; i++)
+         for (int i = Offset; i < Offset+Count; i++)
          {
             T current = typed[i];
             yield return current;
 
             hashSet.Add(current);
 
-            if (i == 0)
+            if (i == Offset)
             {
                min = current;
                max = current;

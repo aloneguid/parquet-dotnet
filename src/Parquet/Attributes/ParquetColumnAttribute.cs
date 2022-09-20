@@ -22,6 +22,8 @@ namespace Parquet.Attributes
          //NOTE: We implement the original defaults from parquet-dotnet before release v3.9 to achieve proper backwards compatibility!
          DecimalPrecision = DecimalFormatDefaults.DefaultPrecision;
          DecimalScale = DecimalFormatDefaults.DefaultScale;
+
+         ListContainerName = ListField.DefaultContainerName;
       }
 
       /// <summary>
@@ -63,5 +65,20 @@ namespace Parquet.Attributes
       /// Should this decimal field force byte array encoding?
       /// </summary>
       public bool DecimalForceByteArrayEncoding { get; set; }
+
+      /// <summary>
+      /// Should this field be generated as a <see cref="ListField"/>?
+      /// </summary>
+      public bool UseListField { get; set; }
+
+      /// <summary>
+      /// Name of the conatiner for the list. Path will be Name.ListContainerName.ListElementName
+      /// </summary>
+      public string ListContainerName { get; set; }
+
+      /// <summary>
+      /// Name of the element for the list. Path will be Name.ListContainerName.ListElementName
+      /// </summary>
+      public string ListElementName { get; set; }
    }
 }

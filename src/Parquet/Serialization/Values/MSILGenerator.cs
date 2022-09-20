@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using Parquet.Data;
 using Parquet.Data.Rows;
 using static System.Reflection.Emit.OpCodes;
@@ -18,6 +17,7 @@ namespace Parquet.Serialization.Values
          DateTimeOffsetToDateTimeConversion.Instance,
          NullableDateTimeToDateTimeOffsetConversion.Instance,
          NullableDateTimeOffsetToDateTimeConversion.Instance,
+         NullableBooleanToBooleanConversion.Instance
       };
 
       public delegate object PopulateListDelegate(object instances,
@@ -83,7 +83,9 @@ namespace Parquet.Serialization.Values
 
          using (il.ForEachLoop(classType, collection, out LocalBuilder currentElement))
          {
-            if (f.IsArray)
+            Type prop = classType.GetTypeInfo().GetDeclaredProperty(f.ClrPropName).PropertyType;
+            bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
+            if (f.IsArray || underlyingTypeIsEnumerable)
             {
                //reset repetition level to 0
                LocalBuilder rl = il.DeclareLocal(typeof(int));
@@ -139,9 +141,7 @@ namespace Parquet.Serialization.Values
 
       public AssignArrayDelegate GenerateAssigner(DataColumn dataColumn, Type classType)
       {
-         DataField fileField = dataColumn.Field;
-         Schema typeSchema = SchemaReflector.Reflect(classType);
-         DataField typeField = typeSchema.FindDataField(fileField.Path);
+         DataField typeField = dataColumn.Field;
 
          Type[] methodArgs = { typeof(DataColumn), typeof(Array) };
          var runMethod = new DynamicMethod(
@@ -181,7 +181,9 @@ namespace Parquet.Serialization.Values
          //arg 0 - DataColumn
          //arg 1 - class intances array (Array)
 
-         if (field.IsArray)
+         Type prop = classType.GetTypeInfo().GetDeclaredProperty(field.ClrPropName).PropertyType;
+         bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
+         if (field.IsArray || underlyingTypeIsEnumerable)
          {
             LocalBuilder repItem = il.DeclareLocal(typeof(int));
             LocalBuilder dce = il.DeclareLocal(typeof(DataColumnEnumerator));
@@ -321,6 +323,18 @@ namespace Parquet.Serialization.Values
             il.Emit(OpCodes.Call, method);
          }
       }
+
+      sealed class NullableBooleanToBooleanConversion : TypeConversion<Boolean?, Boolean>
+      {
+         public static readonly TypeConversion<Boolean?, Boolean> Instance = new NullableBooleanToBooleanConversion();
+
+         private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableBooleanToBooleanConversion");
+
+         public override void Emit(ILGenerator il)
+         {
+            il.Emit(OpCodes.Call, method);
+         }
+      }
    }
 
    /// <summary>
@@ -357,6 +371,18 @@ namespace Parquet.Serialization.Values
       {
          if (value == null) { return null; }
          return new DateTimeOffset(value.Value);
+      }
+
+      /// <summary>
+      /// Convert Boolean? to Boolean
+      /// </summary>
+      /// <param name="value">Boolean?</param>
+      /// <returns>Boolean</returns>
+      public static Boolean NullableBooleanToBooleanConversion(Boolean? value)
+      {
+         if (!value.HasValue) { return false; }
+         return value.Value;
+
       }
    }
 }

@@ -11,7 +11,7 @@ namespace Parquet.Serialization.Values
    {
       private readonly Type _classType;
       private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate> _collectorKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate>();
-      private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate> _assignerKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate>();
+      //private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate> _assignerKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.AssignArrayDelegate>();
 
       public ClrBridge(Type classType)
       {
@@ -25,7 +25,9 @@ namespace Parquet.Serialization.Values
          MSILGenerator.PopulateListDelegate populateList = _collectorKeyToTag.GetOrAdd(key, (_) => new MSILGenerator().GenerateCollector(_classType, field));
 
          IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
-         List<int> repLevelsList = field.IsArray ? new List<int>() : null;
+         Type prop = _classType.GetTypeInfo().GetDeclaredProperty(field.ClrPropName).PropertyType;
+         bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
+         List<int> repLevelsList = field.IsArray || underlyingTypeIsEnumerable ? new List<int>() : null;
          object result = populateList(classInstances, resultList, repLevelsList, field.MaxRepetitionLevel);
 
          MethodInfo toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");
@@ -37,7 +39,7 @@ namespace Parquet.Serialization.Values
       public void AssignColumn(DataColumn dataColumn, Array classInstances)
       {
          var key = new TypeCachingKey(_classType, dataColumn.Field);
-         MSILGenerator.AssignArrayDelegate assignColumn = _assignerKeyToTag.GetOrAdd(key, (_) => new MSILGenerator().GenerateAssigner(dataColumn, _classType));
+         MSILGenerator.AssignArrayDelegate assignColumn = new MSILGenerator().GenerateAssigner(dataColumn, _classType);
          assignColumn(dataColumn, classInstances);
       }
    }

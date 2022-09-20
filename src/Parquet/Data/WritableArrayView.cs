@@ -8,11 +8,11 @@ namespace Parquet.Data
       private readonly T[] _typedArray;
       int _count;
 
-      public WritableArrayView(int length) : this(ArrayPool.Rent(length))
+      public WritableArrayView(int length) : this(ArrayPool.Rent(length), 0, length)
       {
       }
 
-      WritableArrayView(T[] array) : base(array)
+      WritableArrayView(T[] array, int offset, int count) : base(array, offset, count)
       {
          _typedArray = array;
       }

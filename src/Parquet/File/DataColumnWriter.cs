@@ -46,7 +46,7 @@ namespace Parquet.File
       public Thrift.ColumnChunk Write(List<string> path, DataColumn column, IDataTypeHandler dataTypeHandler)
       {
          Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, path, 0);
-         Thrift.PageHeader ph = _footer.CreateDataPage(column.Data.Length);
+         Thrift.PageHeader ph = _footer.CreateDataPage(column.Count);
          _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
          List<PageTag> pages = WriteColumn(column, _schemaElement, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel);
@@ -82,7 +82,7 @@ namespace Parquet.File
 
          using (var ms = new MemoryStream())
          {
-            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Data.Length);
+            Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Count);
 
             //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
             using (GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, _compressionLevel, true))
@@ -94,7 +94,7 @@ namespace Parquet.File
                      WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
                   }
 
-                  ArrayView data = new ArrayView(column.Data);
+                  ArrayView data = new ArrayView(column.Data, column.Offset, column.Count);
 
                   if (maxDefinitionLevel > 0)
                   {

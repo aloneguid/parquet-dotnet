@@ -41,7 +41,7 @@ namespace Parquet.Data
          throw new NotSupportedException();
       }
 
-      public ArrayView PackDefinitions(Array data,  int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
+      public ArrayView PackDefinitions(Array data, int offset, int count, int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
       {
          throw new NotImplementedException();
       }

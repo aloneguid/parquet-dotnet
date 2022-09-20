@@ -90,7 +90,10 @@ namespace Parquet.Data
          var tse = new Thrift.SchemaElement(se.Name);
          tse.Type = _thriftType;
          if (_convertedType != null) tse.Converted_type = _convertedType.Value;
-         tse.Repetition_type = sef.IsArray
+
+         bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
+
+         tse.Repetition_type = sef.IsArray && !isList
             ? Thrift.FieldRepetitionType.REPEATED
             : (sef.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
          container.Add(tse);
@@ -118,21 +121,21 @@ namespace Parquet.Data
 
       public abstract Array GetArray(int minCount, bool rent, bool isNullable);
 
-      public abstract ArrayView PackDefinitions(Array data, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
+      public abstract ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
       public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
 
-      protected ArrayView PackDefinitions<TNullable>(TNullable[] data, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
+      protected ArrayView PackDefinitions<TNullable>(TNullable[] data, int offset, int count, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
          where TNullable : class
       {
-         definitionLevels = IntPool.Rent(data.Length);
-         definitionsLength = data.Length;
+         definitionLevels = IntPool.Rent(count);
+         definitionsLength = count;
 
          nullCount = 0;
-         WritableArrayView<TNullable> result = ArrayView.CreateWritable<TNullable>(data.Length);
+         WritableArrayView<TNullable> result = ArrayView.CreateWritable<TNullable>(count);
          int ir = 0;
 
-         for (int i = 0; i < data.Length; i++)
+         for (int i = offset; i < count; i++)
          {
             TNullable value = data[i];
 

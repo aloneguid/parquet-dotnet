@@ -63,7 +63,7 @@ namespace Parquet.Serialization
       {
          Type pt = property.PropertyType;
          if(pt.IsNullable()) pt = pt.GetNonNullable();
-         if (pt.IsArray) pt = pt.GetElementType();
+         if(pt.TryExtractEnumerableType(out Type t)) pt = t;
 
          IDataTypeHandler handler = DataTypeFactory.Match(pt);
 
@@ -80,6 +80,9 @@ namespace Parquet.Serialization
 
          if (columnAttr != null)
          {
+            if (columnAttr.UseListField)
+               return new ListField(r.Name, handler.DataType, r.HasNulls, property.Name, columnAttr.ListContainerName, columnAttr.ListElementName);
+
             if (handler.ClrType == typeof(TimeSpan))
                r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
             if (handler.ClrType == typeof(DateTime) || handler.ClrType == typeof(DateTimeOffset))

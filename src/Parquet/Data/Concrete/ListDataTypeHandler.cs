@@ -61,7 +61,7 @@ namespace Parquet.Data.Concrete
          container.Add(root);
 
          //add field container
-         var list = new Thrift.SchemaElement("list")
+         var list = new Thrift.SchemaElement(listField.ContainerName)
          {
             Repetition_type = Thrift.FieldRepetitionType.REPEATED
          };
