@@ -69,8 +69,6 @@ namespace Parquet.File
 
          _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-         ParquetEventSource.Current.SeekColumn(_dataField.Path, fileOffset);
-
          var colData = new ColumnRawData();
          colData.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
@@ -193,8 +191,6 @@ namespace Parquet.File
             //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
             using (var ms = bytes.ToStream())
             {
-               ParquetEventSource.Current.OpenDataPage(_dataField.Path, _thriftColumnChunk.Meta_data.Codec.ToString(), ms.Length);
-
                int valueCount = ph.Data_page_header.Num_values;
                using (var reader = new BinaryReader(ms))
                {

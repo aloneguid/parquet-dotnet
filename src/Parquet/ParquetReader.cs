@@ -46,8 +46,6 @@ namespace Parquet
          _meta = ReadMetadata();
          _footer = new ThriftFooter(_meta);
 
-         ParquetEventSource.Current.OpenStream(input.Length, leaveStreamOpen, _meta.Row_groups.Count, _meta.Num_rows);
-
          InitRowGroupReaders();
       }
 
