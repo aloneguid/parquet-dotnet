@@ -22,7 +22,7 @@
  */
 namespace cpp parquet
 namespace java org.apache.parquet.format
-namespace csharp Parquet.Thrift
+namespace netstd Parquet.Thrift
 
 /**
  * Types supported by Parquet.  These types are intended to be used in combination

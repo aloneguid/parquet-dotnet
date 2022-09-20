@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using Thrift.Protocol;
 using Thrift.Transport;
+using Thrift.Transport.Client;
 
 namespace Parquet.File
 {
