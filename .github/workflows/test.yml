@@ -26,6 +26,8 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: |
+          3.1.x
+          6.0.x
     - name: 'test on ${{ matrix.os }}'
       run: dotnet test src/Parquet.sln -c release
