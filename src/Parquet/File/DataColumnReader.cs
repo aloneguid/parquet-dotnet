@@ -188,6 +188,7 @@ namespace Parquet.File
             {
                ParquetEventSource.Current.OpenDataPage(_dataField.Path, _thriftColumnChunk.Meta_data.Codec.ToString(), ms.Length);
 
+               int valueCount = ph.Data_page_header.Num_values;
                using (var reader = new BinaryReader(ms))
                {
                   if (_maxRepetitionLevel > 0)
@@ -204,15 +205,23 @@ namespace Parquet.File
                      if (cd.definitions == null)
                         cd.definitions = new int[cd.maxCount];
 
+                     int offsetBeforeReading = cd.definitionsOffset;
                      cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
+                     // if no statistics are available, we use the number of values expected, based on the definitions
+                     if (ph.Data_page_header.Statistics == null)
+                     {
+                        valueCount = cd.definitions
+                           .Skip(offsetBeforeReading).Take(cd.definitionsOffset - offsetBeforeReading)
+                           .Count(v => v > 0);
+                     }
                   }
 
                   if (ph.Data_page_header == null) throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
 
-                  // if statistics are defined, use null count to determine the exact number of items we should read
-                  // however, I don't know if all parquet files with null values have stats defined. Maybe a better solution would
-                  // be using a count of defined values (from reading definitions?) 
-                  int maxReadCount = ph.Data_page_header.Num_values - (int)(ph.Data_page_header.Statistics?.Null_count ?? 0);
+                  // if statistics are defined, use null count to determine the exact number of items we should read,
+                  // otherwise the previously counted value from definitions
+                  int maxReadCount = ph.Data_page_header.Statistics == null ? valueCount
+                     : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
                   ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
                }
             }
