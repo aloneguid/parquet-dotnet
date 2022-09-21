@@ -49,7 +49,9 @@ namespace Parquet.File.Values.Primitives
          L = (long)(J / 11);
          int Month = (int)(J + 2 - 12 * L);
          int Year = (int)(100 * (N - 49) + I + L);
-
+         // DateTimeOffset.MinValue.Year is 1
+         Year = Math.Max(Year, 1);
+         
          long timeOfDayTicks = nanoTime._timeOfDayNanos / 100;
 
          var result = new DateTimeOffset(Year, Month, Day,
