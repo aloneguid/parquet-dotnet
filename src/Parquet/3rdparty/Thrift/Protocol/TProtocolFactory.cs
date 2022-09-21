@@ -1,5 +1,4 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable IDE0008 // Use explicit type
 
 // Licensed to the Apache Software Foundation(ASF) under one
 // or more contributor license agreements.See the NOTICE file
@@ -18,19 +17,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-namespace Thrift.Protocol.Entities
+using Thrift.Transport;
+
+namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
-    public struct TList
+    public abstract class TProtocolFactory
     {
-        public TList(TType elementType, int count)
-        {
-            ElementType = elementType;
-            Count = count;
-        }
-
-        public TType ElementType { get; set; }
-
-        public int Count { get; set; }
+        public abstract TProtocol GetProtocol(TTransport trans);
     }
 }

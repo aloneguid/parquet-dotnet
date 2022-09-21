@@ -2,132 +2,124 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-namespace Parquet
-{
-   static class CollectionExtensions
-   {
-      public static void TrimTail(this IList list, int maxValues)
-      {
-         if (list == null) return;
+namespace Parquet {
+    sealed class ReferenceEqualityComparer<T> : IEqualityComparer<T> where T : class {
+        public static IEqualityComparer<T> Default { get; } = new ReferenceEqualityComparer<T>();
 
-         if (list.Count > maxValues)
-         {
-            int diffCount = list.Count - maxValues;
-            while (--diffCount >= 0) list.RemoveAt(list.Count - 1); //more effective than copying the list again
-         }
-      }
+        public bool Equals(T x, T y) => ReferenceEquals(x, y);
+        public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
+    }
 
-      public static void TrimHead(this IList list, int maxValues)
-      {
-         if (list == null) return;
+    static class CollectionExtensions {
+        public static void TrimTail(this IList list, int maxValues) {
+            if(list == null)
+                return;
 
-         while (list.Count > maxValues && list.Count > 0)
-         {
-            list.RemoveAt(0);
-         }
-      }
+            if(list.Count > maxValues) {
+                int diffCount = list.Count - maxValues;
+                while(--diffCount >= 0)
+                    list.RemoveAt(list.Count - 1); //more effective than copying the list again
+            }
+        }
 
-      /// <summary>
-      /// Batch through IEnumerable without going to the beginning every time. May need optimisations but OK so far.
-      /// </summary>
-      public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int size)
-      {
-         T[] bucket = null;
-         int count = 0;
+        public static void TrimHead(this IList list, int maxValues) {
+            if(list == null)
+                return;
 
-         foreach (T item in source)
-         {
-            if (bucket == null)
-               bucket = new T[size];
+            while(list.Count > maxValues && list.Count > 0) {
+                list.RemoveAt(0);
+            }
+        }
 
-            bucket[count++] = item;
+        /// <summary>
+        /// Batch through IEnumerable without going to the beginning every time. May need optimisations but OK so far.
+        /// </summary>
+        public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int size) {
+            T[] bucket = null;
+            int count = 0;
 
-            if (count != size)
-               continue;
+            foreach(T item in source) {
+                if(bucket == null)
+                    bucket = new T[size];
 
-            yield return bucket.Select(x => x);
+                bucket[count++] = item;
 
-            bucket = null;
-            count = 0;
-         }
+                if(count != size)
+                    continue;
 
-         // Return the last bucket with all remaining elements
-         if (bucket != null && count > 0)
-            yield return bucket.Take(count);
-      }
+                yield return bucket.Select(x => x);
 
-      public static IEnumerable<Tuple<TFirst, TSecond>> IterateWith<TFirst, TSecond>(this IEnumerable<TFirst> firstSource, IEnumerable<TSecond> secondSource)
-      {
-         return new DoubleIterator<TFirst, TSecond>(firstSource, secondSource);
-      }
-
-      class DoubleIterator<TFirst, TSecond> : IEnumerable<Tuple<TFirst, TSecond>>, IEnumerator<Tuple<TFirst, TSecond>>
-      {
-         private readonly IEnumerator<TFirst> _first;
-         private readonly IEnumerator<TSecond> _second;
-
-         public DoubleIterator(IEnumerable<TFirst> first, IEnumerable<TSecond> second)
-         {
-            if (first == null)
-            {
-               throw new ArgumentNullException(nameof(first));
+                bucket = null;
+                count = 0;
             }
 
-            _first = first.GetEnumerator();
-            _second = second?.GetEnumerator();
-         }
+            // Return the last bucket with all remaining elements
+            if(bucket != null && count > 0)
+                yield return bucket.Take(count);
+        }
 
-         public Tuple<TFirst, TSecond> Current { get; private set; }
+        public static IEnumerable<Tuple<TFirst, TSecond>> IterateWith<TFirst, TSecond>(this IEnumerable<TFirst> firstSource, IEnumerable<TSecond> secondSource) {
+            return new DoubleIterator<TFirst, TSecond>(firstSource, secondSource);
+        }
 
-         object IEnumerator.Current => Current;
+        class DoubleIterator<TFirst, TSecond> : IEnumerable<Tuple<TFirst, TSecond>>, IEnumerator<Tuple<TFirst, TSecond>> {
+            private readonly IEnumerator<TFirst> _first;
+            private readonly IEnumerator<TSecond> _second;
 
-         public void Dispose()
-         {
+            public DoubleIterator(IEnumerable<TFirst> first, IEnumerable<TSecond> second) {
+                if(first == null) {
+                    throw new ArgumentNullException(nameof(first));
+                }
 
-         }
-
-         public IEnumerator<Tuple<TFirst, TSecond>> GetEnumerator()
-         {
-            return this;
-         }
-
-         public bool MoveNext()
-         {
-            bool canMove = _first.MoveNext() && (_second == null || _second.MoveNext());
-
-            if(canMove)
-            {
-               Current = new Tuple<TFirst, TSecond>(_first.Current, _second == null ? default(TSecond) : _second.Current);
-            }
-            else
-            {
-               Current = null;
+                _first = first.GetEnumerator();
+                _second = second?.GetEnumerator();
             }
 
-            return canMove;
-         }
+            public Tuple<TFirst, TSecond> Current { get; private set; }
 
-         public void Reset()
-         {
-            _first.Reset();
-            _second?.Reset();
-         }
+            object IEnumerator.Current => Current;
 
-         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-      }
+            public void Dispose() {
 
-      public static T[] Append<T>(this T[] array, T value)
-      {
-         int length = array?.Length ?? 0;
-         var newArray = new T[length + 1];
+            }
 
-         if (length > 0)
-            array.CopyTo(newArray, 0);
+            public IEnumerator<Tuple<TFirst, TSecond>> GetEnumerator() {
+                return this;
+            }
 
-         newArray[newArray.Length - 1] = value;
+            public bool MoveNext() {
+                bool canMove = _first.MoveNext() && (_second == null || _second.MoveNext());
 
-         return newArray;
-      }
-   }
+                if(canMove) {
+                    Current = new Tuple<TFirst, TSecond>(_first.Current, _second == null ? default(TSecond) : _second.Current);
+                }
+                else {
+                    Current = null;
+                }
+
+                return canMove;
+            }
+
+            public void Reset() {
+                _first.Reset();
+                _second?.Reset();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        public static T[] Append<T>(this T[] array, T value) {
+            int length = array?.Length ?? 0;
+            var newArray = new T[length + 1];
+
+            if(length > 0)
+                array.CopyTo(newArray, 0);
+
+            newArray[newArray.Length - 1] = value;
+
+            return newArray;
+        }
+    }
 }

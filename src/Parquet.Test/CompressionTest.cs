@@ -1,4 +1,5 @@
-﻿using Parquet.Data;
+﻿using System.Threading.Tasks;
+using Parquet.Data;
 using Xunit;
 
 namespace Parquet.Test
@@ -9,10 +10,10 @@ namespace Parquet.Test
       [InlineData(CompressionMethod.None)]
       [InlineData(CompressionMethod.Gzip)]
       [InlineData(CompressionMethod.Snappy)]
-      public void All_compression_methods_supported_for_simple_integeres(CompressionMethod compressionMethod)
+      public async Task All_compression_methods_supported_for_simple_integeres(CompressionMethod compressionMethod)
       {
          const int value = 5;
-         object actual = WriteReadSingle(new DataField<int>("id"), value, compressionMethod);
+         object actual = await WriteReadSingle(new DataField<int>("id"), value, compressionMethod);
          Assert.Equal(5, (int)actual);
       }
 
@@ -20,7 +21,7 @@ namespace Parquet.Test
       [InlineData(CompressionMethod.None)]
       [InlineData(CompressionMethod.Gzip)]
       [InlineData(CompressionMethod.Snappy)]
-      public void All_compression_methods_supported_for_simple_strings(CompressionMethod compressionMethod)
+      public async Task All_compression_methods_supported_for_simple_strings(CompressionMethod compressionMethod)
       {
          /*
           * uncompressed: length - 14, levels - 6
@@ -29,7 +30,7 @@ namespace Parquet.Test
           */
 
          const string value = "five";
-         object actual = WriteReadSingle(new DataField<string>("id"), value, compressionMethod);
+         object actual = await WriteReadSingle(new DataField<string>("id"), value, compressionMethod);
          Assert.Equal("five", actual);
       }
 
@@ -38,10 +39,10 @@ namespace Parquet.Test
       [InlineData(0)]
       [InlineData(1)]
       [InlineData(2)]
-      public void Gzip_all_levels(int level)
+      public async Task Gzip_all_levels(int level)
       {
          const string value = "five";
-         object actual = WriteReadSingle(new DataField<string>("id"), value, CompressionMethod.Gzip, level);
+         object actual = await WriteReadSingle(new DataField<string>("id"), value, CompressionMethod.Gzip, level);
          Assert.Equal("five", actual);
       }
    }

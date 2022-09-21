@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Xunit;
 
@@ -7,7 +8,7 @@ namespace Parquet.Test
    public class RepeatableFieldsTest : TestBase
    {
       [Fact]
-      public void Simple_repeated_field_write_read()
+      public async Task Simple_repeated_field_write_read()
       {
          // arrange 
          var field = new DataField<IEnumerable<int>>("items");
@@ -17,7 +18,7 @@ namespace Parquet.Test
             new int[] { 0, 1, 0, 1 });
 
          // act
-         DataColumn rc = WriteReadSingleColumn(field, column);
+         DataColumn rc = await WriteReadSingleColumn(field, column);
 
          // assert
          Assert.Equal(new int[] { 1, 2, 3, 4 }, rc.Data);

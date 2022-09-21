@@ -5,6 +5,7 @@ using System.Text;
 using Xunit;
 using Parquet.File.Values.Primitives;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Parquet.Test
 {
@@ -18,7 +19,7 @@ namespace Parquet.Test
 
    public class EndToEndTypeTest : TestBase
    {
-      private static Dictionary<string, (DataField field, object expectedValue)> _nameToData =
+      private static readonly Dictionary<string, (DataField field, object expectedValue)> _nameToData =
          new Dictionary<string, (DataField field, object expectedValue)>
          {
             ["plain string"] = (new DataField<string>("string"), "plain string"),
@@ -130,11 +131,11 @@ namespace Parquet.Test
       [InlineData("bool")]
       [InlineData("nullable bool")]
 
-      public void Type_writes_and_reads_end_to_end(string name)
+      public async Task Type_writes_and_reads_end_to_end(string name)
       {
          (DataField field, object expectedValue) input = _nameToData[name];
 
-         object actual = WriteReadSingle(input.field, input.expectedValue);
+         object actual = await WriteReadSingle(input.field, input.expectedValue);
 
          bool equal;
          if (input.expectedValue == null && actual == null)

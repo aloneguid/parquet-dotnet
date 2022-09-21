@@ -24,13 +24,13 @@ var schema = new Schema(idColumn.Field, cityColumn.Field);
 
 using (Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet"))
 {
-   using (var parquetWriter = new ParquetWriter(schema, fileStream))
+   using (var parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream))
    {
       // create a new row group in the file
-      using (ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())
+      using (ParquetRowGroupWriter groupWriter = await parquetWriter.CreateRowGroupAsync())
       {
-         groupWriter.WriteColumn(idColumn);
-         groupWriter.WriteColumn(cityColumn);
+         await groupWriter.WriteColumnAsync(idColumn);
+         await groupWriter.WriteColumnAsync(cityColumn);
       }
    }
 }

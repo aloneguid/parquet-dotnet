@@ -5,150 +5,128 @@ using System.Linq;
 using F = System.IO.File;
 using Parquet.Data.Rows;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Parquet.Extensions;
 
-namespace Parquet.Test
-{
-   public class TestBase
-   {
-      protected Stream OpenTestFile(string name)
-      {
-         return F.OpenRead("./data/" + name);
-      }
+namespace Parquet.Test {
+    public class TestBase {
+        protected Stream OpenTestFile(string name) {
+            return F.OpenRead("./data/" + name);
+        }
 
-      protected T[] ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T: new()
-      {
-         using (var ms = new MemoryStream())
-         {
-            Schema s = ParquetConvert.Serialize<T>(instances, ms);
+        protected async Task<T[]> ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T : new() {
+            using(var ms = new MemoryStream()) {
+                Schema s = await ParquetConvert.SerializeAsync<T>(instances, ms);
+
+                ms.Position = 0;
+
+                return await ParquetConvert.DeserializeAsync<T>(ms);
+            }
+        }
+
+        protected async Task<Table> ReadTestFileAsTableAsync(string name) {
+            using(Stream s = OpenTestFile(name)) {
+                using(ParquetReader reader = await ParquetReader.CreateAsync(s)) {
+                    return await reader.ReadAsTableAsync();
+                }
+            }
+        }
+
+        protected async Task<Table> WriteReadAsync(Table table, bool saveLocal = false) {
+            var ms = new MemoryStream();
+
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(table.Schema, ms)) {
+                await writer.WriteAsync(table);
+            }
+
+            if(saveLocal) {
+                F.WriteAllBytes("c:\\tmp\\test.parquet", ms.ToArray());
+            }
 
             ms.Position = 0;
 
-            return ParquetConvert.Deserialize<T>(ms);
-         }
-      }
-
-      protected Table ReadTestFileAsTable(string name)
-      {
-         using (Stream s = OpenTestFile(name))
-         {
-            using (var reader = new ParquetReader(s))
-            {
-               return reader.ReadAsTable();
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                return await reader.ReadAsTableAsync();
             }
-         }
-      }
+        }
 
-      protected Table WriteRead(Table table, bool saveLocal = false)
-      {
-         var ms = new MemoryStream();
+        protected async Task<DataColumn> WriteReadSingleColumn(DataField field, DataColumn dataColumn) {
+            using(var ms = new MemoryStream()) {
+                // write with built-in extension method
+                await ms.WriteSingleRowGroupParquetFileAsync(new Schema(field), dataColumn);
+                ms.Position = 0;
 
-         using (var writer = new ParquetWriter(table.Schema, ms))
-         {
-            writer.Write(table);
-         }
+                //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
 
-         if(saveLocal)
-         {
-            F.WriteAllBytes("c:\\tmp\\test.parquet", ms.ToArray());
-         }
+                // read first gow group and first column
+                using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                    if(reader.RowGroupCount == 0)
+                        return null;
+                    ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
-         ms.Position = 0;
+                    return await rgReader.ReadColumnAsync(field);
+                }
 
-         using (var reader = new ParquetReader(ms))
-         {
-            return reader.ReadAsTable();
-         }
-      }
 
-      protected DataColumn WriteReadSingleColumn(DataField field, DataColumn dataColumn)
-      {
-         using (var ms = new MemoryStream())
-         {
-            // write with built-in extension method
-            ms.WriteSingleRowGroupParquetFile(new Schema(field), dataColumn);
-            ms.Position = 0;
-
-            //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
-
-            // read first gow group and first column
-            using (var reader = new ParquetReader(ms))
-            {
-               if (reader.RowGroupCount == 0) return null;
-               ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
-
-               return rgReader.ReadColumn(field);
             }
+        }
 
+        protected async Task<Tuple<DataColumn[], Schema>> WriteReadSingleRowGroup(
+            Schema schema, DataColumn[] columns) {
+            Schema readSchema;
+            using(var ms = new MemoryStream()) {
+                await ms.WriteSingleRowGroupParquetFileAsync(schema, columns);
+                ms.Position = 0;
 
-         }
-      }
+                //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
 
-      protected DataColumn[] WriteReadSingleRowGroup(Schema schema, DataColumn[] columns, out Schema readSchema)
-      {
-         using (var ms = new MemoryStream())
-         {
-            ms.WriteSingleRowGroupParquetFile(schema, columns);
-            ms.Position = 0;
+                using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                    readSchema = reader.Schema;
 
-            //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
-
-            using (var reader = new ParquetReader(ms))
-            {
-               readSchema = reader.Schema;
-
-               using (ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0))
-               {
-                  return columns.Select(c =>
-                     rgReader.ReadColumn(c.Field))
-                     .ToArray();
-
-               }
+                    using(ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0)) {
+                        return Tuple.Create(await columns.Select(c =>
+                           rgReader.ReadColumnAsync(c.Field))
+                           .SequentialWhenAll(), readSchema);
+                    }
+                }
             }
-         }
-      }
+        }
 
-      protected object WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None, int compressionLevel = -1)
-      {
-         //for sanity, use disconnected streams
-         byte[] data;
+        protected async Task<object> WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None, int compressionLevel = -1) {
+            //for sanity, use disconnected streams
+            byte[] data;
 
-         using (var ms = new MemoryStream())
-         {
-            // write single value
+            using(var ms = new MemoryStream()) {
+                // write single value
 
-            using (var writer = new ParquetWriter(new Schema(field), ms))
-            {
-               writer.CompressionMethod = compressionMethod;
-               writer.CompressionLevel = compressionLevel;
+                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(field), ms)) {
+                    writer.CompressionMethod = compressionMethod;
+                    writer.CompressionLevel = compressionLevel;
 
-               using (ParquetRowGroupWriter rg = writer.CreateRowGroup())
-               {
-                  Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);
-                  dataArray.SetValue(value, 0);
-                  var column = new DataColumn(field, dataArray);
+                    using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                        Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);
+                        dataArray.SetValue(value, 0);
+                        var column = new DataColumn(field, dataArray);
 
-                  rg.WriteColumn(column);
-               }
+                        await rg.WriteColumnAsync(column);
+                    }
+                }
+
+                data = ms.ToArray();
             }
 
-            data = ms.ToArray();
-         }
+            using(var ms = new MemoryStream(data)) {
+                // read back single value
 
-         using (var ms = new MemoryStream(data))
-         { 
-            // read back single value
+                ms.Position = 0;
+                using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                    using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0)) {
+                        DataColumn column = await rowGroupReader.ReadColumnAsync(field);
 
-            ms.Position = 0;
-            using (var reader = new ParquetReader(ms))
-            {
-               using (ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0))
-               {
-                  DataColumn column = rowGroupReader.ReadColumn(field);
-
-                  return column.Data.GetValue(0);
-               }
+                        return column.Data.GetValue(0);
+                    }
+                }
             }
-         }
-      }
-   }
+        }
+    }
 }

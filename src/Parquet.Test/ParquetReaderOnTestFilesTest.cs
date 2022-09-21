@@ -2,6 +2,7 @@ using Parquet.Data;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Parquet.Test
@@ -34,26 +35,26 @@ namespace Parquet.Test
       };
 
       [Fact]
-      public void FixedLenByteArray_dictionary()
+      public async Task FixedLenByteArray_dictionary()
       {
          using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync();
             }
          }
       }
 
       [Fact]
-      public void Datetypes_all()
+      public async Task Datetypes_all()
       {
          DateTimeOffset offset, offset2;
          using (Stream s = OpenTestFile("dates.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
                offset = (DateTimeOffset)(columns[1].Data.GetValue(0));
                offset2 = (DateTimeOffset)(columns[1].Data.GetValue(1));
@@ -64,14 +65,14 @@ namespace Parquet.Test
       }
 
       [Fact]
-      public void DateTime_FromOtherSystem()
+      public async Task DateTime_FromOtherSystem()
       {
          DateTimeOffset offset;
          using (Stream s = OpenTestFile("datetime_other_system.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
                DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
                Assert.NotNull(as_at_date_col);
@@ -82,13 +83,13 @@ namespace Parquet.Test
          }
       }
       [Fact]
-      public void OptionalValues_WithoutStatistics()
+      public async Task OptionalValues_WithoutStatistics()
       {
          using (Stream s = OpenTestFile("test-optionals-without-stats.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync();
                DataColumn id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
                DataColumn value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
                Assert.NotNull(id_col);
@@ -101,13 +102,13 @@ namespace Parquet.Test
          }
       }
       [Fact]
-      public void Issue164()
+      public async Task Issue164()
       {
          using (Stream s = OpenTestFile("issue-164.parquet"))
          {
-            using (var r = new ParquetReader(s))
+            using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
-               DataColumn[] columns = r.ReadEntireRowGroup();
+               DataColumn[] columns = await r.ReadEntireRowGroupAsync();
                DataColumn id_col = columns[0];
                DataColumn cls_value_8 = columns[9];
                int index = Enumerable.Range(0, id_col.Data.Length).First(i => (int)id_col.Data.GetValue(i) == 256779);

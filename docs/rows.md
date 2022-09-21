@@ -117,14 +117,14 @@ represents a table with two columns - *isbn* and *author*, however *author* is a
 
 |isbn|author|
 |----|------|
-|12345-6|Ivan; Gavryliuk|
-|12345-8|Richard; Conway|
+|12345-6|Hazel; Nut|
+|12345-8|Marsha; Mellow|
 
 you would write:
 
 ```csharp
-table.Add(new Row("12345-6", new Row("Ivan", "Gavryliuk")));
-table.Add(new Row("12345-7", new Row("Richard", "Conway")));
+table.Add(new Row("12345-6", new Row("Hazel", "Nut")));
+table.Add(new Row("12345-7", new Row("Marsha", "Mellow")));
 ```
 
 ## Lists

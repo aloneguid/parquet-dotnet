@@ -19,7 +19,7 @@ For example, to force the reader to treat byte arrays as strings use the followi
 
 ```csharp
 var options = new ParquetOptions { TreatByteArrayAsString = true };
-var reader = new ParquetReader(stream, options);
+var reader = await ParquetReader.CreateAsync(stream, options);
 ```
 
 ## Metadata
@@ -27,7 +27,7 @@ var reader = new ParquetReader(stream, options);
 To read custom metadata you can access the `CustomMetadata` property on `ParquetReader`:
 
 ```csharp
-using (var reader = new ParquetReader(ms))
+using (var reader = await ParquetReader.CreateAsync(ms))
 {
    Assert.Equal("value1", reader.CustomMetadata["key1"]);
    Assert.Equal("value2", reader.CustomMetadata["key2"]);
