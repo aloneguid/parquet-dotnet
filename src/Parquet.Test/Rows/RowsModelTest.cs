@@ -318,7 +318,7 @@ namespace Parquet.Test.Rows {
             t.Add(1, new[] { new Row(1, "Joe"), new Row(2, "Bloggs") });
             t.Add(2, new[] { new Row(3, "Star"), new Row(4, "Wars") });
 
-            Table t2 = await WriteReadAsync(t, true);
+            Table t2 = await WriteReadAsync(t);
 
             Assert.Equal(t.ToString(), t2.ToString(), ignoreLineEndingDifferences: true);
         }
