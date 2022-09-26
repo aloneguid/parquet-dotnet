@@ -240,6 +240,7 @@ namespace Parquet.File {
                     break;
 
                 case Thrift.Encoding.PLAIN_DICTIONARY:
+                case Thrift.Encoding.RLE_DICTIONARY:
                     if(cd.indexes == null)
                         cd.indexes = new int[(int)totalValues];
                     indexCount = ReadPlainDictionary(reader, maxReadCount, cd.indexes, 0);
