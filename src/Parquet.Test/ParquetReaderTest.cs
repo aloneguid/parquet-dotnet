@@ -88,7 +88,8 @@ namespace Parquet.Test {
                 DataColumn[] data = await reader.ReadEntireRowGroupAsync();
 
                 //If we made it this far we were able to read all the columns
-                Assert.Equal(5, data[0].Data.Length);
+                Assert.Single(data[0].Data);
+                Assert.Equal(40539, ((float?[])data[0].Data)[0]);
             }
         }
 
