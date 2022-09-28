@@ -314,6 +314,108 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public async Task Serialize_explicit_schema_dataFields_with_non_null_propertyNames() {
+            // unit test for https://github.com/aloneguid/parquet-dotnet/issues/179
+
+            // create items to be serialised
+            List<SimpleWithDateTimeAndDecimal> items = new List<SimpleWithDateTimeAndDecimal>() {
+                new SimpleWithDateTimeAndDecimal() {
+                    DateTimeValue = DateTimeOffset.UtcNow,
+                    DecimalValue = 123m,
+                    Int32Value = 456,
+                },
+                new SimpleWithDateTimeAndDecimal() {
+                    DateTimeValue = DateTimeOffset.Now,
+                    DecimalValue = 234m,
+                    Int32Value = 567,
+                },
+            };
+
+            // create schema - set DataField.propertyName to non-null strings
+            Schema schema = new Schema(
+                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, false, nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
+                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, false, nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
+                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), DataType.Int32, false, false, nameof(SimpleWithDateTimeAndDecimal.Int32Value))
+                );
+
+            // serialise items
+            using(MemoryStream ms = new MemoryStream()) {
+                CompressionMethod compressionMethod = CompressionMethod.Gzip;
+                const int rowGroupSize = 5000;
+                Schema outputSchema = await ParquetConvert.SerializeAsync(items, ms, schema, compressionMethod, rowGroupSize, false)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        [Fact]
+        public async Task Serialize_explicit_schema_dataFields_with_null_propertyNames() {
+            // unit test for https://github.com/aloneguid/parquet-dotnet/issues/179
+
+            // create items to be serialised
+            List<SimpleWithDateTimeAndDecimal> items = new List<SimpleWithDateTimeAndDecimal>() {
+                new SimpleWithDateTimeAndDecimal() {
+                    DateTimeValue = DateTimeOffset.UtcNow,
+                    DecimalValue = 123m,
+                    Int32Value = 456,
+                },
+                new SimpleWithDateTimeAndDecimal() {
+                    DateTimeValue = DateTimeOffset.Now,
+                    DecimalValue = 234m,
+                    Int32Value = 567,
+                },
+            };
+
+            // create schema - set DataField.propertyName to null
+            Schema schema = new Schema(
+                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, false, null),
+                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, false, null),
+                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), DataType.Int32, false, false, null)
+                );
+
+            // serialise items
+            using(MemoryStream ms = new MemoryStream()) {
+                CompressionMethod compressionMethod = CompressionMethod.Gzip;
+                const int rowGroupSize = 5000;
+                Schema outputSchema = await ParquetConvert.SerializeAsync(items, ms, schema, compressionMethod, rowGroupSize, false)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        [Fact]
+        public async Task Serialize_explicit_schema_generic_dataFields() {
+            // unit test for https://github.com/aloneguid/parquet-dotnet/issues/179
+
+            // create items to be serialised
+            List<SimpleWithDateTimeAndDecimal> items = new List<SimpleWithDateTimeAndDecimal>() {
+                new SimpleWithDateTimeAndDecimal() {
+                    DateTimeValue = DateTimeOffset.UtcNow,
+                    DecimalValue = 123m,
+                    Int32Value = 456,
+                },
+                new SimpleWithDateTimeAndDecimal() {
+                    DateTimeValue = DateTimeOffset.Now,
+                    DecimalValue = 234m,
+                    Int32Value = 567,
+                },
+            };
+
+            // create schema - set DataField.propertyName to null
+            Schema schema = new Schema(
+                new DataField<DateTimeOffset>(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
+                new DataField<decimal>(nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
+                new DataField<int>(nameof(SimpleWithDateTimeAndDecimal.Int32Value))
+                );
+
+            // serialise items
+            using(MemoryStream ms = new MemoryStream()) {
+                CompressionMethod compressionMethod = CompressionMethod.Gzip;
+                const int rowGroupSize = 5000;
+                Schema outputSchema = await ParquetConvert.SerializeAsync(items, ms, schema, compressionMethod, rowGroupSize, false)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        [Fact]
         public async Task Serialize_structure_with_DateTime() {
             await TestRoundTripSerialization<DateTime>(DateTime.UtcNow.RoundToSecond());
         }
@@ -442,6 +544,12 @@ namespace Parquet.Test.Serialisation {
             public int[] col2 { get; set; }
             [ParquetColumn]
             public int[] col3 { get; set; }
+        }
+
+        public class SimpleWithDateTimeAndDecimal {
+            public DateTimeOffset DateTimeValue { get; set; }
+            public decimal DecimalValue { get; set; }
+            public int Int32Value { get; set; }
         }
 
         public class StructureWithTestType<T> {
