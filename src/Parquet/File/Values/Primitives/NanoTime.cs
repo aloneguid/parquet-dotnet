@@ -28,7 +28,7 @@ namespace Parquet.File.Values.Primitives
          }
 
          _julianDay = d + (153 * m - 457) / 5 + 365 * y + (y / 4) - (y / 100) + (y / 400) + 1721119;
-         _timeOfDayNanos = (long)(dt.TimeOfDay.TotalMilliseconds  * 1000000D);
+         _timeOfDayNanos = dt.TimeOfDay.Ticks * 100;
       }
 
       public void Write(BinaryWriter writer)
