@@ -83,6 +83,17 @@ namespace Parquet.Test {
         }
 
         [Fact]
+        public async Task Reads_rle_dictionary_encoded_columns() {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("rle_dictionary_encoded_columns.parquet"), leaveStreamOpen: false)) {
+                DataColumn[] data = await reader.ReadEntireRowGroupAsync();
+
+                //If we made it this far we were able to read all the columns
+                Assert.Single(data[0].Data);
+                Assert.Equal(40539, ((float?[])data[0].Data)[0]);
+            }
+        }
+
+        [Fact]
         public async Task Reads_byte_arrays() {
             byte[] nameValue;
             byte[] expectedValue = Encoding.UTF8.GetBytes("ALGERIA");
