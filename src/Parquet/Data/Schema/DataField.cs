@@ -43,7 +43,8 @@ namespace Parquet.Data
          : this(name,
               Discover(clrType).dataType,
               Discover(clrType).hasNulls,
-              Discover(clrType).isArray)
+              Discover(clrType).isArray,
+              null)
       {
          //todo: calls to Discover() can be killed by making a constructor method
       }
@@ -61,7 +62,7 @@ namespace Parquet.Data
          DataType = dataType;
          HasNulls = hasNulls;
          IsArray = isArray;
-         ClrPropName = propertyName;
+         ClrPropName = propertyName ?? name;
 
          MaxRepetitionLevel = isArray ? 1 : 0;
 

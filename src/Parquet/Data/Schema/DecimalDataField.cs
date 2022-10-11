@@ -31,8 +31,9 @@ namespace Parquet.Data
       /// <param name="forceByteArrayEncoding">Whether to force decimal type encoding as fixed bytes. Hive and Impala only understands decimals when forced to true.</param>
       /// <param name="hasNulls">Is 'decimal?'</param>
       /// <param name="isArray">Indicates whether this field is repeatable.</param>
-      public DecimalDataField(string name, int precision, int scale = 0, bool forceByteArrayEncoding = false, bool hasNulls = true, bool isArray = false)
-         : base(name, DataType.Decimal, hasNulls, isArray)
+      /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
+      public DecimalDataField(string name, int precision, int scale = 0, bool forceByteArrayEncoding = false, bool hasNulls = true, bool isArray = false, string propertyName = null)
+         : base(name, DataType.Decimal, hasNulls, isArray, propertyName)
       {
          // see https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal for more details.
          if (precision < 1) throw new ArgumentException("precision is required and must be a non-zero positive integer", nameof(precision));
