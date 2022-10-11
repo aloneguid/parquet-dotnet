@@ -36,10 +36,8 @@ namespace Thrift.Collections
         public THashSet(int capacity)
 #if NET5_0_OR_GREATER
             : base(capacity)
-#elif NETFRAMEWORK || NETSTANDARD
-            : base(/*capacity not supported*/)
 #else
-#error Unknown platform
+            : base(/*capacity not supported*/)
 #endif
         {
         }
