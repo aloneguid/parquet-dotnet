@@ -68,23 +68,26 @@ namespace Parquet {
         public static async Task<Table> ReadAsTableAsync(this ParquetReader reader) {
             Table result = null;
 
-            for(int i = 0; i < reader.RowGroupCount; i++) {
-                using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
-                    DataField[] dataFields = reader.Schema.GetDataFields();
-                    DataColumn[] allData = new DataColumn[dataFields.Length];
+            if(reader.RowGroupCount == 0) {
+                result = Table(reader.Schema, null, 0);
+            } else {
+                for(int i = 0; i < reader.RowGroupCount; i++) {
+                    using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
+                        DataField[] dataFields = reader.Schema.GetDataFields();
+                        DataColumn[] allData = new DataColumn[dataFields.Length];
 
-                    for(int c = 0; c < dataFields.Length; c++) {
-                        allData[c] = await rowGroupReader.ReadColumnAsync(dataFields[c]);
-                    }
+                        for(int c = 0; c < dataFields.Length; c++) {
+                            allData[c] = await rowGroupReader.ReadColumnAsync(dataFields[c]);
+                        }
 
-                    var t = new Table(reader.Schema, allData, rowGroupReader.RowCount);
+                        var t = new Table(reader.Schema, allData, rowGroupReader.RowCount);
 
-                    if(result == null) {
-                        result = t;
-                    }
-                    else {
-                        foreach(Row row in t) {
-                            result.Add(row);
+                        if(result == null) {
+                            result = t;
+                        } else {
+                            foreach(Row row in t) {
+                                result.Add(row);
+                            }
                         }
                     }
                 }
