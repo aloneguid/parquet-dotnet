@@ -69,7 +69,7 @@ namespace Parquet {
             Table result = null;
 
             if(reader.RowGroupCount == 0) {
-                result = Table(reader.Schema, null, 0);
+                result = new Table(reader.Schema, null, 0);
             } else {
                 for(int i = 0; i < reader.RowGroupCount; i++) {
                     using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
