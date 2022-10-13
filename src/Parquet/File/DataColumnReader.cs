@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.File.Streams;
 using Parquet.File.Values;
 
 namespace Parquet.File {
@@ -71,14 +71,18 @@ namespace Parquet.File {
 
             //there can be only one dictionary page in column
             Thrift.PageHeader ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
-            if(TryReadDictionaryPage(ph, out colData.dictionary, out colData.dictionaryOffset)) {
+            (bool read, Array data, int offset) = await TryReadDictionaryPage(ph);
+            if(read) {
+                colData.dictionary = data;
+                colData.dictionaryOffset = offset;
                 ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
+
             }
 
             int pagesRead = 0;
 
             while(true) {
-                ReadDataPage(ph, colData, maxValues);
+                await ReadDataPage(ph, colData, maxValues);
 
                 pagesRead++;
 
@@ -130,33 +134,36 @@ namespace Parquet.File {
             return finalColumn;
         }
 
-        private bool TryReadDictionaryPage(Thrift.PageHeader ph, out Array dictionary, out int dictionaryOffset) {
+        private async Task<IronCompress.DataBuffer> ReadPageData(Thrift.PageHeader ph) {
+
+            byte[] data = ArrayPool<byte>.Shared.Rent(ph.Compressed_page_size);
+            await _inputStream.ReadAsync(data, 0, ph.Compressed_page_size);
+
+            if(_thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
+                return new IronCompress.DataBuffer(data, ph.Compressed_page_size, ArrayPool<byte>.Shared);
+            }
+
+            return Compressor.Decompress((CompressionMethod)(int)_thriftColumnChunk.Meta_data.Codec,
+                data.AsSpan(0, ph.Compressed_page_size),
+                ph.Uncompressed_page_size);
+        }
+
+        private async Task<(bool, Array, int)> TryReadDictionaryPage(Thrift.PageHeader ph) {
             if(ph.Type != Thrift.PageType.DICTIONARY_PAGE) {
-                dictionary = null;
-                dictionaryOffset = 0;
-                return false;
+                return (false, null, 0);
             }
 
             //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
-
-            using(BytesOwner bytes = ReadPageData(ph)) {
+            using(IronCompress.DataBuffer bytes = await ReadPageData(ph)) {
                 //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
-                using(var ms = new MemoryStream(bytes.Memory.ToArray())) {
+                using(var ms = new MemoryStream(bytes.AsSpan().ToArray())) {
                     using(var dataReader = new BinaryReader(ms)) {
-                        dictionary = _dataTypeHandler.GetArray(ph.Dictionary_page_header.Num_values, false, false);
-
-                        dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0);
-
-                        return true;
+                        Array dictionary = _dataTypeHandler.GetArray(ph.Dictionary_page_header.Num_values, false, false);
+                        int dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0);
+                        return (true, dictionary, dictionaryOffset);
                     }
                 }
             }
-        }
-
-        private BytesOwner ReadPageData(Thrift.PageHeader pageHeader) {
-            return DataStreamFactory.ReadPageData(
-               _inputStream, _thriftColumnChunk.Meta_data.Codec,
-               pageHeader.Compressed_page_size, pageHeader.Uncompressed_page_size);
         }
 
         private long GetFileOffset() {
@@ -172,10 +179,10 @@ namespace Parquet.File {
                .Min();
         }
 
-        private void ReadDataPage(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
-            using(BytesOwner bytes = ReadPageData(ph)) {
+        private async Task ReadDataPage(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
+            using(IronCompress.DataBuffer bytes = await ReadPageData(ph)) {
                 //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
-                using(var ms = bytes.ToStream()) {
+                using(var ms = new MemoryStream(bytes.AsSpan().ToArray())) {
                     int valueCount = ph.Data_page_header.Num_values;
                     using(var reader = new BinaryReader(ms)) {
                         if(_maxRepetitionLevel > 0) {

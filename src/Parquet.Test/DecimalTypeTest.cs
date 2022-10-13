@@ -19,7 +19,7 @@ namespace Parquet.Test {
             const int precision = 1;
             const int scale = 0;
             var field = new DecimalDataField("field-name", precision, scale);
-            Assert.Equal(field.Scale, scale);
+            Assert.Equal(scale, field.Scale);
         }
 
         [Fact]

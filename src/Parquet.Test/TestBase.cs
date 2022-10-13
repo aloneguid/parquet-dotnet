@@ -92,7 +92,7 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<object> WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None, int compressionLevel = -1) {
+        protected async Task<object> WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None) {
             //for sanity, use disconnected streams
             byte[] data;
 
@@ -101,7 +101,6 @@ namespace Parquet.Test {
 
                 using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(field), ms)) {
                     writer.CompressionMethod = compressionMethod;
-                    writer.CompressionLevel = compressionLevel;
 
                     using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                         Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);

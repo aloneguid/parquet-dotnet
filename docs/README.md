@@ -27,8 +27,6 @@ Parquet is a de facto physical storage format in big data applications, includin
 - [Row-Based API](rows.md)
 - [Fast Automatic Serialisation](serialisation.md)
 
-You can track the [amount of features we have implemented so far](features.md).
-
 ## Getting started
 
 **Parquet.Net** is redistributed as a [NuGet package](https://www.nuget.org/packages/Parquet.Net). All the code is managed and doesn't have any native dependencies, therefore you are ready to go after referencing the package. This also means the library works on **Windows**, **Linux** and **MacOS X** (including M1).

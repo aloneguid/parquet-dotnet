@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.File.Data;
 using Parquet.Thrift;
 
 namespace Parquet.File {
@@ -145,7 +144,7 @@ namespace Parquet.File {
         }
 
         public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, Stream output, Thrift.Type columnType, List<string> path, int valuesCount) {
-            Thrift.CompressionCodec codec = DataFactory.GetThriftCompression(compression);
+            Thrift.CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
 
             var chunk = new Thrift.ColumnChunk();
             long startPos = output.Position;
@@ -155,12 +154,11 @@ namespace Parquet.File {
             chunk.Meta_data.Type = columnType;
             chunk.Meta_data.Codec = codec;
             chunk.Meta_data.Data_page_offset = startPos;
-            chunk.Meta_data.Encodings = new List<Thrift.Encoding>
-            {
-            Thrift.Encoding.RLE,
-            Thrift.Encoding.BIT_PACKED,
-            Thrift.Encoding.PLAIN
-         };
+            chunk.Meta_data.Encodings = new List<Thrift.Encoding> {
+                Thrift.Encoding.RLE,
+                Thrift.Encoding.BIT_PACKED,
+                Thrift.Encoding.PLAIN
+            };
             chunk.Meta_data.Path_in_schema = path;
             chunk.Meta_data.Statistics = new Thrift.Statistics();
 

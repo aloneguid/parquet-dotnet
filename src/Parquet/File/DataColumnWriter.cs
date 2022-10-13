@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.File.Streams;
 using Parquet.File.Values;
 
 namespace Parquet.File {
@@ -16,7 +15,6 @@ namespace Parquet.File {
         private readonly ThriftFooter _footer;
         private readonly Thrift.SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
-        private readonly int _compressionLevel;
         private readonly int _rowCount;
 
         private struct PageTag {
@@ -30,14 +28,12 @@ namespace Parquet.File {
            ThriftFooter footer,
            Thrift.SchemaElement schemaElement,
            CompressionMethod compressionMethod,
-           int compressionLevel,
            int rowCount) {
             _stream = stream;
             _thriftStream = thriftStream;
             _footer = footer;
             _schemaElement = schemaElement;
             _compressionMethod = compressionMethod;
-            _compressionLevel = compressionLevel;
             _rowCount = rowCount;
         }
 
@@ -68,6 +64,7 @@ namespace Parquet.File {
            int maxRepetitionLevel,
            int maxDefinitionLevel,
            CancellationToken cancellationToken = default) {
+
             var pages = new List<PageTag>();
 
             /*
@@ -76,56 +73,56 @@ namespace Parquet.File {
              * the write efficiency.
              */
 
-
+            byte[] uncompressedData;
             using(var ms = new MemoryStream()) {
-                Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Count);
 
                 //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-                using(GapStream pageStream = DataStreamFactory.CreateWriter(ms, _compressionMethod, _compressionLevel, true)) {
-                    using(var writer = new BinaryWriter(pageStream, Encoding.UTF8, true)) {
-                        if(column.RepetitionLevels != null) {
-                            WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
-                        }
-
-                        ArrayView data = new ArrayView(column.Data, column.Offset, column.Count);
-
-                        if(maxDefinitionLevel > 0) {
-                            data = column.PackDefinitions(maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelsLength, out int nullCount);
-
-                            //last chance to capture null count as null data is compressed now
-                            column.Statistics.NullCount = nullCount;
-
-                            try {
-                                WriteLevels(writer, definitionLevels, definitionLevelsLength, maxDefinitionLevel);
-                            }
-                            finally {
-                                if(definitionLevels != null) {
-                                    ArrayPool<int>.Shared.Return(definitionLevels);
-                                }
-                            }
-                        }
-                        else {
-                            //no defitions means no nulls
-                            column.Statistics.NullCount = 0;
-                        }
-
-                        dataTypeHandler.Write(tse, writer, data, column.Statistics);
-
-                        writer.Flush();
+                using(var writer = new BinaryWriter(ms, Encoding.UTF8, true)) {
+                    if(column.RepetitionLevels != null) {
+                        WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
                     }
 
-                    pageStream.Flush();   //extremely important to flush the stream as some compression algorithms don't finish writing
-                    pageStream.MarkWriteFinished();
-                    dataPageHeader.Uncompressed_page_size = (int)pageStream.Position;
+                    ArrayView data = new ArrayView(column.Data, column.Offset, column.Count);
+
+                    if(maxDefinitionLevel > 0) {
+                        data = column.PackDefinitions(maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelsLength, out int nullCount);
+
+                        //last chance to capture null count as null data is compressed now
+                        column.Statistics.NullCount = nullCount;
+
+                        try {
+                            WriteLevels(writer, definitionLevels, definitionLevelsLength, maxDefinitionLevel);
+                        }
+                        finally {
+                            if(definitionLevels != null) {
+                                ArrayPool<int>.Shared.Return(definitionLevels);
+                            }
+                        }
+                    }
+                    else {
+                        //no defitions means no nulls
+                        column.Statistics.NullCount = 0;
+                    }
+
+                    dataTypeHandler.Write(tse, writer, data, column.Statistics);
+
+                    writer.Flush();
                 }
-                dataPageHeader.Compressed_page_size = (int)ms.Position;
+                uncompressedData = ms.ToArray();
+            }
+
+            using(IronCompress.DataBuffer compressedData = _compressionMethod == CompressionMethod.None
+                ? new IronCompress.DataBuffer(uncompressedData)
+                : Compressor.Compress(_compressionMethod, uncompressedData)) {
+
+                Thrift.PageHeader dataPageHeader = _footer.CreateDataPage(column.Count);
+                dataPageHeader.Uncompressed_page_size = uncompressedData.Length;
+                dataPageHeader.Compressed_page_size = compressedData.AsSpan().Length;
 
                 //write the header in
                 dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
                 int headerSize = await _thriftStream.WriteAsync(dataPageHeader, false, cancellationToken);
-                ms.Position = 0;
-                ms.CopyTo(_stream);
-
+                _stream.Write(compressedData);
 
                 var dataTag = new PageTag {
                     HeaderMeta = dataPageHeader,

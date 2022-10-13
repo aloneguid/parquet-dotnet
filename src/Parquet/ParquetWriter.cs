@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
-using Parquet.File.Streams;
 
 namespace Parquet {
     /// <summary>
@@ -27,14 +26,8 @@ namespace Parquet {
         /// </summary>
         public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
 
-        /// <summary>
-        /// Compression level to use, value is treated depending on compression algorithm. Defaults to -1
-        /// meaning default compression level.
-        /// </summary>
-        public int CompressionLevel { get; set; } = -1;
-
         private ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
-           : base(new GapStream(output)) {
+           : base(output) {
             if(output == null)
                 throw new ArgumentNullException(nameof(output));
 
@@ -69,7 +62,7 @@ namespace Parquet {
             _dataWritten = true;
 
             var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer,
-               CompressionMethod, CompressionLevel, _formatOptions);
+               CompressionMethod, _formatOptions);
 
             _openedWriters.Add(writer);
 
