@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		..\.github\workflows\test.yml = ..\.github\workflows\test.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.PerfRunner", "Parquet.PerfRunner\Parquet.PerfRunner.csproj", "{6325A9B7-32B4-464C-84F4-9B62BE630E90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6325A9B7-32B4-464C-84F4-9B62BE630E90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6325A9B7-32B4-464C-84F4-9B62BE630E90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6325A9B7-32B4-464C-84F4-9B62BE630E90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6325A9B7-32B4-464C-84F4-9B62BE630E90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -55,6 +61,7 @@ Global
 		{8B0A6566-6722-4550-8EF2-1D91DF188F9B} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 		{AB829BBB-EF87-4038-8D32-E1C1629F357C} = {60294E19-6F8D-4D78-9A62-C50489095484}
 		{F28C5308-5410-4066-9DA8-4DDC8ACB0B5B} = {AB829BBB-EF87-4038-8D32-E1C1629F357C}
+		{6325A9B7-32B4-464C-84F4-9B62BE630E90} = {3F47B841-9074-4317-8ACA-0F2EEA34FA62}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B5C12140-A3BF-47C9-A4AD-91F7C4682804}

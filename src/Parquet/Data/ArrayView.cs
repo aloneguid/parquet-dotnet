@@ -60,11 +60,7 @@ namespace Parquet.Data
             yield break;
          }
          // there's a big win here if you can use the ctor from NET Standard 2.1 that has a capacity, which avoids GC overhead of resize
-#if NETSTANDARD2_1
          HashSet<T> hashSet = new HashSet<T>(Count, equalityComparer);
-#else
-         HashSet<T> hashSet = new HashSet<T>(equalityComparer);
-#endif
 
          T min = default;
          T max = default;
