@@ -57,8 +57,8 @@ using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
                 // read all columns inside each row group (you have an option to read only
                 // required columns if you need to.
                 var columns = new DataColumn[dataFields.Length];
-                for(int c = 0; i < columns.Length; i++) {
-                    columns[c] = await groupReader.ReadColumnAsync(dataFields[i]);
+                for(int c = 0; c < columns.Length; c++) {
+                    columns[c] = await groupReader.ReadColumnAsync(dataFields[c]);
                 }
 
                 // get first column, for instance
