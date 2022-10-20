@@ -137,7 +137,14 @@ namespace Parquet.File {
         private async Task<IronCompress.DataBuffer> ReadPageData(Thrift.PageHeader ph) {
 
             byte[] data = ArrayPool<byte>.Shared.Rent(ph.Compressed_page_size);
-            await _inputStream.ReadAsync(data, 0, ph.Compressed_page_size);
+
+            int totalBytesRead = 0, remainingBytes = ph.Compressed_page_size;
+            do {
+                int bytesRead = await _inputStream.ReadAsync(data, totalBytesRead, remainingBytes);
+                totalBytesRead += bytesRead;
+                remainingBytes -= bytesRead;
+            }
+            while(remainingBytes != 0);
 
             if(_thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
                 return new IronCompress.DataBuffer(data, ph.Compressed_page_size, ArrayPool<byte>.Shared);
