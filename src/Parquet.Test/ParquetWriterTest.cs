@@ -68,6 +68,61 @@ namespace Parquet.Test {
         }
 
         [Fact]
+        public async Task Write_in_small_row_groups_write_only_stream() {
+            //write to a write-only stream that does not implement the Position property
+            var id = new DataField<int>("id");
+            var pipe = new System.IO.Pipelines.Pipe();
+            Stream ws = pipe.Writer.AsStream();
+
+            //parallel thread to read the file back and validate
+            var reader = Task.Run(async () => {
+                //ParquetReader, unlike the writer, does need to be seekable
+                var ms = new MemoryStream();
+                await pipe.Reader.AsStream().CopyToAsync(ms);
+                using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                    Assert.Equal(3, reader.RowGroupCount);
+
+                    using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                        Assert.Equal(1, rg.RowCount);
+                        DataColumn dc = await rg.ReadColumnAsync(id);
+                        Assert.Equal(new int[] { 1 }, dc.Data);
+                    }
+
+                    using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
+                        Assert.Equal(1, rg.RowCount);
+                        DataColumn dc = await rg.ReadColumnAsync(id);
+                        Assert.Equal(new int[] { 2 }, dc.Data);
+                    }
+
+                    using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(2)) {
+                        Assert.Equal(1, rg.RowCount);
+                        DataColumn dc = await rg.ReadColumnAsync(id);
+                        Assert.Equal(new int[] { 3 }, dc.Data);
+                    }
+                }
+            });
+
+            // actual writing now that the reader is set up
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ws)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1 }));
+                }
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 2 }));
+                }
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3 }));
+                }
+            }
+            ws.Dispose();
+
+            //run the work and ensure that nothing throws
+            await reader;
+        }
+
+        [Fact]
         public async Task Append_to_file_reads_all_data() {
             //write a file with a single row group
             var id = new DataField<int>("id");
