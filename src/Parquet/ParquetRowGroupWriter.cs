@@ -23,7 +23,6 @@ namespace Parquet {
         private readonly CompressionMethod _compressionMethod;
         private readonly ParquetOptions _formatOptions;
         private readonly Thrift.RowGroup _thriftRowGroup;
-        private readonly long _rgStartPos;
         private readonly Thrift.SchemaElement[] _thschema;
         private int _colIdx;
 
@@ -41,7 +40,6 @@ namespace Parquet {
             _formatOptions = formatOptions;
 
             _thriftRowGroup = _footer.AddRowGroup();
-            _rgStartPos = _stream.Position;
             _thriftRowGroup.Columns = new List<Thrift.ColumnChunk>();
             _thschema = _footer.GetWriteableSchema();
         }

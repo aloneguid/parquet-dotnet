@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Parquet._3rdparty;
 using Parquet.Data;
 using Parquet.File;
 
@@ -27,7 +28,7 @@ namespace Parquet {
         public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
 
         private ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
-           : base(output) {
+           : base(output?.CanSeek == true ? output : new MeteredWriteStream(output)) {
             if(output == null)
                 throw new ArgumentNullException(nameof(output));
 
