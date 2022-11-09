@@ -77,7 +77,7 @@ namespace Parquet.File {
             using(var ms = new MemoryStream()) {
 
                 //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-                using(var writer = new BinaryWriter(ms, Encoding.UTF8, true)) {
+                using(var writer = new BinaryWriter(ms, Encoding.UTF8)) {
                     if(column.RepetitionLevels != null) {
                         WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
                     }
@@ -85,7 +85,10 @@ namespace Parquet.File {
                     ArrayView data = new ArrayView(column.Data, column.Offset, column.Count);
 
                     if(maxDefinitionLevel > 0) {
-                        data = column.PackDefinitions(maxDefinitionLevel, out int[] definitionLevels, out int definitionLevelsLength, out int nullCount);
+                        data = column.PackDefinitions(maxDefinitionLevel,
+                            out int[] definitionLevels,
+                            out int definitionLevelsLength,
+                            out int nullCount);
 
                         //last chance to capture null count as null data is compressed now
                         column.Statistics.NullCount = nullCount;
@@ -106,7 +109,7 @@ namespace Parquet.File {
 
                     dataTypeHandler.Write(tse, writer, data, column.Statistics);
 
-                    writer.Flush();
+                    //writer.Flush();
                 }
                 uncompressedData = ms.ToArray();
             }
