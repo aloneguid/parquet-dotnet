@@ -13,7 +13,7 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
@@ -22,3 +22,5 @@ jobs:
       run: dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
     - name: Do It!
       run: dotnet nuget push src/Parquet/bin/Release/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+    - name: create gh release      uses: softprops/action-gh-release@v1      with:        tag_name: ${{ env.VERSION }}        name: ${{ env.VERSION }}        files: "src/Parquet/bin/Release/*.nupkg"
+        generate_release_notes: true
