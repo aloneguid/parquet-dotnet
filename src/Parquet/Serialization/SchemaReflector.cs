@@ -39,6 +39,16 @@ namespace Parquet.Serialization
          return new Schema(properties.Select(GetField).Where(p => p != null).ToList());
       }
 
+      public Schema ReflectWithInheritedProperties()
+      {
+         IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties.Where(pickSerializableProperties);
+         IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseClass.DeclaredProperties.Where(pickSerializableProperties);
+         properties.AddRange(baseClassProperties);
+
+         IEnumerable validProperties = properties.Select(GetField).Where(p => p != null).ToList();
+         return new Schema(validProperties);
+      }
+
       /// <summary>
       /// 
       /// </summary>
@@ -57,6 +67,22 @@ namespace Parquet.Serialization
       public static Schema Reflect(Type classType)
       {
          return _cachedReflectedSchemas.GetOrAdd(classType, t => new SchemaReflector(classType).Reflect());
+      }
+
+      public static Schema ReflectWithInheritedProperties<T>()
+      {
+         Type classType = typeof(T);
+         return ReflectWithInheritedProperties(classType);
+      }
+
+      public static Schema ReflectWithInheritedProperties(Type classType)
+      {
+         // TODO: how to differentiate between cached schemas for a type with/without inherited properties.  different cache?
+         return _cachedReflectedSchemas.GetOrAdd(
+            classType, 
+            // TODO: why do we need the `t` argument?
+            t => new SchemaReflector(classType).ReflectWithInheritedProperties()
+         );
       }
 
       private Field GetField(PropertyInfo property)
