@@ -1,7 +1,7 @@
 name: 'Full Workflow'
 
 env:
-  VERSION: 4.1.1
+  VERSION: 4.1.2
   ASM_VERSION: 4.0.0
 
 on:
@@ -28,6 +28,7 @@ jobs:
         dotnet-version: |
           3.1.x
           6.0.x
+          7.0.x
     - name: 'test on ${{ matrix.os }}'
       run: dotnet test src/Parquet.sln -c release
 
