@@ -39,6 +39,11 @@ namespace Parquet.Serialization
          return new Schema(properties.Select(GetField).Where(p => p != null).ToList());
       }
 
+      /// <summary>
+      /// Same as `Reflect()`, but also includes `DeclaredProperties` from 
+      /// the given `classType`'s `BaseClass`
+      /// </summary>
+      /// <returns>Schema</returns>
       public Schema ReflectWithInheritedProperties()
       {
          IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties.Where(pickSerializableProperties);
@@ -69,12 +74,22 @@ namespace Parquet.Serialization
          return _cachedReflectedSchemas.GetOrAdd(classType, t => new SchemaReflector(classType).Reflect());
       }
 
+      /// <summary>
+      /// see non-static method ReflectWithInheritedProperties
+      /// </summary>
+      /// <param name="classType"></param>
+      /// <returns>Schema</returns>
       public static Schema ReflectWithInheritedProperties<T>()
       {
          Type classType = typeof(T);
          return ReflectWithInheritedProperties(classType);
       }
 
+      /// <summary>
+      /// see non-static method ReflectWithInheritedProperties
+      /// </summary>
+      /// <param name="classType"></param>
+      /// <returns>Schema</returns>
       public static Schema ReflectWithInheritedProperties(Type classType)
       {
          // TODO: how to differentiate between cached schemas for a type with/without inherited properties.  different cache?
