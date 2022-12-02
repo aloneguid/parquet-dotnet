@@ -54,16 +54,16 @@ namespace Parquet.Serialization
       {
          IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
          // TODO: BaseClass isn't a valid property here
-         IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseClass.DeclaredProperties;
+         IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseType.GetTypeInfo().DeclaredProperties;
          // TODO: can we just chain the addrange into the LINQ below?
-         IEnumerable<PropertyInfo> allProperties = properties.AddRange(baseClassProperties);
+         IEnumerable<PropertyInfo> allProperties = properties.Concat(baseClassProperties);
 
-         List<Field> allValidProperties = allProperties.Where(pickSerializableProperties)
-                                                       .Select(GetField)
-                                                       .Where(isNotNull)
-                                                       .ToList();
+         List<Field> allValidFields = allProperties.Where(pickSerializableProperties)
+                                                   .Select(GetField)
+                                                   .Where(isNotNull)
+                                                   .ToList();
 
-         return new Schema(allValidProperties);
+         return new Schema(allValidFields);
       }
 
       /// <summary>
@@ -89,7 +89,6 @@ namespace Parquet.Serialization
       /// <summary>
       /// see non-static method <see cref="ReflectWithInheritedProperties"/>
       /// </summary>
-      /// <param name="classType"></param>
       /// <returns><see cref="Schema"/></returns>
       public static Schema ReflectWithInheritedProperties<T>()
       {
