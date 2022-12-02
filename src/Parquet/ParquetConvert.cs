@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
-using Parquet.File;
 using Parquet.Serialization;
 using Parquet.Serialization.Values;
 

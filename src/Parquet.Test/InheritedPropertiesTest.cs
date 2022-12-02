@@ -1,13 +1,7 @@
-// TODO: verify these are all correct/required once i'm back on internet
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
 using System.IO;
-using Parquet;
 using Parquet.Data;
 using Parquet.Serialization;
-using Parquet.Serialization.Values;
 using Xunit;
 
 namespace Parquet.Test {
