@@ -21,6 +21,23 @@ namespace Parquet.Test {
     }
 
     [Fact]
+    public async Task Serialize_class_without_inherited_properties() {
+      InheritedClass[] recordsToSerialize = GenerateRecordsToSerialize();
+      Schema schema = SchemaReflector.Reflect<InheritedClass>();
+
+      // TODO: is there some `with/using` syntax i should use here?
+      MemoryStream stream = new();
+      await ParquetConvert.SerializeAsync(recordsToSerialize, stream, schema);
+      InheritedClass[] deserializedRecords = await ParquetConvert.DeserializeAsync<InheritedClass>(stream, fileSchema: schema);
+      
+      InheritedClass expected = recordsToSerialize[0];
+      InheritedClass actual = deserializedRecords[0];
+
+      Assert.Null(expected.BaseProperty);
+      Assert.Equal(expected.InheritedProperty, actual.InheritedProperty);
+    }
+
+    [Fact]
     public async Task Serialize_class_with_inherited_properties() {
       InheritedClass[] recordsToSerialize = GenerateRecordsToSerialize();
       Schema schema = SchemaReflector.ReflectWithInheritedProperties<InheritedClass>();
@@ -33,8 +50,8 @@ namespace Parquet.Test {
       InheritedClass expected = recordsToSerialize[0];
       InheritedClass actual = deserializedRecords[0];
 
-      // TODO: should we instead assert that 
-      //    `deserialized[0].BaseProperty is not null`?
+      Assert.Equal(expected.InheritedProperty, actual.InheritedProperty);
+      Assert.NotNull(expected.BaseProperty);
       Assert.Equal(expected.BaseProperty, actual.BaseProperty);
     }
 
