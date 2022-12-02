@@ -45,6 +45,8 @@ namespace Parquet.Test.Serialisation
 
          Assert.Equal(1, defaultSchema.Fields.Count);
          Assert.Equal(5, schemaWithInheritedProps.Fields.Count);
+         VerifyPocoSubClassField((DataField) defaultSchema[0]);
+         VerifyPocoClassFields(schemaWithInheritedProps);
       }
 
       [Fact]
@@ -55,6 +57,8 @@ namespace Parquet.Test.Serialisation
 
          Assert.Equal(1, defaultSchema.Fields.Count);
          Assert.Equal(5, schemaWithInheritedProps.Fields.Count);
+         VerifyPocoSubClassField((DataField) defaultSchema[0]);
+         VerifyPocoClassFields(schemaWithInheritedProps);
       }
 
       private static void VerifyPocoClassFields(Schema schema) {
