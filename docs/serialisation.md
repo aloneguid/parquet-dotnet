@@ -110,7 +110,7 @@ class MyClass
 
 ## Limitations
 
-At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).
+At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).  See the [inheritance docs](./inheritance.md) for details on inherited properties.
 
 
 
