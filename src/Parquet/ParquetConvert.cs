@@ -97,13 +97,18 @@ namespace Parquet {
         /// 
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="input"></param>
-        /// <param name="rowGroupIndex"></param>
+        /// <param name="input">Stream</param>
+        /// <param name="rowGroupIndex">int</param>
+        /// <param name="fileSchema">Schema</param>
         /// <returns></returns>
-        public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex = -1) where T : new() {
+        public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex = -1, 
+            Schema fileSchema = null
+        ) where T : new() {
             var result = new List<T>();
             using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
-                Schema fileSchema = new SchemaReflector(typeof(T)).Reflect();
+                if (fileSchema == null) {
+                    fileSchema = new SchemaReflector(typeof(T)).Reflect();
+                }
                 DataField[] dataFields = fileSchema.GetDataFields();
 
                 if(rowGroupIndex == -1) //Means read all row groups.

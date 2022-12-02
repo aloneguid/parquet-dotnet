@@ -154,7 +154,7 @@ namespace Parquet.Serialization.Values
 
          //set class property method
          TypeInfo ti = classType.GetTypeInfo();
-         PropertyInfo pi = ti.GetDeclaredProperty(typeField.ClrPropName ?? typeField.Name);
+         PropertyInfo pi = PropertyHelpers.GetDeclaredPropertyFromClassType(ti, typeField);
          MethodInfo setValueMethod = pi.SetMethod;
 
          TypeInfo dcti = dataColumn.GetType().GetTypeInfo();
@@ -181,7 +181,7 @@ namespace Parquet.Serialization.Values
          //arg 0 - DataColumn
          //arg 1 - class intances array (Array)
 
-         Type prop = classType.GetTypeInfo().GetDeclaredProperty(field.ClrPropName).PropertyType;
+         Type prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, field).PropertyType;
          bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
          if (field.IsArray || underlyingTypeIsEnumerable)
          {
