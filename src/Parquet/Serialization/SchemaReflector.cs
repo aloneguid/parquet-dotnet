@@ -57,7 +57,7 @@ namespace Parquet.Serialization
          // TODO: BaseClass isn't a valid property here
          IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseType.GetTypeInfo().DeclaredProperties;
          // TODO: can we just chain the addrange into the LINQ below?
-         IEnumerable<PropertyInfo> allProperties = properties.Concat(baseClassProperties);
+         IEnumerable<PropertyInfo> allProperties = baseClassProperties.Concat(properties);
 
          List<Field> allValidFields = allProperties.Where(pickSerializableProperties)
                                                    .Select(GetField)
