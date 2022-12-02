@@ -20,7 +20,7 @@ public class SimpleStructure
 Schema schema = SchemaReflector.Reflect<SimpleStructure>();
 ```
 
-This `Schema` only contains top-level (is that the right term?) properties.  So, a more complex structure that inherits the `Id` and `Name` properties from the `SimpleStructure` wouldn't include those properties in the serialized parquet by default.
+This `Schema` only contains top-level properties.  So, a more complex structure that inherits the `Id` and `Name` properties from the `SimpleStructure` wouldn't include those properties in the serialized parquet by default.
 
 ```csharp
 public class ComplexStructure : SimpleStructure
