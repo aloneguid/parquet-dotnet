@@ -17,6 +17,27 @@ namespace Parquet.Test.Serialisation
          Assert.NotNull(schema);
          Assert.Equal(4, schema.Fields.Count);
 
+         VerifyPocoClassFields(schema);
+      }
+
+      [Fact]
+      public void I_ignore_inherited_properties()
+      {
+         Schema schema = SchemaReflector.Reflect<PocoSubClass>();
+         Assert.Equal(1, schema.Fields.Count);
+         VerifyPocoSubClassField((DataField)schema[0]);
+      }
+
+      [Fact]
+      public void I_can_recognize_inherited_properties() 
+      {
+         Schema schema = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
+         Assert.Equal(5, schema.Fields.Count);
+         VerifyPocoClassFields(schema);
+         VerifyPocoSubClassField((DataField) schema[4]);
+      }
+
+      private static void VerifyPocoClassFields(Schema schema) {
          DataField id = (DataField)schema[0];
          Assert.Equal("Id", id.Name);
          Assert.Equal(DataType.Int32, id.DataType);
@@ -40,7 +61,13 @@ namespace Parquet.Test.Serialisation
          Assert.Equal(DataType.Int32, intArray.DataType);
          Assert.False(intArray.HasNulls);
          Assert.True(intArray.IsArray);
+      }
 
+      private static void VerifyPocoSubClassField(DataField extraProp) {
+         Assert.Equal("ExtraProperty", extraProp.Name);
+         Assert.Equal(DataType.Int32, extraProp.DataType);
+         Assert.False(extraProp.HasNulls);
+         Assert.False(extraProp.IsArray);
       }
 
       /// <summary>
@@ -56,6 +83,11 @@ namespace Parquet.Test.Serialisation
          public float? NullableFloat { get; set; }
 
          public int[] IntArray { get; set; }
+      }
+
+      class PocoSubClass : PocoClass
+      {
+         public int ExtraProperty { get; set; }
       }
    }
 }
