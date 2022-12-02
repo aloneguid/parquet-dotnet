@@ -40,18 +40,30 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      /// Same as `Reflect()`, but also includes `DeclaredProperties` from 
+      /// Same functionality as <see cref="Reflect"/>, 
+      /// but this method includes any `DeclaredProperties` inherited from 
       /// the given `classType`'s `BaseClass`
+      /// TODO: instead of doing things this way, we can add a nullable "_baseClassType" attribute,
+      ///         which, if not null, is used to add to the property list in the normal method. 
+      ///         then, the static methods would just 
+      ///            `new SchemaReflector(classType, baseClassType).Reflect()`
+      ///         instead of what we have now.
       /// </summary>
-      /// <returns>Schema</returns>
+      /// <returns><see cref="Schema"/></returns>
       public Schema ReflectWithInheritedProperties()
       {
-         IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties.Where(pickSerializableProperties);
-         IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseClass.DeclaredProperties.Where(pickSerializableProperties);
-         properties.AddRange(baseClassProperties);
+         IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
+         // TODO: BaseClass isn't a valid property here
+         IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseClass.DeclaredProperties;
+         // TODO: can we just chain the addrange into the LINQ below?
+         IEnumerable<PropertyInfo> allProperties = properties.AddRange(baseClassProperties);
 
-         IEnumerable validProperties = properties.Select(GetField).Where(p => p != null).ToList();
-         return new Schema(validProperties);
+         List<Field> allValidProperties = allProperties.Where(pickSerializableProperties)
+                                                       .Select(GetField)
+                                                       .Where(isNotNull)
+                                                       .ToList();
+
+         return new Schema(allValidProperties);
       }
 
       /// <summary>
@@ -75,10 +87,10 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      /// see non-static method ReflectWithInheritedProperties
+      /// see non-static method <see cref="ReflectWithInheritedProperties"/>
       /// </summary>
       /// <param name="classType"></param>
-      /// <returns>Schema</returns>
+      /// <returns><see cref="Schema"/></returns>
       public static Schema ReflectWithInheritedProperties<T>()
       {
          Type classType = typeof(T);
@@ -86,10 +98,10 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      /// see non-static method ReflectWithInheritedProperties
+      /// see non-static method <see cref="ReflectWithInheritedProperties"/>
       /// </summary>
       /// <param name="classType"></param>
-      /// <returns>Schema</returns>
+      /// <returns><see cref="Schema"/></returns>
       public static Schema ReflectWithInheritedProperties(Type classType)
       {
          // TODO: how to differentiate between cached schemas for a type with/without inherited properties.  different cache?
@@ -139,5 +151,7 @@ namespace Parquet.Serialization
 
       Func<PropertyInfo, bool> pickSerializableProperties = (PropertyInfo arg) => !arg.CustomAttributes.Any(p => p.AttributeType == typeof(ParquetIgnoreAttribute));
 
+      // TODO: initially defined this using the pattern above, but didn't know the syntax for a type-generic version, so wrote this instead.  any issue with that?
+      private static bool isNotNull<T>(T obj) => obj != null;
    }
 }
