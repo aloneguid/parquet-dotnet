@@ -38,7 +38,7 @@ namespace Parquet.Serialization.Values
          Type[] methodArgs = { typeof(object), typeof(object), typeof(object), typeof(int) };
 
          TypeInfo ti = classType.GetTypeInfo();
-         PropertyInfo pi = ti.GetDeclaredProperty(field.ClrPropName ?? field.Name);
+         PropertyInfo pi = PropertyHelpers.GetDeclaredPropertyFromClassType(ti, field);
          MethodInfo getValueMethod = pi.GetMethod;
 
          MethodInfo addToListMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("Add");
@@ -83,7 +83,7 @@ namespace Parquet.Serialization.Values
 
          using (il.ForEachLoop(classType, collection, out LocalBuilder currentElement))
          {
-            Type prop = classType.GetTypeInfo().GetDeclaredProperty(f.ClrPropName).PropertyType;
+            Type prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, f).PropertyType;
             bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
             if (f.IsArray || underlyingTypeIsEnumerable)
             {
@@ -383,6 +383,36 @@ namespace Parquet.Serialization.Values
          if (!value.HasValue) { return false; }
          return value.Value;
 
+      }
+   }
+
+   /// <summary>
+   /// This class is exists to help other classes in this namespace with accessing class properties 
+   /// </summary>
+   // TODO: double check this is only visible within the namespace
+   static class PropertyHelpers {
+      /// <summary>
+      /// when the field is declared on the base class, the original version produced 
+      /// a NullReferenceException.  this helper method will fetch the property off the base class
+      /// if necessary, preventing the NRE
+      /// </summary>
+      /// <param name="classType">Type</param>
+      /// <param name="field">Field</param>
+      /// <returns>PropertyInfo</returns>
+      public static PropertyInfo GetDeclaredPropertyFromClassType(Type classType, Field field)
+      {
+         string fieldName = field.ClrPropName ?? field.Name;
+         PropertyInfo prop = classType.GetTypeInfo().GetDeclaredProperty(fieldName);
+         
+         // TODO: trying to get build, probably not the best solution
+         if (prop == null)
+         {
+            // if pi is null, try the base class
+            TypeInfo baseType = classType.BaseType.GetTypeInfo();
+            prop = baseType.GetDeclaredProperty(fieldName);
+         }
+
+         return prop;
       }
    }
 }
