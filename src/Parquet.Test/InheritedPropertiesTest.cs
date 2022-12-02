@@ -33,7 +33,7 @@ namespace Parquet.Test {
       InheritedClass expected = recordsToSerialize[0];
       InheritedClass actual = deserializedRecords[0];
 
-      Assert.Null(expected.BaseProperty);
+      Assert.Null(actual.BaseProperty);
       Assert.Equal(expected.InheritedProperty, actual.InheritedProperty);
     }
 
@@ -51,7 +51,7 @@ namespace Parquet.Test {
       InheritedClass actual = deserializedRecords[0];
 
       Assert.Equal(expected.InheritedProperty, actual.InheritedProperty);
-      Assert.NotNull(expected.BaseProperty);
+      Assert.NotNull(actual.BaseProperty);
       Assert.Equal(expected.BaseProperty, actual.BaseProperty);
     }
 
