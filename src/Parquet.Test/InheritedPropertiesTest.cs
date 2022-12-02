@@ -44,20 +44,6 @@ namespace Parquet.Test {
       Assert.Equal(expected.BaseProperty, actual.BaseProperty);
     }
 
-    [Fact] 
-    public async Task Writer_should_have_inherited_columns() {
-      InheritedClass[] records = GenerateRecordsToSerialize();
-      Schema schema = SchemaReflector.ReflectWithInheritedProperties<InheritedClass>();
-      DataField[] dataFields = schema.GetDataFields();
-      ClrBridge bridge = new(typeof(InheritedClass));
-      DataColumn[] columns = dataFields
-          .Select(df => bridge.BuildColumn(df, records, 1))
-          .ToArray();
-
-      // TODO: fix this assertion to be more specific
-      Assert.Equal(columns.Length, 2);
-    }
-
     private class BaseClass {
       public string BaseProperty { get; set; }
     }
