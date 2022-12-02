@@ -54,7 +54,6 @@ namespace Parquet.Serialization
       public Schema ReflectWithInheritedProperties()
       {
          IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
-         // TODO: BaseClass isn't a valid property here
          IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseType.GetTypeInfo().DeclaredProperties;
          // TODO: can we just chain the addrange into the LINQ below?
          IEnumerable<PropertyInfo> allProperties = baseClassProperties.Concat(properties);
