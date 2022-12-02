@@ -41,8 +41,7 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      /// TODO: i think this is the wrong cref.  how to point to non-static instance method?
-      /// Same functionality as <see cref="SchemaReflector.Reflect()"/>, 
+      /// Same functionality as <see cref="Reflect()"/>, 
       /// but this method includes any `DeclaredProperties` inherited from 
       /// the given `classType`'s `BaseClass`
       /// TODO: instead of doing things this way, we can add a nullable "_baseClassType" attribute,
@@ -87,7 +86,7 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      /// see non-static method <see cref="SchemaReflector.ReflectWithInheritedProperties()"/>
+      /// see non-static method <see cref="O:ReflectWithInheritedProperties"/>
       /// </summary>
       /// <returns><see cref="Schema"/></returns>
       public static Schema ReflectWithInheritedProperties<T>()
@@ -97,7 +96,7 @@ namespace Parquet.Serialization
       }
 
       /// <summary>
-      /// see non-static method <see cref="ReflectWithInheritedProperties()"/>
+      /// see non-static method <see cref="O:ReflectWithInheritedProperties"/>
       /// </summary>
       /// <param name="classType"></param>
       /// <returns><see cref="Schema"/></returns>
