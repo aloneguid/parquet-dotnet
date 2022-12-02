@@ -15,6 +15,7 @@ namespace Parquet.Serialization
    {
       private readonly TypeInfo _classType;
       private static readonly ConcurrentDictionary<Type, Schema> _cachedReflectedSchemas = new ConcurrentDictionary<Type, Schema>();
+      private static readonly ConcurrentDictionary<Type, Schema> _cachedReflectedWithInheritedPropertiesSchemas = new();
 
       /// <summary>
       /// </summary>
@@ -105,7 +106,7 @@ namespace Parquet.Serialization
       public static Schema ReflectWithInheritedProperties(Type classType)
       {
          // TODO: how to differentiate between cached schemas for a type with/without inherited properties.  different cache?
-         return _cachedReflectedSchemas.GetOrAdd(
+         return _cachedReflectedWithInheritedPropertiesSchemas.GetOrAdd(
             classType, 
             // TODO: why do we need the `t` argument?
             t => new SchemaReflector(classType).ReflectWithInheritedProperties()
