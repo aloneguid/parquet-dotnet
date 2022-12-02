@@ -56,13 +56,12 @@ namespace Parquet.Serialization
       {
          IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
          IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseType.GetTypeInfo().DeclaredProperties;
-         // TODO: can we just chain the addrange into the LINQ below?
-         IEnumerable<PropertyInfo> allProperties = baseClassProperties.Concat(properties);
 
-         List<Field> allValidFields = allProperties.Where(pickSerializableProperties)
-                                                   .Select(GetField)
-                                                   .Where(isNotNull)
-                                                   .ToList();
+         List<Field> allValidFields = baseClassProperties.Concat(properties)
+                                                         .Where(pickSerializableProperties)
+                                                         .Select(GetField)
+                                                         .Where(isNotNull)
+                                                         .ToList();
 
          return new Schema(allValidFields);
       }
