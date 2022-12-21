@@ -125,7 +125,12 @@ namespace Parquet.File {
                 //write the header in
                 dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
                 int headerSize = await _thriftStream.WriteAsync(dataPageHeader, false, cancellationToken);
+#if NETSTANDARD2_0
+                byte[] tmp = compressedData.AsSpan().ToArray();
+                _stream.Write(tmp, 0, tmp.Length);
+#else
                 _stream.Write(compressedData);
+#endif
 
                 var dataTag = new PageTag {
                     HeaderMeta = dataPageHeader,

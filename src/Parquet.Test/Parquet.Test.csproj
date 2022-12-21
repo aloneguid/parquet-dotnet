@@ -10,7 +10,21 @@
       <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
    </PropertyGroup>
 
-   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <Choose>
+        <When Condition="'$(OS)' == 'Windows_NT'">
+            <PropertyGroup>
+                <TargetFrameworks>netcoreapp3.1;net6.0;net7.0;net462</TargetFrameworks>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <PropertyGroup>
+                <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
+
+
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
       <DebugType>portable</DebugType>
       <DebugSymbols>true</DebugSymbols>
    </PropertyGroup>
@@ -18,7 +32,7 @@
    <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
       <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
       <PackageReference Include="xunit" Version="2.4.2" />
       <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
