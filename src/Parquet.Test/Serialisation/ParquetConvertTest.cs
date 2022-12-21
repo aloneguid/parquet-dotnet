@@ -144,19 +144,17 @@ namespace Parquet.Test.Serialisation {
 
                 SimpleRenamed[] structures2 = await ParquetConvert.DeserializeAsync<SimpleRenamed>(ms);
 
-                var formatDecimal = new Func<decimal?, decimal?>(d => d.HasValue
-                   ? Math.Round(d.Value, 18, MidpointRounding.ToZero)
-                   : d
-                );
-
                 SimpleRenamed[] structuresArray = structures.ToArray();
                 for(int i = 0; i < 10; i++) {
                     Assert.Equal(structuresArray[i].Id, structures2[i].Id);
                     Assert.Equal(structuresArray[i].PersonName, structures2[i].PersonName);
-                    Assert.Equal(formatDecimal(structuresArray[i].NullableDecimal), formatDecimal(structures2[i].NullableDecimal));
+                    Assert.Equal(structuresArray[i].NullableDecimal.HasValue, structures2[i].NullableDecimal.HasValue);
+                    if(structuresArray[i].NullableDecimal.HasValue)
+                        Assert.Equal(structuresArray[i].NullableDecimal.Value, structures2[i].NullableDecimal.Value, 5);
                 }
             }
         }
+
         [Fact]
         public async Task Serialise_deserialise_listfield_column() {
             IEnumerable<SimpleWithListField> structures = Enumerable
