@@ -221,9 +221,11 @@ namespace Parquet.Test {
             Assert.Equal(3, nameField.MaxDefinitionLevel);
         }
 
-        [Fact]
-        public async Task BackwardCompat_list_with_one_array() {
-            using(Stream input = OpenTestFile("legacy-list-onearray.parquet")) {
+        [Theory]
+        [InlineData("legacy-list-onearray.parquet")]
+        [InlineData("legacy-list-onearray.v2.parquet")]
+        public async Task BackwardCompat_list_with_one_array(string parquetFile) {
+            using(Stream input = OpenTestFile(parquetFile)) {
                 using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
                     Schema schema = reader.Schema;
 
@@ -239,7 +241,6 @@ namespace Parquet.Test {
                     }
                 }
             }
-
         }
     }
 }

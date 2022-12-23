@@ -16,8 +16,15 @@ using Type = System.Type;
 
 namespace Parquet.Test.Reader {
     public class ParquetCsvComparison : TestBase {
-        protected async Task CompareFilesAsync(string baseName, string encoding, bool treatByteArrayAsString, params Type[] columnTypes) {
-            DataColumn[] parquet = await ReadParquetAsync($"{baseName}.{encoding}.parquet", treatByteArrayAsString);
+        protected async Task CompareFilesAsync(string baseName, string encoding, string dataPageVersion, bool treatByteArrayAsString, params Type[] columnTypes) {
+            string parquetFilePrefix = $"{baseName}";
+            if(!string.IsNullOrEmpty(encoding)) {
+                parquetFilePrefix += $".{encoding}";
+            }
+            if(!string.IsNullOrEmpty(dataPageVersion)) {
+                parquetFilePrefix += $".{dataPageVersion}";
+            }
+            DataColumn[] parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
             DataColumn[] csv = ReadCsv($"{baseName}.csv");
             Compare(parquet, csv, columnTypes);
         }

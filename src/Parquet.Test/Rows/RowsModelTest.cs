@@ -451,9 +451,11 @@ namespace Parquet.Test.Rows {
             await ReadTestFileAsTableAsync("special/all_nulls_no_booleans.parquet");
         }
 
-        [Fact]
-        public async Task Special_all_nulls_file() {
-            Table t = await ReadTestFileAsTableAsync("special/all_nulls.parquet");
+        [Theory]
+        [InlineData("special/all_nulls.parquet")]
+        [InlineData("special/all_nulls.v2.parquet")]
+        public async Task Special_all_nulls_file(string parquetFile) {
+            Table t = await ReadTestFileAsTableAsync(parquetFile);
 
             Assert.Equal(1, t.Schema.Fields.Count);
             Assert.Equal("lognumber", t.Schema[0].Name);
@@ -461,14 +463,18 @@ namespace Parquet.Test.Rows {
             Assert.Null(t[0][0]);
         }
 
-        [Fact]
-        public async Task Special_read_all_nulls_decimal_column() {
-            await ReadTestFileAsTableAsync("special/decimalnulls.parquet");
+        [Theory]
+        [InlineData("special/decimalnulls.parquet")]
+        [InlineData("special/decimalnulls.v2.parquet")]
+        public async Task Special_read_all_nulls_decimal_column(string parquetFile) {
+            await ReadTestFileAsTableAsync(parquetFile);
         }
 
-        [Fact]
-        public async Task Special_read_all_legacy_decimals() {
-            Table ds = await ReadTestFileAsTableAsync("special/decimallegacy.parquet");
+        [Theory]
+        [InlineData("special/decimallegacy.parquet")]
+        [InlineData("special/decimallegacy.v2.parquet")]
+        public async Task Special_read_all_legacy_decimals(string parquetFile) {
+            Table ds = await ReadTestFileAsTableAsync(parquetFile);
 
             Row row = ds[0];
             Assert.Equal(1, (int)row[0]);
@@ -529,9 +535,11 @@ namespace Parquet.Test.Rows {
 
         #region [ JSON Conversions ]
 
-        [Fact]
-        public async Task JSON_struct_plain_reads_by_newtonsoft() {
-            Table t = await ReadTestFileAsTableAsync("struct_plain.parquet");
+        [Theory]
+        [InlineData("struct_plain.parquet")]
+        [InlineData("struct_plain.v2.parquet")]
+        public async Task JSON_struct_plain_reads_by_newtonsoft(string parquetFile) {
+            Table t = await ReadTestFileAsTableAsync(parquetFile);
 
             Assert.Equal("{'isbn': '12345-6', 'author': {'firstName': 'Ivan', 'lastName': 'Gavryliuk'}}", t[0].ToString("jsq"));
             //Assert.Equal("{'isbn': '12345-7', 'author': {'firstName': 'Marsha', 'lastName': 'Mellow'}}", t[1].ToString("jsq"));

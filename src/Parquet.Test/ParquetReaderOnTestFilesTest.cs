@@ -34,10 +34,12 @@ namespace Parquet.Test
          0x8f
       };
 
-      [Fact]
-      public async Task FixedLenByteArray_dictionary()
+      [Theory]
+      [InlineData("fixedlenbytearray.parquet")]
+      [InlineData("fixedlenbytearray.v2.parquet")]
+      public async Task FixedLenByteArray_dictionary(string parquetFile)
       {
-         using (Stream s = OpenTestFile("fixedlenbytearray.parquet"))
+         using (Stream s = OpenTestFile(parquetFile))
          {
             using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
@@ -46,11 +48,13 @@ namespace Parquet.Test
          }
       }
 
-      [Fact]
-      public async Task Datetypes_all()
+      [Theory]
+      [InlineData("dates.parquet")]
+      [InlineData("dates.v2.parquet")]
+      public async Task Datetypes_all(string parquetFile)
       {
          DateTimeOffset offset, offset2;
-         using (Stream s = OpenTestFile("dates.parquet"))
+         using (Stream s = OpenTestFile(parquetFile))
          {
             using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
@@ -64,11 +68,13 @@ namespace Parquet.Test
          Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
       }
 
-      [Fact]
-      public async Task DateTime_FromOtherSystem()
+      [Theory]
+      [InlineData("datetime_other_system.parquet")]
+      [InlineData("datetime_other_system.v2.parquet")]
+      public async Task DateTime_FromOtherSystem(string parquetFile)
       {
          DateTimeOffset offset;
-         using (Stream s = OpenTestFile("datetime_other_system.parquet"))
+         using (Stream s = OpenTestFile(parquetFile))
          {
             using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
@@ -82,10 +88,13 @@ namespace Parquet.Test
             }
          }
       }
-      [Fact]
-      public async Task OptionalValues_WithoutStatistics()
+      
+      [Theory]
+      [InlineData("test-optionals-without-stats.parquet")]
+      [InlineData("test-optionals-without-stats.v2.parquet")]
+      public async Task OptionalValues_WithoutStatistics(string parquetFile)
       {
-         using (Stream s = OpenTestFile("test-optionals-without-stats.parquet"))
+         using (Stream s = OpenTestFile(parquetFile))
          {
             using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
@@ -101,10 +110,13 @@ namespace Parquet.Test
             }
          }
       }
-      [Fact]
-      public async Task Issue164()
+      
+      [Theory]
+      [InlineData("issue-164.parquet")]
+      [InlineData("issue-164.v2.parquet")]
+      public async Task Issue164(string parquetFile)
       {
-         using (Stream s = OpenTestFile("issue-164.parquet"))
+         using (Stream s = OpenTestFile(parquetFile))
          {
             using (ParquetReader r = await ParquetReader.CreateAsync(s))
             {
