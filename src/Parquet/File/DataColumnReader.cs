@@ -238,6 +238,12 @@ namespace Parquet.File {
                 }
             }
         }
+        
+        /**
+        * New page format allowing reading levels without decompressing the data
+        * Repetition and definition levels are uncompressed
+        * The remaining section containing the data is compressed if is_compressed is true
+        **/
         private async Task ReadDataPageV2(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
             if(ph.Data_page_header_v2 == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
