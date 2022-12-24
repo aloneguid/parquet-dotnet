@@ -23,7 +23,7 @@ namespace Parquet.Data.Concrete
 
             (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
 
-            (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS) ||
+            (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type is Thrift.ConvertedType.TIMESTAMP_MILLIS or Thrift.ConvertedType.TIMESTAMP_MICROS) ||
 
             (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
       }
@@ -64,7 +64,7 @@ namespace Parquet.Data.Concrete
             case Thrift.Type.INT32:
                return ReadAsInt32(reader, (DateTimeOffset[])dest, offset);
             case Thrift.Type.INT64:
-               return ReadAsInt64(reader, (DateTimeOffset[])dest, offset);
+               return ReadAsInt64(reader, tse,(DateTimeOffset[])dest, offset);
             case Thrift.Type.INT96:
                return ReadAsInt96(reader, (DateTimeOffset[])dest, offset);
             default:
@@ -79,11 +79,9 @@ namespace Parquet.Data.Concrete
          switch (tse.Type)
          {
             case Thrift.Type.INT32:
-               int iv = reader.ReadInt32();
-               return iv.FromUnixDays();
+                return ReadAsInt32(reader);
             case Thrift.Type.INT64:
-               long lv = reader.ReadInt64();
-               return lv.FromUnixMilliseconds();
+                return ReadAsInt64(reader, tse);
             case Thrift.Type.INT96:
                return new NanoTime(reader.ReadBytes(12), 0);
             default:
@@ -141,27 +139,23 @@ namespace Parquet.Data.Concrete
          writer.Write(days);
       }
 
-      private static void ReadAsInt64(BinaryReader reader, IList result)
-      {
-         while (reader.BaseStream.Position + 8 <= reader.BaseStream.Length)
-         {
-            result.Add(ReadAsInt64(reader));
-         }
-      }
-
-      private static DateTimeOffset ReadAsInt64(BinaryReader reader)
+      private static DateTimeOffset ReadAsInt64(BinaryReader reader, Thrift.SchemaElement tse)
       {
          long lv = reader.ReadInt64();
+         if(tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MICROS) {
+             lv /= 1000;
+         }
+
          return lv.FromUnixMilliseconds();
       }
 
-      private static int ReadAsInt64(BinaryReader reader, DateTimeOffset[] dest, int offset)
+      private static int ReadAsInt64(BinaryReader reader, Thrift.SchemaElement tse, DateTimeOffset[] dest, int offset)
       {
          int idx = offset;
 
          while (reader.BaseStream.Position + 8 <= reader.BaseStream.Length)
          {
-            DateTimeOffset dto = ReadAsInt64(reader);
+            DateTimeOffset dto = ReadAsInt64(reader, tse);
             dest[idx++] = dto;
          }
 
@@ -260,7 +254,7 @@ namespace Parquet.Data.Concrete
                   case Thrift.Type.INT32:
                      return ReadAsInt32(reader);
                   case Thrift.Type.INT64:
-                     return ReadAsInt64(reader);
+                     return ReadAsInt64(reader, tse);
                   case Thrift.Type.INT96:
                      return ReadAsInt96(reader);
                   default:
