@@ -143,7 +143,9 @@ namespace Parquet.Data.Concrete
       {
          long lv = reader.ReadInt64();
          if(tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MICROS) {
+             long microseconds = lv % 1000;
              lv /= 1000;
+             return lv.FromUnixMilliseconds().AddTicks(microseconds * 10);
          }
 
          return lv.FromUnixMilliseconds();
