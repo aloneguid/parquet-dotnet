@@ -241,6 +241,20 @@ namespace Parquet.Test {
             }
         }
 
+        [Theory]
+        [InlineData("timestamp_micros.parquet")]
+        [InlineData("timestamp_micros.v2.parquet")]
+        public async Task ParquetReader_TimestampMicrosColumn(string parquetFile) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+                var col0 = (DateTimeOffset?[])columns[0].Data;
+                Assert.Equal(3, col0.Length);
+                Assert.Equal(new DateTimeOffset(2022,12,23,11,43,49, TimeSpan.Zero).AddTicks(10 * 10), col0[0]);
+                Assert.Equal(new DateTimeOffset(2021,12,23,12,44,50 ,TimeSpan.Zero).AddTicks(11 * 10), col0[1]);
+                Assert.Equal(new DateTimeOffset(2020,12,23,13,45,51 ,TimeSpan.Zero).AddTicks(12 * 10), col0[2]);
+            }
+        }
+
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }
