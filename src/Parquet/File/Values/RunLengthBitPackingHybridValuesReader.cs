@@ -1,10 +1,8 @@
-﻿using Parquet.Data;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.File.Values
 {
@@ -40,7 +38,7 @@ namespace Parquet.File.Values
          int startOffset = offset;
          while ((reader.BaseStream.Position - start < length))
          {
-            int header = ReadUnsignedVarInt(reader);
+            int header = reader.ReadUnsignedVarInt();
             bool isRle = (header & 1) == 0;
 
             if (isRle)
@@ -69,7 +67,7 @@ namespace Parquet.File.Values
          if (count == 0) return; //important not to continue reading as will result in data corruption in data page further
          int width = (bitWidth + 7) / 8; //round up to next byte
          byte[] data = reader.ReadBytes(width);
-         int value = ReadIntOnBytes(data);
+         int value = ValuesUtils.ReadIntOnBytes(data);
          destination.AddRange(Enumerable.Repeat(value, count));
       }
 
@@ -84,7 +82,7 @@ namespace Parquet.File.Values
          int count = Math.Min(headerCount, maxItems); // make sure we remain within bounds
          int width = (bitWidth + 7) / 8; // round up to next byte
          byte[] data = reader.ReadBytes(width);
-         int value = ReadIntOnBytes(data);
+         int value = ValuesUtils.ReadIntOnBytes(data);
 
          for (int i = 0; i < count; i++)
          {
@@ -137,46 +135,6 @@ namespace Parquet.File.Values
          }
 
          return offset - start;
-      }
-
-
-
-      /// <summary>
-      /// Read a value using the unsigned, variable int encoding.
-      /// </summary>
-      private static int ReadUnsignedVarInt(BinaryReader reader)
-      {
-         int result = 0;
-         int shift = 0;
-
-         while (true)
-         {
-            byte b = reader.ReadByte();
-            result |= ((b & 0x7F) << shift);
-            if ((b & 0x80) == 0) break;
-            shift += 7;
-         }
-
-         return result;
-      }
-
-      private static int ReadIntOnBytes(byte[] data)
-      {
-         switch (data.Length)
-         {
-            case 0:
-               return 0;
-            case 1:
-               return (data[0]);
-            case 2:
-               return (data[1] << 8) + (data[0]);
-            case 3:
-               return (data[2] << 16) + (data[1] << 8) + (data[0]);
-            case 4:
-               return BitConverter.ToInt32(data, 0);
-            default:
-               throw new IOException($"encountered byte width ({data.Length}) that requires more than 4 bytes.");
-         }
       }
 
       private static int MaskForBits(int width)

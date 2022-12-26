@@ -326,6 +326,10 @@ namespace Parquet.File {
                     cd.valuesOffset += indexCount;
                     break;
 
+                case Thrift.Encoding.DELTA_BYTE_ARRAY:
+                    DeltaByteArrayReader.Read(reader, cd.values, maxReadCount);
+                    break;
+
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");
             }
