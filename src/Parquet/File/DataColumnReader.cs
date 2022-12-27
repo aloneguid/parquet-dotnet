@@ -327,7 +327,7 @@ namespace Parquet.File {
                     break;
 
                 case Thrift.Encoding.DELTA_BYTE_ARRAY:
-                    DeltaByteArrayReader.Read(reader, cd.values, maxReadCount);
+                    cd.valuesOffset += DeltaByteArrayReader.Read(reader, cd.values, cd.valuesOffset, maxReadCount);
                     break;
 
                 default:

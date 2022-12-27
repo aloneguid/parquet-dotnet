@@ -14,8 +14,9 @@ namespace Parquet.File.Values {
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="dest"></param>
+        /// <param name="offset"></param>
         /// <param name="valueCount"></param>
-        public static void Read(BinaryReader reader, Array dest, int valueCount) {
+        public static int Read(BinaryReader reader, Array dest, int offset, int valueCount) {
             var prefixLengthReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(reader);
             var suffixReader = DeltaLengthByteArrayValuesReader.GetDeltaLengthByteArrayValuesReader(reader);
             
@@ -33,15 +34,16 @@ namespace Parquet.File.Values {
                     Array.Copy(previous, 0, value, 0, prefixLength);
                     Array.Copy(suffix, 0, value, prefixLength, suffix.Length);
 
-                    result[i] = System.Text.Encoding.UTF8.GetString(value);
-
+                    result[offset + i] = System.Text.Encoding.UTF8.GetString(value);
                     previous = value;
                 }
                 else {
-                    result[i] = System.Text.Encoding.UTF8.GetString(suffix);
+                    result[offset + i] = System.Text.Encoding.UTF8.GetString(suffix);
                     previous = suffix;
                 }
             }
+
+            return valueCount;
         }
     }
     
