@@ -254,6 +254,19 @@ namespace Parquet.Test {
                 Assert.Equal(new DateTimeOffset(2020,12,23,13,45,51 ,TimeSpan.Zero).AddTicks(12 * 10), col0[2]);
             }
         }
+        
+        [Theory]
+        [InlineData("delta_byte_array.parquet")]
+        public async Task ParquetReader_DeltaByteArrayColumn(string parquetFile) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+                string[] col0 = (string[])columns[0].Data;
+                Assert.Equal(1000, col0.Length);
+                Assert.Equal("AAAAAAAAIODAAAAA", col0[0]);
+                Assert.Equal("AAAAAAAAHODAAAAA", col0[1]);
+                Assert.Equal("AAAAAAAAGODAAAAA", col0[2]);
+            }
+        }
 
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {

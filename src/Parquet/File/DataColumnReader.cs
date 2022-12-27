@@ -267,7 +267,7 @@ namespace Parquet.File {
 
             int maxReadCount = ph.Data_page_header_v2.Num_values - ph.Data_page_header_v2.Num_nulls;
 
-            if(!ph.Data_page_header_v2.Is_compressed) {
+            if((!ph.Data_page_header_v2.Is_compressed) || _thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
                 ReadColumn(reader, ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
                 return;
             }

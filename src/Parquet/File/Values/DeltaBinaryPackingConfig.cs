@@ -9,25 +9,22 @@ namespace Parquet.File.Values {
         internal readonly int MiniBlockNumInABlock;
         internal readonly int MiniBlockSizeInValues;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="blockSizeInValues"></param>
-        /// <param name="miniBlockNumInABlock"></param>
         private DeltaBinaryPackingConfig(int blockSizeInValues, int miniBlockNumInABlock) {
             MiniBlockNumInABlock = miniBlockNumInABlock;
-            double miniSize = (double) blockSizeInValues / miniBlockNumInABlock;
+            double miniSize = (double)blockSizeInValues / miniBlockNumInABlock;
             if(miniSize % 8 != 0) {
                 throw new Exception($"miniBlockSize must be multiple of 8, but it's {miniSize}");
             }
-            MiniBlockSizeInValues = (int) miniSize;
+
+            MiniBlockSizeInValues = (int)miniSize;
         }
 
         /// <summary>
-        /// 
+        /// Read, populate and return DeltaBinaryPackingConfig
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static DeltaBinaryPackingConfig ReadConfig(BinaryReader reader) => new DeltaBinaryPackingConfig(reader.ReadUnsignedVarInt(), reader.ReadUnsignedVarInt());
+        public static DeltaBinaryPackingConfig ReadConfig(BinaryReader reader) =>
+            new DeltaBinaryPackingConfig(reader.ReadUnsignedVarInt(), reader.ReadUnsignedVarInt());
     }
 }

@@ -7,20 +7,24 @@ namespace Parquet.File.Values {
     /// </summary>
     public static class DeltaByteArrayReader {
         /// <summary>
-        /// 
+        ///      From documentation:
+        ///      This is also known as incremental encoding or front compression: for each element in a sequence of strings, store the prefix length of the previous entry plus the suffix.
+        ///      For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding.
+        ///      This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="dest"></param>
         /// <param name="valueCount"></param>
         public static void Read(BinaryReader reader, Array dest, int valueCount) {
+            var prefixLengthReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(reader);
+            var suffixReader = DeltaLengthByteArrayValuesReader.GetDeltaLengthByteArrayValuesReader(reader);
+            
             string[] result = (string[])dest;
             byte[] previous = Array.Empty<byte>();
+            
             for(int i = 0; i < valueCount; i++) {
-                var prefixLengthReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(reader); 
                 int prefixLength = prefixLengthReader.ReadInteger();
-
-                var suffixReader = DeltaLengthByteArrayValuesReader.GetDeltaLengthByteArrayValuesReader(reader);
-                byte[] suffix = suffixReader.readBytes();
+                byte[] suffix = suffixReader.ReadBytes();
 
                 int length = prefixLength + suffix.Length;
 
@@ -34,6 +38,7 @@ namespace Parquet.File.Values {
                     previous = value;
                 }
                 else {
+                    result[i] = System.Text.Encoding.UTF8.GetString(suffix);
                     previous = suffix;
                 }
             }

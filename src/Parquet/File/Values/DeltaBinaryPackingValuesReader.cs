@@ -1,8 +1,7 @@
 using System;
 using System.IO;
 
-namespace Parquet.File.Values
-{
+namespace Parquet.File.Values {
     /// <summary>
     /// 
     /// </summary>
@@ -15,16 +14,10 @@ namespace Parquet.File.Values
         private int[] _bitWidths;
         private int _valuesRead = 0;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="reader"></param>
-        public DeltaBinaryPackingValuesReader(BinaryReader reader) {
-            _reader = reader;
-        }
+        private DeltaBinaryPackingValuesReader(BinaryReader reader) => _reader = reader;
 
         /// <summary>
-        /// 
+        /// Gets and Initializes the configuration for the reader
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
@@ -39,16 +32,17 @@ namespace Parquet.File.Values
             _totalValueCount = _reader.ReadUnsignedVarInt();
 
             // allocate valuesBuffer
-            int totalMiniBlockCount = (int) Math.Ceiling((double) _totalValueCount / _config.MiniBlockSizeInValues);
+            int totalMiniBlockCount = (int)Math.Ceiling((double)_totalValueCount / _config.MiniBlockSizeInValues);
             //+ 1 because first value written to header is also stored in values buffer
             _valuesBuffer = new long[(totalMiniBlockCount * _config.MiniBlockSizeInValues) + 1];
-            
+
             _bitWidths = new int[_config.MiniBlockNumInABlock];
-            
-            //read first value from header
+
+            // read first value from header
             _valuesBuffer[_valuesBuffered++] = _reader.ReadZigZagVarLong();
-            
-            while (_valuesBuffered < _totalValueCount) { //values Buffered could be more than totalValueCount, since we flush on a mini block basis
+
+            while(_valuesBuffered < _totalValueCount) {
+                //values Buffered could be more than totalValueCount, since we flush on a mini block basis
                 LoadNewBlockToBuffer();
             }
         }
@@ -58,44 +52,40 @@ namespace Parquet.File.Values
         /// </summary>
         /// <returns></returns>
         public int ReadInteger() => (int)ReadLong();
-        
+
         private long ReadLong() {
             if(_valuesRead > _totalValueCount) {
                 throw new Exception("DeltaBinaryPackingValuesReader: read all values");
             }
+
             return _valuesBuffer[_valuesRead++];
         }
 
         private void LoadNewBlockToBuffer() {
             long minDeltaInCurrentBlock = _reader.ReadZigZagVarLong();
-            
-            for (int l = 0; l < _config.MiniBlockNumInABlock; l++) {
+
+            for(int l = 0; l < _config.MiniBlockNumInABlock; l++) {
                 _bitWidths[l] = _reader.ReadByte();
             }
 
             int i;
-            for (i = 0; i < _config.MiniBlockNumInABlock && _valuesBuffered < _totalValueCount; i++) {
+            for(i = 0; i < _config.MiniBlockNumInABlock && _valuesBuffered < _totalValueCount; i++) {
                 UnpackMiniBlock(_bitWidths[i]);
             }
 
             //calculate values from deltas unpacked for current block
             int valueUnpacked = i * _config.MiniBlockSizeInValues;
-            for (int j = _valuesBuffered-valueUnpacked; j < _valuesBuffered; j++) {
-                int index = j;
-                _valuesBuffer[index] += minDeltaInCurrentBlock + _valuesBuffer[index - 1];
+            for(int j = _valuesBuffered - valueUnpacked; j < _valuesBuffered; j++) {
+                _valuesBuffer[j] += minDeltaInCurrentBlock + _valuesBuffer[j - 1];
             }
-            
         }
 
         private void UnpackMiniBlock(int bitWidth) {
-            for (int i = 0; i < _config.MiniBlockSizeInValues; i += 8) {
-                int bytesToRead = bitWidth * 8;
-                byte[] bytes = _reader.ReadBytes(bytesToRead);
-                
-                for(int j = 0; j < 8; j++) {
-                    // TODO: bitWidth to long
-                    //_valuesBuffer[_valuesBuffered++] = ValuesUtils.ReadIntOnBytes(bytes);
-                }
+            for(int i = 0; i < _config.MiniBlockSizeInValues; i += 8) {
+                byte[] bytes = _reader.ReadBytes(bitWidth);
+                var packer = new Packer.Packer(bitWidth);
+                packer.Unpack8Values(bytes, 0, _valuesBuffer, _valuesBuffered);
+                _valuesBuffered += 8;
             }
         }
     }
