@@ -5,12 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Parquet.Data;
 using Parquet.File.Values.Primitives;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class DateTimeOffsetDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTimeOffset>
+namespace Parquet.Data.Concrete {
+    class DateTimeOffsetDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTimeOffset>
    {
       public DateTimeOffsetDataTypeHandler() : base(DataType.DateTimeOffset, Thrift.Type.INT96)
       {

@@ -88,7 +88,7 @@ var cityColumn = new DataColumn(
     new string[] { "London", "Derby" });
 
 // create file schema
-var schema = new Schema(idColumn.Field, cityColumn.Field);
+var schema = new ParquetSchema(idColumn.Field, cityColumn.Field);
 
 using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
     using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {

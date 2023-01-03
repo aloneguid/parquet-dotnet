@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Parquet.Data.Concrete;
+using Parquet.Schema;
 
-namespace Parquet.Data
-{
-   static class DataTypeFactory
+namespace Parquet.Data {
+    static class DataTypeFactory
    {
       private static readonly List<IDataTypeHandler> _allDataTypes = new List<IDataTypeHandler>
       {

@@ -1,18 +1,17 @@
 ﻿using Parquet.Attributes;
-using Parquet.Data;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 
-namespace Parquet.Test.Serialisation
-{
-   public class SchemaReflectorTest : TestBase
+namespace Parquet.Test.Serialisation {
+    public class SchemaReflectorTest : TestBase
    {
       [Fact]
       public void I_can_infer_different_types()
       {
          var inferrer = new SchemaReflector(typeof(PocoClass));
 
-         Schema schema = inferrer.Reflect();
+            ParquetSchema schema = inferrer.Reflect();
 
          Assert.NotNull(schema);
          Assert.Equal(4, schema.Fields.Count);

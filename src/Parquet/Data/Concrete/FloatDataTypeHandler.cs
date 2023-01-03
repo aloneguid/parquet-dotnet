@@ -1,8 +1,8 @@
 ﻿using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class FloatDataTypeHandler : BasicPrimitiveDataTypeHandler<float>
+namespace Parquet.Data.Concrete {
+    class FloatDataTypeHandler : BasicPrimitiveDataTypeHandler<float>
    {
       public FloatDataTypeHandler() : base(DataType.Float, Thrift.Type.FLOAT)
       {

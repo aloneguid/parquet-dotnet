@@ -6,7 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
-using Parquet.File.Values;
+using Parquet.Schema;
+using FieldPath = Parquet.Schema.FieldPath;
 
 namespace Parquet {
     /// <summary>
@@ -16,7 +17,7 @@ namespace Parquet {
     public class ParquetRowGroupWriter : IDisposable
 #pragma warning restore CA1063 // Implement IDisposable Correctly
     {
-        private readonly Schema _schema;
+        private readonly ParquetSchema _schema;
         private readonly Stream _stream;
         private readonly ThriftStream _thriftStream;
         private readonly ThriftFooter _footer;
@@ -26,7 +27,7 @@ namespace Parquet {
         private readonly Thrift.SchemaElement[] _thschema;
         private int _colIdx;
 
-        internal ParquetRowGroupWriter(Schema schema,
+        internal ParquetRowGroupWriter(ParquetSchema schema,
            Stream stream,
            ThriftStream thriftStream,
            ThriftFooter footer,
@@ -45,6 +46,29 @@ namespace Parquet {
         }
 
         internal long? RowCount { get; private set; }
+        /// <summary>
+        /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the schema.
+        /// </summary>
+        public async Task WriteColumnAsync2<T>(DataField field, ReadOnlyMemory<T> data, CancellationToken cancellationToken = default) {
+            if(field is null)
+                throw new ArgumentNullException(nameof(field));
+
+            Thrift.SchemaElement tse = _thschema[_colIdx];
+            if(!field.Equals(tse)) {
+                throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{field.Name}'", nameof(field));
+            }
+            _colIdx += 1;
+
+            FieldPath path = _footer.GetPath(tse);
+            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, tse.Type, path, 0);
+            Thrift.PageHeader ph = _footer.CreateDataPage(data.Length);
+            _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
+
+            var encoder = new ColumnEncoder<T>(field, tse, path, data, _compressionMethod, _stream, _footer, _thriftStream);
+            await encoder.Write(cancellationToken);
+
+            _thriftRowGroup.Columns.Add(chunk);
+        }
 
         /// <summary>
         /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the
@@ -68,7 +92,7 @@ namespace Parquet {
             IDataTypeHandler dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
             _colIdx += 1;
 
-            List<string> path = _footer.GetPath(tse);
+            FieldPath path = _footer.GetPath(tse);
 
             var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
                _compressionMethod,

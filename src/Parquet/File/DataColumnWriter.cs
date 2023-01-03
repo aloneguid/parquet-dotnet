@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values;
+using Parquet.Schema;
 
 namespace Parquet.File {
     class DataColumnWriter {
@@ -37,8 +39,11 @@ namespace Parquet.File {
             _rowCount = rowCount;
         }
 
-        public async Task<Thrift.ColumnChunk> WriteAsync(List<string> path, DataColumn column, IDataTypeHandler dataTypeHandler, CancellationToken cancellationToken = default) {
-            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, path, 0);
+        public async Task<Thrift.ColumnChunk> WriteAsync(
+            FieldPath fullPath, DataColumn column, IDataTypeHandler dataTypeHandler,
+            CancellationToken cancellationToken = default) {
+
+            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, fullPath, 0);
             Thrift.PageHeader ph = _footer.CreateDataPage(column.Count);
             _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 

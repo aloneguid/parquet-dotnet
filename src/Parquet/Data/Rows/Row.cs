@@ -5,13 +5,13 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Parquet.Extensions;
+using Parquet.Schema;
 
-namespace Parquet.Data.Rows
-{
-   /// <summary>
-   /// Represents a tabular row
-   /// </summary>
-   public class Row : IEquatable<Row>, IEnumerable<object>
+namespace Parquet.Data.Rows {
+    /// <summary>
+    /// Represents a tabular row
+    /// </summary>
+    public class Row : IEquatable<Row>, IEnumerable<object>
    {
       /// <summary>
       /// Initializes a new instance of the <see cref="Row"/> class which has only one single column.

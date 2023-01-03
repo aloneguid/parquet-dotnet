@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections;
 using System.Linq;
+using Parquet.Schema;
 
 namespace Parquet.Data {
     /// <summary>
-    /// The primary low-level structure to hold data for a parqut column.
+    /// The primary low-level structure to hold data for a parquet column.
     /// Handles internal data composition/decomposition to enrich with custom data Parquet format requires.
     /// </summary>
     public class DataColumn {
@@ -104,7 +106,7 @@ namespace Parquet.Data {
             bool isNullable = Field.ClrType.IsNullable() || Data.GetType().GetElementType().IsNullable();
 
             if(!Field.HasNulls || !isNullable) {
-                SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
+                SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);  // all defined, all ones
                 nullCount = 0; //definitely no nulls here
                 return new ArrayView(Data, Offset, Count);
             }

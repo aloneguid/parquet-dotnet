@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Parquet.Schema;
 
-namespace Parquet.Data.Rows
-{
-   class DataColumnAppender
+namespace Parquet.Data.Rows {
+    class DataColumnAppender
    {
       private readonly DataField _dataField;
       private readonly List<object> _values = new List<object>();

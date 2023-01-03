@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class Int96DataTypeHandler : BasicPrimitiveDataTypeHandler<BigInteger>
+namespace Parquet.Data.Concrete {
+    class Int96DataTypeHandler : BasicPrimitiveDataTypeHandler<BigInteger>
    {
       public Int96DataTypeHandler() : base(DataType.Int96, Thrift.Type.INT96)
       {

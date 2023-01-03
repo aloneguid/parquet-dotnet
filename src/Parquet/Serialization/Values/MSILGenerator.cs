@@ -5,11 +5,11 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Parquet.Data;
 using Parquet.Data.Rows;
+using Parquet.Schema;
 using static System.Reflection.Emit.OpCodes;
 
-namespace Parquet.Serialization.Values
-{
-   class MSILGenerator
+namespace Parquet.Serialization.Values {
+    class MSILGenerator
    {
       private static readonly TypeConversion[] conversions = new TypeConversion[]
       {

@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.Schema;
 
-namespace Parquet.Data.Rows
-{
-   class RowsToDataColumnsConverter
+namespace Parquet.Data.Rows {
+    class RowsToDataColumnsConverter
    {
-      private readonly Schema _schema;
+      private readonly ParquetSchema _schema;
       private readonly IReadOnlyCollection<Row> _rows;
       private readonly Dictionary<string, DataColumnAppender> _pathToDataColumn = new Dictionary<string, DataColumnAppender>();
 
-      public RowsToDataColumnsConverter(Schema schema, IReadOnlyCollection<Row> rows)
+      public RowsToDataColumnsConverter(ParquetSchema schema, IReadOnlyCollection<Row> rows)
       {
          _schema = schema;
          _rows = rows;

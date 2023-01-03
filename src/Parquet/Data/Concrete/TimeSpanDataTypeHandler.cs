@@ -4,12 +4,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Parquet.Data;
 using Parquet.File.Values.Primitives;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class TimeSpanDataTypeHandler : BasicPrimitiveDataTypeHandler<TimeSpan>
+namespace Parquet.Data.Concrete {
+    class TimeSpanDataTypeHandler : BasicPrimitiveDataTypeHandler<TimeSpan>
    {
       public TimeSpanDataTypeHandler() : base(DataType.TimeSpan, Thrift.Type.INT64, Thrift.ConvertedType.TIME_MICROS)
       {

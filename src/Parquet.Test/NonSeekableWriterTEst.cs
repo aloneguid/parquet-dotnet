@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using NetBox.IO;
 using Parquet.Data;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
@@ -12,7 +13,7 @@ namespace Parquet.Test {
             var ms = new MemoryStream();
             var forwardOnly = new WriteableNonSeekableStream(ms);
 
-            var schema = new Schema(
+            var schema = new ParquetSchema(
                new DataField<int>("id"),
                new DataField<string>("nonsense"));
 

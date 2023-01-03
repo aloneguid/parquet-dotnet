@@ -7,6 +7,7 @@ using Parquet.Data;
 using Parquet.Data.Rows;
 using Xunit;
 using F = System.IO.File;
+using Path = System.IO.Path;
 
 namespace Parquet.Test.Integration {
     /// <summary>

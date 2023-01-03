@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Parquet.Thrift;
 
 namespace Parquet.File {
@@ -17,7 +17,7 @@ namespace Parquet.File {
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
 
-        public ThriftFooter(Schema schema, long totalRowCount) {
+        public ThriftFooter(ParquetSchema schema, long totalRowCount) {
             if(schema == null) {
                 throw new ArgumentNullException(nameof(schema));
             }
@@ -75,7 +75,7 @@ namespace Parquet.File {
             return _fileMeta.Schema[i];
         }
 
-        public List<string> GetPath(Thrift.SchemaElement schemaElement) {
+        public FieldPath GetPath(Thrift.SchemaElement schemaElement) {
             var path = new List<string>();
 
             ThriftSchemaTree.Node wrapped = _tree.Find(schemaElement);
@@ -85,7 +85,7 @@ namespace Parquet.File {
             }
 
             path.Reverse();
-            return path;
+            return new FieldPath(path);
         }
 
         // could use value tuple, would that nuget ref be ok to bring in?
@@ -143,7 +143,8 @@ namespace Parquet.File {
             return rg;
         }
 
-        public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, Stream output, Thrift.Type columnType, List<string> path, int valuesCount) {
+        public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
+            Thrift.Type columnType, FieldPath path, int valuesCount) {
             Thrift.CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
 
             var chunk = new Thrift.ColumnChunk();
@@ -159,7 +160,7 @@ namespace Parquet.File {
                 Thrift.Encoding.BIT_PACKED,
                 Thrift.Encoding.PLAIN
             };
-            chunk.Meta_data.Path_in_schema = path;
+            chunk.Meta_data.Path_in_schema = path.ToList();
             chunk.Meta_data.Statistics = new Thrift.Statistics();
 
             return chunk;
@@ -180,17 +181,17 @@ namespace Parquet.File {
 
         #region [ Conversion to Model Schema ]
 
-        public Schema CreateModelSchema(ParquetOptions formatOptions) {
+        public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
             int si = 0;
             Thrift.SchemaElement tse = _fileMeta.Schema[si++];
             var container = new List<Field>();
 
             CreateModelSchema(null, container, tse.Num_children, ref si, formatOptions);
 
-            return new Schema(container);
+            return new ParquetSchema(container);
         }
 
-        private void CreateModelSchema(string path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
+        private void CreateModelSchema(FieldPath path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
             for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++) {
                 Thrift.SchemaElement tse = _fileMeta.Schema[si];
                 IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
@@ -201,7 +202,7 @@ namespace Parquet.File {
 
                 Field se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
 
-                se.Path = string.Join(Schema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
+                se.Path = string.Join(ParquetSchema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
 
                 if(ownedChildCount > 0) {
                     var childContainer = new List<Field>();
@@ -232,7 +233,7 @@ namespace Parquet.File {
 
         #region [ Convertion from Model Schema ]
 
-        public Thrift.FileMetaData CreateThriftSchema(Schema schema) {
+        public Thrift.FileMetaData CreateThriftSchema(ParquetSchema schema) {
             var meta = new Thrift.FileMetaData();
             meta.Version = 1;
             meta.Schema = new List<Thrift.SchemaElement>();

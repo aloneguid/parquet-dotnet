@@ -7,6 +7,7 @@ using Parquet.Data.Rows;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Parquet.Extensions;
+using Parquet.Schema;
 
 namespace Parquet.Test {
     public class TestBase {
@@ -16,7 +17,7 @@ namespace Parquet.Test {
 
         protected async Task<T[]> ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T : new() {
             using(var ms = new MemoryStream()) {
-                Schema s = await ParquetConvert.SerializeAsync<T>(instances, ms);
+                ParquetSchema s = await ParquetConvert.SerializeAsync<T>(instances, ms);
 
                 ms.Position = 0;
 
@@ -53,7 +54,7 @@ namespace Parquet.Test {
         protected async Task<DataColumn> WriteReadSingleColumn(DataField field, DataColumn dataColumn) {
             using(var ms = new MemoryStream()) {
                 // write with built-in extension method
-                await ms.WriteSingleRowGroupParquetFileAsync(new Schema(field), dataColumn);
+                await ms.WriteSingleRowGroupParquetFileAsync(new ParquetSchema(field), dataColumn);
                 ms.Position = 0;
 
                 //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
@@ -71,9 +72,9 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<Tuple<DataColumn[], Schema>> WriteReadSingleRowGroup(
-            Schema schema, DataColumn[] columns) {
-            Schema readSchema;
+        protected async Task<Tuple<DataColumn[], ParquetSchema>> WriteReadSingleRowGroup(
+            ParquetSchema schema, DataColumn[] columns) {
+            ParquetSchema readSchema;
             using(var ms = new MemoryStream()) {
                 await ms.WriteSingleRowGroupParquetFileAsync(schema, columns);
                 ms.Position = 0;
@@ -99,7 +100,7 @@ namespace Parquet.Test {
             using(var ms = new MemoryStream()) {
                 // write single value
 
-                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(field), ms)) {
+                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
                     writer.CompressionMethod = compressionMethod;
 
                     using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {

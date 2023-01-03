@@ -6,6 +6,7 @@ using Parquet.Data;
 using Parquet.Data.Rows;
 using System.Threading.Tasks;
 using System.Threading;
+using Parquet.Schema;
 
 namespace Parquet {
     /// <summary>
@@ -114,7 +115,7 @@ namespace Parquet {
         /// <summary>
         /// Reader schema
         /// </summary>
-        public Schema Schema => _footer.CreateModelSchema(_parquetOptions);
+        public ParquetSchema Schema => _footer.CreateModelSchema(_parquetOptions);
 
         /// <summary>
         /// Internal parquet metadata

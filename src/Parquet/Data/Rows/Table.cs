@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using Parquet.Extensions;
+using Parquet.Schema;
 
-namespace Parquet.Data.Rows
-{
-   /// <summary>
-   /// Represents a table or table chunk that stores data in row format.
-   /// </summary>
-   public class Table : IList<Row>, IEquatable<Table>, IFormattable
+namespace Parquet.Data.Rows {
+    /// <summary>
+    /// Represents a table or table chunk that stores data in row format.
+    /// </summary>
+    public class Table : IList<Row>, IEquatable<Table>, IFormattable
    {
       //dev: for reference from previous stable version see https://github.com/aloneguid/parquet-dotnet/tree/final-v2/src/Parquet/Data       
 
@@ -22,7 +21,7 @@ namespace Parquet.Data.Rows
       /// Creates an empty table with specified schema
       /// </summary>
       /// <param name="schema">Parquet file schema.</param>
-      public Table(Schema schema)
+      public Table(ParquetSchema schema)
       {
          Schema = schema ?? throw new ArgumentNullException(nameof(schema));
          _dfs = schema.Fields.ToArray();
@@ -31,7 +30,7 @@ namespace Parquet.Data.Rows
       /// <summary>
       /// Creates an empty table with specified fiels as schema
       /// </summary>
-      public Table(params Field[] schema) : this(new Schema(schema))
+      public Table(params Field[] schema) : this(new ParquetSchema(schema))
       {
 
       }
@@ -42,7 +41,7 @@ namespace Parquet.Data.Rows
       /// <param name="schema">Parquet file schema.</param>
       /// <param name="tableData">Optionally initialise this table with data columns that correspond to the passed <paramref name="schema"/></param>
       /// <param name="rowCount"></param>
-      internal Table(Schema schema, DataColumn[] tableData, long rowCount) : this(schema)
+      internal Table(ParquetSchema schema, DataColumn[] tableData, long rowCount) : this(schema)
       {
          Schema = schema ?? throw new ArgumentNullException(nameof(schema));
          _dfs = schema.Fields.ToArray();
@@ -57,7 +56,7 @@ namespace Parquet.Data.Rows
       /// <summary>
       /// Table schema
       /// </summary>
-      public Schema Schema { get; }
+      public ParquetSchema Schema { get; }
 
       internal IReadOnlyCollection<DataColumn> ExtractDataColumns()
       {

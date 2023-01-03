@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using Parquet.Data;
 using Parquet.Data.Rows;
+using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test.Rows
-{
-   public class LazyColumnEnumeratorTest
+namespace Parquet.Test.Rows {
+    public class LazyColumnEnumeratorTest
    {
       [Fact]
       public void Two_level_rep_levels()
