@@ -2,10 +2,10 @@
 using System.Buffers;
 using System.IO;
 using System.Text;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class StringDataTypeHandler : BasicDataTypeHandler<string>
+namespace Parquet.Data.Concrete {
+    class StringDataTypeHandler : BasicDataTypeHandler<string>
    {
       private static readonly Encoding E = Encoding.UTF8;
       private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;

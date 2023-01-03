@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Parquet.Data
+namespace Parquet.Schema
 {
    /// <summary>
    /// Represents dataset schema
    /// </summary>
-   public class Schema : IEquatable<Schema>
+   public class ParquetSchema : IEquatable<ParquetSchema>
    {
       /// <summary>
       /// Symbol used to separate path parts in schema element path
@@ -23,10 +23,10 @@ namespace Parquet.Data
       private readonly List<Field> _fields;
 
       /// <summary>
-      /// Initializes a new instance of the <see cref="Schema"/> class from schema elements.
+      /// Initializes a new instance of the <see cref="ParquetSchema"/> class from schema elements.
       /// </summary>
       /// <param name="fields">The elements.</param>
-      public Schema(IReadOnlyCollection<Field> fields) : this(fields.ToList())
+      public ParquetSchema(IReadOnlyCollection<Field> fields) : this(fields.ToList())
       {
          if (fields == null)
          {
@@ -35,10 +35,10 @@ namespace Parquet.Data
       }
 
       /// <summary>
-      /// Initializes a new instance of the <see cref="Schema"/> class.
+      /// Initializes a new instance of the <see cref="ParquetSchema"/> class.
       /// </summary>
       /// <param name="fields">The elements.</param>
-      public Schema(params Field[] fields) : this(fields.ToList())
+      public ParquetSchema(params Field[] fields) : this(fields.ToList())
       {
          if (fields == null)
          {
@@ -46,7 +46,7 @@ namespace Parquet.Data
          }
       }
 
-      private Schema(List<Field> fields)
+      private ParquetSchema(List<Field> fields)
       {
          if(fields.Count == 0)
          {
@@ -132,7 +132,7 @@ namespace Parquet.Data
       /// <returns>
       /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
       /// </returns>
-      public bool Equals(Schema other)
+      public bool Equals(ParquetSchema other)
       {
          if (ReferenceEquals(null, other)) return false;
          if (ReferenceEquals(this, other)) return true;
@@ -150,7 +150,7 @@ namespace Parquet.Data
       /// <summary>
       /// Compares this schema to <paramref name="other"/> and produces a human readable message describing the differences.
       /// </summary>
-      public string GetNotEqualsMessage(Schema other, string thisName, string otherName)
+      public string GetNotEqualsMessage(ParquetSchema other, string thisName, string otherName)
       {
          if(_fields.Count != other._fields.Count)
          {
@@ -196,7 +196,7 @@ namespace Parquet.Data
          if (ReferenceEquals(this, obj)) return true;
          if (obj.GetType() != GetType()) return false;
 
-         return Equals((Schema) obj);
+         return Equals((ParquetSchema) obj);
       }
 
       /// <summary>

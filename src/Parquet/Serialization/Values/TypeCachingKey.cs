@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Serialization.Values
-{
-   class TypeCachingKey : IEquatable<TypeCachingKey>
+namespace Parquet.Serialization.Values {
+    class TypeCachingKey : IEquatable<TypeCachingKey>
    {
       public TypeCachingKey(Type classType, DataField field)
       {

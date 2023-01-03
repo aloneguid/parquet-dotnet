@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class ListDataTypeHandler : NonDataDataTypeHandler
+namespace Parquet.Data.Concrete {
+    class ListDataTypeHandler : NonDataDataTypeHandler
    {
       public override SchemaType SchemaType => SchemaType.List;
 

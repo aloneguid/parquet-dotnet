@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class ShortDataTypeHandler : BasicPrimitiveDataTypeHandler<short>
+namespace Parquet.Data.Concrete {
+    class ShortDataTypeHandler : BasicPrimitiveDataTypeHandler<short>
    {
       public ShortDataTypeHandler() : base(DataType.Short, Thrift.Type.INT32, Thrift.ConvertedType.INT_16)
       {

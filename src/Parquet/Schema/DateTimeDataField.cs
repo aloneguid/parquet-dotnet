@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Parquet.Data
+namespace Parquet.Schema
 {
    /// <summary>
    /// Schema element for <see cref="DateTimeOffset"/> which allows to specify precision

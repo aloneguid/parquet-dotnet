@@ -4,12 +4,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Parquet.Data;
 using Parquet.File.Values.Primitives;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class IntervalDataTypeHandler : BasicPrimitiveDataTypeHandler<Interval>
+namespace Parquet.Data.Concrete {
+    class IntervalDataTypeHandler : BasicPrimitiveDataTypeHandler<Interval>
    {
       public IntervalDataTypeHandler() : base(DataType.Interval, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL)
       {

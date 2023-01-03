@@ -2,13 +2,13 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data
-{
-   /// <summary>
-   /// Handler for built-in data types in .NET
-   /// </summary>
-   abstract class BasicPrimitiveDataTypeHandler<TSystemType> : BasicDataTypeHandler<TSystemType>
+namespace Parquet.Data {
+    /// <summary>
+    /// Handler for built-in data types in .NET
+    /// </summary>
+    abstract class BasicPrimitiveDataTypeHandler<TSystemType> : BasicDataTypeHandler<TSystemType>
       where TSystemType : struct
    {
       private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;

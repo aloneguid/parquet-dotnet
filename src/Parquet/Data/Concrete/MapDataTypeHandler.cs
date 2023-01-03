@@ -3,11 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class MapDataTypeHandler : NonDataDataTypeHandler
+namespace Parquet.Data.Concrete {
+    class MapDataTypeHandler : NonDataDataTypeHandler
    {
       public override SchemaType SchemaType => SchemaType.Map;
 

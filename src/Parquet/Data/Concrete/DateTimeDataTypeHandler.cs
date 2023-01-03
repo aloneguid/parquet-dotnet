@@ -2,10 +2,10 @@
 using System.Collections;
 using System.IO;
 using Parquet.File.Values.Primitives;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class DateTimeDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTime>
+namespace Parquet.Data.Concrete {
+    class DateTimeDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTime>
    {
       public DateTimeDataTypeHandler() : base(DataType.DateTimeOffset, Thrift.Type.BYTE_ARRAY)
       {

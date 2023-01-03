@@ -2,13 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.Schema;
 
-namespace Parquet.Data.Rows
-{
-   /// <summary>
-   /// Everything is rows!!! Not dealing with dictionaries etc. seems like a brilliant idea!!!
-   /// </summary>
-   internal static class RowValidator
+namespace Parquet.Data.Rows {
+    /// <summary>
+    /// Everything is rows!!! Not dealing with dictionaries etc. seems like a brilliant idea!!!
+    /// </summary>
+    internal static class RowValidator
    {
       public static void Validate(Row row, IReadOnlyList<Field> fields)
       {

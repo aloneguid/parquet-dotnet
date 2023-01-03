@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data
-{
-   interface IDataTypeHandler
+namespace Parquet.Data {
+    interface IDataTypeHandler
    {
       /// <summary>
       /// Called by the library to determine if this data handler can be used in current schema position

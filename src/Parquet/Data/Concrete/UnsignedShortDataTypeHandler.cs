@@ -1,8 +1,8 @@
 ﻿using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class UnsignedShortDataTypeHandler : BasicPrimitiveDataTypeHandler<ushort>
+namespace Parquet.Data.Concrete {
+    class UnsignedShortDataTypeHandler : BasicPrimitiveDataTypeHandler<ushort>
    {
       public UnsignedShortDataTypeHandler() : base(DataType.UnsignedShort, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16)
       {

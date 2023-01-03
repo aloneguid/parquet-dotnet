@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class Int16DataTypeHandler : BasicPrimitiveDataTypeHandler<Int16>
+namespace Parquet.Data.Concrete {
+    class Int16DataTypeHandler : BasicPrimitiveDataTypeHandler<Int16>
    {
       public Int16DataTypeHandler() : base(DataType.Int16, Thrift.Type.INT32, Thrift.ConvertedType.INT_16)
       {

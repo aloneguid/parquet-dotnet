@@ -3,11 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class UnsignedByteDataTypeHandler : BasicPrimitiveDataTypeHandler<byte>
+namespace Parquet.Data.Concrete {
+    class UnsignedByteDataTypeHandler : BasicPrimitiveDataTypeHandler<byte>
    {
       public UnsignedByteDataTypeHandler() : base(DataType.UnsignedByte, Thrift.Type.INT32, Thrift.ConvertedType.UINT_8)
       {

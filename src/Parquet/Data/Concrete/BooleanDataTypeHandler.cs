@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
+using Parquet.Schema;
 using Parquet.Thrift;
 
-namespace Parquet.Data.Concrete
-{
-   class BooleanDataTypeHandler : BasicPrimitiveDataTypeHandler<bool>
+namespace Parquet.Data.Concrete {
+    class BooleanDataTypeHandler : BasicPrimitiveDataTypeHandler<bool>
    {
       public BooleanDataTypeHandler() : base(DataType.Boolean, Thrift.Type.BOOLEAN)
       {

@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
@@ -10,7 +11,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task Read_from_stream_that_only_retuns_one_byte_at_the_time() {
             DataField field = new("date", typeof(DateTimeOffset));
-            Schema schema = new(field);
+            ParquetSchema schema = new(field);
 
             using MemoryStream memoryFileStream = new();
             using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryFileStream)) {

@@ -1,12 +1,12 @@
 ﻿using System;
 using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Attributes
-{
-   /// <summary>
-   /// Annotates a class property to provide some extra metadata for it.
-   /// </summary>
-   [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+namespace Parquet.Attributes {
+    /// <summary>
+    /// Annotates a class property to provide some extra metadata for it.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
    public class ParquetColumnAttribute : Attribute
    {
       /// <summary>

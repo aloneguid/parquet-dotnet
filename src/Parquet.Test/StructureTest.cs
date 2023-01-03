@@ -8,7 +8,7 @@ namespace Parquet.Test {
     public class StructureTest : TestBase {
         [Fact]
         public async Task Simple_structure_write_read() {
-            var schema = new Schema(
+            var schema = new ParquetSchema(
                new DataField<string>("name"),
                new StructField("address",
                   new DataField<string>("line1"),

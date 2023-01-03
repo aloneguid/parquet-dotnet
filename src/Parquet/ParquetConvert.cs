@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.File;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Values;
 
@@ -27,8 +28,8 @@ namespace Parquet {
         /// <param name="rowGroupSize"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static async Task<Schema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
-           Schema schema = null,
+        public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
+           ParquetSchema schema = null,
            CompressionMethod compressionMethod = CompressionMethod.Snappy,
            int rowGroupSize = 5000,
            bool append = false)
@@ -82,8 +83,8 @@ namespace Parquet {
         /// <param name="rowGroupSize"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static async Task<Schema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
-           Schema schema = null,
+        public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
+           ParquetSchema schema = null,
            CompressionMethod compressionMethod = CompressionMethod.Snappy,
            int rowGroupSize = 5000,
            bool append = false)
@@ -103,7 +104,7 @@ namespace Parquet {
         public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex = -1) where T : new() {
             var result = new List<T>();
             using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
-                Schema fileSchema = new SchemaReflector(typeof(T)).Reflect();
+                ParquetSchema fileSchema = new SchemaReflector(typeof(T)).Reflect();
                 DataField[] dataFields = fileSchema.GetDataFields();
 
                 if(rowGroupIndex == -1) //Means read all row groups.
@@ -153,7 +154,7 @@ namespace Parquet {
             var r = new List<T[]>();
 
             using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
-                Schema fileSchema = reader.Schema;
+                ParquetSchema fileSchema = reader.Schema;
                 DataField[] dataFields = fileSchema.GetDataFields();
 
                 for(int i = 0; i < reader.RowGroupCount; i++) {

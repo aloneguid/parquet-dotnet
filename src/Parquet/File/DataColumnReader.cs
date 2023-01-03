@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values;
+using Parquet.Schema;
 
 namespace Parquet.File {
     class DataColumnReader {

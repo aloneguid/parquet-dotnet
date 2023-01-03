@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data
-{
-   abstract class NonDataDataTypeHandler : IDataTypeHandler
+namespace Parquet.Data {
+    abstract class NonDataDataTypeHandler : IDataTypeHandler
    {
       public NonDataDataTypeHandler()
       {

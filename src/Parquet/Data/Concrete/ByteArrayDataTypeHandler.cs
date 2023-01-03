@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class ByteArrayDataTypeHandler : BasicDataTypeHandler<byte[]>
+namespace Parquet.Data.Concrete {
+    class ByteArrayDataTypeHandler : BasicDataTypeHandler<byte[]>
    {
       private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
       private static readonly ArrayPool<byte[]> _byteArrayPool = ArrayPool<byte[]>.Shared;
