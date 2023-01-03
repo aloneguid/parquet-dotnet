@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Parquet.Data;
+using Parquet.Schema;
 
 namespace Parquet {
     static class OtherExtensions {
@@ -43,7 +43,7 @@ namespace Parquet {
             if(parts != null)
                 path.AddRange(parts.Where(p => p != null));
 
-            return string.Join(Schema.PathSeparator, path);
+            return string.Join(ParquetSchema.PathSeparator, path);
         }
 
         public static bool EqualTo(this Array left, Array right) {

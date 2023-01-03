@@ -247,7 +247,7 @@ namespace Parquet.Thrift
 
     public SchemaElement DeepCopy()
     {
-      var tmp83 = new ParquetSchemaElement();
+      var tmp83 = new SchemaElement();
       if(__isset.type)
       {
         tmp83.Type = this.Type;

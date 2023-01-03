@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Data.Rows;
+using Parquet.Schema;
 using Xunit;
 using F = System.IO.File;
 using Path = System.IO.Path;

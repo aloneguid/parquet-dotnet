@@ -3,6 +3,7 @@ using Parquet.Data.Rows;
 using Parquet.Data;
 using Xunit;
 using System.Threading.Tasks;
+using Parquet.Schema;
 
 namespace Parquet.Test {
     public class DecimalTypeTest : TestBase {

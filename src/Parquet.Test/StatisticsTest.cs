@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {

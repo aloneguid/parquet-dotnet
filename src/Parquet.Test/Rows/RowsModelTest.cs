@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Parquet.Data;
 using Parquet.Data.Rows;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Rows {

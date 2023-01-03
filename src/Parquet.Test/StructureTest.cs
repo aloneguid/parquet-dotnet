@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
@@ -23,7 +23,7 @@ namespace Parquet.Test {
             ms.Position = 0;
 
             // out Schema readSchema, out DataColumn[] readColumns
-            (Schema readSchema, DataColumn[] readColumns) = await ms.ReadSingleRowGroupParquetFile();
+            (ParquetSchema readSchema, DataColumn[] readColumns) = await ms.ReadSingleRowGroupParquetFile();
 
             Assert.Equal("Hazel", readColumns[0].Data.GetValue(0));
             Assert.Equal("woods", readColumns[1].Data.GetValue(0));
