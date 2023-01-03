@@ -2,6 +2,7 @@
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.File;
+using Parquet.Schema;
 using System;
 using System.Collections.Generic;
 using System.IO;
