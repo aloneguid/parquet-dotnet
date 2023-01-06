@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Parquet.Data {
@@ -20,6 +19,7 @@ namespace Parquet.Data {
 
             return false;
         }
+
         public static void Encode(ReadOnlySpan<int> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
@@ -33,5 +33,24 @@ namespace Parquet.Data {
             destination.Write(bytes);
 #endif
         }
+
+        #region [ Statistics ]
+
+        /**
+         * Statistics will make certain types of queries on Parquet files much faster.
+         * The problem with statistics is they are very expensive to calculate, in particular
+         * exact number of distinct values.
+         * Min, Max and NullCount are relatively cheap though.
+         * To calculate distincts, we used to use HashSet and it's really slow, taking more than 50% of the whole encoding process.
+         * HyperLogLog is slower than HashSet though https://github.com/saguiitay/CardinalityEstimation .
+         */
+
+        public static void FillStats(ReadOnlySpan<int> data, DataColumnStatistics stats) {
+            data.MinMax(out int min, out int max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        #endregion
     }
 }

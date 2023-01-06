@@ -46,29 +46,6 @@ namespace Parquet {
         }
 
         internal long? RowCount { get; private set; }
-        /// <summary>
-        /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the schema.
-        /// </summary>
-        public async Task WriteColumnAsync2<T>(DataField field, ReadOnlyMemory<T> data, CancellationToken cancellationToken = default) {
-            if(field is null)
-                throw new ArgumentNullException(nameof(field));
-
-            Thrift.SchemaElement tse = _thschema[_colIdx];
-            if(!field.Equals(tse)) {
-                throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{field.Name}'", nameof(field));
-            }
-            _colIdx += 1;
-
-            FieldPath path = _footer.GetPath(tse);
-            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, tse.Type, path, 0);
-            Thrift.PageHeader ph = _footer.CreateDataPage(data.Length);
-            _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
-
-            var encoder = new ColumnEncoder<T>(field, tse, path, data, _compressionMethod, _stream, _footer, _thriftStream);
-            await encoder.Write(cancellationToken);
-
-            _thriftRowGroup.Columns.Add(chunk);
-        }
 
         /// <summary>
         /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the
