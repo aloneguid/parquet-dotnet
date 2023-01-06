@@ -12,12 +12,15 @@ namespace Parquet.Data {
         public ArrayView(Array array, int offset, int count) {
             Offset = offset;
             Count = count;
+            Data = array;
             _array = array;
         }
 
         public static WritableArrayView<T> CreateWritable<T>(int length) {
             return new WritableArrayView<T>(length);
         }
+
+        internal Array Data { get; private set; }
 
         public virtual int Count { get; }
 

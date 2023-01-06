@@ -68,7 +68,6 @@ namespace Parquet.Data {
         }
 
         public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics) {
-            // todo: GVARA is the slowest
             foreach(TSystemType one in values.GetValuesAndReturnArray(statistics, this, this)) {
                 WriteOne(writer, one);
             }

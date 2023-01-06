@@ -7,7 +7,7 @@ using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
-    public class NonSeekableWriterTest {
+    public class NonSeekableWriterTst {
         [Fact]
         public async Task Write_multiple_row_groups_to_forward_only_stream() {
             var ms = new MemoryStream();
