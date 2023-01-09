@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data {
 
@@ -64,6 +65,22 @@ namespace Parquet.Data {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
                 Encode(span, destination);
                 return true;
+            } else if(t == typeof(DateTime[])) {
+                Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
+            else if(t == typeof(DateTimeOffset[])) {
+                Span<DateTimeOffset> span = ((DateTimeOffset[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+
             }
 
             return false;
@@ -103,10 +120,53 @@ namespace Parquet.Data {
             else if(t == typeof(byte[])) {
                 result = (byte[])value;
                 return true;
+            } else if(t == typeof(DateTimeOffset)) {
+                return TryEncode((DateTimeOffset)value, tse, out result);
+            } else if(t == typeof(DateTime)) {
+                return TryEncode((DateTime)value, tse, out result);
             }
 
             result = null;
             return false;
+        }
+
+        private static bool TryEncode(DateTime value, Thrift.SchemaElement tse, out byte[] result) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    int days = value.ToUnixDays();
+                    result = BitConverter.GetBytes(days);
+                    return true;
+                case Thrift.Type.INT64:
+                    long unixTime = value.ToUnixMilliseconds();
+                    result = BitConverter.GetBytes(unixTime);
+                    return true;
+                case Thrift.Type.INT96:
+                    var nano = new NanoTime(value);
+                    result = nano.GetBytes();
+                    return true;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
+
+            }
+        }
+
+        private static bool TryEncode(DateTimeOffset value, Thrift.SchemaElement tse, out byte[] result) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    int days = value.ToUnixDays();
+                    result = BitConverter.GetBytes(days);
+                    return true;
+                case Thrift.Type.INT64:
+                    long unixTime = value.ToUnixMilliseconds();
+                    result = BitConverter.GetBytes(unixTime);
+                    return true;
+                case Thrift.Type.INT96:
+                    var nano = new NanoTime(value);
+                    result = nano.GetBytes();
+                    return true;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
+            }
         }
 
         public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
@@ -201,6 +261,66 @@ namespace Parquet.Data {
             }
         }
 
+        public static void Encode(ReadOnlySpan<DateTime> data, Stream destination, Thrift.SchemaElement tse) {
+
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    foreach(DateTime element in data) {
+                        int days = element.ToUnixDays();
+                        byte[] raw = BitConverter.GetBytes(days);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case Thrift.Type.INT64:
+                    foreach(DateTime element in data) {
+                        long unixTime = element.ToUnixMilliseconds();
+                        byte[] raw = BitConverter.GetBytes(unixTime);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case Thrift.Type.INT96:
+                    foreach(DateTime element in data) {
+                        var nano = new NanoTime(element);
+                        nano.Write(destination);
+                    }
+                    break;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
+
+            }
+        }
+
+        public static void Encode(ReadOnlySpan<DateTimeOffset> data, Stream destination, Thrift.SchemaElement tse) {
+
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    foreach(DateTimeOffset element in data) {
+                        int days = element.ToUnixDays();
+                        byte[] raw = BitConverter.GetBytes(days);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case Thrift.Type.INT64:
+                    foreach(DateTimeOffset element in data) {
+                        long unixTime = element.ToUnixMilliseconds();
+                        byte[] raw = BitConverter.GetBytes(unixTime);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case Thrift.Type.INT96:
+                    foreach(DateTimeOffset element in data) {
+                        var nano = new NanoTime(element);
+                        nano.Write(destination);
+                    }
+                    break;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
+
+            }
+        }
+
+        #region [ .NET differences ]
+
         private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
 #if NETSTANDARD2_0
             byte[] tmp = bytes.ToArray();
@@ -233,6 +353,8 @@ namespace Parquet.Data {
             return read;
 #endif
         }
+
+        #endregion
 
         #region [ Statistics ]
 
@@ -271,6 +393,18 @@ namespace Parquet.Data {
 
         public static void FillStats(ReadOnlySpan<BigInteger> data, DataColumnStatistics stats) {
             data.MinMax(out BigInteger min, out BigInteger max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<DateTime> data, DataColumnStatistics stats) {
+            data.MinMax(out DateTime min, out DateTime max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<DateTimeOffset> data, DataColumnStatistics stats) {
+            data.MinMax(out DateTimeOffset min, out DateTimeOffset max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }

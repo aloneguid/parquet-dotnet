@@ -26,11 +26,20 @@ namespace Parquet {
             return (long)diff.TotalMilliseconds;
         }
 
+        public static long ToUnixMilliseconds(this DateTime dto) {
+            TimeSpan diff = dto - UnixEpoch;
+            return (long)diff.TotalMilliseconds;
+        }
+
         public static DateTimeOffset FromUnixDays(this int unixDays) {
             return UnixEpoch.AddDays(unixDays);
         }
 
         public static int ToUnixDays(this DateTimeOffset dto) {
+            TimeSpan diff = dto - UnixEpoch;
+            return (int)diff.TotalDays;
+        }
+        public static int ToUnixDays(this DateTime dto) {
             TimeSpan diff = dto - UnixEpoch;
             return (int)diff.TotalDays;
         }
