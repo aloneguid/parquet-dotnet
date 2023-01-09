@@ -29,11 +29,6 @@
         UnsignedByte,
 
         /// <summary>
-        /// Short
-        /// </summary>
-        Short,
-
-        /// <summary>
         /// Unsigned short
         /// </summary>
         UnsignedShort,

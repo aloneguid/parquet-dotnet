@@ -21,7 +21,6 @@ namespace Parquet.Data {
          new ByteDataTypeHandler(),
          new UnsignedByteDataTypeHandler(),
          new SignedByteDataTypeHandler(),
-         new ShortDataTypeHandler(),
          new UnsignedShortDataTypeHandler(),
          new Int16DataTypeHandler(),
          new UnsignedInt16DataTypeHandler(),

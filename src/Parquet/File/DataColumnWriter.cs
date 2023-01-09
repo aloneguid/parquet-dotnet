@@ -112,9 +112,12 @@ namespace Parquet.File {
                         column.Statistics.NullCount = 0;
                     }
 
-                    dataTypeHandler.Write(tse, writer, data, column.Statistics);
+                    if(!ParquetEncoder.Encode(data.Data, data.Offset, data.Count,
+                        tse,
+                        writer.BaseStream, column.Statistics)) {
 
-                    //writer.Flush();
+                        dataTypeHandler.Write(tse, writer, data, column.Statistics);
+                    }
                 }
                 uncompressedData = ms.ToArray();
             }

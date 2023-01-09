@@ -23,7 +23,6 @@ namespace Parquet.Test {
         [InlineData(DataType.Int64)]
         [InlineData(DataType.Int96)]
         [InlineData(DataType.Interval)]
-        [InlineData(DataType.Short)]
         [InlineData(DataType.SignedByte)]
         [InlineData(DataType.String)]
         [InlineData(DataType.UnsignedByte)]
