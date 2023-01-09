@@ -67,12 +67,6 @@ namespace Parquet.Data {
             return idx - offset;
         }
 
-        public virtual void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics) {
-            foreach(TSystemType one in values.GetValuesAndReturnArray(statistics, this, this)) {
-                WriteOne(writer, one);
-            }
-        }
-
         public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
             DataField sef = (DataField)se;
             var tse = new Thrift.SchemaElement(se.Name);
@@ -150,16 +144,6 @@ namespace Parquet.Data {
 
             return result;
         }
-
-
-        #region [ Reader / Writer Helpers ]
-
-        protected virtual void WriteOne(BinaryWriter writer, TSystemType value) {
-            throw new NotSupportedException();
-        }
-
-
-        #endregion
 
         /// <summary>
         /// less than 0 - x &lt; y
