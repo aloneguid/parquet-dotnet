@@ -52,7 +52,9 @@ namespace Parquet.Data {
             return ReadSingle(reader, tse, length);
         }
 
-        protected abstract TSystemType ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length);
+        protected virtual TSystemType ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length) {
+            throw new NotImplementedException();
+        }
 
         private int Read(Thrift.SchemaElement tse, BinaryReader reader, TSystemType[] dest, int offset) {
             int totalLength = (int)reader.BaseStream.Length;

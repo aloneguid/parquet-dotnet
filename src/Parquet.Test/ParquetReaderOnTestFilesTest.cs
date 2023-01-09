@@ -71,6 +71,7 @@ namespace Parquet.Test {
                 }
             }
         }
+
         [Fact]
         public async Task OptionalValues_WithoutStatistics() {
             using(Stream s = OpenTestFile("test-optionals-without-stats.parquet")) {
@@ -88,7 +89,7 @@ namespace Parquet.Test {
             }
         }
 
-        /*[Fact]
+        [Fact]
         public async Task Issue164() {
             using(Stream s = OpenTestFile("issue-164.parquet")) {
                 using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
@@ -100,7 +101,7 @@ namespace Parquet.Test {
 
                 }
             }
-        }*/
+        }
 
     }
 }
