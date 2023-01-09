@@ -33,6 +33,14 @@ namespace Parquet.Data {
                 }
                 return true;
             }
+            else if(t == typeof(sbyte[])) {
+                Span<sbyte> span = ((sbyte[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
             else if(t == typeof(Int16[])) {
                 Span<short> span = ((short[])data).AsSpan(offset, count);
                 Encode(span, destination);
@@ -134,6 +142,10 @@ namespace Parquet.Data {
             }
             else if(t == typeof(byte)) {
                 result = BitConverter.GetBytes((int)(byte)value);
+                return true;
+            }
+            else if(t == typeof(sbyte)) {
+                result = BitConverter.GetBytes((int)(sbyte)value);
                 return true;
             }
             else if(t == typeof(Int16)) {
@@ -283,6 +295,22 @@ namespace Parquet.Data {
         }
 
         public static void Encode(ReadOnlySpan<byte> data, Stream destination) {
+
+            // copy shorts into ints
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            try {
+                for(int i = 0; i < data.Length; i++) {
+                    ints[i] = data[i];
+                }
+            }
+            finally {
+                ArrayPool<int>.Shared.Return(ints);
+            }
+
+            Encode(ints.AsSpan(0, data.Length), destination);
+        }
+
+        public static void Encode(ReadOnlySpan<sbyte> data, Stream destination) {
 
             // copy shorts into ints
             int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
@@ -510,6 +538,12 @@ namespace Parquet.Data {
 
         public static void FillStats(ReadOnlySpan<byte> data, DataColumnStatistics stats) {
             data.MinMax(out byte min, out byte max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<sbyte> data, DataColumnStatistics stats) {
+            data.MinMax(out sbyte min, out sbyte max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }
