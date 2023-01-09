@@ -4,7 +4,6 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Parquet.File.Values.Primitives;
-using Parquet.Thrift;
 
 namespace Parquet.Data {
 
@@ -173,6 +172,43 @@ namespace Parquet.Data {
             return false;
         }
 
+        public static bool Decode(
+            Array data, int offset, int count,
+            Thrift.SchemaElement tse,
+            Stream source,
+            out int elementsRead) {
+
+            System.Type t = data.GetType();
+
+            if(t == typeof(bool[])) {
+                elementsRead = Decode(source, ((bool[])data).AsSpan(offset, count));
+                return true;
+            } else if(t == typeof(Int32[])) {
+                Span<int> span = ((int[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span);
+                return true;
+            }
+            else if(t == typeof(Int64[])) {
+                Span<long> span = ((long[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span);
+                return true;
+            }
+            else if(t == typeof(double[])) {
+                Span<double> span = ((double[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span);
+                return true;
+
+            }
+            else if(t == typeof(float[])) {
+                Span<float> span = ((float[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span);
+                return true;
+            }
+
+            elementsRead = 0;
+            return false;
+        }
+
         #region [ Single Value Encoding ]
 
         public static bool TryEncode(object value, Thrift.SchemaElement tse, out byte[] result) {
@@ -252,6 +288,34 @@ namespace Parquet.Data {
             }
             else if(t == typeof(string)) {
                 result = System.Text.Encoding.UTF8.GetBytes((string)value);
+                return true;
+            }
+
+            result = null;
+            return false;
+        }
+
+        public static bool TryDecode(byte[] value, Thrift.SchemaElement tse, out object result) {
+            if(value == null) {
+                result = null;
+                return true;    // we've just successfully encoded null
+            }
+
+            if(tse.Type == Thrift.Type.BOOLEAN) {
+                result = BitConverter.ToBoolean(value, 0);
+                return true;
+            }
+            if(tse.Type == Thrift.Type.INT32) {
+                result = BitConverter.ToInt32(value, 0);
+                return true;
+            } else if(tse.Type == Thrift.Type.INT64) {
+                result = BitConverter.ToInt64(value, 0);
+                return true;
+            } else if(tse.Type == Thrift.Type.DOUBLE) {
+                result = BitConverter.ToDouble(value, 0);
+                return true;
+            } else if(tse.Type == Thrift.Type.FLOAT) {
+                result = BitConverter.ToSingle(value, 0);
                 return true;
             }
 
@@ -376,6 +440,24 @@ namespace Parquet.Data {
             }
         }
 
+        public static int Decode(Stream source, Span<bool> data) {
+            int offset = 0;
+
+            int ibit = 0;
+            while(source.Position < source.Length && offset < data.Length) {
+                byte b = (byte)source.ReadByte();
+
+                while(ibit < 8 && offset < data.Length) {
+                    bool set = ((b >> ibit++) & 1) == 1;
+                    data[offset++] = set;
+                }
+
+                ibit = 0;
+            }
+
+            return offset;
+        }
+
         public static void Encode(ReadOnlySpan<byte> data, Stream destination, Thrift.SchemaElement tse) {
 
             // copy shorts into ints
@@ -452,12 +534,17 @@ namespace Parquet.Data {
 
         public static int Decode(Stream source, Span<int> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            return Read(source, bytes);
+            return Read(source, bytes) / sizeof(int);
         }
 
         public static void Encode(ReadOnlySpan<long> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
+        }
+
+        public static int Decode(Stream source, Span<long> data) {
+            Span<byte> bytes = MemoryMarshal.AsBytes(data);
+            return Read(source, bytes) / sizeof(long);
         }
 
         public static void Encode(ReadOnlySpan<ulong> data, Stream destination) {
@@ -518,9 +605,19 @@ namespace Parquet.Data {
             Write(destination, bytes);
         }
 
+        public static int Decode(Stream source, Span<double> data) {
+            Span<byte> bytes = MemoryMarshal.AsBytes(data);
+            return Read(source, bytes) / sizeof(double);
+        }
+
         public static void Encode(ReadOnlySpan<float> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
+        }
+
+        public static int Decode(Stream source, Span<float> data) {
+            Span<byte> bytes = MemoryMarshal.AsBytes(data);
+            return Read(source, bytes) / sizeof(float);
         }
 
         public static void Encode(ReadOnlySpan<byte[]> data, Stream destination) {
