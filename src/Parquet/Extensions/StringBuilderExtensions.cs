@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using Parquet.Data.Rows;
+using Parquet.Rows;
 using Parquet.Schema;
 using Parquet.Serialization;
 

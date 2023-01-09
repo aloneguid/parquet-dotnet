@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.Data.Rows;
 using Parquet.Extensions;
 using Parquet.File;
+using Parquet.Rows;
 using Parquet.Schema;
 
 namespace Parquet {

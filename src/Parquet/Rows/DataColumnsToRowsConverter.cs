@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.Data;
 using Parquet.Schema;
 
-namespace Parquet.Data.Rows {
+namespace Parquet.Rows {
     class DataColumnsToRowsConverter {
         private readonly ParquetSchema _schema;
         private readonly DataColumn[] _columns;
@@ -30,9 +31,8 @@ namespace Parquet.Data.Rows {
 
             ColumnsToRows(_schema.Fields, pathToColumn, result, _totalRowRount);
 
-            foreach(Row row in result) {
+            foreach(Row row in result)
                 row.Schema = _schema.Fields.ToArray();
-            }
 
             return result;
         }
@@ -49,9 +49,8 @@ namespace Parquet.Data.Rows {
         private IReadOnlyList<Row> BuildRows(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn) {
             var rows = new List<Row>();
 
-            while(TryBuildNextRow(fields, pathToColumn, out Row row)) {
+            while(TryBuildNextRow(fields, pathToColumn, out Row row))
                 rows.Add(row);
-            }
 
             return rows;
         }
@@ -154,17 +153,15 @@ namespace Parquet.Data.Rows {
             DataField[] schemaFields = schema.GetDataFields();
             DataField[] passedFields = columns.Select(f => f.Field).ToArray();
 
-            if(schemaFields.Length != passedFields.Length) {
+            if(schemaFields.Length != passedFields.Length)
                 throw new ArgumentException($"schema has {schemaFields.Length} fields, but only {passedFields.Length} are passed", nameof(schema));
-            }
 
             for(int i = 0; i < schemaFields.Length; i++) {
                 DataField sf = schemaFields[i];
                 DataField pf = schemaFields[i];
 
-                if(!sf.Equals(pf)) {
+                if(!sf.Equals(pf))
                     throw new ArgumentException($"expected {sf} at position {i} but found {pf}");
-                }
             }
         }
     }

@@ -3,11 +3,11 @@ using System.IO;
 using Parquet.Data;
 using System.Linq;
 using F = System.IO.File;
-using Parquet.Data.Rows;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Parquet.Extensions;
 using Parquet.Schema;
+using Parquet.Rows;
 
 namespace Parquet.Test {
     public class TestBase {

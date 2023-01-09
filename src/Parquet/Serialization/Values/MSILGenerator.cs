@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using Parquet.Data;
-using Parquet.Data.Rows;
+using Parquet.Rows;
 using Parquet.Schema;
 using static System.Reflection.Emit.OpCodes;
 
