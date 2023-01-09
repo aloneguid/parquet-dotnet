@@ -53,8 +53,6 @@ namespace Parquet.Data {
 
         Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
 
-        byte[] PlainEncode(Thrift.SchemaElement tse, object x);
-
         object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
     }
 }
