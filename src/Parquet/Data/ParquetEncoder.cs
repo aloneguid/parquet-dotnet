@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Parquet.File.Values.Primitives;
+using Parquet.Thrift;
 
 namespace Parquet.Data {
 
@@ -12,12 +13,15 @@ namespace Parquet.Data {
     /// Experimental.
     /// </summary>
     static class ParquetEncoder {
+
+        private static readonly System.Text.Encoding E = System.Text.Encoding.UTF8;
+
         public static bool Encode(
             Array data, int offset, int count,
             Thrift.SchemaElement tse,
             Stream destination,
             DataColumnStatistics stats = null) {
-            Type t = data.GetType();
+            System.Type t = data.GetType();
 
             if(t == typeof(bool[])) {
                 Span<bool> span = ((bool[])data).AsSpan(offset, count);
@@ -122,6 +126,13 @@ namespace Parquet.Data {
                 Encode(span, destination);
                 // no stats, maybe todo
                 return true;
+            } else if(t == typeof(string[])) {
+                Span<string> span = ((string[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
             }
 
             return false;
@@ -135,7 +146,7 @@ namespace Parquet.Data {
                 return false;
             }
 
-            Type t = value.GetType();
+            System.Type t = value.GetType();
             if(t == typeof(bool)) {
                 result = null;
                 return true;
@@ -185,6 +196,9 @@ namespace Parquet.Data {
                 return TryEncode((DateTime)value, tse, out result);
             } else if(t == typeof(Interval)) {
                 result = ((Interval)value).GetBytes();
+                return true;
+            } else if(t == typeof(string)) {
+                result = System.Text.Encoding.UTF8.GetBytes((string)value);
                 return true;
             }
 
@@ -488,6 +502,28 @@ namespace Parquet.Data {
             }
         }
 
+        public static void Encode(ReadOnlySpan<string> data, Stream destination) {
+            foreach(string s in data) {
+                if(string.IsNullOrEmpty(s)) {
+                    byte[] b = BitConverter.GetBytes((int)0);
+                    destination.Write(b, 0, b.Length);
+                } else {
+                    //transofrm to byte array first, as we need the length of the byte buffer, not string length
+                    byte[] b = ArrayPool<byte>.Shared.Rent(E.GetByteCount(s));
+                    try {
+                        int bytesWritten = E.GetBytes(s, 0, s.Length, b, 0);
+                        byte[] cb = BitConverter.GetBytes(bytesWritten);
+
+                        destination.Write(cb, 0, cb.Length);
+                        destination.Write(b, 0, bytesWritten);
+                    }
+                    finally {
+                        ArrayPool<byte>.Shared.Return(b);
+                    }
+                }
+            }
+        }
+
         #region [ .NET differences ]
 
         private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
@@ -598,6 +634,11 @@ namespace Parquet.Data {
 
         public static void FillStats(ReadOnlySpan<DateTimeOffset> data, DataColumnStatistics stats) {
             data.MinMax(out DateTimeOffset min, out DateTimeOffset max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+        public static void FillStats(ReadOnlySpan<string> data, DataColumnStatistics stats) {
+            data.MinMax(out string min, out string max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }
