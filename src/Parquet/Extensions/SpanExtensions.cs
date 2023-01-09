@@ -76,6 +76,28 @@ namespace System {
             }
         }
 
+        public static void MinMax(this ReadOnlySpan<double> span, out double min, out double max) {
+            min = span.IsEmpty ? default(double) : span[0];
+            max = min;
+            foreach(double i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
+        public static void MinMax(this ReadOnlySpan<float> span, out float min, out float max) {
+            min = span.IsEmpty ? default(float) : span[0];
+            max = min;
+            foreach(float i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
         public static void MinMax(this ReadOnlySpan<DateTime> span, out DateTime min, out DateTime max) {
             min = span.IsEmpty ? default(DateTime) : span[0];
             max = min;

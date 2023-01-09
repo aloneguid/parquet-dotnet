@@ -72,6 +72,21 @@ namespace Parquet.Data {
                     FillStats(span, stats);
                 }
                 return true;
+            } else if(t == typeof(double[])) {
+                Span<double> span = ((double[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
+            else if(t == typeof(float[])) {
+                Span<float> span = ((float[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
             }
             else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
@@ -131,9 +146,18 @@ namespace Parquet.Data {
             else if(t == typeof(BigInteger)) {
                 result = ((BigInteger)value).ToByteArray();
                 return true;
-            } else if(t == typeof(decimal)) {
+            }
+            else if(t == typeof(decimal)) {
                 return TryEncode((decimal)value, tse, out result);
-            } else if(t == typeof(byte[])) {
+            } else if(t == typeof(double)) {
+                result = BitConverter.GetBytes((double)value);
+                return true;
+            }
+            else if(t == typeof(float)) {
+                result = BitConverter.GetBytes((float)value);
+                return true;
+            }
+            else if(t == typeof(byte[])) {
                 result = (byte[])value;
                 return true;
             }
@@ -345,6 +369,16 @@ namespace Parquet.Data {
             }
         }
 
+        public static void Encode(ReadOnlySpan<double> data, Stream destination) {
+            ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
+            Write(destination, bytes);
+        }
+
+        public static void Encode(ReadOnlySpan<float> data, Stream destination) {
+            ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
+            Write(destination, bytes);
+        }
+
         public static void Encode(ReadOnlySpan<byte[]> data, Stream destination) {
             foreach(byte[] element in data) {
                 byte[] l = BitConverter.GetBytes(element.Length);
@@ -491,6 +525,18 @@ namespace Parquet.Data {
 
         public static void FillStats(ReadOnlySpan<decimal> data, DataColumnStatistics stats) {
             data.MinMax(out decimal min, out decimal max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<double> data, DataColumnStatistics stats) {
+            data.MinMax(out double min, out double max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<float> data, DataColumnStatistics stats) {
+            data.MinMax(out float min, out float max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }
