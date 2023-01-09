@@ -107,7 +107,5 @@ namespace Parquet.Data.Concrete {
                 }
             }
         }
-
-        public override byte[] PlainEncode(Thrift.SchemaElement tse, string x) => throw new NotImplementedException();
     }
 }

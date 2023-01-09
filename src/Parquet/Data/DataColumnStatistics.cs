@@ -1,4 +1,6 @@
-﻿namespace Parquet.Data {
+﻿using System;
+
+namespace Parquet.Data {
     /// <summary>
     /// Basic statistics for data column
     /// </summary>
@@ -43,11 +45,11 @@
         internal Thrift.Statistics ToThriftStatistics(IDataTypeHandler handler, Thrift.SchemaElement tse) {
 
             if(!ParquetEncoder.TryEncode(MinValue, tse, out byte[] min)) {
-                min = handler.PlainEncode(tse, MinValue);   // will go away
+                throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
             if(!ParquetEncoder.TryEncode(MaxValue, tse, out byte[] max)) {
-                max = handler.PlainEncode(tse, MaxValue);  // will go away
+                throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
             var r = new Thrift.Statistics {

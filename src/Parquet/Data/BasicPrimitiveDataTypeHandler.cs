@@ -86,16 +86,6 @@ namespace Parquet.Data {
             return EqualityComparer.Equals(x, y);
         }
 
-        public override byte[] PlainEncode(Thrift.SchemaElement tse, TSystemType x) {
-            using(var ms = new MemoryStream()) {
-                using(var bs = new BinaryWriter(ms)) {
-                    WriteOne(bs, x);
-                }
-
-                return ms.ToArray();
-            }
-        }
-
         public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) {
             if(encoded == null)
                 return null;

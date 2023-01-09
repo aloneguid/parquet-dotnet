@@ -178,7 +178,7 @@ namespace Parquet.Data {
         public static bool TryEncode(object value, Thrift.SchemaElement tse, out byte[] result) {
             if(value == null) {
                 result = null;
-                return false;
+                return true;    // we've just successfully encoded null
             }
 
             System.Type t = value.GetType();

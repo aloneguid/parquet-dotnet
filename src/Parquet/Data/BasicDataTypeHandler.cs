@@ -172,15 +172,6 @@ namespace Parquet.Data {
 
         public int GetHashCode(TSystemType x) => x.GetHashCode();
 
-        public abstract byte[] PlainEncode(Thrift.SchemaElement tse, TSystemType x);
-
-        public byte[] PlainEncode(Thrift.SchemaElement tse, object x) {
-            if(x == null)
-                return null;
-
-            return PlainEncode(tse, (TSystemType)x);
-        }
-
         public abstract object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
     }
 }
