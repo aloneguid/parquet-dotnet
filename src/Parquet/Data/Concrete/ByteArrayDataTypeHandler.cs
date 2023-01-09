@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO;
 using Parquet.Schema;
+using Parquet.Thrift;
 
 namespace Parquet.Data.Concrete {
     class ByteArrayDataTypeHandler : BasicDataTypeHandler<byte[]> {
@@ -80,12 +81,10 @@ namespace Parquet.Data.Concrete {
             return x == y;
         }
 
-        public override byte[] PlainEncode(Thrift.SchemaElement tse, byte[] x) {
-            return x;
-        }
-
         public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) {
             return encoded;
         }
+
+        public override byte[] PlainEncode(SchemaElement tse, byte[] x) => throw new NotImplementedException();
     }
 }
