@@ -65,26 +65,27 @@ namespace Parquet.Rows {
         }
 
         private static void ValidatePrimitive(DataField df, object value) {
-            if(value == null)
+            if(value == null) {
                 if(!df.HasNulls)
                     throw new ArgumentException($"element is null but column '{df.Name}' does not accept nulls");
-                else {
-                    Type vt = value.GetType();
-                    Type st = df.ClrType;
+            }
+            else {
+                Type vt = value.GetType();
+                Type st = df.ClrType;
 
-                    if(vt.IsNullable())
-                        vt = vt.GetNonNullable();
+                if(vt.IsNullable())
+                    vt = vt.GetNonNullable();
 
-                    if(df.IsArray) {
-                        if(!vt.IsArray)
-                            throw new ArgumentException($"expected array but found {vt}");
+                if(df.IsArray) {
+                    if(!vt.IsArray)
+                        throw new ArgumentException($"expected array but found {vt}");
 
-                        if(vt.GetElementType() != st)
-                            throw new ArgumentException($"expected array element type {st} but found {vt.GetElementType()}");
-                    }
-                    else if(vt != st)
-                        throw new ArgumentException($"expected {st} but found {vt}");
+                    if(vt.GetElementType() != st)
+                        throw new ArgumentException($"expected array element type {st} but found {vt.GetElementType()}");
                 }
+                else if(vt != st)
+                    throw new ArgumentException($"expected {st} but found {vt}");
+            }
         }
     }
 }

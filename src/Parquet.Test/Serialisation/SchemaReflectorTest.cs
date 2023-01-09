@@ -1,5 +1,4 @@
-﻿using Parquet.Attributes;
-using Parquet.Schema;
+﻿using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 
