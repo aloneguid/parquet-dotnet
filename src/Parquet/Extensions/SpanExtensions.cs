@@ -21,6 +21,17 @@ namespace System {
             }
         }
 
+        public static void MinMax(this ReadOnlySpan<sbyte> span, out sbyte min, out sbyte max) {
+            min = span.IsEmpty ? default(sbyte) : span[0];
+            max = min;
+            foreach(sbyte i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
         public static void MinMax(this ReadOnlySpan<short> span, out short min, out short max) {
             min = span.IsEmpty ? default(short) : span[0];
             max = min;
