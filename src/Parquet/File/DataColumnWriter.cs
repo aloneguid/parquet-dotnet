@@ -116,7 +116,7 @@ namespace Parquet.File {
                         tse,
                         writer.BaseStream, column.Statistics)) {
 
-                        dataTypeHandler.Write(tse, writer, data, column.Statistics);
+                        throw new IOException("failed to encode data");
                     }
                 }
                 uncompressedData = ms.ToArray();

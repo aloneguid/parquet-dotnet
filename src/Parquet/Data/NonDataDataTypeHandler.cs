@@ -27,11 +27,6 @@ namespace Parquet.Data {
 
         public object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) => throw new NotSupportedException();
 
-
-        public void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics) {
-            throw new NotSupportedException();
-        }
-
         public Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length) {
             throw new NotSupportedException();
         }
