@@ -25,9 +25,7 @@ namespace Parquet.Test {
         [InlineData(DataType.Interval)]
         [InlineData(DataType.SignedByte)]
         [InlineData(DataType.String)]
-        [InlineData(DataType.UnsignedByte)]
         [InlineData(DataType.UnsignedInt16)]
-        [InlineData(DataType.UnsignedShort)]
         public void CheckingForClrType(DataType type) {
             DataField input = new DataField(type.ToString(), type);
 

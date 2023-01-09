@@ -18,10 +18,8 @@ namespace Parquet.Data {
 
          // low priority types
          new BooleanDataTypeHandler(),
-         new ByteDataTypeHandler(),
-         new UnsignedByteDataTypeHandler(),
+         new ByteDataTypeHandler(), // byte is unsigned by default
          new SignedByteDataTypeHandler(),
-         new UnsignedShortDataTypeHandler(),
          new Int16DataTypeHandler(),
          new UnsignedInt16DataTypeHandler(),
          new UnsignedInt32DataTypeHandler(),

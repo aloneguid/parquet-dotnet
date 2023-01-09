@@ -14,24 +14,14 @@
         Boolean,
 
         /// <summary>
-        /// Byte
+        /// Byte (unsigned)
         /// </summary>
         Byte,
 
         /// <summary>
-        /// Signed byte data type
-        /// </summary>
-        SignedByte,
-
-        /// <summary>
         /// Unsigned byte
         /// </summary>
-        UnsignedByte,
-
-        /// <summary>
-        /// Unsigned short
-        /// </summary>
-        UnsignedShort,
+        SignedByte,
 
         /// <summary>
         /// 16 bit integer

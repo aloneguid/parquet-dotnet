@@ -31,7 +31,7 @@ namespace Parquet.Data {
             }
             else if(t == typeof(byte[])) {
                 Span<byte> span = ((byte[])data).AsSpan(offset, count);
-                Encode(span, destination);
+                Encode(span, destination, tse);
                 if(stats != null) {
                     FillStats(span, stats);
                 }
@@ -53,6 +53,14 @@ namespace Parquet.Data {
                 }
                 return true;
             }
+            else if(t == typeof(UInt16[])) {
+                Span<ushort> span = ((ushort[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
             else if(t == typeof(Int32[])) {
                 Span<int> span = ((int[])data).AsSpan(offset, count);
                 Encode(span, destination);
@@ -61,8 +69,24 @@ namespace Parquet.Data {
                 }
                 return true;
             }
+            else if(t == typeof(UInt32[])) {
+                Span<uint> span = ((uint[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
             else if(t == typeof(Int64[])) {
                 Span<long> span = ((long[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
+            else if(t == typeof(UInt64[])) {
+                Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
                     FillStats(span, stats);
@@ -84,7 +108,8 @@ namespace Parquet.Data {
                     FillStats(span, stats);
                 }
                 return true;
-            } else if(t == typeof(double[])) {
+            }
+            else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
@@ -121,12 +146,22 @@ namespace Parquet.Data {
                 }
                 return true;
 
-            } else if(t == typeof(Interval[])) {
+            }
+            else if(t == typeof(TimeSpan[])) {
+                Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
+            else if(t == typeof(Interval[])) {
                 Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 // no stats, maybe todo
                 return true;
-            } else if(t == typeof(string[])) {
+            }
+            else if(t == typeof(string[])) {
                 Span<string> span = ((string[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
@@ -163,12 +198,24 @@ namespace Parquet.Data {
                 result = BitConverter.GetBytes((int)(short)value);
                 return true;
             }
+            else if(t == typeof(UInt16)) {
+                result = BitConverter.GetBytes((int)(ushort)value);
+                return true;
+            }
             else if(t == typeof(Int32)) {
                 result = BitConverter.GetBytes((int)value);
                 return true;
             }
+            else if(t == typeof(UInt32)) {
+                result = BitConverter.GetBytes((int)(uint)value);
+                return true;
+            }
             else if(t == typeof(Int64)) {
                 result = BitConverter.GetBytes((long)value);
+                return true;
+            }
+            else if(t == typeof(UInt64)) {
+                result = BitConverter.GetBytes((ulong)value);
                 return true;
             }
             else if(t == typeof(BigInteger)) {
@@ -177,7 +224,8 @@ namespace Parquet.Data {
             }
             else if(t == typeof(decimal)) {
                 return TryEncode((decimal)value, tse, out result);
-            } else if(t == typeof(double)) {
+            }
+            else if(t == typeof(double)) {
                 result = BitConverter.GetBytes((double)value);
                 return true;
             }
@@ -194,10 +242,15 @@ namespace Parquet.Data {
             }
             else if(t == typeof(DateTime)) {
                 return TryEncode((DateTime)value, tse, out result);
-            } else if(t == typeof(Interval)) {
+            }
+            else if(t == typeof(TimeSpan)) {
+                return TryEncode((TimeSpan)value, tse, out result);
+            }
+            else if(t == typeof(Interval)) {
                 result = ((Interval)value).GetBytes();
                 return true;
-            } else if(t == typeof(string)) {
+            }
+            else if(t == typeof(string)) {
                 result = System.Text.Encoding.UTF8.GetBytes((string)value);
                 return true;
             }
@@ -273,6 +326,21 @@ namespace Parquet.Data {
             }
         }
 
+        private static bool TryEncode(TimeSpan value, Thrift.SchemaElement tse, out byte[] result) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    int ms = (int)value.TotalMilliseconds;
+                    result = BitConverter.GetBytes(ms);
+                    return true;
+                case Thrift.Type.INT64:
+                    long micros = value.Ticks / 10;
+                    result = BitConverter.GetBytes(micros);
+                    return true;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
+            }
+        }
+
         #endregion
 
         public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
@@ -308,7 +376,7 @@ namespace Parquet.Data {
             }
         }
 
-        public static void Encode(ReadOnlySpan<byte> data, Stream destination) {
+        public static void Encode(ReadOnlySpan<byte> data, Stream destination, Thrift.SchemaElement tse) {
 
             // copy shorts into ints
             int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
@@ -356,7 +424,28 @@ namespace Parquet.Data {
             Encode(ints.AsSpan(0, data.Length), destination);
         }
 
+        public static void Encode(ReadOnlySpan<ushort> data, Stream destination) {
+
+            // copy ushorts into ints
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            try {
+                for(int i = 0; i < data.Length; i++) {
+                    ints[i] = data[i];
+                }
+            }
+            finally {
+                ArrayPool<int>.Shared.Return(ints);
+            }
+
+            Encode(ints.AsSpan(0, data.Length), destination);
+        }
+
         public static void Encode(ReadOnlySpan<int> data, Stream destination) {
+            ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
+            Write(destination, bytes);
+        }
+
+        public static void Encode(ReadOnlySpan<uint> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
         }
@@ -367,6 +456,11 @@ namespace Parquet.Data {
         }
 
         public static void Encode(ReadOnlySpan<long> data, Stream destination) {
+            ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
+            Write(destination, bytes);
+        }
+
+        public static void Encode(ReadOnlySpan<ulong> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
         }
@@ -495,6 +589,27 @@ namespace Parquet.Data {
             }
         }
 
+        public static void Encode(ReadOnlySpan<TimeSpan> data, Stream destination, Thrift.SchemaElement tse) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    foreach(TimeSpan ts in data) {
+                        int ms = (int)ts.TotalMilliseconds;
+                        byte[] raw = BitConverter.GetBytes(ms);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case Thrift.Type.INT64:
+                    foreach(TimeSpan ts in data) {
+                        long micros = ts.Ticks / 10;
+                        byte[] raw = BitConverter.GetBytes(micros);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
+            }
+        }
+
         public static void Encode(ReadOnlySpan<Interval> data, Stream destination) {
             foreach(Interval iv in data) {
                 byte[] b = iv.GetBytes();
@@ -590,14 +705,32 @@ namespace Parquet.Data {
             stats.MaxValue = max;
         }
 
+        public static void FillStats(ReadOnlySpan<ushort> data, DataColumnStatistics stats) {
+            data.MinMax(out ushort min, out ushort max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
         public static void FillStats(ReadOnlySpan<int> data, DataColumnStatistics stats) {
             data.MinMax(out int min, out int max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }
 
+        public static void FillStats(ReadOnlySpan<uint> data, DataColumnStatistics stats) {
+            data.MinMax(out uint min, out uint max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
         public static void FillStats(ReadOnlySpan<long> data, DataColumnStatistics stats) {
             data.MinMax(out long min, out long max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<ulong> data, DataColumnStatistics stats) {
+            data.MinMax(out ulong min, out ulong max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }
@@ -637,6 +770,13 @@ namespace Parquet.Data {
             stats.MinValue = min;
             stats.MaxValue = max;
         }
+
+        public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {
+            data.MinMax(out TimeSpan min, out TimeSpan max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
         public static void FillStats(ReadOnlySpan<string> data, DataColumnStatistics stats) {
             data.MinMax(out string min, out string max);
             stats.MinValue = min;
