@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Parquet.Attributes;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
