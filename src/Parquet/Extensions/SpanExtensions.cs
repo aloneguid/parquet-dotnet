@@ -64,5 +64,27 @@ namespace System {
                     max = i;
             }
         }
+
+        public static void MinMax(this ReadOnlySpan<DateTime> span, out DateTime min, out DateTime max) {
+            min = span.IsEmpty ? default(DateTime) : span[0];
+            max = min;
+            foreach(DateTime i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
+        public static void MinMax(this ReadOnlySpan<DateTimeOffset> span, out DateTimeOffset min, out DateTimeOffset max) {
+            min = span.IsEmpty ? default(DateTimeOffset) : span[0];
+            max = min;
+            foreach(DateTimeOffset i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
     }
 }
