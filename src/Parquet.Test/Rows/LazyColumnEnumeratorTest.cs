@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Parquet.Data;
-using Parquet.Data.Rows;
+using Parquet.Rows;
 using Parquet.Schema;
 using Xunit;
 

@@ -3,10 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
 
-namespace Parquet.Data.Rows {
+namespace Parquet.Rows {
     /// <summary>
     /// Represents a table or table chunk that stores data in row format.
     /// </summary>
@@ -221,20 +222,18 @@ namespace Parquet.Data.Rows {
                 return false;
             }
 
-            for(int i = 0; i < Count; i++) {
+            for(int i = 0; i < Count; i++)
                 if(!this[i].Equals(other[i])) {
-                    if(throwExceptions) {
+                    if(throwExceptions)
                         try {
                             this[i].Equals(other[i], true);
                         }
                         catch(ArgumentException ex) {
                             throw new ArgumentException($"tables are different at row {i}. this: {this[i]}, other: {other[i]}", ex);
                         }
-                    }
 
                     return false;
                 }
-            }
 
             return true;
         }
@@ -278,12 +277,10 @@ namespace Parquet.Data.Rows {
             bool first = true;
             int i = 0;
             foreach(Row row in _rows) {
-                if(first) {
+                if(first)
                     first = false;
-                }
-                else {
+                else
                     sb.DivideObjects(sf, 0);
-                }
 
                 try {
                     row.ToString(sb, sf, 1, Schema.Fields);

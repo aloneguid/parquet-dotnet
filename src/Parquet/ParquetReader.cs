@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
-using Parquet.Data.Rows;
 using System.Threading.Tasks;
 using System.Threading;
 using Parquet.Schema;
+using Parquet.Rows;
 
 namespace Parquet {
     /// <summary>
