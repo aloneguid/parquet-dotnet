@@ -18,9 +18,12 @@ namespace Parquet.Data {
             DataColumnStatistics stats = null) {
             Type t = data.GetType();
 
-            // todo: for Int16, but needs to be written as Int32!
-
-            if(t == typeof(Int16[])) {
+            if(t == typeof(bool[])) {
+                Span<bool> span = ((bool[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                // no stats for bools
+                return true;
+            } else if(t == typeof(Int16[])) {
                 Span<short> span = ((short[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
@@ -60,7 +63,10 @@ namespace Parquet.Data {
             }
 
             Type t = value.GetType();
-            if(t == typeof(Int16)) {
+            if(t == typeof(bool)) {
+                result = null;
+                return true;
+            } else if(t == typeof(Int16)) {
                 result = BitConverter.GetBytes((int)(short)value);
                 return true;
             } else if(t == typeof(Int32)) {
@@ -76,6 +82,39 @@ namespace Parquet.Data {
 
             result = null;
             return false;
+        }
+
+        public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
+            int targetLength = (data.Length / 8) + 1;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(targetLength);
+
+            int n = 0;
+            byte b = 0;
+            int ib = 0;
+
+            try {
+                foreach(bool flag in data) {
+                    if(flag) {
+                        b |= (byte)(1 << n);
+                    }
+
+                    n++;
+                    if(n == 8) {
+                        buffer[ib++] = b;
+                        n = 0;
+                        b = 0;
+                    }
+                }
+
+                if(n != 0)
+                    buffer[ib] = b;
+
+                Write(destination, buffer.AsSpan(0, targetLength));
+
+            }
+            finally {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         public static void Encode(ReadOnlySpan<short> data, Stream destination) {
