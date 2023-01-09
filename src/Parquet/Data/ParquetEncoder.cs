@@ -109,6 +109,11 @@ namespace Parquet.Data {
                 }
                 return true;
 
+            } else if(t == typeof(Interval[])) {
+                Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                // no stats, maybe todo
+                return true;
             }
 
             return false;
@@ -166,6 +171,9 @@ namespace Parquet.Data {
             }
             else if(t == typeof(DateTime)) {
                 return TryEncode((DateTime)value, tse, out result);
+            } else if(t == typeof(Interval)) {
+                result = ((Interval)value).GetBytes();
+                return true;
             }
 
             result = null;
@@ -442,6 +450,13 @@ namespace Parquet.Data {
                 default:
                     throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
 
+            }
+        }
+
+        public static void Encode(ReadOnlySpan<Interval> data, Stream destination) {
+            foreach(Interval iv in data) {
+                byte[] b = iv.GetBytes();
+                destination.Write(b, 0, b.Length);
             }
         }
 
