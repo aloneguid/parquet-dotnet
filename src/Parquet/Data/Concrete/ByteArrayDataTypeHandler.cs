@@ -72,11 +72,6 @@ namespace Parquet.Data.Concrete {
             return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel);
         }
 
-        protected override void WriteOne(BinaryWriter writer, byte[] value) {
-            writer.Write(value.Length);
-            writer.Write(value);
-        }
-
         public override int Compare(byte[] x, byte[] y) {
             return 0;
         }

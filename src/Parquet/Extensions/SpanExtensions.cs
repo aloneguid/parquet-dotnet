@@ -10,6 +10,17 @@ namespace System {
 
         // All of these could be replaced with generic math, but we don't have access to it
 
+        public static void MinMax(this ReadOnlySpan<byte> span, out byte min, out byte max) {
+            min = span.IsEmpty ? default(byte) : span[0];
+            max = min;
+            foreach(byte i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
         public static void MinMax(this ReadOnlySpan<short> span, out short min, out short max) {
             min = span.IsEmpty ? default(short) : span[0];
             max = min;
