@@ -12,16 +12,9 @@ namespace Parquet.Data.Concrete {
             return reader.ReadInt32();
         }
 
-        public override void Write(SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics) {
-
-            Span<int> span = ((int[])values.Data).AsSpan(values.Offset, values.Count);  // temporary
-
-            ParquetEncoder.Encode(span, writer.BaseStream);
-            ParquetEncoder.FillStats(span, statistics);
-        }
-
-        protected override void WriteOne(BinaryWriter writer, int value) {
-            writer.Write(value);
+        public override int Read(BinaryReader reader, SchemaElement tse, Array dest, int offset) {
+            Span<int> span = ((int[])dest).AsSpan(offset);
+            return ParquetEncoder.Decode(reader.BaseStream, span);
         }
     }
 }

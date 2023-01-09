@@ -41,8 +41,14 @@
         public object MaxValue { get; internal set; }
 
         internal Thrift.Statistics ToThriftStatistics(IDataTypeHandler handler, Thrift.SchemaElement tse) {
-            byte[] min = handler.PlainEncode(tse, MinValue);
-            byte[] max = handler.PlainEncode(tse, MaxValue);
+
+            if(!ParquetEncoder.TryEncode(MinValue, tse, out byte[] min)) {
+                min = handler.PlainEncode(tse, MinValue);   // will go away
+            }
+
+            if(!ParquetEncoder.TryEncode(MaxValue, tse, out byte[] max)) {
+                max = handler.PlainEncode(tse, MaxValue);  // will go away
+            }
 
             var r = new Thrift.Statistics {
                 Null_count = NullCount,
