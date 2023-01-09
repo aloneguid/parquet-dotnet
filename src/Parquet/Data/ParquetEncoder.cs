@@ -23,6 +23,14 @@ namespace Parquet.Data {
                 Encode(span, destination);
                 // no stats for bools
                 return true;
+            }
+            else if(t == typeof(byte[])) {
+                Span<byte> span = ((byte[])data).AsSpan(offset, count);
+                Encode(span, destination);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
             } else if(t == typeof(Int16[])) {
                 Span<short> span = ((short[])data).AsSpan(offset, count);
                 Encode(span, destination);
@@ -51,6 +59,11 @@ namespace Parquet.Data {
                 if(stats != null) {
                     FillStats(span, stats);
                 }
+                return true;
+            } else if(t == typeof(byte[][])) {
+                Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
+                Encode(span, destination);
+                return true;
             }
 
             return false;
@@ -66,17 +79,29 @@ namespace Parquet.Data {
             if(t == typeof(bool)) {
                 result = null;
                 return true;
-            } else if(t == typeof(Int16)) {
+            }
+            else if(t == typeof(byte)) {
+                result = BitConverter.GetBytes((int)(byte)value);
+                return true;
+            }
+            else if(t == typeof(Int16)) {
                 result = BitConverter.GetBytes((int)(short)value);
                 return true;
-            } else if(t == typeof(Int32)) {
+            }
+            else if(t == typeof(Int32)) {
                 result = BitConverter.GetBytes((int)value);
                 return true;
-            } else if(t == typeof(Int64)) {
+            }
+            else if(t == typeof(Int64)) {
                 result = BitConverter.GetBytes((long)value);
                 return true;
-            } else if(t == typeof(BigInteger)) {
+            }
+            else if(t == typeof(BigInteger)) {
                 result = ((BigInteger)value).ToByteArray();
+                return true;
+            }
+            else if(t == typeof(byte[])) {
+                result = (byte[])value;
                 return true;
             }
 
@@ -117,6 +142,22 @@ namespace Parquet.Data {
             }
         }
 
+        public static void Encode(ReadOnlySpan<byte> data, Stream destination) {
+
+            // copy shorts into ints
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            try {
+                for(int i = 0; i < data.Length; i++) {
+                    ints[i] = data[i];
+                }
+            }
+            finally {
+                ArrayPool<int>.Shared.Return(ints);
+            }
+
+            Encode(ints.AsSpan(0, data.Length), destination);
+        }
+
         public static void Encode(ReadOnlySpan<short> data, Stream destination) {
 
             // copy shorts into ints
@@ -150,6 +191,14 @@ namespace Parquet.Data {
         public static void Encode(ReadOnlySpan<BigInteger> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
+        }
+
+        public static void Encode(ReadOnlySpan<byte[]> data, Stream destination) {
+            foreach(byte[] element in data) {
+                byte[] l = BitConverter.GetBytes(element.Length);
+                destination.Write(l, 0, l.Length);
+                destination.Write(element, 0, element.Length);
+            }
         }
 
         private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
@@ -195,6 +244,12 @@ namespace Parquet.Data {
          * To calculate distincts, we used to use HashSet and it's really slow, taking more than 50% of the whole encoding process.
          * HyperLogLog is slower than HashSet though https://github.com/saguiitay/CardinalityEstimation .
          */
+
+        public static void FillStats(ReadOnlySpan<byte> data, DataColumnStatistics stats) {
+            data.MinMax(out byte min, out byte max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
 
         public static void FillStats(ReadOnlySpan<short> data, DataColumnStatistics stats) {
             data.MinMax(out short min, out short max);
