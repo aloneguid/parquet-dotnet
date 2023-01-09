@@ -65,6 +65,17 @@ namespace System {
             }
         }
 
+        public static void MinMax(this ReadOnlySpan<decimal> span, out decimal min, out decimal max) {
+            min = span.IsEmpty ? default(decimal) : span[0];
+            max = min;
+            foreach(decimal i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
         public static void MinMax(this ReadOnlySpan<DateTime> span, out DateTime min, out DateTime max) {
             min = span.IsEmpty ? default(DateTime) : span[0];
             max = min;

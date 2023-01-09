@@ -32,7 +32,8 @@ namespace Parquet.Data {
                     FillStats(span, stats);
                 }
                 return true;
-            } else if(t == typeof(Int16[])) {
+            }
+            else if(t == typeof(Int16[])) {
                 Span<short> span = ((short[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
@@ -47,25 +48,37 @@ namespace Parquet.Data {
                     FillStats(span, stats);
                 }
                 return true;
-            } else if(t == typeof(Int64[])) {
+            }
+            else if(t == typeof(Int64[])) {
                 Span<long> span = ((long[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
                     FillStats(span, stats);
                 }
                 return true;
-            } else if(t == typeof(BigInteger[])) {
+            }
+            else if(t == typeof(BigInteger[])) {
                 Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null) {
                     FillStats(span, stats);
                 }
                 return true;
-            } else if(t == typeof(byte[][])) {
+            }
+            else if(t == typeof(decimal[])) {
+                Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null) {
+                    FillStats(span, stats);
+                }
+                return true;
+            }
+            else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
                 Encode(span, destination);
                 return true;
-            } else if(t == typeof(DateTime[])) {
+            }
+            else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null) {
@@ -85,6 +98,8 @@ namespace Parquet.Data {
 
             return false;
         }
+
+        #region [ Single Value Encoding ]
 
         public static bool TryEncode(object value, Thrift.SchemaElement tse, out byte[] result) {
             if(value == null) {
@@ -116,13 +131,16 @@ namespace Parquet.Data {
             else if(t == typeof(BigInteger)) {
                 result = ((BigInteger)value).ToByteArray();
                 return true;
-            }
-            else if(t == typeof(byte[])) {
+            } else if(t == typeof(decimal)) {
+                return TryEncode((decimal)value, tse, out result);
+            } else if(t == typeof(byte[])) {
                 result = (byte[])value;
                 return true;
-            } else if(t == typeof(DateTimeOffset)) {
+            }
+            else if(t == typeof(DateTimeOffset)) {
                 return TryEncode((DateTimeOffset)value, tse, out result);
-            } else if(t == typeof(DateTime)) {
+            }
+            else if(t == typeof(DateTime)) {
                 return TryEncode((DateTime)value, tse, out result);
             }
 
@@ -150,6 +168,34 @@ namespace Parquet.Data {
             }
         }
 
+        private static bool TryEncode(decimal value, Thrift.SchemaElement tse, out byte[] result) {
+            try {
+                switch(tse.Type) {
+                    case Thrift.Type.INT32:
+                        double sf32 = Math.Pow(10, tse.Scale);
+                        int i = (int)(value * (decimal)sf32);
+                        result = BitConverter.GetBytes(i);
+                        return true;
+                    case Thrift.Type.INT64:
+                        double sf64 = Math.Pow(10, tse.Scale);
+                        long l = (long)(value * (decimal)sf64);
+                        result = BitConverter.GetBytes((long)l);
+                        return true;
+                    case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                        var bd = new BigDecimal(value, tse.Precision, tse.Scale);
+                        result = bd.GetBytes();
+                        return true;
+                    default:
+                        throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
+                }
+            }
+
+            catch(OverflowException) {
+                throw new ParquetException(
+                   $"value '{value}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
+            }
+        }
+
         private static bool TryEncode(DateTimeOffset value, Thrift.SchemaElement tse, out byte[] result) {
             switch(tse.Type) {
                 case Thrift.Type.INT32:
@@ -168,6 +214,8 @@ namespace Parquet.Data {
                     throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
             }
         }
+
+        #endregion
 
         public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
             int targetLength = (data.Length / 8) + 1;
@@ -223,10 +271,11 @@ namespace Parquet.Data {
             // copy shorts into ints
             int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
             try {
-                for(int i = 0; i < data.Length ; i++) {
+                for(int i = 0; i < data.Length; i++) {
                     ints[i] = data[i];
                 }
-            } finally {
+            }
+            finally {
                 ArrayPool<int>.Shared.Return(ints);
             }
 
@@ -251,6 +300,49 @@ namespace Parquet.Data {
         public static void Encode(ReadOnlySpan<BigInteger> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
+        }
+
+        public static void Encode(ReadOnlySpan<decimal> data, Stream destination, Thrift.SchemaElement tse) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    double sf32 = Math.Pow(10, tse.Scale);
+                    foreach(decimal d in data) {
+                        try {
+                            int i = (int)(d * (decimal)sf32);
+                            byte[] b = BitConverter.GetBytes(i);
+                            destination.Write(b, 0, b.Length);
+                        }
+                        catch(OverflowException) {
+                            throw new ParquetException(
+                               $"value '{d}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
+                        }
+                    }
+                    break;
+                case Thrift.Type.INT64:
+                    double sf64 = Math.Pow(10, tse.Scale);
+                    foreach(decimal d in data) {
+                        try {
+                            long l = (long)(d * (decimal)sf64);
+                            byte[] b = BitConverter.GetBytes((long)l);
+                            destination.Write(b, 0, b.Length);
+                        }
+                        catch(OverflowException) {
+                            throw new ParquetException(
+                               $"value '{d}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
+                        }
+                    }
+                    break;
+                case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                    foreach(decimal d in data) {
+                        var bd = new BigDecimal(d, tse.Precision, tse.Scale);
+                        byte[] b = bd.GetBytes();
+                        tse.Type_length = b.Length; //always re-set type length as it can differ from default type length
+                        destination.Write(b, 0, b.Length);
+                    }
+                    break;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
+            }
         }
 
         public static void Encode(ReadOnlySpan<byte[]> data, Stream destination) {
@@ -393,6 +485,12 @@ namespace Parquet.Data {
 
         public static void FillStats(ReadOnlySpan<BigInteger> data, DataColumnStatistics stats) {
             data.MinMax(out BigInteger min, out BigInteger max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<decimal> data, DataColumnStatistics stats) {
+            data.MinMax(out decimal min, out decimal max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }
