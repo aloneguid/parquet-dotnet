@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Parquet.Attributes;
 using Parquet.Data;
 using Parquet.Schema;
 
