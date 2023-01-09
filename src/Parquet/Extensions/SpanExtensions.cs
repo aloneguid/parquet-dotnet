@@ -43,6 +43,17 @@ namespace System {
             }
         }
 
+        public static void MinMax(this ReadOnlySpan<ushort> span, out ushort min, out ushort max) {
+            min = span.IsEmpty ? default(ushort) : span[0];
+            max = min;
+            foreach(ushort i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
         public static void MinMax(this ReadOnlySpan<int> span, out int min, out int max) {
             min = span.IsEmpty ? default(int) : span[0];
             max = min;
@@ -54,10 +65,32 @@ namespace System {
             }
         }
 
+        public static void MinMax(this ReadOnlySpan<uint> span, out uint min, out uint max) {
+            min = span.IsEmpty ? default(uint) : span[0];
+            max = min;
+            foreach(uint i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
         public static void MinMax(this ReadOnlySpan<long> span, out long min, out long max) {
             min = span.IsEmpty ? default(long) : span[0];
             max = min;
             foreach(long i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
+        public static void MinMax(this ReadOnlySpan<ulong> span, out ulong min, out ulong max) {
+            min = span.IsEmpty ? default(ulong) : span[0];
+            max = min;
+            foreach(ulong i in span) {
                 if(i < min)
                     min = i;
                 if(i > max)
@@ -124,6 +157,17 @@ namespace System {
             min = span.IsEmpty ? default(DateTimeOffset) : span[0];
             max = min;
             foreach(DateTimeOffset i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+
+        public static void MinMax(this ReadOnlySpan<TimeSpan> span, out TimeSpan min, out TimeSpan max) {
+            min = span.IsEmpty ? default(TimeSpan) : span[0];
+            max = min;
+            foreach(TimeSpan i in span) {
                 if(i < min)
                     min = i;
                 if(i > max)
