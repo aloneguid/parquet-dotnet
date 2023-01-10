@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values;
+using Parquet.Schema;
 
 namespace Parquet.File {
     class DataColumnReader {
@@ -118,11 +119,14 @@ namespace Parquet.File {
                colData.indexes);
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
+
+                ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement, out object min);
+                ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement, out object max);
+
                 finalColumn.Statistics = new DataColumnStatistics(
                    _thriftColumnChunk.Meta_data.Statistics.Null_count,
                    _thriftColumnChunk.Meta_data.Statistics.Distinct_count,
-                   _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Min_value),
-                   _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Max_value));
+                   min, max);
             }
 
             // Fix for nullable booleans
@@ -166,7 +170,12 @@ namespace Parquet.File {
                 using(var ms = new MemoryStream(bytes.AsSpan().ToArray())) {
                     using(var dataReader = new BinaryReader(ms)) {
                         Array dictionary = _dataTypeHandler.GetArray(ph.Dictionary_page_header.Num_values, false, false);
-                        int dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0);
+
+                        if(!ParquetEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
+                            _thriftSchemaElement, ms, out int dictionaryOffset)) {
+                            throw new IOException("could not decode");
+                        }
+
                         return (true, dictionary, dictionaryOffset);
                     }
                 }
@@ -242,7 +251,11 @@ namespace Parquet.File {
 
             switch(encoding) {
                 case Thrift.Encoding.PLAIN:
-                    cd.valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, cd.values, cd.valuesOffset);
+                    if(!ParquetEncoder.Decode(cd.values, cd.valuesOffset, (int)totalValues - cd.valuesOffset,
+                        _thriftSchemaElement, reader.BaseStream, out int read)) {
+                        throw new IOException("could not decode");
+                    }
+                    cd.valuesOffset += read;
                     break;
 
                 case Thrift.Encoding.RLE:

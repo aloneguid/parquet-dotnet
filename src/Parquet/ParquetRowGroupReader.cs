@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
+using Parquet.Schema;
 
 namespace Parquet {
     /// <summary>

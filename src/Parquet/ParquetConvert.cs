@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
+using Parquet.File;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Values;
 
@@ -26,8 +28,8 @@ namespace Parquet {
         /// <param name="rowGroupSize"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static async Task<Schema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
-           Schema schema = null,
+        public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
+           ParquetSchema schema = null,
            CompressionMethod compressionMethod = CompressionMethod.Snappy,
            int rowGroupSize = 5000,
            bool append = false)
@@ -81,8 +83,8 @@ namespace Parquet {
         /// <param name="rowGroupSize"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static async Task<Schema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
-           Schema schema = null,
+        public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
+           ParquetSchema schema = null,
            CompressionMethod compressionMethod = CompressionMethod.Snappy,
            int rowGroupSize = 5000,
            bool append = false)
@@ -157,7 +159,7 @@ namespace Parquet {
             var r = new List<T[]>();
 
             using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
-                Schema fileSchema = reader.Schema;
+                ParquetSchema fileSchema = reader.Schema;
                 DataField[] dataFields = fileSchema.GetDataFields();
 
                 for(int i = 0; i < reader.RowGroupCount; i++) {

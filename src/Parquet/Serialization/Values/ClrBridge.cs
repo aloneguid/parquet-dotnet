@@ -4,10 +4,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Serialization.Values
-{
-   class ClrBridge
+namespace Parquet.Serialization.Values {
+    class ClrBridge
    {
       private readonly Type _classType;
       private static readonly ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate> _collectorKeyToTag = new ConcurrentDictionary<TypeCachingKey, MSILGenerator.PopulateListDelegate>();
