@@ -1,10 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.Extensions;
-using Parquet.File;
 using Parquet.Rows;
 using Parquet.Schema;
 
@@ -105,25 +101,6 @@ namespace Parquet {
         public static async Task WriteAsync(this ParquetRowGroupWriter writer, Table table) {
             foreach(DataColumn dc in table.ExtractDataColumns()) {
                 await writer.WriteColumnAsync(dc);
-            }
-        }
-
-        /// <summary>
-        /// Decodes raw bytes from <see cref="Thrift.Statistics"/> into a CLR value
-        /// </summary>
-        public static object DecodeSingleStatsValue(this Thrift.FileMetaData fileMeta, Thrift.ColumnChunk columnChunk, byte[] rawBytes) {
-            if(rawBytes == null || rawBytes.Length == 0)
-                return null;
-
-            var footer = new ThriftFooter(fileMeta);
-            Thrift.SchemaElement schema = footer.GetSchemaElement(columnChunk);
-
-            IDataTypeHandler handler = DataTypeFactory.Match(schema, new ParquetOptions { TreatByteArrayAsString = true });
-
-            using(var ms = new MemoryStream(rawBytes))
-            using(var reader = new BinaryReader(ms)) {
-                object value = handler.Read(reader, schema, rawBytes.Length);
-                return value;
             }
         }
     }

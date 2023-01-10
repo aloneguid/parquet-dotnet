@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Parquet.Schema;
 
 namespace Parquet.Data {
@@ -26,16 +25,6 @@ namespace Parquet.Data {
 
         Type ClrType { get; }
 
-        int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset);
-
-        /// <summary>
-        /// Reads a single value from the current stream position. This shouldn't be used normally, however it's useful when decoding parquet stats.
-        /// </summary>
-        /// <param name="reader">Incoming data</param>
-        /// <param name="tse">Schema element</param>
-        /// <param name="length">Number of bytes to read (type specific). Pass -1 to read the length from incoming stream if you don't know how long the buffer is.</param>
-        object Read(BinaryReader reader, Thrift.SchemaElement tse, int length);
-
         /// <summary>
         /// Creates or rents a native array
         /// </summary>
@@ -50,7 +39,5 @@ namespace Parquet.Data {
         ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
 
         Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
-
-        object PlainDecode(Thrift.SchemaElement tse, byte[] encoded);
     }
 }
