@@ -54,9 +54,7 @@ namespace Parquet.File.Values.Primitives {
         /// Converts a BigDecimal to a decimal
         /// </summary>
         /// <param name="bd">The BigDecimal value</param>
-        public static implicit operator decimal(BigDecimal bd) {
-            return bd.DecimalValue;
-        }
+        public static implicit operator decimal(BigDecimal bd) => bd.DecimalValue;
 
         /// <summary>
         /// Gets buffer size enough to be able to hold the decimal number of a specific precision
