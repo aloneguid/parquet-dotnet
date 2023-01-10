@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using Parquet.Schema;
 
 // MIGRATION LEFTOVERS
@@ -82,6 +85,73 @@ namespace Parquet.Data.Concrete {
     class SignedByteDataTypeHandler : BasicPrimitiveDataTypeHandler<sbyte> {
         public SignedByteDataTypeHandler() : base(DataType.SignedByte, Thrift.Type.INT32, Thrift.ConvertedType.INT_8) {
 
+        }
+    }
+
+    class DateTimeDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTime> {
+        public DateTimeDataTypeHandler() : base(DataType.DateTimeOffset, Thrift.Type.BYTE_ARRAY) {
+
+        }
+
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
+            return
+
+               (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
+
+               (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS) ||
+
+               (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
+        }
+    }
+
+    class DateTimeOffsetDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTimeOffset> {
+        public DateTimeOffsetDataTypeHandler() : base(DataType.DateTimeOffset, Thrift.Type.INT96) {
+
+        }
+
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
+            return
+
+               (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
+
+               (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS) ||
+
+               (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
+        }
+
+        public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            base.CreateThrift(se, parent, container);
+
+            //modify annotations
+            Thrift.SchemaElement tse = container.Last();
+            if(se is DateTimeDataField dse) {
+                switch(dse.DateTimeFormat) {
+                    case DateTimeFormat.DateAndTime:
+                        tse.Type = Thrift.Type.INT64;
+                        tse.Converted_type = Thrift.ConvertedType.TIMESTAMP_MILLIS;
+                        break;
+                    case DateTimeFormat.Date:
+                        tse.Type = Thrift.Type.INT32;
+                        tse.Converted_type = Thrift.ConvertedType.DATE;
+                        break;
+
+                        //other cases are just default
+                }
+            }
+            else {
+                tse.Converted_type = Thrift.ConvertedType.DATE;
+                //default annotation is fine
+            }
+
+        }
+    }
+
+    class Int96DataTypeHandler : BasicPrimitiveDataTypeHandler<BigInteger> {
+        public Int96DataTypeHandler() : base(DataType.Int96, Thrift.Type.INT96) {
+        }
+
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
+            return tse.Type == Thrift.Type.INT96 && !formatOptions.TreatBigIntegersAsDates;
         }
     }
 }

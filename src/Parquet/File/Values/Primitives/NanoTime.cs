@@ -5,10 +5,22 @@ namespace Parquet.File.Values.Primitives {
     class NanoTime {
         private readonly int _julianDay;
         private readonly long _timeOfDayNanos;
+        public const int BinarySize = 12;
 
         public NanoTime(byte[] data, int offset) {
             _timeOfDayNanos = BitConverter.ToInt64(data, offset);
             _julianDay = BitConverter.ToInt32(data, offset + 8);
+        }
+
+        public NanoTime(Span<byte> span) {
+#if NETSTANDARD2_0
+            byte[] data = span.ToArray();
+            _timeOfDayNanos = BitConverter.ToInt64(data, 0);
+            _julianDay = BitConverter.ToInt32(data, sizeof(long));
+#else
+            _timeOfDayNanos = BitConverter.ToInt64(span.Slice(0, sizeof(long)));
+            _julianDay = BitConverter.ToInt32(span.Slice(sizeof(long)));
+#endif
         }
 
         public NanoTime(DateTimeOffset dt) {

@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
 
@@ -205,6 +206,11 @@ namespace Parquet.Data {
                 elementsRead = Decode(source, span);
                 return true;
             }
+            else if(t == typeof(BigInteger[])) {
+                Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span);
+                return true;
+            }
             else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
@@ -221,7 +227,16 @@ namespace Parquet.Data {
                 elementsRead = Decode(source, span);
                 return true;
             }
-
+            else if(t == typeof(DateTime[])) {
+                Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+                return true;
+            }
+            else if(t == typeof(DateTimeOffset[])) {
+                Span<DateTimeOffset> span = ((DateTimeOffset[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+                return true;
+            }
 
             elementsRead = 0;
             return false;
@@ -326,13 +341,29 @@ namespace Parquet.Data {
             if(tse.Type == Thrift.Type.INT32) {
                 result = BitConverter.ToInt32(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.INT64) {
+            }
+            else if(tse.Type == Thrift.Type.INT64) {
                 result = BitConverter.ToInt64(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.DOUBLE) {
+            }
+            else if(tse.Type == Thrift.Type.INT96) {
+                if(value.Length == 12) {
+                    if(tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE) {
+                        result = (DateTimeOffset)(new NanoTime(value, 0));
+                    }
+                    else {
+                        result = new BigInteger(value);
+                    }
+                } else {
+                    result = null;
+                }
+                return true;
+            }
+            else if(tse.Type == Thrift.Type.DOUBLE) {
                 result = BitConverter.ToDouble(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.FLOAT) {
+            }
+            else if(tse.Type == Thrift.Type.FLOAT) {
                 result = BitConverter.ToSingle(value, 0);
                 return true;
             }
@@ -593,6 +624,11 @@ namespace Parquet.Data {
             Write(destination, bytes);
         }
 
+        public static int Decode(Stream source, Span<BigInteger> data) {
+            Span<byte> bytes = MemoryMarshal.AsBytes(data);
+            return Read(source, bytes) / 12;
+        }
+
         public static void Encode(ReadOnlySpan<decimal> data, Stream destination, Thrift.SchemaElement tse) {
             switch(tse.Type) {
                 case Thrift.Type.INT32:
@@ -709,6 +745,52 @@ namespace Parquet.Data {
             }
         }
 
+        public static int Decode(Stream source, Span<DateTime> data, Thrift.SchemaElement tse) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+                    try {
+                        int intsRead = Decode(source, ints.AsSpan(0, data.Length));
+                        for(int i = 0; i < intsRead; i++) {
+                            data[i] = ints[i].FromUnixDays().Date;
+                        }
+                        return intsRead;
+                    } finally {
+                        ArrayPool<int>.Shared.Return(ints);
+                    }
+                case Thrift.Type.INT64:
+                    long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
+                    try {
+                        int longsRead = Decode(source, longs.AsSpan(0, data.Length));
+                        for(int i = 0; i < longsRead; i++) {
+                            data[i] = longs[i].FromUnixMilliseconds().Date;
+                        }
+                        return longsRead;
+                    }
+                    finally {
+                        ArrayPool<long>.Shared.Return(longs);
+                    }
+                case Thrift.Type.INT96:
+                    byte[] buf = ArrayPool<byte>.Shared.Rent(NanoTime.BinarySize * data.Length);
+                    try {
+                        Span<byte> span = buf.AsSpan(0, NanoTime.BinarySize * data.Length);
+                        Read(source, span);
+                        int offset = 0;
+                        int els = 0;
+                        while(offset + NanoTime.BinarySize <= span.Length) {
+                            var nano = new NanoTime(span.Slice(offset));
+                            data[els++] = ((DateTimeOffset)nano).Date;
+                            offset += NanoTime.BinarySize;
+                        }
+                        return els;
+                    }finally {
+                        ArrayPool<byte>.Shared.Return(buf);
+                    }
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         public static void Encode(ReadOnlySpan<DateTimeOffset> data, Stream destination, Thrift.SchemaElement tse) {
 
             switch(tse.Type) {
@@ -735,6 +817,53 @@ namespace Parquet.Data {
                 default:
                     throw new InvalidDataException($"data type '{tse.Type}' does not represent any date types");
 
+            }
+        }
+
+        public static int Decode(Stream source, Span<DateTimeOffset> data, Thrift.SchemaElement tse) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+                    try {
+                        int intsRead = Decode(source, ints.AsSpan(0, data.Length));
+                        for(int i = 0; i < intsRead; i++) {
+                            data[i] = ints[i].FromUnixDays();
+                        }
+                        return intsRead;
+                    }
+                    finally {
+                        ArrayPool<int>.Shared.Return(ints);
+                    }
+                case Thrift.Type.INT64:
+                    long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
+                    try {
+                        int longsRead = Decode(source, longs.AsSpan(0, data.Length));
+                        for(int i = 0; i < longsRead; i++) {
+                            data[i] = longs[i].FromUnixMilliseconds();
+                        }
+                        return longsRead;
+                    }
+                    finally {
+                        ArrayPool<long>.Shared.Return(longs);
+                    }
+                case Thrift.Type.INT96:
+                    byte[] buf = ArrayPool<byte>.Shared.Rent(NanoTime.BinarySize * data.Length);
+                    try {
+                        Span<byte> span = buf.AsSpan(0, NanoTime.BinarySize * data.Length);
+                        Read(source, span);
+                        int offset = 0;
+                        int els = 0;
+                        while(offset + NanoTime.BinarySize <= span.Length) {
+                            data[els++] = new NanoTime(span.Slice(offset));
+                            offset += NanoTime.BinarySize;
+                        }
+                        return els;
+                    }
+                    finally {
+                        ArrayPool<byte>.Shared.Return(buf);
+                    }
+                default:
+                    throw new NotSupportedException();
             }
         }
 
