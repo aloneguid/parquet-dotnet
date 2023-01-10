@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
 
@@ -219,6 +220,11 @@ namespace Parquet.Data {
                 elementsRead = Decode(source, span);
                 return true;
             }
+            else if(t == typeof(decimal[])) {
+                Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+                return true;
+            }
             else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
@@ -367,6 +373,10 @@ namespace Parquet.Data {
                 }
                 return true;
             }
+            else if(tse.Converted_type == Thrift.ConvertedType.DECIMAL) {
+                result = TryDecodeDecimal(value, tse);
+                return true;
+            }
             else if(tse.Type == Thrift.Type.DOUBLE) {
                 result = BitConverter.ToDouble(value, 0);
                 return true;
@@ -378,6 +388,25 @@ namespace Parquet.Data {
 
             result = null;
             return false;
+        }
+
+        private static decimal TryDecodeDecimal(byte[] value, Thrift.SchemaElement tse) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32:
+                    decimal iscaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                    int iv = BitConverter.ToInt32(value, 0);
+                    decimal idv = iv * iscaleFactor;
+                    return idv;
+                case Thrift.Type.INT64:
+                    decimal lscaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                    long lv = BitConverter.ToInt64(value, 0);
+                    decimal ldv = lv * lscaleFactor;
+                    return ldv;
+                case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                    return new BigDecimal(value, tse);
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
+            }
         }
 
         private static bool TryEncode(DateTime value, Thrift.SchemaElement tse, out byte[] result) {
@@ -707,6 +736,62 @@ namespace Parquet.Data {
                         destination.Write(b, 0, b.Length);
                     }
                     break;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
+            }
+        }
+
+        public static int Decode(Stream source, Span<decimal> data, Thrift.SchemaElement tse) {
+            switch(tse.Type) {
+                case Thrift.Type.INT32: {
+                        decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                        int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+                        try {
+                            Decode(source, ints.AsSpan(0, data.Length));
+                            for(int i = 0; i < data.Length; i++) {
+                                data[i] = ints[i] * scaleFactor;
+                            }
+                            return data.Length;
+                        } finally {
+                            ArrayPool<int>.Shared.Return(ints);
+                        }
+                    }
+                case Thrift.Type.INT64: {
+                        decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                        long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
+                        try {
+                            Decode(source, longs.AsSpan(0, data.Length));
+                            for(int i = 0; i < data.Length; i++) {
+                                data[i] = longs[i] * scaleFactor;
+                            }
+                            return data.Length;
+                        }
+                        finally {
+                            ArrayPool<long>.Shared.Return(longs);
+                        }
+                    }
+                case Thrift.Type.FIXED_LEN_BYTE_ARRAY: {
+                        int tl = tse.Type_length;
+                        if(tl == 0)
+                            return 0;
+
+                        byte[] raw = ArrayPool<byte>.Shared.Rent(data.Length * tl);
+                        Read(source, raw.AsSpan(0, data.Length * tl));
+                        try {
+                            byte[] chunk = new byte[tl];
+                            for(int offset = 0, i = 0; offset + tl <= data.Length * tl; offset += tl, i ++) {
+                                Array.Copy(raw, offset, chunk, 0, tl);
+                                decimal dc = new BigDecimal(chunk, tse);
+                                data[i] = dc;
+                            }
+                            return data.Length;
+                        }
+                        finally {
+                            ArrayPool<byte>.Shared.Return(raw);
+                        }
+
+                    }
+                    
                 default:
                     throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
             }

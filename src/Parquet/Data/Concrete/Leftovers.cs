@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 
 // MIGRATION LEFTOVERS
@@ -164,6 +165,54 @@ namespace Parquet.Data.Concrete {
     class UnsignedInt16DataTypeHandler : BasicPrimitiveDataTypeHandler<UInt16> {
         public UnsignedInt16DataTypeHandler() : base(DataType.UnsignedInt16, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16) {
 
+        }
+    }
+
+    class DecimalDataTypeHandler : BasicPrimitiveDataTypeHandler<decimal> {
+        public DecimalDataTypeHandler() : base(DataType.Decimal, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.DECIMAL) {
+        }
+
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
+            return
+
+               tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DECIMAL &&
+
+               (
+                  tse.Type == Thrift.Type.FIXED_LEN_BYTE_ARRAY ||
+                  tse.Type == Thrift.Type.INT32 ||
+                  tse.Type == Thrift.Type.INT64
+               );
+        }
+
+        public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            base.CreateThrift(se, parent, container);
+
+            //modify this element slightly
+            Thrift.SchemaElement tse = container.Last();
+
+            if(se is DecimalDataField dse) {
+                if(dse.ForceByteArrayEncoding) {
+                    tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+                }
+                else {
+                    if(dse.Precision <= 9)
+                        tse.Type = Thrift.Type.INT32;
+                    else if(dse.Precision <= 18)
+                        tse.Type = Thrift.Type.INT64;
+                    else
+                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+                }
+
+                tse.Precision = dse.Precision;
+                tse.Scale = dse.Scale;
+                tse.Type_length = BigDecimal.GetBufferSize(dse.Precision);
+            }
+            else {
+                //set defaults
+                tse.Precision = DecimalFormatDefaults.DefaultPrecision;
+                tse.Scale = DecimalFormatDefaults.DefaultScale;
+                tse.Type_length = 16;
+            }
         }
     }
 }
