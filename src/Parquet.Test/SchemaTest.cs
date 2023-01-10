@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Parquet.Schema;
+using System.Linq;
 
 namespace Parquet.Test {
     public class SchemaTest : TestBase {
@@ -241,6 +242,40 @@ namespace Parquet.Test {
                 }
             }
 
+        }
+
+        [Fact]
+        public async Task Column_called_root() {
+
+            var columns = new List<DataColumn>();
+            columns.Add(new DataColumn(new DataField<string>("root"), new string[] { "AAA" }));
+            columns.Add(new DataColumn(new DataField<string>("other"), new string[] { "BBB" }));
+            List<Field> fields = new List<Field>();
+            foreach(DataColumn column in columns) {
+                fields.Add(column.Field);
+            }
+
+            var schema = new ParquetSchema(fields);
+            var ms = new MemoryStream();
+            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms)) {
+                using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
+                    foreach(DataColumn column in columns) {
+                        await groupWriter.WriteColumnAsync(column);
+                    }
+                }
+            }
+
+            ms.Position = 0;
+            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(ms)) {
+                DataField[] dataFields = parquetReader.Schema.GetDataFields();
+                for(int i = 0; i < parquetReader.RowGroupCount; i++) {
+                    using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i)) {
+                        foreach(DataColumn column in columns) {
+                            DataColumn c = await groupReader.ReadColumnAsync(column.Field);
+                        }
+                    }
+                }
+            }
         }
     }
 }
