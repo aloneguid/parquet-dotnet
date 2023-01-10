@@ -120,14 +120,8 @@ namespace Parquet.File {
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
-                if(!ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement, out object min)) {
-                    min = _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Min_value);
-                }
-
-                if(!ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement, out object max)) {
-                    max = _dataTypeHandler.PlainDecode(_thriftSchemaElement, _thriftColumnChunk.Meta_data.Statistics.Max_value);
-                }
-
+                ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement, out object min);
+                ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement, out object max);
 
                 finalColumn.Statistics = new DataColumnStatistics(
                    _thriftColumnChunk.Meta_data.Statistics.Null_count,
@@ -179,7 +173,7 @@ namespace Parquet.File {
 
                         if(!ParquetEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
                             _thriftSchemaElement, ms, out int dictionaryOffset)) {
-                            dictionaryOffset = _dataTypeHandler.Read(dataReader, _thriftSchemaElement, dictionary, 0);
+                            throw new IOException("could not decode");
                         }
 
                         return (true, dictionary, dictionaryOffset);
@@ -259,7 +253,7 @@ namespace Parquet.File {
                 case Thrift.Encoding.PLAIN:
                     if(!ParquetEncoder.Decode(cd.values, cd.valuesOffset, (int)totalValues - cd.valuesOffset,
                         _thriftSchemaElement, reader.BaseStream, out int read)) {
-                        cd.valuesOffset += _dataTypeHandler.Read(reader, _thriftSchemaElement, cd.values, cd.valuesOffset);
+                        throw new IOException("could not decode");
                     }
                     cd.valuesOffset += read;
                     break;
