@@ -154,4 +154,16 @@ namespace Parquet.Data.Concrete {
             return tse.Type == Thrift.Type.INT96 && !formatOptions.TreatBigIntegersAsDates;
         }
     }
+
+    class Int16DataTypeHandler : BasicPrimitiveDataTypeHandler<Int16> {
+        public Int16DataTypeHandler() : base(DataType.Int16, Thrift.Type.INT32, Thrift.ConvertedType.INT_16) {
+
+        }
+    }
+
+    class UnsignedInt16DataTypeHandler : BasicPrimitiveDataTypeHandler<UInt16> {
+        public UnsignedInt16DataTypeHandler() : base(DataType.UnsignedInt16, Thrift.Type.INT32, Thrift.ConvertedType.UINT_16) {
+
+        }
+    }
 }
