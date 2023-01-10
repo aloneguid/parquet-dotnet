@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
@@ -15,6 +16,7 @@ namespace Parquet.Data {
     static class ParquetEncoder {
 
         private static readonly System.Text.Encoding E = System.Text.Encoding.UTF8;
+        private static readonly byte[] ZeroInt32 = BitConverter.GetBytes((int)0);
 
         public static bool Encode(
             Array data, int offset, int count,
@@ -1103,17 +1105,19 @@ namespace Parquet.Data {
         public static void Encode(ReadOnlySpan<string> data, Stream destination) {
             foreach(string s in data) {
                 if(string.IsNullOrEmpty(s)) {
-                    byte[] b = BitConverter.GetBytes((int)0);
-                    destination.Write(b, 0, b.Length);
+                    destination.Write(ZeroInt32, 0, ZeroInt32.Length);
                 } else {
                     //transofrm to byte array first, as we need the length of the byte buffer, not string length
-                    byte[] b = ArrayPool<byte>.Shared.Rent(E.GetByteCount(s));
+                    byte[] b = ArrayPool<byte>.Shared.Rent(E.GetByteCount(s) + sizeof(int));
                     try {
-                        int bytesWritten = E.GetBytes(s, 0, s.Length, b, 0);
-                        byte[] cb = BitConverter.GetBytes(bytesWritten);
-
-                        destination.Write(cb, 0, cb.Length);
-                        destination.Write(b, 0, bytesWritten);
+                        int len = E.GetBytes(s, 0, s.Length, b, sizeof(int));
+#if NETSTANDARD2_1
+                        Array.Copy(BitConverter.GetBytes(len), b, sizeof(int));
+#else
+                        Unsafe.As<byte, int>(ref b[0]) = len;
+#endif
+                        len += sizeof(int);
+                        destination.Write(b, 0, len);
                     }
                     finally {
                         ArrayPool<byte>.Shared.Return(b);
