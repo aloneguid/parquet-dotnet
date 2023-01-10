@@ -186,7 +186,16 @@ namespace Parquet.Data {
             if(t == typeof(bool[])) {
                 elementsRead = Decode(source, ((bool[])data).AsSpan(offset, count));
                 return true;
-            } else if(t == typeof(Int32[])) {
+            }
+            else if(t == typeof(byte[])) {
+                elementsRead = Decode(source, ((byte[])data).AsSpan(offset, count));
+                return true;
+            }
+            else if(t == typeof(sbyte[])) {
+                elementsRead = Decode(source, ((sbyte[])data).AsSpan(offset, count));
+                return true;
+            }
+            else if(t == typeof(Int32[])) {
                 Span<int> span = ((int[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
                 return true;
@@ -483,6 +492,15 @@ namespace Parquet.Data {
             Encode(ints.AsSpan(0, data.Length), destination);
         }
 
+        public static int Decode(Stream source, Span<byte> data) {
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            int r = Decode(source, ints.AsSpan(0, data.Length));
+            for(int i = 0; i < data.Length; i++) {
+                data[i] = (byte)ints[i];
+            }
+            return r;
+        }
+
         public static void Encode(ReadOnlySpan<sbyte> data, Stream destination) {
 
             // copy shorts into ints
@@ -497,6 +515,15 @@ namespace Parquet.Data {
             }
 
             Encode(ints.AsSpan(0, data.Length), destination);
+        }
+
+        public static int Decode(Stream source, Span<sbyte> data) {
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            int r = Decode(source, ints.AsSpan(0, data.Length));
+            for(int i = 0; i < data.Length; i++) {
+                data[i] = (sbyte)ints[i];
+            }
+            return r;
         }
 
         public static void Encode(ReadOnlySpan<short> data, Stream destination) {

@@ -72,4 +72,16 @@ namespace Parquet.Data.Concrete {
             return encoded;
         }
     }
+
+    class ByteDataTypeHandler : BasicPrimitiveDataTypeHandler<byte> {
+        public ByteDataTypeHandler() : base(DataType.Byte, Thrift.Type.INT32, Thrift.ConvertedType.UINT_8) {
+
+        }
+    }
+
+    class SignedByteDataTypeHandler : BasicPrimitiveDataTypeHandler<sbyte> {
+        public SignedByteDataTypeHandler() : base(DataType.SignedByte, Thrift.Type.INT32, Thrift.ConvertedType.INT_8) {
+
+        }
+    }
 }
