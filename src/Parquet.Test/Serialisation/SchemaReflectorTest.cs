@@ -1,4 +1,4 @@
-﻿using Parquet.Schema;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 
@@ -13,6 +13,47 @@ namespace Parquet.Test.Serialisation {
             Assert.NotNull(schema);
             Assert.Equal(4, schema.Fields.Count);
 
+            VerifyPocoClassFields(schema);
+        }
+
+        [Fact]
+        public void I_ignore_inherited_properties() {
+            ParquetSchema schema = SchemaReflector.Reflect<PocoSubClass>();
+            Assert.Equal(1, schema.Fields.Count);
+            VerifyPocoSubClassField((DataField)schema[0]);
+        }
+
+        [Fact]
+        public void I_can_recognize_inherited_properties() {
+            ParquetSchema schema = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
+            Assert.Equal(5, schema.Fields.Count);
+            VerifyPocoClassFields(schema);
+            VerifyPocoSubClassField((DataField)schema[4]);
+        }
+
+        [Fact]
+        public void Reflecting_with_inherited_properties_after_default_does_not_cause_cache_collisions() {
+            ParquetSchema defaultSchema = SchemaReflector.Reflect<PocoSubClass>();
+            ParquetSchema schemaWithInheritedProps = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
+
+            Assert.Equal(1, defaultSchema.Fields.Count);
+            Assert.Equal(5, schemaWithInheritedProps.Fields.Count);
+            VerifyPocoSubClassField((DataField)defaultSchema[0]);
+            VerifyPocoClassFields(schemaWithInheritedProps);
+        }
+
+        [Fact]
+        public void Reflecting_with_inherited_properties_before_default_does_not_cause_cache_collisions() {
+            ParquetSchema schemaWithInheritedProps = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
+            ParquetSchema defaultSchema = SchemaReflector.Reflect<PocoSubClass>();
+
+            Assert.Equal(1, defaultSchema.Fields.Count);
+            Assert.Equal(5, schemaWithInheritedProps.Fields.Count);
+            VerifyPocoSubClassField((DataField)defaultSchema[0]);
+            VerifyPocoClassFields(schemaWithInheritedProps);
+        }
+
+        private static void VerifyPocoClassFields(ParquetSchema schema) {
             DataField id = (DataField)schema[0];
             Assert.Equal("Id", id.Name);
             Assert.Equal(DataType.Int32, id.DataType);
@@ -36,7 +77,13 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(DataType.Int32, intArray.DataType);
             Assert.False(intArray.HasNulls);
             Assert.True(intArray.IsArray);
+        }
 
+        private static void VerifyPocoSubClassField(DataField extraProp) {
+            Assert.Equal("ExtraProperty", extraProp.Name);
+            Assert.Equal(DataType.Int32, extraProp.DataType);
+            Assert.False(extraProp.HasNulls);
+            Assert.False(extraProp.IsArray);
         }
 
         /// <summary>
@@ -45,12 +92,15 @@ namespace Parquet.Test.Serialisation {
         class PocoClass {
             public int Id { get; set; }
 
-            [ParquetColumn("AltId")]
-            public int AnnotatedId { get; set; }
+            [ParquetColumn("AltId")] public int AnnotatedId { get; set; }
 
             public float? NullableFloat { get; set; }
 
             public int[] IntArray { get; set; }
+        }
+
+        class PocoSubClass : PocoClass {
+            public int ExtraProperty { get; set; }
         }
     }
 }

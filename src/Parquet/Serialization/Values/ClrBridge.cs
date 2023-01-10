@@ -25,7 +25,7 @@ namespace Parquet.Serialization.Values {
          MSILGenerator.PopulateListDelegate populateList = _collectorKeyToTag.GetOrAdd(key, (_) => new MSILGenerator().GenerateCollector(_classType, field));
 
          IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
-         Type prop = _classType.GetTypeInfo().GetDeclaredProperty(field.ClrPropName).PropertyType;
+         Type prop = PropertyHelpers.GetDeclaredPropertyFromClassType(_classType, field).PropertyType;
          bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
          List<int> repLevelsList = field.IsArray || underlyingTypeIsEnumerable ? new List<int>() : null;
          object result = populateList(classInstances, resultList, repLevelsList, field.MaxRepetitionLevel);
