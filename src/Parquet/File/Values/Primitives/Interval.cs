@@ -6,6 +6,12 @@ namespace Parquet.File.Values.Primitives {
     /// 12 byte little Endian structure fits in an INT96 original type with an INTERVAL converted type
     /// </summary>
     public struct Interval {
+
+        /// <summary>
+        /// Binary serialised size
+        /// </summary>
+        public const int BinarySize = 12;
+
         /// <summary>
         /// Used to create an interval type
         /// </summary>
