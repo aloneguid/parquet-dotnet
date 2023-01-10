@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
 
 namespace Parquet.Data {
@@ -172,6 +173,8 @@ namespace Parquet.Data {
             return false;
         }
 
+        // todo: instead of Stream, use Span<byte>, because we already read it all into memorystream!
+
         public static bool Decode(
             Array data, int offset, int count,
             Thrift.SchemaElement tse,
@@ -204,6 +207,12 @@ namespace Parquet.Data {
                 elementsRead = Decode(source, span);
                 return true;
             }
+            else if(t == typeof(byte[][])) {
+                Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span);
+                return true;
+            }
+
 
             elementsRead = 0;
             return false;
@@ -626,6 +635,22 @@ namespace Parquet.Data {
                 destination.Write(l, 0, l.Length);
                 destination.Write(element, 0, element.Length);
             }
+        }
+
+        public static int Decode(Stream source, Span<byte[]> data) {
+            int read = 0;
+
+            while(read < data.Length) {
+                int length = source.ReadInt32();
+                if(length > 0) {
+                    byte[] el = new byte[length];
+                    int elRead = source.Read(el, 0, length);
+                    data[read++] = el;
+                    if(elRead != length)
+                        throw new IOException($"expected {length} but read {elRead}");
+                }
+            }
+            return read;
         }
 
         public static void Encode(ReadOnlySpan<DateTime> data, Stream destination, Thrift.SchemaElement tse) {

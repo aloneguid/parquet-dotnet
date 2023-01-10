@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using Parquet.Schema;
 
@@ -29,6 +30,46 @@ namespace Parquet.Data.Concrete {
 
     class FloatDataTypeHandler : BasicPrimitiveDataTypeHandler<float> {
         public FloatDataTypeHandler() : base(DataType.Float, Thrift.Type.FLOAT) {
+        }
+    }
+
+    class ByteArrayDataTypeHandler : BasicDataTypeHandler<byte[]> {
+        private static readonly ArrayPool<byte[]> _byteArrayPool = ArrayPool<byte[]>.Shared;
+
+        public ByteArrayDataTypeHandler() : base(DataType.ByteArray, Thrift.Type.BYTE_ARRAY) {
+        }
+
+        public override Array GetArray(int minCount, bool rent, bool isNullable) {
+            if(rent) {
+                return _byteArrayPool.Rent(minCount);
+            }
+
+            return new byte[minCount][];
+        }
+
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
+            return tse.__isset.type && tse.Type == Thrift.Type.BYTE_ARRAY
+                                    && !tse.__isset.converted_type;
+        }
+
+        public override ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount) {
+            return PackDefinitions((byte[][])data, offset, count, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
+        }
+
+        public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel) {
+            return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel);
+        }
+
+        public override int Compare(byte[] x, byte[] y) {
+            return 0;
+        }
+
+        public override bool Equals(byte[] x, byte[] y) {
+            return x == y;
+        }
+
+        public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) {
+            return encoded;
         }
     }
 }
