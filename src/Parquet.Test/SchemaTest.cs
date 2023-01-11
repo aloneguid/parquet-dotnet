@@ -255,6 +255,7 @@ namespace Parquet.Test {
                 fields.Add(column.Field);
             }
 
+            // the writer used to create structure type under "root" (https://github.com/aloneguid/parquet-dotnet/issues/143)
             var schema = new ParquetSchema(fields);
             var ms = new MemoryStream();
             using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms)) {

@@ -46,6 +46,16 @@ namespace Parquet.Schema {
         public List<string> ToList() => new List<string>(_parts);
 
         /// <summary>
+        /// Returns first part of the path, or null if path is empty
+        /// </summary>
+        public string FirstPart => _parts.Count == 0 ? null : _parts[0];
+
+        /// <summary>
+        /// Number of elements in path
+        /// </summary>
+        public int Length => _parts.Count;
+
+        /// <summary>
         /// Compares string path
         /// </summary>
         public bool Equals(FieldPath other) {

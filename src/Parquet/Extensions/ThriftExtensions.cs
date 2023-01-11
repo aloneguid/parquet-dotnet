@@ -20,8 +20,8 @@ namespace Parquet {
             return schemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
         }
 
-        public static string GetPath(this Thrift.ColumnChunk columnChunk) {
-            return string.Join(ParquetSchema.PathSeparator, columnChunk.Meta_data.Path_in_schema);
+        public static FieldPath GetPath(this Thrift.ColumnChunk columnChunk) {
+            return new FieldPath(columnChunk.Meta_data.Path_in_schema);
         }
 
         public static string Describe(this Thrift.SchemaElement se) {
