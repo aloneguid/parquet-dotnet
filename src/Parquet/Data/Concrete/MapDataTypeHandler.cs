@@ -3,11 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Parquet.Data;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class MapDataTypeHandler : NonDataDataTypeHandler
+namespace Parquet.Data.Concrete {
+    class MapDataTypeHandler : NonDataDataTypeHandler
    {
       public override SchemaType SchemaType => SchemaType.Map;
 
@@ -26,7 +25,7 @@ namespace Parquet.Data.Concrete
          //followed by a key and a value, but we declared them as owned
 
          var map = new MapField(tseRoot.Name);
-         map.Path = tseRoot.Name + Schema.PathSeparator + tseContainer.Name;
+         map.Path = tseRoot.Name + ParquetSchema.PathSeparator + tseContainer.Name;
 
          index += 1;
          ownedChildCount = 2;

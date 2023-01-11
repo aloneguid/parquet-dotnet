@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data.Concrete
-{
-   class ListDataTypeHandler : NonDataDataTypeHandler
+namespace Parquet.Data.Concrete {
+    class ListDataTypeHandler : NonDataDataTypeHandler
    {
       public override SchemaType SchemaType => SchemaType.List;
 
@@ -39,7 +39,7 @@ namespace Parquet.Data.Concrete
          }
 
          //as we are skipping elements set path hint
-         listField.Path = $"{tseList.Name}{Schema.PathSeparator}{schema[index + 1].Name}";
+         listField.Path = $"{tseList.Name}{ParquetSchema.PathSeparator}{schema[index + 1].Name}";
          index += 2;          //skip this element and child container
          ownedChildCount = 1; //we should get this element assigned back
          return listField;

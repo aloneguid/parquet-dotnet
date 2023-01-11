@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
         <Description>
             Pure managed .NET library to read and write Apache Parquet files, targeting .NET Standand 2.0 and up.
 
@@ -49,15 +49,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IronCompress" Version="1.2.4" />
+        <PackageReference Include="IronCompress" Version="1.2.5" />
     </ItemGroup>
 
-    <!--
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
         <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.3.0" />
     </ItemGroup>
-    -->
 
     <ItemGroup>
         <None Include="..\icon.png">

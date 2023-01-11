@@ -1,41 +1,41 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 
-   <PropertyGroup>
-      <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-      <IsPackable>false</IsPackable>
-      <LangVersion>latest</LangVersion>
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <LangVersion>latest</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
 
-      <SignAssembly>true</SignAssembly>
-      <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
-   </PropertyGroup>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
 
-   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-      <DebugType>portable</DebugType>
-      <DebugSymbols>true</DebugSymbols>
-   </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
 
-   <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-      <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
-      <PackageReference Include="xunit" Version="2.4.2" />
-      <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
-         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-         <PrivateAssets>all</PrivateAssets>
-      </PackageReference>
-       <PackageReference Include="System.IO.Pipelines" Version="7.0.0" />
-   </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+        <PackageReference Include="xunit" Version="2.4.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="System.IO.Pipelines" Version="7.0.0" />
+    </ItemGroup>
 
-   <ItemGroup>
-      <ProjectReference Include="..\Parquet\Parquet.csproj" />
-   </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Parquet\Parquet.csproj" />
+    </ItemGroup>
 
-   <ItemGroup>
-      <None Update="data\**">
-         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+    <ItemGroup>
+        <None Update="data\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
 
-   </ItemGroup>
+    </ItemGroup>
 
 </Project>

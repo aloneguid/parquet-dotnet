@@ -4,6 +4,8 @@ using Xunit;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Parquet.Schema;
+using System.Linq;
 
 namespace Parquet.Test {
     public class SchemaTest : TestBase {
@@ -29,24 +31,24 @@ namespace Parquet.Test {
 
         [Fact]
         public void Schemas_idential_equal() {
-            var schema1 = new Schema(new DataField<int>("id"), new DataField<string>("city"));
-            var schema2 = new Schema(new DataField<int>("id"), new DataField<string>("city"));
+            var schema1 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("city"));
+            var schema2 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("city"));
 
             Assert.Equal(schema1, schema2);
         }
 
         [Fact]
         public void Schemas_different_not_equal() {
-            var schema1 = new Schema(new DataField<int>("id"), new DataField<string>("city"));
-            var schema2 = new Schema(new DataField<int>("id"), new DataField<string>("city2"));
+            var schema1 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("city"));
+            var schema2 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("city2"));
 
             Assert.NotEqual(schema1, schema2);
         }
 
         [Fact]
         public void Schemas_differ_only_in_repeated_fields_not_equal() {
-            var schema1 = new Schema(new DataField<int>("id"), new DataField<string>("cities"));
-            var schema2 = new Schema(new DataField<int>("id"), new DataField<IEnumerable<string>>("cities"));
+            var schema1 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("cities"));
+            var schema2 = new ParquetSchema(new DataField<int>("id"), new DataField<IEnumerable<string>>("cities"));
 
             Assert.NotEqual(schema1, schema2);
         }
@@ -170,7 +172,7 @@ namespace Parquet.Test {
 
         [Fact]
         public void Plain_data_field_0R_0D() {
-            var schema = new Schema(new DataField<int>("id"));
+            var schema = new ParquetSchema(new DataField<int>("id"));
 
             Assert.Equal(0, schema[0].MaxRepetitionLevel);
             Assert.Equal(0, schema[0].MaxDefinitionLevel);
@@ -178,7 +180,7 @@ namespace Parquet.Test {
 
         [Fact]
         public void Plain_nullable_data_field_0R_1D() {
-            var schema = new Schema(new DataField<int?>("id"));
+            var schema = new ParquetSchema(new DataField<int?>("id"));
 
             Assert.Equal(0, schema[0].MaxRepetitionLevel);
             Assert.Equal(1, schema[0].MaxDefinitionLevel);
@@ -186,7 +188,7 @@ namespace Parquet.Test {
 
         [Fact]
         public void Map_of_required_key_and_optional_value_1R2D_1R3D() {
-            var schema = new Schema(
+            var schema = new ParquetSchema(
                new MapField("numbers",
                   new DataField<int>("key"),
                   new DataField<string>("value")
@@ -207,7 +209,7 @@ namespace Parquet.Test {
             var idField = new DataField<int>("id");
             var nameField = new DataField<string>("name");
 
-            var schema = new Schema(
+            var schema = new ParquetSchema(
                new DataField<int>("id"),
                new ListField("structs",
                   new StructField("mystruct",
@@ -227,7 +229,7 @@ namespace Parquet.Test {
         public async Task BackwardCompat_list_with_one_array(string parquetFile) {
             using(Stream input = OpenTestFile(parquetFile)) {
                 using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
-                    Schema schema = reader.Schema;
+                    ParquetSchema schema = reader.Schema;
 
                     //validate schema
                     Assert.Equal("impurityStats", schema[3].Name);
@@ -238,6 +240,41 @@ namespace Parquet.Test {
                     //smoke test we can read it
                     using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                         DataColumn values4 = await rg.ReadColumnAsync((DataField)schema[4]);
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Column_called_root() {
+
+            var columns = new List<DataColumn>();
+            columns.Add(new DataColumn(new DataField<string>("root"), new string[] { "AAA" }));
+            columns.Add(new DataColumn(new DataField<string>("other"), new string[] { "BBB" }));
+            List<Field> fields = new List<Field>();
+            foreach(DataColumn column in columns) {
+                fields.Add(column.Field);
+            }
+
+            // the writer used to create structure type under "root" (https://github.com/aloneguid/parquet-dotnet/issues/143)
+            var schema = new ParquetSchema(fields);
+            var ms = new MemoryStream();
+            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms)) {
+                using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
+                    foreach(DataColumn column in columns) {
+                        await groupWriter.WriteColumnAsync(column);
+                    }
+                }
+            }
+
+            ms.Position = 0;
+            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(ms)) {
+                DataField[] dataFields = parquetReader.Schema.GetDataFields();
+                for(int i = 0; i < parquetReader.RowGroupCount; i++) {
+                    using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i)) {
+                        foreach(DataColumn column in columns) {
+                            DataColumn c = await groupReader.ReadColumnAsync(column.Field);
+                        }
                     }
                 }
             }

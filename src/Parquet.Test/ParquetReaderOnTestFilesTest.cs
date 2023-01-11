@@ -5,15 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Parquet.Test
-{
-   /// <summary>
-   /// Tests a set of predefined test files that they read back correct
-   /// </summary>
-   public class ParquetReaderOnTestFilesTest : TestBase
-   {
-      private byte[] vals = new byte[18]
-      {
+namespace Parquet.Test {
+    /// <summary>
+    /// Tests a set of predefined test files that they read back correct
+    /// </summary>
+    public class ParquetReaderOnTestFilesTest : TestBase {
+        private byte[] vals = new byte[18]
+        {
          0x00,
          0x00,
          0x27,
@@ -32,7 +30,7 @@ namespace Parquet.Test
          0xac,
          0xe3,
          0x8f
-      };
+        };
 
       [Theory]
       [InlineData("fixedlenbytearray.parquet")]
@@ -45,8 +43,7 @@ namespace Parquet.Test
             {
                DataColumn[] columns = await r.ReadEntireRowGroupAsync();
             }
-         }
-      }
+        }
 
       [Theory]
       [InlineData("dates.parquet")]
@@ -60,13 +57,13 @@ namespace Parquet.Test
             {
                DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
-               offset = (DateTimeOffset)(columns[1].Data.GetValue(0));
-               offset2 = (DateTimeOffset)(columns[1].Data.GetValue(1));
+                    offset = (DateTimeOffset)(columns[1].Data.GetValue(0));
+                    offset2 = (DateTimeOffset)(columns[1].Data.GetValue(1));
+                }
             }
-         }
-         Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
-         Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
-      }
+            Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
+            Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
+        }
 
       [Theory]
       [InlineData("datetime_other_system.parquet")]
@@ -80,11 +77,12 @@ namespace Parquet.Test
             {
                DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
-               DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
-               Assert.NotNull(as_at_date_col);
+                    DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
+                    Assert.NotNull(as_at_date_col);
 
-               offset = (DateTimeOffset)(as_at_date_col.Data.GetValue(0));
-               Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset.Date);
+                    offset = (DateTimeOffset)(as_at_date_col.Data.GetValue(0));
+                    Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset.Date);
+                }
             }
          }
       }
@@ -104,9 +102,20 @@ namespace Parquet.Test
                Assert.NotNull(id_col);
                Assert.NotNull(value_col);
 
-               int index = Enumerable.Range(0, id_col.Data.Length).First(i => (long)id_col.Data.GetValue(i) == 20908539289);
+        [Fact]
+        public async Task OptionalValues_WithoutStatistics() {
+            using(Stream s = OpenTestFile("test-optionals-without-stats.parquet")) {
+                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
+                    DataColumn id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
+                    DataColumn value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
+                    Assert.NotNull(id_col);
+                    Assert.NotNull(value_col);
 
-               Assert.Equal(0, value_col.Data.GetValue(index));
+                    int index = Enumerable.Range(0, id_col.Data.Length).First(i => (long)id_col.Data.GetValue(i) == 20908539289);
+
+                    Assert.Equal(0, value_col.Data.GetValue(index));
+                }
             }
          }
       }
@@ -126,8 +135,9 @@ namespace Parquet.Test
                int index = Enumerable.Range(0, id_col.Data.Length).First(i => (int)id_col.Data.GetValue(i) == 256779);
                Assert.Equal("MOSTRU\u00C1RIO-000", cls_value_8.Data.GetValue(index));
 
+                }
             }
-         }
-      }
-   }
+        }
+
+    }
 }

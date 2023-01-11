@@ -7,7 +7,7 @@
 
 
 
-**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports `.NET 6.0`, `.NET Core 3.1`,  and `.NET Standard 2.1`.
+**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
 Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs and much more.
 
@@ -88,7 +88,7 @@ var cityColumn = new DataColumn(
     new string[] { "London", "Derby" });
 
 // create file schema
-var schema = new Schema(idColumn.Field, cityColumn.Field);
+var schema = new ParquetSchema(idColumn.Field, cityColumn.Field);
 
 using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
     using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
