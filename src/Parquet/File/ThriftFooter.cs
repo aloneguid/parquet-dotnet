@@ -60,19 +60,8 @@ namespace Parquet.File {
                 throw new ArgumentNullException(nameof(columnChunk));
             }
 
-            List<string> path = columnChunk.Meta_data.Path_in_schema;
-
-            int i = 0;
-            foreach(string pp in path) {
-                while(i < _fileMeta.Schema.Count) {
-                    if(_fileMeta.Schema[i].Name == pp)
-                        break;
-
-                    i++;
-                }
-            }
-
-            return _fileMeta.Schema[i];
+            var findPath = new FieldPath(columnChunk.Meta_data.Path_in_schema);
+            return _tree.Find(findPath)?.element;
         }
 
         public FieldPath GetPath(Thrift.SchemaElement schemaElement) {
@@ -302,6 +291,24 @@ namespace Parquet.File {
                         Node cf = Find(child, tse);
                         if(cf != null)
                             return cf;
+                    }
+                }
+
+                return null;
+            }
+
+            public Node Find(FieldPath path) {
+                if(path.Length == 0) return null;
+                return Find(root, path);
+            }
+
+            private Node Find(Node root, FieldPath path) {
+                foreach(Node child in root.children) {
+                    if(child.element.Name == path.FirstPart) {
+                        if(path.Length == 1)
+                            return child;
+
+                        return Find(child, new FieldPath(path.ToList().Skip(1)));
                     }
                 }
 
