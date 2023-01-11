@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
+using Parquet.Thrift;
 
 namespace Parquet.Data {
 
@@ -933,8 +934,20 @@ namespace Parquet.Data {
                     long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
                     try {
                         int longsRead = Decode(source, longs.AsSpan(0, data.Length));
-                        for(int i = 0; i < longsRead; i++) {
-                            data[i] = longs[i].FromUnixMilliseconds().Date;
+                        bool isMicros = tse.__isset.converted_type &&
+                                        tse.Converted_type == ConvertedType.TIMESTAMP_MICROS;
+                        if(isMicros) {
+                            for(int i = 0; i < longsRead; i++) {
+                                long lv = longs[i];
+                                long microseconds = lv % 1000;
+                                lv /= 1000;
+                                data[i] = lv.FromUnixMilliseconds().AddTicks(microseconds * 10).Date;
+                            }
+                        }
+                        else {
+                            for(int i = 0; i < longsRead; i++) {
+                                data[i] = longs[i].FromUnixMilliseconds().Date;
+                            }
                         }
                         return longsRead;
                     }
@@ -1009,8 +1022,20 @@ namespace Parquet.Data {
                     long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
                     try {
                         int longsRead = Decode(source, longs.AsSpan(0, data.Length));
-                        for(int i = 0; i < longsRead; i++) {
-                            data[i] = longs[i].FromUnixMilliseconds();
+                        bool isMicros = tse.__isset.converted_type &&
+                                       tse.Converted_type == ConvertedType.TIMESTAMP_MICROS;
+                        if(isMicros) {
+                            for(int i = 0; i < longsRead; i++) {
+                                long lv = longs[i];
+                                long microseconds = lv % 1000;
+                                lv /= 1000;
+                                data[i] = lv.FromUnixMilliseconds().AddTicks(microseconds * 10);
+                            }
+                        }
+                        else {
+                            for(int i = 0; i < longsRead; i++) {
+                                data[i] = longs[i].FromUnixMilliseconds();
+                            }
                         }
                         return longsRead;
                     }
