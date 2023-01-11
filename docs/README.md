@@ -25,7 +25,7 @@ Parquet is a de facto physical storage format in big data applications, includin
 - [Declaring Schema](schema.md)
 - [Complex Types](complex-types.md)
 - [Row-Based API](rows.md)
-- [Fast Automatic Serialisation](serialisation.md)
+- [Class Serialisation](serialisation.md), including [inherited properties](inheritance.md).
 
 ## Getting started
 

@@ -112,6 +112,4 @@ class MyClass
 
 At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).  See the [inheritance docs](inheritance.md) for details on inherited properties.
 
-
-
 None of the complex types such as arrays etc. are supported. We would love to hear your feedback whether this functionality is required though!

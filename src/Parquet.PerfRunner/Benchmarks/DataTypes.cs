@@ -65,5 +65,21 @@ namespace Parquet.PerfRunner.Benchmarks {
                 }
             }
         }
+
+        public async Task WriteRandomStrings() {
+
+
+            var col = new DataColumn(new DataField<string>("c"), Enumerable.Range(0, 100000).Select(i => RandomString(100)).ToArray());
+            var f = (DataField)col.Field;
+            var ms = new MemoryStream();
+            var schema = new ParquetSchema(col.Field);
+
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+                writer.CompressionMethod = CompressionMethod.None;
+                using(ParquetRowGroupWriter g = writer.CreateRowGroup()) {
+                    await g.WriteColumnAsync(col);
+                }
+            }
+        }
     }
 }
