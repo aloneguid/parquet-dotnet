@@ -25,13 +25,17 @@ namespace Parquet._3rdparty {
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
+#if !NETSTANDARD2_0
         public override int Read(System.Span<byte> buffer) => throw new NotImplementedException();
+#endif
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             => throw new NotImplementedException();
 
+#if !NETSTANDARD2_0
         public override ValueTask<int> ReadAsync(System.Memory<byte> buffer, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
+#endif
 
         public override int ReadByte() => throw new NotImplementedException();
 
@@ -40,27 +44,33 @@ namespace Parquet._3rdparty {
             _written += count;
         }
 
+#if !NETSTANDARD2_0
         public override void Write(System.ReadOnlySpan<byte> buffer) {
             _baseStream.Write(buffer);
             _written += buffer.Length;
         }
+#endif
 
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
             await _baseStream.WriteAsync(buffer, offset, count, cancellationToken);
             _written += count;
         }
 
+#if !NETSTANDARD2_0
         public override async ValueTask WriteAsync(System.ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
             await _baseStream.WriteAsync(buffer, cancellationToken);
             _written += buffer.Length;
         }
+#endif
 
         public override void WriteByte(byte value) {
             ++_written;
             _baseStream.WriteByte(value);
         }
 
+#if !NETSTANDARD2_0
         public override void CopyTo(Stream destination, int bufferSize) => throw new NotImplementedException();
+#endif
 
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
             => throw new NotImplementedException();
@@ -99,9 +109,11 @@ namespace Parquet._3rdparty {
             }
         }
 
+#if !NETSTANDARD2_0
         public override async ValueTask DisposeAsync() {
             await base.DisposeAsync();
             await _baseStream.DisposeAsync();
         }
+#endif
     }
 }

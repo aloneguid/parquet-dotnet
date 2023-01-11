@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values;
+using Parquet.Schema;
 
 namespace Parquet.File {
     class DataColumnWriter {
@@ -37,8 +39,11 @@ namespace Parquet.File {
             _rowCount = rowCount;
         }
 
-        public async Task<Thrift.ColumnChunk> WriteAsync(List<string> path, DataColumn column, IDataTypeHandler dataTypeHandler, CancellationToken cancellationToken = default) {
-            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, path, 0);
+        public async Task<Thrift.ColumnChunk> WriteAsync(
+            FieldPath fullPath, DataColumn column, IDataTypeHandler dataTypeHandler,
+            CancellationToken cancellationToken = default) {
+
+            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, fullPath, 0);
             Thrift.PageHeader ph = _footer.CreateDataPage(column.Count);
             _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
@@ -107,9 +112,12 @@ namespace Parquet.File {
                         column.Statistics.NullCount = 0;
                     }
 
-                    dataTypeHandler.Write(tse, writer, data, column.Statistics);
+                    if(!ParquetEncoder.Encode(data.Data, data.Offset, data.Count,
+                        tse,
+                        writer.BaseStream, column.Statistics)) {
 
-                    //writer.Flush();
+                        throw new IOException("failed to encode data");
+                    }
                 }
                 uncompressedData = ms.ToArray();
             }
@@ -125,7 +133,12 @@ namespace Parquet.File {
                 //write the header in
                 dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
                 int headerSize = await _thriftStream.WriteAsync(dataPageHeader, false, cancellationToken);
+#if NETSTANDARD2_0
+                byte[] tmp = compressedData.AsSpan().ToArray();
+                _stream.Write(tmp, 0, tmp.Length);
+#else
                 _stream.Write(compressedData);
+#endif
 
                 var dataTag = new PageTag {
                     HeaderMeta = dataPageHeader,

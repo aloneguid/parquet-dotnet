@@ -1,58 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Parquet.Schema;
 
-namespace Parquet.Data
-{
-   abstract class NonDataDataTypeHandler : IDataTypeHandler
-   {
-      public NonDataDataTypeHandler()
-      {
-      }
+namespace Parquet.Data {
+    abstract class NonDataDataTypeHandler : IDataTypeHandler {
+        public NonDataDataTypeHandler() {
+        }
 
-      public DataType DataType => DataType.Unspecified;
+        public DataType DataType => DataType.Unspecified;
 
-      public abstract SchemaType SchemaType { get; }
+        public abstract SchemaType SchemaType { get; }
 
-      public System.Type ClrType => null;
+        public System.Type ClrType => null;
 
-      public abstract Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);
+        public abstract Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);
 
-      public abstract void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
+        public abstract void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
 
-      public abstract bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
-      public Array GetArray(int minCount, bool rent, bool isNullable)
-      {
-         throw new NotSupportedException();
-      }
+        public abstract bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
+        public Array GetArray(int minCount, bool rent, bool isNullable) {
+            throw new NotSupportedException();
+        }
 
-      public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset) => throw new NotSupportedException();
+        public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset) => throw new NotSupportedException();
 
-      public object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) => throw new NotSupportedException();
+        public object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) => throw new NotSupportedException();
 
+        public Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length) {
+            throw new NotSupportedException();
+        }
 
-      public void Write(Thrift.SchemaElement tse, BinaryWriter writer, ArrayView values, DataColumnStatistics statistics)
-      {
-         throw new NotSupportedException();
-      }
+        public ArrayView PackDefinitions(Array data, int offset, int count, int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount) {
+            throw new NotImplementedException();
+        }
 
-      public Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length)
-      {
-         throw new NotSupportedException();
-      }
+        public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel) {
+            throw new NotSupportedException();
+        }
 
-      public ArrayView PackDefinitions(Array data, int offset, int count, int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount)
-      {
-         throw new NotImplementedException();
-      }
-
-      public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel)
-      {
-         throw new NotSupportedException();
-      }
-
-      public object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) => throw new NotImplementedException();
-
-      public byte[] PlainEncode(Thrift.SchemaElement tse, object x) => throw new NotImplementedException();
-   }
+        public object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) => throw new NotImplementedException();
+    }
 }

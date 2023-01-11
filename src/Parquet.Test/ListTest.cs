@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
@@ -10,7 +11,7 @@ namespace Parquet.Test {
             var cnamech = new DataField<string>("name");
             var ccountrych = new DataField<string>("country");
 
-            var schema = new Schema(
+            var schema = new ParquetSchema(
                idsch,
                new ListField("cities",
                new StructField("element",

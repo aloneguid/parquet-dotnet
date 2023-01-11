@@ -5,7 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Parquet.Data;
-using Parquet.Data.Rows;
+using Parquet.Rows;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Rows {
@@ -14,20 +15,20 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Flat_add_valid_row_succeeds() {
-            var table = new Table(new Schema(new DataField<int>("id")));
+            var table = new Table(new ParquetSchema(new DataField<int>("id")));
             table.Add(new Row(1));
         }
 
         [Fact]
         public void Flat_add_invalid_type_fails() {
-            var table = new Table(new Schema(new DataField<int>("id")));
+            var table = new Table(new ParquetSchema(new DataField<int>("id")));
 
             Assert.Throws<ArgumentException>(() => table.Add(new Row("1")));
         }
 
         [Fact]
         public async Task Flat_write_read() {
-            var table = new Table(new Schema(new DataField<int>("id"), new DataField<string>("city")));
+            var table = new Table(new ParquetSchema(new DataField<int>("id"), new DataField<string>("city")));
             var ms = new MemoryStream();
 
             //generate fake data
@@ -53,7 +54,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public async Task Flat_concurrent_write_read() {
-            var schema = new Schema(
+            var schema = new ParquetSchema(
                new DataField<int>("id"),
                new DataField<string>("city"));
 
@@ -84,7 +85,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Array_validate_succeeds() {
-            var table = new Table(new Schema(new DataField<IEnumerable<int>>("ids")));
+            var table = new Table(new ParquetSchema(new DataField<IEnumerable<int>>("ids")));
 
             table.Add(new Row(new[] { 1, 2, 3 }));
             table.Add(new Row(new[] { 4, 5, 6 }));
@@ -92,7 +93,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Array_validate_fails() {
-            var table = new Table(new Schema(new DataField<IEnumerable<int>>("ids")));
+            var table = new Table(new ParquetSchema(new DataField<IEnumerable<int>>("ids")));
 
             Assert.Throws<ArgumentException>(() => table.Add(new Row(1)));
         }
@@ -100,7 +101,7 @@ namespace Parquet.Test.Rows {
         [Fact]
         public async Task Array_write_read() {
             var table = new Table(
-               new Schema(
+               new ParquetSchema(
                   new DataField<int>("id"),
                   new DataField<string[]>("categories")     //array field
                   )
@@ -134,7 +135,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Map_validate_succeeds() {
-            var table = new Table(new Schema(
+            var table = new Table(new ParquetSchema(
                new MapField("map", new DataField<string>("key"), new DataField<string>("value"))
                ));
 
@@ -148,7 +149,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Map_validate_fails() {
-            var table = new Table(new Schema(
+            var table = new Table(new ParquetSchema(
                new MapField("map", new DataField<string>("key"), new DataField<string>("value"))
                ));
 
@@ -170,7 +171,7 @@ namespace Parquet.Test.Rows {
         [Fact]
         public async Task Map_write_read() {
             var table = new Table(
-               new Schema(
+               new ParquetSchema(
                   new DataField<string>("city"),
                   new MapField("population",
                      new DataField<int>("areaId"),
@@ -204,7 +205,7 @@ namespace Parquet.Test.Rows {
         [Fact]
         public async Task Struct_write_read() {
             var table = new Table(
-               new Schema(
+               new ParquetSchema(
                   new DataField<string>("isbn"),
                   new StructField("author",
                      new DataField<string>("firstName"),
@@ -221,7 +222,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public async Task Struct_with_repeated_field_writes_reads() {
-            var t = new Table(new Schema(
+            var t = new Table(new ParquetSchema(
                new DataField<string>("name"),
                new StructField("address",
                   new DataField<string>("name"),
@@ -240,7 +241,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void List_table_equality() {
-            var schema = new Schema(new ListField("ints", new DataField<int>("int")));
+            var schema = new ParquetSchema(new ListField("ints", new DataField<int>("int")));
 
 
             var tbl1 = new Table(schema);
@@ -267,7 +268,7 @@ namespace Parquet.Test.Rows {
         [Fact]
         public async Task List_simple_element_write_read() {
             var table = new Table(
-               new Schema(
+               new ParquetSchema(
                   new DataField<int>("id"),
                   new ListField("cities",
                      new DataField<string>("name"))));
@@ -451,9 +452,11 @@ namespace Parquet.Test.Rows {
             await ReadTestFileAsTableAsync("special/all_nulls_no_booleans.parquet");
         }
 
-        [Fact]
-        public async Task Special_all_nulls_file() {
-            Table t = await ReadTestFileAsTableAsync("special/all_nulls.parquet");
+        [Theory]
+        [InlineData("special/all_nulls.parquet")]
+        [InlineData("special/all_nulls.v2.parquet")]
+        public async Task Special_all_nulls_file(string parquetFile) {
+            Table t = await ReadTestFileAsTableAsync(parquetFile);
 
             Assert.Equal(1, t.Schema.Fields.Count);
             Assert.Equal("lognumber", t.Schema[0].Name);
@@ -461,14 +464,18 @@ namespace Parquet.Test.Rows {
             Assert.Null(t[0][0]);
         }
 
-        [Fact]
-        public async Task Special_read_all_nulls_decimal_column() {
-            await ReadTestFileAsTableAsync("special/decimalnulls.parquet");
+        [Theory]
+        [InlineData("special/decimalnulls.parquet")]
+        [InlineData("special/decimalnulls.v2.parquet")]
+        public async Task Special_read_all_nulls_decimal_column(string parquetFile) {
+            await ReadTestFileAsTableAsync(parquetFile);
         }
 
-        [Fact]
-        public async Task Special_read_all_legacy_decimals() {
-            Table ds = await ReadTestFileAsTableAsync("special/decimallegacy.parquet");
+        [Theory]
+        [InlineData("special/decimallegacy.parquet")]
+        [InlineData("special/decimallegacy.v2.parquet")]
+        public async Task Special_read_all_legacy_decimals(string parquetFile) {
+            Table ds = await ReadTestFileAsTableAsync(parquetFile);
 
             Row row = ds[0];
             Assert.Equal(1, (int)row[0]);
@@ -529,9 +536,11 @@ namespace Parquet.Test.Rows {
 
         #region [ JSON Conversions ]
 
-        [Fact]
-        public async Task JSON_struct_plain_reads_by_newtonsoft() {
-            Table t = await ReadTestFileAsTableAsync("struct_plain.parquet");
+        [Theory]
+        [InlineData("struct_plain.parquet")]
+        [InlineData("struct_plain.v2.parquet")]
+        public async Task JSON_struct_plain_reads_by_newtonsoft(string parquetFile) {
+            Table t = await ReadTestFileAsTableAsync(parquetFile);
 
             Assert.Equal("{'isbn': '12345-6', 'author': {'firstName': 'Ivan', 'lastName': 'Gavryliuk'}}", t[0].ToString("jsq"));
             //Assert.Equal("{'isbn': '12345-7', 'author': {'firstName': 'Marsha', 'lastName': 'Mellow'}}", t[1].ToString("jsq"));
@@ -543,7 +552,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void JSON_convert_with_null_arrays() {
-            var t = new Table(new Schema(
+            var t = new Table(new ParquetSchema(
                new DataField<string>("name"),
                new ListField("observations",
                   new StructField("observation",

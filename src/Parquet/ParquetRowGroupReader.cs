@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
+using Parquet.Schema;
 
 namespace Parquet {
     /// <summary>
@@ -16,7 +17,7 @@ namespace Parquet {
         private readonly Stream _stream;
         private readonly ThriftStream _thriftStream;
         private readonly ParquetOptions _parquetOptions;
-        private readonly Dictionary<string, Thrift.ColumnChunk> _pathToChunk = new Dictionary<string, Thrift.ColumnChunk>();
+        private readonly Dictionary<FieldPath, Thrift.ColumnChunk> _pathToChunk = new Dictionary<FieldPath, Thrift.ColumnChunk>();
 
         internal ParquetRowGroupReader(
            Thrift.RowGroup rowGroup,
@@ -31,7 +32,7 @@ namespace Parquet {
 
             //cache chunks
             foreach(Thrift.ColumnChunk thriftChunk in _rowGroup.Columns) {
-                string path = thriftChunk.GetPath();
+                FieldPath path = thriftChunk.GetPath();
                 _pathToChunk[path] = thriftChunk;
             }
         }

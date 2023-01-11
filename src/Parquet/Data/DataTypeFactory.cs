@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Parquet.Data.Concrete;
+using Parquet.Schema;
 
-namespace Parquet.Data
-{
-   static class DataTypeFactory
+namespace Parquet.Data {
+    static class DataTypeFactory
    {
       private static readonly List<IDataTypeHandler> _allDataTypes = new List<IDataTypeHandler>
       {
@@ -18,11 +18,8 @@ namespace Parquet.Data
 
          // low priority types
          new BooleanDataTypeHandler(),
-         new ByteDataTypeHandler(),
-         new UnsignedByteDataTypeHandler(),
+         new ByteDataTypeHandler(), // byte is unsigned by default
          new SignedByteDataTypeHandler(),
-         new ShortDataTypeHandler(),
-         new UnsignedShortDataTypeHandler(),
          new Int16DataTypeHandler(),
          new UnsignedInt16DataTypeHandler(),
          new UnsignedInt32DataTypeHandler(),

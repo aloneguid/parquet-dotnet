@@ -29,10 +29,12 @@ namespace Parquet.Test.Reader
       /// |1  |false   |1          |1           |1      |10        |1.1      |10.1      |[30 31 2F 30 31 2F 30 39]|[31]      |2009-01-01 00:01:00.0|
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// </summary>
-      [Fact]
-      public async Task Alltypes_plain_no_compression()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_plain_no_compression(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes", "plain", true,
+         await CompareFilesAsync("types/alltypes", "plain", dataPageVersion, true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -46,10 +48,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_gzip_compression()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_gzip_compression(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes", "gzip", true,
+         await CompareFilesAsync("types/alltypes", "gzip", dataPageVersion, true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -63,10 +67,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_snappy_compression()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_snappy_compression(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes", "snappy", true,
+         await CompareFilesAsync("types/alltypes", "snappy", dataPageVersion, true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -80,27 +86,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_plain_no_compression_byte_arrays()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_plain_no_compression_byte_arrays(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes", "plain", false,
-            typeof(int?),
-            typeof(bool?),
-            typeof(int?),
-            typeof(int?),
-            typeof(int?),
-            typeof(long?),
-            typeof(float?),
-            typeof(double?),
-            typeof(byte[]),
-            typeof(byte[]),
-            typeof(DateTimeOffset?));
-      }
-
-      [Fact]
-      public async Task Alltypes_gzip_compression_byte_arrays()
-      {
-         await CompareFilesAsync("types/alltypes", "gzip", false,
+         await CompareFilesAsync("types/alltypes", "plain", dataPageVersion, false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -114,10 +105,31 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_snappy_compression_byte_arrays()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_gzip_compression_byte_arrays(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes", "snappy", false,
+         await CompareFilesAsync("types/alltypes", "gzip", dataPageVersion, false,
+            typeof(int?),
+            typeof(bool?),
+            typeof(int?),
+            typeof(int?),
+            typeof(int?),
+            typeof(long?),
+            typeof(float?),
+            typeof(double?),
+            typeof(byte[]),
+            typeof(byte[]),
+            typeof(DateTimeOffset?));
+      }
+
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_snappy_compression_byte_arrays(string dataPageVersion)
+      {
+         await CompareFilesAsync("types/alltypes", "snappy", dataPageVersion, false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -139,10 +151,12 @@ namespace Parquet.Test.Reader
       /// |1  |false   |1          |1           |1      |10        |1.1      |10.1      |[30 31 2F 30 31 2F 30 39]|[31]      |2009-01-01 00:01:00.0|
       /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
       /// </summary>
-      [Fact]
-      public async Task Alltypes_dictionary_no_compression()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_dictionary_no_compression(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes_dictionary", "plain", true,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain", dataPageVersion, true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -156,10 +170,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_dictionary_no_compression_by_spark()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_dictionary_no_compression_by_spark(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", true,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", dataPageVersion, true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -173,10 +189,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_dictionary_gzipped()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_dictionary_gzipped(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes_dictionary", "gzip", true,
+         await CompareFilesAsync("types/alltypes_dictionary", "gzip", dataPageVersion, true,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -190,10 +208,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_dictionary_no_compression_byte_arrays()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_dictionary_no_compression_byte_arrays(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes_dictionary", "plain", false,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain", dataPageVersion, false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -207,10 +227,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_dictionary_no_compression_by_spark_byte_arrays()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_dictionary_no_compression_by_spark_byte_arrays(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", false,
+         await CompareFilesAsync("types/alltypes_dictionary", "plain-spark21", dataPageVersion, false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -224,10 +246,12 @@ namespace Parquet.Test.Reader
             typeof(DateTimeOffset?));
       }
 
-      [Fact]
-      public async Task Alltypes_dictionary_gzipped_byte_arrays()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Alltypes_dictionary_gzipped_byte_arrays(string dataPageVersion)
       {
-         await CompareFilesAsync("types/alltypes_dictionary", "gzip", false,
+         await CompareFilesAsync("types/alltypes_dictionary", "gzip", dataPageVersion, false,
             typeof(int?),
             typeof(bool?),
             typeof(int?),
@@ -242,10 +266,12 @@ namespace Parquet.Test.Reader
       }
 
 
-      [Fact]
-      public async Task Postcodes_sample_no_compression()
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task Postcodes_sample_no_compression(string dataPageVersion)
       {
-         await CompareFilesAsync("postcodes", "plain", true,
+         await CompareFilesAsync("postcodes", "plain", dataPageVersion, true,
             typeof(string),   //Postcode
             typeof(string),   //
             typeof(double?),
@@ -275,6 +301,13 @@ namespace Parquet.Test.Reader
             typeof(int?),
             typeof(int?),
             typeof(string));
+      }
+      
+      [Theory]
+      [InlineData("")]
+      [InlineData("v2")]
+      public async Task ReadSampleFile(string dataPageVersion) {
+          await CompareFilesAsync("table", "", dataPageVersion, false, typeof(double?), typeof(string), typeof(bool?), typeof(string), typeof(DateTimeOffset?));
       }
    }
 }
