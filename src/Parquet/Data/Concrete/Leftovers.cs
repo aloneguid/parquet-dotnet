@@ -94,15 +94,15 @@ namespace Parquet.Data.Concrete {
 
         }
 
-        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
-            return
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) =>
+            (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
 
-               (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
+            (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type &&
+             tse.Converted_type is Thrift.ConvertedType.TIMESTAMP_MILLIS
+                 or Thrift.ConvertedType.TIMESTAMP_MICROS) ||
 
-               (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS) ||
-
-               (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
-        }
+            (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type &&
+             tse.Converted_type == Thrift.ConvertedType.DATE);
     }
 
     class DateTimeOffsetDataTypeHandler : BasicPrimitiveDataTypeHandler<DateTimeOffset> {
@@ -110,15 +110,15 @@ namespace Parquet.Data.Concrete {
 
         }
 
-        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
-            return
+        public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) =>
+            (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
 
-               (tse.Type == Thrift.Type.INT96 && formatOptions.TreatBigIntegersAsDates) || //Impala
+            (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type &&
+             tse.Converted_type is Thrift.ConvertedType.TIMESTAMP_MILLIS
+                 or Thrift.ConvertedType.TIMESTAMP_MICROS) ||
 
-               (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIMESTAMP_MILLIS) ||
-
-               (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE);
-        }
+            (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type &&
+             tse.Converted_type == Thrift.ConvertedType.DATE);
 
         public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
             base.CreateThrift(se, parent, container);
