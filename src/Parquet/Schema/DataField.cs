@@ -13,7 +13,7 @@ namespace Parquet.Schema {
         public DataType DataType { get; }
 
         /// <summary>
-        /// When true, this element is allowed to have nulls
+        /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
         /// </summary>
         public bool HasNulls { get; }
 
@@ -23,7 +23,7 @@ namespace Parquet.Schema {
         public bool IsArray { get; }
 
         /// <summary>
-        /// CLR type of this column.
+        /// CLR type of this column. For nullable columns this type is not nullable.
         /// </summary>
         public Type ClrType { get; private set; }
 
@@ -86,6 +86,33 @@ namespace Parquet.Schema {
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             MaxRepetitionLevel = parentRepetitionLevel + (IsArray ? 1 : 0);
             MaxDefinitionLevel = parentDefinitionLevel + (HasNulls ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Creates non-nullable uninitialised array to hold this data type.
+        /// </summary>
+        /// <param name="length">Exact array size</param>
+        /// <returns></returns>
+        internal Array CreateArray(int length) {
+            return Array.CreateInstance(ClrType, length);
+        }
+
+        internal Array CreateNullableArray(int length) {
+            return Array.CreateInstance(ClrNullableIfHasNullsType, length);
+        }
+
+        internal Array UnpackDefinitions(Array definedData, int[] definitionLevels, int maxDefinitionLevel) {
+            Array result = CreateNullableArray(definitionLevels.Length);
+
+            int isrc = 0;
+            for(int i = 0; i < definitionLevels.Length; i++) {
+                int level = definitionLevels[i];
+
+                if(level == maxDefinitionLevel) {
+                    result.SetValue(definedData.GetValue(isrc++), i);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -153,7 +180,9 @@ namespace Parquet.Schema {
             bool hasNulls = false;
 
             //throw a useful hint
-            if(t.TryExtractDictionaryType(out Type dKey, out Type dValue))                 throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
+            if(t.TryExtractDictionaryType(out Type dKey, out Type dValue)) {
+                throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
+            }
 
             if(t.TryExtractEnumerableType(out Type enumItemType)) {
                 baseType = enumItemType;

@@ -6,7 +6,7 @@ using Parquet.Schema;
 
 namespace Parquet.Data {
 
-    abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler, IComparer<TSystemType>, IEqualityComparer<TSystemType> {
+    abstract class BasicDataTypeHandler<TSystemType> : IDataTypeHandler {
         private readonly Thrift.Type _thriftType;
         private readonly Thrift.ConvertedType? _convertedType;
         private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
@@ -44,31 +44,6 @@ namespace Parquet.Data {
             return new DataField(tse.Name, DataType, hasNulls, isArray);
         }
 
-        public virtual int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset) {
-            return Read(tse, reader, (TSystemType[])dest, offset);
-        }
-
-        public virtual object Read(BinaryReader reader, Thrift.SchemaElement tse, int length) {
-            return ReadSingle(reader, tse, length);
-        }
-
-        protected virtual TSystemType ReadSingle(BinaryReader reader, Thrift.SchemaElement tse, int length) {
-            throw new NotImplementedException();
-        }
-
-        private int Read(Thrift.SchemaElement tse, BinaryReader reader, TSystemType[] dest, int offset) {
-            int totalLength = (int)reader.BaseStream.Length;
-            int idx = offset;
-            Stream s = reader.BaseStream;
-
-            while(s.Position < totalLength && idx < dest.Length) {
-                TSystemType element = ReadSingle(reader, tse, -1);  //potential performance hit on calling a method
-                dest[idx++] = element;
-            }
-
-            return idx - offset;
-        }
-
         public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
             DataField sef = (DataField)se;
             var tse = new Thrift.SchemaElement(se.Name);
@@ -100,62 +75,5 @@ namespace Parquet.Data {
 
             return result;
         }
-
-        public abstract Array GetArray(int minCount, bool rent, bool isNullable);
-
-        public abstract ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
-
-        public abstract Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
-
-        protected ArrayView PackDefinitions<TNullable>(TNullable[] data, int offset, int count, int maxDefinitionLevel, out int[] definitionLevels, out int definitionsLength, out int nullCount)
-           where TNullable : class {
-            definitionLevels = IntPool.Rent(count);
-            definitionsLength = count;
-
-            nullCount = 0;
-            WritableArrayView<TNullable> result = ArrayView.CreateWritable<TNullable>(count);
-            int ir = 0;
-
-            for(int i = offset; i < count; i++) {
-                TNullable value = data[i];
-
-                if(value == null) {
-                    definitionLevels[i] = 0;
-                    nullCount++;
-                }
-                else {
-                    definitionLevels[i] = maxDefinitionLevel;
-                    result[ir++] = value;
-                }
-            }
-
-            return result;
-        }
-
-        protected T[] UnpackGenericDefinitions<T>(T[] src, int[] definitionLevels, int maxDefinitionLevel) {
-            T[] result = (T[])GetArray(definitionLevels.Length, false, true);
-
-            int isrc = 0;
-            for(int i = 0; i < definitionLevels.Length; i++) {
-                int level = definitionLevels[i];
-
-                if(level == maxDefinitionLevel) {
-                    result[i] = src[isrc++];
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// less than 0 - x &lt; y
-        /// 0 - x == y
-        /// greater than 0 - x &gt; y
-        /// </summary>
-        public abstract int Compare(TSystemType x, TSystemType y);
-
-        public abstract bool Equals(TSystemType x, TSystemType y);
-
-        public int GetHashCode(TSystemType x) => x.GetHashCode();
     }
 }

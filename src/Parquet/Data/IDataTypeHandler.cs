@@ -25,19 +25,6 @@ namespace Parquet.Data {
 
         Type ClrType { get; }
 
-        /// <summary>
-        /// Creates or rents a native array
-        /// </summary>
-        /// <param name="minCount">Minimum element count. Realistically there could be more elements than you've asked for only when arrays are rented.</param>
-        /// <param name="rent">Rent or create</param>
-        /// <param name="isNullable">Nullable elements or not</param>
-        /// <returns></returns>
-        Array GetArray(int minCount, bool rent, bool isNullable);
-
         Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length);
-
-        ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount);
-
-        Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel);
     }
 }

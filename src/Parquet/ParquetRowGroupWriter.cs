@@ -66,7 +66,6 @@ namespace Parquet {
             if(!column.Field.Equals(tse)) {
                 throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{column.Field.Name}'", nameof(column));
             }
-            IDataTypeHandler dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
             _colIdx += 1;
 
             FieldPath path = _footer.GetPath(tse);
@@ -75,7 +74,7 @@ namespace Parquet {
                _compressionMethod,
                (int)(RowCount ?? 0));
 
-            Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, dataTypeHandler, cancellationToken);
+            Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
             _thriftRowGroup.Columns.Add(chunk);
 
         }

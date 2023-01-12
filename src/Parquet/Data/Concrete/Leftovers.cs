@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using Parquet.File.Values.Primitives;
@@ -43,33 +42,9 @@ namespace Parquet.Data.Concrete {
         public ByteArrayDataTypeHandler() : base(DataType.ByteArray, Thrift.Type.BYTE_ARRAY) {  // T+
         }
 
-        public override Array GetArray(int minCount, bool rent, bool isNullable) {
-            if(rent) {
-                return _byteArrayPool.Rent(minCount);
-            }
-
-            return new byte[minCount][];
-        }
-
         public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
             return tse.__isset.type && tse.Type == Thrift.Type.BYTE_ARRAY
                                     && !tse.__isset.converted_type;
-        }
-
-        public override ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount) {
-            return PackDefinitions((byte[][])data, offset, count, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
-        }
-
-        public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel) {
-            return UnpackGenericDefinitions((byte[][])src, definitionLevels, maxDefinitionLevel);
-        }
-
-        public override int Compare(byte[] x, byte[] y) {
-            return 0;
-        }
-
-        public override bool Equals(byte[] x, byte[] y) {
-            return x == y;
         }
     }
 
@@ -278,17 +253,7 @@ namespace Parquet.Data.Concrete {
     }
 
     class StringDataTypeHandler : BasicDataTypeHandler<string> {
-        private static readonly ArrayPool<string> _stringPool = ArrayPool<string>.Shared;
-
         public StringDataTypeHandler() : base(DataType.String, Thrift.Type.BYTE_ARRAY, Thrift.ConvertedType.UTF8) { // T+
-        }
-
-        public override Array GetArray(int minCount, bool rent, bool isNullable) {
-            if(rent) {
-                return _stringPool.Rent(minCount);
-            }
-
-            return new string[minCount];
         }
 
         public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
@@ -298,22 +263,6 @@ namespace Parquet.Data.Concrete {
                   (tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.UTF8) ||
                   formatOptions.TreatByteArrayAsString
                );
-        }
-
-        public override ArrayView PackDefinitions(Array data, int offset, int count, int maxDefinitionLevel, out int[] definitions, out int definitionsLength, out int nullCount) {
-            return PackDefinitions((string[])data, offset, count, maxDefinitionLevel, out definitions, out definitionsLength, out nullCount);
-        }
-
-        public override Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel) {
-            return UnpackGenericDefinitions((string[])src, definitionLevels, maxDefinitionLevel);
-        }
-
-        public override int Compare(string x, string y) {
-            return string.CompareOrdinal(x, y);
-        }
-
-        public override bool Equals(string x, string y) {
-            return string.CompareOrdinal(x, y) == 0;
         }
     }
 }

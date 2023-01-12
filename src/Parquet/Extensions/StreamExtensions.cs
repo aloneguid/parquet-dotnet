@@ -9,6 +9,11 @@ namespace Parquet.Extensions {
             return BitConverter.ToInt32(tmp, 0);
         }
 
+        public static void WriteInt32(this Stream s, int value) {
+            byte[] tmp = BitConverter.GetBytes(value);
+            s.Write(tmp, 0, sizeof(int));
+        }
+
         public static long ReadInt64(this Stream s) {
             byte[] tmp = new byte[sizeof(long)];
             s.Read(tmp, 0, sizeof(long));
