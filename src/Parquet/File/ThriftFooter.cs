@@ -189,7 +189,10 @@ namespace Parquet.File {
                     throw new InvalidOperationException($"cannot find data type handler to create model schema for {tse.Describe()}");
                 }
 
+                Field se2 = SchemaEncoder.BuildField(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount2);
                 Field se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
+                if(!se.Equals(se2))
+                    throw new InvalidOperationException("migration failure");
 
                 se.Path = string.Join(ParquetSchema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
 
