@@ -157,9 +157,5 @@ namespace Parquet.Data {
         public abstract bool Equals(TSystemType x, TSystemType y);
 
         public int GetHashCode(TSystemType x) => x.GetHashCode();
-
-        public virtual object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) {
-            throw new NotImplementedException();
-        }
     }
 }

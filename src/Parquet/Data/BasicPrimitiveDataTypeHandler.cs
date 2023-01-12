@@ -85,18 +85,5 @@ namespace Parquet.Data {
         public override bool Equals(TSystemType x, TSystemType y) {
             return EqualityComparer.Equals(x, y);
         }
-
-        public override object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) {
-            if(encoded == null)
-                return null;
-
-            using(var ms = new MemoryStream(encoded)) {
-                using(var br = new BinaryReader(ms)) {
-                    TSystemType element = ReadSingle(br, tse, -1);
-                    return element;
-                }
-            }
-
-        }
     }
 }
