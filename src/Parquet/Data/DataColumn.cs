@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Drawing;
 using System.Linq;
 using Parquet.Schema;
 
@@ -55,7 +56,7 @@ namespace Parquet.Data {
 
             // 1. Apply definitions
             if(definitionLevels != null) {
-                Data = _dataTypeHandler.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
+                Data = field.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
             }
 
             // 2. Apply repetitions
@@ -98,25 +99,32 @@ namespace Parquet.Data {
         /// </summary>
         public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0, null, null);
 
-        internal ArrayView PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount, out int nullCount) {
-            pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Count);
-            definitionLevelCount = Count;
-
-            bool isNullable = Field.ClrType.IsNullable() || Data.GetType().GetElementType().IsNullable();
-
-            if(!Field.HasNulls || !isNullable) {
-                SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);  // all defined, all ones
-                nullCount = 0; //definitely no nulls here
-                return new ArrayView(Data, Offset, Count);
+        internal int CalculateNullCount() {
+            int nullCount = 0;
+            for(int i = Offset; i < Offset + Count; i++) {
+                if(Data.GetValue(i) == null)
+                    nullCount++;
             }
-
-            return _dataTypeHandler.PackDefinitions(Data, Offset, Count, maxDefinitionLevel, out pooledDefinitionLevels, out definitionLevelCount, out nullCount);
+            return nullCount;
         }
 
-        void SetPooledDefinitionLevels(int maxDefinitionLevel, int[] pooledDefinitionLevels) {
-            for(int i = 0; i < Count; i++) {
-                pooledDefinitionLevels[i] = maxDefinitionLevel;
+        internal void PackDefinitions(Span<int> definitions,
+            Array data, int dataOffset, int dataCount,
+            Array packedData,
+            int maxDefinitionLevel) {
+
+            for(int i = dataOffset, y = 0, ir = 0; i < (dataOffset + dataCount); i++, y++) {
+                object value = data.GetValue(i);
+
+                if(value == null) {
+                    definitions[y] = 0;
+                }
+                else {
+                    definitions[y] = maxDefinitionLevel;
+                    packedData.SetValue(value, ir++);
+                }
             }
+
         }
 
         internal long CalculateRowCount() {

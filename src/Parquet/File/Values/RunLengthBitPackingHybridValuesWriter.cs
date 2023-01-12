@@ -1,14 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using Parquet.Extensions;
 
 namespace Parquet.File.Values {
-    class RunLengthBitPackingHybridValuesWriter {
+    static class RunLengthBitPackingHybridValuesWriter {
 
         /// <summary>
         /// Writes to target stream without jumping around, therefore can be used in forward-only stream
         /// </summary>
-        public static void WriteForwardOnly(BinaryWriter writer, int bitWidth, int[] data, int count) {
+        public static void WriteForwardOnly(Stream s, int bitWidth, int[] data, int count) {
             //write data to a memory buffer, as we need data length to be written before the data
             using(var ms = new MemoryStream()) {
                 using(var bw = new BinaryWriter(ms, Encoding.UTF8, true)) {
@@ -17,11 +18,11 @@ namespace Parquet.File.Values {
                 }
 
                 //int32 - length of data
-                writer.Write((int)ms.Length);
+                s.WriteInt32((int)ms.Length);
 
                 //actual data
                 ms.Position = 0;
-                ms.CopyTo(writer.BaseStream); //warning! CopyTo performs .Flush internally
+                ms.CopyTo(s); //warning! CopyTo performs .Flush internally
             }
         }
 

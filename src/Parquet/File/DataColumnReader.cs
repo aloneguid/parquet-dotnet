@@ -180,7 +180,7 @@ namespace Parquet.File {
                 using(var ms = new MemoryStream(bytes.AsSpan().ToArray())) {
                     using(var dataReader = new BinaryReader(ms)) {
                         // Dictionary should not contains null values
-                        Array dictionary = _dataTypeHandler.GetArray(ph.Dictionary_page_header.Num_values, false, false);
+                        Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
 
                         if(!ParquetEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
                             _thriftSchemaElement, ms, out int dictionaryOffset)) {
@@ -310,7 +310,7 @@ namespace Parquet.File {
             //dictionary encoding uses RLE to encode data
 
             if(cd.values == null) {
-                cd.values = _dataTypeHandler.GetArray((int)totalValues, false, false);
+                cd.values = _dataField.CreateArray((int)totalValues);
             }
 
             switch(encoding) {

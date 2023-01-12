@@ -42,7 +42,7 @@ namespace Parquet.Data {
         /// </summary>
         public object MaxValue { get; internal set; }
 
-        internal Thrift.Statistics ToThriftStatistics(IDataTypeHandler handler, Thrift.SchemaElement tse) {
+        internal Thrift.Statistics ToThriftStatistics(Thrift.SchemaElement tse) {
 
             if(!ParquetEncoder.TryEncode(MinValue, tse, out byte[] min)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));

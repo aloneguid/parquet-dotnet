@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -18,6 +17,7 @@ namespace Parquet.File {
         private readonly Thrift.SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
         private readonly int _rowCount;
+        private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
 
         private struct PageTag {
             public int HeaderSize;
@@ -40,16 +40,16 @@ namespace Parquet.File {
         }
 
         public async Task<Thrift.ColumnChunk> WriteAsync(
-            FieldPath fullPath, DataColumn column, IDataTypeHandler dataTypeHandler,
+            FieldPath fullPath, DataColumn column,
             CancellationToken cancellationToken = default) {
 
             Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, fullPath, 0);
             Thrift.PageHeader ph = _footer.CreateDataPage(column.Count);
             _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
-            List<PageTag> pages = await WriteColumnAsync(column, _schemaElement, dataTypeHandler, maxRepetitionLevel, maxDefinitionLevel, cancellationToken);
+            List<PageTag> pages = await WriteColumnAsync(column, _schemaElement, maxRepetitionLevel, maxDefinitionLevel, cancellationToken);
             //generate stats for column chunk
-            chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
+            chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
             //this count must be set to number of all values in the column, including nulls.
             //for hierarchy/repeated columns this is a count of flattened list, including nulls.
@@ -65,7 +65,6 @@ namespace Parquet.File {
 
         private async Task<List<PageTag>> WriteColumnAsync(DataColumn column,
            Thrift.SchemaElement tse,
-           IDataTypeHandler dataTypeHandler,
            int maxRepetitionLevel,
            int maxDefinitionLevel,
            CancellationToken cancellationToken = default) {
@@ -78,46 +77,54 @@ namespace Parquet.File {
              * the write efficiency.
              */
 
+            // todo: replace with RecycleableMemoryStream: https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream
             byte[] uncompressedData;
             using(var ms = new MemoryStream()) {
 
                 //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
-                using(var writer = new BinaryWriter(ms, Encoding.UTF8)) {
-                    if(column.RepetitionLevels != null) {
-                        WriteLevels(writer, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
+                if(column.RepetitionLevels != null) {
+                    WriteLevels(ms, column.RepetitionLevels, column.RepetitionLevels.Length, maxRepetitionLevel);
+                }
+
+                Array data = column.Data;
+                int dataOffset = column.Offset;
+                int dataCount = column.Count;
+
+                if(maxDefinitionLevel > 0) {
+                    int nullCount = column.CalculateNullCount();
+                    column.Statistics.NullCount = nullCount;
+
+                    // having exact null count we can allocate/rent just the right buffer
+                    Array packedData = column.Field.CreateArray(column.Count - nullCount);
+                    int[] definitions = IntPool.Rent(column.Count);
+                    try {
+                        column.PackDefinitions(definitions.AsSpan(0, column.Count),
+                            data, dataOffset, dataCount,
+                            packedData,
+                            maxDefinitionLevel);
+
+                        WriteLevels(ms, definitions, column.Count, maxDefinitionLevel);
+
+                        // levels extracted and written out, swap data to packed data
+                        data = packedData;
+                        dataOffset = 0;
+                        dataCount = column.Count - nullCount;
+
                     }
-
-                    ArrayView data = new ArrayView(column.Data, column.Offset, column.Count);
-
-                    if(maxDefinitionLevel > 0) {
-                        data = column.PackDefinitions(maxDefinitionLevel,
-                            out int[] definitionLevels,
-                            out int definitionLevelsLength,
-                            out int nullCount);
-
-                        //last chance to capture null count as null data is compressed now
-                        column.Statistics.NullCount = nullCount;
-
-                        try {
-                            WriteLevels(writer, definitionLevels, definitionLevelsLength, maxDefinitionLevel);
-                        }
-                        finally {
-                            if(definitionLevels != null) {
-                                ArrayPool<int>.Shared.Return(definitionLevels);
-                            }
-                        }
+                    finally {
+                        IntPool.Return(definitions);
                     }
-                    else {
-                        //no defitions means no nulls
-                        column.Statistics.NullCount = 0;
-                    }
+                }
+                else {
+                    //no defitions means no nulls
+                    column.Statistics.NullCount = 0;
+                }
 
-                    if(!ParquetEncoder.Encode(data.Data, data.Offset, data.Count,
-                        tse,
-                        writer.BaseStream, column.Statistics)) {
+                if(!ParquetEncoder.Encode(data, dataOffset, dataCount,
+                    tse,
+                    ms, column.Statistics)) {
 
-                        throw new IOException("failed to encode data");
-                    }
+                    throw new IOException("failed to encode data");
                 }
                 uncompressedData = ms.ToArray();
             }
@@ -131,7 +138,7 @@ namespace Parquet.File {
                 dataPageHeader.Compressed_page_size = compressedData.AsSpan().Length;
 
                 //write the header in
-                dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(dataTypeHandler, _schemaElement);
+                dataPageHeader.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
                 int headerSize = await _thriftStream.WriteAsync(dataPageHeader, false, cancellationToken);
 #if NETSTANDARD2_0
                 byte[] tmp = compressedData.AsSpan().ToArray();
@@ -151,9 +158,9 @@ namespace Parquet.File {
             return pages;
         }
 
-        private void WriteLevels(BinaryWriter writer, int[] levels, int count, int maxLevel) {
+        private void WriteLevels(Stream s, int[] levels, int count, int maxLevel) {
             int bitWidth = maxLevel.GetBitWidth();
-            RunLengthBitPackingHybridValuesWriter.WriteForwardOnly(writer, bitWidth, levels, count);
+            RunLengthBitPackingHybridValuesWriter.WriteForwardOnly(s, bitWidth, levels, count);
         }
     }
 }

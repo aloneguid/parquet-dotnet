@@ -1132,7 +1132,8 @@ namespace Parquet.Data {
                 if(string.IsNullOrEmpty(s)) {
                     destination.Write(ZeroInt32, 0, ZeroInt32.Length);
                 } else {
-                    //transofrm to byte array first, as we need the length of the byte buffer, not string length
+                    // transofrm to byte array first, as we need the length of the byte buffer, not string length
+                    // todo: this can be improved to re-pool only when needed instead of in each iteration
                     byte[] b = ArrayPool<byte>.Shared.Rent(E.GetByteCount(s) + sizeof(int));
                     try {
                         int len = E.GetBytes(s, 0, s.Length, b, sizeof(int));

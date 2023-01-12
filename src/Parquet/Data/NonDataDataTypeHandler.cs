@@ -19,9 +19,6 @@ namespace Parquet.Data {
         public abstract void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
 
         public abstract bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
-        public Array GetArray(int minCount, bool rent, bool isNullable) {
-            throw new NotSupportedException();
-        }
 
         public int Read(BinaryReader reader, Thrift.SchemaElement tse, Array dest, int offset) => throw new NotSupportedException();
 
@@ -33,10 +30,6 @@ namespace Parquet.Data {
 
         public ArrayView PackDefinitions(Array data, int offset, int count, int maxDefiniionLevel, out int[] definitions, out int definitionsLength, out int nullCount) {
             throw new NotImplementedException();
-        }
-
-        public Array UnpackDefinitions(Array src, int[] definitionLevels, int maxDefinitionLevel) {
-            throw new NotSupportedException();
         }
 
         public object PlainDecode(Thrift.SchemaElement tse, byte[] encoded) => throw new NotImplementedException();
