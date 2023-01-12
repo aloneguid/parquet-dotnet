@@ -1,7 +1,7 @@
 name: 'Full Workflow'
 
 env:
-  VERSION: 4.2.2
+  VERSION: 4.2.3
   ASM_VERSION: 4.0.0
 
 on:

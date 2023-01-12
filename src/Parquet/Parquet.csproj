@@ -49,12 +49,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IronCompress" Version="1.2.5" />
+        <PackageReference Include="IronCompress" Version="1.2.6" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
-        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.3.0" />
+        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     </ItemGroup>
 
     <ItemGroup>

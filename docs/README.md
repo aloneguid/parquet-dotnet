@@ -26,6 +26,7 @@ Parquet is a de facto physical storage format in big data applications, includin
 - [Complex Types](complex-types.md)
 - [Row-Based API](rows.md)
 - [Class Serialisation](serialisation.md), including [inherited properties](inheritance.md).
+- [Performance](#performance)
 
 ## Getting started
 
@@ -42,7 +43,7 @@ In order to read a parquet file you need to open a stream first. Due to the fact
 For instance, to read a file `c:\test.parquet` you would normally write the following code:
 
 ```csharp
-// open file stream
+  // open file stream
 using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
     // open parquet file reader
     using(ParquetReader parquetReader = await ParquetReader.CreateAsync(fileStream)) {
@@ -57,8 +58,8 @@ using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
                 // read all columns inside each row group (you have an option to read only
                 // required columns if you need to.
                 var columns = new DataColumn[dataFields.Length];
-                for(int c = 0; c < columns.Length; c++) {
-                    columns[c] = await groupReader.ReadColumnAsync(dataFields[c]);
+                for(int c = 0; i < columns.Length; i++) {
+                    columns[c] = await groupReader.ReadColumnAsync(dataFields[i]);
                 }
 
                 // get first column, for instance
@@ -104,6 +105,10 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 ### Row-Based Access
 
 There are [API for row-based access](rows.md) that simplify parquet programming at the expense of memory, speed and flexibility. We recommend using column based approach when you can (examples above) however if not possible use these API as we constantly optimise for speed and use them internally ourselves in certain situations.
+
+## Performance
+
+As of today, this is probably the fastest Parquet implementation on the planet. Parquet.Net used to be [slower than alternative implementation](https://github.com/G-Research/ParquetSharp#performance) but since v4.2 the tests are [showing the opposite](https://github.com/aloneguid/parquet-dotnet/releases/tag/4.2.0).
 
 ## Migrating from V3
 

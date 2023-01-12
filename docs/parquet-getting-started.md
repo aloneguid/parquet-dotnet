@@ -25,5 +25,9 @@ There are already working implementations in other languages we find useful to c
 
 ## 3rd Party Libraries
 
-[Snappy Sharp](https://github.com/jeffesp/Snappy.Sharp) was used to compress and decompress via Snappy Algorithm. It is now replaced by my own implementation [IronSnappy](https://github.com/aloneguid/IronSnappy).
+[Snappy Sharp](https://github.com/jeffesp/Snappy.Sharp) was used to compress and decompress via Snappy Algorithm. It is now replaced by my own implementation [IronCompress](https://github.com/aloneguid/IronCompress.
+
+## Alternatives
+
+[ParquetSharp](https://github.com/G-Research/ParquetSharp) is another .NET library for working with parquet files, which is a great work on wrapping C++ implementation with .NET API. Despite being a native wrapper, it's somewhat slower than this managed library starting from v4.2.
 
