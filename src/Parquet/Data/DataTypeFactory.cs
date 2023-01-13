@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Parquet.Schema;
 
 namespace Parquet.Data {
     static class DataTypeFactory {
@@ -37,25 +35,6 @@ namespace Parquet.Data {
 
         public static IDataTypeHandler Match(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
             return _allDataTypes.FirstOrDefault(dt => dt.IsMatch(tse, formatOptions));
-        }
-
-        private static IDataTypeHandler Match(DataType dataType) {
-            return _allDataTypes.FirstOrDefault(dt => dt.DataType == dataType);
-        }
-
-        public static IDataTypeHandler Match(Field field) {
-            switch(field.SchemaType) {
-                case SchemaType.Struct:
-                    return new StructureDataTypeHandler();
-                case SchemaType.Map:
-                    return new MapDataTypeHandler();
-                case SchemaType.List:
-                    return new ListDataTypeHandler();
-                case SchemaType.Data:
-                    return Match(((DataField)field).DataType);
-                default:
-                    throw OtherExtensions.NotImplemented($"matching {field.SchemaType}");
-            }
         }
     }
 }
