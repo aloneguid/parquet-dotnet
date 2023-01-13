@@ -107,14 +107,12 @@ namespace Parquet.Serialization {
             if(pt.IsNullable()) pt = pt.GetNonNullable();
             if(pt.TryExtractEnumerableType(out Type t)) pt = t;
 
-            IDataTypeHandler handler = DataTypeFactory.Match(pt);
-
-            if(handler == null) return null;
+            DataType? dataType = SchemaEncoder.FindDataType(pt);
+            if(dataType == null) return null;
 
             ParquetColumnAttribute columnAttr = property.GetCustomAttribute<ParquetColumnAttribute>();
 
             string name = columnAttr?.Name ?? property.Name;
-            DataType type = handler.DataType;
 
             var r = new DataField(name,
                 property.PropertyType //use CLR type here as DF constructor will figure out nullability and other parameters
@@ -122,14 +120,14 @@ namespace Parquet.Serialization {
 
             if(columnAttr != null) {
                 if(columnAttr.UseListField)
-                    return new ListField(r.Name, handler.DataType, r.HasNulls, property.Name,
+                    return new ListField(r.Name, dataType.Value, r.HasNulls, property.Name,
                         columnAttr.ListContainerName, columnAttr.ListElementName);
 
-                if(handler.ClrType == typeof(TimeSpan))
+                if(pt == typeof(TimeSpan))
                     r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
-                if(handler.ClrType == typeof(DateTime) || handler.ClrType == typeof(DateTimeOffset))
+                if(pt == typeof(DateTime) || pt == typeof(DateTimeOffset))
                     r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.HasNulls, r.IsArray);
-                if(handler.ClrType == typeof(decimal))
+                if(pt == typeof(decimal))
                     r = new DecimalDataField(r.Name, columnAttr.DecimalPrecision, columnAttr.DecimalScale,
                         columnAttr.DecimalForceByteArrayEncoding, r.HasNulls, r.IsArray);
             }
@@ -139,7 +137,7 @@ namespace Parquet.Serialization {
             return r;
         }
 
-        Func<PropertyInfo, bool> pickSerializableProperties = (PropertyInfo arg) =>
+        private readonly Func<PropertyInfo, bool> pickSerializableProperties = (PropertyInfo arg) =>
             !arg.CustomAttributes.Any(p => p.AttributeType == typeof(ParquetIgnoreAttribute));
 
         // TODO: initially defined this using the pattern above, but didn't know the syntax for a type-generic version, so wrote this instead.  any issue with that?

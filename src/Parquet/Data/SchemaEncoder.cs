@@ -20,14 +20,20 @@ namespace Parquet.Data {
 
             private readonly Dictionary<Thrift.Type, DataType> _typeToDefaultType = new();
             private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, DataType> _typeAndConvertedTypeToType = new();
+            private readonly Dictionary<DataType, System.Type> _dataTypeToSystemType = new();
+            private readonly Dictionary<System.Type, DataType> _systemTypeToDataType = new();
 
             public void Add(Thrift.Type thriftType, DataType dataType, System.Type clrType, params object[] options) {
                 _typeToDefaultType.Add(thriftType, dataType);
+                _dataTypeToSystemType[dataType] = clrType;
+                _systemTypeToDataType[clrType] = dataType;
                 for(int i = 0; i < options.Length; i+=3) { 
                     var ct = (Thrift.ConvertedType)options[i];
                     var dt = (DataType)options[i+1];
                     var clr = (System.Type)options[i+2];
                     _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), dt);
+                    _dataTypeToSystemType[dt] = clr;
+                    _systemTypeToDataType[clr] = dt;
                 }
             }
 
@@ -45,6 +51,15 @@ namespace Parquet.Data {
 
                 return null;
             }
+
+            public DataType? FindDataType(System.Type type) {
+                return _systemTypeToDataType.TryGetValue(type, out DataType match) ? match : null;
+            }
+
+            public System.Type FindSystemType(DataType dataType) {
+                _dataTypeToSystemType.TryGetValue(dataType, out System.Type type);
+                return type;
+            }
         }
 
         private static readonly LookupTable LT = new LookupTable {
@@ -58,12 +73,14 @@ namespace Parquet.Data {
                 Thrift.ConvertedType.INT_32, DataType.Int32, typeof(int),
                 Thrift.ConvertedType.DATE, DataType.DateTimeOffset, typeof(DateTimeOffset),
                 Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, DataType.DateTimeOffset, typeof(TimeSpan)
+                Thrift.ConvertedType.TIME_MILLIS, DataType.TimeSpan, typeof(TimeSpan),
+                Thrift.ConvertedType.TIMESTAMP_MILLIS, DataType.DateTimeOffset, typeof(DateTimeOffset)
             },
             { Thrift.Type.INT64 , DataType.Int64, typeof(long),
                 Thrift.ConvertedType.INT_64, DataType.Int64, typeof(long),
                 Thrift.ConvertedType.UINT_64, DataType.UnsignedInt64, typeof(ulong),
-                Thrift.ConvertedType.TIMESTAMP_MICROS, DataType.DateTimeOffset, typeof(TimeSpan),
+                Thrift.ConvertedType.TIME_MICROS, DataType.TimeSpan, typeof(TimeSpan),
+                Thrift.ConvertedType.TIMESTAMP_MICROS, DataType.DateTimeOffset, typeof(DateTimeOffset),
                 Thrift.ConvertedType.TIMESTAMP_MILLIS, DataType.DateTimeOffset, typeof(DateTimeOffset),
                 Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal)
             },
@@ -178,7 +195,7 @@ namespace Parquet.Data {
         /// <param name="index"></param>
         /// <param name="ownedChildCount"></param>
         /// <returns></returns>
-        public static Field BuildField(List<Thrift.SchemaElement> schema,
+        public static Field Decode(List<Thrift.SchemaElement> schema,
             ParquetOptions options,
             ref int index, out int ownedChildCount) {
 
@@ -190,18 +207,18 @@ namespace Parquet.Data {
 
             DataType? dataType = LT.FindDataType(se);
             if(dataType != null) {
+                // correction taking int account passed options
                 if(options.TreatBigIntegersAsDates && dataType == DataType.Int96)
                     dataType = DataType.DateTimeOffset;
 
                 if(options.TreatByteArrayAsString && dataType == DataType.ByteArray)
                     dataType = DataType.String;
 
+                // successful field built
                 f = new DataField(se.Name, dataType.Value, hasNulls, isArray);
                 index++;
                 return f;
             }
-
-            // todo: complex types (map, struct etc.)
 
             if(TryBuildList(schema, ref index, out ownedChildCount, out ListField lf)) {
                 f = lf;
@@ -212,6 +229,40 @@ namespace Parquet.Data {
             }
 
             return f;
+        }
+
+        public static void Encode(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            if(se is DataField sef) {
+                var tse = new Thrift.SchemaElement(se.Name);
+
+                // find thrift type and converted type
+                //tse.Type = _thriftType;
+                //if(_convertedType != null)
+                //    tse.Converted_type = _convertedType.Value;
+
+                //bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
+
+                //tse.Repetition_type = sef.IsArray && !isList
+                //   ? Thrift.FieldRepetitionType.REPEATED
+                //   : (sef.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
+                //container.Add(tse);
+                //parent.Num_children += 1;
+            }
+        }
+
+        /// <summary>
+        /// Finds corresponding .NET type
+        /// </summary>
+        public static System.Type FindSystemType(DataType dataType) {
+            return LT.FindSystemType(dataType);
+        }
+
+        public static DataType? FindDataType(System.Type type) {
+
+            if(type == typeof(DateTime))
+                type = typeof(DateTimeOffset);
+
+            return LT.FindDataType(type);
         }
     }
 }

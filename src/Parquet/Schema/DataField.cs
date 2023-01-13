@@ -64,11 +64,9 @@ namespace Parquet.Schema {
 
             MaxRepetitionLevel = isArray ? 1 : 0;
 
-            IDataTypeHandler handler = DataTypeFactory.Match(dataType);
-            if(handler != null) {
-                ClrType = handler.ClrType;
+            ClrType = SchemaEncoder.FindSystemType(dataType);
+            if(ClrType != null)
                 ClrNullableIfHasNullsType = hasNulls ? ClrType.GetNullable() : ClrType;
-            }
         }
 
         internal override FieldPath PathPrefix {
@@ -124,11 +122,6 @@ namespace Parquet.Schema {
             if(obj is not DataField other)
                 return false;
 
-            bool b1 = base.Equals(obj);
-            bool b2 = DataType == other.DataType;
-            bool b3 = HasNulls == other.HasNulls;
-            bool b4 = IsArray == other.IsArray;
-
             return base.Equals(obj) &&
                 DataType == other.DataType &&
                 HasNulls == other.HasNulls &&
@@ -170,12 +163,13 @@ namespace Parquet.Schema {
                 hasNulls = true;
             }
 
-            IDataTypeHandler handler = DataTypeFactory.Match(baseType);
-            if(handler == null)
-                DataTypeFactory.ThrowClrTypeNotSupported(baseType);
+            DataType? dtn = SchemaEncoder.FindDataType(baseType);
+            if(dtn == null)
+                throw new NotSupportedException($"type '{baseType}' is not supported");
+            DataType dataType = dtn.Value;
 
             return new CInfo {
-                dataType = handler.DataType,
+                dataType = dataType,
                 baseType = baseType,
                 isArray = isArray,
                 hasNulls = hasNulls

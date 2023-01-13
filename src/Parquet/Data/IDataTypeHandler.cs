@@ -19,10 +19,6 @@ namespace Parquet.Data {
 
         DataType DataType { get; }
 
-        SchemaType SchemaType { get; }
-
-        Type ClrType { get; }
-
         Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length);
     }
 }
