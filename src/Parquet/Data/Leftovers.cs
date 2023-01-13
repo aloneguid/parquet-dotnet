@@ -16,12 +16,9 @@ namespace Parquet.Data {
         private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
 
         public BasicDataTypeHandler(DataType dataType, Thrift.Type thriftType, Thrift.ConvertedType? convertedType = null) {
-            DataType = dataType;
             _thriftType = thriftType;
             _convertedType = convertedType;
         }
-
-        public DataType DataType { get; private set; }
 
         public SchemaType SchemaType => SchemaType.Data;
 
@@ -29,22 +26,6 @@ namespace Parquet.Data {
             return
                tse.__isset.type && _thriftType == tse.Type &&
                (_convertedType == null || (tse.__isset.converted_type && tse.Converted_type == _convertedType.Value));
-        }
-
-        public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            DataField sef = (DataField)se;
-            var tse = new Thrift.SchemaElement(se.Name);
-            tse.Type = _thriftType;
-            if(_convertedType != null)
-                tse.Converted_type = _convertedType.Value;
-
-            bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
-
-            tse.Repetition_type = sef.IsArray && !isList
-               ? Thrift.FieldRepetitionType.REPEATED
-               : (sef.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
-            container.Add(tse);
-            parent.Num_children += 1;
         }
 
         public virtual Array MergeDictionary(Array untypedDictionary, int[] indexes, Array data, int offset, int length) {
@@ -151,29 +132,6 @@ namespace Parquet.Data {
 
             (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type &&
              tse.Converted_type == Thrift.ConvertedType.DATE);
-
-        public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            base.CreateThrift(se, parent, container);
-
-            //modify annotations
-            Thrift.SchemaElement tse = container.Last();
-            if(se is DateTimeDataField dse)
-                switch(dse.DateTimeFormat) {
-                    case DateTimeFormat.DateAndTime:
-                        tse.Type = Thrift.Type.INT64;
-                        tse.Converted_type = Thrift.ConvertedType.TIMESTAMP_MILLIS;
-                        break;
-                    case DateTimeFormat.Date:
-                        tse.Type = Thrift.Type.INT32;
-                        tse.Converted_type = Thrift.ConvertedType.DATE;
-                        break;
-
-                        //other cases are just default
-                }
-            else
-                tse.Converted_type = Thrift.ConvertedType.DATE;
-
-        }
     }
 
     class Int96DataTypeHandler : BasicPrimitiveDataTypeHandler<BigInteger> {
@@ -212,47 +170,11 @@ namespace Parquet.Data {
                   tse.Type == Thrift.Type.INT64
                );
         }
-
-        public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            base.CreateThrift(se, parent, container);
-
-            //modify this element slightly
-            Thrift.SchemaElement tse = container.Last();
-
-            if(se is DecimalDataField dse) {
-                if(dse.ForceByteArrayEncoding)
-                    tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-                else if(dse.Precision <= 9)
-                    tse.Type = Thrift.Type.INT32;
-                else if(dse.Precision <= 18)
-                    tse.Type = Thrift.Type.INT64;
-                else
-                    tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-
-                tse.Precision = dse.Precision;
-                tse.Scale = dse.Scale;
-                tse.Type_length = BigDecimal.GetBufferSize(dse.Precision);
-            }
-            else {
-                //set defaults
-                tse.Precision = DecimalFormatDefaults.DefaultPrecision;
-                tse.Scale = DecimalFormatDefaults.DefaultScale;
-                tse.Type_length = 16;
-            }
-        }
     }
 
     class IntervalDataTypeHandler : BasicPrimitiveDataTypeHandler<Interval> {
         public IntervalDataTypeHandler() : base(DataType.Interval, Thrift.Type.FIXED_LEN_BYTE_ARRAY, Thrift.ConvertedType.INTERVAL) { // T+
 
-        }
-
-        public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            base.CreateThrift(se, parent, container);
-
-            //set type length to 12
-            Thrift.SchemaElement tse = container.Last();
-            tse.Type_length = 12;
         }
     }
 
@@ -267,29 +189,6 @@ namespace Parquet.Data {
                (tse.Type == Thrift.Type.INT64 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIME_MICROS) ||
 
                (tse.Type == Thrift.Type.INT32 && tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.TIME_MILLIS);
-        }
-
-        public override void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            base.CreateThrift(se, parent, container);
-
-            //modify annotations
-            Thrift.SchemaElement tse = container.Last();
-            if(se is TimeSpanDataField dse)                 switch(dse.TimeSpanFormat) {
-                    case TimeSpanFormat.MicroSeconds:
-                        tse.Type = Thrift.Type.INT64;
-                        tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
-                        break;
-                    case TimeSpanFormat.MilliSeconds:
-                        tse.Type = Thrift.Type.INT32;
-                        tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
-                        break;
-
-                        //other cases are just default
-                }
-            else {
-                //default annotation is fine
-            }
-
         }
     }
 
@@ -324,8 +223,6 @@ namespace Parquet.Data {
 
         public abstract SchemaType SchemaType { get; }
 
-        public abstract void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
-
         public abstract bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
 
         public Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length) {
@@ -336,30 +233,6 @@ namespace Parquet.Data {
     class ListDataTypeHandler : NonDataDataTypeHandler {
         public override SchemaType SchemaType => SchemaType.List;
 
-        public override void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            var listField = (ListField)field;
-
-            parent.Num_children += 1;
-
-            //add list container
-            var root = new Thrift.SchemaElement(field.Name) {
-                Converted_type = Thrift.ConvertedType.LIST,
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
-                Num_children = 1  //field container below
-            };
-            container.Add(root);
-
-            //add field container
-            var list = new Thrift.SchemaElement(listField.ContainerName) {
-                Repetition_type = Thrift.FieldRepetitionType.REPEATED
-            };
-            container.Add(list);
-
-            //add the list item as well
-            IDataTypeHandler fieldHandler = DataTypeFactory.Match(listField.Item);
-            fieldHandler.CreateThrift(listField.Item, list, container);
-        }
-
         public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
             return tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.LIST;
         }
@@ -367,41 +240,6 @@ namespace Parquet.Data {
 
     class MapDataTypeHandler : NonDataDataTypeHandler {
         public override SchemaType SchemaType => SchemaType.Map;
-
-        public override void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            parent.Num_children += 1;
-
-            //add the root container where map begins
-            var root = new Thrift.SchemaElement(field.Name) {
-                Converted_type = Thrift.ConvertedType.MAP,
-                Num_children = 1,
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL
-            };
-            container.Add(root);
-
-            //key-value is a container for column of keys and column of values
-            var keyValue = new Thrift.SchemaElement(MapField.ContainerName) {
-                Num_children = 0, //is assigned by children
-                Repetition_type = Thrift.FieldRepetitionType.REPEATED
-            };
-            container.Add(keyValue);
-
-            //now add the key and value separately
-            var mapField = field as MapField;
-            IDataTypeHandler keyHandler = DataTypeFactory.Match(mapField.Key);
-            IDataTypeHandler valueHandler = DataTypeFactory.Match(mapField.Value);
-
-            keyHandler.CreateThrift(mapField.Key, keyValue, container);
-            Thrift.SchemaElement tseKey = container[container.Count - 1];
-            valueHandler.CreateThrift(mapField.Value, keyValue, container);
-            Thrift.SchemaElement tseValue = container[container.Count - 1];
-
-            //fixups for weirdness in RLs
-            if(tseKey.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
-                tseKey.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-            if(tseValue.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
-                tseValue.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-        }
 
         public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
             return
@@ -412,21 +250,6 @@ namespace Parquet.Data {
 
     class StructureDataTypeHandler : NonDataDataTypeHandler {
         public override SchemaType SchemaType => SchemaType.Struct;
-
-        public override void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            var structField = (StructField)field;
-
-            var tseStruct = new Thrift.SchemaElement(field.Name) {
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
-            };
-            container.Add(tseStruct);
-            parent.Num_children += 1;
-
-            foreach(Field cf in structField.Fields) {
-                IDataTypeHandler handler = DataTypeFactory.Match(cf);
-                handler.CreateThrift(cf, tseStruct, container);
-            }
-        }
 
         public override bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
             return

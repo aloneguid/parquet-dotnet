@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Numerics;
+using System.Xml.Linq;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Thrift;
@@ -18,15 +20,18 @@ namespace Parquet.Data {
 
         class LookupTable : List<LookupItem> {
 
+            // all the cached lookups built during static initialisation
             private readonly Dictionary<Thrift.Type, DataType> _typeToDefaultType = new();
             private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, DataType> _typeAndConvertedTypeToType = new();
             private readonly Dictionary<DataType, System.Type> _dataTypeToSystemType = new();
             private readonly Dictionary<System.Type, DataType> _systemTypeToDataType = new();
+            private readonly Dictionary<System.Type, Tuple<Thrift.Type, Thrift.ConvertedType?>> _systemTypeToTypeTuple = new();
 
             public void Add(Thrift.Type thriftType, DataType dataType, System.Type clrType, params object[] options) {
-                _typeToDefaultType.Add(thriftType, dataType);
+                _typeToDefaultType[thriftType] = dataType;
                 _dataTypeToSystemType[dataType] = clrType;
                 _systemTypeToDataType[clrType] = dataType;
+                _systemTypeToTypeTuple[clrType] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, null);
                 for(int i = 0; i < options.Length; i+=3) { 
                     var ct = (Thrift.ConvertedType)options[i];
                     var dt = (DataType)options[i+1];
@@ -34,6 +39,9 @@ namespace Parquet.Data {
                     _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), dt);
                     _dataTypeToSystemType[dt] = clr;
                     _systemTypeToDataType[clr] = dt;
+
+                    // more specific version overrides less specific
+                    _systemTypeToTypeTuple[clr] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, ct);
                 }
             }
 
@@ -60,6 +68,18 @@ namespace Parquet.Data {
                 _dataTypeToSystemType.TryGetValue(dataType, out System.Type type);
                 return type;
             }
+
+            public bool FindTypeTuple(System.Type type, out Thrift.Type ttype, out Thrift.ConvertedType? convertedType) {
+                if(!_systemTypeToTypeTuple.TryGetValue(type, out Tuple<Thrift.Type, ConvertedType?> tuple)) {
+                    ttype = default(Thrift.Type);
+                    convertedType = null;
+                    return false;
+                }
+
+                ttype = tuple.Item1;
+                convertedType = tuple.Item2;
+                return true;
+            }
         }
 
         private static readonly LookupTable LT = new LookupTable {
@@ -84,6 +104,7 @@ namespace Parquet.Data {
                 Thrift.ConvertedType.TIMESTAMP_MILLIS, DataType.DateTimeOffset, typeof(DateTimeOffset),
                 Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal)
             },
+            { Thrift.Type.INT96, DataType.DateTimeOffset, typeof(DateTimeOffset) },
             { Thrift.Type.INT96, DataType.Int96, typeof(BigInteger) },
             { Thrift.Type.FLOAT, DataType.Float, typeof(float) },
             { Thrift.Type.DOUBLE, DataType.Double, typeof(double) },
@@ -231,22 +252,165 @@ namespace Parquet.Data {
             return f;
         }
 
-        public static void Encode(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            if(se is DataField sef) {
-                var tse = new Thrift.SchemaElement(se.Name);
+        /// <summary>
+        /// Adjust type-specific schema encodings that do not always follow generic use case
+        /// </summary>
+        /// <param name="df"></param>
+        /// <param name="tse"></param>
+        private static void AdjustEncoding(DataField df, Thrift.SchemaElement tse) {
+            if(df.DataType == DataType.DateTimeOffset) {
+                if(df is DateTimeDataField dfDateTime)
+                    switch(dfDateTime.DateTimeFormat) {
+                        case DateTimeFormat.DateAndTime:
+                            tse.Type = Thrift.Type.INT64;
+                            tse.Converted_type = Thrift.ConvertedType.TIMESTAMP_MILLIS;
+                            break;
+                        case DateTimeFormat.Date:
+                            tse.Type = Thrift.Type.INT32;
+                            tse.Converted_type = Thrift.ConvertedType.DATE;
+                            break;
 
-                // find thrift type and converted type
-                //tse.Type = _thriftType;
-                //if(_convertedType != null)
-                //    tse.Converted_type = _convertedType.Value;
+                            //other cases are just default
+                    }
+                else
+                    tse.Converted_type = Thrift.ConvertedType.DATE;
+            } else if(df.DataType == DataType.Decimal) {
+                if(df is DecimalDataField dfDecimal) {
+                    if(dfDecimal.ForceByteArrayEncoding)
+                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+                    else if(dfDecimal.Precision <= 9)
+                        tse.Type = Thrift.Type.INT32;
+                    else if(dfDecimal.Precision <= 18)
+                        tse.Type = Thrift.Type.INT64;
+                    else
+                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
 
-                //bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
+                    tse.Precision = dfDecimal.Precision;
+                    tse.Scale = dfDecimal.Scale;
+                    tse.Type_length = BigDecimal.GetBufferSize(dfDecimal.Precision);
+                }
+                else {
+                    //set defaults
+                    tse.Precision = DecimalFormatDefaults.DefaultPrecision;
+                    tse.Scale = DecimalFormatDefaults.DefaultScale;
+                    tse.Type_length = 16;
+                }
+            } else if(df.DataType == DataType.Interval) {
+                //set type length to 12
+                tse.Type_length = 12;
+            } else if(df.DataType == DataType.TimeSpan) {
+                if(df is TimeSpanDataField dfTime) {
+                    switch(dfTime.TimeSpanFormat) {
+                        case TimeSpanFormat.MicroSeconds:
+                            tse.Type = Thrift.Type.INT64;
+                            tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
+                            break;
+                        case TimeSpanFormat.MilliSeconds:
+                            tse.Type = Thrift.Type.INT32;
+                            tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
+                            break;
 
-                //tse.Repetition_type = sef.IsArray && !isList
-                //   ? Thrift.FieldRepetitionType.REPEATED
-                //   : (sef.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
-                //container.Add(tse);
-                //parent.Num_children += 1;
+                            //other cases are just default
+                    }
+                }
+            }
+        }
+
+        private static void Encode(ListField listField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            parent.Num_children += 1;
+
+            //add list container
+            var root = new Thrift.SchemaElement(listField.Name) {
+                Converted_type = Thrift.ConvertedType.LIST,
+                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+                Num_children = 1  //field container below
+            };
+            container.Add(root);
+
+            //add field container
+            var list = new Thrift.SchemaElement(listField.ContainerName) {
+                Repetition_type = Thrift.FieldRepetitionType.REPEATED
+            };
+            container.Add(list);
+
+            //add the list item as well
+            Encode(listField.Item, list, container);
+        }
+
+        private static void Encode(MapField mapField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            parent.Num_children += 1;
+
+            //add the root container where map begins
+            var root = new Thrift.SchemaElement(mapField.Name) {
+                Converted_type = Thrift.ConvertedType.MAP,
+                Num_children = 1,
+                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL
+            };
+            container.Add(root);
+
+            //key-value is a container for column of keys and column of values
+            var keyValue = new Thrift.SchemaElement(MapField.ContainerName) {
+                Num_children = 0, //is assigned by children
+                Repetition_type = Thrift.FieldRepetitionType.REPEATED
+            };
+            container.Add(keyValue);
+
+            //now add the key and value separately
+            Encode(mapField.Key, keyValue, container);
+            Thrift.SchemaElement tseKey = container[container.Count - 1];
+            Encode(mapField.Value, keyValue, container);
+            Thrift.SchemaElement tseValue = container[container.Count - 1];
+
+            //fixups for weirdness in RLs
+            if(tseKey.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
+                tseKey.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+            if(tseValue.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
+                tseValue.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+        }
+
+        private static void Encode(StructField structField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            var tseStruct = new Thrift.SchemaElement(structField.Name) {
+                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+            };
+            container.Add(tseStruct);
+            parent.Num_children += 1;
+
+            foreach(Field memberField in structField.Fields) {
+                Encode(memberField, tseStruct, container);
+            }
+        }
+
+        public static void Encode(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+            if(field.SchemaType == SchemaType.Data && field is DataField dataField) {
+                var tse = new Thrift.SchemaElement(field.Name);
+
+                if(!LT.FindTypeTuple(dataField.ClrType, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType)) {
+                    throw new NotSupportedException($"could not find type tuple for {dataField.ClrType}");
+                }
+
+                tse.Type = thriftType;
+                if(convertedType != null) {
+                    // be careful calling thrift setter as it sets other hidden flags
+                    tse.Converted_type = convertedType.Value;
+                }
+
+                bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
+
+                tse.Repetition_type = dataField.IsArray && !isList
+                   ? Thrift.FieldRepetitionType.REPEATED
+                   : (dataField.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
+                container.Add(tse);
+                parent.Num_children += 1;
+
+                AdjustEncoding(dataField, tse);
+            } else if(field.SchemaType == SchemaType.List && field is ListField listField) {
+                Encode(listField, parent, container);
+            } else if(field.SchemaType == SchemaType.Map && field is MapField mapField) {
+                Encode(mapField, parent, container);
+            } else if(field.SchemaType == SchemaType.Struct && field is StructField structField) {
+                Encode(structField, parent, container);
+            } else {
+                throw new InvalidOperationException($"unable to encode {field}");
             }
         }
 

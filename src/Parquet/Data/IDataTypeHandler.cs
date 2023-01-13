@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Parquet.Schema;
 
 namespace Parquet.Data {
     /// <summary>
@@ -14,10 +12,6 @@ namespace Parquet.Data {
         /// <param name="formatOptions"></param>
         /// <returns></returns>
         bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);
-
-        void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
-
-        DataType DataType { get; }
 
         Array MergeDictionary(Array dictionary, int[] indexes, Array data, int offset, int length);
     }

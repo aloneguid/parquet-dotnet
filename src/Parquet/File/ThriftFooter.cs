@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace Parquet.File {
                 throw new ArgumentNullException(nameof(schema));
             }
 
+            //_fileMeta = LegacyCreateThriftSchema(schema);
             _fileMeta = CreateThriftSchema(schema);
             _fileMeta.Num_rows = totalRowCount;
 
@@ -224,25 +226,18 @@ namespace Parquet.File {
             meta.Row_groups = new List<Thrift.RowGroup>();
 
             Thrift.SchemaElement root = AddRoot(meta.Schema);
-            CreateThriftSchema(schema.Fields, root, meta.Schema);
+            foreach(Field se in schema.Fields) {
+                SchemaEncoder.Encode(se, root, meta.Schema);
+            }
 
             return meta;
         }
+
 
         private Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container) {
             var root = new Thrift.SchemaElement("root");
             container.Add(root);
             return root;
-        }
-
-        private void CreateThriftSchema(IEnumerable<Field> ses, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            foreach(Field se in ses) {
-                IDataTypeHandler handler = DataTypeFactory.Match(se);
-
-                //todo: check that handler is found indeed
-
-                handler.CreateThrift(se, parent, container);
-            }
         }
 
         #endregion
