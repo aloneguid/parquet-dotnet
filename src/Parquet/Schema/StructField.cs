@@ -63,44 +63,18 @@ namespace Parquet.Schema {
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals(StructField other) {
-            if(ReferenceEquals(null, other))
-                return false;
-            if(ReferenceEquals(this, other))
-                return true;
+            bool ok = base.Equals(other) && Fields.Count == other.Fields.Count;
 
-            if(Name != other.Name)
-                return false;
-            if(Fields.Count != other.Fields.Count)
-                return false;
-            for(int i = 0; i < Fields.Count; i++)                 if(!Fields[i].Equals(other.Fields[i]))
-                    return false;
+            if(ok) {
+                for(int i = 0; i < Fields.Count; i++) {
+                    if(!Fields[i].Equals(other.Fields[i])) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
 
-            return true;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override bool Equals(object obj) {
-            if(ReferenceEquals(null, obj))
-                return false;
-            if(ReferenceEquals(this, obj))
-                return true;
-            if(obj.GetType() != GetType())
-                return false;
-
-            return Equals((StructField)obj);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override int GetHashCode() {
-            return Name.GetHashCode() *
-               Fields.Aggregate(1, (current, f) => current * f.GetHashCode());
+            return ok;
         }
     }
 }

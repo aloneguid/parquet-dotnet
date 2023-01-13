@@ -87,11 +87,22 @@ namespace Parquet.Schema {
 
         #endregion
 
+        /// <inheritdoc/>
+        public override string ToString() => $"{Path} ({SchemaType})";
+
         /// <summary>
-        /// pretty prints
+        /// Basic equality check
         /// </summary>
-        public override string ToString() {
-            return $"{SchemaType} {Path}";
+        public override bool Equals(object obj) {
+
+            if(obj is not Field other) return false;
+
+            return SchemaType == other.SchemaType && Name == other.Name && Path.Equals(other.Path);
         }
+
+        /// <summary>
+        /// GetHashCode
+        /// </summary>
+        public override int GetHashCode() => Path.ToString().GetHashCode();
     }
 }

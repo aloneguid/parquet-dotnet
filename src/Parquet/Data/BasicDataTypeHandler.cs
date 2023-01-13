@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 using Parquet.Schema;
 
 namespace Parquet.Data {
@@ -27,21 +26,6 @@ namespace Parquet.Data {
             return
                tse.__isset.type && _thriftType == tse.Type &&
                (_convertedType == null || (tse.__isset.converted_type && tse.Converted_type == _convertedType.Value));
-        }
-
-        public virtual Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount) {
-            Thrift.SchemaElement tse = schema[index++];
-
-            bool hasNulls = (tse.Repetition_type != Thrift.FieldRepetitionType.REQUIRED);
-            bool isArray = (tse.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
-
-            Field simple = CreateSimple(tse, hasNulls, isArray);
-            ownedChildCount = 0;
-            return simple;
-        }
-
-        protected virtual DataField CreateSimple(Thrift.SchemaElement tse, bool hasNulls, bool isArray) {
-            return new DataField(tse.Name, DataType, hasNulls, isArray);
         }
 
         public virtual void CreateThrift(Field se, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {

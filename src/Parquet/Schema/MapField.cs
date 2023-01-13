@@ -38,9 +38,12 @@ namespace Parquet.Schema {
         }
 
         internal override void Assign(Field se) {
-            if(Key == null)                 Key = se;
-            else if(Value == null)                 Value = se;
-            else                 throw new InvalidOperationException($"'{Name}' already has key and value assigned");
+            if(Key == null)
+                Key = se;
+            else if(Value == null)
+                Value = se;
+            else
+                throw new InvalidOperationException($"'{Name}' already has key and value assigned");
         }
 
         internal override FieldPath PathPrefix {
@@ -80,27 +83,18 @@ namespace Parquet.Schema {
             return (IDictionary)Activator.CreateInstance(concreteType);
         }
 
-        /// <summary>
-        /// <see cref="Equals(object)"/>
-        /// </summary>
+        /// <inheritdoc/>
         public override bool Equals(object obj) {
-            if(ReferenceEquals(obj, null))
-                return false;
-            if(ReferenceEquals(obj, this))
-                return true;
-            if(obj.GetType() != typeof(MapField))
+            if(obj is not MapField other)
                 return false;
 
-            var other = (MapField)obj;
-
-            return Name.Equals(other.Name) && Key.Equals(other.Key) && Value.Equals(other.Value);
+            return base.Equals(other) && 
+                (Key?.Equals(other.Key) ?? true) && 
+                (Value?.Equals(other.Value) ?? true);
         }
 
-        /// <summary>
-        /// <see cref="GetHashCode"/>
-        /// </summary>
-        public override int GetHashCode() {
-            return Name.GetHashCode() * Key.GetHashCode() * Value.GetHashCode();
-        }
+        /// <inheritdoc/>
+        public override int GetHashCode() => base.GetHashCode();
+
     }
 }
