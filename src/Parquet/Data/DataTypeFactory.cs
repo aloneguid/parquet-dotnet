@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Parquet.Data.Concrete;
 using Parquet.Schema;
 
 namespace Parquet.Data {
@@ -36,13 +35,11 @@ namespace Parquet.Data {
          new StructureDataTypeHandler()
       };
 
-        //todo: all the matches can be much faster, cache them.
-
         public static IDataTypeHandler Match(Thrift.SchemaElement tse, ParquetOptions formatOptions) {
             return _allDataTypes.FirstOrDefault(dt => dt.IsMatch(tse, formatOptions));
         }
 
-        public static IDataTypeHandler Match(DataType dataType) {
+        private static IDataTypeHandler Match(DataType dataType) {
             return _allDataTypes.FirstOrDefault(dt => dt.DataType == dataType);
         }
 
@@ -59,19 +56,6 @@ namespace Parquet.Data {
                 default:
                     throw OtherExtensions.NotImplemented($"matching {field.SchemaType}");
             }
-        }
-
-        public static IDataTypeHandler Match(Type clrType) {
-            return _allDataTypes.FirstOrDefault(dt => dt.ClrType == clrType);
-        }
-
-        public static void ThrowClrTypeNotSupported(Type clrType) {
-            string message = string.Format("CLR type '{0}' is not supported, please specify one of '{1}' or use an alternative constructor",
-               clrType,
-               string.Join(", ", _allDataTypes.Select(dt => dt.ClrType))
-               );
-
-            throw new NotSupportedException(message);
         }
     }
 }

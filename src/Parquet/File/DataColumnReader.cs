@@ -122,11 +122,12 @@ namespace Parquet.File {
                    min, max);
             }
 
+            // i don't understand the point of this, but leaving as a comment as looks suspicious
             // Fix for nullable booleans
-            if(finalColumn.Data.GetType().GetElementType() == typeof(Boolean?)) {
+            /*if(finalColumn.Data.GetType().GetElementType() == typeof(Boolean?)) {
                 finalColumn.Field.ClrNullableIfHasNullsType = DataTypeFactory.Match(finalColumn.Field.DataType).ClrType.GetNullable();
                 _dataField.ClrNullableIfHasNullsType = DataTypeFactory.Match(finalColumn.Field.DataType).ClrType.GetNullable();
-            }
+            }*/
 
             return finalColumn;
         }

@@ -96,6 +96,6 @@
         /// <summary>
         /// TimeSpan
         /// </summary>
-        TimeSpan,
+        TimeSpan
     }
 }

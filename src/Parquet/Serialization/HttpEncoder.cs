@@ -73,7 +73,7 @@ namespace Parquet.Serialization
 
       private static bool CharRequiresJavaScriptEncoding(char c)
       {
-         if (c >= ' ' && c != '"' && (c != '\\' && c != '\'') && (c != '<' && c != '>' && (c != '&' || !JavaScriptEncodeAmpersand)) && (c != '\x0085' && c != '\x2028'))
+         if (c >= ' ' && c != '"' && c != '\\' && c != '\'' && c != '<' && c != '>' && (c != '&' || !JavaScriptEncodeAmpersand) && c != '\x0085' && c != '\x2028')
             return c == '\x2029';
          return true;
       }

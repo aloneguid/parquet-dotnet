@@ -182,7 +182,7 @@ namespace Parquet.File {
 
         private void CreateModelSchema(FieldPath path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
             for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++) {
-                Field se = SchemaEncoder.BuildField(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
+                Field se = SchemaEncoder.Decode(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
 
                 List<string> npath = path?.ToList() ?? new List<string>();
                 if(se.Path != null) npath.AddRange(se.Path.ToList());
