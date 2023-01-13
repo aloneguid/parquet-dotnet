@@ -14,8 +14,6 @@ namespace Parquet.Data {
 
         public System.Type ClrType => null;
 
-        public abstract Field CreateSchemaElement(IList<Thrift.SchemaElement> schema, ref int index, out int ownedChildCount);
-
         public abstract void CreateThrift(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container);
 
         public abstract bool IsMatch(Thrift.SchemaElement tse, ParquetOptions formatOptions);

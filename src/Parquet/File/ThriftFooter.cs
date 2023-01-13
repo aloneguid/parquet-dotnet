@@ -182,19 +182,12 @@ namespace Parquet.File {
 
         private void CreateModelSchema(FieldPath path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
             for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++) {
-                Thrift.SchemaElement tse = _fileMeta.Schema[si];
-                IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
+                Field se = SchemaEncoder.BuildField(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
 
-                if(dth == null) {
-                    throw new InvalidOperationException($"cannot find data type handler to create model schema for {tse.Describe()}");
-                }
-
-                Field se2 = SchemaEncoder.BuildField(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount2);
-                Field se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
-                //if(!se.Equals(se2))
-                    //throw new InvalidOperationException("migration failure");
-
-                se.Path = string.Join(ParquetSchema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
+                List<string> npath = path?.ToList() ?? new List<string>();
+                if(se.Path != null) npath.AddRange(se.Path.ToList());
+                else npath.Add(se.Name);
+                se.Path = new FieldPath(npath);
 
                 if(ownedChildCount > 0) {
                     var childContainer = new List<Field>();
@@ -203,7 +196,6 @@ namespace Parquet.File {
                         se.Assign(cse);
                     }
                 }
-
 
                 container.Add(se);
             }

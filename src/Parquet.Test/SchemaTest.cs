@@ -16,7 +16,7 @@ namespace Parquet.Test {
 
         [Fact]
         public void SchemaElement_are_equal() {
-            Assert.Equal(new DataField<int>("id"), new DataField<int>("id"));
+            Assert.True(new DataField<int>("id").Equals(new DataField<int>("id")));
         }
 
         [Fact]
@@ -98,9 +98,17 @@ namespace Parquet.Test {
 
         [Fact]
         public void Map_fields_with_different_types_are_unequal() {
-            Assert.NotEqual(new MapField("dictionary", new DataField("key", DataType.String), new DataField("value", DataType.String)),
-                         new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String)));
 
+            var map1 = new MapField("dictionary",
+                    new DataField("key", DataType.String),
+                   new DataField("value", DataType.String));
+
+
+            var map2 = new MapField("dictionary",
+                new DataField("key", DataType.Int32),
+                new DataField("value", DataType.String));
+
+            Assert.False(map1.Equals(map2));
         }
 
         [Fact]

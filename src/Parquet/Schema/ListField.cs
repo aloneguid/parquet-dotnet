@@ -5,7 +5,7 @@ namespace Parquet.Schema {
     /// Represents a list of items. The list can contain either a normal data field or a complex structure.
     /// If you need to get a list of primitive data fields it's more efficient to use arrays.
     /// </summary>
-    public class ListField : Field, IEquatable<ListField> {
+    public class ListField : Field {
         /// <summary>
         /// Default container name for a list
         /// </summary>
@@ -78,39 +78,20 @@ namespace Parquet.Schema {
         }
 
         internal override void Assign(Field field) {
-            if(Item != null)                 throw new InvalidOperationException($"item was already assigned to this list ({Name}), somethin is terribly wrong because a list can only have one item.");
+            if(Item != null)
+                throw new InvalidOperationException($"item was already assigned to this list ({Name}), somethin is terribly wrong because a list can only have one item.");
 
             Item = field ?? throw new ArgumentNullException(nameof(field));
         }
 
-        /// <summary>
-        /// </summary>
-        public bool Equals(ListField other) {
-            if(ReferenceEquals(null, other))
-                return false;
-            if(ReferenceEquals(this, other))
-                return true;
-
-            return Name.Equals(other.Name) && Item.Equals(other.Item);
-        }
-
-        /// <summary>
-        /// </summary>
+        /// <inheritdoc/>
         public override bool Equals(object obj) {
-            if(ReferenceEquals(null, obj))
-                return false;
-            if(ReferenceEquals(this, obj))
-                return true;
-            if(obj.GetType() != GetType())
-                return false;
+            if(obj is not ListField other) return false;
 
-            return Equals((ListField)obj);
+            return base.Equals(obj) && (Item?.Equals(other.Item) ?? true);
         }
 
-        /// <summary>
-        /// </summary>
-        public override int GetHashCode() {
-            return Name.GetHashCode() * Item.GetHashCode();
-        }
+        /// <inheritdoc/>
+        public override int GetHashCode() => base.GetHashCode();
     }
 }

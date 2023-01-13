@@ -9,6 +9,20 @@ using Xunit;
 
 namespace Parquet.Test.Serialisation {
     public class ParquetConvertTest : TestBase {
+
+        [Fact]
+        public async Task SmokeTest() {
+            SimpleStructure[] structures = Enumerable
+                .Range(0, 1000)
+                .Select(i => new SimpleStructure {
+                    Id = i,
+                    Name = $"row {i}"
+                })
+                .ToArray();
+
+            await ParquetConvert.SerializeAsync(structures, new MemoryStream());
+        }
+
         [Fact]
         public async Task Serialise_Should_Exclude_IgnoredProperties_while_serialized_to_parquetfile() {
             DateTime now = DateTime.Now;
@@ -480,6 +494,12 @@ namespace Parquet.Test.Serialisation {
             }
         }
 
+        public class SimplestStructure {
+            public int Id { get; set; }
+
+            public string Name { get; set; }
+        }
+
         public class SimpleRepeated {
             public int Id { get; set; }
 
@@ -495,6 +515,7 @@ namespace Parquet.Test.Serialisation {
 
             public DateTimeOffset Date { get; set; }
         }
+
         public class SimpleStructureWithFewProperties {
             public int Id { get; set; }
             public string Name { get; set; }

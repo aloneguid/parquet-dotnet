@@ -6,7 +6,7 @@ namespace Parquet.Schema {
     /// <summary>
     /// Field containing actual data, unlike fields containing metadata.
     /// </summary>
-    public class DataField : Field, IEquatable<DataField> {
+    public class DataField : Field {
         /// <summary>
         /// Parquet data type of this element
         /// </summary>
@@ -78,10 +78,7 @@ namespace Parquet.Schema {
         }
 
         /// <summary>
-        /// see
-        /// <see cref="ThriftFooter.GetLevels(Thrift.ColumnChunk, out int, out int)"/>
-        /// and
-        /// <see cref="BasicDataTypeHandler{TSystemType}.CreateSchemaElement(System.Collections.Generic.IList{Thrift.SchemaElement}, ref int, out int)"/>
+        /// see <see cref="ThriftFooter.GetLevels(Thrift.ColumnChunk, out int, out int)"/>
         /// </summary>
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             MaxRepetitionLevel = parentRepetitionLevel + (IsArray ? 1 : 0);
@@ -115,55 +112,34 @@ namespace Parquet.Schema {
             return result;
         }
 
-        /// <summary>
-        /// Indicates whether the current object is equal to another object of the same type.
-        /// </summary>
-        /// <param name="other">An object to compare with this object.</param>
-        /// <returns>
-        /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
-        /// </returns>
-        public bool Equals(DataField other) {
-            if(ReferenceEquals(null, other))
-                return false;
-            if(ReferenceEquals(this, other))
-                return true;
-
-            //todo: check equality for child elements
-
-            return
-               string.Equals(Path, other.Path) &&
-               DataType.Equals(other.DataType) &&
-               HasNulls == other.HasNulls &&
-               IsArray == other.IsArray;
-        }
+        /// <inheritdoc/>
+        public override string ToString() => $"{Path} ({DataType})";
 
         /// <summary>
-        /// Determines whether the specified <see cref="object" />, is equal to this instance.
+        /// Basic equality check
         /// </summary>
-        /// <param name="obj">The <see cref="object" /> to compare with this instance.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
-        /// </returns>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj) {
-            if(ReferenceEquals(null, obj))
-                return false;
-            if(ReferenceEquals(this, obj))
-                return true;
-            if(!(obj is DataField))
+            if(obj is not DataField other)
                 return false;
 
-            return Equals((DataField)obj);
+            bool b1 = base.Equals(obj);
+            bool b2 = DataType == other.DataType;
+            bool b3 = HasNulls == other.HasNulls;
+            bool b4 = IsArray == other.IsArray;
+
+            return base.Equals(obj) &&
+                DataType == other.DataType &&
+                HasNulls == other.HasNulls &&
+                IsArray == other.IsArray;
         }
 
         /// <summary>
-        /// Returns a hash code for this instance.
+        /// Basic GetHashCode
         /// </summary>
-        /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
-        /// </returns>
-        public override int GetHashCode() {
-            return Path.GetHashCode() * DataType.GetHashCode();
-        }
+        /// <returns></returns>
+        public override int GetHashCode() => base.GetHashCode();
 
         #region [ Type Resolution ]
 

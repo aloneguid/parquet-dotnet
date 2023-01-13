@@ -16,7 +16,7 @@ namespace Parquet.Schema {
         public const string Separator = ".";
 
         private readonly List<string> _parts;
-        private readonly string _str;
+        private string _str;
 
         /// <summary>
         /// Construct path from raw string (unsafe!)
@@ -35,8 +35,31 @@ namespace Parquet.Schema {
         /// Constructs path from parts (safe)
         /// </summary>
         public FieldPath(IEnumerable<string> parts) {
-            _str = string.Join(Separator, parts);
-            _parts = parts.ToList();
+            _parts = parts
+                .Where(i => !string.IsNullOrEmpty(i))
+                .ToList();
+            _str = string.Join(Separator, _parts);
+
+        }
+
+        /// <summary>
+        /// Constructs path from parts (safe)
+        /// </summary>
+        /// <param name="parts"></param>
+        public FieldPath(params string[] parts) : this((IEnumerable<string>)parts) {
+
+        }
+
+        /// <summary>
+        /// Append an element to path
+        /// </summary>
+        /// <param name="value">Can be null or empty (ignored).</param>
+        public void Append(string value) {
+            if(string.IsNullOrEmpty(value))
+                return;
+
+            _parts.Add(value);
+            _str = string.Join(Separator, _parts);
         }
 
         /// <summary>

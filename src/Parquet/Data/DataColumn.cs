@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Buffers;
-using System.Drawing;
 using System.Linq;
 using Parquet.Schema;
 
@@ -10,15 +8,11 @@ namespace Parquet.Data {
     /// Handles internal data composition/decomposition to enrich with custom data Parquet format requires.
     /// </summary>
     public class DataColumn {
-        private readonly IDataTypeHandler _dataTypeHandler;
-
         private readonly int _offset;
         private readonly int _count = -1;
 
         private DataColumn(DataField field) {
             Field = field ?? throw new ArgumentNullException(nameof(field));
-
-            _dataTypeHandler = DataTypeFactory.Match(field.DataType);
         }
 
         /// <summary>
