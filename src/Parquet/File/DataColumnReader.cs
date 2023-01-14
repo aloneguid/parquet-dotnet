@@ -8,6 +8,7 @@ using Parquet.Data;
 using Parquet.File.Values;
 using Parquet.Thrift;
 using Parquet.Schema;
+using Parquet.Extensions;
 
 namespace Parquet.File {
     class DataColumnReader {
@@ -20,7 +21,6 @@ namespace Parquet.File {
         private readonly ThriftStream _thriftStream;
         private readonly int _maxRepetitionLevel;
         private readonly int _maxDefinitionLevel;
-        private readonly IDataTypeHandler _dataTypeHandler;
 
         private class ColumnRawData {
             public int maxCount;
@@ -59,7 +59,6 @@ namespace Parquet.File {
             _maxRepetitionLevel = mrl;
             _maxDefinitionLevel = mdl;
             _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
-            _dataTypeHandler = DataTypeFactory.Match(_thriftSchemaElement, _parquetOptions);
         }
 
         public async Task<DataColumn> ReadAsync(CancellationToken cancellationToken = default) {
@@ -327,7 +326,7 @@ namespace Parquet.File {
                     if(cd.indexes == null)
                         cd.indexes = new int[(int)totalValues];
                     int indexCount = RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, cd.indexes, 0, maxReadCount);
-                    _dataTypeHandler.MergeDictionary(cd.dictionary, cd.indexes, cd.values, cd.valuesOffset, indexCount);
+                    cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                     cd.valuesOffset += indexCount;
                     break;
 
@@ -336,7 +335,7 @@ namespace Parquet.File {
                     if(cd.indexes == null)
                         cd.indexes = new int[(int)totalValues];
                     indexCount = ReadPlainDictionary(reader, maxReadCount, cd.indexes, 0);
-                    _dataTypeHandler.MergeDictionary(cd.dictionary, cd.indexes, cd.values, cd.valuesOffset, indexCount);
+                    cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                     cd.valuesOffset += indexCount;
                     break;
 

@@ -3,4 +3,4 @@
 using Parquet.PerfRunner.Benchmarks;
 
 //new VsParquetSharp().Main();
-await new DataTypes().SimpleStringWriteRead();
+await new DataTypes().SimpleIntWriteRead();
