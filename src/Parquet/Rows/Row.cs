@@ -137,8 +137,8 @@ namespace Parquet.Rows {
         /// Gets the value as <see cref="DateTimeOffset"/>
         /// </summary>
         /// <param name="i">Value index</param>
-        public DateTimeOffset GetDateTimeOffset(int i) {
-            return Get<DateTimeOffset>(i);
+        public DateTime GetDateTime(int i) {
+            return Get<DateTime>(i);
         }
 
         /// <summary>

@@ -344,9 +344,9 @@ namespace Parquet.Test.Serialisation {
 
             // create schema - set DataField.propertyName to non-null strings
             ParquetSchema schema = new ParquetSchema(
-                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, false, nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
-                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, false, nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
-                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), DataType.Int32, false, false, nameof(SimpleWithDateTimeAndDecimal.Int32Value))
+                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
+                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
+                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), typeof(int), nameof(SimpleWithDateTimeAndDecimal.Int32Value))
                 );
 
             // serialise items
@@ -378,9 +378,9 @@ namespace Parquet.Test.Serialisation {
 
             // create schema - set DataField.propertyName to null
             ParquetSchema schema = new ParquetSchema(
-                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, false, null),
-                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, false, null),
-                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), DataType.Int32, false, false, null)
+                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, null),
+                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, null),
+                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), typeof(int))
                 );
 
             // serialise items
@@ -412,7 +412,7 @@ namespace Parquet.Test.Serialisation {
 
             // create schema - set DataField.propertyName to null
             ParquetSchema schema = new ParquetSchema(
-                new DataField<DateTimeOffset>(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
+                new DataField<DateTime>(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
                 new DataField<decimal>(nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
                 new DataField<int>(nameof(SimpleWithDateTimeAndDecimal.Int32Value))
                 );
@@ -513,7 +513,7 @@ namespace Parquet.Test.Serialisation {
 
             public string Name { get; set; }
 
-            public DateTimeOffset Date { get; set; }
+            public DateTime Date { get; set; }
         }
 
         public class SimpleStructureWithFewProperties {

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Data.SqlTypes;
 using Parquet.Data;
 using Parquet.File;
 
@@ -7,15 +9,26 @@ namespace Parquet.Schema {
     /// Field containing actual data, unlike fields containing metadata.
     /// </summary>
     public class DataField : Field {
+
+        private bool _isNullable;
+        private bool _isArray;
+
         /// <summary>
         /// Parquet data type of this element
         /// </summary>
+        [Obsolete]
         public DataType DataType { get; }
 
         /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
+        /// Changes <see cref="ClrNullableIfHasNullsType"/> property accordingly.
         /// </summary>
-        public bool IsNullable { get; }
+        public bool IsNullable {
+            get => _isNullable; internal set {
+                _isNullable = value;
+                ClrNullableIfHasNullsType = value ? ClrType.GetNullable() : ClrType;
+            }
+        }
 
         /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
@@ -26,7 +39,12 @@ namespace Parquet.Schema {
         /// <summary>
         /// When true, the value is an array rather than a single value.
         /// </summary>
-        public bool IsArray { get; }
+        public bool IsArray {
+            get => _isArray; internal set {
+                _isArray = value;
+                MaxRepetitionLevel = value ? 1 : 0;
+            }
+        }
 
         /// <summary>
         /// CLR type of this column. For nullable columns this type is not nullable.
@@ -43,13 +61,29 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="name">Field name</param>
         /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
-        public DataField(string name, Type clrType)
-           : this(name,
-                Discover(clrType).dataType,
-                Discover(clrType).hasNulls,
-                Discover(clrType).isArray,
-                null) {
-            //todo: calls to Discover() can be killed by making a constructor method
+        /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
+        public DataField(string name, Type clrType, string propertyName = null)
+           : base(name, SchemaType.Data) {
+
+            Discover(clrType, out Type baseType, out bool isArray, out bool isNullable);
+            ClrType = baseType;
+            if(!SchemaEncoder.IsSupported(ClrType)) {
+                if(clrType == typeof(DateTimeOffset)) {
+                    throw new NotSupportedException($"{nameof(DateTimeOffset)} support was dropped due to numerous ambiguity issues, please use {nameof(DateTime)} from now on.");
+                }
+                else {
+                    throw new NotSupportedException($"type {clrType} is not supported");
+                }
+            }
+
+            IsNullable = isNullable;
+            IsArray = isArray;
+            ClrPropName = propertyName ?? name;
+            MaxRepetitionLevel = isArray ? 1 : 0;
+
+#pragma warning disable CS0612 // Type or member is obsolete
+            DataType = SchemaEncoder.FindDataType(ClrType) ?? DataType.Unspecified;
+#pragma warning restore CS0612 // Type or member is obsolete
         }
 
         /// <summary>
@@ -60,19 +94,15 @@ namespace Parquet.Schema {
         /// <param name="isNullable">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
         /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in C#.</param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
+        [Obsolete("use constructor not referencing DataType")]
         public DataField(string name, DataType dataType, bool isNullable = true, bool isArray = false, string propertyName = null) :
             base(name, SchemaType.Data) {
 
             DataType = dataType;
+            ClrType = SchemaEncoder.FindSystemType(dataType);
             IsNullable = isNullable;
             IsArray = isArray;
             ClrPropName = propertyName ?? name;
-
-            MaxRepetitionLevel = isArray ? 1 : 0;
-
-            ClrType = SchemaEncoder.FindSystemType(dataType);
-            if(ClrType != null)
-                ClrNullableIfHasNullsType = isNullable ? ClrType.GetNullable() : ClrType;
         }
 
         internal override FieldPath PathPrefix {
@@ -117,7 +147,7 @@ namespace Parquet.Schema {
         }
 
         /// <inheritdoc/>
-        public override string ToString() => $"{Path} ({DataType})";
+        public override string ToString() => $"{Path} ({ClrType})";
 
         /// <summary>
         /// Basic equality check
@@ -129,30 +159,20 @@ namespace Parquet.Schema {
                 return false;
 
             return base.Equals(obj) &&
-                DataType == other.DataType &&
+                ClrType == other.ClrType &&
                 IsNullable == other.IsNullable &&
                 IsArray == other.IsArray;
         }
 
-        /// <summary>
-        /// Basic GetHashCode
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public override int GetHashCode() => base.GetHashCode();
 
         #region [ Type Resolution ]
 
-        private struct CInfo {
-            public DataType dataType;
-            public Type baseType;
-            public bool isArray;
-            public bool hasNulls;
-        }
-
-        private static CInfo Discover(Type t) {
-            Type baseType = t;
-            bool isArray = false;
-            bool hasNulls = false;
+        private static void Discover(Type t, out Type baseType, out bool isArray, out bool isNullable) {
+            baseType = t;
+            isArray = false;
+            isNullable = false;
 
             //throw a useful hint
             if(t.TryExtractDictionaryType(out Type dKey, out Type dValue)) {
@@ -166,20 +186,8 @@ namespace Parquet.Schema {
 
             if(baseType.IsNullable()) {
                 baseType = baseType.GetNonNullable();
-                hasNulls = true;
+                isNullable = true;
             }
-
-            DataType? dtn = SchemaEncoder.FindDataType(baseType);
-            if(dtn == null)
-                throw new NotSupportedException($"type '{baseType}' is not supported");
-            DataType dataType = dtn.Value;
-
-            return new CInfo {
-                dataType = dataType,
-                baseType = baseType,
-                isArray = isArray,
-                hasNulls = hasNulls
-            };
         }
 
         #endregion

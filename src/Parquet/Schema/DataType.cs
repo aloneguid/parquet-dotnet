@@ -1,7 +1,10 @@
-﻿namespace Parquet.Schema {
+﻿using System;
+
+namespace Parquet.Schema {
     /// <summary>
     /// List of supported data types
     /// </summary>
+    [Obsolete("Please remove references to this enum and use System.Type where appropriate. WIll be removed in the next major release.")]
     public enum DataType {
         /// <summary>
         /// Type is not specified, shouldn't be used.

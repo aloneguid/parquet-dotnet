@@ -34,6 +34,7 @@ namespace Parquet {
             int rowGroupSize = 5000,
             bool append = false)
             where T : new() {
+
             if(objectInstances == null)
                 throw new ArgumentNullException(nameof(objectInstances));
             if(destination == null)

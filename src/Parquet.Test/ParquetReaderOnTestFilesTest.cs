@@ -28,13 +28,13 @@ namespace Parquet.Test {
         [InlineData("dates.parquet")]
         [InlineData("dates.v2.parquet")]
         public async Task Datetypes_all(string parquetFile) {
-            DateTimeOffset offset, offset2;
+            DateTime offset, offset2;
             using(Stream s = OpenTestFile(parquetFile)) {
                 using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
-                    offset = (DateTimeOffset)(columns[1].Data.GetValue(0));
-                    offset2 = (DateTimeOffset)(columns[1].Data.GetValue(1));
+                    offset = (DateTime)(columns[1].Data.GetValue(0));
+                    offset2 = (DateTime)(columns[1].Data.GetValue(1));
                 }
             }
 
@@ -46,7 +46,7 @@ namespace Parquet.Test {
         [InlineData("datetime_other_system.parquet")]
         [InlineData("datetime_other_system.v2.parquet")]
         public async Task DateTime_FromOtherSystem(string parquetFile) {
-            DateTimeOffset offset;
+            DateTime offset;
             using(Stream s = OpenTestFile(parquetFile)) {
                 using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
@@ -54,7 +54,7 @@ namespace Parquet.Test {
                     DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
                     Assert.NotNull(as_at_date_col);
 
-                    offset = (DateTimeOffset)(as_at_date_col.Data.GetValue(0));
+                    offset = (DateTime)(as_at_date_col.Data.GetValue(0));
                     Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset.Date);
                 }
             }

@@ -107,8 +107,8 @@ namespace Parquet.Serialization {
             if(pt.IsNullable()) pt = pt.GetNonNullable();
             if(pt.TryExtractEnumerableType(out Type t)) pt = t;
 
-            DataType? dataType = SchemaEncoder.FindDataType(pt);
-            if(dataType == null) return null;
+            if(!SchemaEncoder.IsSupported(pt))
+                return null;
 
             ParquetColumnAttribute columnAttr = property.GetCustomAttribute<ParquetColumnAttribute>();
 
@@ -120,16 +120,16 @@ namespace Parquet.Serialization {
 
             if(columnAttr != null) {
                 if(columnAttr.UseListField)
-                    return new ListField(r.Name, dataType.Value, r.IsNullable, property.Name,
+                    return new ListField(r.Name, pt, property.Name,
                         columnAttr.ListContainerName, columnAttr.ListElementName);
 
                 if(pt == typeof(TimeSpan))
-                    r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.IsNullable, r.IsArray);
-                if(pt == typeof(DateTime) || pt == typeof(DateTimeOffset))
-                    r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.IsNullable, r.IsArray);
-                if(pt == typeof(decimal))
+                    r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.IsNullable);
+                else if(pt == typeof(DateTime))
+                    r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.IsNullable);
+                else if(pt == typeof(decimal))
                     r = new DecimalDataField(r.Name, columnAttr.DecimalPrecision, columnAttr.DecimalScale,
-                        columnAttr.DecimalForceByteArrayEncoding, r.IsNullable, r.IsArray);
+                        columnAttr.DecimalForceByteArrayEncoding, r.IsNullable);
             }
 
             r.ClrPropName = property.Name;

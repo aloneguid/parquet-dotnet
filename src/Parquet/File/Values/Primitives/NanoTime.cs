@@ -23,7 +23,7 @@ namespace Parquet.File.Values.Primitives {
 #endif
         }
 
-        public NanoTime(DateTimeOffset dt) {
+        public NanoTime(DateTime dt) {
             dt = dt.ToUniversalTime();
             int m = dt.Month;
             int d = dt.Day;
@@ -59,7 +59,7 @@ namespace Parquet.File.Values.Primitives {
             return r;
         }
 
-        public static implicit operator DateTimeOffset(NanoTime nanoTime) {
+        public static implicit operator DateTime(NanoTime nanoTime) {
             long L = nanoTime._julianDay + 68569;
             long N = (long)(4 * L / 146097);
             L = L - ((long)(((146097 * N) + 3) / 4));
@@ -75,9 +75,8 @@ namespace Parquet.File.Values.Primitives {
 
             long timeOfDayTicks = nanoTime._timeOfDayNanos / 100;
 
-            var result = new DateTimeOffset(Year, Month, Day,
-               0, 0, 0,
-               TimeSpan.Zero);
+            var result = new DateTime(Year, Month, Day,
+               0, 0, 0, DateTimeKind.Utc);
             result = result.AddTicks(timeOfDayTicks);
 
             return result;

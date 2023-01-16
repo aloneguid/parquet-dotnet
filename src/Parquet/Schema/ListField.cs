@@ -39,8 +39,23 @@ namespace Parquet.Schema {
         /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
         /// <param name="containerName">Container name</param>
         /// <param name="elementName">Element name</param>
+        [Obsolete]
         public ListField(string name, DataType dataType, bool hasNulls = true, string propertyName = null, string containerName = "list", string elementName = null) : this(name) {
             Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
+            ContainerName = containerName;
+            PathPrefix = null;
+        }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="ListField"/>
+        /// </summary>
+        /// <param name="name">Field name</param>
+        /// <param name="itemDataType">Type of the item in the list</param>
+        /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
+        /// <param name="containerName">Container name</param>
+        /// <param name="elementName">Element name</param>
+        public ListField(string name, Type itemDataType, string propertyName = null, string containerName = "list", string elementName = null) : this(name) {
+            Item = new DataField(elementName ?? name, itemDataType, propertyName ?? name);
             ContainerName = containerName;
             PathPrefix = null;
         }
