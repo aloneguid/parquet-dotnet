@@ -14,10 +14,5 @@ namespace Parquet {
         /// Gets or sets a value indicating whether big integers are always treated as dates
         /// </summary>
         public bool TreatBigIntegersAsDates { get; set; } = true;
-
-        /// <summary>
-        /// When true, date columns will be deserialized to <see cref="DateTime"/> instead of <see cref="DateTimeOffset"/>
-        /// </summary>
-        public bool PreferDateToDateTimeOffset { get; set; } = false;
     }
 }

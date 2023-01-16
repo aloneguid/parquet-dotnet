@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -72,32 +71,18 @@ namespace Parquet.Test {
             ["dateTime"] =
               new TestDesc {
                   Type = typeof(DateTime),
-                  Data = new DateTimeOffset[]
+                  Data = new DateTime[]
                  {
-                  new DateTimeOffset(new DateTime(2019, 12, 16), TimeSpan.Zero),
-                  new DateTimeOffset(new DateTime(2019, 12, 16), TimeSpan.Zero),
-                  new DateTimeOffset(new DateTime(2019, 12, 15), TimeSpan.Zero),
-                  new DateTimeOffset(new DateTime(2019, 12, 17), TimeSpan.Zero)
+                  new DateTime(2019, 12, 16),
+                  new DateTime(2019, 12, 16),
+                  new DateTime(2019, 12, 15),
+                  new DateTime(2019, 12, 17)
                  },
                   DistinctCount = 3,
                   NullCount = 0,
-                  Min = new DateTimeOffset(new DateTime(2019, 12, 15), TimeSpan.Zero),
-                  Max = new DateTimeOffset(new DateTime(2019, 12, 17), TimeSpan.Zero)
-              },
-            ["dateTimeWithOffset"] = new TestDesc {
-                Type = typeof(DateTime),
-                Data = new DateTimeOffset[]
-              {
-               new DateTimeOffset(new DateTime(2019, 12, 16), TimeSpan.FromHours(5)),
-               new DateTimeOffset(new DateTime(2019, 12, 16), TimeSpan.FromHours(5)),
-               new DateTimeOffset(new DateTime(2019, 12, 15), TimeSpan.FromHours(5)),
-               new DateTimeOffset(new DateTime(2019, 12, 17), TimeSpan.FromHours(5))
-              },
-                DistinctCount = 3,
-                NullCount = 0,
-                Min = new DateTimeOffset(new DateTime(2019, 12, 15), TimeSpan.FromHours(5)),
-                Max = new DateTimeOffset(new DateTime(2019, 12, 17), TimeSpan.FromHours(5))
-            }
+                  Min = new DateTime(2019, 12, 15),
+                  Max = new DateTime(2019, 12, 17)
+              }
         };
 
         [Theory]
@@ -107,7 +92,6 @@ namespace Parquet.Test {
         [InlineData("float")]
         [InlineData("double")]
         [InlineData("dateTime")]
-        [InlineData("dateTimeWithOffset")]
         public async Task Distinct_stat_for_basic_data_types(string name) {
             TestDesc test = NameToTest[name];
 

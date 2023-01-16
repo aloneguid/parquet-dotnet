@@ -50,6 +50,7 @@
 
     <ItemGroup>
         <PackageReference Include="IronCompress" Version="1.2.6" />
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

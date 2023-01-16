@@ -556,21 +556,19 @@ namespace Parquet.Test.Rows {
                new DataField<string>("name"),
                new ListField("observations",
                   new StructField("observation",
-                     new DataField<DateTimeOffset>("date"),
+                     new DataField<DateTime>("date"),
                      new DataField<bool>("bool"),
                      new DataField<IEnumerable<int?>>("values")))));
 
-            DateTimeOffset defaultDate = new DateTimeOffset(2018, 1, 1, 1, 1, 1, TimeSpan.Zero);
+            var defaultDate = new DateTime(2018, 1, 1, 1, 1, 1, DateTimeKind.Utc);
 
-            t.Add("London", new[]
-            {
-            new Row(defaultDate, true, new int?[] { 1, 2, 3, 4, 5 })
-         });
+            t.Add("London", new[] {
+                new Row(defaultDate, true, new int?[] { 1, 2, 3, 4, 5 })
+            });
 
-            t.Add("Oslo", new[]
-            {
-            new Row(defaultDate, false, new int?[] { null, null, null, null, null, null, null })
-         });
+            t.Add("Oslo", new[] {
+                new Row(defaultDate, false, new int?[] { null, null, null, null, null, null, null })
+            });
 
             string[] jsons = t.ToString("jsq").Split(new[] { Environment.NewLine }, StringSplitOptions.None);
             Assert.Equal($"{{'name': 'London', 'observations': [{{'date': '{defaultDate}', 'bool': true, 'values': [1, 2, 3, 4, 5]}}]}}", jsons[0]);

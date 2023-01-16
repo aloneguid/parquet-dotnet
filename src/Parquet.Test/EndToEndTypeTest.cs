@@ -22,7 +22,7 @@ namespace Parquet.Test {
                ["byte array"] = (new DataField<byte[]>("byte array"), Encoding.UTF8.GetBytes("raw byte string")),
                ["float"] = (new DataField<float>("float"), 1.23f),
                ["double"] = (new DataField<double>("double"), 10.44D),
-               ["simple DateTime"] = (new DataField<DateTime>("datetime"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
+               ["simple DateTime"] = (new DataField<DateTime>("datetime"), DateTime.UtcNow.RoundToSecond()),
                ["long"] = (new DataField<long>("long"), (long)1234),
 
                //difference cases of decimals
@@ -36,12 +36,11 @@ namespace Parquet.Test {
                //loses precision slightly, i.e.
                //Expected: 2017-07-13T10:58:44.3767154+00:00
                //Actual:   2017-07-12T10:58:44.3770000+00:00
-               ["dateTimeOffset"] = (new DataField<DateTimeOffset>("dateTimeOffset"), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
-               ["dateTimeOffsetWithOffset"] = (new DataField<DateTimeOffset>("dateTimeOffsetWithOffset"), new DateTimeOffset(new DateTime(2001, 12, 1, 0, 10, 0, DateTimeKind.Unspecified), TimeSpan.FromHours(3))),
-               ["impala date"] = (new DateTimeDataField("dateImpala", DateTimeFormat.Impala), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
-               ["dateDateAndTime"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTime), new DateTimeOffset(DateTime.UtcNow.RoundToSecond())),
+               ["dateTime"] = (new DataField<DateTime>("dateTime"), DateTime.UtcNow.RoundToSecond()),
+               ["impala date"] = (new DateTimeDataField("dateImpala", DateTimeFormat.Impala), DateTime.UtcNow.RoundToSecond()),
+               ["dateDateAndTime"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTime), DateTime.UtcNow.RoundToSecond()),
                // don't want any excess info in the offset INT32 doesn't contain or care about this data 
-               ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), new DateTimeOffset(DateTime.UtcNow.RoundToDay(), TimeSpan.Zero)),
+               ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
                ["interval"] = (new DataField<Interval>("interval"), new Interval(3, 2, 1)),
                // time test(loses precision slightly)
                ["time_micros"] = (new TimeSpanDataField("timeMicros", TimeSpanFormat.MicroSeconds), new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10)),
@@ -92,8 +91,7 @@ namespace Parquet.Test {
         [InlineData("fixed byte array decimal")]
         [InlineData("negative decimal")]
 
-        [InlineData("dateTimeOffset")]
-        [InlineData("dateTimeOffsetWithOffset")]
+        [InlineData("dateTime")]
         [InlineData("impala date")]
         [InlineData("dateDateAndTime")]
         [InlineData("dateDate")]

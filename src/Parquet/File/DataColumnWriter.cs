@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.IO;
 using Parquet.Data;
 using Parquet.File.Values;
 using Parquet.Schema;
@@ -18,6 +19,7 @@ namespace Parquet.File {
         private readonly CompressionMethod _compressionMethod;
         private readonly int _rowCount;
         private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
+        private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
 
         private struct PageTag {
             public int HeaderSize;
@@ -43,8 +45,9 @@ namespace Parquet.File {
             FieldPath fullPath, DataColumn column,
             CancellationToken cancellationToken = default) {
 
-            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(_compressionMethod, _stream, _schemaElement.Type, fullPath, 0);
-            Thrift.PageHeader ph = _footer.CreateDataPage(column.Count);
+            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(
+                _compressionMethod, _stream, _schemaElement.Type, fullPath, column.Count);
+
             _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
             List<PageTag> pages = await WriteColumnAsync(column, _schemaElement, maxRepetitionLevel, maxDefinitionLevel, cancellationToken);
@@ -53,8 +56,7 @@ namespace Parquet.File {
 
             //this count must be set to number of all values in the column, including nulls.
             //for hierarchy/repeated columns this is a count of flattened list, including nulls.
-            chunk.Meta_data.Num_values = ph.Data_page_header.Num_values;
-            ph.Data_page_header.Statistics = chunk.Meta_data.Statistics;   //simply copy statistics to page header
+            chunk.Meta_data.Num_values = column.Count;
 
             //the following counters must include both data size and header size
             chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
@@ -79,7 +81,7 @@ namespace Parquet.File {
 
             // todo: replace with RecycleableMemoryStream: https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream
             byte[] uncompressedData;
-            using(var ms = new MemoryStream()) {
+            using(RecyclableMemoryStream ms = _rmsMgr.GetStream() as RecyclableMemoryStream) {
 
                 //chain streams together so we have real streaming instead of wasting undefraggable LOH memory
                 if(column.RepetitionLevels != null) {

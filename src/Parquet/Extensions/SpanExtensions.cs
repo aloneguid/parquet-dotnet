@@ -1,7 +1,8 @@
-﻿using System.Numerics;
+﻿using System.Collections.Generic;
+using System.Numerics;
 
 namespace System {
-    static class SpanExtensions {
+    internal static class SpanExtensions {
         public static int ReadInt32(this Span<byte> span) {
             if(BitConverter.IsLittleEndian)
                 return (int)span[0] | ((int)span[1] << 8) | ((int)span[2] << 16) | ((int)span[3] << 24);
@@ -153,17 +154,6 @@ namespace System {
             }
         }
 
-        public static void MinMax(this ReadOnlySpan<DateTimeOffset> span, out DateTimeOffset min, out DateTimeOffset max) {
-            min = span.IsEmpty ? default(DateTimeOffset) : span[0];
-            max = min;
-            foreach(DateTimeOffset i in span) {
-                if(i < min)
-                    min = i;
-                if(i > max)
-                    max = i;
-            }
-        }
-
         public static void MinMax(this ReadOnlySpan<TimeSpan> span, out TimeSpan min, out TimeSpan max) {
             min = span.IsEmpty ? default(TimeSpan) : span[0];
             max = min;
@@ -179,12 +169,36 @@ namespace System {
             min = span.IsEmpty ? default(string) : span[0];
             max = min;
             foreach(string s in span) {
-                int cmp = s.CompareTo(min);
+                int cmp = string.CompareOrdinal(s, min);
                 if(cmp < 0)
                     min = s;
-                else if(cmp > 0)
+
+                cmp = string.CompareOrdinal(s, max);
+                if(cmp > 0)
                     max = s;
             }
+        }
+
+        public static int DistinctCount(this ReadOnlySpan<string> span) {
+
+            /*
+             * Use "Ordinal" comparison as it's the fastest (13 times faster than invariant).
+             * .NET standard 2.0 does not have pre-allocated hash version which give a tiny performance boost.
+             * Interestingly, hashcode based hash for strings is slower.
+             */
+
+#if NETSTANDARD2_0
+            var hs = new HashSet<string>(StringComparer.Ordinal);
+#else
+            // pre-allocation is a tiny performance boost
+            var hs = new HashSet<string>(span.Length, StringComparer.Ordinal);
+#endif
+
+            foreach(string s in span) {
+                hs.Add(s);
+            }
+
+            return hs.Count;
         }
     }
 }

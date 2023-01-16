@@ -93,17 +93,17 @@ namespace Parquet.PerfRunner.Benchmarks {
                     break;
                 case "date":
                     _pqnc = new DataColumn(
-                        new DataField<DateTimeOffset>("dto"),
-                        Enumerable.Range(0, DataSize).Select(i => (DateTimeOffset)DateTime.UtcNow.AddSeconds(i)).ToArray());
-                    _pqss = new Column[] { new Column<DateTimeOffset>("dto") };
-                    _pqsd = (DateTimeOffset[])_pqnc.Data;
+                        new DataField<DateTime>("dto"),
+                        Enumerable.Range(0, DataSize).Select(i => DateTime.UtcNow.AddSeconds(i)).ToArray());
+                    _pqss = new Column[] { new Column<DateTime>("dto") };
+                    _pqsd = (DateTime[])_pqnc.Data;
                     _pqsWriteAction = w => {
-                        using(LogicalColumnWriter<DateTimeOffset> colWriter = w.NextColumn().LogicalWriter<DateTimeOffset>()) {
-                            colWriter.WriteBatch((DateTimeOffset[])_pqsd);
+                        using(LogicalColumnWriter<DateTime> colWriter = w.NextColumn().LogicalWriter<DateTime>()) {
+                            colWriter.WriteBatch((DateTime[])_pqsd);
                         }
                     };
                     _pqsReadAction = (r, n) => {
-                        DateTimeOffset[] data = r.Column(0).LogicalReader<DateTimeOffset>().ReadAll(n);
+                        DateTime[] data = r.Column(0).LogicalReader<DateTime>().ReadAll(n);
                     };
 
                     break;

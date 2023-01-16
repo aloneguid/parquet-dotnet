@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Numerics;
-using System.Xml.Linq;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Thrift;
+using SType = System.Type;
 
 namespace Parquet.Data {
     static class SchemaEncoder {
@@ -13,43 +12,42 @@ namespace Parquet.Data {
         class LookupItem {
             public Thrift.Type ThriftType { get; set; }
 
-            public DataType? DefaultDataType { get; set; }
+            public SType SystemType { get; set; }
 
-            public Dictionary<Thrift.ConvertedType, DataType> ConvertedTypes { get; set; }
+            public Dictionary<Thrift.ConvertedType, SType> ConvertedTypes { get; set; }
         }
 
         class LookupTable : List<LookupItem> {
 
             // all the cached lookups built during static initialisation
-            private readonly Dictionary<Thrift.Type, DataType> _typeToDefaultType = new();
-            private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, DataType> _typeAndConvertedTypeToType = new();
-            private readonly Dictionary<DataType, System.Type> _dataTypeToSystemType = new();
-            private readonly Dictionary<System.Type, DataType> _systemTypeToDataType = new();
-            private readonly Dictionary<System.Type, Tuple<Thrift.Type, Thrift.ConvertedType?>> _systemTypeToTypeTuple = new();
+            private readonly HashSet<SType> _supportedTypes = new();
+            private readonly Dictionary<Thrift.Type, SType> _typeToDefaultType = new();
+            private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, SType> _typeAndConvertedTypeToType = new();
+            private readonly Dictionary<SType, Tuple<Thrift.Type, Thrift.ConvertedType?>> _systemTypeToTypeTuple = new();
 
-            public void Add(Thrift.Type thriftType, DataType dataType, System.Type clrType, params object[] options) {
-                _typeToDefaultType[thriftType] = dataType;
-                _dataTypeToSystemType[dataType] = clrType;
-                _systemTypeToDataType[clrType] = dataType;
-                _systemTypeToTypeTuple[clrType] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, null);
-                for(int i = 0; i < options.Length; i+=3) { 
+            public void Add(Thrift.Type thriftType, SType t, params object[] options) {
+                _typeToDefaultType[thriftType] = t;
+                _systemTypeToTypeTuple[t] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, null);
+                _supportedTypes.Add(t);
+                for(int i = 0; i < options.Length; i+=2) { 
                     var ct = (Thrift.ConvertedType)options[i];
-                    var dt = (DataType)options[i+1];
-                    var clr = (System.Type)options[i+2];
-                    _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), dt);
-                    _dataTypeToSystemType[dt] = clr;
-                    _systemTypeToDataType[clr] = dt;
+                    var clr = (System.Type)options[i+1];
+                    _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
 
                     // more specific version overrides less specific
                     _systemTypeToTypeTuple[clr] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, ct);
+
+                    _supportedTypes.Add(clr);
                 }
             }
 
-            public DataType? FindDataType(Thrift.SchemaElement se) {
+            public SType FindSystemType(Thrift.SchemaElement se) {
                 if(!se.__isset.type) return null;
 
                 if(se.__isset.converted_type && 
-                    _typeAndConvertedTypeToType.TryGetValue(new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type), out DataType match)) {
+                    _typeAndConvertedTypeToType.TryGetValue(
+                        new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type),
+                        out SType match)) {
                     return match;
                 }
 
@@ -60,18 +58,10 @@ namespace Parquet.Data {
                 return null;
             }
 
-            public DataType? FindDataType(System.Type type) {
-                return _systemTypeToDataType.TryGetValue(type, out DataType match) ? match : null;
-            }
+            public bool FindTypeTuple(SType type, out Thrift.Type ttype, out Thrift.ConvertedType? convertedType) {
 
-            public System.Type FindSystemType(DataType dataType) {
-                _dataTypeToSystemType.TryGetValue(dataType, out System.Type type);
-                return type;
-            }
-
-            public bool FindTypeTuple(System.Type type, out Thrift.Type ttype, out Thrift.ConvertedType? convertedType) {
                 if(!_systemTypeToTypeTuple.TryGetValue(type, out Tuple<Thrift.Type, ConvertedType?> tuple)) {
-                    ttype = default(Thrift.Type);
+                    ttype = default;
                     convertedType = null;
                     return false;
                 }
@@ -80,41 +70,65 @@ namespace Parquet.Data {
                 convertedType = tuple.Item2;
                 return true;
             }
+
+            public bool IsSupported(SType t) => _supportedTypes.Contains(t);
         }
 
+        [Obsolete]
+        private static readonly Dictionary<SType, DataType> SystemTypeToObsoleteType = new() {
+            { typeof(bool), DataType.Boolean },
+            { typeof(byte), DataType.Byte },
+            { typeof(sbyte), DataType.SignedByte },
+            { typeof(short), DataType.Int16 },
+            { typeof(ushort), DataType.UnsignedInt16 },
+            { typeof(int), DataType.Int32 },
+            { typeof(uint), DataType.UnsignedInt32 },
+            { typeof(long), DataType.Int64 },
+            { typeof(ulong), DataType.UnsignedInt64 },
+            { typeof(BigInteger), DataType.Int96 },
+            { typeof(byte[]), DataType.ByteArray },
+            { typeof(string), DataType.String },
+            { typeof(float), DataType.Float },
+            { typeof(double), DataType.Double },
+            { typeof(decimal), DataType.Decimal },
+            { typeof(DateTime), DataType.DateTimeOffset },
+            { typeof(Interval), DataType.Interval },
+            { typeof(TimeSpan), DataType.TimeSpan }
+        };
+
         private static readonly LookupTable LT = new LookupTable {
-            { Thrift.Type.BOOLEAN, DataType.Boolean, typeof(bool) },
-            { Thrift.Type.INT32, DataType.Int32, typeof(int),
-                Thrift.ConvertedType.UINT_8, DataType.Byte, typeof(byte),
-                Thrift.ConvertedType.INT_8, DataType.SignedByte, typeof(sbyte),
-                Thrift.ConvertedType.UINT_16, DataType.UnsignedInt16, typeof(ushort),
-                Thrift.ConvertedType.INT_16, DataType.Int16, typeof(short),
-                Thrift.ConvertedType.UINT_32, DataType.UnsignedInt32, typeof(uint),
-                Thrift.ConvertedType.INT_32, DataType.Int32, typeof(int),
-                Thrift.ConvertedType.DATE, DataType.DateTimeOffset, typeof(DateTimeOffset),
-                Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal),
-                Thrift.ConvertedType.TIME_MILLIS, DataType.TimeSpan, typeof(TimeSpan),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, DataType.DateTimeOffset, typeof(DateTimeOffset)
+            { Thrift.Type.BOOLEAN, typeof(bool) },
+            { Thrift.Type.INT32, typeof(int),
+                Thrift.ConvertedType.UINT_8, typeof(byte),
+                Thrift.ConvertedType.INT_8, typeof(sbyte),
+                Thrift.ConvertedType.UINT_16, typeof(ushort),
+                Thrift.ConvertedType.INT_16, typeof(short),
+                Thrift.ConvertedType.UINT_32, typeof(uint),
+                Thrift.ConvertedType.INT_32, typeof(int),
+                Thrift.ConvertedType.DATE, typeof(DateTime),
+                Thrift.ConvertedType.DECIMAL, typeof(decimal),
+                Thrift.ConvertedType.TIME_MILLIS, typeof(TimeSpan),
+                Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime)
             },
-            { Thrift.Type.INT64 , DataType.Int64, typeof(long),
-                Thrift.ConvertedType.INT_64, DataType.Int64, typeof(long),
-                Thrift.ConvertedType.UINT_64, DataType.UnsignedInt64, typeof(ulong),
-                Thrift.ConvertedType.TIME_MICROS, DataType.TimeSpan, typeof(TimeSpan),
-                Thrift.ConvertedType.TIMESTAMP_MICROS, DataType.DateTimeOffset, typeof(DateTimeOffset),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, DataType.DateTimeOffset, typeof(DateTimeOffset),
-                Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal)
+            { Thrift.Type.INT64 , typeof(long),
+                Thrift.ConvertedType.INT_64, typeof(long),
+                Thrift.ConvertedType.UINT_64, typeof(ulong),
+                Thrift.ConvertedType.TIME_MICROS, typeof(TimeSpan),
+                Thrift.ConvertedType.TIMESTAMP_MICROS, typeof(DateTime),
+                Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime),
+                Thrift.ConvertedType.DECIMAL, typeof(decimal)
             },
-            { Thrift.Type.INT96, DataType.DateTimeOffset, typeof(DateTimeOffset) },
-            { Thrift.Type.INT96, DataType.Int96, typeof(BigInteger) },
-            { Thrift.Type.FLOAT, DataType.Float, typeof(float) },
-            { Thrift.Type.DOUBLE, DataType.Double, typeof(double) },
-            { Thrift.Type.BYTE_ARRAY, DataType.ByteArray, typeof(byte[]),
-                Thrift.ConvertedType.UTF8, DataType.String, typeof(string),
-                Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal)
+            { Thrift.Type.INT96, typeof(DateTime) },
+            { Thrift.Type.INT96, typeof(BigInteger) },
+            { Thrift.Type.FLOAT, typeof(float) },
+            { Thrift.Type.DOUBLE, typeof(double) },
+            { Thrift.Type.BYTE_ARRAY, typeof(byte[]),
+                Thrift.ConvertedType.UTF8, typeof(string),
+                Thrift.ConvertedType.DECIMAL, typeof(decimal)
             },
-            { Thrift.Type.FIXED_LEN_BYTE_ARRAY, DataType.ByteArray, typeof(byte[]),
-                Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal),
-                Thrift.ConvertedType.INTERVAL, DataType.Interval, typeof(Interval)
+            { Thrift.Type.FIXED_LEN_BYTE_ARRAY, typeof(byte[]),
+                Thrift.ConvertedType.DECIMAL, typeof(decimal),
+                Thrift.ConvertedType.INTERVAL, typeof(Interval)
             }
         };
 
@@ -209,6 +223,8 @@ namespace Parquet.Data {
             return true;
         }
 
+        public static bool IsSupported(SType t) => t == typeof(DateTime) || LT.IsSupported(t);
+
         /// <summary>
         /// Builds <see cref="Field"/> from thrift schema
         /// </summary>
@@ -222,22 +238,26 @@ namespace Parquet.Data {
             ref int index, out int ownedChildCount) {
 
             Thrift.SchemaElement se = schema[index];
-            bool hasNulls = se.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
+            bool isNullable = se.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
             bool isArray = se.Repetition_type == Thrift.FieldRepetitionType.REPEATED;
             Field f = null;
             ownedChildCount = 0;
 
-            DataType? dataType = LT.FindDataType(se);
-            if(dataType != null) {
+            SType t = LT.FindSystemType(se);
+            if(t != null) {
                 // correction taking int account passed options
-                if(options.TreatBigIntegersAsDates && dataType == DataType.Int96)
-                    dataType = DataType.DateTimeOffset;
+                if(options.TreatBigIntegersAsDates && t == typeof(BigInteger))
+                    t = typeof(DateTime);
 
-                if(options.TreatByteArrayAsString && dataType == DataType.ByteArray)
-                    dataType = DataType.String;
+                if(options.TreatByteArrayAsString && t == typeof(byte[]))
+                    t = typeof(string);
 
                 // successful field built
-                f = new DataField(se.Name, dataType.Value, hasNulls, isArray);
+                var df = new DataField(se.Name, t);
+                df.IsNullable = isNullable;
+                df.IsArray = isArray;
+                f = df;
+
                 index++;
                 return f;
             }
@@ -259,7 +279,7 @@ namespace Parquet.Data {
         /// <param name="df"></param>
         /// <param name="tse"></param>
         private static void AdjustEncoding(DataField df, Thrift.SchemaElement tse) {
-            if(df.DataType == DataType.DateTimeOffset) {
+            if(df.ClrType == typeof(DateTime)) {
                 if(df is DateTimeDataField dfDateTime)
                     switch(dfDateTime.DateTimeFormat) {
                         case DateTimeFormat.DateAndTime:
@@ -275,7 +295,7 @@ namespace Parquet.Data {
                     }
                 else
                     tse.Converted_type = Thrift.ConvertedType.DATE;
-            } else if(df.DataType == DataType.Decimal) {
+            } else if(df.ClrType == typeof(decimal)) {
                 if(df is DecimalDataField dfDecimal) {
                     if(dfDecimal.ForceByteArrayEncoding)
                         tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
@@ -296,10 +316,10 @@ namespace Parquet.Data {
                     tse.Scale = DecimalFormatDefaults.DefaultScale;
                     tse.Type_length = 16;
                 }
-            } else if(df.DataType == DataType.Interval) {
+            } else if(df.ClrType == typeof(Interval)) {
                 //set type length to 12
                 tse.Type_length = 12;
-            } else if(df.DataType == DataType.TimeSpan) {
+            } else if(df.ClrType == typeof(TimeSpan)) {
                 if(df is TimeSpanDataField dfTime) {
                     switch(dfTime.TimeSpanFormat) {
                         case TimeSpanFormat.MicroSeconds:
@@ -418,16 +438,20 @@ namespace Parquet.Data {
         /// <summary>
         /// Finds corresponding .NET type
         /// </summary>
-        public static System.Type FindSystemType(DataType dataType) {
-            return LT.FindSystemType(dataType);
+        [Obsolete]
+        public static SType FindSystemType(DataType dataType) {
+            foreach(KeyValuePair<SType, DataType> pair in SystemTypeToObsoleteType) {
+                if(pair.Value == dataType)
+                    return pair.Key;
+            }
+
+            return null;
         }
 
-        public static DataType? FindDataType(System.Type type) {
+        [Obsolete]
+        public static DataType? FindDataType(SType type) {
 
-            if(type == typeof(DateTime))
-                type = typeof(DateTimeOffset);
-
-            return LT.FindDataType(type);
+            return SystemTypeToObsoleteType[type];
         }
     }
 }

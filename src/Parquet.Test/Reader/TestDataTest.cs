@@ -64,7 +64,7 @@ namespace Parquet.Test.Reader
             typeof(double?),
             typeof(string),
             typeof(string),
-            typeof(DateTimeOffset?));
+            typeof(DateTime?));
       }
 
       [Theory]

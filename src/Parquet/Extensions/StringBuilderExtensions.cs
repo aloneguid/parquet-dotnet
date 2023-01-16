@@ -109,7 +109,7 @@ namespace Parquet.Extensions {
                 sb.Append(HttpEncoder.JavaScriptStringEncode((string)value));
                 sb.Append(quote);
             }
-            else if(t == typeof(DateTimeOffset)) {
+            else if(t == typeof(DateTime)) {
                 sb.Append(quote);
                 sb.Append(value.ToString());
                 sb.Append(quote);
