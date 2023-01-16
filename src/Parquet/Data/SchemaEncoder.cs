@@ -109,7 +109,8 @@ namespace Parquet.Data {
             { Thrift.Type.FLOAT, DataType.Float, typeof(float) },
             { Thrift.Type.DOUBLE, DataType.Double, typeof(double) },
             { Thrift.Type.BYTE_ARRAY, DataType.ByteArray, typeof(byte[]),
-                Thrift.ConvertedType.UTF8, DataType.String, typeof(string)
+                Thrift.ConvertedType.UTF8, DataType.String, typeof(string),
+                Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal)
             },
             { Thrift.Type.FIXED_LEN_BYTE_ARRAY, DataType.ByteArray, typeof(byte[]),
                 Thrift.ConvertedType.DECIMAL, DataType.Decimal, typeof(decimal),
@@ -398,7 +399,7 @@ namespace Parquet.Data {
 
                 tse.Repetition_type = dataField.IsArray && !isList
                    ? Thrift.FieldRepetitionType.REPEATED
-                   : (dataField.HasNulls ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
+                   : (dataField.IsNullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
                 container.Add(tse);
                 parent.Num_children += 1;
 

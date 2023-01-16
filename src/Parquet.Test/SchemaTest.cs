@@ -64,14 +64,14 @@ namespace Parquet.Test {
         public void String_is_always_nullable() {
             var se = new DataField<string>("id");
 
-            Assert.True(se.HasNulls);
+            Assert.True(se.IsNullable);
         }
 
         [Fact]
         public void Datetime_is_not_nullable_by_default() {
             var se = new DataField<DateTime>("id");
 
-            Assert.False(se.HasNulls);
+            Assert.False(se.IsNullable);
         }
 
         [Fact]
@@ -117,7 +117,7 @@ namespace Parquet.Test {
             Assert.Equal(DataType.ByteArray, field.DataType);
             Assert.Equal(typeof(byte[]), field.ClrType);
             Assert.False(field.IsArray);
-            Assert.True(field.HasNulls);
+            Assert.True(field.IsNullable);
         }
 
         [Fact]

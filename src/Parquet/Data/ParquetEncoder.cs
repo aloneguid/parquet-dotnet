@@ -748,10 +748,10 @@ namespace Parquet.Data {
         public static void Encode(ReadOnlySpan<decimal> data, Stream destination, Thrift.SchemaElement tse) {
             switch(tse.Type) {
                 case Thrift.Type.INT32:
-                    double sf32 = Math.Pow(10, tse.Scale);
+                    double scaleFactor32 = Math.Pow(10, tse.Scale);
                     foreach(decimal d in data) {
                         try {
-                            int i = (int)(d * (decimal)sf32);
+                            int i = (int)(d * (decimal)scaleFactor32);
                             byte[] b = BitConverter.GetBytes(i);
                             destination.Write(b, 0, b.Length);
                         }
@@ -837,6 +837,27 @@ namespace Parquet.Data {
                             ArrayPool<byte>.Shared.Return(raw);
                         }
 
+                    }
+                case Thrift.Type.BYTE_ARRAY: {
+                        // type_length: 0
+                        // precision: 4
+                        // scale: 2
+                        // see https://github.com/apache/arrow/pull/2646/files
+
+                        int read = 0;
+                        // convert each byte chunk to valid decimal bytes
+                        while(read < data.Length) {
+                            int length = source.ReadInt32();
+                            if(length > 0) {
+                                byte[] raw = ArrayPool<byte>.Shared.Rent(length);
+                                Span<byte> span = raw.AsSpan(0, length);
+                                Read(source, span);
+                                span.Reverse();
+                                decimal dc = new BigDecimal(span.ToArray(), tse, true);
+                                data[read++] = dc;
+                            }
+                        }
+                        return read;
                     }
                     
                 default:

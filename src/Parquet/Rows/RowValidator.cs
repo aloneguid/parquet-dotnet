@@ -66,7 +66,7 @@ namespace Parquet.Rows {
 
         private static void ValidatePrimitive(DataField df, object value) {
             if(value == null) {
-                if(!df.HasNulls)
+                if(!df.IsNullable)
                     throw new ArgumentException($"element is null but column '{df.Name}' does not accept nulls");
             }
             else {

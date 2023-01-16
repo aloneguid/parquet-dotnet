@@ -120,16 +120,16 @@ namespace Parquet.Serialization {
 
             if(columnAttr != null) {
                 if(columnAttr.UseListField)
-                    return new ListField(r.Name, dataType.Value, r.HasNulls, property.Name,
+                    return new ListField(r.Name, dataType.Value, r.IsNullable, property.Name,
                         columnAttr.ListContainerName, columnAttr.ListElementName);
 
                 if(pt == typeof(TimeSpan))
-                    r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.HasNulls, r.IsArray);
+                    r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.IsNullable, r.IsArray);
                 if(pt == typeof(DateTime) || pt == typeof(DateTimeOffset))
-                    r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.HasNulls, r.IsArray);
+                    r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.IsNullable, r.IsArray);
                 if(pt == typeof(decimal))
                     r = new DecimalDataField(r.Name, columnAttr.DecimalPrecision, columnAttr.DecimalScale,
-                        columnAttr.DecimalForceByteArrayEncoding, r.HasNulls, r.IsArray);
+                        columnAttr.DecimalForceByteArrayEncoding, r.IsNullable, r.IsArray);
             }
 
             r.ClrPropName = property.Name;

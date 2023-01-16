@@ -3,11 +3,9 @@
 
 ![Icon](img/banner.jpg)
 
----
 
 
-
-**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
+**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
 Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs and much more.
 
@@ -124,7 +122,7 @@ The major difference between v4 and v3 is v4 fully migrated to async API. In mos
 - Native Windows [Parquet Viewer app](https://github.com/mukunku/ParquetViewer).
 - [Recfluence](https://github.com/markledwich2/Recfluence) YouTube analytics.
 
-and [many more](https://github.com/aloneguid/parquet-dotnet/network/dependents). Want to be listed here? Just raise a PR.
+and [many more](https://github.com/aloneguid/parquet-dotnet/network/dependents). Want to be listed here? Just raise a PR or comment on this issue.
 
 ## Contributions
 

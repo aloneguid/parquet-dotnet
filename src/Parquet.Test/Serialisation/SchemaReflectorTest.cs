@@ -57,32 +57,32 @@ namespace Parquet.Test.Serialisation {
             DataField id = (DataField)schema[0];
             Assert.Equal("Id", id.Name);
             Assert.Equal(DataType.Int32, id.DataType);
-            Assert.False(id.HasNulls);
+            Assert.False(id.IsNullable);
             Assert.False(id.IsArray);
 
             DataField altId = (DataField)schema[1];
             Assert.Equal("AltId", altId.Name);
             Assert.Equal(DataType.Int32, id.DataType);
-            Assert.False(id.HasNulls);
+            Assert.False(id.IsNullable);
             Assert.False(id.IsArray);
 
             DataField nullableFloat = (DataField)schema[2];
             Assert.Equal("NullableFloat", nullableFloat.Name);
             Assert.Equal(DataType.Float, nullableFloat.DataType);
-            Assert.True(nullableFloat.HasNulls);
+            Assert.True(nullableFloat.IsNullable);
             Assert.False(nullableFloat.IsArray);
 
             DataField intArray = (DataField)schema[3];
             Assert.Equal("IntArray", intArray.Name);
             Assert.Equal(DataType.Int32, intArray.DataType);
-            Assert.False(intArray.HasNulls);
+            Assert.False(intArray.IsNullable);
             Assert.True(intArray.IsArray);
         }
 
         private static void VerifyPocoSubClassField(DataField extraProp) {
             Assert.Equal("ExtraProperty", extraProp.Name);
             Assert.Equal(DataType.Int32, extraProp.DataType);
-            Assert.False(extraProp.HasNulls);
+            Assert.False(extraProp.IsNullable);
             Assert.False(extraProp.IsArray);
         }
 

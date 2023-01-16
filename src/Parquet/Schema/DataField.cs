@@ -15,7 +15,13 @@ namespace Parquet.Schema {
         /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
         /// </summary>
-        public bool HasNulls { get; }
+        public bool IsNullable { get; }
+
+        /// <summary>
+        /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
+        /// </summary>
+        [Obsolete("Use IsNullable instead.")]
+        public bool HasNulls => IsNullable;
 
         /// <summary>
         /// When true, the value is an array rather than a single value.
@@ -58,7 +64,7 @@ namespace Parquet.Schema {
             base(name, SchemaType.Data) {
 
             DataType = dataType;
-            HasNulls = hasNulls;
+            IsNullable = hasNulls;
             IsArray = isArray;
             ClrPropName = propertyName ?? name;
 
@@ -80,7 +86,7 @@ namespace Parquet.Schema {
         /// </summary>
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             MaxRepetitionLevel = parentRepetitionLevel + (IsArray ? 1 : 0);
-            MaxDefinitionLevel = parentDefinitionLevel + (HasNulls ? 1 : 0);
+            MaxDefinitionLevel = parentDefinitionLevel + (IsNullable ? 1 : 0);
         }
 
         /// <summary>
@@ -124,7 +130,7 @@ namespace Parquet.Schema {
 
             return base.Equals(obj) &&
                 DataType == other.DataType &&
-                HasNulls == other.HasNulls &&
+                IsNullable == other.IsNullable &&
                 IsArray == other.IsArray;
         }
 

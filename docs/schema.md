@@ -2,7 +2,7 @@
 
 Due to the fact that Parquet is s strong typed format you need to declare a schema before writing any data.
 
-Schema can be defined by creating an instance of `Schema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `Schema` exist to simplify the schema declaration, but we are going to be more specific on this page.
+Schema can be defined by creating an instance of `ParquetSchema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `ParquetSchema` exist to simplify the schema declaration, but we are going to be more specific on this page.
 
 There are several types of fields you can specify in your schema, and the most common is `DataField`. Data field is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
 
