@@ -1,4 +1,5 @@
 using Parquet.Data;
+using Parquet.Schema;
 using System;
 using System.IO;
 using System.Linq;
@@ -7,7 +8,8 @@ using Xunit;
 
 namespace Parquet.Test {
     /// <summary>
-    /// Tests a set of predefined test files that they read back correct
+    /// Tests a set of predefined test files that they read back correct.
+    /// Find more test data (some taken from there): https://github.com/apache/parquet-testing/tree/master/data
     /// </summary>
     public class ParquetReaderOnTestFilesTest : TestBase {
 
@@ -90,6 +92,23 @@ namespace Parquet.Test {
 
                 }
             }
+        }
+
+        [Fact]
+        public async Task ByteArrayDecimal() {
+            using Stream s = OpenTestFile("byte_array_decimal.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+            ParquetSchema schema = r.Schema;
+            Assert.Equal("value", schema[0].Name);
+
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+            Assert.Single(cols);
+            DataColumn dc = cols[0];
+
+            Assert.Equal(
+                Enumerable.Range(1, 24).Select(i => (decimal?)i),
+                (decimal?[])dc.Data);
         }
     }
 }

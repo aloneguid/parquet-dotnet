@@ -223,7 +223,7 @@ namespace Parquet.Serialization.Values {
             il.GetArrayLength(data, dataLength);
 
             LocalBuilder dataItem = il.DeclareLocal(field.ClrNullableIfHasNullsType);  //current value
-            bool dataIsRef = field.HasNulls && !field.ClrNullableIfHasNullsType.IsSystemNullable();
+            bool dataIsRef = field.IsNullable && !field.ClrNullableIfHasNullsType.IsSystemNullable();
 
             LocalBuilder classInstance = il.DeclareLocal(classType);
 

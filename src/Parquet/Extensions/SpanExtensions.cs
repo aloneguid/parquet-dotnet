@@ -8,7 +8,7 @@ namespace System {
             return ((int)span[0] << 24) | ((int)span[1] << 16) | ((int)span[2] << 8) | (int)span[3];
         }
 
-        // All of these could be replaced with generic math, but we don't have access to it
+        // All of these could be replaced with generic math, but we don't have access to it due to supporting older than .NET 6
 
         public static void MinMax(this ReadOnlySpan<byte> span, out byte min, out byte max) {
             min = span.IsEmpty ? default(byte) : span[0];

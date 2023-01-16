@@ -16,7 +16,7 @@ or
 var field= new DataField("items", DataType.Int32, isArray: true);
 ```
 
-Apparently to check if the field is repeated you can always check `.IsArray` boolean flag.
+Apparently to check if the field is repeated you can always check `.IsArray` Boolean flag.
 
 Array column is also a usual instance of the `DataColumm` class, however in order to populate it you need to pass **repetition levels**. Repetition levels specify *at which level array starts* (please read more details on this in the link above). 
 
