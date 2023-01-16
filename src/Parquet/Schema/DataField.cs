@@ -57,14 +57,14 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="name">Field name.</param>
         /// <param name="dataType">Native Parquet type</param>
-        /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
+        /// <param name="isNullable">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
         /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in C#.</param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
-        public DataField(string name, DataType dataType, bool hasNulls = true, bool isArray = false, string propertyName = null) :
+        public DataField(string name, DataType dataType, bool isNullable = true, bool isArray = false, string propertyName = null) :
             base(name, SchemaType.Data) {
 
             DataType = dataType;
-            IsNullable = hasNulls;
+            IsNullable = isNullable;
             IsArray = isArray;
             ClrPropName = propertyName ?? name;
 
@@ -72,7 +72,7 @@ namespace Parquet.Schema {
 
             ClrType = SchemaEncoder.FindSystemType(dataType);
             if(ClrType != null)
-                ClrNullableIfHasNullsType = hasNulls ? ClrType.GetNullable() : ClrType;
+                ClrNullableIfHasNullsType = isNullable ? ClrType.GetNullable() : ClrType;
         }
 
         internal override FieldPath PathPrefix {
