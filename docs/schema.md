@@ -20,11 +20,11 @@ The second one is just a shortcut to `DataField` that allows you to use .NET Gen
 
 ## Null Values
 
-Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly:
+Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly by setting `isNullable` to `true`:
 
 ```csharp
 new DataField<int?>("id");
-
+// or
 new DataField("id", DataType.Int32, true);
 ```
 
@@ -58,9 +58,11 @@ new DecimalDataField("decInt32", 4, 1); // uses precision 4 and scale 1
 new DecimalDataField("decMinus", 10, 2, true); // uses precision 10 and scale 2, and enforces legacy decimal encoding that Impala understands
 ```
 
+Since v4.2.3 variable-size decimal encoding [(variant 4)](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) is supported by the reader.
+
 ## Repeatable Fields
 
-Parquet.Net supports repeatable fields i.e. fields that contain an array of values instead of just one single value.
+Repeatable fields are fields that contain an array of values instead of just one single value.
 
 To declare a repeatable field in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
 
@@ -76,27 +78,4 @@ When writing to the field you can specify any value which derives from `IEnumera
 ds.Add(1, new int[] { 1, 2, 3 });
 ```
 
-When reading schema back, you can check if it's repeatable by calling to `.IsArray` member. 
-
-## Supported Types
-
-Parquet.Net tries to fit natively into .NET environment and map built-in CLR types to Parquet type system. The following table lists the types supported at the moment. These are the types you can specify in the constructor of `SchemaElement<TType>`:
-
-| CLR Type                               | Parquet Type | Parquet Annotation |
-| -------------------------------------- | ------------ | ------------------ |
-| System.Byte (byte)                     | INT32        | UNIT_8             |
-| System.SByte (sbyte)                   | INT32        | UINT_8             |
-| byte[]                                 | BYTE_ARRAY   |                    |
-| System.Int16 (short)                   | INT_32       | INT_16             |
-| System.UInt16 (ushort)                 | INT_32       | UINT_16            |
-| System.Int32 (int)                     | INT32        |                    |
-| System.UInt32 (uint)                   | INT32        | UINT_32            |
-| System.Boolean (bool)                  | BOOLEAN      |                    |
-| System.String (string)                 | BYTE_ARRAY   | UTF8               |
-| System.Single (float)                  | FLOAT        |                    |
-| System.Int64 (long)                    | INT64        |                    |
-| System.UInt64 (ulong)                  | INT64        | UINT_64            |
-| System.Double (double)                 | DOUBLE       |                    |
-| System.Decimal (decimal)               | BYTE_ARRAY   | DECIMAL            |
-| System.DateTimeOffset (DateTimeOffset) | INT96        |                    |
-| System.DateTime (DateTime)             | INT96        |                    |
+When reading schema back, you can check if it's repeatable by calling to `.IsArray` property. 
