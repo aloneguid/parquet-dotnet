@@ -330,7 +330,7 @@ namespace Parquet.File {
                 case Thrift.Encoding.RLE_DICTIONARY:
                     if(cd.indexes == null)
                         cd.indexes = new int[(int)totalValues];
-                    indexCount = ReadPlainDictionary(reader, maxReadCount, cd.indexes, 0);
+                    indexCount = ReadRleDictionary(reader, maxReadCount, cd.indexes, 0);
                     cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                     cd.valuesOffset += indexCount;
                     break;
@@ -340,7 +340,7 @@ namespace Parquet.File {
             }
         }
 
-        private static int ReadPlainDictionary(BinaryReader reader, int maxReadCount, int[] dest, int offset) {
+        private static int ReadRleDictionary(BinaryReader reader, int maxReadCount, int[] dest, int offset) {
             int start = offset;
             int bitWidth = reader.ReadByte();
 

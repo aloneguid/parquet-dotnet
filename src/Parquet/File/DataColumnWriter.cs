@@ -17,9 +17,7 @@ namespace Parquet.File {
         private readonly ThriftFooter _footer;
         private readonly Thrift.SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
-        private readonly int _rowCount;
         private readonly ParquetOptions _options;
-        private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
         private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
 
         public DataColumnWriter(
@@ -28,14 +26,12 @@ namespace Parquet.File {
            ThriftFooter footer,
            Thrift.SchemaElement schemaElement,
            CompressionMethod compressionMethod,
-           int rowCount,
            ParquetOptions options) {
             _stream = stream;
             _thriftStream = thriftStream;
             _footer = footer;
             _schemaElement = schemaElement;
             _compressionMethod = compressionMethod;
-            _rowCount = rowCount;
             _options = options;
         }
 
@@ -139,8 +135,7 @@ namespace Parquet.File {
                     }
                     pc.GetDataPage(out Array data, out int offset, out int count);
                     if(pc.HasDictionary) {
-                        ms.WriteByte((byte)pc.Dictionary.Length.GetBitWidth());
-                        WriteLevels(ms, (int[])data, count, pc.Dictionary.Length);
+                        WriteRleDictionary(ms, (int[])data, count, pc.Dictionary.Length);
                     }
                     else {
                         if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, column.Statistics)) {
@@ -158,6 +153,19 @@ namespace Parquet.File {
         private void WriteLevels(Stream s, int[] levels, int count, int maxValue) {
             int bitWidth = maxValue.GetBitWidth();
             RleEncoder.Encode(s, bitWidth, levels, count);
+        }
+
+        private void WriteRleDictionary(Stream s, int[] data, int count, int maxValue) {
+
+            /*
+             * Data page format: https://github.com/apache/parquet-format/blob/master/Encodings.md#dictionary-encoding-plain_dictionary--2-and-rle_dictionary--8
+             * the bit width used to encode the entry ids stored as 1 byte (max bit width = 32), 
+             * followed by the values encoded using RLE/Bit packed described above (with the given bit width).
+             */
+
+            int bitWidth = maxValue.GetBitWidth();
+            RleEncoder.Encode(s, bitWidth, data, count);
+
         }
     }
 }
