@@ -4,9 +4,9 @@ Due to the fact that Parquet is s strong typed format you need to declare a sche
 
 Schema can be defined by creating an instance of `ParquetSchema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `ParquetSchema` exist to simplify the schema declaration, but we are going to be more specific on this page.
 
-There are several types of fields you can specify in your schema, and the most common is `DataField`. Data field is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
+There are several types of fields you can specify in your schema, and the most common is `DataField`. `DataField` is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
 
-You can declare a `DataField` by specifying a column name and it's type in the constuctor, in one of two forms:
+You can declare a `DataField` by specifying a column name and it's type in the constructor, in one of two forms:
 
 ```csharp
 var field = new DataField("id", DataType.Int32);
@@ -18,17 +18,95 @@ The first one is more declarative and allows you to select data type from the `D
 
 The second one is just a shortcut to `DataField` that allows you to use .NET Generics.
 
+Then, there are specialised versions for `DataField` allowing you to specify more precise metadata about certain parquet data type, for instance `DecimalDataField` allows to specify precision and scale other than default values.
+
+Non-data field wrap complex structures like list (`ListField`), map (`MapField`) and struct (`StructField`).
+
+Full schema type hierarchy can be expressed as:
+
+```mermaid
+classDiagram
+    Schema "1" o-- "1..*" Field
+    Field <|-- DataField
+    DataField <|-- DataF1eld~T~
+    DataField <|-- DateTimeDataField
+    DataField <|-- DecimalDataField
+    DataField <|-- TimeSpanDataField
+    
+    Field <|-- ListField
+    Field "1" --o "1" ListField: list item
+
+    Field <|-- MapField
+    Field "1" --o "1" MapField: key field
+    Field "1" --o "1" MapField: value field
+
+    Field <|-- StructField
+    Field "1..*" --o "1" StructField: struct members
+
+
+    class Schema {
+        +List~Field~: Fields
+    }
+
+    class Field {
+        +string Name
+        +SchemaType SchemaType
+        +FieldPath Path
+    }
+
+    class DataField {
+        +Type ClrType
+        +bool IsNullable
+        +bool IsArray
+    }
+
+    class DataF1eld~T~{
+        
+    }
+
+    class DateTimeDataField {
+        +DateTimeFormat: DateTimeFormat
+    }
+
+    class DecimalDataField {
+        +int Precision
+        +int Scale
+        +bool: ForceByteArrayEncoding
+    }
+
+    class TimeSpanDataField {
+        +TimeSpanFormat: TimeSpanFormat
+    }
+
+    class ListField {
+        +Field: Item
+    }
+
+    class MapField {
+        +Field: Key
+        +Field: Value
+    }
+
+    class StructField {
+        +List~Field~: Fields
+    }
+```
+
+
+
 ## Null Values
 
-Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly by setting `isNullable` to `true`:
+Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly by specifying a nullable type:
 
 ```csharp
 new DataField<int?>("id");
 // or
-new DataField("id", DataType.Int32, true);
+new DataField("id", typeof(int?));
 ```
 
 This allows you to force the schema to be nullable, so you can add null values. In many cases having a nullable column is useful even if you are not using nulls at the moment, for instance when you will append to the file later and will have nulls.
+
+Nullable columns incur a slight performance and data size overhead, as parquet needs to store an additional nullable flag for each value.
 
 > Note that `string` type is always nullable. Although `string` is an [immutable type](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/strings/) in CLR, it's still passed by reference, which can be assigned to `null` value.
 
@@ -36,7 +114,7 @@ This allows you to force the schema to be nullable, so you can add null values. 
 
 In the old times Parquet format didn't support dates, therefore people used to store dates as `int96` number. Because of backward compatibility issues we use this as the default date storage format.
 
-If you need to override date format storage you can use `DateTimeDataField` instead of `DataField<DateTimeOffset>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
+If you need to override date format storage you can use `DateTimeDataField` instead of `DataField<DateTime>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
 
 ```csharp
 new DateTimeDataField("date_col", DateTimeFormat.Date);

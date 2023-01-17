@@ -331,12 +331,12 @@ namespace Parquet.Test.Serialisation {
             // create items to be serialised
             List<SimpleWithDateTimeAndDecimal> items = new List<SimpleWithDateTimeAndDecimal>() {
                 new SimpleWithDateTimeAndDecimal() {
-                    DateTimeValue = DateTimeOffset.UtcNow,
+                    DateTimeValue = DateTime.UtcNow,
                     DecimalValue = 123m,
                     Int32Value = 456,
                 },
                 new SimpleWithDateTimeAndDecimal() {
-                    DateTimeValue = DateTimeOffset.Now,
+                    DateTimeValue = DateTime.Now,
                     DecimalValue = 234m,
                     Int32Value = 567,
                 },
@@ -344,10 +344,23 @@ namespace Parquet.Test.Serialisation {
 
             // create schema - set DataField.propertyName to non-null strings
             ParquetSchema schema = new ParquetSchema(
-                new DateTimeDataField(nameof(SimpleWithDateTimeAndDecimal.DateTimeValue), DateTimeFormat.Date, false, nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
-                new DecimalDataField(nameof(SimpleWithDateTimeAndDecimal.DecimalValue), 38, 18, false, false, nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
-                new DataField(nameof(SimpleWithDateTimeAndDecimal.Int32Value), typeof(int), nameof(SimpleWithDateTimeAndDecimal.Int32Value))
-                );
+                new DateTimeDataField(
+                    nameof(SimpleWithDateTimeAndDecimal.DateTimeValue),
+                    DateTimeFormat.Date,
+                    null,
+                    null,
+                    nameof(SimpleWithDateTimeAndDecimal.DateTimeValue)),
+                new DecimalDataField(
+                    nameof(SimpleWithDateTimeAndDecimal.DecimalValue),
+                    38, 18,
+                    false,
+                    null, null,
+                    nameof(SimpleWithDateTimeAndDecimal.DecimalValue)),
+                new DataField(
+                    nameof(SimpleWithDateTimeAndDecimal.Int32Value),
+                    typeof(int),
+                    null, null,
+                    nameof(SimpleWithDateTimeAndDecimal.Int32Value)));
 
             // serialise items
             using(MemoryStream ms = new MemoryStream()) {
@@ -365,12 +378,12 @@ namespace Parquet.Test.Serialisation {
             // create items to be serialised
             List<SimpleWithDateTimeAndDecimal> items = new List<SimpleWithDateTimeAndDecimal>() {
                 new SimpleWithDateTimeAndDecimal() {
-                    DateTimeValue = DateTimeOffset.UtcNow,
+                    DateTimeValue = DateTime.UtcNow,
                     DecimalValue = 123m,
                     Int32Value = 456,
                 },
                 new SimpleWithDateTimeAndDecimal() {
-                    DateTimeValue = DateTimeOffset.Now,
+                    DateTimeValue = DateTime.Now,
                     DecimalValue = 234m,
                     Int32Value = 567,
                 },
@@ -399,12 +412,12 @@ namespace Parquet.Test.Serialisation {
             // create items to be serialised
             List<SimpleWithDateTimeAndDecimal> items = new List<SimpleWithDateTimeAndDecimal>() {
                 new SimpleWithDateTimeAndDecimal() {
-                    DateTimeValue = DateTimeOffset.UtcNow,
+                    DateTimeValue = DateTime.UtcNow,
                     DecimalValue = 123m,
                     Int32Value = 456,
                 },
                 new SimpleWithDateTimeAndDecimal() {
-                    DateTimeValue = DateTimeOffset.Now,
+                    DateTimeValue = DateTime.Now,
                     DecimalValue = 234m,
                     Int32Value = 567,
                 },
@@ -565,7 +578,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         public class SimpleWithDateTimeAndDecimal {
-            public DateTimeOffset DateTimeValue { get; set; }
+            public DateTime DateTimeValue { get; set; }
             public decimal DecimalValue { get; set; }
             public int Int32Value { get; set; }
         }
