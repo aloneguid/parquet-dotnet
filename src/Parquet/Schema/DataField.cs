@@ -61,14 +61,16 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="name">Field name</param>
         /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
+        /// <param name="isNullable">When set, will override <see cref="IsNullable"/> attribute regardless whether passed type was nullable or not.</param>
+        /// <param name="isArray">When set, will override <see cref="IsArray"/> attribute regardless whether passed type was an array or not.</param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
-        public DataField(string name, Type clrType, string propertyName = null)
+        public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string propertyName = null)
            : base(name, SchemaType.Data) {
 
-            Discover(clrType, out Type baseType, out bool isArray, out bool isNullable);
+            Discover(clrType, out Type baseType, out bool discIsArray, out bool discIsNullable);
             ClrType = baseType;
             if(!SchemaEncoder.IsSupported(ClrType)) {
-                if(clrType == typeof(DateTimeOffset)) {
+                if(baseType == typeof(DateTimeOffset)) {
                     throw new NotSupportedException($"{nameof(DateTimeOffset)} support was dropped due to numerous ambiguity issues, please use {nameof(DateTime)} from now on.");
                 }
                 else {
@@ -76,10 +78,10 @@ namespace Parquet.Schema {
                 }
             }
 
-            IsNullable = isNullable;
-            IsArray = isArray;
+            IsNullable = isNullable.HasValue ? isNullable.Value : discIsNullable;
+            IsArray = isArray.HasValue ? isArray.Value : discIsArray;
             ClrPropName = propertyName ?? name;
-            MaxRepetitionLevel = isArray ? 1 : 0;
+            MaxRepetitionLevel = IsArray ? 1 : 0;
 
 #pragma warning disable CS0612 // Type or member is obsolete
             DataType = SchemaEncoder.FindDataType(ClrType) ?? DataType.Unspecified;

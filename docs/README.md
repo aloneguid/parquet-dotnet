@@ -32,11 +32,11 @@ Parquet is a de facto physical storage format in big data applications, includin
 
 ### General
 
-This intro is covering only basic use cases. Parquet format is more complicated when it comes to complex types like structures, lists, maps and arrays, therefore you should [read this page](parquet-getting-started.md) if you are planning to use them.
+This intro is covering only basic use cases. Parquet format is more complicated when it comes to complex types like structures, lists, maps and arrays, therefore you should [read this page](parquet-getting-started.md) if you are planning to use them, otherwise ignore for now.
 
 ### Reading files
 
-In order to read a parquet file you need to open a stream first. Due to the fact that Parquet utilises file seeking extensively, the input stream must be *readable and seekable*. **You cannot stream parquet data!** This somewhat limits the amount of streaming you can do, for instance you can't read a parquet file from a network stream as we need to jump around it, therefore you have to download it locally to disk and then open.
+In order to read a parquet file you need to open a stream first. Due to the fact that Parquet utilises file seeking extensively, the input stream must be *readable and seekable*. **You cannot stream parquet data!** This somewhat limits the amount of streaming you can do, for instance you can't read a parquet file from a network stream as we need to jump around it, therefore you have to download it locally to disk (or memory) and then open.
 
 For instance, to read a file `c:\test.parquet` you would normally write the following code:
 
@@ -74,7 +74,7 @@ using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
 
 ### Writing files
 
-Writing operates on streams, therefore you need to create it first. The following example shows how to create a file on disk with two columns - `id` and `city`.
+Writing operates on streams, therefore you need to create it first. The following example shows how to create a file on disk with two columns - `id` and `city`. Streams need to be *writeable, readable and seekable* due to how Parquet files are organised internally.
 
 ```csharp
 //create data columns with schema metadata and the data you need
