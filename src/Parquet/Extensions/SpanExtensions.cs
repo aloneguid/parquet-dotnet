@@ -178,27 +178,5 @@ namespace System {
                     max = s;
             }
         }
-
-        public static int DistinctCount(this ReadOnlySpan<string> span) {
-
-            /*
-             * Use "Ordinal" comparison as it's the fastest (13 times faster than invariant).
-             * .NET standard 2.0 does not have pre-allocated hash version which give a tiny performance boost.
-             * Interestingly, hashcode based hash for strings is slower.
-             */
-
-#if NETSTANDARD2_0
-            var hs = new HashSet<string>(StringComparer.Ordinal);
-#else
-            // pre-allocation is a tiny performance boost
-            var hs = new HashSet<string>(span.Length, StringComparer.Ordinal);
-#endif
-
-            foreach(string s in span) {
-                hs.Add(s);
-            }
-
-            return hs.Count;
-        }
     }
 }

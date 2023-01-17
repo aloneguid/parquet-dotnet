@@ -110,8 +110,8 @@ namespace Parquet.File {
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
-                ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement, out object min);
-                ParquetEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement, out object max);
+                ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement, out object min);
+                ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement, out object max);
 
                 finalColumn.Statistics = new DataColumnStatistics(
                    _thriftColumnChunk.Meta_data.Statistics.Null_count,
@@ -180,7 +180,7 @@ namespace Parquet.File {
                         // Dictionary should not contains null values
                         Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
 
-                        if(!ParquetEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
+                        if(!ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
                             _thriftSchemaElement, ms, out int dictionaryOffset)) {
                             throw new IOException("could not decode");
                         }
@@ -246,11 +246,9 @@ namespace Parquet.File {
             }
         }
         
-        /**
-        * New page format allowing reading levels without decompressing the data
-        * Repetition and definition levels are uncompressed
-        * The remaining section containing the data is compressed if is_compressed is true
-        **/
+        /// <summary>
+        /// WARNING!!! LEAKS A LOT OF MEMORY!!!
+        /// </summary>
         private async Task ReadDataPageV2(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
             if(ph.Data_page_header_v2 == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
@@ -301,7 +299,7 @@ namespace Parquet.File {
         private int ReadLevels(BinaryReader reader, int maxLevel, int[] dest, int offset, int pageSize, int length = 0) {
             int bitWidth = maxLevel.GetBitWidth();
 
-            return RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset, pageSize);
+            return RleEncoder.Decode(reader, bitWidth, length, dest, offset, pageSize);
         }
 
         private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long totalValues, int maxReadCount, ColumnRawData cd) {
@@ -313,7 +311,7 @@ namespace Parquet.File {
 
             switch(encoding) {
                 case Thrift.Encoding.PLAIN:
-                    if(!ParquetEncoder.Decode(cd.values, cd.valuesOffset, (int)totalValues - cd.valuesOffset,
+                    if(!ParquetPlainEncoder.Decode(cd.values, cd.valuesOffset, (int)totalValues - cd.valuesOffset,
                         _thriftSchemaElement, reader.BaseStream, out int read)) {
                         throw new IOException("could not decode");
                     }
@@ -323,7 +321,7 @@ namespace Parquet.File {
                 case Thrift.Encoding.RLE:
                     if(cd.indexes == null)
                         cd.indexes = new int[(int)totalValues];
-                    int indexCount = RunLengthBitPackingHybridValuesReader.Read(reader, _thriftSchemaElement.Type_length, cd.indexes, 0, maxReadCount);
+                    int indexCount = RleEncoder.Decode(reader, _thriftSchemaElement.Type_length, cd.indexes, 0, maxReadCount);
                     cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                     cd.valuesOffset += indexCount;
                     break;
@@ -356,7 +354,7 @@ namespace Parquet.File {
             }
             else {
                 if(length != 0) {
-                    offset += RunLengthBitPackingHybridValuesReader.ReadRleBitpackedHybrid(reader, bitWidth, length, dest, offset, maxReadCount);
+                    offset += RleEncoder.Decode(reader, bitWidth, length, dest, offset, maxReadCount);
                 }
             }
 

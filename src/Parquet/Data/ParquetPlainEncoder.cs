@@ -14,7 +14,7 @@ namespace Parquet.Data {
     /// Fast data encoder.
     /// Experimental.
     /// </summary>
-    static class ParquetEncoder {
+    static class ParquetPlainEncoder {
 
         private static readonly System.Text.Encoding E = System.Text.Encoding.UTF8;
         private static readonly byte[] ZeroInt32 = BitConverter.GetBytes((int)0);

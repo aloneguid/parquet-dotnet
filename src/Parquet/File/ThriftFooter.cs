@@ -156,16 +156,25 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public Thrift.PageHeader CreateDataPage(int valueCount) {
+        public Thrift.PageHeader CreateDataPage(int valueCount, bool isDictionary) {
             var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
             ph.Data_page_header = new Thrift.DataPageHeader {
-                Encoding = Thrift.Encoding.PLAIN,
+                Encoding = isDictionary ? Thrift.Encoding.RLE_DICTIONARY : Thrift.Encoding.PLAIN,
                 Definition_level_encoding = Thrift.Encoding.RLE,
                 Repetition_level_encoding = Thrift.Encoding.RLE,
                 Num_values = valueCount,
                 Statistics = new Thrift.Statistics()
             };
 
+            return ph;
+        }
+
+        public Thrift.PageHeader CreateDictionaryPage(int numValues) {
+            var ph = new Thrift.PageHeader(Thrift.PageType.DICTIONARY_PAGE, 0, 0);
+            ph.Dictionary_page_header = new DictionaryPageHeader {
+                Encoding = Thrift.Encoding.PLAIN,
+                Num_values = numValues
+            };
             return ph;
         }
 
