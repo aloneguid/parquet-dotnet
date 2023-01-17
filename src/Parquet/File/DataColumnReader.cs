@@ -106,9 +106,7 @@ namespace Parquet.File {
             var finalColumn = new DataColumn(
                _dataField, colData.values,
                colData.definitions, _maxDefinitionLevel,
-               colData.repetitions, _maxRepetitionLevel,
-               colData.dictionary,
-               colData.indexes);
+               colData.repetitions, _maxRepetitionLevel);
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 

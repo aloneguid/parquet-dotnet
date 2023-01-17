@@ -29,9 +29,7 @@ namespace Parquet.Test.Rows {
                0, 2, 2,
                1, 2, 2, 2
                },
-               2,
-               null,
-               null
+               2
                );
 
             var e = new LazyColumnEnumerator(dc);
@@ -66,9 +64,7 @@ namespace Parquet.Test.Rows {
             0, 1, 1, 1,
             0, 1
             },
-            2,
-            null,
-            null);
+            2);
 
             var e = new LazyColumnEnumerator(dc);
 
@@ -97,9 +93,7 @@ namespace Parquet.Test.Rows {
             0,
             0, 1
             },
-            2,
-            null,
-            null);
+            2);
 
             var e = new LazyColumnEnumerator(dc);
 
