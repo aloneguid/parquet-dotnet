@@ -116,7 +116,7 @@ namespace Parquet.Test.Rows {
                 await writer.WriteAsync(table);
             }
 
-            //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
+            //System.IO.File.WriteAllBytes("c:\\tmp\\array.parquet", ms.ToArray());
 
             //read back into table
             ms.Position = 0;

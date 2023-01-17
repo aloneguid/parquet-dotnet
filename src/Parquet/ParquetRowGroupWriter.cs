@@ -72,7 +72,6 @@ namespace Parquet {
 
             var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
                _compressionMethod,
-               (int)(RowCount ?? 0),
                _formatOptions);
 
             Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
