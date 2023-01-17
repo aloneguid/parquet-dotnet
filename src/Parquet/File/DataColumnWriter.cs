@@ -21,11 +21,6 @@ namespace Parquet.File {
         private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
         private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
 
-        private struct PageTag {
-            public int HeaderSize;
-            public Thrift.PageHeader HeaderMeta;
-        }
-
         public DataColumnWriter(
            Stream stream,
            ThriftStream thriftStream,
@@ -50,7 +45,9 @@ namespace Parquet.File {
 
             _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
-            List<PageTag> pages = await WriteColumnAsync(column, _schemaElement, maxRepetitionLevel, maxDefinitionLevel, cancellationToken);
+            ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
+                maxRepetitionLevel, maxDefinitionLevel,
+                cancellationToken);
             //generate stats for column chunk
             chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
@@ -59,19 +56,23 @@ namespace Parquet.File {
             chunk.Meta_data.Num_values = column.Count;
 
             //the following counters must include both data size and header size
-            chunk.Meta_data.Total_compressed_size = pages.Sum(p => p.HeaderMeta.Compressed_page_size + p.HeaderSize);
-            chunk.Meta_data.Total_uncompressed_size = pages.Sum(p => p.HeaderMeta.Uncompressed_page_size + p.HeaderSize);
+            chunk.Meta_data.Total_compressed_size = columnSizes.CompressedSize;
+            chunk.Meta_data.Total_uncompressed_size = columnSizes.UncompressedSize;
 
             return chunk;
         }
 
-        private async Task<List<PageTag>> WriteColumnAsync(DataColumn column,
+        class ColumnSizes {
+            public int CompressedSize;
+            public int UncompressedSize;
+        }
+
+        private async Task<ColumnSizes> WriteColumnAsync(DataColumn column,
            Thrift.SchemaElement tse,
            int maxRepetitionLevel,
            int maxDefinitionLevel,
            CancellationToken cancellationToken = default) {
-
-            var pages = new List<PageTag>();
+            var r = new ColumnSizes();
 
             /*
              * Page header must preceeed actual data (compressed or not) however it contains both
@@ -79,7 +80,6 @@ namespace Parquet.File {
              * the write efficiency.
              */
 
-            // todo: replace with RecycleableMemoryStream: https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream
             byte[] uncompressedData;
             using(RecyclableMemoryStream ms = _rmsMgr.GetStream() as RecyclableMemoryStream) {
 
@@ -148,16 +148,14 @@ namespace Parquet.File {
 #else
                 _stream.Write(compressedData);
 #endif
+                r.CompressedSize += headerSize;
+                r.UncompressedSize += headerSize;
 
-                var dataTag = new PageTag {
-                    HeaderMeta = dataPageHeader,
-                    HeaderSize = headerSize
-                };
-
-                pages.Add(dataTag);
+                r.CompressedSize += dataPageHeader.Compressed_page_size;
+                r.UncompressedSize += dataPageHeader.Uncompressed_page_size;
             }
 
-            return pages;
+            return r;
         }
 
         private void WriteLevels(Stream s, int[] levels, int count, int maxLevel) {
