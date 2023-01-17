@@ -71,6 +71,11 @@ namespace Parquet.Data {
         public int Count => _count > -1 ? _count : Data.Length;
 
         /// <summary>
+        /// Count of elements not including nulls, if statistics contains null count.
+        /// </summary>
+        public int CountWithoutNulls => (int)(Count - Statistics.NullCount);
+
+        /// <summary>
         /// Repetition levels if any.
         /// </summary>
         public int[] RepetitionLevels { get; private set; }

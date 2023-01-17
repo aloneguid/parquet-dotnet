@@ -44,11 +44,11 @@ namespace Parquet.Data {
 
         internal Thrift.Statistics ToThriftStatistics(Thrift.SchemaElement tse) {
 
-            if(!ParquetEncoder.TryEncode(MinValue, tse, out byte[] min)) {
+            if(!ParquetPlainEncoder.TryEncode(MinValue, tse, out byte[] min)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
-            if(!ParquetEncoder.TryEncode(MaxValue, tse, out byte[] max)) {
+            if(!ParquetPlainEncoder.TryEncode(MaxValue, tse, out byte[] max)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
