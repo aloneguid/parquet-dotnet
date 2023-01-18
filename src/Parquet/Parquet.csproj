@@ -63,6 +63,30 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+        <None Include="Extensions\UntypedArrayExtensions.cs">
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+          <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Extensions\UntypedArrayExtensions.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>UntypedArrayExtensions.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Extensions\UntypedArrayExtensions.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

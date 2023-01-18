@@ -9,11 +9,48 @@ using Parquet.Schema;
 namespace Parquet.PerfRunner.Benchmarks {
     internal class DataTypes {
 
+        private const int DataSize = 1000000;
+        private Parquet.Data.DataColumn _ints;
+        private Parquet.Data.DataColumn _nullableInts;
+
         private static Random random = new Random();
         public static string RandomString(int length) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
               .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        public DataTypes() {
+            _ints = new DataColumn(new DataField<int>("c"), Enumerable.Range(0, DataSize).ToArray());
+
+            _nullableInts = new DataColumn(new DataField<int?>("c"),
+                Enumerable
+                    .Range(0, DataSize)
+                    .Select(i => i % 4 == 0 ? (int?)null : i)
+                    .ToArray());
+        }
+
+        private async Task Run(DataColumn c) {
+            using var ms = new MemoryStream();
+
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(c.Field), ms)) {
+                writer.CompressionMethod = CompressionMethod.None;
+                // create a new row group in the file
+                using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
+                    await groupWriter.WriteColumnAsync(c);
+                }
+            }
+
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                    await rg.ReadColumnAsync(c.Field);
+                }
+            }
+        }
+
+        public Task NullableInts() {
+            return Run(_nullableInts);
         }
 
         public async Task SimpleIntWriteRead() {

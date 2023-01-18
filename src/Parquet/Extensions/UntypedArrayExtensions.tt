@@ -1,0 +1,61 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<#
+    var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]" }; #>
+// This file is generated with T4
+// https://learn.microsoft.com/en-us/visualstudio/modeling/text-template-control-blocks?view=vs-2022
+// Because of this, performance is truly great!
+// Hint: prefer Rider to edit .tt as it support syntax highlighting
+namespace Parquet.Extensions {
+
+    using System;
+    using System.Numerics;
+    using Parquet.File.Values.Primitives;
+
+    static class UntypedArrayExtensions {
+
+        #region [ Null Counting ]
+
+        public static int CalculateNullCountFast(this Array array, int offset, int count) {
+            Type t = array.GetType().GetElementType();
+            if(!t.IsNullable()) return 0;
+
+<# foreach(string nt in types) { #>
+            if(t == typeof(<#= nt #>)) {
+                return CalculateNullCount((<#= nt #>[])array, offset, count);
+            }
+<# } #>            
+            throw new NotSupportedException($"nullable type {t} is not supported");
+        }
+
+<# foreach(string nt in types) { #>
+        private static int CalculateNullCount(<#= nt #>[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
+<# } #>
+    #endregion
+
+    #region [ Null Packing ]
+
+    // todo
+
+    #endregion
+
+    #region [ Null Unpacking ]
+
+    // todo
+
+    #endregion
+
+    }
+}

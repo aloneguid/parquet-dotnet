@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Parquet.Extensions;
 using Parquet.Schema;
 
 namespace Parquet.Data {
@@ -97,12 +98,7 @@ namespace Parquet.Data {
         public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0, null, null);
 
         internal int CalculateNullCount() {
-            int nullCount = 0;
-            for(int i = Offset; i < Offset + Count; i++) {
-                if(Data.GetValue(i) == null)
-                    nullCount++;
-            }
-            return nullCount;
+            return Data.CalculateNullCountFast(Offset, Count);
         }
 
         internal void PackDefinitions(Span<int> definitions,
