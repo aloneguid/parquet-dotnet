@@ -175,6 +175,10 @@ namespace Parquet.Data {
             Stream source,
             out int elementsRead) {
 
+            int rem = data.Length - offset;
+            if(count > rem)
+                count = rem;
+
             System.Type t = data.GetType();
 
             if(t == typeof(bool[])) {
