@@ -87,9 +87,12 @@ namespace Parquet.File {
 
             // 2. try to extract dictionary
 
-            if(useDictionaryEncoding && ParquetDictionaryEncoder.TryExtractDictionary(_column.Field.ClrType,
-                _plainData, _plainDataOffset, _plainDataCount,
-                out _dictionary, out _dictionaryIndexes, dictionaryThreshold)) {
+            if(useDictionaryEncoding && 
+                // for some reason some readers do NOT understand dictionary-encoded arrays, but lists or plain columns are just fine
+                !_column.Field.IsArray &&
+                ParquetDictionaryEncoder.TryExtractDictionary(_column.Field.ClrType,
+                    _plainData, _plainDataOffset, _plainDataCount,
+                    out _dictionary, out _dictionaryIndexes, dictionaryThreshold)) {
 
                 // if dictionary is successfully extracted, plainData is invalid
                 _plainData = null;

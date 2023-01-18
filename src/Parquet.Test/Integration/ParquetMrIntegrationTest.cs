@@ -42,7 +42,7 @@ namespace Parquet.Test.Integration {
                 }
             }
 
-            F.Copy(testFileName, "c:\\tmp\\mr.parquet");
+            //F.Copy(testFileName, "c:\\tmp\\mr.parquet", true);
 
             //read back
             Table t2 = await ParquetReader.ReadTableFromFileAsync(testFileName);
@@ -118,7 +118,7 @@ namespace Parquet.Test.Integration {
         }
 
         [Fact]
-        public async Task Array_simple_integers() {
+        public async Task IntegerIds_and_array_of_strings() {
             var table = new Table(
                new DataField<int>("id"),
                new DataField<string[]>("categories")     //array field
