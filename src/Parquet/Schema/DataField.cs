@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Data.SqlTypes;
 using Parquet.Data;
+using Parquet.Extensions;
 using Parquet.File;
 
 namespace Parquet.Schema {
@@ -78,13 +77,15 @@ namespace Parquet.Schema {
                 }
             }
 
-            IsNullable = isNullable.HasValue ? isNullable.Value : discIsNullable;
-            IsArray = isArray.HasValue ? isArray.Value : discIsArray;
+            IsNullable = isNullable ?? discIsNullable;
+            IsArray = isArray ?? discIsArray;
             ClrPropName = propertyName ?? name;
             MaxRepetitionLevel = IsArray ? 1 : 0;
 
 #pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0618
             DataType = SchemaEncoder.FindDataType(ClrType) ?? DataType.Unspecified;
+#pragma warning restore CS0618
 #pragma warning restore CS0612 // Type or member is obsolete
         }
 
@@ -108,9 +109,7 @@ namespace Parquet.Schema {
         }
 
         internal override FieldPath PathPrefix {
-            set {
-                Path = value + new FieldPath(Name);
-            }
+            set => Path = value + new FieldPath(Name);
         }
 
         /// <summary>
@@ -126,30 +125,21 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="length">Exact array size</param>
         /// <returns></returns>
-        internal Array CreateArray(int length) {
-            return Array.CreateInstance(ClrType, length);
-        }
-
-        internal Array CreateNullableArray(int length) {
-            return Array.CreateInstance(ClrNullableIfHasNullsType, length);
-        }
+        internal Array CreateArray(int length) => Array.CreateInstance(ClrType, length);
 
         internal Array UnpackDefinitions(Array definedData, int[] definitionLevels, int maxDefinitionLevel) {
-            Array result = CreateNullableArray(definitionLevels.Length);
-
-            int isrc = 0;
-            for(int i = 0; i < definitionLevels.Length; i++) {
-                int level = definitionLevels[i];
-
-                if(level == maxDefinitionLevel) {
-                    result.SetValue(definedData.GetValue(isrc++), i);
-                }
+            if(IsNullable) {
+                Array result = Array.CreateInstance(ClrNullableIfHasNullsType, definitionLevels.Length);
+                definedData.UnpackNullsFast(definitionLevels, maxDefinitionLevel, result);
+                return result;
+            } else {
+                return definedData;
             }
-            return result;
         }
 
         /// <inheritdoc/>
-        public override string ToString() => $"{Path} ({ClrType})";
+        public override string ToString() => 
+            $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";
 
         /// <summary>
         /// Basic equality check

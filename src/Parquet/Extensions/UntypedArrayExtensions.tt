@@ -29,7 +29,7 @@ namespace Parquet.Extensions {
                 return CalculateNullCount((<#= nt #>[])array, offset, count);
             }
 <# } #>            
-            throw new NotSupportedException($"nullable type {t} is not supported");
+            throw new NotSupportedException($"cannot count nulls in type {t}");
         }
 
 <# foreach(string nt in types) { #>
@@ -47,13 +47,98 @@ namespace Parquet.Extensions {
 
     #region [ Null Packing ]
 
-    // todo
+    public static void PackNullsFast(this Array array,
+            int offset, int count,
+            Array packedData,
+            Span<int> dest,
+            int fillerValue) {
+
+            Type t = array.GetType().GetElementType();
+            if(!t.IsNullable()) return;
+
+<# foreach(string nt in types) { #>
+            if(t == typeof(<#= nt #>)) {
+                PackNulls((<#= nt #>[])array,
+                    offset, count,
+                    (<#= nt #>[])packedData,
+                    dest, fillerValue);
+            }
+<# } #>            
+            throw new NotSupportedException($"cannot pack type {t}");
+        }
+
+<# foreach(string nt in types) { #>
+        private static void PackNulls(<#= nt #>[] array,
+            int offset, int count,
+            <#= nt #>[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                <#= nt #> value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = value;
+                }
+            }
+        }
+
+<# } #>
 
     #endregion
 
     #region [ Null Unpacking ]
 
-    // todo
+    public static void UnpackNullsFast(this Array array,
+        int[] flags, int fillFlag,
+        Array result) {
+
+        Type t = array.GetType().GetElementType();
+        
+<# foreach(string nt in types) { #>
+<# string nnt = nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt; #>
+        if(t == typeof(<#= nnt #>)) {
+            UnpackNulls((<#= nnt #>[])array,
+                flags, fillFlag,
+                (<#= nt #>[])result);
+            return;
+        }
+<# } #>            
+        throw new NotSupportedException($"cannot pack type {t}");
+
+    }
+
+<# foreach(string nt in types) { #>
+<# string nnt = nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt; #>
+    private static void UnpackNulls(<#= nnt #>[] array,
+        int[] flags, int fillFlag,
+        <#= nt #>[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
+<# } #>
+
+    #endregion
+
+    #region [ Dictionary Explosion ]
+
+    public static void ExplodeFast(this Array dictionary,
+            Span<int> indexes,
+            Array result, int resultOffset, int resultCount) {
+
+    }
 
     #endregion
 
