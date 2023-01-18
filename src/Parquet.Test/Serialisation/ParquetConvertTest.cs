@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
@@ -486,6 +487,37 @@ namespace Parquet.Test.Serialisation {
                     Assert.Equal(structuresArray[i].Date, structures2[i].Date);
                 }
             }
+        }
+
+        class NullableDateTime {
+            public int Id { get; set; }
+
+            public DateTime? DateTime { get; set; }
+        }
+
+        [Fact]
+        public async Task Serialize_column_with_all_nulls() {
+
+            // test steps.
+            var data = Enumerable.Range(0, 10000).Select(i => new NullableDateTime { Id = i, DateTime = DateTime.Now }).ToList();
+
+            foreach(NullableDateTime item in data.Take(7000)) {
+                item.DateTime = null;
+            }
+
+            var stream = new MemoryStream();
+
+            ParquetSchema schema = await ParquetConvert.SerializeAsync(data, stream);
+
+            try {
+                NullableDateTime[] result = await ParquetConvert.DeserializeAsync<NullableDateTime>(stream);
+            }
+            catch(Exception e) {
+                string res = JsonConvert.SerializeObject(e);
+                Console.WriteLine(e);
+                throw;
+            }
+
         }
 
         async Task TestRoundTripSerialization<T>(T value) {
