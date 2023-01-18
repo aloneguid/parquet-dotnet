@@ -43,7 +43,9 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Build
-      run: dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+      run: |
+        envsubst < src/Parquet/Globals.cs > src/Parquet/Globals.cs
+        dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - uses: actions/upload-artifact@v3
       name: save

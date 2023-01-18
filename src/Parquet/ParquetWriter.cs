@@ -75,7 +75,7 @@ namespace Parquet {
         /// </summary>
         public IReadOnlyDictionary<string, string> CustomMetadata {
             get => _footer.CustomMetadata;
-            set { _footer.CustomMetadata = value.ToDictionary(p => p.Key, p => p.Value); }
+            set => _footer.CustomMetadata = value.ToDictionary(p => p.Key, p => p.Value);
         }
 
         private async Task PrepareFileAsync(bool append, CancellationToken cancellationToken) {
@@ -116,9 +116,7 @@ namespace Parquet {
             }
         }
 
-        private void WriteMagic() {
-            Stream.Write(MagicBytes, 0, MagicBytes.Length);
-        }
+        private void WriteMagic() => Stream.Write(MagicBytes, 0, MagicBytes.Length);
 
         /// <summary>
         /// Disposes the writer and writes the file footer.

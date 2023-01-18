@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -22,11 +24,14 @@ namespace Parquet.File {
                 throw new ArgumentNullException(nameof(schema));
             }
 
-            //_fileMeta = LegacyCreateThriftSchema(schema);
             _fileMeta = CreateThriftSchema(schema);
             _fileMeta.Num_rows = totalRowCount;
 
-            _fileMeta.Created_by = $"Parquet.Net version %Version% (build %Git.LongCommitHash%)";
+#if DEBUG
+            _fileMeta.Created_by = "Parquet.Net local dev version";
+#else
+            _fileMeta.Created_by = $"Parquet.Net v{Globals.Version}";
+#endif
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
 
@@ -178,7 +183,7 @@ namespace Parquet.File {
             return ph;
         }
 
-        #region [ Conversion to Model Schema ]
+#region [ Conversion to Model Schema ]
 
         public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
             int si = 0;
@@ -223,9 +228,9 @@ namespace Parquet.File {
             throw new NotSupportedException($"cannot find data type handler for schema element '{tse.Name}' (type: {t}{ct})");
         }
 
-        #endregion
+#endregion
 
-        #region [ Convertion from Model Schema ]
+#region [ Convertion from Model Schema ]
 
         public Thrift.FileMetaData CreateThriftSchema(ParquetSchema schema) {
             var meta = new Thrift.FileMetaData();
@@ -248,9 +253,9 @@ namespace Parquet.File {
             return root;
         }
 
-        #endregion
+#endregion
 
-        #region [ Helpers ]
+#region [ Helpers ]
 
         class ThriftSchemaTree {
             readonly Dictionary<SchemaElement, Node> _memoizedFindResults = 
@@ -326,6 +331,6 @@ namespace Parquet.File {
             }
         }
 
-        #endregion
+#endregion
     }
 }

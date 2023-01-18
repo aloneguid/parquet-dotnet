@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Parquet.Schema {
 
     /// <summary>
     /// Represents path in schema. Path is a dot-separated string, however path parts can also contain dots!
+    /// Never use strings to represent path, prefer this class.
     /// </summary>
     public sealed class FieldPath : IEquatable<FieldPath> {
 

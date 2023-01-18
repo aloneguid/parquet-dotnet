@@ -3,15 +3,11 @@ using IronCompress;
 
 namespace Parquet.File {
     static class Compressor {
-        private static readonly Iron _iron = new Iron();
+        private static readonly Iron _iron = new();
 
-        public static DataBuffer Compress(CompressionMethod method, ReadOnlySpan<byte> input) {
-            return _iron.Compress(ToCodec(method), input);
-        }
+        public static DataBuffer Compress(CompressionMethod method, ReadOnlySpan<byte> input) => _iron.Compress(ToCodec(method), input);
 
-        public static DataBuffer Decompress(CompressionMethod method, ReadOnlySpan<byte> input, int outLength) {
-            return _iron.Decompress(ToCodec(method), input, outLength);
-        }
+        public static DataBuffer Decompress(CompressionMethod method, ReadOnlySpan<byte> input, int outLength) => _iron.Decompress(ToCodec(method), input, outLength);
 
         private static Codec ToCodec(CompressionMethod method) {
             switch(method) {
