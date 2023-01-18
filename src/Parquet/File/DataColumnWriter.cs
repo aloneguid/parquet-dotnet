@@ -132,7 +132,7 @@ namespace Parquet.File {
                 if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
                     throw new IOException("failed to encode data");
                 }
-
+                ph.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(tse);
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             }
 

@@ -290,7 +290,7 @@ namespace Parquet.File {
 
             switch(encoding) {
                 case Thrift.Encoding.PLAIN: {
-                        if(!ParquetPlainEncoder.Decode(cd.values, cd.valuesOffset, (int)totalValues - cd.valuesOffset,
+                        if(!ParquetPlainEncoder.Decode(cd.values, cd.valuesOffset, maxReadCount - cd.valuesOffset,
                             _thriftSchemaElement, s, out int read)) {
                             throw new IOException("could not decode");
                         }

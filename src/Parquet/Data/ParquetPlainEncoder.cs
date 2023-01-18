@@ -947,7 +947,7 @@ namespace Parquet.Data {
                         int offset = 0;
                         int els = 0;
                         while(offset + NanoTime.BinarySize <= span.Length) {
-                            data[els++] = new NanoTime(span.Slice(offset));
+                            data[els++] = new NanoTime(span.Slice(offset, NanoTime.BinarySize));
                             offset += NanoTime.BinarySize;
                         }
                         return els;
