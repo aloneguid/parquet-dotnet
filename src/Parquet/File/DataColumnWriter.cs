@@ -129,13 +129,8 @@ namespace Parquet.File {
                     WriteLevels(ms, pc.DefinitionLevels, column.Count, maxDefinitionLevel);
                 }
                 pc.GetDataPage(out Array data, out int offset, out int count);
-                if(pc.HasDictionary) {
-                    WriteRleDictionary(ms, (int[])data, count, pc.Dictionary.Length);
-                }
-                else {
-                    if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, column.Statistics)) {
-                        throw new IOException("failed to encode data");
-                    }
+                if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
+                    throw new IOException("failed to encode data");
                 }
 
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
@@ -146,7 +141,7 @@ namespace Parquet.File {
 
         private static void WriteLevels(Stream s, int[] levels, int count, int maxValue) {
             int bitWidth = maxValue.GetBitWidth();
-            RleEncoder.Encode(s, bitWidth, levels, count);
+            RleEncoder.EncodeWithLength(s, bitWidth, levels, count);
         }
 
         private static void WriteRleDictionary(Stream s, int[] data, int count, int maxValue) {
@@ -158,7 +153,7 @@ namespace Parquet.File {
              */
 
             int bitWidth = maxValue.GetBitWidth();
-            RleEncoder.Encode(s, bitWidth, data, count);
+            RleEncoder.Encode(s, data, count, bitWidth);
 
         }
     }

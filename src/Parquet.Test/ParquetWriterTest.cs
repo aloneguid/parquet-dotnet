@@ -5,6 +5,7 @@ using Xunit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Parquet.Schema;
+using System.Linq;
 
 namespace Parquet.Test {
     public class ParquetWriterTest : TestBase {
@@ -310,6 +311,52 @@ namespace Parquet.Test {
                 Assert.Equal("value1", reader.CustomMetadata["key1"]);
                 Assert.Equal("value2", reader.CustomMetadata["key2"]);
             }
+        }
+
+        [Fact]
+        public async Task Dictionary_encoding_applied_for_repeated_strings() {
+            var str = new DataField<string>("s");
+            using var ms = new MemoryStream();
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms)) {
+                writer.CompressionMethod = CompressionMethod.None;
+
+                var strings = new List<string>();
+                strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
+                strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
+                strings.AddRange(Enumerable.Repeat("The main reason behind the occurrence of this error is...", 10000));
+                var strData = new DataColumn(str, strings.ToArray());
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(strData);
+                }
+            }
+
+            // if it's less than 200kb it's fine!
+            Assert.True(ms.Length < 200000, $"output size is {ms.Length}");
+
+        }
+
+        [Fact]
+        public async Task Dictionary_encoding_can_be_turned_off() {
+            var str = new DataField<string>("s");
+            using var ms = new MemoryStream();
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms,
+                new ParquetOptions { UseDictionaryEncoding = false})) {
+                writer.CompressionMethod = CompressionMethod.None;
+                var strings = new List<string>();
+                strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
+                strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
+                strings.AddRange(Enumerable.Repeat("The main reason behind the occurrence of this error is...", 10000));
+                var strData = new DataColumn(str, strings.ToArray());
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(strData);
+                }
+            }
+
+            // should be relatively big
+            Assert.True(ms.Length > 200000, $"output size is {ms.Length}");
+
         }
     }
 }
