@@ -73,22 +73,22 @@ namespace Parquet.File {
                 ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
             }
 
-            long maxValues = _thriftColumnChunk.Meta_data.Num_values;
+            long totalValuesInChunk = _thriftColumnChunk.Meta_data.Num_values;
 
             colData.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
             while(true) {
                 if(ph.Type == PageType.DATA_PAGE_V2) {
-                    await ReadDataPageV2Async(ph, colData, maxValues);
+                    await ReadDataPageV2Async(ph, colData, totalValuesInChunk);
                 }
                 else {
-                    await ReadDataPageAsync(ph, colData, maxValues);
+                    await ReadDataPageAsync(ph, colData, totalValuesInChunk);
                 }
 
                 int totalCount = Math.Max(
                    (colData.values == null ? 0 : colData.valuesOffset),
                    (colData.definitions == null ? 0 : colData.definitionsOffset));
-                if(totalCount >= maxValues)
+                if(totalCount >= totalValuesInChunk)
                     break; //limit reached
 
                 ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
@@ -192,7 +192,7 @@ namespace Parquet.File {
                 .Where(e => e != 0)
                 .Min();
 
-        private async Task ReadDataPageAsync(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
+        private async Task ReadDataPageAsync(Thrift.PageHeader ph, ColumnRawData cd, long totalValuesInChunk) {
             using IronCompress.DataBuffer bytes = await ReadPageDataAsync(ph);
             //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
             if(ph.Data_page_header == null) {
@@ -224,9 +224,9 @@ namespace Parquet.File {
 
             // if statistics are defined, use null count to determine the exact number of items we should read,
             // otherwise the previously counted value from definitions
-            int maxReadCount = ph.Data_page_header.Statistics == null ? valueCount
+            int totalValuesInPage = ph.Data_page_header.Statistics == null ? valueCount
                 : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
-            ReadColumn(ms, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
+            ReadColumn(ms, ph.Data_page_header.Encoding, totalValuesInChunk, totalValuesInPage, cd);
         }
         
         /// <summary>
@@ -283,14 +283,16 @@ namespace Parquet.File {
             return RleEncoder.Decode(s, bitWidth, length, dest, offset, pageSize);
         }
 
-        private void ReadColumn(Stream s, Thrift.Encoding encoding, long totalValues, int maxReadCount, ColumnRawData cd) {
+        private void ReadColumn(Stream s, Thrift.Encoding encoding, long totalValuesInChunk, int totalValuesInPage, ColumnRawData cd) {
             //dictionary encoding uses RLE to encode data
 
-            cd.values ??= _dataField.CreateArray((int)totalValues);
+            cd.values ??= _dataField.CreateArray((int)totalValuesInChunk);
 
             switch(encoding) {
                 case Thrift.Encoding.PLAIN: {
-                        if(!ParquetPlainEncoder.Decode(cd.values, cd.valuesOffset, maxReadCount - cd.valuesOffset,
+                        if(!ParquetPlainEncoder.Decode(cd.values,
+                            cd.valuesOffset,
+                            totalValuesInPage,
                             _thriftSchemaElement, s, out int read)) {
                             throw new IOException("could not decode");
                         }
@@ -299,8 +301,8 @@ namespace Parquet.File {
                     break;
 
                 case Thrift.Encoding.RLE: {
-                        cd.indexes ??= new int[(int)totalValues];
-                        int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement.Type_length, maxReadCount);
+                        cd.indexes ??= new int[(int)totalValuesInChunk];
+                        int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement.Type_length, totalValuesInPage);
                         cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
@@ -308,8 +310,8 @@ namespace Parquet.File {
 
                 case Thrift.Encoding.PLAIN_DICTIONARY:
                 case Thrift.Encoding.RLE_DICTIONARY: {
-                        cd.indexes ??= new int[(int)totalValues];
-                        int indexCount = ReadRleDictionary(s, maxReadCount, cd.indexes, 0);
+                        cd.indexes ??= new int[(int)totalValuesInChunk];
+                        int indexCount = ReadRleDictionary(s, totalValuesInPage, cd.indexes, 0);
                         cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
