@@ -42,6 +42,8 @@ namespace Parquet.Test.Integration {
                 }
             }
 
+            F.Copy(testFileName, "c:\\tmp\\mr.parquet");
+
             //read back
             Table t2 = await ParquetReader.ReadTableFromFileAsync(testFileName);
 
@@ -127,6 +129,5 @@ namespace Parquet.Test.Integration {
 
             await CompareWithMr(table);
         }
-
     }
 }

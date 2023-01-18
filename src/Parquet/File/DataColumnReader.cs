@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.File.Values;
 using Parquet.Thrift;
 using Parquet.Schema;
 using Parquet.Extensions;
@@ -67,7 +66,7 @@ namespace Parquet.File {
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
             
             Thrift.PageHeader ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
-            (bool read, Array data, int offset) = await TryReadDictionaryPage(ph);
+            (bool read, Array data, int offset) = await TryReadDictionaryPageAsync(ph);
             if(read) {
                 colData.dictionary = data;
                 colData.dictionaryOffset = offset;
@@ -78,17 +77,13 @@ namespace Parquet.File {
 
             colData.maxCount = (int)_thriftColumnChunk.Meta_data.Num_values;
 
-            int pagesRead = 0;
-
             while(true) {
                 if(ph.Type == PageType.DATA_PAGE_V2) {
-                    await ReadDataPageV2(ph, colData, maxValues);
+                    await ReadDataPageV2Async(ph, colData, maxValues);
                 }
                 else {
-                    await ReadDataPage(ph, colData, maxValues);
+                    await ReadDataPageAsync(ph, colData, maxValues);
                 }
-
-                pagesRead++;
 
                 int totalCount = Math.Max(
                    (colData.values == null ? 0 : colData.valuesOffset),
@@ -129,7 +124,7 @@ namespace Parquet.File {
             return finalColumn;
         }
 
-        private async Task<IronCompress.DataBuffer> ReadPageData(Thrift.PageHeader ph) {
+        private async Task<IronCompress.DataBuffer> ReadPageDataAsync(Thrift.PageHeader ph) {
 
             byte[] data = ArrayPool<byte>.Shared.Rent(ph.Compressed_page_size);
 
@@ -150,7 +145,7 @@ namespace Parquet.File {
                 ph.Uncompressed_page_size);
         }
         
-        private async Task<byte[]> ReadPageDataV2(Thrift.PageHeader ph) {
+        private async Task<byte[]> ReadPageDataV2Async(Thrift.PageHeader ph) {
 
             int pageSize = ph.Compressed_page_size;
             
@@ -167,94 +162,84 @@ namespace Parquet.File {
             return data;
         }
 
-        private async Task<(bool, Array, int)> TryReadDictionaryPage(Thrift.PageHeader ph) {
+        private async Task<(bool, Array, int)> TryReadDictionaryPageAsync(Thrift.PageHeader ph) {
             if(ph.Type != Thrift.PageType.DICTIONARY_PAGE) {
                 return (false, null, 0);
             }
 
             //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
-            using(IronCompress.DataBuffer bytes = await ReadPageData(ph)) {
-                //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
-                using(var ms = new MemoryStream(bytes.AsSpan().ToArray())) {
-                    using(var dataReader = new BinaryReader(ms)) {
-                        // Dictionary should not contains null values
-                        Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
+            using IronCompress.DataBuffer bytes = await ReadPageDataAsync(ph);
+            //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
+            using var ms = new MemoryStream(bytes.AsSpan().ToArray());
+            using var dataReader = new BinaryReader(ms);
+            // Dictionary should not contains null values
+            Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
 
-                        if(!ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
-                            _thriftSchemaElement, ms, out int dictionaryOffset)) {
-                            throw new IOException("could not decode");
-                        }
-
-                        return (true, dictionary, dictionaryOffset);
-                    }
-                }
+            if(!ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
+                   _thriftSchemaElement, ms, out int dictionaryOffset)) {
+                throw new IOException("could not decode");
             }
+
+            return (true, dictionary, dictionaryOffset);
         }
 
-        private long GetFileOffset() {
+        private long GetFileOffset() =>
             // get the minimum offset, we'll just read pages in sequence as Dictionary_page_offset/Data_page_offset are not reliable
-
-            return
-               new[]
-               {
-               _thriftColumnChunk.Meta_data.Dictionary_page_offset,
-               _thriftColumnChunk.Meta_data.Data_page_offset
-               }
-               .Where(e => e != 0)
-               .Min();
-        }
-
-        private async Task ReadDataPage(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
-            using(IronCompress.DataBuffer bytes = await ReadPageData(ph)) {
-                //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
-                if(ph.Data_page_header == null) {
-                    throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+            new[]
+                {
+                    _thriftColumnChunk.Meta_data.Dictionary_page_offset,
+                    _thriftColumnChunk.Meta_data.Data_page_offset
                 }
- 
-                using(var ms = new MemoryStream(bytes.AsSpan().ToArray())) {
-                    int valueCount = ph.Data_page_header.Num_values;
-                    using(var reader = new BinaryReader(ms)) {
-                        if(_maxRepetitionLevel > 0) {
-                            //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
-                            if(cd.repetitions == null)
-                                cd.repetitions = new int[cd.maxCount];
+                .Where(e => e != 0)
+                .Min();
 
-                            cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset, ph.Data_page_header.Num_values);
-                        }
+        private async Task ReadDataPageAsync(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
+            using IronCompress.DataBuffer bytes = await ReadPageDataAsync(ph);
+            //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
+            if(ph.Data_page_header == null) {
+                throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+            }
 
-                        if(_maxDefinitionLevel > 0) {
-                            if(cd.definitions == null)
-                                cd.definitions = new int[cd.maxCount];
+            using var ms = new MemoryStream(bytes.AsSpan().ToArray());
+            int valueCount = ph.Data_page_header.Num_values;
+            using var reader = new BinaryReader(ms);
+            if(_maxRepetitionLevel > 0) {
+                //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
+                if(cd.repetitions == null)
+                    cd.repetitions = new int[cd.maxCount];
 
-                            int offsetBeforeReading = cd.definitionsOffset;
-                            cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
-                            // if no statistics are available, we use the number of values expected, based on the definitions
-                            if(ph.Data_page_header.Statistics == null) {
-                                valueCount = cd.definitions
-                                   .Skip(offsetBeforeReading).Take(cd.definitionsOffset - offsetBeforeReading)
-                                   .Count(v => v > 0);
-                            }
-                        }
+                cd.repetitionsOffset += ReadLevels(reader, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset, ph.Data_page_header.Num_values);
+            }
 
-                        // if statistics are defined, use null count to determine the exact number of items we should read,
-                        // otherwise the previously counted value from definitions
-                        int maxReadCount = ph.Data_page_header.Statistics == null ? valueCount
-                           : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
-                        ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
-                    }
+            if(_maxDefinitionLevel > 0) {
+                cd.definitions ??= new int[cd.maxCount];
+
+                int offsetBeforeReading = cd.definitionsOffset;
+                cd.definitionsOffset += ReadLevels(reader, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
+                // if no statistics are available, we use the number of values expected, based on the definitions
+                if(ph.Data_page_header.Statistics == null) {
+                    valueCount = cd.definitions
+                        .Skip(offsetBeforeReading).Take(cd.definitionsOffset - offsetBeforeReading)
+                        .Count(v => v > 0);
                 }
             }
+
+            // if statistics are defined, use null count to determine the exact number of items we should read,
+            // otherwise the previously counted value from definitions
+            int maxReadCount = ph.Data_page_header.Statistics == null ? valueCount
+                : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
+            ReadColumn(reader, ph.Data_page_header.Encoding, maxValues, maxReadCount, cd);
         }
         
         /// <summary>
         /// WARNING!!! LEAKS A LOT OF MEMORY!!!
         /// </summary>
-        private async Task ReadDataPageV2(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
+        private async Task ReadDataPageV2Async(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
             if(ph.Data_page_header_v2 == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             } 
             
-            byte[] bytes = await ReadPageDataV2(ph);
+            byte[] bytes = await ReadPageDataV2Async(ph);
 
             using var ms = new MemoryStream(bytes);
             using var reader = new BinaryReader(ms);
@@ -305,9 +290,7 @@ namespace Parquet.File {
         private void ReadColumn(BinaryReader reader, Thrift.Encoding encoding, long totalValues, int maxReadCount, ColumnRawData cd) {
             //dictionary encoding uses RLE to encode data
 
-            if(cd.values == null) {
-                cd.values = _dataField.CreateArray((int)totalValues);
-            }
+            cd.values ??= _dataField.CreateArray((int)totalValues);
 
             switch(encoding) {
                 case Thrift.Encoding.PLAIN:
@@ -319,8 +302,7 @@ namespace Parquet.File {
                     break;
 
                 case Thrift.Encoding.RLE:
-                    if(cd.indexes == null)
-                        cd.indexes = new int[(int)totalValues];
+                    cd.indexes ??= new int[(int)totalValues];
                     int indexCount = RleEncoder.Decode(reader, _thriftSchemaElement.Type_length, cd.indexes, 0, maxReadCount);
                     cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                     cd.valuesOffset += indexCount;
@@ -328,13 +310,17 @@ namespace Parquet.File {
 
                 case Thrift.Encoding.PLAIN_DICTIONARY:
                 case Thrift.Encoding.RLE_DICTIONARY:
-                    if(cd.indexes == null)
-                        cd.indexes = new int[(int)totalValues];
+                    cd.indexes ??= new int[(int)totalValues];
                     indexCount = ReadRleDictionary(reader, maxReadCount, cd.indexes, 0);
                     cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                     cd.valuesOffset += indexCount;
                     break;
 
+                case Encoding.BIT_PACKED:
+                case Encoding.DELTA_BINARY_PACKED:
+                case Encoding.DELTA_LENGTH_BYTE_ARRAY:
+                case Encoding.DELTA_BYTE_ARRAY:
+                case Encoding.BYTE_STREAM_SPLIT:
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");
             }
@@ -361,8 +347,6 @@ namespace Parquet.File {
             return offset - start;
         }
 
-        private static int GetRemainingLength(BinaryReader reader) {
-            return (int)(reader.BaseStream.Length - reader.BaseStream.Position);
-        }
+        private static int GetRemainingLength(BinaryReader reader) => (int)(reader.BaseStream.Length - reader.BaseStream.Position);
     }
 }
