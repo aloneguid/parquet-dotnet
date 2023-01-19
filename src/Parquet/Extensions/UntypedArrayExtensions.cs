@@ -1,14 +1,14 @@
-﻿
-
-
-
-
-
-
-// This file is generated with T4
+﻿// This file is generated with T4
 // https://learn.microsoft.com/en-us/visualstudio/modeling/text-template-control-blocks?view=vs-2022
 // Because of this, performance is truly great!
 // Hint: prefer Rider to edit .tt as it support syntax highlighting
+
+
+
+
+
+
+
 namespace Parquet.Extensions {
 
     using System;
@@ -295,126 +295,126 @@ namespace Parquet.Extensions {
 
 
             if(t == typeof(bool?)) {
-                PackNulls((bool?[])array,
+                PackNullsTypeFast((bool?[])array,
                     offset, count,
                     (bool?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(byte?)) {
-                PackNulls((byte?[])array,
+                PackNullsTypeFast((byte?[])array,
                     offset, count,
                     (byte?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(sbyte?)) {
-                PackNulls((sbyte?[])array,
+                PackNullsTypeFast((sbyte?[])array,
                     offset, count,
                     (sbyte?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(short?)) {
-                PackNulls((short?[])array,
+                PackNullsTypeFast((short?[])array,
                     offset, count,
                     (short?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(ushort?)) {
-                PackNulls((ushort?[])array,
+                PackNullsTypeFast((ushort?[])array,
                     offset, count,
                     (ushort?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(int?)) {
-                PackNulls((int?[])array,
+                PackNullsTypeFast((int?[])array,
                     offset, count,
                     (int?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(uint?)) {
-                PackNulls((uint?[])array,
+                PackNullsTypeFast((uint?[])array,
                     offset, count,
                     (uint?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(long?)) {
-                PackNulls((long?[])array,
+                PackNullsTypeFast((long?[])array,
                     offset, count,
                     (long?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(ulong?)) {
-                PackNulls((ulong?[])array,
+                PackNullsTypeFast((ulong?[])array,
                     offset, count,
                     (ulong?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(BigInteger?)) {
-                PackNulls((BigInteger?[])array,
+                PackNullsTypeFast((BigInteger?[])array,
                     offset, count,
                     (BigInteger?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(float?)) {
-                PackNulls((float?[])array,
+                PackNullsTypeFast((float?[])array,
                     offset, count,
                     (float?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(double?)) {
-                PackNulls((double?[])array,
+                PackNullsTypeFast((double?[])array,
                     offset, count,
                     (double?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(decimal?)) {
-                PackNulls((decimal?[])array,
+                PackNullsTypeFast((decimal?[])array,
                     offset, count,
                     (decimal?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(DateTime?)) {
-                PackNulls((DateTime?[])array,
+                PackNullsTypeFast((DateTime?[])array,
                     offset, count,
                     (DateTime?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(TimeSpan?)) {
-                PackNulls((TimeSpan?[])array,
+                PackNullsTypeFast((TimeSpan?[])array,
                     offset, count,
                     (TimeSpan?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(Interval?)) {
-                PackNulls((Interval?[])array,
+                PackNullsTypeFast((Interval?[])array,
                     offset, count,
                     (Interval?[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(string)) {
-                PackNulls((string[])array,
+                PackNullsTypeFast((string[])array,
                     offset, count,
                     (string[])packedData,
                     dest, fillerValue);
             }
 
             if(t == typeof(byte[])) {
-                PackNulls((byte[][])array,
+                PackNullsTypeFast((byte[][])array,
                     offset, count,
                     (byte[][])packedData,
                     dest, fillerValue);
@@ -424,7 +424,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(bool?[] array,
+        private static void PackNullsTypeFast(bool?[] array,
             int offset, int count,
             bool?[] packedArray,
             Span<int> dest,
@@ -444,7 +444,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(byte?[] array,
+        private static void PackNullsTypeFast(byte?[] array,
             int offset, int count,
             byte?[] packedArray,
             Span<int> dest,
@@ -464,7 +464,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(sbyte?[] array,
+        private static void PackNullsTypeFast(sbyte?[] array,
             int offset, int count,
             sbyte?[] packedArray,
             Span<int> dest,
@@ -484,7 +484,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(short?[] array,
+        private static void PackNullsTypeFast(short?[] array,
             int offset, int count,
             short?[] packedArray,
             Span<int> dest,
@@ -504,7 +504,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(ushort?[] array,
+        private static void PackNullsTypeFast(ushort?[] array,
             int offset, int count,
             ushort?[] packedArray,
             Span<int> dest,
@@ -524,7 +524,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(int?[] array,
+        private static void PackNullsTypeFast(int?[] array,
             int offset, int count,
             int?[] packedArray,
             Span<int> dest,
@@ -544,7 +544,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(uint?[] array,
+        private static void PackNullsTypeFast(uint?[] array,
             int offset, int count,
             uint?[] packedArray,
             Span<int> dest,
@@ -564,7 +564,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(long?[] array,
+        private static void PackNullsTypeFast(long?[] array,
             int offset, int count,
             long?[] packedArray,
             Span<int> dest,
@@ -584,7 +584,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(ulong?[] array,
+        private static void PackNullsTypeFast(ulong?[] array,
             int offset, int count,
             ulong?[] packedArray,
             Span<int> dest,
@@ -604,7 +604,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(BigInteger?[] array,
+        private static void PackNullsTypeFast(BigInteger?[] array,
             int offset, int count,
             BigInteger?[] packedArray,
             Span<int> dest,
@@ -624,7 +624,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(float?[] array,
+        private static void PackNullsTypeFast(float?[] array,
             int offset, int count,
             float?[] packedArray,
             Span<int> dest,
@@ -644,7 +644,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(double?[] array,
+        private static void PackNullsTypeFast(double?[] array,
             int offset, int count,
             double?[] packedArray,
             Span<int> dest,
@@ -664,7 +664,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(decimal?[] array,
+        private static void PackNullsTypeFast(decimal?[] array,
             int offset, int count,
             decimal?[] packedArray,
             Span<int> dest,
@@ -684,7 +684,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(DateTime?[] array,
+        private static void PackNullsTypeFast(DateTime?[] array,
             int offset, int count,
             DateTime?[] packedArray,
             Span<int> dest,
@@ -704,7 +704,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(TimeSpan?[] array,
+        private static void PackNullsTypeFast(TimeSpan?[] array,
             int offset, int count,
             TimeSpan?[] packedArray,
             Span<int> dest,
@@ -724,7 +724,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(Interval?[] array,
+        private static void PackNullsTypeFast(Interval?[] array,
             int offset, int count,
             Interval?[] packedArray,
             Span<int> dest,
@@ -744,7 +744,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(string[] array,
+        private static void PackNullsTypeFast(string[] array,
             int offset, int count,
             string[] packedArray,
             Span<int> dest,
@@ -764,7 +764,7 @@ namespace Parquet.Extensions {
         }
 
 
-        private static void PackNulls(byte[][] array,
+        private static void PackNullsTypeFast(byte[][] array,
             int offset, int count,
             byte[][] packedArray,
             Span<int> dest,
@@ -796,145 +796,127 @@ namespace Parquet.Extensions {
         Type t = array.GetType().GetElementType();
         
 
-
         if(t == typeof(bool)) {
-            UnpackNulls((bool[])array,
+            UnpackNullsTypeFast((bool[])array,
                 flags, fillFlag,
                 (bool?[])result);
             return;
         }
 
-
         if(t == typeof(byte)) {
-            UnpackNulls((byte[])array,
+            UnpackNullsTypeFast((byte[])array,
                 flags, fillFlag,
                 (byte?[])result);
             return;
         }
 
-
         if(t == typeof(sbyte)) {
-            UnpackNulls((sbyte[])array,
+            UnpackNullsTypeFast((sbyte[])array,
                 flags, fillFlag,
                 (sbyte?[])result);
             return;
         }
 
-
         if(t == typeof(short)) {
-            UnpackNulls((short[])array,
+            UnpackNullsTypeFast((short[])array,
                 flags, fillFlag,
                 (short?[])result);
             return;
         }
 
-
         if(t == typeof(ushort)) {
-            UnpackNulls((ushort[])array,
+            UnpackNullsTypeFast((ushort[])array,
                 flags, fillFlag,
                 (ushort?[])result);
             return;
         }
 
-
         if(t == typeof(int)) {
-            UnpackNulls((int[])array,
+            UnpackNullsTypeFast((int[])array,
                 flags, fillFlag,
                 (int?[])result);
             return;
         }
 
-
         if(t == typeof(uint)) {
-            UnpackNulls((uint[])array,
+            UnpackNullsTypeFast((uint[])array,
                 flags, fillFlag,
                 (uint?[])result);
             return;
         }
 
-
         if(t == typeof(long)) {
-            UnpackNulls((long[])array,
+            UnpackNullsTypeFast((long[])array,
                 flags, fillFlag,
                 (long?[])result);
             return;
         }
 
-
         if(t == typeof(ulong)) {
-            UnpackNulls((ulong[])array,
+            UnpackNullsTypeFast((ulong[])array,
                 flags, fillFlag,
                 (ulong?[])result);
             return;
         }
 
-
         if(t == typeof(BigInteger)) {
-            UnpackNulls((BigInteger[])array,
+            UnpackNullsTypeFast((BigInteger[])array,
                 flags, fillFlag,
                 (BigInteger?[])result);
             return;
         }
 
-
         if(t == typeof(float)) {
-            UnpackNulls((float[])array,
+            UnpackNullsTypeFast((float[])array,
                 flags, fillFlag,
                 (float?[])result);
             return;
         }
 
-
         if(t == typeof(double)) {
-            UnpackNulls((double[])array,
+            UnpackNullsTypeFast((double[])array,
                 flags, fillFlag,
                 (double?[])result);
             return;
         }
 
-
         if(t == typeof(decimal)) {
-            UnpackNulls((decimal[])array,
+            UnpackNullsTypeFast((decimal[])array,
                 flags, fillFlag,
                 (decimal?[])result);
             return;
         }
 
-
         if(t == typeof(DateTime)) {
-            UnpackNulls((DateTime[])array,
+            UnpackNullsTypeFast((DateTime[])array,
                 flags, fillFlag,
                 (DateTime?[])result);
             return;
         }
 
-
         if(t == typeof(TimeSpan)) {
-            UnpackNulls((TimeSpan[])array,
+            UnpackNullsTypeFast((TimeSpan[])array,
                 flags, fillFlag,
                 (TimeSpan?[])result);
             return;
         }
 
-
         if(t == typeof(Interval)) {
-            UnpackNulls((Interval[])array,
+            UnpackNullsTypeFast((Interval[])array,
                 flags, fillFlag,
                 (Interval?[])result);
             return;
         }
 
-
         if(t == typeof(string)) {
-            UnpackNulls((string[])array,
+            UnpackNullsTypeFast((string[])array,
                 flags, fillFlag,
                 (string[])result);
             return;
         }
 
-
         if(t == typeof(byte[])) {
-            UnpackNulls((byte[][])array,
+            UnpackNullsTypeFast((byte[][])array,
                 flags, fillFlag,
                 (byte[][])result);
             return;
@@ -945,8 +927,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(bool[] array,
+    private static void UnpackNullsTypeFast(bool[] array,
         int[] flags, int fillFlag,
         bool?[] result) {
 
@@ -961,8 +942,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(byte[] array,
+    private static void UnpackNullsTypeFast(byte[] array,
         int[] flags, int fillFlag,
         byte?[] result) {
 
@@ -977,8 +957,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(sbyte[] array,
+    private static void UnpackNullsTypeFast(sbyte[] array,
         int[] flags, int fillFlag,
         sbyte?[] result) {
 
@@ -993,8 +972,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(short[] array,
+    private static void UnpackNullsTypeFast(short[] array,
         int[] flags, int fillFlag,
         short?[] result) {
 
@@ -1009,8 +987,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(ushort[] array,
+    private static void UnpackNullsTypeFast(ushort[] array,
         int[] flags, int fillFlag,
         ushort?[] result) {
 
@@ -1025,8 +1002,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(int[] array,
+    private static void UnpackNullsTypeFast(int[] array,
         int[] flags, int fillFlag,
         int?[] result) {
 
@@ -1041,8 +1017,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(uint[] array,
+    private static void UnpackNullsTypeFast(uint[] array,
         int[] flags, int fillFlag,
         uint?[] result) {
 
@@ -1057,8 +1032,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(long[] array,
+    private static void UnpackNullsTypeFast(long[] array,
         int[] flags, int fillFlag,
         long?[] result) {
 
@@ -1073,8 +1047,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(ulong[] array,
+    private static void UnpackNullsTypeFast(ulong[] array,
         int[] flags, int fillFlag,
         ulong?[] result) {
 
@@ -1089,8 +1062,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(BigInteger[] array,
+    private static void UnpackNullsTypeFast(BigInteger[] array,
         int[] flags, int fillFlag,
         BigInteger?[] result) {
 
@@ -1105,8 +1077,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(float[] array,
+    private static void UnpackNullsTypeFast(float[] array,
         int[] flags, int fillFlag,
         float?[] result) {
 
@@ -1121,8 +1092,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(double[] array,
+    private static void UnpackNullsTypeFast(double[] array,
         int[] flags, int fillFlag,
         double?[] result) {
 
@@ -1137,8 +1107,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(decimal[] array,
+    private static void UnpackNullsTypeFast(decimal[] array,
         int[] flags, int fillFlag,
         decimal?[] result) {
 
@@ -1153,8 +1122,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(DateTime[] array,
+    private static void UnpackNullsTypeFast(DateTime[] array,
         int[] flags, int fillFlag,
         DateTime?[] result) {
 
@@ -1169,8 +1137,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(TimeSpan[] array,
+    private static void UnpackNullsTypeFast(TimeSpan[] array,
         int[] flags, int fillFlag,
         TimeSpan?[] result) {
 
@@ -1185,8 +1152,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(Interval[] array,
+    private static void UnpackNullsTypeFast(Interval[] array,
         int[] flags, int fillFlag,
         Interval?[] result) {
 
@@ -1201,8 +1167,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(string[] array,
+    private static void UnpackNullsTypeFast(string[] array,
         int[] flags, int fillFlag,
         string[] result) {
 
@@ -1217,8 +1182,7 @@ namespace Parquet.Extensions {
     }
 
 
-
-    private static void UnpackNulls(byte[][] array,
+    private static void UnpackNullsTypeFast(byte[][] array,
         int[] flags, int fillFlag,
         byte[][] result) {
 
@@ -1241,8 +1205,390 @@ namespace Parquet.Extensions {
     public static void ExplodeFast(this Array dictionary,
             Span<int> indexes,
             Array result, int resultOffset, int resultCount) {
+        Type t = dictionary.GetType().GetElementType();
 
+        if(t == typeof(bool)) {
+            ExplodeTypeFast((bool[])dictionary,
+                indexes, (bool[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(byte)) {
+            ExplodeTypeFast((byte[])dictionary,
+                indexes, (byte[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(sbyte)) {
+            ExplodeTypeFast((sbyte[])dictionary,
+                indexes, (sbyte[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(short)) {
+            ExplodeTypeFast((short[])dictionary,
+                indexes, (short[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(ushort)) {
+            ExplodeTypeFast((ushort[])dictionary,
+                indexes, (ushort[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(int)) {
+            ExplodeTypeFast((int[])dictionary,
+                indexes, (int[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(uint)) {
+            ExplodeTypeFast((uint[])dictionary,
+                indexes, (uint[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(long)) {
+            ExplodeTypeFast((long[])dictionary,
+                indexes, (long[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(ulong)) {
+            ExplodeTypeFast((ulong[])dictionary,
+                indexes, (ulong[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(BigInteger)) {
+            ExplodeTypeFast((BigInteger[])dictionary,
+                indexes, (BigInteger[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(float)) {
+            ExplodeTypeFast((float[])dictionary,
+                indexes, (float[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(double)) {
+            ExplodeTypeFast((double[])dictionary,
+                indexes, (double[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(decimal)) {
+            ExplodeTypeFast((decimal[])dictionary,
+                indexes, (decimal[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(DateTime)) {
+            ExplodeTypeFast((DateTime[])dictionary,
+                indexes, (DateTime[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(TimeSpan)) {
+            ExplodeTypeFast((TimeSpan[])dictionary,
+                indexes, (TimeSpan[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(Interval)) {
+            ExplodeTypeFast((Interval[])dictionary,
+                indexes, (Interval[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(string)) {
+            ExplodeTypeFast((string[])dictionary,
+                indexes, (string[])result, resultOffset, resultCount);
+            return;
+        }
+
+        if(t == typeof(byte[])) {
+            ExplodeTypeFast((byte[][])dictionary,
+                indexes, (byte[][])result, resultOffset, resultCount);
+            return;
+        }
+            
+        throw new NotSupportedException($"cannot pack type {t}");
     }
+
+
+    private static void ExplodeTypeFast(bool[] dictionary,
+        Span<int> indexes,
+        bool[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(byte[] dictionary,
+        Span<int> indexes,
+        byte[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(sbyte[] dictionary,
+        Span<int> indexes,
+        sbyte[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(short[] dictionary,
+        Span<int> indexes,
+        short[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(ushort[] dictionary,
+        Span<int> indexes,
+        ushort[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(int[] dictionary,
+        Span<int> indexes,
+        int[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(uint[] dictionary,
+        Span<int> indexes,
+        uint[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(long[] dictionary,
+        Span<int> indexes,
+        long[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(ulong[] dictionary,
+        Span<int> indexes,
+        ulong[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(BigInteger[] dictionary,
+        Span<int> indexes,
+        BigInteger[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(float[] dictionary,
+        Span<int> indexes,
+        float[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(double[] dictionary,
+        Span<int> indexes,
+        double[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(decimal[] dictionary,
+        Span<int> indexes,
+        decimal[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(DateTime[] dictionary,
+        Span<int> indexes,
+        DateTime[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(TimeSpan[] dictionary,
+        Span<int> indexes,
+        TimeSpan[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(Interval[] dictionary,
+        Span<int> indexes,
+        Interval[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(string[] dictionary,
+        Span<int> indexes,
+        string[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
+    private static void ExplodeTypeFast(byte[][] dictionary,
+        Span<int> indexes,
+        byte[][] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+
 
     #endregion
 

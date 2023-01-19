@@ -1,15 +1,18 @@
-﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+﻿// This file is generated with T4
+// https://learn.microsoft.com/en-us/visualstudio/modeling/text-template-control-blocks?view=vs-2022
+// Because of this, performance is truly great!
+// Hint: prefer Rider to edit .tt as it support syntax highlighting
+<#@ template debug="false" hostspecific="false" language="C#" #>
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".cs" #>
-<#
-    var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]" }; #>
-// This file is generated with T4
-// https://learn.microsoft.com/en-us/visualstudio/modeling/text-template-control-blocks?view=vs-2022
-// Because of this, performance is truly great!
-// Hint: prefer Rider to edit .tt as it support syntax highlighting
+<# 
+    var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]" }; 
+
+    string nn(string nt) => nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt;
+#>
 namespace Parquet.Extensions {
 
     using System;
@@ -58,7 +61,7 @@ namespace Parquet.Extensions {
 
 <# foreach(string nt in types) { #>
             if(t == typeof(<#= nt #>)) {
-                PackNulls((<#= nt #>[])array,
+                PackNullsTypeFast((<#= nt #>[])array,
                     offset, count,
                     (<#= nt #>[])packedData,
                     dest, fillerValue);
@@ -68,7 +71,7 @@ namespace Parquet.Extensions {
         }
 
 <# foreach(string nt in types) { #>
-        private static void PackNulls(<#= nt #>[] array,
+        private static void PackNullsTypeFast(<#= nt #>[] array,
             int offset, int count,
             <#= nt #>[] packedArray,
             Span<int> dest,
@@ -100,9 +103,8 @@ namespace Parquet.Extensions {
         Type t = array.GetType().GetElementType();
         
 <# foreach(string nt in types) { #>
-<# string nnt = nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt; #>
-        if(t == typeof(<#= nnt #>)) {
-            UnpackNulls((<#= nnt #>[])array,
+        if(t == typeof(<#= nn(nt) #>)) {
+            UnpackNullsTypeFast((<#= nn(nt) #>[])array,
                 flags, fillFlag,
                 (<#= nt #>[])result);
             return;
@@ -113,8 +115,7 @@ namespace Parquet.Extensions {
     }
 
 <# foreach(string nt in types) { #>
-<# string nnt = nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt; #>
-    private static void UnpackNulls(<#= nnt #>[] array,
+    private static void UnpackNullsTypeFast(<#= nn(nt) #>[] array,
         int[] flags, int fillFlag,
         <#= nt #>[] result) {
 
@@ -137,8 +138,33 @@ namespace Parquet.Extensions {
     public static void ExplodeFast(this Array dictionary,
             Span<int> indexes,
             Array result, int resultOffset, int resultCount) {
-
+        Type t = dictionary.GetType().GetElementType();
+<# foreach(string nt in types) { #>
+        if(t == typeof(<#= nn(nt) #>)) {
+            ExplodeTypeFast((<#= nn(nt) #>[])dictionary,
+                indexes, (<#= nn(nt) #>[])result, resultOffset, resultCount);
+            return;
+        }
+<# } #>            
+        throw new NotSupportedException($"cannot pack type {t}");
     }
+
+<# foreach(string nt in types) { #>
+    private static void ExplodeTypeFast(<#= nn(nt) #>[] dictionary,
+        Span<int> indexes,
+        <#= nn(nt) #>[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+<# } #>
 
     #endregion
 

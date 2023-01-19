@@ -20,7 +20,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         public string ParquetSharpFilename;
 
         //[Params("int", "str", "float")]
-        [Params("int", "str")]
+        [Params("int?")]
         public string DataType;
 
         //[Params(10, 100, 1000, 1000000)]
@@ -61,6 +61,23 @@ namespace Parquet.PerfRunner.Benchmarks {
                     };
                     _pqsReadAction = (r, n) => {
                         int[] data = r.Column(0).LogicalReader<int>().ReadAll(n);
+                    };
+                    break;
+                case "int?":
+                    _pqnc = new DataColumn(new DataField<int?>("c"),
+                        Enumerable
+                            .Range(0, DataSize)
+                            .Select(i => i % 4 == 0 ? (int?)null : i)
+                            .ToArray());
+                    _pqss = new Column[] { new Column<int?>("c") };
+                    _pqsd = (int?[])_pqnc.Data;
+                    _pqsWriteAction = w => {
+                        using(LogicalColumnWriter<int?> colWriter = w.NextColumn().LogicalWriter<int?>()) {
+                            colWriter.WriteBatch((int?[])_pqsd);
+                        }
+                    };
+                    _pqsReadAction = (r, n) => {
+                        int?[] data = r.Column(0).LogicalReader<int?>().ReadAll(n);
                     };
                     break;
                 case "str":
@@ -116,8 +133,9 @@ namespace Parquet.PerfRunner.Benchmarks {
             _pqns = new ParquetSchema(_pqnc.Field);
             _pnqMs = new MemoryStream(1000);
 
-            ParquetNetFilename = $"c:\\tmp\\parq_net_benchmark_{Mode}_{DataSize}_{DataType}.parquet";
-            ParquetSharpFilename = $"c:\\tmp\\parq_sharp_benchmark_{Mode}_{DataSize}_{DataType}.parquet";
+            string fileDataType = DataType.Replace("?", "_nullable");
+            ParquetNetFilename = $"c:\\tmp\\parq_net_benchmark_{Mode}_{DataSize}_{fileDataType}.parquet";
+            ParquetSharpFilename = $"c:\\tmp\\parq_sharp_benchmark_{Mode}_{DataSize}_{fileDataType}.parquet";
 
             if(Mode == "read") {
                 using(Stream fileStream = System.IO.File.Create(ParquetNetFilename)) {

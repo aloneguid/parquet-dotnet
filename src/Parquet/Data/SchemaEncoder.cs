@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
@@ -58,15 +59,15 @@ namespace Parquet.Data {
                 return null;
             }
 
-            public bool FindTypeTuple(SType type, out Thrift.Type ttype, out Thrift.ConvertedType? convertedType) {
+            public bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) {
 
                 if(!_systemTypeToTypeTuple.TryGetValue(type, out Tuple<Thrift.Type, ConvertedType?> tuple)) {
-                    ttype = default;
+                    thriftType = default;
                     convertedType = null;
                     return false;
                 }
 
-                ttype = tuple.Item1;
+                thriftType = tuple.Item1;
                 convertedType = tuple.Item2;
                 return true;
             }
@@ -75,7 +76,7 @@ namespace Parquet.Data {
         }
 
         [Obsolete]
-        private static readonly Dictionary<SType, DataType> SystemTypeToObsoleteType = new() {
+        private static readonly Dictionary<SType, DataType> _systemTypeToObsoleteType = new() {
             { typeof(bool), DataType.Boolean },
             { typeof(byte), DataType.Byte },
             { typeof(sbyte), DataType.SignedByte },
@@ -96,7 +97,7 @@ namespace Parquet.Data {
             { typeof(TimeSpan), DataType.TimeSpan }
         };
 
-        private static readonly LookupTable LT = new LookupTable {
+        private static readonly LookupTable _lt = new() {
             { Thrift.Type.BOOLEAN, typeof(bool) },
             { Thrift.Type.INT32, typeof(int),
                 Thrift.ConvertedType.UINT_8, typeof(byte),
@@ -223,7 +224,7 @@ namespace Parquet.Data {
             return true;
         }
 
-        public static bool IsSupported(SType t) => t == typeof(DateTime) || LT.IsSupported(t);
+        public static bool IsSupported(SType t) => t == typeof(DateTime) || _lt.IsSupported(t);
 
         /// <summary>
         /// Builds <see cref="Field"/> from thrift schema
@@ -243,7 +244,7 @@ namespace Parquet.Data {
             Field f = null;
             ownedChildCount = 0;
 
-            SType t = LT.FindSystemType(se);
+            SType t = _lt.FindSystemType(se);
             if(t != null) {
                 // correction taking int account passed options
                 if(options.TreatBigIntegersAsDates && t == typeof(BigInteger))
@@ -382,7 +383,7 @@ namespace Parquet.Data {
             Encode(mapField.Value, keyValue, container);
             Thrift.SchemaElement tseValue = container[container.Count - 1];
 
-            //fixups for weirdness in RLs
+            //fixes for weirdness in RLs
             if(tseKey.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
                 tseKey.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
             if(tseValue.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
@@ -405,7 +406,7 @@ namespace Parquet.Data {
             if(field.SchemaType == SchemaType.Data && field is DataField dataField) {
                 var tse = new Thrift.SchemaElement(field.Name);
 
-                if(!LT.FindTypeTuple(dataField.ClrType, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType)) {
+                if(!_lt.FindTypeTuple(dataField.ClrType, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType)) {
                     throw new NotSupportedException($"could not find type tuple for {dataField.ClrType}");
                 }
 
@@ -439,19 +440,10 @@ namespace Parquet.Data {
         /// Finds corresponding .NET type
         /// </summary>
         [Obsolete]
-        public static SType FindSystemType(DataType dataType) {
-            foreach(KeyValuePair<SType, DataType> pair in SystemTypeToObsoleteType) {
-                if(pair.Value == dataType)
-                    return pair.Key;
-            }
-
-            return null;
-        }
+        public static SType FindSystemType(DataType dataType) => 
+            (from pair in _systemTypeToObsoleteType where pair.Value == dataType select pair.Key).FirstOrDefault();
 
         [Obsolete]
-        public static DataType? FindDataType(SType type) {
-
-            return SystemTypeToObsoleteType[type];
-        }
+        public static DataType? FindDataType(SType type) => _systemTypeToObsoleteType[type];
     }
 }

@@ -303,7 +303,8 @@ namespace Parquet.File {
                 case Thrift.Encoding.RLE: {
                         cd.indexes ??= new int[(int)totalValuesInChunk];
                         int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement.Type_length, totalValuesInPage);
-                        cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
+                        //cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
+                        cd.dictionary.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;
@@ -312,7 +313,8 @@ namespace Parquet.File {
                 case Thrift.Encoding.RLE_DICTIONARY: {
                         cd.indexes ??= new int[(int)totalValuesInChunk];
                         int indexCount = ReadRleDictionary(s, totalValuesInPage, cd.indexes, 0);
-                        cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
+                        //cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
+                        cd.dictionary.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;
