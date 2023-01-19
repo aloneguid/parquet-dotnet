@@ -57,14 +57,19 @@ namespace Parquet.Extensions {
             int fillerValue) {
 
             Type t = array.GetType().GetElementType();
-            if(!t.IsNullable()) return;
+            if(!t.IsNullable()) {
+                Array.Copy(array, offset, packedData, 0, count);
+                dest.Fill(fillerValue);
+                return;
+            }
 
 <# foreach(string nt in types) { #>
             if(t == typeof(<#= nt #>)) {
                 PackNullsTypeFast((<#= nt #>[])array,
                     offset, count,
-                    (<#= nt #>[])packedData,
+                    (<#= nn(nt) #>[])packedData,
                     dest, fillerValue);
+                return;
             }
 <# } #>            
             throw new NotSupportedException($"cannot pack type {t}");
@@ -73,7 +78,7 @@ namespace Parquet.Extensions {
 <# foreach(string nt in types) { #>
         private static void PackNullsTypeFast(<#= nt #>[] array,
             int offset, int count,
-            <#= nt #>[] packedArray,
+            <#= nn(nt) #>[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -85,7 +90,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (<#= nn(nt) #>)value;
                 }
             }
         }

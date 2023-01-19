@@ -291,119 +291,139 @@ namespace Parquet.Extensions {
             int fillerValue) {
 
             Type t = array.GetType().GetElementType();
-            if(!t.IsNullable()) return;
+            if(!t.IsNullable()) {
+                Array.Copy(array, offset, packedData, 0, count);
+                dest.Fill(fillerValue);
+                return;
+            }
 
 
             if(t == typeof(bool?)) {
                 PackNullsTypeFast((bool?[])array,
                     offset, count,
-                    (bool?[])packedData,
+                    (bool[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(byte?)) {
                 PackNullsTypeFast((byte?[])array,
                     offset, count,
-                    (byte?[])packedData,
+                    (byte[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(sbyte?)) {
                 PackNullsTypeFast((sbyte?[])array,
                     offset, count,
-                    (sbyte?[])packedData,
+                    (sbyte[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(short?)) {
                 PackNullsTypeFast((short?[])array,
                     offset, count,
-                    (short?[])packedData,
+                    (short[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(ushort?)) {
                 PackNullsTypeFast((ushort?[])array,
                     offset, count,
-                    (ushort?[])packedData,
+                    (ushort[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(int?)) {
                 PackNullsTypeFast((int?[])array,
                     offset, count,
-                    (int?[])packedData,
+                    (int[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(uint?)) {
                 PackNullsTypeFast((uint?[])array,
                     offset, count,
-                    (uint?[])packedData,
+                    (uint[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(long?)) {
                 PackNullsTypeFast((long?[])array,
                     offset, count,
-                    (long?[])packedData,
+                    (long[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(ulong?)) {
                 PackNullsTypeFast((ulong?[])array,
                     offset, count,
-                    (ulong?[])packedData,
+                    (ulong[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(BigInteger?)) {
                 PackNullsTypeFast((BigInteger?[])array,
                     offset, count,
-                    (BigInteger?[])packedData,
+                    (BigInteger[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(float?)) {
                 PackNullsTypeFast((float?[])array,
                     offset, count,
-                    (float?[])packedData,
+                    (float[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(double?)) {
                 PackNullsTypeFast((double?[])array,
                     offset, count,
-                    (double?[])packedData,
+                    (double[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(decimal?)) {
                 PackNullsTypeFast((decimal?[])array,
                     offset, count,
-                    (decimal?[])packedData,
+                    (decimal[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(DateTime?)) {
                 PackNullsTypeFast((DateTime?[])array,
                     offset, count,
-                    (DateTime?[])packedData,
+                    (DateTime[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(TimeSpan?)) {
                 PackNullsTypeFast((TimeSpan?[])array,
                     offset, count,
-                    (TimeSpan?[])packedData,
+                    (TimeSpan[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(Interval?)) {
                 PackNullsTypeFast((Interval?[])array,
                     offset, count,
-                    (Interval?[])packedData,
+                    (Interval[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(string)) {
@@ -411,6 +431,7 @@ namespace Parquet.Extensions {
                     offset, count,
                     (string[])packedData,
                     dest, fillerValue);
+                return;
             }
 
             if(t == typeof(byte[])) {
@@ -418,6 +439,7 @@ namespace Parquet.Extensions {
                     offset, count,
                     (byte[][])packedData,
                     dest, fillerValue);
+                return;
             }
             
             throw new NotSupportedException($"cannot pack type {t}");
@@ -426,7 +448,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(bool?[] array,
             int offset, int count,
-            bool?[] packedArray,
+            bool[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -438,7 +460,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (bool)value;
                 }
             }
         }
@@ -446,7 +468,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(byte?[] array,
             int offset, int count,
-            byte?[] packedArray,
+            byte[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -458,7 +480,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (byte)value;
                 }
             }
         }
@@ -466,7 +488,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(sbyte?[] array,
             int offset, int count,
-            sbyte?[] packedArray,
+            sbyte[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -478,7 +500,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (sbyte)value;
                 }
             }
         }
@@ -486,7 +508,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(short?[] array,
             int offset, int count,
-            short?[] packedArray,
+            short[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -498,7 +520,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (short)value;
                 }
             }
         }
@@ -506,7 +528,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(ushort?[] array,
             int offset, int count,
-            ushort?[] packedArray,
+            ushort[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -518,7 +540,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (ushort)value;
                 }
             }
         }
@@ -526,7 +548,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(int?[] array,
             int offset, int count,
-            int?[] packedArray,
+            int[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -538,7 +560,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (int)value;
                 }
             }
         }
@@ -546,7 +568,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(uint?[] array,
             int offset, int count,
-            uint?[] packedArray,
+            uint[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -558,7 +580,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (uint)value;
                 }
             }
         }
@@ -566,7 +588,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(long?[] array,
             int offset, int count,
-            long?[] packedArray,
+            long[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -578,7 +600,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (long)value;
                 }
             }
         }
@@ -586,7 +608,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(ulong?[] array,
             int offset, int count,
-            ulong?[] packedArray,
+            ulong[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -598,7 +620,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (ulong)value;
                 }
             }
         }
@@ -606,7 +628,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(BigInteger?[] array,
             int offset, int count,
-            BigInteger?[] packedArray,
+            BigInteger[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -618,7 +640,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (BigInteger)value;
                 }
             }
         }
@@ -626,7 +648,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(float?[] array,
             int offset, int count,
-            float?[] packedArray,
+            float[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -638,7 +660,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (float)value;
                 }
             }
         }
@@ -646,7 +668,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(double?[] array,
             int offset, int count,
-            double?[] packedArray,
+            double[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -658,7 +680,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (double)value;
                 }
             }
         }
@@ -666,7 +688,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(decimal?[] array,
             int offset, int count,
-            decimal?[] packedArray,
+            decimal[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -678,7 +700,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (decimal)value;
                 }
             }
         }
@@ -686,7 +708,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(DateTime?[] array,
             int offset, int count,
-            DateTime?[] packedArray,
+            DateTime[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -698,7 +720,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (DateTime)value;
                 }
             }
         }
@@ -706,7 +728,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(TimeSpan?[] array,
             int offset, int count,
-            TimeSpan?[] packedArray,
+            TimeSpan[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -718,7 +740,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (TimeSpan)value;
                 }
             }
         }
@@ -726,7 +748,7 @@ namespace Parquet.Extensions {
 
         private static void PackNullsTypeFast(Interval?[] array,
             int offset, int count,
-            Interval?[] packedArray,
+            Interval[] packedArray,
             Span<int> dest,
             int fillerValue) {
 
@@ -738,7 +760,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (Interval)value;
                 }
             }
         }
@@ -758,7 +780,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (string)value;
                 }
             }
         }
@@ -778,7 +800,7 @@ namespace Parquet.Extensions {
                 }
                 else {
                     dest[y] = fillerValue;
-                    packedArray[ir++] = value;
+                    packedArray[ir++] = (byte[])value;
                 }
             }
         }

@@ -63,11 +63,6 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
-        <None Include="Extensions\UntypedArrayExtensions.cs">
-          <DesignTime>True</DesignTime>
-          <AutoGen>True</AutoGen>
-          <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
-        </None>
     </ItemGroup>
 
     <ItemGroup>

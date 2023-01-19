@@ -106,18 +106,7 @@ namespace Parquet.Data {
             Array packedData,
             int maxDefinitionLevel) {
 
-            for(int i = dataOffset, y = 0, ir = 0; i < (dataOffset + dataCount); i++, y++) {
-                object value = data.GetValue(i);
-
-                if(value == null) {
-                    definitions[y] = 0;
-                }
-                else {
-                    definitions[y] = maxDefinitionLevel;
-                    packedData.SetValue(value, ir++);
-                }
-            }
-
+            data.PackNullsFast(dataOffset, dataCount, packedData, definitions, maxDefinitionLevel);
         }
 
         internal long CalculateRowCount() {

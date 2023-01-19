@@ -2,5 +2,5 @@
 
 using Parquet.PerfRunner.Benchmarks;
 
-new VsParquetSharp().Main();
-//await new DataTypes().NullableInts();
+//new VsParquetSharp().Main();
+await new DataTypes().NullableInts();
