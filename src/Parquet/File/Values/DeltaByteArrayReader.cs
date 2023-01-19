@@ -12,13 +12,13 @@ namespace Parquet.File.Values {
         ///      For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding.
         ///      This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="s"></param>
         /// <param name="dest"></param>
         /// <param name="offset"></param>
         /// <param name="valueCount"></param>
-        public static int Read(BinaryReader reader, Array dest, int offset, int valueCount) {
-            var prefixLengthReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(reader);
-            var suffixReader = DeltaLengthByteArrayValuesReader.GetDeltaLengthByteArrayValuesReader(reader);
+        public static int Read(Stream s, Array dest, int offset, int valueCount) {
+            var prefixLengthReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(s);
+            var suffixReader = DeltaLengthByteArrayValuesReader.GetDeltaLengthByteArrayValuesReader(s);
             
             string[] result = (string[])dest;
             byte[] previous = Array.Empty<byte>();

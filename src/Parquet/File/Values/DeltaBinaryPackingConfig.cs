@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Parquet.Extensions;
 
 namespace Parquet.File.Values {
     /// <summary>
@@ -22,9 +23,9 @@ namespace Parquet.File.Values {
         /// <summary>
         /// Read, populate and return DeltaBinaryPackingConfig
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="s"></param>
         /// <returns></returns>
-        public static DeltaBinaryPackingConfig ReadConfig(BinaryReader reader) =>
-            new DeltaBinaryPackingConfig(reader.ReadUnsignedVarInt(), reader.ReadUnsignedVarInt());
+        public static DeltaBinaryPackingConfig ReadConfig(Stream s) =>
+            new DeltaBinaryPackingConfig(s.ReadUnsignedVarInt(), s.ReadUnsignedVarInt());
     }
 }

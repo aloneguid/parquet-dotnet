@@ -8,6 +8,7 @@ using Parquet.Data;
 using Parquet.Thrift;
 using Parquet.Schema;
 using Parquet.Extensions;
+using Parquet.File.Values;
 
 namespace Parquet.File {
     class DataColumnReader {
@@ -320,7 +321,7 @@ namespace Parquet.File {
                     break;
 
                 case Thrift.Encoding.DELTA_BYTE_ARRAY:
-                    cd.valuesOffset += DeltaByteArrayReader.Read(reader, cd.values, cd.valuesOffset, maxReadCount);
+                    cd.valuesOffset += DeltaByteArrayReader.Read(s, cd.values, cd.valuesOffset, totalValuesInPage);
                     break;
 
                 case Encoding.BIT_PACKED:

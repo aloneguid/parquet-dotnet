@@ -1,4 +1,5 @@
 using System.IO;
+using Parquet.Extensions;
 
 namespace Parquet.File.Values
 {
@@ -6,11 +7,11 @@ namespace Parquet.File.Values
     /// 
     /// </summary>
     public class DeltaLengthByteArrayValuesReader {
-        private readonly BinaryReader _reader;
+        private readonly Stream _stream;
         private readonly DeltaBinaryPackingValuesReader _lengthReader;
 
-        private DeltaLengthByteArrayValuesReader(BinaryReader reader, DeltaBinaryPackingValuesReader lengthReader) {
-            _reader = reader;
+        private DeltaLengthByteArrayValuesReader(Stream s, DeltaBinaryPackingValuesReader lengthReader) {
+            _stream = s;
             _lengthReader = lengthReader;
         }
 
@@ -21,17 +22,17 @@ namespace Parquet.File.Values
         public byte[] ReadBytes() {
             int length = _lengthReader.ReadInteger();
 
-            return _reader.ReadBytes(length);
+            return _stream.ReadBytesExactly(length);
         }
         
         /// <summary>
         /// Gets and Initializes the configuration for the reader
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="s"></param>
         /// <returns></returns>
-        public static DeltaLengthByteArrayValuesReader GetDeltaLengthByteArrayValuesReader(BinaryReader reader) {
-            var deltaBinaryPackingValuesReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(reader);
-            return new DeltaLengthByteArrayValuesReader(reader, deltaBinaryPackingValuesReader);
+        public static DeltaLengthByteArrayValuesReader GetDeltaLengthByteArrayValuesReader(Stream s) {
+            var deltaBinaryPackingValuesReader = DeltaBinaryPackingValuesReader.GetDeltaBinaryPackingValuesReader(s);
+            return new DeltaLengthByteArrayValuesReader(s, deltaBinaryPackingValuesReader);
         }
         
     }

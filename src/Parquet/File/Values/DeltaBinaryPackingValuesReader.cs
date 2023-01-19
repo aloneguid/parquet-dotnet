@@ -1,12 +1,13 @@
 using System;
 using System.IO;
+using Parquet.Extensions;
 
 namespace Parquet.File.Values {
     /// <summary>
     /// 
     /// </summary>
     public class DeltaBinaryPackingValuesReader {
-        private readonly BinaryReader _reader;
+        private readonly Stream _stream;
         private DeltaBinaryPackingConfig _config;
         private int _totalValueCount;
         private long[] _valuesBuffer;
@@ -14,22 +15,22 @@ namespace Parquet.File.Values {
         private int[] _bitWidths;
         private int _valuesRead = 0;
 
-        private DeltaBinaryPackingValuesReader(BinaryReader reader) => _reader = reader;
+        private DeltaBinaryPackingValuesReader(Stream s) => _stream = s;
 
         /// <summary>
         /// Gets and Initializes the configuration for the reader
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="s"></param>
         /// <returns></returns>
-        public static DeltaBinaryPackingValuesReader GetDeltaBinaryPackingValuesReader(BinaryReader reader) {
-            var deltaBinaryPackingValuesReader = new DeltaBinaryPackingValuesReader(reader);
+        public static DeltaBinaryPackingValuesReader GetDeltaBinaryPackingValuesReader(Stream s) {
+            var deltaBinaryPackingValuesReader = new DeltaBinaryPackingValuesReader(s);
             deltaBinaryPackingValuesReader.Init();
             return deltaBinaryPackingValuesReader;
         }
 
         private void Init() {
-            _config = DeltaBinaryPackingConfig.ReadConfig(_reader);
-            _totalValueCount = _reader.ReadUnsignedVarInt();
+            _config = DeltaBinaryPackingConfig.ReadConfig(_stream);
+            _totalValueCount = _stream.ReadUnsignedVarInt();
 
             // allocate valuesBuffer
             int totalMiniBlockCount = (int)Math.Ceiling((double)_totalValueCount / _config.MiniBlockSizeInValues);
@@ -39,7 +40,7 @@ namespace Parquet.File.Values {
             _bitWidths = new int[_config.MiniBlockNumInABlock];
 
             // read first value from header
-            _valuesBuffer[_valuesBuffered++] = _reader.ReadZigZagVarLong();
+            _valuesBuffer[_valuesBuffered++] = _stream.ReadZigZagVarLong();
 
             while(_valuesBuffered < _totalValueCount) {
                 //values Buffered could be more than totalValueCount, since we flush on a mini block basis
@@ -62,10 +63,10 @@ namespace Parquet.File.Values {
         }
 
         private void LoadNewBlockToBuffer() {
-            long minDeltaInCurrentBlock = _reader.ReadZigZagVarLong();
+            long minDeltaInCurrentBlock = _stream.ReadZigZagVarLong();
 
             for(int l = 0; l < _config.MiniBlockNumInABlock; l++) {
-                _bitWidths[l] = _reader.ReadByte();
+                _bitWidths[l] = _stream.ReadByte();
             }
 
             int i;
@@ -82,7 +83,7 @@ namespace Parquet.File.Values {
 
         private void UnpackMiniBlock(int bitWidth) {
             for(int i = 0; i < _config.MiniBlockSizeInValues; i += 8) {
-                byte[] bytes = _reader.ReadBytes(bitWidth);
+                byte[] bytes = _stream.ReadBytesExactly(bitWidth);
                 var packer = new Packer.Packer(bitWidth);
                 packer.Unpack8Values(bytes, 0, _valuesBuffer, _valuesBuffered);
                 _valuesBuffered += 8;
