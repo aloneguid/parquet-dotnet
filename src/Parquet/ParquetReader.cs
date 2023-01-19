@@ -3,9 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Parquet.Data;
-using Parquet.Data.Rows;
 using System.Threading.Tasks;
 using System.Threading;
+using Parquet.Schema;
+using Parquet.Rows;
 
 namespace Parquet {
     /// <summary>
@@ -114,7 +115,7 @@ namespace Parquet {
         /// <summary>
         /// Reader schema
         /// </summary>
-        public Schema Schema => _footer.CreateModelSchema(_parquetOptions);
+        public ParquetSchema Schema => _footer.CreateModelSchema(_parquetOptions);
 
         /// <summary>
         /// Internal parquet metadata

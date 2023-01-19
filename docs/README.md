@@ -3,11 +3,9 @@
 
 ![Icon](img/banner.jpg)
 
----
 
 
-
-**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Supports `.NET 6.0`, `.NET Core 3.1`,  and `.NET Standard 2.1`.
+**Fully portable, managed** .NET library to read and write [Apache Parquet](https://parquet.apache.org/) files. Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
 Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs and much more.
 
@@ -25,7 +23,8 @@ Parquet is a de facto physical storage format in big data applications, includin
 - [Declaring Schema](schema.md)
 - [Complex Types](complex-types.md)
 - [Row-Based API](rows.md)
-- [Fast Automatic Serialisation](serialisation.md)
+- [Class Serialisation](serialisation.md), including [inherited properties](inheritance.md).
+- [Performance](#performance)
 
 ## Getting started
 
@@ -33,16 +32,16 @@ Parquet is a de facto physical storage format in big data applications, includin
 
 ### General
 
-This intro is covering only basic use cases. Parquet format is more complicated when it comes to complex types like structures, lists, maps and arrays, therefore you should [read this page](parquet-getting-started.md) if you are planning to use them.
+This intro is covering only basic use cases. Parquet format is more complicated when it comes to complex types like structures, lists, maps and arrays, therefore you should [read this page](parquet-getting-started.md) if you are planning to use them, otherwise ignore for now.
 
 ### Reading files
 
-In order to read a parquet file you need to open a stream first. Due to the fact that Parquet utilises file seeking extensively, the input stream must be *readable and seekable*. **You cannot stream parquet data!** This somewhat limits the amount of streaming you can do, for instance you can't read a parquet file from a network stream as we need to jump around it, therefore you have to download it locally to disk and then open.
+In order to read a parquet file you need to open a stream first. Due to the fact that Parquet utilises file seeking extensively, the input stream must be *readable and seekable*. **You cannot stream parquet data!** This somewhat limits the amount of streaming you can do, for instance you can't read a parquet file from a network stream as we need to jump around it, therefore you have to download it locally to disk (or memory) and then open.
 
 For instance, to read a file `c:\test.parquet` you would normally write the following code:
 
 ```csharp
-// open file stream
+  // open file stream
 using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
     // open parquet file reader
     using(ParquetReader parquetReader = await ParquetReader.CreateAsync(fileStream)) {
@@ -57,8 +56,8 @@ using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
                 // read all columns inside each row group (you have an option to read only
                 // required columns if you need to.
                 var columns = new DataColumn[dataFields.Length];
-                for(int c = 0; c < columns.Length; c++) {
-                    columns[c] = await groupReader.ReadColumnAsync(dataFields[c]);
+                for(int c = 0; i < columns.Length; i++) {
+                    columns[c] = await groupReader.ReadColumnAsync(dataFields[i]);
                 }
 
                 // get first column, for instance
@@ -75,7 +74,7 @@ using(Stream fileStream = System.IO.File.OpenRead("c:\\test.parquet")) {
 
 ### Writing files
 
-Writing operates on streams, therefore you need to create it first. The following example shows how to create a file on disk with two columns - `id` and `city`.
+Writing operates on streams, therefore you need to create it first. The following example shows how to create a file on disk with two columns - `id` and `city`. Streams need to be *writeable, readable and seekable* due to how Parquet files are organised internally.
 
 ```csharp
 //create data columns with schema metadata and the data you need
@@ -88,7 +87,7 @@ var cityColumn = new DataColumn(
     new string[] { "London", "Derby" });
 
 // create file schema
-var schema = new Schema(idColumn.Field, cityColumn.Field);
+var schema = new ParquetSchema(idColumn.Field, cityColumn.Field);
 
 using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
     using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
@@ -105,6 +104,10 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 
 There are [API for row-based access](rows.md) that simplify parquet programming at the expense of memory, speed and flexibility. We recommend using column based approach when you can (examples above) however if not possible use these API as we constantly optimise for speed and use them internally ourselves in certain situations.
 
+## Performance
+
+As of today, this is probably the fastest Parquet implementation on the planet. Parquet.Net used to be [slower than alternative implementation](https://github.com/G-Research/ParquetSharp#performance) but since v4.2 the tests are [showing the opposite](https://github.com/aloneguid/parquet-dotnet/releases/tag/4.2.0).
+
 ## Migrating from V3
 
 The major difference between v4 and v3 is v4 fully migrated to async API. In most of the cases you will see an equivalent `Async` method instead of synchronous one. The only non-obvious places are:
@@ -119,7 +122,7 @@ The major difference between v4 and v3 is v4 fully migrated to async API. In mos
 - Native Windows [Parquet Viewer app](https://github.com/mukunku/ParquetViewer).
 - [Recfluence](https://github.com/markledwich2/Recfluence) YouTube analytics.
 
-and [many more](https://github.com/aloneguid/parquet-dotnet/network/dependents). Want to be listed here? Just raise a PR.
+and [many more](https://github.com/aloneguid/parquet-dotnet/network/dependents). Want to be listed here? Just raise a PR or comment on this issue.
 
 ## Contributions
 

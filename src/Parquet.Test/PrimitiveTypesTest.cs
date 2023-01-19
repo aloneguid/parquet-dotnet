@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.File.Values.Primitives;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
@@ -13,7 +10,7 @@ namespace Parquet.Test {
         [InlineData(1000)]
         public async Task Write_loads_of_booleans_all_true(int count) {
             var id = new DataField<bool>("enabled");
-            var schema = new Schema(id);
+            var schema = new ParquetSchema(id);
 
             bool[] data = new bool[count];
             //generate data

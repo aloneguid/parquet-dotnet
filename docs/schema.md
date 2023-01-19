@@ -2,11 +2,11 @@
 
 Due to the fact that Parquet is s strong typed format you need to declare a schema before writing any data.
 
-Schema can be defined by creating an instance of `Schema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `Schema` exist to simplify the schema declaration, but we are going to be more specific on this page.
+Schema can be defined by creating an instance of `ParquetSchema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `ParquetSchema` exist to simplify the schema declaration, but we are going to be more specific on this page.
 
-There are several types of fields you can specify in your schema, and the most common is `DataField`. Data field is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
+There are several types of fields you can specify in your schema, and the most common is `DataField`. `DataField` is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
 
-You can declare a `DataField` by specifying a column name and it's type in the constuctor, in one of two forms:
+You can declare a `DataField` by specifying a column name and it's type in the constructor, in one of two forms:
 
 ```csharp
 var field = new DataField("id", DataType.Int32);
@@ -18,17 +18,95 @@ The first one is more declarative and allows you to select data type from the `D
 
 The second one is just a shortcut to `DataField` that allows you to use .NET Generics.
 
+Then, there are specialised versions for `DataField` allowing you to specify more precise metadata about certain parquet data type, for instance `DecimalDataField` allows to specify precision and scale other than default values.
+
+Non-data field wrap complex structures like list (`ListField`), map (`MapField`) and struct (`StructField`).
+
+Full schema type hierarchy can be expressed as:
+
+```mermaid
+classDiagram
+    Schema "1" o-- "1..*" Field
+    Field <|-- DataField
+    DataField <|-- DataF1eld~T~
+    DataField <|-- DateTimeDataField
+    DataField <|-- DecimalDataField
+    DataField <|-- TimeSpanDataField
+    
+    Field <|-- ListField
+    Field "1" --o "1" ListField: list item
+
+    Field <|-- MapField
+    Field "1" --o "1" MapField: key field
+    Field "1" --o "1" MapField: value field
+
+    Field <|-- StructField
+    Field "1..*" --o "1" StructField: struct members
+
+
+    class Schema {
+        +List~Field~: Fields
+    }
+
+    class Field {
+        +string Name
+        +SchemaType SchemaType
+        +FieldPath Path
+    }
+
+    class DataField {
+        +Type ClrType
+        +bool IsNullable
+        +bool IsArray
+    }
+
+    class DataF1eld~T~{
+        
+    }
+
+    class DateTimeDataField {
+        +DateTimeFormat: DateTimeFormat
+    }
+
+    class DecimalDataField {
+        +int Precision
+        +int Scale
+        +bool: ForceByteArrayEncoding
+    }
+
+    class TimeSpanDataField {
+        +TimeSpanFormat: TimeSpanFormat
+    }
+
+    class ListField {
+        +Field: Item
+    }
+
+    class MapField {
+        +Field: Key
+        +Field: Value
+    }
+
+    class StructField {
+        +List~Field~: Fields
+    }
+```
+
+
+
 ## Null Values
 
-Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly:
+Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly by specifying a nullable type:
 
 ```csharp
 new DataField<int?>("id");
-
-new DataField("id", DataType.Int32, true);
+// or
+new DataField("id", typeof(int?));
 ```
 
 This allows you to force the schema to be nullable, so you can add null values. In many cases having a nullable column is useful even if you are not using nulls at the moment, for instance when you will append to the file later and will have nulls.
+
+Nullable columns incur a slight performance and data size overhead, as parquet needs to store an additional nullable flag for each value.
 
 > Note that `string` type is always nullable. Although `string` is an [immutable type](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/strings/) in CLR, it's still passed by reference, which can be assigned to `null` value.
 
@@ -36,7 +114,7 @@ This allows you to force the schema to be nullable, so you can add null values. 
 
 In the old times Parquet format didn't support dates, therefore people used to store dates as `int96` number. Because of backward compatibility issues we use this as the default date storage format.
 
-If you need to override date format storage you can use `DateTimeDataField` instead of `DataField<DateTimeOffset>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
+If you need to override date format storage you can use `DateTimeDataField` instead of `DataField<DateTime>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
 
 ```csharp
 new DateTimeDataField("date_col", DateTimeFormat.Date);
@@ -58,9 +136,11 @@ new DecimalDataField("decInt32", 4, 1); // uses precision 4 and scale 1
 new DecimalDataField("decMinus", 10, 2, true); // uses precision 10 and scale 2, and enforces legacy decimal encoding that Impala understands
 ```
 
+Since v4.2.3 variable-size decimal encoding [(variant 4)](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) is supported by the reader.
+
 ## Repeatable Fields
 
-Parquet.Net supports repeatable fields i.e. fields that contain an array of values instead of just one single value.
+Repeatable fields are fields that contain an array of values instead of just one single value.
 
 To declare a repeatable field in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
 
@@ -76,27 +156,4 @@ When writing to the field you can specify any value which derives from `IEnumera
 ds.Add(1, new int[] { 1, 2, 3 });
 ```
 
-When reading schema back, you can check if it's repeatable by calling to `.IsArray` member. 
-
-## Supported Types
-
-Parquet.Net tries to fit natively into .NET environment and map built-in CLR types to Parquet type system. The following table lists the types supported at the moment. These are the types you can specify in the constructor of `SchemaElement<TType>`:
-
-| CLR Type                               | Parquet Type | Parquet Annotation |
-| -------------------------------------- | ------------ | ------------------ |
-| System.Byte (byte)                     | INT32        | UNIT_8             |
-| System.SByte (sbyte)                   | INT32        | UINT_8             |
-| byte[]                                 | BYTE_ARRAY   |                    |
-| System.Int16 (short)                   | INT_32       | INT_16             |
-| System.UInt16 (ushort)                 | INT_32       | UINT_16            |
-| System.Int32 (int)                     | INT32        |                    |
-| System.UInt32 (uint)                   | INT32        | UINT_32            |
-| System.Boolean (bool)                  | BOOLEAN      |                    |
-| System.String (string)                 | BYTE_ARRAY   | UTF8               |
-| System.Single (float)                  | FLOAT        |                    |
-| System.Int64 (long)                    | INT64        |                    |
-| System.UInt64 (ulong)                  | INT64        | UINT_64            |
-| System.Double (double)                 | DOUBLE       |                    |
-| System.Decimal (decimal)               | BYTE_ARRAY   | DECIMAL            |
-| System.DateTimeOffset (DateTimeOffset) | INT96        |                    |
-| System.DateTime (DateTime)             | INT96        |                    |
+When reading schema back, you can check if it's repeatable by calling to `.IsArray` property. 

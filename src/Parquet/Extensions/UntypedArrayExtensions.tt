@@ -1,0 +1,177 @@
+﻿// This file is generated with T4
+// https://learn.microsoft.com/en-us/visualstudio/modeling/text-template-control-blocks?view=vs-2022
+// Because of this, performance is truly great!
+// Hint: prefer Rider to edit .tt as it support syntax highlighting
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<# 
+    var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]" }; 
+
+    string nn(string nt) => nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt;
+#>
+namespace Parquet.Extensions {
+
+    using System;
+    using System.Numerics;
+    using Parquet.File.Values.Primitives;
+
+    static class UntypedArrayExtensions {
+
+        #region [ Null Counting ]
+
+        public static int CalculateNullCountFast(this Array array, int offset, int count) {
+            Type t = array.GetType().GetElementType();
+            if(!t.IsNullable()) return 0;
+
+<# foreach(string nt in types) { #>
+            if(t == typeof(<#= nt #>)) {
+                return CalculateNullCount((<#= nt #>[])array, offset, count);
+            }
+<# } #>            
+            throw new NotSupportedException($"cannot count nulls in type {t}");
+        }
+
+<# foreach(string nt in types) { #>
+        private static int CalculateNullCount(<#= nt #>[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
+<# } #>
+    #endregion
+
+    #region [ Null Packing ]
+
+    public static void PackNullsFast(this Array array,
+            int offset, int count,
+            Array packedData,
+            Span<int> dest,
+            int fillerValue) {
+
+            Type t = array.GetType().GetElementType();
+            if(!t.IsNullable()) {
+                Array.Copy(array, offset, packedData, 0, count);
+                dest.Fill(fillerValue);
+                return;
+            }
+
+<# foreach(string nt in types) { #>
+            if(t == typeof(<#= nt #>)) {
+                PackNullsTypeFast((<#= nt #>[])array,
+                    offset, count,
+                    (<#= nn(nt) #>[])packedData,
+                    dest, fillerValue);
+                return;
+            }
+<# } #>            
+            throw new NotSupportedException($"cannot pack type {t}");
+        }
+
+<# foreach(string nt in types) { #>
+        private static void PackNullsTypeFast(<#= nt #>[] array,
+            int offset, int count,
+            <#= nn(nt) #>[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                <#= nt #> value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (<#= nn(nt) #>)value;
+                }
+            }
+        }
+
+<# } #>
+
+    #endregion
+
+    #region [ Null Unpacking ]
+
+    public static void UnpackNullsFast(this Array array,
+        int[] flags, int fillFlag,
+        Array result) {
+
+        Type t = array.GetType().GetElementType();
+        
+<# foreach(string nt in types) { #>
+        if(t == typeof(<#= nn(nt) #>)) {
+            UnpackNullsTypeFast((<#= nn(nt) #>[])array,
+                flags, fillFlag,
+                (<#= nt #>[])result);
+            return;
+        }
+<# } #>            
+        throw new NotSupportedException($"cannot pack type {t}");
+
+    }
+
+<# foreach(string nt in types) { #>
+    private static void UnpackNullsTypeFast(<#= nn(nt) #>[] array,
+        int[] flags, int fillFlag,
+        <#= nt #>[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
+<# } #>
+
+    #endregion
+
+    #region [ Dictionary Explosion ]
+
+    public static void ExplodeFast(this Array dictionary,
+            Span<int> indexes,
+            Array result, int resultOffset, int resultCount) {
+        Type t = dictionary.GetType().GetElementType();
+<# foreach(string nt in types) { #>
+        if(t == typeof(<#= nn(nt) #>)) {
+            ExplodeTypeFast((<#= nn(nt) #>[])dictionary,
+                indexes, (<#= nn(nt) #>[])result, resultOffset, resultCount);
+            return;
+        }
+<# } #>            
+        throw new NotSupportedException($"cannot pack type {t}");
+    }
+
+<# foreach(string nt in types) { #>
+    private static void ExplodeTypeFast(<#= nn(nt) #>[] dictionary,
+        Span<int> indexes,
+        <#= nn(nt) #>[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+<# } #>
+
+    #endregion
+
+    }
+}

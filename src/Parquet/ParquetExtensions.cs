@@ -1,11 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.Data.Rows;
-using Parquet.Extensions;
-using Parquet.File;
+using Parquet.Rows;
+using Parquet.Schema;
 
 namespace Parquet {
     /// <summary>
@@ -16,7 +13,7 @@ namespace Parquet {
         /// Writes a file with a single row group
         /// </summary>
         public static async Task WriteSingleRowGroupParquetFileAsync(
-            this Stream stream, Schema schema, params DataColumn[] columns) {
+            this Stream stream, ParquetSchema schema, params DataColumn[] columns) {
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, stream)) {
                 writer.CompressionMethod = CompressionMethod.None;
                 using(ParquetRowGroupWriter rgw = writer.CreateRowGroup()) {
@@ -31,8 +28,8 @@ namespace Parquet {
         /// Reads the first row group from a file
         /// </summary>
         /// <param name="stream"></param>
-        public static async Task<(Schema, DataColumn[])> ReadSingleRowGroupParquetFile(this Stream stream) {
-            Schema schema;
+        public static async Task<(ParquetSchema, DataColumn[])> ReadSingleRowGroupParquetFile(this Stream stream) {
+            ParquetSchema schema;
             DataColumn[] columns;
             using(ParquetReader reader = await ParquetReader.CreateAsync(stream)) {
                 schema = reader.Schema;
@@ -104,25 +101,6 @@ namespace Parquet {
         public static async Task WriteAsync(this ParquetRowGroupWriter writer, Table table) {
             foreach(DataColumn dc in table.ExtractDataColumns()) {
                 await writer.WriteColumnAsync(dc);
-            }
-        }
-
-        /// <summary>
-        /// Decodes raw bytes from <see cref="Thrift.Statistics"/> into a CLR value
-        /// </summary>
-        public static object DecodeSingleStatsValue(this Thrift.FileMetaData fileMeta, Thrift.ColumnChunk columnChunk, byte[] rawBytes) {
-            if(rawBytes == null || rawBytes.Length == 0)
-                return null;
-
-            var footer = new ThriftFooter(fileMeta);
-            Thrift.SchemaElement schema = footer.GetSchemaElement(columnChunk);
-
-            IDataTypeHandler handler = DataTypeFactory.Match(schema, new ParquetOptions { TreatByteArrayAsString = true });
-
-            using(var ms = new MemoryStream(rawBytes))
-            using(var reader = new BinaryReader(ms)) {
-                object value = handler.Read(reader, schema, rawBytes.Length);
-                return value;
             }
         }
     }

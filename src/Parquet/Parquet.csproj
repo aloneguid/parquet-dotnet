@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
         <Description>
             Pure managed .NET library to read and write Apache Parquet files, targeting .NET Standand 2.0 and up.
 
@@ -49,21 +49,39 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IronCompress" Version="1.2.4" />
+        <PackageReference Include="IronCompress" Version="1.2.6" />
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
     </ItemGroup>
 
-    <!--
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
-        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.3.0" />
+        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     </ItemGroup>
-    -->
 
     <ItemGroup>
         <None Include="..\icon.png">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Extensions\UntypedArrayExtensions.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>UntypedArrayExtensions.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Extensions\UntypedArrayExtensions.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

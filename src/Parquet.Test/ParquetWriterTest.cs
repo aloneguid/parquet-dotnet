@@ -4,12 +4,14 @@ using System.IO;
 using Xunit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Parquet.Schema;
+using System.Linq;
 
 namespace Parquet.Test {
     public class ParquetWriterTest : TestBase {
         [Fact]
         public async Task Cannot_write_columns_in_wrong_order() {
-            var schema = new Schema(new DataField<int>("id"), new DataField<int>("id2"));
+            var schema = new ParquetSchema(new DataField<int>("id"), new DataField<int>("id2"));
 
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
 
@@ -27,7 +29,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
             var ms = new MemoryStream();
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1 }));
                 }
@@ -103,7 +105,7 @@ namespace Parquet.Test {
             });
 
             // actual writing now that the reader is set up
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ws)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ws)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1 }));
                 }
@@ -128,7 +130,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
             var ms = new MemoryStream();
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1, 2 }));
                 }
@@ -136,7 +138,7 @@ namespace Parquet.Test {
 
             //append to this file. Note that you cannot append to existing row group, therefore create a new one
             ms.Position = 0;
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms, append: true)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms, append: true)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3, 4 }));
                 }
@@ -174,7 +176,7 @@ namespace Parquet.Test {
             var id = new DataField<int?>("id");
             var ms = new MemoryStream();
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, input));
                 }
@@ -197,7 +199,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }, 0, 3));
                 }
@@ -219,7 +221,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }, 1, 3));
                 }
@@ -241,7 +243,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
                 }
@@ -263,7 +265,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
                 }
@@ -293,7 +295,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new Schema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
                 writer.CustomMetadata = new Dictionary<string, string> {
                     ["key1"] = "value1",
                     ["key2"] = "value2"
@@ -309,6 +311,52 @@ namespace Parquet.Test {
                 Assert.Equal("value1", reader.CustomMetadata["key1"]);
                 Assert.Equal("value2", reader.CustomMetadata["key2"]);
             }
+        }
+
+        [Fact]
+        public async Task Dictionary_encoding_applied_for_repeated_strings() {
+            var str = new DataField<string>("s");
+            using var ms = new MemoryStream();
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms)) {
+                writer.CompressionMethod = CompressionMethod.None;
+
+                var strings = new List<string>();
+                strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
+                strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
+                strings.AddRange(Enumerable.Repeat("The main reason behind the occurrence of this error is...", 10000));
+                var strData = new DataColumn(str, strings.ToArray());
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(strData);
+                }
+            }
+
+            // if it's less than 200kb it's fine!
+            Assert.True(ms.Length < 200000, $"output size is {ms.Length}");
+
+        }
+
+        [Fact]
+        public async Task Dictionary_encoding_can_be_turned_off() {
+            var str = new DataField<string>("s");
+            using var ms = new MemoryStream();
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms,
+                new ParquetOptions { UseDictionaryEncoding = false})) {
+                writer.CompressionMethod = CompressionMethod.None;
+                var strings = new List<string>();
+                strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
+                strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
+                strings.AddRange(Enumerable.Repeat("The main reason behind the occurrence of this error is...", 10000));
+                var strData = new DataColumn(str, strings.ToArray());
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(strData);
+                }
+            }
+
+            // should be relatively big
+            Assert.True(ms.Length > 200000, $"output size is {ms.Length}");
+
         }
     }
 }

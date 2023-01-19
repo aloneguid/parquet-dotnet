@@ -4,7 +4,7 @@ Parquet library is generally extremely flexible in terms of supporting internals
 
 For this reason the library implements a fast serialiser/deserialiser for parquet files.
 
-They both generate IL code in runtime for a class type to work with, therefore there is a tiny bit of a startup complation delay which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast. Note that this is still faster than reflection. In general, we see around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records).
+They both generate IL code in runtime for a class type to work with, therefore there is a tiny bit of a startup compilation delay which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast. Note that this is still faster than reflection. In general, we see around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records).
 
 Both serialiser and deserialiser works with array of classes. Let's say you have the following class definition:
 
@@ -36,7 +36,7 @@ Here is what you can do to write out those classes in a single file:
 ParquetConvert.Serialize(structures, stream);
 ```
 
-That's it! Of course `.Serialise()` method also has overloads and optional parameters allowing you to control the serialisation process slightly, such as selecting compression method, row group size etc.
+That's it! Of course the `.Serialize()` method also has overloads and optional parameters allowing you to control the serialization process slightly, such as selecting compression method, row group size etc.
 
 Parquet.Net will automatically figure out file schema by reflecting class structure, types, nullability and other parameters for you.
 
@@ -110,8 +110,6 @@ class MyClass
 
 ## Limitations
 
-At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).
-
-
+At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).  See the [inheritance docs](inheritance.md) for details on inherited properties.
 
 None of the complex types such as arrays etc. are supported. We would love to hear your feedback whether this functionality is required though!

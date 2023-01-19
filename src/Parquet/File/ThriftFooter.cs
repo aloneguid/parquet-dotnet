@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Parquet.Thrift;
 
 namespace Parquet.File {
@@ -17,7 +19,7 @@ namespace Parquet.File {
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
 
-        public ThriftFooter(Schema schema, long totalRowCount) {
+        public ThriftFooter(ParquetSchema schema, long totalRowCount) {
             if(schema == null) {
                 throw new ArgumentNullException(nameof(schema));
             }
@@ -25,7 +27,11 @@ namespace Parquet.File {
             _fileMeta = CreateThriftSchema(schema);
             _fileMeta.Num_rows = totalRowCount;
 
-            _fileMeta.Created_by = $"Parquet.Net version %Version% (build %Git.LongCommitHash%)";
+#if DEBUG
+            _fileMeta.Created_by = "Parquet.Net local dev version";
+#else
+            _fileMeta.Created_by = $"Parquet.Net v{Globals.Version}";
+#endif
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
 
@@ -60,22 +66,11 @@ namespace Parquet.File {
                 throw new ArgumentNullException(nameof(columnChunk));
             }
 
-            List<string> path = columnChunk.Meta_data.Path_in_schema;
-
-            int i = 0;
-            foreach(string pp in path) {
-                while(i < _fileMeta.Schema.Count) {
-                    if(_fileMeta.Schema[i].Name == pp)
-                        break;
-
-                    i++;
-                }
-            }
-
-            return _fileMeta.Schema[i];
+            var findPath = new FieldPath(columnChunk.Meta_data.Path_in_schema);
+            return _tree.Find(findPath)?.element;
         }
 
-        public List<string> GetPath(Thrift.SchemaElement schemaElement) {
+        public FieldPath GetPath(Thrift.SchemaElement schemaElement) {
             var path = new List<string>();
 
             ThriftSchemaTree.Node wrapped = _tree.Find(schemaElement);
@@ -85,7 +80,7 @@ namespace Parquet.File {
             }
 
             path.Reverse();
-            return path;
+            return new FieldPath(path);
         }
 
         // could use value tuple, would that nuget ref be ok to bring in?
@@ -143,7 +138,8 @@ namespace Parquet.File {
             return rg;
         }
 
-        public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, Stream output, Thrift.Type columnType, List<string> path, int valuesCount) {
+        public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
+            Thrift.Type columnType, FieldPath path, int valuesCount) {
             Thrift.CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
 
             var chunk = new Thrift.ColumnChunk();
@@ -159,16 +155,16 @@ namespace Parquet.File {
                 Thrift.Encoding.BIT_PACKED,
                 Thrift.Encoding.PLAIN
             };
-            chunk.Meta_data.Path_in_schema = path;
+            chunk.Meta_data.Path_in_schema = path.ToList();
             chunk.Meta_data.Statistics = new Thrift.Statistics();
 
             return chunk;
         }
 
-        public Thrift.PageHeader CreateDataPage(int valueCount) {
+        public Thrift.PageHeader CreateDataPage(int valueCount, bool isDictionary) {
             var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
             ph.Data_page_header = new Thrift.DataPageHeader {
-                Encoding = Thrift.Encoding.PLAIN,
+                Encoding = isDictionary ? Thrift.Encoding.PLAIN_DICTIONARY : Thrift.Encoding.PLAIN,
                 Definition_level_encoding = Thrift.Encoding.RLE,
                 Repetition_level_encoding = Thrift.Encoding.RLE,
                 Num_values = valueCount,
@@ -178,30 +174,35 @@ namespace Parquet.File {
             return ph;
         }
 
-        #region [ Conversion to Model Schema ]
+        public Thrift.PageHeader CreateDictionaryPage(int numValues) {
+            var ph = new Thrift.PageHeader(Thrift.PageType.DICTIONARY_PAGE, 0, 0);
+            ph.Dictionary_page_header = new DictionaryPageHeader {
+                Encoding = Thrift.Encoding.PLAIN_DICTIONARY,
+                Num_values = numValues
+            };
+            return ph;
+        }
 
-        public Schema CreateModelSchema(ParquetOptions formatOptions) {
+#region [ Conversion to Model Schema ]
+
+        public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
             int si = 0;
             Thrift.SchemaElement tse = _fileMeta.Schema[si++];
             var container = new List<Field>();
 
             CreateModelSchema(null, container, tse.Num_children, ref si, formatOptions);
 
-            return new Schema(container);
+            return new ParquetSchema(container);
         }
 
-        private void CreateModelSchema(string path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
+        private void CreateModelSchema(FieldPath path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
             for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++) {
-                Thrift.SchemaElement tse = _fileMeta.Schema[si];
-                IDataTypeHandler dth = DataTypeFactory.Match(tse, formatOptions);
+                Field se = SchemaEncoder.Decode(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
 
-                if(dth == null) {
-                    throw new InvalidOperationException($"cannot find data type handler to create model schema for {tse.Describe()}");
-                }
-
-                Field se = dth.CreateSchemaElement(_fileMeta.Schema, ref si, out int ownedChildCount);
-
-                se.Path = string.Join(Schema.PathSeparator, new[] { path, se.Path ?? se.Name }.Where(p => p != null));
+                List<string> npath = path?.ToList() ?? new List<string>();
+                if(se.Path != null) npath.AddRange(se.Path.ToList());
+                else npath.Add(se.Name);
+                se.Path = new FieldPath(npath);
 
                 if(ownedChildCount > 0) {
                     var childContainer = new List<Field>();
@@ -210,7 +211,6 @@ namespace Parquet.File {
                         se.Assign(cse);
                     }
                 }
-
 
                 container.Add(se);
             }
@@ -228,21 +228,24 @@ namespace Parquet.File {
             throw new NotSupportedException($"cannot find data type handler for schema element '{tse.Name}' (type: {t}{ct})");
         }
 
-        #endregion
+#endregion
 
-        #region [ Convertion from Model Schema ]
+#region [ Convertion from Model Schema ]
 
-        public Thrift.FileMetaData CreateThriftSchema(Schema schema) {
+        public Thrift.FileMetaData CreateThriftSchema(ParquetSchema schema) {
             var meta = new Thrift.FileMetaData();
             meta.Version = 1;
             meta.Schema = new List<Thrift.SchemaElement>();
             meta.Row_groups = new List<Thrift.RowGroup>();
 
             Thrift.SchemaElement root = AddRoot(meta.Schema);
-            CreateThriftSchema(schema.Fields, root, meta.Schema);
+            foreach(Field se in schema.Fields) {
+                SchemaEncoder.Encode(se, root, meta.Schema);
+            }
 
             return meta;
         }
+
 
         private Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container) {
             var root = new Thrift.SchemaElement("root");
@@ -250,19 +253,9 @@ namespace Parquet.File {
             return root;
         }
 
-        private void CreateThriftSchema(IEnumerable<Field> ses, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            foreach(Field se in ses) {
-                IDataTypeHandler handler = DataTypeFactory.Match(se);
+#endregion
 
-                //todo: check that handler is found indeed
-
-                handler.CreateThrift(se, parent, container);
-            }
-        }
-
-        #endregion
-
-        #region [ Helpers ]
+#region [ Helpers ]
 
         class ThriftSchemaTree {
             readonly Dictionary<SchemaElement, Node> _memoizedFindResults = 
@@ -307,6 +300,24 @@ namespace Parquet.File {
                 return null;
             }
 
+            public Node Find(FieldPath path) {
+                if(path.Length == 0) return null;
+                return Find(root, path);
+            }
+
+            private Node Find(Node root, FieldPath path) {
+                foreach(Node child in root.children) {
+                    if(child.element.Name == path.FirstPart) {
+                        if(path.Length == 1)
+                            return child;
+
+                        return Find(child, new FieldPath(path.ToList().Skip(1)));
+                    }
+                }
+
+                return null;
+            }
+
             private void BuildSchema(Node parent, List<Thrift.SchemaElement> schema, int count, ref int i) {
                 parent.children = new List<Node>();
                 for(int ic = 0; ic < count; ic++) {
@@ -320,6 +331,6 @@ namespace Parquet.File {
             }
         }
 
-        #endregion
+#endregion
     }
 }

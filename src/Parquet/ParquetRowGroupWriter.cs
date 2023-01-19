@@ -6,7 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
-using Parquet.File.Values;
+using Parquet.Schema;
+using FieldPath = Parquet.Schema.FieldPath;
 
 namespace Parquet {
     /// <summary>
@@ -16,7 +17,7 @@ namespace Parquet {
     public class ParquetRowGroupWriter : IDisposable
 #pragma warning restore CA1063 // Implement IDisposable Correctly
     {
-        private readonly Schema _schema;
+        private readonly ParquetSchema _schema;
         private readonly Stream _stream;
         private readonly ThriftStream _thriftStream;
         private readonly ThriftFooter _footer;
@@ -26,7 +27,7 @@ namespace Parquet {
         private readonly Thrift.SchemaElement[] _thschema;
         private int _colIdx;
 
-        internal ParquetRowGroupWriter(Schema schema,
+        internal ParquetRowGroupWriter(ParquetSchema schema,
            Stream stream,
            ThriftStream thriftStream,
            ThriftFooter footer,
@@ -65,16 +66,15 @@ namespace Parquet {
             if(!column.Field.Equals(tse)) {
                 throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{column.Field.Name}'", nameof(column));
             }
-            IDataTypeHandler dataTypeHandler = DataTypeFactory.Match(tse, _formatOptions);
             _colIdx += 1;
 
-            List<string> path = _footer.GetPath(tse);
+            FieldPath path = _footer.GetPath(tse);
 
             var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
                _compressionMethod,
-               (int)(RowCount ?? 0));
+               _formatOptions);
 
-            Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, dataTypeHandler, cancellationToken);
+            Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
             _thriftRowGroup.Columns.Add(chunk);
 
         }

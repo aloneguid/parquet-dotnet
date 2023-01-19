@@ -1,22 +1,19 @@
 ﻿using System;
-using System.Buffers;
 using System.Linq;
+using Parquet.Extensions;
+using Parquet.Schema;
 
 namespace Parquet.Data {
     /// <summary>
-    /// The primary low-level structure to hold data for a parqut column.
+    /// The primary low-level structure to hold data for a parquet column.
     /// Handles internal data composition/decomposition to enrich with custom data Parquet format requires.
     /// </summary>
     public class DataColumn {
-        private readonly IDataTypeHandler _dataTypeHandler;
-
         private readonly int _offset;
         private readonly int _count = -1;
 
         private DataColumn(DataField field) {
             Field = field ?? throw new ArgumentNullException(nameof(field));
-
-            _dataTypeHandler = DataTypeFactory.Match(field.DataType);
         }
 
         /// <summary>
@@ -47,14 +44,12 @@ namespace Parquet.Data {
         internal DataColumn(DataField field,
            Array definedData,
            int[] definitionLevels, int maxDefinitionLevel,
-           int[] repetitionLevels, int maxRepetitionLevel,
-           Array dictionary,
-           int[] dictionaryIndexes) : this(field) {
+           int[] repetitionLevels, int maxRepetitionLevel) : this(field) {
             Data = definedData;
 
             // 1. Apply definitions
             if(definitionLevels != null) {
-                Data = _dataTypeHandler.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
+                Data = field.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
             }
 
             // 2. Apply repetitions
@@ -77,6 +72,11 @@ namespace Parquet.Data {
         public int Count => _count > -1 ? _count : Data.Length;
 
         /// <summary>
+        /// Count of elements not including nulls, if statistics contains null count.
+        /// </summary>
+        public int CountWithoutNulls => (int)(Count - Statistics.NullCount);
+
+        /// <summary>
         /// Repetition levels if any.
         /// </summary>
         public int[] RepetitionLevels { get; private set; }
@@ -97,25 +97,16 @@ namespace Parquet.Data {
         /// </summary>
         public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0, null, null);
 
-        internal ArrayView PackDefinitions(int maxDefinitionLevel, out int[] pooledDefinitionLevels, out int definitionLevelCount, out int nullCount) {
-            pooledDefinitionLevels = ArrayPool<int>.Shared.Rent(Count);
-            definitionLevelCount = Count;
-
-            bool isNullable = Field.ClrType.IsNullable() || Data.GetType().GetElementType().IsNullable();
-
-            if(!Field.HasNulls || !isNullable) {
-                SetPooledDefinitionLevels(maxDefinitionLevel, pooledDefinitionLevels);
-                nullCount = 0; //definitely no nulls here
-                return new ArrayView(Data, Offset, Count);
-            }
-
-            return _dataTypeHandler.PackDefinitions(Data, Offset, Count, maxDefinitionLevel, out pooledDefinitionLevels, out definitionLevelCount, out nullCount);
+        internal int CalculateNullCount() {
+            return Data.CalculateNullCountFast(Offset, Count);
         }
 
-        void SetPooledDefinitionLevels(int maxDefinitionLevel, int[] pooledDefinitionLevels) {
-            for(int i = 0; i < Count; i++) {
-                pooledDefinitionLevels[i] = maxDefinitionLevel;
-            }
+        internal void PackDefinitions(Span<int> definitions,
+            Array data, int dataOffset, int dataCount,
+            Array packedData,
+            int maxDefinitionLevel) {
+
+            data.PackNullsFast(dataOffset, dataCount, packedData, definitions, maxDefinitionLevel);
         }
 
         internal long CalculateRowCount() {

@@ -1,61 +1,106 @@
-﻿using Parquet.Attributes;
-using Parquet.Data;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 
-namespace Parquet.Test.Serialisation
-{
-   public class SchemaReflectorTest : TestBase
-   {
-      [Fact]
-      public void I_can_infer_different_types()
-      {
-         var inferrer = new SchemaReflector(typeof(PocoClass));
+namespace Parquet.Test.Serialisation {
+    public class SchemaReflectorTest : TestBase {
+        [Fact]
+        public void I_can_infer_different_types() {
+            var inferrer = new SchemaReflector(typeof(PocoClass));
 
-         Schema schema = inferrer.Reflect();
+            ParquetSchema schema = inferrer.Reflect();
 
-         Assert.NotNull(schema);
-         Assert.Equal(4, schema.Fields.Count);
+            Assert.NotNull(schema);
+            Assert.Equal(4, schema.Fields.Count);
 
-         DataField id = (DataField)schema[0];
-         Assert.Equal("Id", id.Name);
-         Assert.Equal(DataType.Int32, id.DataType);
-         Assert.False(id.HasNulls);
-         Assert.False(id.IsArray);
+            VerifyPocoClassFields(schema);
+        }
 
-         DataField altId = (DataField)schema[1];
-         Assert.Equal("AltId", altId.Name);
-         Assert.Equal(DataType.Int32, id.DataType);
-         Assert.False(id.HasNulls);
-         Assert.False(id.IsArray);
+        [Fact]
+        public void I_ignore_inherited_properties() {
+            ParquetSchema schema = SchemaReflector.Reflect<PocoSubClass>();
+            Assert.Equal(1, schema.Fields.Count);
+            VerifyPocoSubClassField((DataField)schema[0]);
+        }
 
-         DataField nullableFloat = (DataField)schema[2];
-         Assert.Equal("NullableFloat", nullableFloat.Name);
-         Assert.Equal(DataType.Float, nullableFloat.DataType);
-         Assert.True(nullableFloat.HasNulls);
-         Assert.False(nullableFloat.IsArray);
+        [Fact]
+        public void I_can_recognize_inherited_properties() {
+            ParquetSchema schema = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
+            Assert.Equal(5, schema.Fields.Count);
+            VerifyPocoClassFields(schema);
+            VerifyPocoSubClassField((DataField)schema[4]);
+        }
 
-         DataField intArray = (DataField)schema[3];
-         Assert.Equal("IntArray", intArray.Name);
-         Assert.Equal(DataType.Int32, intArray.DataType);
-         Assert.False(intArray.HasNulls);
-         Assert.True(intArray.IsArray);
+        [Fact]
+        public void Reflecting_with_inherited_properties_after_default_does_not_cause_cache_collisions() {
+            ParquetSchema defaultSchema = SchemaReflector.Reflect<PocoSubClass>();
+            ParquetSchema schemaWithInheritedProps = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
 
-      }
+            Assert.Equal(1, defaultSchema.Fields.Count);
+            Assert.Equal(5, schemaWithInheritedProps.Fields.Count);
+            VerifyPocoSubClassField((DataField)defaultSchema[0]);
+            VerifyPocoClassFields(schemaWithInheritedProps);
+        }
 
-      /// <summary>
-      /// Essentially all the test cases are this class' fields
-      /// </summary>
-      class PocoClass
-      {
-         public int Id { get; set; }
+        [Fact]
+        public void Reflecting_with_inherited_properties_before_default_does_not_cause_cache_collisions() {
+            ParquetSchema schemaWithInheritedProps = SchemaReflector.ReflectWithInheritedProperties<PocoSubClass>();
+            ParquetSchema defaultSchema = SchemaReflector.Reflect<PocoSubClass>();
 
-         [ParquetColumn("AltId")]
-         public int AnnotatedId { get; set; }
+            Assert.Equal(1, defaultSchema.Fields.Count);
+            Assert.Equal(5, schemaWithInheritedProps.Fields.Count);
+            VerifyPocoSubClassField((DataField)defaultSchema[0]);
+            VerifyPocoClassFields(schemaWithInheritedProps);
+        }
 
-         public float? NullableFloat { get; set; }
+        private static void VerifyPocoClassFields(ParquetSchema schema) {
+            DataField id = (DataField)schema[0];
+            Assert.Equal("Id", id.Name);
+            Assert.Equal(DataType.Int32, id.DataType);
+            Assert.False(id.IsNullable);
+            Assert.False(id.IsArray);
 
-         public int[] IntArray { get; set; }
-      }
-   }
+            DataField altId = (DataField)schema[1];
+            Assert.Equal("AltId", altId.Name);
+            Assert.Equal(DataType.Int32, id.DataType);
+            Assert.False(id.IsNullable);
+            Assert.False(id.IsArray);
+
+            DataField nullableFloat = (DataField)schema[2];
+            Assert.Equal("NullableFloat", nullableFloat.Name);
+            Assert.Equal(DataType.Float, nullableFloat.DataType);
+            Assert.True(nullableFloat.IsNullable);
+            Assert.False(nullableFloat.IsArray);
+
+            DataField intArray = (DataField)schema[3];
+            Assert.Equal("IntArray", intArray.Name);
+            Assert.Equal(DataType.Int32, intArray.DataType);
+            Assert.False(intArray.IsNullable);
+            Assert.True(intArray.IsArray);
+        }
+
+        private static void VerifyPocoSubClassField(DataField extraProp) {
+            Assert.Equal("ExtraProperty", extraProp.Name);
+            Assert.Equal(DataType.Int32, extraProp.DataType);
+            Assert.False(extraProp.IsNullable);
+            Assert.False(extraProp.IsArray);
+        }
+
+        /// <summary>
+        /// Essentially all the test cases are this class' fields
+        /// </summary>
+        class PocoClass {
+            public int Id { get; set; }
+
+            [ParquetColumn("AltId")] public int AnnotatedId { get; set; }
+
+            public float? NullableFloat { get; set; }
+
+            public int[] IntArray { get; set; }
+        }
+
+        class PocoSubClass : PocoClass {
+            public int ExtraProperty { get; set; }
+        }
+    }
 }

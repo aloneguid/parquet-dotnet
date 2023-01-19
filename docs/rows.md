@@ -12,7 +12,20 @@ Parquet.Net provides out-of-the-box helpers to represent data in row format, how
 
 Table is at the root of row-based hierarchy. A table is simply a collection of `Row`s, and by itself implements `IList<Row>` interface. This means that you can perform any operations you normally do with `IList<T>` in .NET. A row is just a collection of untyped objects:
 
-![Rows General](img/rows-general.png)
+```mermaid
+classDiagram
+    Table "1" *-- "*" Row
+    class IList~Row~
+    Table --|> IList~Row~ : implements
+    class Table {
+        +ParquetSchema schema
+        +IList~Row~ rows
+        +ExtractDataColumns()
+    }
+    class Row {
+        +object[] Values
+    }
+```
 
 ## Row
 
@@ -159,7 +172,7 @@ table.Add(2, new[] { "Paris", "New York" });
 
 As you can see, it's no different to repeatable fields (in this case a repeatable string) however it will perform much slower due to transformation costs are higher.
 
-### Lists of Stuctures
+### Lists of Structures
 
 A more complicated use case of lists where they actually make some sense is using structures (although lists can contain any subclass of `Field`). Let's say you have the the following schema definition:
 

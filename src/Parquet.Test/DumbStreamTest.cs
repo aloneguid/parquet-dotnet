@@ -3,21 +3,22 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test {
     public class DumbStreamTest {
         [Fact]
         public async Task Read_from_stream_that_only_retuns_one_byte_at_the_time() {
-            DataField field = new("date", typeof(DateTimeOffset));
-            Schema schema = new(field);
+            DataField field = new("date", typeof(DateTime));
+            ParquetSchema schema = new(field);
 
             using MemoryStream memoryFileStream = new();
             using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryFileStream)) {
                 using ParquetRowGroupWriter rowGroupWriter = parquetWriter.CreateRowGroup();
-                DateTimeOffset[] data = new DateTimeOffset[10000];
+                DateTime[] data = new DateTime[10000];
                 for(int i = 0; i < 10000; i++)
-                    data[i] = DateTimeOffset.UtcNow.AddMilliseconds(i);
+                    data[i] = DateTime.UtcNow.AddMilliseconds(i);
                 await rowGroupWriter.WriteColumnAsync(new DataColumn(field, data, 0, 10000));
             }
 

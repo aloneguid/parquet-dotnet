@@ -2,14 +2,13 @@
 using Parquet.Data;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using Xunit;
 using NetBox.Generator;
-using Parquet.Data.Rows;
 using System.Linq;
 using System.Threading.Tasks;
+using Path = System.IO.Path;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {
@@ -196,7 +195,7 @@ namespace Parquet.Test {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
                 DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
 
-                DateTimeOffset?[] col0 = (DateTimeOffset?[])columns[0].Data;
+                DateTime?[] col0 = (DateTime?[])columns[0].Data;
                 Assert.Equal(440773, col0.Length);
 
                 long ticks = col0[0].Value.Ticks;

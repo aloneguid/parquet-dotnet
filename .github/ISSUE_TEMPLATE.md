@@ -1,28 +1,23 @@
-**Version:** Parquet.Net v...
+**Library Version:** ...
 
-**Runtime Version:** .Net Framework v, .Net Core v etc.
+**.NET Version:** ...
 
-**OS:** Windows/Linux/MacOSX v etc.
+**OS:** ...
 
-#### Expected behavior
+#### Expected Behaviour
 
-Please describe how you expect **Parquet.Net** to work.
+...
 
-#### Actual behavior
+#### Actual Behaviour
 
-Please describe how **Parquet.Net** is behaving.
+...
 
-### Steps to reproduce the behavior
+### Steps to Reproduce
 
-1. Step 1.
-2. Step 2.
+...
 
-#### Code snippet reproducing the behavior
-
-<!-- Please include a code snippet so we can reproduce the problem. An ideal code snippet is a failing unit test ;) -->
+#### Code Snippet
 
 ```csharp
 //here
 ```
-
-<!-- Attaching a .parquet file showing the problem is a great way to help speeding this up -->

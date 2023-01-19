@@ -4,9 +4,11 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.Data.Rows;
+using Parquet.Rows;
+using Parquet.Schema;
 using Xunit;
 using F = System.IO.File;
+using Path = System.IO.Path;
 
 namespace Parquet.Test.Integration {
     /// <summary>
@@ -39,6 +41,8 @@ namespace Parquet.Test.Integration {
                     await writer.WriteAsync(t);
                 }
             }
+
+            //F.Copy(testFileName, "c:\\tmp\\mr.parquet", true);
 
             //read back
             Table t2 = await ParquetReader.ReadTableFromFileAsync(testFileName);
@@ -114,7 +118,7 @@ namespace Parquet.Test.Integration {
         }
 
         [Fact]
-        public async Task Array_simple_integers() {
+        public async Task IntegerIds_and_array_of_strings() {
             var table = new Table(
                new DataField<int>("id"),
                new DataField<string[]>("categories")     //array field
@@ -125,6 +129,5 @@ namespace Parquet.Test.Integration {
 
             await CompareWithMr(table);
         }
-
     }
 }

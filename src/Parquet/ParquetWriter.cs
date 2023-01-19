@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet._3rdparty;
-using Parquet.Data;
+using Parquet.Schema;
 using Parquet.File;
 
 namespace Parquet {
@@ -17,7 +17,7 @@ namespace Parquet {
 #pragma warning restore CA1063 // Implement IDisposable Correctly
     {
         private ThriftFooter _footer;
-        private readonly Schema _schema;
+        private readonly ParquetSchema _schema;
         private readonly ParquetOptions _formatOptions;
         private bool _dataWritten;
         private readonly List<ParquetRowGroupWriter> _openedWriters = new List<ParquetRowGroupWriter>();
@@ -27,7 +27,7 @@ namespace Parquet {
         /// </summary>
         public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
 
-        private ParquetWriter(Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
+        private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions formatOptions = null, bool append = false)
            : base(output?.CanSeek == true ? output : new MeteredWriteStream(output)) {
             if(output == null)
                 throw new ArgumentNullException(nameof(output));
@@ -49,7 +49,7 @@ namespace Parquet {
         /// <exception cref="ArgumentNullException">Output is null.</exception>
         /// <exception cref="ArgumentException">Output stream is not writeable</exception>
         public static async Task<ParquetWriter> CreateAsync(
-            Schema schema, Stream output, ParquetOptions formatOptions = null, bool append = false,
+            ParquetSchema schema, Stream output, ParquetOptions formatOptions = null, bool append = false,
             CancellationToken cancellationToken = default) {
             var writer = new ParquetWriter(schema, output, formatOptions, append);
             await writer.PrepareFileAsync(append, cancellationToken);
@@ -75,7 +75,7 @@ namespace Parquet {
         /// </summary>
         public IReadOnlyDictionary<string, string> CustomMetadata {
             get => _footer.CustomMetadata;
-            set { _footer.CustomMetadata = value.ToDictionary(p => p.Key, p => p.Value); }
+            set => _footer.CustomMetadata = value.ToDictionary(p => p.Key, p => p.Value);
         }
 
         private async Task PrepareFileAsync(bool append, CancellationToken cancellationToken) {
@@ -107,8 +107,8 @@ namespace Parquet {
             }
         }
 
-        private void ValidateSchemasCompatible(ThriftFooter footer, Schema schema) {
-            Schema existingSchema = footer.CreateModelSchema(_formatOptions);
+        private void ValidateSchemasCompatible(ThriftFooter footer, ParquetSchema schema) {
+            ParquetSchema existingSchema = footer.CreateModelSchema(_formatOptions);
 
             if(!schema.Equals(existingSchema)) {
                 string reason = schema.GetNotEqualsMessage(existingSchema, "appending", "existing");
@@ -116,9 +116,7 @@ namespace Parquet {
             }
         }
 
-        private void WriteMagic() {
-            Stream.Write(MagicBytes, 0, MagicBytes.Length);
-        }
+        private void WriteMagic() => Stream.Write(MagicBytes, 0, MagicBytes.Length);
 
         /// <summary>
         /// Disposes the writer and writes the file footer.

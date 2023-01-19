@@ -1,17 +1,14 @@
 ﻿using NetBox.FileFormats;
 using Parquet.Data;
 using Parquet.Extensions;
-using Parquet.File;
+using Parquet.Schema;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using F = System.IO.File;
-using Path = System.IO.Path;
 using Type = System.Type;
 
 namespace Parquet.Test.Reader {
@@ -86,9 +83,9 @@ namespace Parquet.Test.Reader {
             if(v is string s && string.IsNullOrEmpty(s))
                 return null;
 
-            if(t == typeof(DateTimeOffset)) {
+            if(t == typeof(DateTime)) {
                 string so = (string)v;
-                return new DateTimeOffset(DateTime.Parse(so));
+                return DateTime.Parse(so).ToUniversalTime();
             }
 
             if(t == typeof(byte[])) {
