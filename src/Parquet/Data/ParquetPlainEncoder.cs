@@ -18,6 +18,7 @@ namespace Parquet.Data {
 
         private static readonly System.Text.Encoding E = System.Text.Encoding.UTF8;
         private static readonly byte[] ZeroInt32 = BitConverter.GetBytes((int)0);
+        private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
         public static bool Encode(
             Array data, int offset, int count,
@@ -1028,27 +1029,46 @@ namespace Parquet.Data {
         }
 
         public static void Encode(ReadOnlySpan<string> data, Stream destination) {
-            foreach(string s in data) {
-                if(string.IsNullOrEmpty(s)) {
-                    destination.Write(ZeroInt32, 0, ZeroInt32.Length);
-                } else {
-                    // transofrm to byte array first, as we need the length of the byte buffer, not string length
-                    // todo: this can be improved to re-pool only when needed instead of in each iteration
-                    byte[] b = ArrayPool<byte>.Shared.Rent(E.GetByteCount(s) + sizeof(int));
-                    try {
-                        int len = E.GetBytes(s, 0, s.Length, b, sizeof(int));
-#if NETSTANDARD2_1
-                        Array.Copy(BitConverter.GetBytes(len), b, sizeof(int));
-#else
-                        Unsafe.As<byte, int>(ref b[0]) = len;
-#endif
-                        len += sizeof(int);
-                        destination.Write(b, 0, len);
+
+            // rent a buffer large enough not to reallocate often and not call stream write often
+            byte[] rb = BytePool.Rent(1024 * 10);
+            int rbOffset = 0;
+            try {
+
+                foreach(string s in data) {
+                    int len = string.IsNullOrEmpty(s) ? 0 : E.GetByteCount(s);
+                    int minLen = len + sizeof(int);
+                    int rem = rb.Length - rbOffset;
+
+                    // check we have enough space left
+                    if(rem < minLen) {
+                        destination.Write(rb, 0, rbOffset); // dump current buffer
+                        rbOffset = 0;
+
+                        // do we need to reallocate for more space?
+                        if(minLen > rb.Length) {
+                            BytePool.Return(rb);
+                            rb = BytePool.Rent(minLen);
+                        }
                     }
-                    finally {
-                        ArrayPool<byte>.Shared.Return(b);
+
+                    // write our data
+                    if(len == 0) {
+                        Array.Copy(ZeroInt32, 0, rb, rbOffset, ZeroInt32.Length);
+                    } else {
+                        Array.Copy(BitConverter.GetBytes(len), 0, rb, rbOffset, sizeof(int));
                     }
+                    rbOffset += sizeof(int);
+                    E.GetBytes(s, 0, s.Length, rb, rbOffset);
+                    rbOffset += len;
                 }
+
+                if(rbOffset > 0) {
+                    destination.Write(rb, 0, rbOffset);
+                }
+                
+            } finally {
+                BytePool.Return(rb);
             }
         }
 

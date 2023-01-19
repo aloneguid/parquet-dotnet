@@ -12,6 +12,8 @@ namespace Parquet.PerfRunner.Benchmarks {
         private const int DataSize = 1000000;
         private Parquet.Data.DataColumn _ints;
         private Parquet.Data.DataColumn _nullableInts;
+        private DataColumn _randomStrings;
+        private DataColumn _repeatingStrings;
 
         private static Random random = new Random();
         public static string RandomString(int length) {
@@ -27,6 +29,16 @@ namespace Parquet.PerfRunner.Benchmarks {
                 Enumerable
                     .Range(0, DataSize)
                     .Select(i => i % 4 == 0 ? (int?)null : i)
+                    .ToArray());
+
+            _randomStrings = new DataColumn(new DataField<string>("c"),
+                Enumerable.Range(0, DataSize)
+                    .Select(i => RandomString(50))
+                    .ToArray());
+
+            _repeatingStrings = new DataColumn(new DataField<string>("c"),
+                Enumerable.Range(0, DataSize)
+                    .Select(i => i < DataSize / 2 ? "first half" : "second half")
                     .ToArray());
         }
 
@@ -53,70 +65,8 @@ namespace Parquet.PerfRunner.Benchmarks {
             return Run(_nullableInts);
         }
 
-        public async Task SimpleIntWriteRead() {
-
-            // allocate stream large enough to avoid re-allocations during performance test
-            const int l = 10000000;
-            var ms = new MemoryStream(l * sizeof(int) * 2);
-            var schema = new ParquetSchema(new DataField<int>("id"));
-            var rnd = new Random();
-            int[] ints = new int[l];
-            for(int i = 0; i < l; i++) {
-                ints[i] = rnd.Next();
-            }
-
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                writer.CompressionMethod = CompressionMethod.None;
-                using(ParquetRowGroupWriter g = writer.CreateRowGroup()) {
-                    await g.WriteColumnAsync(new DataColumn((DataField)schema[0], ints));
-                }
-            }
-
-            ms.Position = 0;
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                using(ParquetRowGroupReader g = reader.OpenRowGroupReader(0)) {
-                    DataColumn data = await g.ReadColumnAsync((DataField)schema[0]);
-                }
-            }
-        }
-
-        public async Task SimpleStringWriteRead() {
-
-
-            var col = new DataColumn(new DataField<string>("c"), Enumerable.Range(0, 100000).Select(i => RandomString(100)).ToArray());
-            var f = (DataField)col.Field;
-            var ms = new MemoryStream();
-            var schema = new ParquetSchema(col.Field);
-
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                writer.CompressionMethod = CompressionMethod.None;
-                using(ParquetRowGroupWriter g = writer.CreateRowGroup()) {
-                    await g.WriteColumnAsync(col);
-                }
-            }
-
-            ms.Position = 0;
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                using(ParquetRowGroupReader g = reader.OpenRowGroupReader(0)) {
-                    DataColumn data = await g.ReadColumnAsync(f);
-                }
-            }
-        }
-
-        public async Task WriteRandomStrings() {
-
-
-            var col = new DataColumn(new DataField<string>("c"), Enumerable.Range(0, 100000).Select(i => RandomString(100)).ToArray());
-            var f = (DataField)col.Field;
-            var ms = new MemoryStream();
-            var schema = new ParquetSchema(col.Field);
-
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                writer.CompressionMethod = CompressionMethod.None;
-                using(ParquetRowGroupWriter g = writer.CreateRowGroup()) {
-                    await g.WriteColumnAsync(col);
-                }
-            }
+        public Task RandomStrings() {
+            return Run(_randomStrings);
         }
     }
 }
