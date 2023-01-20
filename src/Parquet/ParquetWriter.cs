@@ -83,14 +83,14 @@ namespace Parquet {
                 if(!Stream.CanSeek)
                     throw new IOException("destination stream must be seekable for append operations.");
 
-                ValidateFile();
+                await ValidateFileAsync();
 
                 Thrift.FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
                 _footer = new ThriftFooter(fileMeta);
 
                 ValidateSchemasCompatible(_footer, _schema);
 
-                GoBeforeFooter();
+                await GoBeforeFooterAsync();
             }
             else {
                 if(_footer == null) {
