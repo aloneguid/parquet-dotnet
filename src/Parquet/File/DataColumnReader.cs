@@ -228,10 +228,7 @@ namespace Parquet.File {
                 : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
             ReadColumn(ms, ph.Data_page_header.Encoding, totalValuesInChunk, totalValuesInPage, cd);
         }
-        
-        /// <summary>
-        /// WARNING!!! LEAKS A LOT OF MEMORY!!!
-        /// </summary>
+
         private async Task ReadDataPageV2Async(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
             if(ph.Data_page_header_v2 == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
