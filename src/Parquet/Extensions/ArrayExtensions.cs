@@ -19,5 +19,9 @@ namespace Parquet.Extensions {
                 }
             }
         }
+
+        public static string ToHexString(this byte[] b) {
+            return BitConverter.ToString(b).Replace("-", "");
+        }
     }
 }

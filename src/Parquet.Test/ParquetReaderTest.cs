@@ -9,6 +9,7 @@ using NetBox.Generator;
 using System.Linq;
 using System.Threading.Tasks;
 using Path = System.IO.Path;
+using System.Threading;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {
@@ -53,6 +54,15 @@ namespace Parquet.Test {
                 Assert.Equal(new int[] { 1, 2, 3 }, data[1].Data);
                 Assert.Equal(new string[] { "one", "two", "three" }, data[2].Data);
             }
+        }
+
+        [Fact(Skip = "todo: for some reason .Read (sync) is still called")]
+        public async Task Reading_schema_uses_async_only_methods() {
+            using Stream tf = OpenTestFile("map_simple.parquet");
+            using Stream ao = new AsyncOnlyStream(tf, 3);
+            using ParquetReader reader = await ParquetReader.CreateAsync(ao);
+
+            Assert.NotNull(reader.Schema);
         }
 
         [Theory]
@@ -294,6 +304,43 @@ namespace Parquet.Test {
 
             public override bool CanRead => true;
 
+        }
+
+        class AsyncOnlyStream : Stream {
+            private readonly Stream _baseStream;
+            private readonly int _maxSyncReads;
+            private int _syncReads = 0;
+
+            public AsyncOnlyStream(Stream baseStream, int maxSyncReads) {
+                _baseStream = baseStream;
+                _maxSyncReads = maxSyncReads;
+            }
+
+            public override bool CanRead => _baseStream.CanRead;
+
+            public override bool CanSeek => _baseStream.CanSeek;
+
+            public override bool CanWrite => _baseStream.CanWrite;
+
+            public override long Length => _baseStream.Length;
+
+            public override long Position { get => _baseStream.Position; set => _baseStream.Position = value; }
+
+            public override void Flush() => _baseStream.Flush();
+
+            public override int Read(byte[] buffer, int offset, int count) {
+                _syncReads++;
+                if(_syncReads > _maxSyncReads) {
+                    throw new IOException($"limit of {_maxSyncReads} reached");
+                }
+                return _baseStream.Read(buffer, offset, count);
+            }
+
+            public override long Seek(long offset, SeekOrigin origin) => _baseStream.Seek(offset, origin);
+
+            public override void SetLength(long value) => _baseStream.SetLength(value);
+
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         }
     }
 }

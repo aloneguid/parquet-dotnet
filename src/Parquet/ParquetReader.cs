@@ -35,7 +35,7 @@ namespace Parquet {
         }
 
         private async Task InitialiseAsync(CancellationToken cancellationToken) {
-            ValidateFile();
+            await ValidateFileAsync();
 
             //read metadata instantly, now
             _meta = await ReadMetadataAsync(cancellationToken);
