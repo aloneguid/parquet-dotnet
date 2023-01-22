@@ -145,7 +145,7 @@ namespace Parquet.File {
                 ph.Uncompressed_page_size);
         }
         
-        private async Task<byte[]> ReadPageDataV2Async(Thrift.PageHeader ph) {
+        private async Task<IronCompress.DataBuffer> ReadPageDataV2Async(Thrift.PageHeader ph) {
 
             int pageSize = ph.Compressed_page_size;
             
@@ -159,7 +159,7 @@ namespace Parquet.File {
             }
             while(remainingBytes != 0);
 
-            return data;
+            return new IronCompress.DataBuffer(data, pageSize, ArrayPool<byte>.Shared);
         }
 
         private async Task<(bool, Array, int)> TryReadDictionaryPageAsync(Thrift.PageHeader ph) {
@@ -237,9 +237,9 @@ namespace Parquet.File {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             } 
             
-            byte[] bytes = await ReadPageDataV2Async(ph);
+            using IronCompress.DataBuffer bytes = await ReadPageDataV2Async(ph);
 
-            using var ms = new MemoryStream(bytes);
+            using var ms = new MemoryStream(bytes.AsSpan().ToArray());
 
             if(_maxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
@@ -272,7 +272,7 @@ namespace Parquet.File {
                 dataBytes.AsSpan(),
                 decompressedSize);
 
-            var dataMs = new MemoryStream(decompressedDataByes.AsSpan().ToArray());
+            using var dataMs = new MemoryStream(decompressedDataByes.AsSpan().ToArray());
 
             ReadColumn(dataMs, ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
         }
