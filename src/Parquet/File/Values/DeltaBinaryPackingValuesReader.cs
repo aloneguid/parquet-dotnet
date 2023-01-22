@@ -85,7 +85,7 @@ namespace Parquet.File.Values {
             for(int i = 0; i < _config.MiniBlockSizeInValues; i += 8) {
                 byte[] bytes = _stream.ReadBytesExactly(bitWidth);
                 var packer = new Packer.Packer(bitWidth);
-                packer.Unpack8Values(bytes, 0, _valuesBuffer, _valuesBuffered);
+                packer.Unpack8Values(bytes, _valuesBuffer, _valuesBuffered);
                 _valuesBuffered += 8;
             }
         }
