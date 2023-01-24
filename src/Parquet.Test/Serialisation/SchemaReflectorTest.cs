@@ -56,32 +56,32 @@ namespace Parquet.Test.Serialisation {
         private static void VerifyPocoClassFields(ParquetSchema schema) {
             DataField id = (DataField)schema[0];
             Assert.Equal("Id", id.Name);
-            Assert.Equal(DataType.Int32, id.DataType);
+            Assert.Equal(typeof(int), id.ClrType);
             Assert.False(id.IsNullable);
             Assert.False(id.IsArray);
 
             DataField altId = (DataField)schema[1];
             Assert.Equal("AltId", altId.Name);
-            Assert.Equal(DataType.Int32, id.DataType);
+            Assert.Equal(typeof(int), id.ClrType);
             Assert.False(id.IsNullable);
             Assert.False(id.IsArray);
 
             DataField nullableFloat = (DataField)schema[2];
             Assert.Equal("NullableFloat", nullableFloat.Name);
-            Assert.Equal(DataType.Float, nullableFloat.DataType);
+            Assert.Equal(typeof(float), nullableFloat.ClrType);
             Assert.True(nullableFloat.IsNullable);
             Assert.False(nullableFloat.IsArray);
 
             DataField intArray = (DataField)schema[3];
             Assert.Equal("IntArray", intArray.Name);
-            Assert.Equal(DataType.Int32, intArray.DataType);
+            Assert.Equal(typeof(int), intArray.ClrType);
             Assert.False(intArray.IsNullable);
             Assert.True(intArray.IsArray);
         }
 
         private static void VerifyPocoSubClassField(DataField extraProp) {
             Assert.Equal("ExtraProperty", extraProp.Name);
-            Assert.Equal(DataType.Int32, extraProp.DataType);
+            Assert.Equal(typeof(int), extraProp.ClrType);
             Assert.False(extraProp.IsNullable);
             Assert.False(extraProp.IsArray);
         }
@@ -93,7 +93,6 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
 
             [ParquetColumn("AltId")] public int AnnotatedId { get; set; }
-
             public float? NullableFloat { get; set; }
 
             public int[] IntArray { get; set; }
