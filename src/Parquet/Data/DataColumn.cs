@@ -77,6 +77,17 @@ namespace Parquet.Data {
         public int CountWithoutNulls => (int)(Count - Statistics.NullCount);
 
         /// <summary>
+        /// Casts <see cref="Data"/> to <see cref="Span{T}"/>
+        /// </summary>
+        /// <exception cref="InvalidOperationException">When T is invalid type</exception>
+        public Span<T> AsSpan<T>(int? offset = null, int? count = null) {
+            if(Data is not T[] ar)
+                throw new InvalidOperationException($"data is not castable to {typeof(T)}[]");
+
+            return ar.AsSpan(offset ?? Offset, count ?? Count);
+        }
+
+        /// <summary>
         /// Repetition levels if any.
         /// </summary>
         public int[] RepetitionLevels { get; private set; }

@@ -86,14 +86,18 @@ namespace Parquet.Test {
 
         [Fact]
         public void But_i_can_declare_a_dictionary() {
-            new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String));
+            new MapField("dictionary", new DataField<int>("key"), new DataField<string>("value"));
         }
 
         [Fact]
         public void Map_fields_with_same_types_are_equal() {
-            Assert.Equal(new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String)),
-                         new MapField("dictionary", new DataField("key", DataType.Int32), new DataField("value", DataType.String)));
-
+            Assert.Equal(
+                new MapField("dictionary", 
+                    new DataField<int>("key"), 
+                    new DataField<string>("value")),
+                new MapField("dictionary", 
+                    new DataField<int>("key"),
+                    new DataField<string>("value")));
         }
 
         [Fact]

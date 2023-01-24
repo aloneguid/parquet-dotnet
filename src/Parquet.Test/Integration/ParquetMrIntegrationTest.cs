@@ -29,7 +29,7 @@ namespace Parquet.Test.Integration {
                : "java";
         }
 
-        private async Task CompareWithMr(Table t) {
+        private async Task CompareWithMr(Table t, Func<string, string> jsonPreprocessor = null) {
             string testFileName = Path.GetFullPath("temp.parquet");
 
             if(F.Exists(testFileName))
@@ -50,8 +50,14 @@ namespace Parquet.Test.Integration {
             //check we don't have a bug internally before launching MR
             Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
 
+            string myJson = t.ToString("j");
             string mrJson = ExecAndGetOutput(_javaExecName, $"-jar {_toolsJarPath} cat -j {testFileName}");
-            Assert.Equal(t.ToString("j"), mrJson);
+
+            if(jsonPreprocessor != null) {
+                myJson = jsonPreprocessor(myJson);
+            }
+
+            Assert.Equal(myJson, mrJson);
         }
 
         private static string ExecAndGetOutput(string fileName, string arguments) {
@@ -128,6 +134,32 @@ namespace Parquet.Test.Integration {
             table.Add(3, new[] { "3", "3", "3" });
 
             await CompareWithMr(table);
+        }
+
+        [Fact]
+        public async Task Plain_Dictionary_encoding() {
+            var table = new Table(
+               new DataField<string>("string")
+            );
+
+            for(int i = 0; i < 100; i++) {
+                table.Add("one");
+            }
+
+            for(int i = 0; i < 100; i++) {
+                table.Add("two");
+            }
+
+            for(int i = 0; i < 100; i++) {
+                table.Add((string)null);
+            }
+
+            for(int i = 0; i < 100; i++) {
+                table.Add("three");
+            }
+
+            await CompareWithMr(table,
+                s => s.Replace("\"string\":null", ""));
         }
     }
 }

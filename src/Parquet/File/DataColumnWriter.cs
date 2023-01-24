@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IO;
 using Parquet.Data;
+using Parquet.Extensions;
 using Parquet.Schema;
 
 namespace Parquet.File {
@@ -128,10 +129,20 @@ namespace Parquet.File {
                 if(pc.HasDefinitionLevels) {
                     WriteLevels(ms, pc.DefinitionLevels, column.Count, maxDefinitionLevel);
                 }
-                pc.GetDataPage(out Array data, out int offset, out int count);
-                if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
-                    throw new IOException("failed to encode data");
+
+                if(pc.HasDictionary) {
+                    // dictionary indexes are always encoded with RLE
+                    int[] indexes = pc.GetDictionaryIndexes(out int indexesLength);
+                    int bitWidth = pc.Dictionary.Length.GetBitWidth();
+                    ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
+                    RleEncoder.Encode(ms, indexes, indexesLength, bitWidth);
+                } else {
+                    Array data = pc.GetPlainData(out int offset, out int count);
+                    if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
+                        throw new IOException("failed to encode data");
+                    }
                 }
+
                 ph.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(tse);
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             }
