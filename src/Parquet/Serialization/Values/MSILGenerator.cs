@@ -17,7 +17,7 @@ namespace Parquet.Serialization.Values {
 
         public delegate object PopulateListDelegate(object instances,
            object resultItemsList,
-           object resultRepetitionsList,
+           object? resultRepetitionsList,
            int maxRepetitionLevel);
 
         public delegate void AssignArrayDelegate(
@@ -31,11 +31,18 @@ namespace Parquet.Serialization.Values {
             Type[] methodArgs = { typeof(object), typeof(object), typeof(object), typeof(int) };
 
             TypeInfo ti = classType.GetTypeInfo();
-            PropertyInfo pi = PropertyHelpers.GetDeclaredPropertyFromClassType(ti, field);
-            MethodInfo getValueMethod = pi.GetMethod;
+            PropertyInfo? pi = PropertyHelpers.GetDeclaredPropertyFromClassType(ti, field);
+            MethodInfo? getValueMethod = pi?.GetMethod;
 
-            MethodInfo addToListMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("Add");
-            MethodInfo addRepLevelMethod = typeof(List<int>).GetTypeInfo().GetDeclaredMethod("Add");
+            if(getValueMethod == null)
+                throw new InvalidOperationException($"{nameof(getValueMethod)} not found");
+
+            MethodInfo? addToListMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("Add");
+
+            if(addToListMethod == null)
+                throw new InvalidOperationException($"{nameof(addToListMethod)} not found");
+
+            MethodInfo? addRepLevelMethod = typeof(List<int>).GetTypeInfo().GetDeclaredMethod("Add");
 
             var runMethod = new DynamicMethod(
                $"Get{classType.Name}{field.Path}",
@@ -43,7 +50,7 @@ namespace Parquet.Serialization.Values {
                methodArgs,
                GetType().GetTypeInfo().Module);
 
-            TypeConversion conversion = GetConversion(pi.PropertyType, field.ClrNullableIfHasNullsType);
+            TypeConversion? conversion = GetConversion(pi?.PropertyType, field.ClrNullableIfHasNullsType);
 
             ILGenerator il = runMethod.GetILGenerator();
 
@@ -61,8 +68,8 @@ namespace Parquet.Serialization.Values {
            DataField f,
            MethodInfo getValueMethod,
            MethodInfo addToListMethod,
-           MethodInfo addRepLevelMethod,
-           TypeConversion conversion) {
+           MethodInfo? addRepLevelMethod,
+           TypeConversion? conversion) {
             //arg 0 - collection of classes, clr objects
             //arg 1 - data items (typed list)
             //arg 2 - repetitions (optional)
@@ -74,9 +81,15 @@ namespace Parquet.Serialization.Values {
             il.Emit(Stloc, collection.LocalIndex);
 
             using(il.ForEachLoop(classType, collection, out LocalBuilder currentElement)) {
-                Type prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, f).PropertyType;
+                Type? prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, f)?.PropertyType;
+                if(prop == null)
+                    throw new InvalidOperationException("cannot get property");
                 bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
                 if(f.IsArray || underlyingTypeIsEnumerable) {
+
+                    if(addRepLevelMethod == null)
+                        throw new InvalidOperationException($"{nameof(addRepLevelMethod)} is required");
+
                     //reset repetition level to 0
                     LocalBuilder rl = il.DeclareLocal(typeof(int));
                     il.Emit(Ldc_I4_0);
@@ -140,14 +153,18 @@ namespace Parquet.Serialization.Values {
 
             //set class property method
             TypeInfo ti = classType.GetTypeInfo();
-            PropertyInfo pi = PropertyHelpers.GetDeclaredPropertyFromClassType(ti, typeField);
-            MethodInfo setValueMethod = pi.SetMethod;
+            PropertyInfo? pi = PropertyHelpers.GetDeclaredPropertyFromClassType(ti, typeField);
+            if(pi == null)
+                throw new InvalidOperationException("could not fetch property type");
+            MethodInfo? setValueMethod = pi?.SetMethod;
+            if(setValueMethod == null)
+                throw new InvalidOperationException($"{nameof(setValueMethod)} not found");
 
             TypeInfo dcti = dataColumn.GetType().GetTypeInfo();
-            MethodInfo getDataMethod = dcti.GetDeclaredProperty(nameof(DataColumn.Data)).GetMethod;
-            MethodInfo getRepsMethod = dcti.GetDeclaredProperty(nameof(DataColumn.RepetitionLevels)).GetMethod;
+            MethodInfo? getDataMethod = dcti.GetDeclaredProperty(nameof(DataColumn.Data))?.GetMethod;
+            MethodInfo? getRepsMethod = dcti.GetDeclaredProperty(nameof(DataColumn.RepetitionLevels))?.GetMethod;
 
-            TypeConversion conversion = GetConversion(dataColumn.Field.ClrNullableIfHasNullsType, pi.PropertyType);
+            TypeConversion? conversion = GetConversion(dataColumn.Field.ClrNullableIfHasNullsType, pi!.PropertyType);
 
             GenerateAssigner(il, classType, typeField,
                setValueMethod,
@@ -160,13 +177,15 @@ namespace Parquet.Serialization.Values {
 
         private void GenerateAssigner(ILGenerator il, Type classType, DataField field,
            MethodInfo setValueMethod,
-           MethodInfo getDataMethod,
-           MethodInfo getRepsMethod,
-           TypeConversion conversion) {
+           MethodInfo? getDataMethod,
+           MethodInfo? getRepsMethod,
+           TypeConversion? conversion) {
             //arg 0 - DataColumn
             //arg 1 - class intances array (Array)
 
-            Type prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, field).PropertyType;
+            Type? prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, field)?.PropertyType;
+            if(prop == null)
+                throw new InvalidOperationException("cannot get property type");
             bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
             if(field.IsArray || underlyingTypeIsEnumerable) {
                 LocalBuilder repItem = il.DeclareLocal(typeof(int));
@@ -197,6 +216,8 @@ namespace Parquet.Serialization.Values {
             else {
                 //get values
                 LocalBuilder data = il.DeclareLocal(typeof(Array));
+                if(getDataMethod == null)
+                    throw new InvalidOperationException($"{nameof(getDataMethod)} not defined");
                 il.CallVirt(getDataMethod, Ldarg_0);
                 il.StLoc(data);
 
@@ -235,8 +256,10 @@ namespace Parquet.Serialization.Values {
             il.Emit(Ret);
         }
 
-        private TypeConversion GetConversion(Type fromType, Type toType) {
-            if(fromType == toType) { return null; }
+        private TypeConversion? GetConversion(Type? fromType, Type? toType) {
+            if(fromType == null || toType == null)
+                return null;
+            if(fromType == toType) return null;
             return conversions.FirstOrDefault(c => c.FromType == fromType && c.ToType == toType);
         }
 
@@ -254,9 +277,11 @@ namespace Parquet.Serialization.Values {
         sealed private class NullableDateTimeToDateTimeConversion : TypeConversion<DateTime?, DateTime> {
             public static readonly TypeConversion<DateTime?, DateTime> Instance = new NullableDateTimeToDateTimeConversion();
 
-            private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableDateTimeToDateTime");
+            private static readonly MethodInfo? method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableDateTimeToDateTime");
 
             public override void Emit(ILGenerator il) {
+                if(method == null)
+                    throw new InvalidOperationException("method not found");
                 il.Emit(OpCodes.Call, method);
             }
         }
@@ -264,9 +289,12 @@ namespace Parquet.Serialization.Values {
         sealed class NullableBooleanToBooleanConversion : TypeConversion<Boolean?, Boolean> {
             public static readonly TypeConversion<Boolean?, Boolean> Instance = new NullableBooleanToBooleanConversion();
 
-            private static readonly MethodInfo method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableBooleanToBooleanConversion");
+            private static readonly MethodInfo? method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableBooleanToBooleanConversion");
 
             public override void Emit(ILGenerator il) {
+                if(method == null)
+                    throw new InvalidOperationException("method not found");
+
                 il.Emit(OpCodes.Call, method);
             }
         }
@@ -310,15 +338,15 @@ namespace Parquet.Serialization.Values {
         /// <param name="classType">Type</param>
         /// <param name="field">Field</param>
         /// <returns>PropertyInfo</returns>
-        public static PropertyInfo GetDeclaredPropertyFromClassType(Type classType, Field field) {
+        public static PropertyInfo? GetDeclaredPropertyFromClassType(Type classType, Field field) {
             string fieldName = field.ClrPropName ?? field.Name;
-            PropertyInfo prop = classType.GetTypeInfo().GetDeclaredProperty(fieldName);
+            PropertyInfo? prop = classType.GetTypeInfo().GetDeclaredProperty(fieldName);
 
             // TODO: trying to get build, probably not the best solution
             if(prop == null) {
                 // if pi is null, try the base class
-                TypeInfo baseType = classType.BaseType.GetTypeInfo();
-                prop = baseType.GetDeclaredProperty(fieldName);
+                TypeInfo? baseType = classType.BaseType?.GetTypeInfo();
+                prop = baseType?.GetDeclaredProperty(fieldName);
             }
 
             return prop;

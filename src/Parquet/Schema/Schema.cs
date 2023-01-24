@@ -90,7 +90,7 @@ namespace Parquet.Schema
             switch (f.SchemaType)
             {
                case SchemaType.Data:
-                  result.Add((DataField)f);
+                  result?.Add((DataField)f);
                   break;
                case SchemaType.List:
                   analyse(((ListField)f).Item);
@@ -120,7 +120,7 @@ namespace Parquet.Schema
          return result.ToArray();
       }
 
-      internal DataField FindDataField(string path)
+      internal DataField? FindDataField(string path)
       {
          return GetDataFields().FirstOrDefault(f => f.Path == path);
       }
@@ -132,7 +132,7 @@ namespace Parquet.Schema
       /// <returns>
       /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
       /// </returns>
-      public bool Equals(ParquetSchema other)
+      public bool Equals(ParquetSchema? other)
       {
          if (ReferenceEquals(null, other)) return false;
          if (ReferenceEquals(this, other)) return true;
@@ -190,7 +190,7 @@ namespace Parquet.Schema
       /// <returns>
       ///   <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
       /// </returns>
-      public override bool Equals(object obj)
+      public override bool Equals(object? obj)
       {
          if (ReferenceEquals(null, obj)) return false;
          if (ReferenceEquals(this, obj)) return true;

@@ -165,7 +165,7 @@ namespace System {
             }
         }
 
-        public static void MinMax(this ReadOnlySpan<string> span, out string min, out string max) {
+        public static void MinMax(this ReadOnlySpan<string> span, out string? min, out string? max) {
             min = span.IsEmpty ? default(string) : span[0];
             max = min;
             foreach(string s in span) {

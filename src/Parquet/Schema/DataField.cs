@@ -53,7 +53,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Unsupported, use at your own risk!
         /// </summary>
-        public Type ClrNullableIfHasNullsType { get; set; }
+        public Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
 
         /// <summary>
         /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
@@ -63,7 +63,7 @@ namespace Parquet.Schema {
         /// <param name="isNullable">When set, will override <see cref="IsNullable"/> attribute regardless whether passed type was nullable or not.</param>
         /// <param name="isArray">When set, will override <see cref="IsArray"/> attribute regardless whether passed type was an array or not.</param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
-        public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string propertyName = null)
+        public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string? propertyName = null)
            : base(name, SchemaType.Data) {
 
             Discover(clrType, out Type baseType, out bool discIsArray, out bool discIsNullable);
@@ -98,17 +98,17 @@ namespace Parquet.Schema {
         /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in C#.</param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
         [Obsolete("use constructor not referencing DataType")]
-        public DataField(string name, DataType dataType, bool isNullable = true, bool isArray = false, string propertyName = null) :
+        public DataField(string name, DataType dataType, bool isNullable = true, bool isArray = false, string? propertyName = null) :
             base(name, SchemaType.Data) {
 
             DataType = dataType;
-            ClrType = SchemaEncoder.FindSystemType(dataType);
+            ClrType = SchemaEncoder.FindSystemType(dataType)!;
             IsNullable = isNullable;
             IsArray = isArray;
             ClrPropName = propertyName ?? name;
         }
 
-        internal override FieldPath PathPrefix {
+        internal override FieldPath? PathPrefix {
             set => Path = value + new FieldPath(Name);
         }
 
@@ -146,7 +146,7 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if(obj is not DataField other)
                 return false;
 
@@ -167,12 +167,12 @@ namespace Parquet.Schema {
             isNullable = false;
 
             //throw a useful hint
-            if(t.TryExtractDictionaryType(out Type dKey, out Type dValue)) {
+            if(t.TryExtractDictionaryType(out Type? dKey, out Type? dValue)) {
                 throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
             }
 
-            if(t.TryExtractEnumerableType(out Type enumItemType)) {
-                baseType = enumItemType;
+            if(t.TryExtractEnumerableType(out Type? enumItemType)) {
+                baseType = enumItemType!;
                 isArray = true;
             }
 

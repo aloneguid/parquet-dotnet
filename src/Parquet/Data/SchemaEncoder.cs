@@ -13,9 +13,9 @@ namespace Parquet.Data {
         class LookupItem {
             public Thrift.Type ThriftType { get; set; }
 
-            public SType SystemType { get; set; }
+            public SType? SystemType { get; set; }
 
-            public Dictionary<Thrift.ConvertedType, SType> ConvertedTypes { get; set; }
+            public Dictionary<Thrift.ConvertedType, SType>? ConvertedTypes { get; set; }
         }
 
         class LookupTable : List<LookupItem> {
@@ -42,13 +42,13 @@ namespace Parquet.Data {
                 }
             }
 
-            public SType FindSystemType(Thrift.SchemaElement se) {
+            public SType? FindSystemType(Thrift.SchemaElement se) {
                 if(!se.__isset.type) return null;
 
                 if(se.__isset.converted_type && 
                     _typeAndConvertedTypeToType.TryGetValue(
                         new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type),
-                        out SType match)) {
+                        out SType? match)) {
                     return match;
                 }
 
@@ -61,7 +61,7 @@ namespace Parquet.Data {
 
             public bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) {
 
-                if(!_systemTypeToTypeTuple.TryGetValue(type, out Tuple<Thrift.Type, ConvertedType?> tuple)) {
+                if(!_systemTypeToTypeTuple.TryGetValue(type, out Tuple<Thrift.Type, ConvertedType?>? tuple)) {
                     thriftType = default;
                     convertedType = null;
                     return false;
@@ -72,7 +72,7 @@ namespace Parquet.Data {
                 return true;
             }
 
-            public bool IsSupported(SType t) => _supportedTypes.Contains(t);
+            public bool IsSupported(SType? t) => t != null && _supportedTypes.Contains(t);
         }
 
         [Obsolete]
@@ -135,7 +135,7 @@ namespace Parquet.Data {
 
         static bool TryBuildList(List<Thrift.SchemaElement> schema,
             ref int index, out int ownedChildren,
-            out ListField field) {
+            out ListField? field) {
 
             Thrift.SchemaElement se = schema[index];
 
@@ -178,7 +178,7 @@ namespace Parquet.Data {
 
         static bool TryBuildMap(List<Thrift.SchemaElement> schema,
             ref int index, out int ownedChildren,
-            out MapField field) {
+            out MapField? field) {
 
             Thrift.SchemaElement root = schema[index];
             bool isMap = root.__isset.converted_type &&
@@ -209,7 +209,7 @@ namespace Parquet.Data {
 
         static bool TryBuildStruct(List<Thrift.SchemaElement> schema,
             ref int index, out int ownedChildren,
-            out StructField field) {
+            out StructField? field) {
             Thrift.SchemaElement container = schema[index];
             bool isStruct = container.Num_children > 0;
             if(!isStruct) {
@@ -224,7 +224,7 @@ namespace Parquet.Data {
             return true;
         }
 
-        public static bool IsSupported(SType t) => t == typeof(DateTime) || _lt.IsSupported(t);
+        public static bool IsSupported(SType? t) => t == typeof(DateTime) || _lt.IsSupported(t);
 
         /// <summary>
         /// Builds <see cref="Field"/> from thrift schema
@@ -234,23 +234,23 @@ namespace Parquet.Data {
         /// <param name="index"></param>
         /// <param name="ownedChildCount"></param>
         /// <returns></returns>
-        public static Field Decode(List<Thrift.SchemaElement> schema,
-            ParquetOptions options,
+        public static Field? Decode(List<Thrift.SchemaElement> schema,
+            ParquetOptions? options,
             ref int index, out int ownedChildCount) {
 
             Thrift.SchemaElement se = schema[index];
             bool isNullable = se.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
             bool isArray = se.Repetition_type == Thrift.FieldRepetitionType.REPEATED;
-            Field f = null;
+            Field? f = null;
             ownedChildCount = 0;
 
-            SType t = _lt.FindSystemType(se);
+            SType? t = _lt.FindSystemType(se);
             if(t != null) {
                 // correction taking int account passed options
-                if(options.TreatBigIntegersAsDates && t == typeof(BigInteger))
+                if(options != null && options.TreatBigIntegersAsDates && t == typeof(BigInteger))
                     t = typeof(DateTime);
 
-                if(options.TreatByteArrayAsString && t == typeof(byte[]))
+                if(options != null && options.TreatByteArrayAsString && t == typeof(byte[]))
                     t = typeof(string);
 
                 // successful field built
@@ -263,11 +263,11 @@ namespace Parquet.Data {
                 return f;
             }
 
-            if(TryBuildList(schema, ref index, out ownedChildCount, out ListField lf)) {
+            if(TryBuildList(schema, ref index, out ownedChildCount, out ListField? lf)) {
                 f = lf;
-            } else if(TryBuildMap(schema, ref index, out ownedChildCount, out MapField mf)) {
+            } else if(TryBuildMap(schema, ref index, out ownedChildCount, out MapField? mf)) {
                 f = mf;
-            } else if(TryBuildStruct(schema, ref index, out ownedChildCount, out StructField sf)) {
+            } else if(TryBuildStruct(schema, ref index, out ownedChildCount, out StructField? sf)) {
                 f = sf;
             }
 
@@ -440,7 +440,7 @@ namespace Parquet.Data {
         /// Finds corresponding .NET type
         /// </summary>
         [Obsolete]
-        public static SType FindSystemType(DataType dataType) => 
+        public static SType? FindSystemType(DataType dataType) => 
             (from pair in _systemTypeToObsoleteType where pair.Value == dataType select pair.Key).FirstOrDefault();
 
         [Obsolete]

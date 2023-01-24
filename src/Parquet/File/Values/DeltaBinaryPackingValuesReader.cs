@@ -8,11 +8,11 @@ namespace Parquet.File.Values {
     /// </summary>
     public class DeltaBinaryPackingValuesReader {
         private readonly Stream _stream;
-        private DeltaBinaryPackingConfig _config;
+        private DeltaBinaryPackingConfig? _config;
         private int _totalValueCount;
-        private long[] _valuesBuffer;
+        private long[]? _valuesBuffer;
         private int _valuesBuffered = 0;
-        private int[] _bitWidths;
+        private int[]? _bitWidths;
         private int _valuesRead = 0;
 
         private DeltaBinaryPackingValuesReader(Stream s) => _stream = s;
@@ -55,6 +55,9 @@ namespace Parquet.File.Values {
         public int ReadInteger() => (int)ReadLong();
 
         private long ReadLong() {
+            if(_valuesBuffer == null)
+                throw new InvalidOperationException("not initialised");
+
             if(_valuesRead > _totalValueCount) {
                 throw new Exception("DeltaBinaryPackingValuesReader: read all values");
             }
@@ -63,6 +66,10 @@ namespace Parquet.File.Values {
         }
 
         private void LoadNewBlockToBuffer() {
+
+            if(_config == null || _bitWidths == null || _valuesBuffer == null)
+                throw new InvalidOperationException("not initialised");
+
             long minDeltaInCurrentBlock = _stream.ReadZigZagVarLong();
 
             for(int l = 0; l < _config.MiniBlockNumInABlock; l++) {
@@ -82,6 +89,10 @@ namespace Parquet.File.Values {
         }
 
         private void UnpackMiniBlock(int bitWidth) {
+
+            if(_config == null || _valuesBuffer == null)
+                throw new InvalidOperationException("not initialised");
+
             for(int i = 0; i < _config.MiniBlockSizeInValues; i += 8) {
                 byte[] bytes = _stream.ReadBytesExactly(bitWidth);
                 var packer = new Packer.Packer(bitWidth);

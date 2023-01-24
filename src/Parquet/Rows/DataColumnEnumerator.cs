@@ -14,7 +14,7 @@ namespace Parquet.Rows {
         private int _position = -1;
         private readonly bool _isRepeated;
         private readonly Array _data;
-        private readonly int[] _rls;
+        private readonly int[]? _rls;
         private readonly DataField _field;
         private readonly DataColumn _dc;
 
@@ -26,7 +26,7 @@ namespace Parquet.Rows {
             _dc = dataColumn;
         }
 
-        public object Current { get; private set; }
+        public object? Current { get; private set; }
 
         public DataColumn DataColumn => _dc;
 
@@ -35,7 +35,7 @@ namespace Parquet.Rows {
                 return false;
 
             if(_isRepeated) {
-                int read = Read(_position + 1, out object current);
+                int read = Read(_position + 1, out object? current);
 
                 _position += read;
 
@@ -47,15 +47,15 @@ namespace Parquet.Rows {
             return true;
         }
 
-        private int Read(int position, out object cr) {
+        private int Read(int position, out object? cr) {
             //0 indicates start of a new row
             int prl = 0;
             int read = 0;
             var result = new TreeList(null);
-            TreeList current = result;
+            TreeList? current = result;
 
             while(position < _data.Length) {
-                int rl = _rls[position];
+                int rl = _rls![position];
 
                 if(rl == 0 && (current.HasValues || current != result))
                     break;
@@ -63,10 +63,10 @@ namespace Parquet.Rows {
                 int lmv = rl - prl;
 
                 if(lmv != 0)
-                    current = current.Submerge(lmv);
+                    current = current!.Submerge(lmv);
 
-                object value = _data.GetValue(position);
-                current.Add(value);
+                object? value = _data!.GetValue(position);
+                current!.Add(value);
                 read += 1;
 
                 prl = rl;

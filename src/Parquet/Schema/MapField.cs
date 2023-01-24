@@ -10,6 +10,9 @@ namespace Parquet.Schema {
     public class MapField : Field {
         internal const string ContainerName = "key_value";
 
+        private bool _keyAssigned = false;
+        private bool _valueAssigned = false;
+
         /// <summary>
         /// Data field used as a key
         /// </summary>
@@ -27,6 +30,7 @@ namespace Parquet.Schema {
            : base(name, SchemaType.Map) {
             Key = keyField;
             Value = valueField;
+            _keyAssigned = _valueAssigned = true;
 
             Path = name.AddPath(ContainerName);
             Key.PathPrefix = Path;
@@ -35,18 +39,22 @@ namespace Parquet.Schema {
 
         internal MapField(string name)
            : base(name, SchemaType.Map) {
+            Key = Value = new DataField<int>("invalid");
         }
 
         internal override void Assign(Field se) {
-            if(Key == null)
+            if(!_keyAssigned) {
                 Key = se;
-            else if(Value == null)
+                _keyAssigned = true;
+            } else if(!_valueAssigned) {
                 Value = se;
-            else
+                _valueAssigned = true;
+            } else {
                 throw new InvalidOperationException($"'{Name}' already has key and value assigned");
+            }
         }
 
-        internal override FieldPath PathPrefix {
+        internal override FieldPath? PathPrefix {
             set {
                 Path = value + Name + ContainerName;
                 Key.PathPrefix = Path;
@@ -80,11 +88,11 @@ namespace Parquet.Schema {
                ((DataField)Key).ClrNullableIfHasNullsType,
                ((DataField)Value).ClrNullableIfHasNullsType);
 
-            return (IDictionary)Activator.CreateInstance(concreteType);
+            return (IDictionary)Activator.CreateInstance(concreteType)!;
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if(obj is not MapField other)
                 return false;
 

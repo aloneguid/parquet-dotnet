@@ -12,7 +12,7 @@
             return $"Level: {Level}; Index: {Index}";
         }
 
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if(obj is LevelIndex li &&
                li.Index == Index &&
                li.Level == Level)

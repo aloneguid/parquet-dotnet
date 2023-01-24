@@ -28,7 +28,7 @@ namespace Thrift
         {
         }
 
-        public TException(string message, Exception inner)
+        public TException(string message, Exception? inner)
             : base(message, inner)
         {
         }

@@ -8,6 +8,7 @@
 
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)'=='Debug'">

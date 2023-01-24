@@ -41,19 +41,19 @@ namespace Thrift.Transport
         {
         }
 
-        public TTransportException(ExceptionType exType, Exception inner = null)
+        public TTransportException(ExceptionType exType, Exception? inner = null)
             : base(string.Empty, inner)
         {
             ExType = exType;
         }
 
-        public TTransportException(ExceptionType exType, string message, Exception inner = null)
+        public TTransportException(ExceptionType exType, string message, Exception? inner = null)
             : base(message, inner)
         {
             ExType = exType;
         }
 
-        public TTransportException(string message, Exception inner = null)
+        public TTransportException(string message, Exception? inner = null)
             : base(message, inner)
         {
         }

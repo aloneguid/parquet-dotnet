@@ -14,7 +14,7 @@ namespace Parquet.File
          _key = key;
       }
       
-      public override bool Equals(object obj)
+      public override bool Equals(object? obj)
       {
          return obj is StringListComparer s && Equals(s);
       }

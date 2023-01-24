@@ -39,38 +39,40 @@ namespace Parquet.Rows {
 
         private void ColumnsToRows(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn, List<Row> result, long rowCount) {
             for(int rowIndex = 0; rowCount == -1 || rowIndex < rowCount; rowIndex++) {
-                if(!TryBuildNextRow(fields, pathToColumn, out Row row))
+                if(!TryBuildNextRow(fields, pathToColumn, out Row? row))
                     break;
 
-                result.Add(row);
+                result.Add(row!);
             }
         }
 
         private IReadOnlyList<Row> BuildRows(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn) {
             var rows = new List<Row>();
 
-            while(TryBuildNextRow(fields, pathToColumn, out Row row))
-                rows.Add(row);
+            while(TryBuildNextRow(fields, pathToColumn, out Row? row))
+                rows.Add(row!);
 
             return rows;
         }
 
-        private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn, out Row row) {
+        private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn,
+            out Row? row) {
             var rowList = new List<object>();
             foreach(Field f in fields) {
-                if(!TryBuildNextCell(f, pathToColumn, out object cell)) {
+                if(!TryBuildNextCell(f, pathToColumn, out object? cell)) {
                     row = null;
                     return false;
                 }
 
-                rowList.Add(cell);
+                rowList.Add(cell!);
             }
 
             row = new Row(fields, rowList);
             return true;
         }
 
-        private bool TryBuildNextCell(Field f, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn, out object cell) {
+        private bool TryBuildNextCell(Field f, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn,
+            out object? cell) {
             switch(f.SchemaType) {
                 case SchemaType.Data:
                     LazyColumnEnumerator dce = pathToColumn[f.Path];
@@ -83,12 +85,12 @@ namespace Parquet.Rows {
 
                     break;
                 case SchemaType.Map:
-                    bool mcok = TryBuildMapCell((MapField)f, pathToColumn, out IReadOnlyList<Row> mapRow);
+                    bool mcok = TryBuildMapCell((MapField)f, pathToColumn, out IReadOnlyList<Row>? mapRow);
                     cell = mapRow;
                     return mcok;
 
                 case SchemaType.Struct:
-                    bool scok = TryBuildStructCell((StructField)f, pathToColumn, out Row scRow);
+                    bool scok = TryBuildStructCell((StructField)f, pathToColumn, out Row? scRow);
                     cell = scRow;
                     return scok;
 
@@ -117,7 +119,7 @@ namespace Parquet.Rows {
             }
 
             var nestedPathToColumn = nestedPathTicks
-               .ToDictionary(ptc => ptc.path, ptc => (LazyColumnEnumerator)ptc.collection.Current);
+               .ToDictionary(ptc => ptc.path, ptc => (LazyColumnEnumerator)ptc.collection.Current!);
 
             IReadOnlyList<Row> rows = BuildRows(new[] { lf.Item }, nestedPathToColumn);
 
@@ -126,19 +128,20 @@ namespace Parquet.Rows {
             return true;
         }
 
-        private bool TryBuildStructCell(StructField sf, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn, out Row cell) {
+        private bool TryBuildStructCell(StructField sf, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn, out Row? cell) {
             return TryBuildNextRow(sf.Fields, pathToColumn, out cell);
         }
 
-        private bool TryBuildMapCell(MapField mf, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn, out IReadOnlyList<Row> rows) {
+        private bool TryBuildMapCell(MapField mf, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn,
+            out IReadOnlyList<Row>? rows) {
             //"cut into" the keys and values collection
             LazyColumnEnumerator keysCollection = pathToColumn[mf.Key.Path];
             LazyColumnEnumerator valuesCollection = pathToColumn[mf.Value.Path];
 
             if(keysCollection.MoveNext() && valuesCollection.MoveNext()) {
                 var ptc = new Dictionary<FieldPath, LazyColumnEnumerator> {
-                    [mf.Key.Path] = (LazyColumnEnumerator)keysCollection.Current,
-                    [mf.Value.Path] = (LazyColumnEnumerator)valuesCollection.Current
+                    [mf.Key.Path] = (LazyColumnEnumerator)keysCollection.Current!,
+                    [mf.Value.Path] = (LazyColumnEnumerator)valuesCollection.Current!
                 };
 
                 rows = BuildRows(new[] { mf.Key, mf.Value }, ptc);

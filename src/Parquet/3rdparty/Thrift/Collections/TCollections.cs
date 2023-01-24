@@ -21,24 +21,19 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Thrift.Collections
-{
+namespace Thrift.Collections {
     // ReSharper disable once InconsistentNaming
-    public static class TCollections
-    {
+    public static class TCollections {
         /// <summary>
         ///     This will return true if the two collections are value-wise the same.
         ///     If the collection contains a collection, the collections will be compared using this method.
         /// </summary>
-        public static bool Equals(IEnumerable first, IEnumerable second)
-        {
-            if (first == null && second == null)
-            {
+        public static bool Equals(IEnumerable first, IEnumerable second) {
+            if(first == null && second == null) {
                 return true;
             }
 
-            if (first == null || second == null)
-            {
+            if(first == null || second == null) {
                 return false;
             }
 
@@ -46,9 +41,8 @@ namespace Thrift.Collections
             // because KeyValuePair<K,V>.Equals() will not do what we want
             var fdict = first as IDictionary;
             var sdict = second as IDictionary;
-            if ((fdict != null) || (sdict != null))
-            {
-                if ((fdict == null) || (sdict == null))
+            if((fdict != null) || (sdict != null)) {
+                if((fdict == null) || (sdict == null))
                     return false;
                 return TCollections.Equals(fdict.Keys, sdict.Keys)
                     && TCollections.Equals(fdict.Values, sdict.Values);
@@ -60,24 +54,19 @@ namespace Thrift.Collections
             var fnext = fiter.MoveNext();
             var snext = siter.MoveNext();
 
-            while (fnext && snext)
-            {
+            while(fnext && snext) {
                 var fenum = fiter.Current as IEnumerable;
                 var senum = siter.Current as IEnumerable;
 
-                if (fenum != null && senum != null)
-                {
-                    if (!Equals(fenum, senum))
-                    {
+                if(fenum != null && senum != null) {
+                    if(!Equals(fenum, senum)) {
                         return false;
                     }
                 }
-                else if (fenum == null ^ senum == null)
-                {
+                else if(fenum == null ^ senum == null) {
                     return false;
                 }
-                else if (!Equals(fiter.Current, siter.Current))
-                {
+                else if(!Equals(fiter.Current, siter.Current)) {
                     return false;
                 }
 
@@ -91,21 +80,17 @@ namespace Thrift.Collections
         /// <summary>
         ///     This returns a hashcode based on the value of the enumerable.
         /// </summary>
-        public static int GetHashCode(IEnumerable enumerable)
-        {
-            if (enumerable == null)
-            {
+        public static int GetHashCode(IEnumerable enumerable) {
+            if(enumerable == null) {
                 return 0;
             }
 
             var hashcode = 0;
 
-            foreach (var obj in enumerable)
-            {
-                var objHash = (obj is IEnumerable enum2) ? GetHashCode(enum2) : obj.GetHashCode();
+            foreach(var obj in enumerable) {
+                var objHash = (obj is IEnumerable enum2) ? GetHashCode(enum2) : obj?.GetHashCode() ?? 0;
 
-                unchecked
-                {
+                unchecked {
                     hashcode = (hashcode * 397) ^ (objHash);
                 }
             }

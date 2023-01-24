@@ -108,7 +108,7 @@ namespace Parquet.File {
 
             // dictionary page
             if(pc.HasDictionary) {
-                Thrift.PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary.Length);
+                Thrift.PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
                 using MemoryStream ms = _rmsMgr.GetStream();
                 if(!ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
                        tse,
@@ -124,20 +124,20 @@ namespace Parquet.File {
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 Thrift.PageHeader ph = _footer.CreateDataPage(column.Count, pc.HasDictionary);
                 if(pc.HasRepetitionLevels) {
-                    WriteLevels(ms, pc.RepetitionLevels, pc.RepetitionLevels.Length, maxRepetitionLevel);
+                    WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, maxRepetitionLevel);
                 }
                 if(pc.HasDefinitionLevels) {
-                    WriteLevels(ms, pc.DefinitionLevels, column.Count, maxDefinitionLevel);
+                    WriteLevels(ms, pc.DefinitionLevels!, column.Count, maxDefinitionLevel);
                 }
 
                 if(pc.HasDictionary) {
                     // dictionary indexes are always encoded with RLE
-                    int[] indexes = pc.GetDictionaryIndexes(out int indexesLength);
-                    int bitWidth = pc.Dictionary.Length.GetBitWidth();
+                    int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
+                    int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                     RleEncoder.Encode(ms, indexes, indexesLength, bitWidth);
                 } else {
-                    Array data = pc.GetPlainData(out int offset, out int count);
+                    Array data = pc.GetPlainData(out int offset, out int count)!;
                     if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
                         throw new IOException($"failed to encode data page data for column {column}");
                     }

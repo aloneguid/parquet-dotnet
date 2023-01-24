@@ -4,19 +4,19 @@ using System.Linq;
 
 namespace Parquet.Rows {
     class TreeList {
-        private readonly TreeList _parent;
-        private List<TreeList> _children;
-        private List<object> _values;
+        private readonly TreeList? _parent;
+        private List<TreeList>? _children;
+        private List<object?>? _values;
 
-        public TreeList(TreeList parent) {
+        public TreeList(TreeList? parent) {
             _parent = parent;
         }
 
         public bool HasValues => _values != null && _values.Count > 0;
 
-        public TreeList FirstChild => _children == null || _children.Count == 0 ? null : _children[0];
+        public TreeList? FirstChild => _children == null || _children.Count == 0 ? null : _children[0];
 
-        public TreeList Submerge(int depth) {
+        public TreeList? Submerge(int depth) {
             if(depth == 0)
                 return this;
 
@@ -27,7 +27,7 @@ namespace Parquet.Rows {
                     if(result._children == null)
                         result._children = new List<TreeList>();
                     if(result._values != null) {
-                        foreach(object v in result._values)
+                        foreach(object? v in result._values)
                             next.Add(v);
                         result._values = null;
                     }
@@ -38,16 +38,16 @@ namespace Parquet.Rows {
                 return result;
             }
 
-            TreeList r2 = this;
+            TreeList? r2 = this;
             while(depth++ < 0)
-                r2 = r2._parent;
+                r2 = r2?._parent;
 
             return r2;
         }
 
-        public void Add(object value) {
+        public void Add(object? value) {
             if(_values == null)
-                _values = new List<object>();
+                _values = new List<object?>();
             _values.Add(value);
         }
 
@@ -55,17 +55,17 @@ namespace Parquet.Rows {
             if(_values != null)
                 return ValuesAs(clrType);
 
-            return new List<object>(_children.Select(c => c.Compact(clrType)));
+            return new List<object>(_children?.Select(c => c.Compact(clrType)) ?? Enumerable.Empty<object>());
         }
 
         public object ValuesAs(Type clrType) {
-            var cellArray = Array.CreateInstance(clrType, _values.Count);
-            for(int i = 0; i < _values.Count; i++)
-                cellArray.SetValue(_values[i], i);
+            var cellArray = Array.CreateInstance(clrType, _values?.Count ?? 0);
+            for(int i = 0; i < (_values?.Count ?? 0); i++)
+                cellArray.SetValue(_values?[i], i);
             return cellArray;
         }
 
-        public object FinalValue(Type clrType) {
+        public object? FinalValue(Type clrType) {
             return FirstChild == null
                ? _values != null && _values[0] != null ? ValuesAs(clrType) : null
                : FirstChild?.Compact(clrType);

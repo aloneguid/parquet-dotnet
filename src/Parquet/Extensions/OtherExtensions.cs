@@ -55,8 +55,8 @@ namespace Parquet {
                 return false;
 
             for(int i = 0; i < left.Length; i++) {
-                object il = left.GetValue(i);
-                object ir = right.GetValue(i);
+                object? il = left.GetValue(i);
+                object? ir = right.GetValue(i);
 
                 if(il == null || ir == null) {
                     return il == null && ir == null;

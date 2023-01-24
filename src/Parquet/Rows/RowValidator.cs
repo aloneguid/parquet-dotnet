@@ -12,8 +12,8 @@ namespace Parquet.Rows {
         public static void Validate(Row row, IReadOnlyList<Field> fields) {
             for(int i = 0; i < fields.Count; i++) {
                 Field field = fields[i];
-                object value = row[i];
-                Type vt = value == null ? null : value.GetType();
+                object? value = row[i];
+                Type? vt = value == null ? null : value.GetType();
 
                 switch(field.SchemaType) {
                     case SchemaType.Data:
@@ -23,7 +23,11 @@ namespace Parquet.Rows {
                         ValidateMap((MapField)field, value);
                         break;
                     case SchemaType.Struct:
-                        Validate((Row)value, ((StructField)field).Fields);
+                        if(value is Row row1) {
+                            Validate(row1, ((StructField)field).Fields);
+                        } else {
+                            throw new InvalidOperationException("expected Row");
+                        }
                         break;
                     case SchemaType.List:
                         ValidateList((ListField)field, value);
@@ -34,37 +38,43 @@ namespace Parquet.Rows {
             }
         }
 
-        private static void ValidateMap(MapField mf, object value) {
-            if(!value.GetType().TryExtractEnumerableType(out Type elementType))
-                throw new ArgumentException($"map must be a collection, but found {value.GetType()}");
+        private static void ValidateMap(MapField mf, object? value) {
+            if(value == null || !value.GetType().TryExtractEnumerableType(out Type? elementType))
+                throw new ArgumentException($"map must be a collection, but found {value?.GetType()}");
 
             if(elementType != typeof(Row))
                 throw new ArgumentException($"map element must be a collection of rows, but found a collection of {elementType}");
 
-            foreach(Row row in (IEnumerable)value)
+            foreach(Row? row in (IEnumerable)value) {
+                if(row == null)
+                    continue;
                 Validate(row, new[] { mf.Key, mf.Value });
+            }
         }
 
-        private static void ValidateList(ListField lf, object value) {
-            bool isEnumerable = value.GetType().TryExtractEnumerableType(out Type elementType);
+        private static void ValidateList(ListField lf, object? value) {
+            Type? elementType = null;
+            bool isEnumerable = value?.GetType().TryExtractEnumerableType(out elementType) ?? false;
 
             //value must be an enumeration of items
             if(!isEnumerable)
-                throw new ArgumentException($"simple list must be a collection, but found {value.GetType()}");
+                throw new ArgumentException($"simple list must be a collection, but found {value?.GetType()}");
 
             if(lf.Item.SchemaType == SchemaType.Data) {
                 var df = (DataField)lf.Item;
 
                 //value is a list of items
 
-                foreach(object element in (IEnumerable)value)
-                    ValidatePrimitive(df, element);
+                if(value is IEnumerable ie) {
+                    foreach(object? element in ie)
+                        ValidatePrimitive(df, element);
+                }
             }
             else if(elementType != typeof(Row))
                 throw new ArgumentException($"expected a collection of {typeof(Row)} but found a collection of {elementType}");
         }
 
-        private static void ValidatePrimitive(DataField df, object value) {
+        private static void ValidatePrimitive(DataField df, object? value) {
             if(value == null) {
                 if(!df.IsNullable)
                     throw new ArgumentException($"element is null but column '{df.Name}' does not accept nulls");

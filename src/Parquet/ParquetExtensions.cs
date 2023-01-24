@@ -5,6 +5,12 @@ using Parquet.Rows;
 using Parquet.Schema;
 
 namespace Parquet {
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public delegate Task TableReaderProgressCallback(string message, int? rowGroupIndex, DataField? field);
+
     /// <summary>
     /// Defines extension methods to simplify Parquet usage (experimental v3)
     /// </summary>
@@ -32,7 +38,7 @@ namespace Parquet {
             ParquetSchema schema;
             DataColumn[] columns;
             using(ParquetReader reader = await ParquetReader.CreateAsync(stream)) {
-                schema = reader.Schema;
+                schema = reader.Schema!;
 
                 using(ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0)) {
                     DataField[] dataFields = schema.GetDataFields();
@@ -58,19 +64,19 @@ namespace Parquet {
         }
 
         /// <summary>
-        /// Reads the first row group as a table
+        /// Reads all row groups as a table. Can be extremely slow.
         /// </summary>
         /// <param name="reader">Open reader</param>
         /// <returns></returns>
         public static async Task<Table> ReadAsTableAsync(this ParquetReader reader) {
-            Table result = null;
+            Table? result = null;
+            DataField[] dataFields = reader.Schema!.GetDataFields();
 
             if(reader.RowGroupCount == 0) {
                 result = new Table(reader.Schema, null, 0);
             } else {
                 for(int i = 0; i < reader.RowGroupCount; i++) {
                     using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
-                        DataField[] dataFields = reader.Schema.GetDataFields();
                         DataColumn[] allData = new DataColumn[dataFields.Length];
 
                         for(int c = 0; c < dataFields.Length; c++) {
@@ -90,7 +96,7 @@ namespace Parquet {
                 }
             }
 
-            return result;
+            return result!;
         }
 
         /// <summary>

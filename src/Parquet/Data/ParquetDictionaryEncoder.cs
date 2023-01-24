@@ -9,8 +9,8 @@ namespace Parquet.Data {
 
         public static bool TryExtractDictionary(Type elementType,
             Array data, int offset, int count,
-            out Array dictionaryArray,
-            out int[] rentedIndexes,
+            out Array? dictionaryArray,
+            out int[]? rentedIndexes,
             double threshold = 0.8) {
 
             dictionaryArray = null;

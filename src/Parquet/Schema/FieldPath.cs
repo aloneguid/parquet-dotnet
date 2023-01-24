@@ -71,7 +71,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Returns first part of the path, or null if path is empty
         /// </summary>
-        public string FirstPart => _parts.Count == 0 ? null : _parts[0];
+        public string? FirstPart => _parts.Count == 0 ? null : _parts[0];
 
         /// <summary>
         /// Number of elements in path
@@ -81,11 +81,11 @@ namespace Parquet.Schema {
         /// <summary>
         /// Compares string path
         /// </summary>
-        public bool Equals(FieldPath other) {
+        public bool Equals(FieldPath? other) {
             if(ReferenceEquals(this, other))
                 return true;
 
-            return _str.Equals(other._str);
+            return _str.Equals(other?._str);
 
         }
 
@@ -102,7 +102,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Combines two paths safely
         /// </summary>
-        public static FieldPath operator +(FieldPath left, FieldPath right) {
+        public static FieldPath operator +(FieldPath? left, FieldPath? right) {
             var parts = new List<string>();
             if(left != null)
                 parts.AddRange(left._parts);
