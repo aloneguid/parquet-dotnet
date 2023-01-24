@@ -66,5 +66,36 @@ namespace Parquet.Extensions {
 
             return tmp;
         }
+        
+        public static int ReadUnsignedVarInt(this Stream s) {
+            int result = 0;
+            int shift = 0;
+
+            while(true) {
+                int b = s.ReadByte();
+                result |= ((b & 0x7F) << shift);
+                if((b & 0x80) == 0) break;
+                shift += 7;
+            }
+
+            return result;
+        }
+
+        public static long ReadUnsignedVarLong(this Stream s) {
+            long value = 0;
+            int i = 0;
+            long b;
+            while(((b = s.ReadByte()) &0x80) != 0) {
+                value |= (b & 0x7F) << i;
+                i += 7;
+            }
+            return value | (b << i);
+        }
+
+        public static long ReadZigZagVarLong(this Stream s) {
+            long raw = s.ReadUnsignedVarLong();
+            long temp = (((raw << 63) >> 63) ^ raw) >> 1;
+            return temp ^ (raw & (1L << 63));
+        }
     }
 }

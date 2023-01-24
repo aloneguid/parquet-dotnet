@@ -8,6 +8,7 @@ using Parquet.Data;
 using Parquet.Thrift;
 using Parquet.Schema;
 using Parquet.Extensions;
+using Parquet.File.Values;
 
 namespace Parquet.File {
     class DataColumnReader {
@@ -254,7 +255,7 @@ namespace Parquet.File {
 
             int maxReadCount = ph.Data_page_header_v2.Num_values - ph.Data_page_header_v2.Num_nulls;
 
-            if(!ph.Data_page_header_v2.Is_compressed) {
+            if((!ph.Data_page_header_v2.Is_compressed) || _thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
                 ReadColumn(ms, ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
                 return;
             }
@@ -319,10 +320,13 @@ namespace Parquet.File {
                     }
                     break;
 
+                case Thrift.Encoding.DELTA_BYTE_ARRAY:
+                    cd.valuesOffset += DeltaByteArrayReader.Read(s, cd.values, cd.valuesOffset, totalValuesInPage);
+                    break;
+
                 case Encoding.BIT_PACKED:
                 case Encoding.DELTA_BINARY_PACKED:
                 case Encoding.DELTA_LENGTH_BYTE_ARRAY:
-                case Encoding.DELTA_BYTE_ARRAY:
                 case Encoding.BYTE_STREAM_SPLIT:
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");

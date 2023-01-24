@@ -252,14 +252,29 @@ namespace Parquet.Test {
 
         [Theory]
         [InlineData("timestamp_micros.parquet")]
+        [InlineData("timestamp_micros.v2.parquet")]
         public async Task ParquetReader_TimestampMicrosColumn(string parquetFile) {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
                 DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
                 var col0 = (DateTime?[])columns[0].Data;
                 Assert.Equal(3, col0.Length);
-                Assert.Equal(new DateTime(2022, 12, 23, 11, 43, 49).AddTicks(10 * 10), col0[0]);
-                Assert.Equal(new DateTime(2021, 12, 23, 12, 44, 50).AddTicks(11 * 10), col0[1]);
-                Assert.Equal(new DateTime(2020, 12, 23, 13, 45, 51).AddTicks(12 * 10), col0[2]);
+                Assert.Equal(new DateTime(2022,12,23,11,43,49).AddTicks(10 * 10), col0[0]);
+                Assert.Equal(new DateTime(2021,12,23,12,44,50).AddTicks(11 * 10), col0[1]);
+                Assert.Equal(new DateTime(2020,12,23,13,45,51).AddTicks(12 * 10), col0[2]);
+            }
+        }
+        
+        [Theory]
+        [InlineData("delta_byte_array.parquet")]
+        public async Task ParquetReader_DeltaByteArrayColumn(string parquetFile) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+                string[] col0 = (string[])columns[0].Data;
+                Assert.Equal(100, col0.Length);
+                Assert.Equal("0X0", col0[0]);
+                Assert.Equal("0X1", col0[1]);
+                Assert.Equal("0X2", col0[2]);
+                Assert.Equal("0X63", col0[99]);
             }
         }
 
