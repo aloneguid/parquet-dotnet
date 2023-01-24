@@ -114,7 +114,7 @@ namespace Parquet.File {
                        tse,
                        ms, column.Statistics)) {
 
-                    throw new IOException("failed to encode data");
+                    throw new IOException("failed to encode dictionary data for column " + column);
                 }
 
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
@@ -139,7 +139,7 @@ namespace Parquet.File {
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
                     if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
-                        throw new IOException("failed to encode data");
+                        throw new IOException($"failed to encode data page data for column {column}");
                     }
                 }
 
