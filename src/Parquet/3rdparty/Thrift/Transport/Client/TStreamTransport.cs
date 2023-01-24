@@ -23,29 +23,25 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Thrift.Transport.Client
-{
+namespace Thrift.Transport.Client {
     // ReSharper disable once InconsistentNaming
-    public class TStreamTransport : TEndpointTransport
-    {
+    public class TStreamTransport : TEndpointTransport {
         private bool _isDisposed;
 
         protected TStreamTransport(TConfiguration config)
-            :base(config)
-        {
+            : base(config) {
         }
 
-        public TStreamTransport(Stream inputStream, Stream outputStream, TConfiguration config)
-            : base(config)
-        {
+        public TStreamTransport(Stream inputStream, Stream outputStream, TConfiguration? config)
+            : base(config) {
             InputStream = inputStream;
             OutputStream = outputStream;
         }
 
-        protected Stream OutputStream { get; set; }
+        protected Stream? OutputStream { get; set; }
 
-        private Stream _InputStream = null;
-        protected Stream InputStream {
+        private Stream? _InputStream = null;
+        protected Stream? InputStream {
             get => _InputStream;
             set {
                 _InputStream = value;
@@ -55,31 +51,25 @@ namespace Thrift.Transport.Client
 
         public override bool IsOpen => true;
 
-        public override Task OpenAsync(CancellationToken cancellationToken)
-        {
+        public override Task OpenAsync(CancellationToken cancellationToken) {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override void Close()
-        {
-            if (InputStream != null)
-            {
+        public override void Close() {
+            if(InputStream != null) {
                 InputStream.Dispose();
                 InputStream = null;
             }
 
-            if (OutputStream != null)
-            {
+            if(OutputStream != null) {
                 OutputStream.Dispose();
                 OutputStream = null;
             }
         }
 
-        public override async ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
-        {
-            if (InputStream == null)
-            {
+        public override async ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken) {
+            if(InputStream == null) {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen,
                     "Cannot read from null inputstream");
             }
@@ -91,10 +81,8 @@ namespace Thrift.Transport.Client
 #endif
         }
 
-        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
-        {
-            if (OutputStream == null)
-            {
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken) {
+            if(OutputStream == null) {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen,
                     "Cannot write to null outputstream");
             }
@@ -106,20 +94,17 @@ namespace Thrift.Transport.Client
 #endif
         }
 
-        public override async Task FlushAsync(CancellationToken cancellationToken)
-        {
-            await OutputStream.FlushAsync(cancellationToken);
+        public override async Task FlushAsync(CancellationToken cancellationToken) {
+            if(OutputStream != null)
+                await OutputStream.FlushAsync(cancellationToken);
             ResetConsumedMessageSize();
         }
 
 
         // IDisposable
-        protected override void Dispose(bool disposing)
-        {
-            if (!_isDisposed)
-            {
-                if (disposing)
-                {
+        protected override void Dispose(bool disposing) {
+            if(!_isDisposed) {
+                if(disposing) {
                     InputStream?.Dispose();
                     OutputStream?.Dispose();
                 }

@@ -13,12 +13,12 @@ namespace Parquet.File {
 
         // fields declared in write order
 
-        private Array _dictionary;
-        private int[] _dictionaryIndexes;
+        private Array? _dictionary;
+        private int[]? _dictionaryIndexes;
 
-        private readonly int[] _repetitionLevels;
+        private readonly int[]? _repetitionLevels;
 
-        private int[] _definitionLevels;
+        private int[]? _definitionLevels;
 
         private Array _plainData;
         private int _plainDataOffset;
@@ -36,22 +36,22 @@ namespace Parquet.File {
 
         public bool HasDictionary => _dictionary != null;
 
-        public Array Dictionary => _dictionary;
+        public Array? Dictionary => _dictionary;
 
         public bool HasRepetitionLevels => _repetitionLevels != null;
 
-        public int[] RepetitionLevels => _repetitionLevels;
+        public int[]? RepetitionLevels => _repetitionLevels;
 
         public bool HasDefinitionLevels => _definitionLevels != null;
 
-        public int[] DefinitionLevels => _definitionLevels;
+        public int[]? DefinitionLevels => _definitionLevels;
 
-        public int[] GetDictionaryIndexes(out int length) {
+        public int[]? GetDictionaryIndexes(out int length) {
             length = (int)(_column.Count - _column.Statistics.NullCount);
             return _dictionaryIndexes;
         }
 
-        public Array GetPlainData(out int offset, out int count) {
+        public Array? GetPlainData(out int offset, out int count) {
             offset = _plainDataOffset;
             count = _plainDataCount;
             return _plainData;
@@ -94,11 +94,11 @@ namespace Parquet.File {
                     out _dictionary, out _dictionaryIndexes, dictionaryThreshold)) {
 
                 // if dictionary is successfully extracted, plainData is invalid
-                _plainData = null;
+                _plainData = Array.Empty<string>();
                 _plainDataOffset = 0;
                 _plainDataCount = 0;
 
-                _column.Statistics.DistinctCount = _dictionary.Length;
+                _column.Statistics.DistinctCount = _dictionary!.Length;
 
                 // note that dictionary indexes are pooled!
             }

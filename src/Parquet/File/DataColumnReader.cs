@@ -15,9 +15,9 @@ namespace Parquet.File {
         private readonly DataField _dataField;
         private readonly Stream _inputStream;
         private readonly Thrift.ColumnChunk _thriftColumnChunk;
-        private readonly Thrift.SchemaElement _thriftSchemaElement;
+        private readonly Thrift.SchemaElement? _thriftSchemaElement;
         private readonly ThriftFooter _footer;
-        private readonly ParquetOptions _parquetOptions;
+        private readonly ParquetOptions? _parquetOptions;
         private readonly ThriftStream _thriftStream;
         private readonly int _maxRepetitionLevel;
         private readonly int _maxDefinitionLevel;
@@ -25,18 +25,18 @@ namespace Parquet.File {
         private class ColumnRawData {
             public int maxCount;
 
-            public int[] repetitions;
+            public int[]? repetitions;
             public int repetitionsOffset;
 
-            public int[] definitions;
+            public int[]? definitions;
             public int definitionsOffset;
 
-            public int[] indexes;
+            public int[]? indexes;
 
-            public Array values;
+            public Array? values;
             public int valuesOffset;
 
-            public Array dictionary;
+            public Array? dictionary;
             public int dictionaryOffset;
         }
 
@@ -45,7 +45,7 @@ namespace Parquet.File {
            Stream inputStream,
            Thrift.ColumnChunk thriftColumnChunk,
            ThriftFooter footer,
-           ParquetOptions parquetOptions) {
+           ParquetOptions? parquetOptions) {
             _dataField = dataField ?? throw new ArgumentNullException(nameof(dataField));
             _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
             _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
@@ -67,7 +67,7 @@ namespace Parquet.File {
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
             
             Thrift.PageHeader ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
-            (bool read, Array data, int offset) = await TryReadDictionaryPageAsync(ph);
+            (bool read, Array? data, int offset) = await TryReadDictionaryPageAsync(ph);
             if(read) {
                 colData.dictionary = data;
                 colData.dictionaryOffset = offset;
@@ -100,14 +100,16 @@ namespace Parquet.File {
             // all the data is available here!
 
             var finalColumn = new DataColumn(
-               _dataField, colData.values,
+               _dataField, colData.values!,
                colData.definitions, _maxDefinitionLevel,
                colData.repetitions, _maxRepetitionLevel);
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
-                ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement, out object min);
-                ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement, out object max);
+                ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement!,
+                    out object? min);
+                ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement!,
+                    out object? max);
 
                 finalColumn.Statistics = new DataColumnStatistics(
                    _thriftColumnChunk.Meta_data.Statistics.Null_count,
@@ -163,7 +165,7 @@ namespace Parquet.File {
             return new IronCompress.DataBuffer(data, pageSize, ArrayPool<byte>.Shared);
         }
 
-        private async Task<(bool, Array, int)> TryReadDictionaryPageAsync(Thrift.PageHeader ph) {
+        private async Task<(bool, Array?, int)> TryReadDictionaryPageAsync(Thrift.PageHeader ph) {
             if(ph.Type != Thrift.PageType.DICTIONARY_PAGE) {
                 return (false, null, 0);
             }
@@ -176,7 +178,7 @@ namespace Parquet.File {
             Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
 
             if(!ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
-                   _thriftSchemaElement, ms, out int dictionaryOffset)) {
+                   _thriftSchemaElement!, ms, out int dictionaryOffset)) {
                 throw new IOException("could not decode");
             }
 
@@ -293,7 +295,7 @@ namespace Parquet.File {
                         if(!ParquetPlainEncoder.Decode(cd.values,
                             cd.valuesOffset,
                             totalValuesInPage,
-                            _thriftSchemaElement, s, out int read)) {
+                            _thriftSchemaElement!, s, out int read)) {
                             throw new IOException("could not decode");
                         }
                         cd.valuesOffset += read;
@@ -302,8 +304,8 @@ namespace Parquet.File {
 
                 case Thrift.Encoding.RLE: {
                         cd.indexes ??= new int[(int)totalValuesInChunk];
-                        int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement.Type_length, totalValuesInPage);
-                        cd.dictionary.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
+                        int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement!.Type_length, totalValuesInPage);
+                        cd.dictionary!.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;
@@ -312,7 +314,7 @@ namespace Parquet.File {
                 case Thrift.Encoding.RLE_DICTIONARY: {
                         cd.indexes ??= new int[(int)totalValuesInChunk];
                         int indexCount = ReadRleDictionary(s, totalValuesInPage, cd.indexes, 0);
-                        cd.dictionary.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
+                        cd.dictionary!.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;

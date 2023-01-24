@@ -8,7 +8,7 @@ namespace Parquet {
     sealed class ReferenceEqualityComparer<T> : IEqualityComparer<T> where T : class {
         public static IEqualityComparer<T> Default { get; } = new ReferenceEqualityComparer<T>();
 
-        public bool Equals(T x, T y) => ReferenceEquals(x, y);
+        public bool Equals(T? x, T? y) => ReferenceEquals(x, y);
         public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
     }
 
@@ -37,7 +37,7 @@ namespace Parquet {
         /// Batch through IEnumerable without going to the beginning every time. May need optimisations but OK so far.
         /// </summary>
         public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int size) {
-            T[] bucket = null;
+            T[]? bucket = null;
             int count = 0;
 
             foreach(T item in source) {
@@ -60,32 +60,34 @@ namespace Parquet {
                 yield return bucket.Take(count);
         }
 
-        public static IEnumerable<Tuple<TFirst, TSecond>> IterateWith<TFirst, TSecond>(this IEnumerable<TFirst> firstSource, IEnumerable<TSecond> secondSource) {
+        public static IEnumerable<Tuple<TFirst, TSecond?>> IterateWith<TFirst, TSecond>(
+            this IEnumerable<TFirst> firstSource, IEnumerable<TSecond> secondSource)
+            where TFirst : class, new()
+            where TSecond : class {
             return new DoubleIterator<TFirst, TSecond>(firstSource, secondSource);
         }
 
-        class DoubleIterator<TFirst, TSecond> : IEnumerable<Tuple<TFirst, TSecond>>, IEnumerator<Tuple<TFirst, TSecond>> {
+        class DoubleIterator<TFirst, TSecond> : IEnumerable<Tuple<TFirst, TSecond?>>, IEnumerator<Tuple<TFirst, TSecond?>> 
+            where TFirst : class, new()
+            where TSecond : class {
             private readonly IEnumerator<TFirst> _first;
-            private readonly IEnumerator<TSecond> _second;
+            private readonly IEnumerator<TSecond>? _second;
 
-            public DoubleIterator(IEnumerable<TFirst> first, IEnumerable<TSecond> second) {
-                if(first == null) {
-                    throw new ArgumentNullException(nameof(first));
-                }
-
+            public DoubleIterator(IEnumerable<TFirst> first, IEnumerable<TSecond>? second) {
                 _first = first.GetEnumerator();
                 _second = second?.GetEnumerator();
+                Current = Tuple.Create<TFirst, TSecond?>(new TFirst(), null);
             }
 
-            public Tuple<TFirst, TSecond> Current { get; private set; }
+            public Tuple<TFirst, TSecond?> Current { get; private set; }
 
-            object IEnumerator.Current => Current;
+            object? IEnumerator.Current => Current;
 
             public void Dispose() {
 
             }
 
-            public IEnumerator<Tuple<TFirst, TSecond>> GetEnumerator() {
+            public IEnumerator<Tuple<TFirst, TSecond?>> GetEnumerator() {
                 return this;
             }
 
@@ -93,10 +95,7 @@ namespace Parquet {
                 bool canMove = _first.MoveNext() && (_second == null || _second.MoveNext());
 
                 if(canMove) {
-                    Current = new Tuple<TFirst, TSecond>(_first.Current, _second == null ? default(TSecond) : _second.Current);
-                }
-                else {
-                    Current = null;
+                    Current = new Tuple<TFirst, TSecond?>(_first.Current, _second == null ? default(TSecond) : _second.Current);
                 }
 
                 return canMove;
@@ -110,12 +109,15 @@ namespace Parquet {
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
-        public static T[] Append<T>(this T[] array, T value) {
+        public static T[] Append<T>(this T[]? array, T value) {
+            if(array == null)
+                return Array.Empty<T>();
+
             int length = array?.Length ?? 0;
             var newArray = new T[length + 1];
 
             if(length > 0)
-                array.CopyTo(newArray, 0);
+                array?.CopyTo(newArray, 0);
 
             newArray[newArray.Length - 1] = value;
 

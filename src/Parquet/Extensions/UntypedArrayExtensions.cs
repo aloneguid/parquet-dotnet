@@ -20,8 +20,8 @@ namespace Parquet.Extensions {
         #region [ Null Counting ]
 
         public static int CalculateNullCountFast(this Array array, int offset, int count) {
-            Type t = array.GetType().GetElementType();
-            if(!t.IsNullable()) return 0;
+            Type? t = array.GetType().GetElementType();
+            if(t != null && !t.IsNullable()) return 0;
 
 
             if(t == typeof(bool?)) {
@@ -290,7 +290,10 @@ namespace Parquet.Extensions {
             Span<int> dest,
             int fillerValue) {
 
-            Type t = array.GetType().GetElementType();
+            Type? t = array.GetType().GetElementType();
+            if(t == null)
+                throw new ArgumentException("cannot detect element type", nameof(array));
+
             if(!t.IsNullable()) {
                 Array.Copy(array, offset, packedData, 0, count);
                 dest.Fill(fillerValue);
@@ -815,7 +818,10 @@ namespace Parquet.Extensions {
         int[] flags, int fillFlag,
         Array result) {
 
-        Type t = array.GetType().GetElementType();
+        Type? t = array.GetType().GetElementType();
+        if(t == null)
+            throw new ArgumentException("cannot detect element type", nameof(array));
+
         
 
         if(t == typeof(bool)) {
@@ -1227,7 +1233,10 @@ namespace Parquet.Extensions {
     public static void ExplodeFast(this Array dictionary,
             Span<int> indexes,
             Array result, int resultOffset, int resultCount) {
-        Type t = dictionary.GetType().GetElementType();
+        Type? t = dictionary.GetType().GetElementType();
+        if(t == null)
+            throw new ArgumentException("cannot detect element type", nameof(dictionary));
+
 
         if(t == typeof(bool)) {
             ExplodeTypeFast((bool[])dictionary,

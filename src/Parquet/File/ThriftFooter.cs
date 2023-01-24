@@ -61,7 +61,7 @@ namespace Parquet.File {
             return await thriftStream.WriteAsync(_fileMeta, false, cancellationToken);
         }
 
-        public Thrift.SchemaElement GetSchemaElement(Thrift.ColumnChunk columnChunk) {
+        public Thrift.SchemaElement? GetSchemaElement(Thrift.ColumnChunk columnChunk) {
             if(columnChunk == null) {
                 throw new ArgumentNullException(nameof(columnChunk));
             }
@@ -73,9 +73,11 @@ namespace Parquet.File {
         public FieldPath GetPath(Thrift.SchemaElement schemaElement) {
             var path = new List<string>();
 
-            ThriftSchemaTree.Node wrapped = _tree.Find(schemaElement);
-            while(wrapped.parent != null) {
-                path.Add(wrapped.element.Name);
+            ThriftSchemaTree.Node? wrapped = _tree.Find(schemaElement);
+            while(wrapped?.parent != null) {
+                string? name = wrapped.element?.Name;
+                if(name != null)
+                    path.Add(name);
                 wrapped = wrapped.parent;
             }
 
@@ -94,7 +96,7 @@ namespace Parquet.File {
             List<string> path = columnChunk.Meta_data.Path_in_schema;
 
             var comparer = new StringListComparer(path);
-            if(_memoizedLevels.TryGetValue(comparer, out Tuple<int, int> t)) {
+            if(_memoizedLevels.TryGetValue(comparer, out Tuple<int, int>? t)) {
                 maxRepetitionLevel = t.Item1;
                 maxDefinitionLevel = t.Item2;
                 return;
@@ -185,7 +187,7 @@ namespace Parquet.File {
 
 #region [ Conversion to Model Schema ]
 
-        public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
+        public ParquetSchema CreateModelSchema(ParquetOptions? formatOptions) {
             int si = 0;
             Thrift.SchemaElement tse = _fileMeta.Schema[si++];
             var container = new List<Field>();
@@ -195,9 +197,11 @@ namespace Parquet.File {
             return new ParquetSchema(container);
         }
 
-        private void CreateModelSchema(FieldPath path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
+        private void CreateModelSchema(FieldPath? path, IList<Field> container, int childCount, ref int si, ParquetOptions? formatOptions) {
             for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++) {
-                Field se = SchemaEncoder.Decode(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
+                Field? se = SchemaEncoder.Decode(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
+                if(se == null)
+                    throw new InvalidOperationException($"cannot decode schema for field {_fileMeta.Schema[si]}");
 
                 List<string> npath = path?.ToList() ?? new List<string>();
                 if(se.Path != null) npath.AddRange(se.Path.ToList());
@@ -217,7 +221,7 @@ namespace Parquet.File {
         }
 
         private void ThrowNoHandler(Thrift.SchemaElement tse) {
-            string ct = tse.__isset.converted_type
+            string? ct = tse.__isset.converted_type
                ? $" ({tse.Converted_type})"
                : null;
 
@@ -258,13 +262,13 @@ namespace Parquet.File {
 #region [ Helpers ]
 
         class ThriftSchemaTree {
-            readonly Dictionary<SchemaElement, Node> _memoizedFindResults = 
-                new Dictionary<SchemaElement, Node>(new ReferenceEqualityComparer<SchemaElement>());
+            readonly Dictionary<SchemaElement, Node?> _memoizedFindResults = 
+                new Dictionary<SchemaElement, Node?>(new ReferenceEqualityComparer<SchemaElement>());
 
             public class Node {
-                public Thrift.SchemaElement element;
-                public List<Node> children;
-                public Node parent;
+                public Thrift.SchemaElement? element;
+                public List<Node>? children;
+                public Node? parent;
             }
 
             public Node root;
@@ -276,8 +280,8 @@ namespace Parquet.File {
                 BuildSchema(root, schema, root.element.Num_children, ref i);
             }
 
-            public Node Find(Thrift.SchemaElement tse) {
-                if(_memoizedFindResults.TryGetValue(tse, out Node node)) {
+            public Node? Find(Thrift.SchemaElement tse) {
+                if(_memoizedFindResults.TryGetValue(tse, out Node? node)) {
                     return node;
                 }
                 node = Find(root, tse);
@@ -285,33 +289,37 @@ namespace Parquet.File {
                 return node;
             }
 
-            private Node Find(Node root, Thrift.SchemaElement tse) {
-                foreach(Node child in root.children) {
-                    if(child.element == tse)
-                        return child;
+            private Node? Find(Node root, Thrift.SchemaElement tse) {
+                if(root.children != null) {
+                    foreach(Node child in root.children) {
+                        if(child.element == tse)
+                            return child;
 
-                    if(child.children != null) {
-                        Node cf = Find(child, tse);
-                        if(cf != null)
-                            return cf;
+                        if(child.children != null) {
+                            Node? cf = Find(child, tse);
+                            if(cf != null)
+                                return cf;
+                        }
                     }
                 }
 
                 return null;
             }
 
-            public Node Find(FieldPath path) {
+            public Node? Find(FieldPath path) {
                 if(path.Length == 0) return null;
                 return Find(root, path);
             }
 
-            private Node Find(Node root, FieldPath path) {
-                foreach(Node child in root.children) {
-                    if(child.element.Name == path.FirstPart) {
-                        if(path.Length == 1)
-                            return child;
+            private Node? Find(Node root, FieldPath path) {
+                if(root.children != null) {
+                    foreach(Node child in root.children) {
+                        if(child.element?.Name == path.FirstPart) {
+                            if(path.Length == 1)
+                                return child;
 
-                        return Find(child, new FieldPath(path.ToList().Skip(1)));
+                            return Find(child, new FieldPath(path.ToList().Skip(1)));
+                        }
                     }
                 }
 

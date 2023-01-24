@@ -15,7 +15,7 @@ namespace Parquet.Data {
         /// <summary>
         /// 
         /// </summary>
-        public DataColumnStatistics(long nullCount, long distinctCount, object minValue, object maxValue) {
+        public DataColumnStatistics(long nullCount, long distinctCount, object? minValue, object? maxValue) {
             NullCount = nullCount;
             DistinctCount = distinctCount;
             MinValue = minValue;
@@ -35,20 +35,20 @@ namespace Parquet.Data {
         /// <summary>
         /// Minimum value, casted to CLR type
         /// </summary>
-        public object MinValue { get; internal set; }
+        public object? MinValue { get; internal set; }
 
         /// <summary>
         /// Maximum value, casted to CLR type
         /// </summary>
-        public object MaxValue { get; internal set; }
+        public object? MaxValue { get; internal set; }
 
         internal Thrift.Statistics ToThriftStatistics(Thrift.SchemaElement tse) {
 
-            if(!ParquetPlainEncoder.TryEncode(MinValue, tse, out byte[] min)) {
+            if(!ParquetPlainEncoder.TryEncode(MinValue, tse, out byte[]? min)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
-            if(!ParquetPlainEncoder.TryEncode(MaxValue, tse, out byte[] max)) {
+            if(!ParquetPlainEncoder.TryEncode(MaxValue, tse, out byte[]? max)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 

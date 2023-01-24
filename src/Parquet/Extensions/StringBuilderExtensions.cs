@@ -52,7 +52,7 @@ namespace Parquet.Extensions {
                 sb.Append("}");
         }
 
-        public static void AppendPropertyName(this StringBuilder sb, StringFormat sf, Field f) {
+        public static void AppendPropertyName(this StringBuilder sb, StringFormat sf, Field? f) {
             switch(sf) {
                 case StringFormat.Json:
                     if(f != null) {
@@ -79,7 +79,7 @@ namespace Parquet.Extensions {
             }
         }
 
-        public static void Append(this StringBuilder sb, StringFormat sf, object value) {
+        public static void Append(this StringBuilder sb, StringFormat sf, object? value) {
             if(sf == StringFormat.Json || sf == StringFormat.JsonSingleQuote) {
                 EncodeJson(sb, sf, value);
             }
@@ -88,14 +88,14 @@ namespace Parquet.Extensions {
             }
         }
 
-        private static void EncodeCsv(StringBuilder sb, StringFormat sf, object value) {
+        private static void EncodeCsv(StringBuilder sb, StringFormat sf, object? value) {
             if(value == null)
                 return;
 
             sb.Append(value.ToString());
         }
 
-        private static void EncodeJson(StringBuilder sb, StringFormat sf, object value) {
+        private static void EncodeJson(StringBuilder sb, StringFormat sf, object? value) {
             if(value == null) {
                 AppendNull(sb, sf);
                 return;

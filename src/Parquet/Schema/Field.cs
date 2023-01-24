@@ -36,9 +36,9 @@ namespace Parquet.Schema {
         /// <summary>
         /// Used internally for serialisation
         /// </summary>
-        internal string ClrPropName { get; set; }
+        internal string? ClrPropName { get; set; }
 
-        internal virtual FieldPath PathPrefix { set { } }
+        internal virtual FieldPath? PathPrefix { set { } }
 
         /// <summary>
         /// Constructs a field with only requiremd parameters
@@ -93,7 +93,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Basic equality check
         /// </summary>
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
 
             if(obj is not Field other) return false;
 

@@ -24,7 +24,7 @@ namespace Parquet.Data {
             Array data, int offset, int count,
             Thrift.SchemaElement tse,
             Stream destination,
-            DataColumnStatistics stats = null) {
+            DataColumnStatistics? stats = null) {
             System.Type t = data.GetType();
 
             if(t == typeof(bool[])) {
@@ -276,7 +276,7 @@ namespace Parquet.Data {
 
         #region [ Single Value Encoding ]
 
-        public static bool TryEncode(object value, Thrift.SchemaElement tse, out byte[] result) {
+        public static bool TryEncode(object? value, Thrift.SchemaElement tse, out byte[]? result) {
             if(value == null) {
                 result = null;
                 return true;    // we've just successfully encoded null
@@ -357,7 +357,7 @@ namespace Parquet.Data {
             return false;
         }
 
-        public static bool TryDecode(byte[] value, Thrift.SchemaElement tse, out object result) {
+        public static bool TryDecode(byte[]? value, Thrift.SchemaElement tse, out object? result) {
             if(value == null) {
                 result = null;
                 return true;    // we've just successfully encoded null
@@ -1232,7 +1232,7 @@ namespace Parquet.Data {
         }
 
         public static void FillStats(ReadOnlySpan<string> data, DataColumnStatistics stats) {
-            data.MinMax(out string min, out string max);
+            data.MinMax(out string? min, out string? max);
             stats.MinValue = min;
             stats.MaxValue = max;
         }

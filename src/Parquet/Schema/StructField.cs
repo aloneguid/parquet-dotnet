@@ -26,11 +26,12 @@ namespace Parquet.Schema {
             PathPrefix = null;
         }
 
-        internal override FieldPath PathPrefix {
+        internal override FieldPath? PathPrefix {
             set {
                 Path = value + Name;
 
-                foreach(Field field in _fields)                     field.PathPrefix = Path;
+                foreach(Field field in _fields)
+                    field.PathPrefix = Path;
             }
         }
 
@@ -62,12 +63,12 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(StructField other) {
+        public bool Equals(StructField? other) {
             bool ok = base.Equals(other) && Fields.Count == other.Fields.Count;
 
             if(ok) {
                 for(int i = 0; i < Fields.Count; i++) {
-                    if(!Fields[i].Equals(other.Fields[i])) {
+                    if(!Fields[i].Equals(other?.Fields[i])) {
                         ok = false;
                         break;
                     }

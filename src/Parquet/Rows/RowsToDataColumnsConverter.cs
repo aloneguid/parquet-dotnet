@@ -92,7 +92,7 @@ namespace Parquet.Rows {
 
         private DataColumnAppender GetAppender(Field f) {
             //prepare value appender
-            if(!_pathToDataColumn.TryGetValue(f.Path, out DataColumnAppender appender)) {
+            if(!_pathToDataColumn.TryGetValue(f.Path, out DataColumnAppender? appender)) {
                 appender = new DataColumnAppender((DataField)f);
                 _pathToDataColumn[f.Path] = appender;
             }

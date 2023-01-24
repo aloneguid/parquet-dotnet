@@ -11,7 +11,7 @@ namespace Parquet.Rows {
         private int _offset;
         private readonly int _count;
         private readonly Array _data;
-        private readonly int[] _rls;
+        private readonly int[]? _rls;
         private readonly int _rl;
         private readonly int _maxRl;
 
@@ -34,7 +34,7 @@ namespace Parquet.Rows {
             _maxRl = dc.Field.MaxRepetitionLevel;
         }
 
-        public object Current { get; private set; }
+        public object? Current { get; private set; }
 
         /// <summary>
         /// Helper method to get all elements as a list of enumerators
@@ -44,7 +44,7 @@ namespace Parquet.Rows {
             Reset();
             var result = new List<LazyColumnEnumerator>();
             while(MoveNext())
-                result.Add((LazyColumnEnumerator)Current);
+                result.Add((LazyColumnEnumerator)Current!);
             return result;
         }
 
@@ -91,7 +91,7 @@ namespace Parquet.Rows {
             int prl = -1;
 
             for(int i = _offset; i < _start + _count; i++) {
-                int rl = _rls[i];
+                int rl = _rls![i];
 
                 if(prl != -1 && rl != _maxRl && rl == _rl) {
                     int count = i - _offset;

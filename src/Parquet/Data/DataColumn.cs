@@ -14,6 +14,7 @@ namespace Parquet.Data {
 
         private DataColumn(DataField field) {
             Field = field ?? throw new ArgumentNullException(nameof(field));
+            Data = Array.Empty<int>();
         }
 
         /// <summary>
@@ -22,7 +23,8 @@ namespace Parquet.Data {
         /// <param name="field"></param>
         /// <param name="data"></param>
         /// <param name="repetitionLevels"></param>
-        public DataColumn(DataField field, Array data, int[] repetitionLevels = null) : this(field, data, 0, -1, repetitionLevels) {
+        public DataColumn(DataField field, Array data, int[]? repetitionLevels = null) 
+            : this(field, data, 0, -1, repetitionLevels) {
         }
 
         /// <summary>
@@ -33,7 +35,7 @@ namespace Parquet.Data {
         /// <param name="offset"></param>
         /// <param name="count"></param>
         /// <param name="repetitionLevels"></param>
-        public DataColumn(DataField field, Array data, int offset, int count, int[] repetitionLevels = null) : this(field) {
+        public DataColumn(DataField field, Array data, int offset, int count, int[]? repetitionLevels = null) : this(field) {
             Data = data ?? throw new ArgumentNullException(nameof(data));
             _offset = offset;
             _count = count;
@@ -43,8 +45,8 @@ namespace Parquet.Data {
 
         internal DataColumn(DataField field,
            Array definedData,
-           int[] definitionLevels, int maxDefinitionLevel,
-           int[] repetitionLevels, int maxRepetitionLevel) : this(field) {
+           int[]? definitionLevels, int maxDefinitionLevel,
+           int[]? repetitionLevels, int maxRepetitionLevel) : this(field) {
             Data = definedData;
 
             // 1. Apply definitions
@@ -90,7 +92,7 @@ namespace Parquet.Data {
         /// <summary>
         /// Repetition levels if any.
         /// </summary>
-        public int[] RepetitionLevels { get; private set; }
+        public int[]? RepetitionLevels { get; private set; }
 
         /// <summary>
         /// Data field
@@ -106,7 +108,8 @@ namespace Parquet.Data {
         /// <summary>
         /// Basic statistics for this data column (populated on read)
         /// </summary>
-        public DataColumnStatistics Statistics { get; internal set; } = new DataColumnStatistics(0, 0, null, null);
+        public DataColumnStatistics Statistics { get; internal set; } = 
+            new DataColumnStatistics(0, 0, null, null);
 
         internal int CalculateNullCount() {
             return Data.CalculateNullCountFast(Offset, Count);
@@ -122,7 +125,7 @@ namespace Parquet.Data {
 
         internal long CalculateRowCount() {
             if(Field.MaxRepetitionLevel > 0) {
-                return RepetitionLevels.Count(rl => rl == 0);
+                return RepetitionLevels?.Count(rl => rl == 0) ?? 0;
             }
 
             return Count;

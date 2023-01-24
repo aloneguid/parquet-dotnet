@@ -29,7 +29,7 @@ namespace Parquet {
         /// <param name="append"></param>
         /// <returns></returns>
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
-            ParquetSchema schema = null,
+            ParquetSchema? schema = null,
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
             bool append = false)
@@ -85,7 +85,7 @@ namespace Parquet {
         /// <param name="append"></param>
         /// <returns></returns>
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
-            ParquetSchema schema = null,
+            ParquetSchema? schema = null,
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
             bool append = false)
@@ -105,7 +105,7 @@ namespace Parquet {
         /// <param name="fileSchema">Schema</param>
         /// <returns></returns>
         public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex = -1,
-            ParquetSchema fileSchema = null
+            ParquetSchema? fileSchema = null
         ) where T : new() {
             var result = new List<T>();
             using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
@@ -166,7 +166,10 @@ namespace Parquet {
             var r = new List<T[]>();
 
             using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
-                ParquetSchema fileSchema = reader.Schema;
+                ParquetSchema? fileSchema = reader.Schema;
+                if(fileSchema== null) {
+                    throw new InvalidOperationException("schema not defined");
+                }
                 DataField[] dataFields = fileSchema.GetDataFields();
 
                 for(int i = 0; i < reader.RowGroupCount; i++) {

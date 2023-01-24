@@ -33,7 +33,7 @@ namespace Parquet.Schema {
         public DecimalDataField(string name,
             int precision, int scale = 0,
             bool forceByteArrayEncoding = false,
-            bool? isNullable = null, bool? isArray = null, string propertyName = null)
+            bool? isNullable = null, bool? isArray = null, string? propertyName = null)
            : base(name, typeof(decimal), isNullable, isArray, propertyName) {
 
             // see https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal for more details.

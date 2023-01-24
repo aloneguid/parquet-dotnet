@@ -21,7 +21,7 @@ namespace Parquet.Rows {
         }
 
         //eventually we can expose this externally, however it's not ready yet.
-        internal Field[] Schema { get; set; }
+        internal Field[]? Schema { get; set; }
 
         /// <summary>
         /// Creates a single cell row. Use this method to avoid overloading confusion.
@@ -121,7 +121,7 @@ namespace Parquet.Rows {
         /// Gets the value as byte array
         /// </summary>
         /// <param name="i">Value index</param>
-        public byte[] GetByteArray(int i) {
+        public byte[]? GetByteArray(int i) {
             return Get<byte[]>(i);
         }
 
@@ -129,7 +129,7 @@ namespace Parquet.Rows {
         /// Gets the value as string
         /// </summary>
         /// <param name="i">Value index</param>
-        public string GetString(int i) {
+        public string? GetString(int i) {
             return Get<string>(i);
         }
 
@@ -153,8 +153,8 @@ namespace Parquet.Rows {
         /// </summary>
         /// <param name="i">Value index</param>
         /// <exception cref="ArgumentException">Cannot cast <typeparamref name="T"/></exception>
-        public T Get<T>(int i) {
-            object v = Values[i];
+        public T? Get<T>(int i) {
+            object? v = Values[i];
 
             if(v == null)
                 return default;
@@ -177,7 +177,7 @@ namespace Parquet.Rows {
         /// Convert to string with optional formatting
         /// </summary>
         /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
-        public string ToString(string format) {
+        public string ToString(string? format) {
             return ToString(format, 0);
         }
 
@@ -186,7 +186,9 @@ namespace Parquet.Rows {
         /// </summary>
         /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
         /// <param name="rowIndex">Optional row index. In case of CSV output, index of 0 prints header row</param>
-        public string ToString(string format, int rowIndex) {
+        public string ToString(string? format, int rowIndex) {
+            if(Schema == null)
+                return string.Empty;
             var sb = new StringBuilder();
 
             StringFormat sf = GetStringFormat(format);
@@ -207,7 +209,7 @@ namespace Parquet.Rows {
             return sb.ToString();
         }
 
-        internal static StringFormat GetStringFormat(string format) {
+        internal static StringFormat GetStringFormat(string? format) {
             return format switch {
                 "j" => StringFormat.Json,
                 "c" => StringFormat.Csv,
@@ -219,8 +221,8 @@ namespace Parquet.Rows {
             ToString(sb, Values, sf, level, fields);
         }
 
-        internal void ToString(StringBuilder sb, object[] values, StringFormat sf, int level, IReadOnlyCollection<Field> fields) {
-            if(fields == null) {
+        internal void ToString(StringBuilder sb, object[]? values, StringFormat sf, int level, IReadOnlyCollection<Field> fields) {
+            if(fields == null || values == null) {
                 sb.AppendFormat("{0} value(s)", values?.Length ?? 0);
                 return;
             }
@@ -229,9 +231,9 @@ namespace Parquet.Rows {
 
             bool first = true;
             int nl = level + 1;
-            foreach(Tuple<object, Field> valueWithField in values.IterateWith(fields)) {
+            foreach(Tuple<object, Field?> valueWithField in values!.IterateWith(fields)) {
                 object v = valueWithField.Item1;
-                Field f = valueWithField.Item2;
+                Field? f = valueWithField.Item2;
 
                 if(first)
                     first = false;
@@ -244,7 +246,7 @@ namespace Parquet.Rows {
             sb.EndObject(sf);
         }
 
-        private void FormatValue(object v, StringBuilder sb, StringFormat sf, Field f, int level, bool appendPropertyName = true) {
+        private void FormatValue(object? v, StringBuilder sb, StringFormat sf, Field? f, int level, bool appendPropertyName = true) {
             if(appendPropertyName)
                 sb.AppendPropertyName(sf, f);
 
@@ -258,7 +260,7 @@ namespace Parquet.Rows {
                         var df = (DataField)f;
                         if(df.IsArray) {
                             sb.StartArray(sf, level);
-                            foreach(object vb in (IEnumerable)v) {
+                            foreach(object? vb in (IEnumerable)v) {
                                 if(first)
                                     first = false;
                                 else
@@ -284,13 +286,13 @@ namespace Parquet.Rows {
                     case SchemaType.Map:
                         var mf = (MapField)f;
                         sb.StartArray(sf, level);
-                        foreach(Row row in (IEnumerable)v) {
+                        foreach(Row? row in (IEnumerable)v) {
                             if(first)
                                 first = false;
                             else
                                 sb.DivideObjects(sf, level);
 
-                            ToString(sb, row.Values, sf, level + 1, new[] { mf.Key, mf.Value });
+                            ToString(sb, row?.Values, sf, level + 1, new[] { mf.Key, mf.Value });
                         }
                         sb.EndArray(sf, level);
                         break;
@@ -298,7 +300,7 @@ namespace Parquet.Rows {
                     case SchemaType.List:
                         var lf = (ListField)f;
                         sb.StartArray(sf, level);
-                        foreach(object le in (IEnumerable)v) {
+                        foreach(object? le in (IEnumerable)v) {
                             if(first)
                                 first = false;
                             else
@@ -316,7 +318,7 @@ namespace Parquet.Rows {
                 throw new NotImplementedException("null schema, value: " + v);
         }
 
-        private static IReadOnlyCollection<Field> GetMoreFields(Field f) {
+        private static IReadOnlyCollection<Field>? GetMoreFields(Field f) {
             if(f == null)
                 return null;
 
@@ -339,17 +341,17 @@ namespace Parquet.Rows {
         /// <summary>
         /// 
         /// </summary>
-        public bool Equals(Row other) {
+        public bool Equals(Row? other) {
             return Equals(other, false);
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public bool Equals(Row other, bool throwException) {
-            if(Values.Length != other.Values.Length) {
+        public bool Equals(Row? other, bool throwException) {
+            if(Values.Length != other?.Values.Length) {
                 if(throwException)
-                    throw new ArgumentException($"values count is different ({Values.Length} != {other.Values.Length})");
+                    throw new ArgumentException($"values count is different ({Values.Length} != {other?.Values.Length})");
 
                 return false;
             }

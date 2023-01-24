@@ -11,7 +11,7 @@ namespace Parquet {
         public static IList CreateGenericList(this Type t) {
             Type rt = typeof(List<>).MakeGenericType(t);
 
-            return (IList)Activator.CreateInstance(rt);
+            return (IList)Activator.CreateInstance(rt)!;
         }
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace Parquet {
         /// <param name="t"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        public static bool TryExtractEnumerableType(this Type t, out Type baseType) {
+        public static bool TryExtractEnumerableType(this Type t, out Type? baseType) {
             if(typeof(byte[]) == t) {
                 //it's a special case to avoid confustion between byte arrays and repeatable bytes
                 baseType = null;
@@ -57,7 +57,7 @@ namespace Parquet {
             return false;
         }
 
-        public static bool TryExtractDictionaryType(this Type t, out Type keyType, out Type valueType) {
+        public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
             TypeInfo ti = t.GetTypeInfo();
 
             if(ti.IsGenericType && ti.GetGenericTypeDefinition().GetTypeInfo().IsAssignableFrom(typeof(Dictionary<,>).GetTypeInfo())) {
@@ -74,7 +74,7 @@ namespace Parquet {
             TypeInfo ti = list.GetType().GetTypeInfo();
 
             Type t = ti.GenericTypeArguments[0];
-            Type gt = t.GetTypeInfo().IsGenericType ? t.GetTypeInfo().GetGenericTypeDefinition() : null;
+            Type? gt = t.GetTypeInfo().IsGenericType ? t.GetTypeInfo().GetGenericTypeDefinition() : null;
 
             return gt == typeof(Nullable<>) || t.GetTypeInfo().IsClass;
         }

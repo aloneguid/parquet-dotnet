@@ -36,17 +36,17 @@ namespace Thrift.Protocol {
         public TProtocolException() {
         }
 
-        public TProtocolException(int type, Exception inner = null)
+        public TProtocolException(int type, Exception? inner = null)
             : base(string.Empty, inner) {
             Type = type;
         }
 
-        public TProtocolException(int type, string message, Exception inner = null)
+        public TProtocolException(int type, string message, Exception? inner = null)
             : base(message, inner) {
             Type = type;
         }
 
-        public TProtocolException(string message, Exception inner = null)
+        public TProtocolException(string message, Exception? inner = null)
             : base(message, inner) {
         }
 

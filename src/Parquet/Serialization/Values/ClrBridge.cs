@@ -21,15 +21,19 @@ namespace Parquet.Serialization.Values {
             MSILGenerator.PopulateListDelegate populateList = _collectorKeyToTag.GetOrAdd(key, (_) => new MSILGenerator().GenerateCollector(_classType, field));
 
             IList resultList = field.ClrNullableIfHasNullsType.CreateGenericList();
-            Type prop = PropertyHelpers.GetDeclaredPropertyFromClassType(_classType, field).PropertyType;
+            Type? prop = PropertyHelpers.GetDeclaredPropertyFromClassType(_classType, field)?.PropertyType;
+            if(prop == null)
+                throw new InvalidOperationException("cannot get property type");
             bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
-            List<int> repLevelsList = field.IsArray || underlyingTypeIsEnumerable ? new List<int>() : null;
+            List<int>? repLevelsList = field.IsArray || underlyingTypeIsEnumerable ? new List<int>() : null;
             object result = populateList(classInstances, resultList, repLevelsList, field.MaxRepetitionLevel);
 
-            MethodInfo toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");
-            object array = toArrayMethod.Invoke(resultList, null);
+            MethodInfo? toArrayMethod = typeof(List<>).MakeGenericType(field.ClrNullableIfHasNullsType).GetTypeInfo().GetDeclaredMethod("ToArray");
+            if(toArrayMethod == null)
+                throw new InvalidOperationException("cannot get array conversion method");
+            object? array = toArrayMethod.Invoke(resultList, null);
 
-            return new DataColumn(field, (Array)array, repLevelsList?.ToArray());
+            return new DataColumn(field, (Array)array!, repLevelsList?.ToArray());
         }
 
         public void AssignColumn(DataColumn dataColumn, Array classInstances) {

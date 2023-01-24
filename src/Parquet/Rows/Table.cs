@@ -39,7 +39,7 @@ namespace Parquet.Rows {
         /// <param name="schema">Parquet file schema.</param>
         /// <param name="tableData">Optionally initialise this table with data columns that correspond to the passed <paramref name="schema"/></param>
         /// <param name="rowCount"></param>
-        internal Table(ParquetSchema schema, DataColumn[] tableData, long rowCount) : this(schema) {
+        internal Table(ParquetSchema schema, DataColumn[]? tableData, long rowCount) : this(schema) {
             Schema = schema ?? throw new ArgumentNullException(nameof(schema));
             _dfs = schema.Fields.ToArray();
 
@@ -187,7 +187,7 @@ namespace Parquet.Rows {
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(Table other) {
+        public bool Equals(Table? other) {
             return Equals(other, false);
         }
 
@@ -200,7 +200,7 @@ namespace Parquet.Rows {
         /// <param name="other"></param>
         /// <param name="throwExceptions"></param>
         /// <returns></returns>
-        public bool Equals(Table other, bool throwExceptions) {
+        public bool Equals(Table? other, bool throwExceptions) {
             if(ReferenceEquals(other, null)) {
                 if(throwExceptions)
                     throw new ArgumentNullException(nameof(other));
@@ -254,7 +254,7 @@ namespace Parquet.Rows {
         /// <param name="format">jsq - one line single-quote json, default, j - one line json</param>
         /// <param name="formatProvider">Optaional format provider, not used at the moment</param>
         /// <returns></returns>
-        public string ToString(string format, IFormatProvider formatProvider) {
+        public string ToString(string? format, IFormatProvider? formatProvider) {
             return ToString(format, 10);
         }
 
@@ -267,7 +267,7 @@ namespace Parquet.Rows {
             return ToString(format, 10);
         }
 
-        private string ToString(string format, int maxRows) {
+        private string ToString(string? format, int maxRows) {
             StringFormat sf = Row.GetStringFormat(format);
 
             var sb = new StringBuilder();

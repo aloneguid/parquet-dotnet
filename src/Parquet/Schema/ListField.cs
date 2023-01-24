@@ -6,6 +6,9 @@ namespace Parquet.Schema {
     /// If you need to get a list of primitive data fields it's more efficient to use arrays.
     /// </summary>
     public class ListField : Field {
+
+        private bool _itemAssigned = false;
+
         /// <summary>
         /// Default container name for a list
         /// </summary>
@@ -26,6 +29,7 @@ namespace Parquet.Schema {
         /// <param name="containerName">Container name</param>
         public ListField(string name, Field item, string containerName = DefaultContainerName) : this(name) {
             Item = item ?? throw new ArgumentNullException(nameof(item));
+            _itemAssigned = true;
             ContainerName = containerName;
             PathPrefix = null;
         }
@@ -40,8 +44,9 @@ namespace Parquet.Schema {
         /// <param name="containerName">Container name</param>
         /// <param name="elementName">Element name</param>
         [Obsolete]
-        public ListField(string name, DataType dataType, bool hasNulls = true, string propertyName = null, string containerName = "list", string elementName = null) : this(name) {
+        public ListField(string name, DataType dataType, bool hasNulls = true, string? propertyName = null, string containerName = "list", string? elementName = null) : this(name) {
             Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
+            _itemAssigned = true;
             ContainerName = containerName;
             PathPrefix = null;
         }
@@ -56,18 +61,21 @@ namespace Parquet.Schema {
         /// <param name="elementName">Element name</param>
         public ListField(string name,
             Type itemDataType,
-            string propertyName = null,
+            string? propertyName = null,
             string containerName = "list",
-            string elementName = null) : this(name) {
+            string? elementName = null) : this(name) {
             Item = new DataField(elementName ?? name, itemDataType, null, null, propertyName ?? name);
+            _itemAssigned = true;
             ContainerName = containerName;
             PathPrefix = null;
         }
 
         private ListField(string name) : base(name, SchemaType.List) {
+            ContainerName = "list";
+            Item = new DataField<int>("invalid");
         }
 
-        internal override FieldPath PathPrefix {
+        internal override FieldPath? PathPrefix {
             set {
                 Path = value + Name + ContainerName;
                 Item.PathPrefix = Path;
@@ -97,14 +105,15 @@ namespace Parquet.Schema {
         }
 
         internal override void Assign(Field field) {
-            if(Item != null)
+            if(_itemAssigned)
                 throw new InvalidOperationException($"item was already assigned to this list ({Name}), somethin is terribly wrong because a list can only have one item.");
 
             Item = field ?? throw new ArgumentNullException(nameof(field));
+            _itemAssigned = true;
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if(obj is not ListField other) return false;
 
             return base.Equals(obj) && (Item?.Equals(other.Item) ?? true);

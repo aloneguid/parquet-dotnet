@@ -36,7 +36,7 @@ namespace Parquet {
         /// <summary>
         /// Column name. When undefined a default property name is used which is simply the declared property name on the class.
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// TmeSpanFormat. MilliSeconds or MicroSeconds
@@ -76,6 +76,6 @@ namespace Parquet {
         /// <summary>
         /// Name of the element for the list. Path will be Name.ListContainerName.ListElementName
         /// </summary>
-        public string ListElementName { get; set; }
+        public string? ListElementName { get; set; }
     }
 }

@@ -22,9 +22,9 @@ namespace Parquet.Serialization {
             TypeInfo iEnumerable = typeof(IEnumerable).GetTypeInfo();
             TypeInfo iEnumerator = typeof(IEnumerator).GetTypeInfo();
 
-            getEnumeratorMethod = iEnumerable.GetDeclaredMethod(nameof(IEnumerable.GetEnumerator));
-            moveNextMethod = iEnumerator.GetDeclaredMethod(nameof(IEnumerator.MoveNext));
-            getCurrentMethod = iEnumerator.GetDeclaredProperty(nameof(IEnumerator.Current)).GetMethod;
+            getEnumeratorMethod = iEnumerable.GetDeclaredMethod(nameof(IEnumerable.GetEnumerator))!;
+            moveNextMethod = iEnumerator.GetDeclaredMethod(nameof(IEnumerator.MoveNext))!;
+            getCurrentMethod = iEnumerator.GetDeclaredProperty(nameof(IEnumerator.Current))!.GetMethod!;
         }
 
         public static IDisposable ForEachLoopFromEnumerator(this ILGenerator il, Type elementType, LocalBuilder enumerator, out LocalBuilder currentElement) {

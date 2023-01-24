@@ -34,7 +34,7 @@ namespace Parquet.Serialization {
         public ParquetSchema Reflect() {
             IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties.Where(pickSerializableProperties);
 
-            return new ParquetSchema(properties.Select(GetField).Where(p => p != null).ToList());
+            return new ParquetSchema(properties.Select(GetField).Where(p => p != null).Select(f => f!).ToList());
         }
 
         /// <summary>
@@ -50,12 +50,16 @@ namespace Parquet.Serialization {
         /// <returns><see cref="Schema"/></returns>
         public ParquetSchema ReflectWithInheritedProperties() {
             IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
-            IEnumerable<PropertyInfo> baseClassProperties = _classType.BaseType.GetTypeInfo().DeclaredProperties;
+            IEnumerable<PropertyInfo>? baseClassProperties = _classType.BaseType?.GetTypeInfo().DeclaredProperties;
+
+            if(baseClassProperties == null)
+                throw new InvalidOperationException("failed to get declared properties");
 
             List<Field> allValidFields = baseClassProperties.Concat(properties)
                 .Where(pickSerializableProperties)
                 .Select(GetField)
                 .Where(isNotNull)
+                .Select(f => f!)
                 .ToList();
 
             return new ParquetSchema(allValidFields);
@@ -102,15 +106,17 @@ namespace Parquet.Serialization {
             );
         }
 
-        private Field GetField(PropertyInfo property) {
-            Type pt = property.PropertyType;
+        private Field? GetField(PropertyInfo property) {
+            Type? pt = property.PropertyType;
+            if(pt == null)
+                throw new ArgumentException("cannot get property type", nameof(property));
             if(pt.IsNullable()) pt = pt.GetNonNullable();
-            if(pt.TryExtractEnumerableType(out Type t)) pt = t;
+            if(pt.TryExtractEnumerableType(out Type? t)) pt = t;
 
             if(!SchemaEncoder.IsSupported(pt))
                 return null;
 
-            ParquetColumnAttribute columnAttr = property.GetCustomAttribute<ParquetColumnAttribute>();
+            ParquetColumnAttribute? columnAttr = property.GetCustomAttribute<ParquetColumnAttribute>();
 
             string name = columnAttr?.Name ?? property.Name;
 
@@ -120,7 +126,7 @@ namespace Parquet.Serialization {
 
             if(columnAttr != null) {
                 if(columnAttr.UseListField)
-                    return new ListField(r.Name, pt, property.Name,
+                    return new ListField(r.Name, pt!, property.Name,
                         columnAttr.ListContainerName, columnAttr.ListElementName);
 
                 if(pt == typeof(TimeSpan))
