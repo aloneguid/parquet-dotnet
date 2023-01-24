@@ -142,7 +142,7 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void List_of_one_element() {
-            var dc = new DataColumn(new DataField("level2", DataType.String, isArray: true) { MaxRepetitionLevel = 2 },
+            var dc = new DataColumn(new DataField<string[]>("level2") { MaxRepetitionLevel = 2 },
                 new string[] { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j" },
                 new int[] { 0, 2, 2, 1, 2, 2, 2, 0, 1, 2 });
 

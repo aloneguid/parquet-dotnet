@@ -46,16 +46,15 @@ namespace Parquet.File {
 
         public int[] DefinitionLevels => _definitionLevels;
 
-        public void GetDataPage(out Array data, out int offset, out int count) {
-            if(HasDictionary) {
-                data = _dictionaryIndexes;
-                offset = 0;
-                count = (int)(_column.Count - _column.Statistics.NullCount);
-            } else {
-                data = _plainData;
-                offset = _plainDataOffset;
-                count = _plainDataCount;
-            }
+        public int[] GetDictionaryIndexes(out int length) {
+            length = (int)(_column.Count - _column.Statistics.NullCount);
+            return _dictionaryIndexes;
+        }
+
+        public Array GetPlainData(out int offset, out int count) {
+            offset = _plainDataOffset;
+            count = _plainDataCount;
+            return _plainData;
         }
 
         /// <summary>

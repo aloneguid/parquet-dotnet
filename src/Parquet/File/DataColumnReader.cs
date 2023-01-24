@@ -281,7 +281,9 @@ namespace Parquet.File {
             return RleEncoder.Decode(s, bitWidth, length, dest, offset, pageSize);
         }
 
-        private void ReadColumn(Stream s, Thrift.Encoding encoding, long totalValuesInChunk, int totalValuesInPage, ColumnRawData cd) {
+        private void ReadColumn(Stream s, Thrift.Encoding encoding, long totalValuesInChunk, int totalValuesInPage,
+            ColumnRawData cd) {
+
             //dictionary encoding uses RLE to encode data
 
             cd.values ??= _dataField.CreateArray((int)totalValuesInChunk);
@@ -301,17 +303,15 @@ namespace Parquet.File {
                 case Thrift.Encoding.RLE: {
                         cd.indexes ??= new int[(int)totalValuesInChunk];
                         int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement.Type_length, totalValuesInPage);
-                        //cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.dictionary.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;
 
-                case Thrift.Encoding.PLAIN_DICTIONARY:
+                case Thrift.Encoding.PLAIN_DICTIONARY:  // values are still encoded in RLE
                 case Thrift.Encoding.RLE_DICTIONARY: {
                         cd.indexes ??= new int[(int)totalValuesInChunk];
                         int indexCount = ReadRleDictionary(s, totalValuesInPage, cd.indexes, 0);
-                        //cd.dictionary.Explode(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.dictionary.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }

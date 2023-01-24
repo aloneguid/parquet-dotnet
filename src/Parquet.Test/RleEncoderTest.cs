@@ -23,5 +23,12 @@ namespace Parquet.Test {
 
             Assert.Equal(input, r2);
         }
+
+        [Fact]
+        public void Encode0to7() {
+            using var ms = new MemoryStream();
+            RleEncoder.Encode(ms, new[] { 0, 1, 2, 3, 4, 5, 6, 7 }, 8, 3);
+            byte[] ebytes = ms.ToArray();
+        }
     }
 }
