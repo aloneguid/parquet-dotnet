@@ -116,6 +116,10 @@ namespace Parquet.Extensions {
             }
             else if(t == typeof(bool)) {
                 sb.Append((bool)value ? "true" : "false");
+            } else if(t == typeof(byte[])) {
+                sb.Append(quote);
+                sb.Append(Convert.ToBase64String((byte[])value));
+                sb.Append(quote);
             }
             else {
                 sb.Append(value.ToString());

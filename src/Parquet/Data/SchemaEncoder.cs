@@ -20,15 +20,44 @@ namespace Parquet.Data {
 
         class LookupTable : List<LookupItem> {
 
+            class SystemTypeInfo {
+                public Thrift.Type tt;
+                public Thrift.ConvertedType? tct;
+                public int priority;
+            }
+
             // all the cached lookups built during static initialisation
             private readonly HashSet<SType> _supportedTypes = new();
             private readonly Dictionary<Thrift.Type, SType> _typeToDefaultType = new();
             private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, SType> _typeAndConvertedTypeToType = new();
-            private readonly Dictionary<SType, Tuple<Thrift.Type, Thrift.ConvertedType?>> _systemTypeToTypeTuple = new();
+            private readonly Dictionary<SType, SystemTypeInfo> _systemTypeToTypeTuple = new();
 
             public void Add(Thrift.Type thriftType, SType t, params object[] options) {
+                Add(thriftType, t, int.MaxValue, options);
+            }
+
+            private void AddSystemTypeInfo(Thrift.Type thriftType, SType t, Thrift.ConvertedType? ct, int priority) {
+                if(_systemTypeToTypeTuple.TryGetValue(t, out SystemTypeInfo? sti)) {
+                    if(priority <= sti.priority) {
+                        sti.tt = thriftType;
+                        sti.tct = ct;
+                        sti.priority = priority;
+                    }
+                } else {
+                    _systemTypeToTypeTuple[t] = new SystemTypeInfo {
+                        tt = thriftType,
+                        tct = ct,
+                        priority = priority
+                    };
+                }
+            }
+
+            public void Add(Thrift.Type thriftType, SType t, int priority, params object[] options) {
+
                 _typeToDefaultType[thriftType] = t;
-                _systemTypeToTypeTuple[t] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, null);
+
+                AddSystemTypeInfo(thriftType, t, null, priority);
+
                 _supportedTypes.Add(t);
                 for(int i = 0; i < options.Length; i+=2) { 
                     var ct = (Thrift.ConvertedType)options[i];
@@ -36,7 +65,7 @@ namespace Parquet.Data {
                     _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
 
                     // more specific version overrides less specific
-                    _systemTypeToTypeTuple[clr] = new Tuple<Thrift.Type, Thrift.ConvertedType?>(thriftType, ct);
+                    AddSystemTypeInfo(thriftType, clr, ct, int.MaxValue);
 
                     _supportedTypes.Add(clr);
                 }
@@ -61,14 +90,14 @@ namespace Parquet.Data {
 
             public bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) {
 
-                if(!_systemTypeToTypeTuple.TryGetValue(type, out Tuple<Thrift.Type, ConvertedType?>? tuple)) {
+                if(!_systemTypeToTypeTuple.TryGetValue(type, out SystemTypeInfo? sti)) {
                     thriftType = default;
                     convertedType = null;
                     return false;
                 }
 
-                thriftType = tuple.Item1;
-                convertedType = tuple.Item2;
+                thriftType = sti.tt;
+                convertedType = sti.tct;
                 return true;
             }
 
@@ -123,7 +152,7 @@ namespace Parquet.Data {
             { Thrift.Type.INT96, typeof(BigInteger) },
             { Thrift.Type.FLOAT, typeof(float) },
             { Thrift.Type.DOUBLE, typeof(double) },
-            { Thrift.Type.BYTE_ARRAY, typeof(byte[]),
+            { Thrift.Type.BYTE_ARRAY, typeof(byte[]), 1,
                 Thrift.ConvertedType.UTF8, typeof(string),
                 Thrift.ConvertedType.DECIMAL, typeof(decimal)
             },
