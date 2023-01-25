@@ -38,7 +38,7 @@ namespace Parquet.Data {
 
             private void AddSystemTypeInfo(Thrift.Type thriftType, SType t, Thrift.ConvertedType? ct, int priority) {
                 if(_systemTypeToTypeTuple.TryGetValue(t, out SystemTypeInfo? sti)) {
-                    if(priority < sti.priority) {
+                    if(priority <= sti.priority) {
                         sti.tt = thriftType;
                         sti.tct = ct;
                         sti.priority = priority;
@@ -65,7 +65,7 @@ namespace Parquet.Data {
                     _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
 
                     // more specific version overrides less specific
-                    AddSystemTypeInfo(thriftType, t, ct, priority);
+                    AddSystemTypeInfo(thriftType, clr, ct, int.MaxValue);
 
                     _supportedTypes.Add(clr);
                 }
