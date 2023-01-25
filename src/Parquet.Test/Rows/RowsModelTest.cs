@@ -578,16 +578,24 @@ namespace Parquet.Test.Rows {
         #endregion
 
         #region [ Callback ]
-        
-        public async Task Progress_callback() {
+
+        [Fact]
+        public async Task Progress_callback_is_called() {
             Table t;
-            using(Stream stream = OpenTestFile("real/nation.impala.parquet")) {
+            int timesInvoked = 0;
+            var messages = new List<string>();
+            using(Stream stream = OpenTestFile("customer.impala.parquet")) {
                 using(ParquetReader reader = await ParquetReader.CreateAsync(stream)) {
-                    t = await reader.ReadAsTableAsync();
+                    t = await reader.ReadAsTableAsync(async (int perc, string msg) => {
+                        Console.WriteLine($"{perc}%: {msg}");
+                        timesInvoked++;
+                        messages.Add(msg);
+                    });
                 }
             }
 
             Assert.NotNull(t);
+            Assert.True(timesInvoked > 0);
         }
 
 

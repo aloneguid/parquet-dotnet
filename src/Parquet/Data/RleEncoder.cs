@@ -199,7 +199,7 @@ namespace Parquet.Data {
             int byteCount = bitWidth * count / 8;
             //int byteCount2 = (int)Math.Ceiling(bitWidth * count / 8.0);
 
-            byte[] rawBytes = s.ReadBytesExactly(byteCount);
+            byte[] rawBytes = s.ReadBytesExactly(byteCount, true);
             byteCount = rawBytes.Length;  //sometimes there will be less data available, typically on the last page
 
             int mask = MaskForBits(bitWidth);

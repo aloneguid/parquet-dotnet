@@ -27,7 +27,7 @@ namespace Parquet.Extensions {
             return BitConverter.ToInt64(tmp, 0);
         }
 
-        public static byte[] ReadBytesExactly(this Stream s, int count) {
+        public static byte[] ReadBytesExactly(this Stream s, int count, bool allowLess = false) {
             byte[] tmp = new byte[count];
 #if NET7_0_OR_GREATER
             s.ReadExactly(tmp, 0, count);
@@ -40,7 +40,7 @@ namespace Parquet.Extensions {
                 else
                     read += r;
             }
-            if(read < count)
+            if(read < count && !allowLess)
                 throw new IOException($"only {read} out of {count} bytes are available");
 #endif
 

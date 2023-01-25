@@ -74,6 +74,9 @@ namespace Parquet {
             Table? result = null;
             DataField[] dataFields = reader.Schema!.GetDataFields();
 
+            int stepsTotal = dataFields.Length * reader.RowGroupCount;
+            int currentStep = 0;
+
             if(reader.RowGroupCount == 0) {
                 result = new Table(reader.Schema, null, 0);
             } else {
@@ -82,10 +85,20 @@ namespace Parquet {
                         DataColumn[] allData = new DataColumn[dataFields.Length];
 
                         for(int c = 0; c < dataFields.Length; c++) {
+                            if(progressCallback != null) {
+                                await progressCallback(
+                                    (int)(currentStep++ * 100 / (double)stepsTotal), 
+                                    $"reading column '{dataFields[c].Name}' in row group #{i}");
+                            }
                             allData[c] = await rowGroupReader.ReadColumnAsync(dataFields[c]);
                         }
 
                         var t = new Table(reader.Schema, allData, rowGroupReader.RowCount);
+                        if(progressCallback != null) {
+                            await progressCallback(
+                                (int)(currentStep * 100 / (double)stepsTotal),
+                                $"adding extra {t.Count} row(s) to result...");
+                        }
 
                         if(result == null) {
                             result = t;
@@ -97,6 +110,9 @@ namespace Parquet {
                     }
                 }
             }
+
+            if(progressCallback != null)
+                await progressCallback(100, "done.");
 
             return result!;
         }
