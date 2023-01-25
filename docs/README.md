@@ -9,7 +9,9 @@
 
 Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs and much more.
 
-Support Web Assembly is coming (email me if you are interested in details).
+It even works completely in-browser offline (web assembly):
+
+[![](po-banner.png)](https://parquetdbg.aloneguid.uk/)
 
 ## Why
 

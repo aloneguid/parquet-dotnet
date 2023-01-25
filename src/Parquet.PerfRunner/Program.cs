@@ -3,4 +3,5 @@
 using Parquet.PerfRunner.Benchmarks;
 
 //new VsParquetSharp().Main();
-await new DataTypes().RandomStrings();
+await new DataTypes().NullableInts();
+//Progression.Run();
