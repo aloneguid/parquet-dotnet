@@ -1,23 +1,11 @@
-**Library Version:** ...
+**INFO:** lib version/.net version/OS etc.
 
-**.NET Version:** ...
+describe your issue here
 
-**OS:** ...
-
-#### Expected Behaviour
-
-...
-
-#### Actual Behaviour
-
-...
-
-### Steps to Reproduce
-
-...
-
-#### Code Snippet
+#### Reproducible Code Snippet
 
 ```csharp
 //here
 ```
+
+<!-- NOTE: to test parquet files, you can use https://parquetdbg.aloneguid.uk/ -->
