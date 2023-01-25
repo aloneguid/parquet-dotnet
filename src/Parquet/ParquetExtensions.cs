@@ -7,9 +7,9 @@ using Parquet.Schema;
 namespace Parquet {
 
     /// <summary>
-    /// 
+    /// Progress callback
     /// </summary>
-    public delegate Task TableReaderProgressCallback(string message, int? rowGroupIndex, DataField? field);
+    public delegate Task TableReaderProgressCallback(int progress, string message);
 
     /// <summary>
     /// Defines extension methods to simplify Parquet usage (experimental v3)
@@ -67,8 +67,10 @@ namespace Parquet {
         /// Reads all row groups as a table. Can be extremely slow.
         /// </summary>
         /// <param name="reader">Open reader</param>
+        /// <param name="progressCallback"></param>
         /// <returns></returns>
-        public static async Task<Table> ReadAsTableAsync(this ParquetReader reader) {
+        public static async Task<Table> ReadAsTableAsync(this ParquetReader reader,
+            TableReaderProgressCallback? progressCallback = null) {
             Table? result = null;
             DataField[] dataFields = reader.Schema!.GetDataFields();
 

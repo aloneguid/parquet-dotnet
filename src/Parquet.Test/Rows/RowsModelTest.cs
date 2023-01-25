@@ -576,5 +576,21 @@ namespace Parquet.Test.Rows {
         }
 
         #endregion
+
+        #region [ Callback ]
+        
+        public async Task Progress_callback() {
+            Table t;
+            using(Stream stream = OpenTestFile("real/nation.impala.parquet")) {
+                using(ParquetReader reader = await ParquetReader.CreateAsync(stream)) {
+                    t = await reader.ReadAsTableAsync();
+                }
+            }
+
+            Assert.NotNull(t);
+        }
+
+
+        #endregion
     }
 }
