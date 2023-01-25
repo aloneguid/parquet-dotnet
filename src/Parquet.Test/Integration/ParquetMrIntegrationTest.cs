@@ -161,5 +161,17 @@ namespace Parquet.Test.Integration {
             await CompareWithMr(table,
                 s => s.Replace("\"string\":null", ""));
         }
+
+        [Fact]
+        public async Task Byte_arrays()
+        {
+            var table = new Table(new DataField<byte[]>("ars"));
+            for (int i = 0; i < 100; i++)
+            {
+                table.Add(Encoding.UTF8.GetBytes($"string {i}"));
+            }
+
+            await CompareWithMr(table);
+        }
     }
 }
