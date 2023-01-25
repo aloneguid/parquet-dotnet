@@ -269,9 +269,9 @@ namespace Parquet.Rows {
                                 sb.Append(sf, vb);
                             }
                             sb.EndArray(sf, level);
-                        }
-                        else
+                        } else {
                             sb.Append(sf, v);
+                        }
                         break;
 
                     case SchemaType.Struct:
