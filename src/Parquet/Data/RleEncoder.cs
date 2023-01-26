@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Parquet.Collections;
 using Parquet.Extensions;
 
 namespace Parquet.Data {
@@ -26,10 +27,17 @@ namespace Parquet.Data {
             }
         }
 
+        public static void Encode(Stream s, int[] data, int count, int bitWidth) {
+            using(var list = new SpanBackedByteList()) {
+                Encode(list, data, count, bitWidth);
+                list.Write(s);
+            }
+        }
+
         /// <summary>
         /// Encodes input data
         /// </summary>
-        public static void Encode(Stream s, int[] data, int count, int bitWidth) {
+        public static void Encode(IList<byte> s, int[] data, int count, int bitWidth) {
             //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
             const int maxCount = int.MaxValue >> 1;  //max count for an integer with one lost bit
@@ -70,7 +78,7 @@ namespace Parquet.Data {
             return Decode(s, bitWidth, length, dest, destOffset, maxReadCount);
         }
 
-        private static void WriteRle(Stream s, int chunkCount, int value, int bitWidth) {
+        private static void WriteRle(IList<byte> s, int chunkCount, int value, int bitWidth) {
             int header = 0x0; // the last bit for RLE is 0
             header = chunkCount << 1;
             int byteWidth = (bitWidth + 7) / 8; //number of whole bytes for this bit width
@@ -79,42 +87,51 @@ namespace Parquet.Data {
             WriteIntBytes(s, value, byteWidth);
         }
 
-        private static void WriteIntBytes(Stream s, int value, int byteWidth) {
-            byte[] dataBytes = BitConverter.GetBytes(value);
+        private static void WriteIntBytes(IList<byte> s, int value, int byteWidth) {
+#if NETSTANDARD2_0
+            byte[] bytes = BitConverter.GetBytes(value);
+#else
+            Span<byte> bytes = stackalloc byte[sizeof(int)];
+            BitConverter.TryWriteBytes(bytes, value);
+#endif
 
             switch(byteWidth) {
                 case 0:
                     break;
                 case 1:
-                    s.WriteByte(dataBytes[0]);
+                    s.Add(bytes[0]);
                     break;
                 case 2:
-                    s.WriteByte(dataBytes[1]);
-                    s.WriteByte(dataBytes[0]);
+                    s.Add(bytes[1]);
+                    s.Add(bytes[0]);
                     break;
                 case 3:
-                    s.WriteByte(dataBytes[2]);
-                    s.WriteByte(dataBytes[1]);
-                    s.WriteByte(dataBytes[0]);
+                    s.Add(bytes[2]);
+                    s.Add(bytes[1]);
+                    s.Add(bytes[0]);
                     break;
                 case 4:
-                    s.Write(dataBytes, 0, dataBytes.Length);
+                    s.Add(bytes[0]);
+                    s.Add(bytes[1]);
+                    s.Add(bytes[2]);
+                    s.Add(bytes[3]);
+                    //s.AddRange(dataBytes, 0, dataBytes.Length);
                     break;
                 default:
                     throw new IOException($"encountered bit width ({byteWidth}) that requires more than 4 bytes.");
             }
         }
 
-        private static void WriteUnsignedVarInt(Stream s, int value) {
+        private static void WriteUnsignedVarInt(IList<byte> s, int value) {
             while(value > 127) {
                 byte b = (byte)((value & 0x7F) | 0x80);
 
-                s.WriteByte(b);
+                s.Add(b);
 
                 value >>= 7;
             }
 
-            s.WriteByte((byte)value);
+            s.Add((byte)value);
         }
 
         /* from specs:
