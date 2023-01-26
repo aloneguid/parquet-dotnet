@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,15 @@ namespace Parquet {
         /// Type of compression to use, defaults to <see cref="CompressionMethod.Snappy"/>
         /// </summary>
         public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
+
+        /// <summary>
+        /// Level of compression
+        /// </summary>
+#if NET6_0_OR_GREATER
+        public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
+#else
+        public CompressionLevel CompressionLevel = CompressionLevel.Optimal;
+#endif
 
         private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false)
            : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
@@ -63,7 +73,7 @@ namespace Parquet {
             _dataWritten = true;
 
             var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer!,
-               CompressionMethod, _formatOptions);
+               CompressionMethod, _formatOptions, CompressionLevel);
 
             _openedWriters.Add(writer);
 

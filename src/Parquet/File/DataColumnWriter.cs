@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IO;
@@ -14,6 +15,7 @@ namespace Parquet.File {
         private readonly ThriftFooter _footer;
         private readonly Thrift.SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
+        private readonly CompressionLevel _compressionLevel;
         private readonly ParquetOptions _options;
         private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
 
@@ -23,12 +25,14 @@ namespace Parquet.File {
            ThriftFooter footer,
            Thrift.SchemaElement schemaElement,
            CompressionMethod compressionMethod,
-           ParquetOptions options) {
+           ParquetOptions options,
+           CompressionLevel compressionLevel) {
             _stream = stream;
             _thriftStream = thriftStream;
             _footer = footer;
             _schemaElement = schemaElement;
             _compressionMethod = compressionMethod;
+            _compressionLevel = compressionLevel;
             _options = options;
         }
 
@@ -70,7 +74,7 @@ namespace Parquet.File {
             
             using IronCompress.DataBuffer compressedData = _compressionMethod == CompressionMethod.None
                 ? new IronCompress.DataBuffer(data.ToArray())
-                : Compressor.Compress(_compressionMethod, data.ToArray());
+                : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
             
             ph.Uncompressed_page_size = (int)data.Length;
             ph.Compressed_page_size = compressedData.AsSpan().Length;
