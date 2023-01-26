@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.IO;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
@@ -539,7 +538,7 @@ namespace Parquet.Data {
             while(source.Position < source.Length && offset < data.Length) {
                 byte b = (byte)source.ReadByte();
 
-                while(ibit < 8 && offset < data.Length) {
+                while(ibit < 8 && offset < data.Length  && offset < data.Length) {
                     bool set = ((b >> ibit++) & 1) == 1;
                     data[offset++] = set;
                 }
@@ -989,7 +988,7 @@ namespace Parquet.Data {
             switch(tse.Type) {
                 case Thrift.Type.INT32: {
                         int i = 0;
-                        while(source.Position + 4 <= source.Length) {
+                        while(source.Position + 4 <= source.Length && i < data.Length) {
                             int iv = source.ReadInt32();
                             data[i++] = new TimeSpan(0, 0, 0, 0, iv);
                         }
@@ -997,7 +996,7 @@ namespace Parquet.Data {
                     }
                 case Thrift.Type.INT64: {
                         int i = 0;
-                        while(source.Position + 8 <= source.Length) {
+                        while(source.Position + 8 <= source.Length && i < data.Length) {
                             long lv = source.ReadInt64();
                             data[i++] = new TimeSpan(lv * 10);
                         }
@@ -1017,7 +1016,7 @@ namespace Parquet.Data {
 
         public static int Decode(Stream source, Span<Interval> data) {
             int i = 0;
-            while(source.Position + Interval.BinarySize <= source.Length) {
+            while(source.Position + Interval.BinarySize <= source.Length && i < data.Length) {
                 int months = source.ReadInt32();
                 int days = source.ReadInt32();
                 int millis = source.ReadInt32();
