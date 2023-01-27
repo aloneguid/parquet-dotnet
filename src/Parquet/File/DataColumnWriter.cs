@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
+using IronCompress;
 using Microsoft.IO;
 using Parquet.Data;
 using Parquet.Extensions;
@@ -72,8 +73,8 @@ namespace Parquet.File {
             ColumnSizes cs,
             CancellationToken cancellationToken) {
             
-            using IronCompress.DataBuffer compressedData = _compressionMethod == CompressionMethod.None
-                ? new IronCompress.DataBuffer(data.ToArray())
+            using IronCompress.IronCompressResult compressedData = _compressionMethod == CompressionMethod.None
+                ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
                 : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
             
             ph.Uncompressed_page_size = (int)data.Length;

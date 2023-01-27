@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IronCompress;
 using Parquet.Data;
 using Parquet.Thrift;
 using Parquet.Schema;
@@ -127,7 +128,7 @@ namespace Parquet.File {
             return finalColumn;
         }
 
-        private async Task<IronCompress.DataBuffer> ReadPageDataAsync(Thrift.PageHeader ph) {
+        private async Task<IronCompress.IronCompressResult> ReadPageDataAsync(Thrift.PageHeader ph) {
 
             byte[] data = ArrayPool<byte>.Shared.Rent(ph.Compressed_page_size);
 
@@ -140,7 +141,7 @@ namespace Parquet.File {
             while(remainingBytes != 0);
 
             if(_thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
-                return new IronCompress.DataBuffer(data, ph.Compressed_page_size, ArrayPool<byte>.Shared);
+                return new IronCompress.IronCompressResult(data, Codec.Snappy, false, ph.Compressed_page_size, ArrayPool<byte>.Shared);
             }
 
             return Compressor.Decompress((CompressionMethod)(int)_thriftColumnChunk.Meta_data.Codec,
@@ -148,7 +149,7 @@ namespace Parquet.File {
                 ph.Uncompressed_page_size);
         }
         
-        private async Task<IronCompress.DataBuffer> ReadPageDataV2Async(Thrift.PageHeader ph) {
+        private async Task<IronCompress.IronCompressResult> ReadPageDataV2Async(Thrift.PageHeader ph) {
 
             int pageSize = ph.Compressed_page_size;
             
@@ -162,7 +163,7 @@ namespace Parquet.File {
             }
             while(remainingBytes != 0);
 
-            return new IronCompress.DataBuffer(data, pageSize, ArrayPool<byte>.Shared);
+            return new IronCompress.IronCompressResult(data, Codec.Snappy, false, pageSize, ArrayPool<byte>.Shared);
         }
 
         private async Task<(bool, Array?, int)> TryReadDictionaryPageAsync(Thrift.PageHeader ph) {
@@ -171,7 +172,7 @@ namespace Parquet.File {
             }
 
             //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
-            using IronCompress.DataBuffer bytes = await ReadPageDataAsync(ph);
+            using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
             //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
             using var ms = new MemoryStream(bytes.AsSpan().ToArray());
             // Dictionary should not contains null values
@@ -196,7 +197,7 @@ namespace Parquet.File {
                 .Min();
 
         private async Task ReadDataPageAsync(Thrift.PageHeader ph, ColumnRawData cd, long totalValuesInChunk) {
-            using IronCompress.DataBuffer bytes = await ReadPageDataAsync(ph);
+            using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
             //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
             if(ph.Data_page_header == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
@@ -237,7 +238,7 @@ namespace Parquet.File {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             } 
             
-            using IronCompress.DataBuffer bytes = await ReadPageDataV2Async(ph);
+            using IronCompress.IronCompressResult bytes = await ReadPageDataV2Async(ph);
 
             using var ms = new MemoryStream(bytes.AsSpan().ToArray());
 
@@ -267,7 +268,7 @@ namespace Parquet.File {
             
             byte[] dataBytes = ms.ReadBytesExactly(dataSize);
             
-            IronCompress.DataBuffer decompressedDataByes = Compressor.Decompress(
+            IronCompress.IronCompressResult decompressedDataByes = Compressor.Decompress(
                 (CompressionMethod)(int)_thriftColumnChunk.Meta_data.Codec,
                 dataBytes.AsSpan(),
                 decompressedSize);
