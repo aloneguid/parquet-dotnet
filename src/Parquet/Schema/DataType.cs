@@ -22,7 +22,7 @@ namespace Parquet.Schema {
         Byte,
 
         /// <summary>
-        /// Unsigned byte
+        /// Signed byte
         /// </summary>
         SignedByte,
 
