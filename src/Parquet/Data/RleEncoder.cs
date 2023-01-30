@@ -102,13 +102,13 @@ namespace Parquet.Data {
                     s.Add(bytes[0]);
                     break;
                 case 2:
-                    s.Add(bytes[1]);
                     s.Add(bytes[0]);
+                    s.Add(bytes[1]);
                     break;
                 case 3:
-                    s.Add(bytes[2]);
-                    s.Add(bytes[1]);
                     s.Add(bytes[0]);
+                    s.Add(bytes[1]);
+                    s.Add(bytes[2]);
                     break;
                 case 4:
                     s.Add(bytes[0]);

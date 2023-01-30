@@ -30,5 +30,41 @@ namespace Parquet.Test {
             RleEncoder.Encode(ms, new[] { 0, 1, 2, 3, 4, 5, 6, 7 }, 8, 3);
             byte[] ebytes = ms.ToArray();
         }
+
+        [Fact]
+        public void EncodeBitWidth10() {
+            using var ms = new MemoryStream();
+            const int count = 1000;
+            int bitWidth = count.GetBitWidth();
+            Assert.Equal(10, bitWidth);
+            int[] data = Enumerable.Range(0, count).ToArray();
+
+            RleEncoder.Encode(ms, data, count, bitWidth);
+
+            ms.Position = 0;
+            int[] data2 = new int[count];
+            int count2 = RleEncoder.Decode(ms, data2, 0, bitWidth, count);
+
+            Assert.Equal(data, data2);
+
+        }
+
+        [Fact]
+        public void EncodeBitWidth18() {
+            using var ms = new MemoryStream();
+            const int count = 180000;
+            int bitWidth = count.GetBitWidth();
+            Assert.Equal(18, bitWidth);
+            int[] data = Enumerable.Range(0, count).ToArray();
+
+            RleEncoder.Encode(ms, data, count, bitWidth);
+
+            ms.Position = 0;
+            int[] data2 = new int[count];
+            int count2 = RleEncoder.Decode(ms, data2, 0, bitWidth, count);
+
+            Assert.Equal(data, data2);
+
+        }
     }
 }
