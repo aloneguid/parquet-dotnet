@@ -6,6 +6,7 @@ using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Thrift;
 using SType = System.Type;
+using Type = Parquet.Thrift.Type;
 
 namespace Parquet.Data {
     static class SchemaEncoder {
@@ -282,8 +283,15 @@ namespace Parquet.Data {
                 if(options != null && options.TreatByteArrayAsString && t == typeof(byte[]))
                     t = typeof(string);
 
-                // successful field built
-                var df = new DataField(se.Name, t);
+                DataField? df;
+                if(t == typeof(DateTime)) {
+                    df = GetDateTimeDataField(se);
+                } 
+                else{
+                    // successful field built
+                    df = new DataField(se.Name, t);
+                }
+
                 df.IsNullable = isNullable;
                 df.IsArray = isArray;
                 f = df;
@@ -301,6 +309,22 @@ namespace Parquet.Data {
             }
 
             return f;
+        }
+
+        private static DataField GetDateTimeDataField(SchemaElement se)
+        {
+            switch (se.Converted_type)
+            {
+                case ConvertedType.TIMESTAMP_MILLIS:
+                    if (se.Type == Type.INT64)
+                        return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
+                    break;
+                case ConvertedType.DATE:
+                    if(se.Type == Type.INT32)
+                        return new DateTimeDataField(se.Name, DateTimeFormat.Date);
+                    break;
+            }
+            return new DateTimeDataField(se.Name, DateTimeFormat.Impala);
         }
 
         /// <summary>
