@@ -32,6 +32,7 @@ namespace Parquet.Test {
                ["int64 decimal"] = (new DecimalDataField("decInt64", 17, 12), 1234567.88m),
                ["fixed byte array decimal"] = (new DecimalDataField("decFixedByteArray", 48, 12), 34434.5m),
                ["negative decimal"] = (new DecimalDataField("decMinus", 10, 2, true), -1m),
+               ["scale zero"] = (new DecimalDataField("v", 10, 0, true), 10.0m),
 
                //loses precision slightly, i.e.
                //Expected: 2017-07-13T10:58:44.3767154+00:00
