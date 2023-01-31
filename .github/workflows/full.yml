@@ -32,6 +32,25 @@ jobs:
     - name: 'test on ${{ matrix.os }}'
       run: dotnet test src/Parquet.sln -c release
 
+  benchmarks:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          3.1.x
+          6.0.x
+          7.0.x
+    - name: 'Write Performance'
+      run: dotnet run -c release -- write
+      working-directory: src/Parquet.PerfRunner
+
   build:
 
     runs-on: 'ubuntu-latest'
