@@ -32,7 +32,7 @@ jobs:
     - name: 'test on ${{ matrix.os }}'
       run: dotnet test src/Parquet.sln -c release
 
-  benchmarks:
+  run-benchmarks:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -50,6 +50,16 @@ jobs:
     - name: 'Write Performance'
       run: dotnet run -c release -- write
       working-directory: src/Parquet.PerfRunner
+    - name: 'Prep'
+      run: mv BenchmarkDotNet.Artifacts ${{ matrix.os }}
+      working-directory: src/Parquet.PerfRunner
+    - uses: actions/upload-artifact@v3
+      name: Collect Results
+      with:
+        name: benchmarks
+        path: |
+          ${{ matrix.os }}/**/*
+
 
   build:
 
