@@ -80,8 +80,8 @@ namespace Parquet.Test {
                  },
                   DistinctCount = 3,
                   NullCount = 0,
-                  Min = new DateTime(2019, 12, 15),
-                  Max = new DateTime(2019, 12, 17)
+                  Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Local).ToUniversalTime(),
+                  Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Local).ToUniversalTime()
               }
         };
 

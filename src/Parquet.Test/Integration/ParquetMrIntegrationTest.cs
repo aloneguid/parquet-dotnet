@@ -51,7 +51,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
 
             string myJson = t.ToString("j");
-            string mrJson = ExecAndGetOutput(_javaExecName, $"-jar {_toolsJarPath} cat -j {testFileName}");
+            string mrJson = ExecAndGetOutput(_javaExecName, $"-jar \"{_toolsJarPath}\" cat -j \"{testFileName}\"");
 
             if(jsonPreprocessor != null) {
                 myJson = jsonPreprocessor(myJson);
