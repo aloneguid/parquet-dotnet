@@ -60,7 +60,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(myJson, mrJson);
         }
 
-        private static string ExecAndGetOutput(string fileName, string arguments) {
+        private static string? ExecAndGetOutput(string fileName, string arguments) {
             var psi = new ProcessStartInfo {
                 FileName = fileName,
                 Arguments = arguments,

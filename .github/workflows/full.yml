@@ -51,8 +51,8 @@ jobs:
       run: dotnet run -c release -- write
       working-directory: src/Parquet.PerfRunner
     - name: 'Prep'
-      run: mv BenchmarkDotNet.Artifacts ${{ matrix.os }}
-      working-directory: src/Parquet.PerfRunner
+      run: mv results ${{ matrix.os }}
+      working-directory: src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts
 
     - name: debug
       run: ls -R
@@ -63,7 +63,7 @@ jobs:
       with:
         name: benchmarks
         path: |
-          src/Parquet.PerfRunner/${{ matrix.os }}/**/*
+          src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/${{ matrix.os }}/
 
 
   build:
