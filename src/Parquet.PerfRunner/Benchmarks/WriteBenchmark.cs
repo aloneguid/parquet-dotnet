@@ -12,7 +12,7 @@ namespace Parquet.PerfRunner.Benchmarks {
     [MarkdownExporter]
     public class WriteBenchmark : BenchmarkBase {
 
-        [Params(typeof(int), typeof(int?))]
+        [Params(typeof(int), typeof(int?), typeof(string))]
         public Type DataType;
 
         private DataField _f;
