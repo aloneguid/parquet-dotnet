@@ -356,7 +356,8 @@ namespace Parquet.Data {
             return false;
         }
 
-        public static bool TryDecode(byte[]? value, Thrift.SchemaElement tse, out object? result) {
+        public static bool TryDecode(byte[]? value, Thrift.SchemaElement tse, ParquetOptions? options,
+            out object? result) {
             if(value == null) {
                 result = null;
                 return true;    // we've just successfully encoded null
@@ -376,7 +377,7 @@ namespace Parquet.Data {
             }
             else if(tse.Type == Thrift.Type.INT96) {
                 if(value.Length == 12) {
-                    if(tse.__isset.converted_type && tse.Converted_type == Thrift.ConvertedType.DATE) {
+                    if(options?.TreatBigIntegersAsDates ?? false) {
                         result = (DateTime)new NanoTime(value, 0);
                     }
                     else {

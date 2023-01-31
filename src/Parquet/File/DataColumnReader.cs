@@ -18,7 +18,7 @@ namespace Parquet.File {
         private readonly Thrift.ColumnChunk _thriftColumnChunk;
         private readonly Thrift.SchemaElement? _thriftSchemaElement;
         private readonly ThriftFooter _footer;
-        private readonly ParquetOptions? _parquetOptions;
+        private readonly ParquetOptions? _options;
         private readonly ThriftStream _thriftStream;
         private readonly int _maxRepetitionLevel;
         private readonly int _maxDefinitionLevel;
@@ -51,7 +51,7 @@ namespace Parquet.File {
             _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
             _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
-            _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
+            _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             _thriftStream = new ThriftStream(inputStream);
             _footer.GetLevels(_thriftColumnChunk, out int mrl, out int mdl);
@@ -108,9 +108,9 @@ namespace Parquet.File {
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
                 ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Min_value, _thriftSchemaElement!,
-                    out object? min);
+                    _options, out object? min);
                 ParquetPlainEncoder.TryDecode(_thriftColumnChunk.Meta_data.Statistics.Max_value, _thriftSchemaElement!,
-                    out object? max);
+                    _options, out object? max);
 
                 finalColumn.Statistics = new DataColumnStatistics(
                    _thriftColumnChunk.Meta_data.Statistics.Null_count,

@@ -138,7 +138,7 @@ new DecimalDataField("decMinus", 10, 2, true); // uses precision 10 and scale 2,
 
 Since v4.2.3 variable-size decimal encoding [(variant 4)](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) is supported by the reader.
 
-## Repeatable Fields
+## Repeatable Fields (Arrays)
 
 Repeatable fields are fields that contain an array of values instead of just one single value.
 
@@ -157,3 +157,11 @@ ds.Add(1, new int[] { 1, 2, 3 });
 ```
 
 When reading schema back, you can check if it's repeatable by calling to `.IsArray` property. 
+
+### The Difference between Lists and Arrays
+
+You can also declare a list (`ListField`) with one element, so the question is - why do you need arrays? If you can, prefer lists to arrays because:
+
+- Lists are more flexible - arrays can only contain a primitive type, whereas lists can contain anything.
+- Most big data platforms just default to lists.
+- Schema evolution is not possible with arrays.
