@@ -1,4 +1,4 @@
-# Fast Automatic Serialisation
+# Class Serialisation
 
 Parquet library is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
 
@@ -9,41 +9,37 @@ They both generate IL code in runtime for a class type to work with, therefore t
 Both serialiser and deserialiser works with array of classes. Let's say you have the following class definition:
 
 ```csharp
-public class SimpleStructure
-{
-   public int Id { get; set; }
-
-   public string Name { get; set; }
+class Record {
+    public DateTime Timestamp { get; set; }
+    public string EventName { get; set; }
+    public double MeterValue { get; set; }
 }
 ```
 
 Let's generate a few instances of those for a test:
 
 ```csharp
-SimpleStructure[] structures = Enumerable
-   .Range(0, 1000)
-   .Select(i => new SimpleStructure
-   {
-      Id = i,
-      Name = $"row {i}",
-   })
-   .ToArray();
+var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
+    Timestamp = DateTime.UtcNow.AddSeconds(i),
+    EventName = i % 2 == 0 ? "on" : "off",
+    MeterValue = i 
+}).ToList();
 ```
 
 Here is what you can do to write out those classes in a single file:
 
 ```csharp
-ParquetConvert.Serialize(structures, stream);
+await ParquetConvert.SerializeAsync(data, "/mnt/storage/data.parquet");
 ```
 
-That's it! Of course the `.Serialize()` method also has overloads and optional parameters allowing you to control the serialization process slightly, such as selecting compression method, row group size etc.
+That's it! Of course the `.SerializeAsync()` method also has overloads and optional parameters allowing you to control the serialization process slightly, such as selecting compression method, row group size etc.
 
 Parquet.Net will automatically figure out file schema by reflecting class structure, types, nullability and other parameters for you.
 
 In order to deserialise this file back to array of classes you would write the following:
 
 ```csharp
-SimpleStructure[] structures = ParquetConvert.Deserialize<SimpleStructure>(stream);
+Record[] data = await ParquetConvert.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
 ### Retrieve and Deserialize records by RowGroup:
 

@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Rows;
@@ -61,6 +62,26 @@ namespace Parquet {
             using(ParquetRowGroupWriter rowGroupWriter = writer.CreateRowGroup()) {
                 await rowGroupWriter.WriteAsync(table);
             }
+        }
+
+        /// <summary>
+        /// Writes table to a stream
+        /// </summary>
+        public static async Task WriteAsync(this Table table, Stream output,
+            ParquetOptions? formatOptions = null, bool append = false, CancellationToken cancellationToken = default) {
+            using ParquetWriter writer = await ParquetWriter.CreateAsync(table.Schema, output, formatOptions, append, cancellationToken);
+            using(ParquetRowGroupWriter rowGroupWriter = writer.CreateRowGroup()) {
+                await rowGroupWriter.WriteAsync(table);
+            }
+        }
+
+        /// <summary>
+        /// Writes table to a file
+        /// </summary>
+        public static async Task WriteAsync(this Table table, string path,
+            ParquetOptions? formatOptions = null, bool append = false, CancellationToken cancellationToken = default) {
+            using Stream output = System.IO.File.OpenWrite(path);
+            await WriteAsync(table, output, formatOptions, append, cancellationToken);
         }
 
         /// <summary>

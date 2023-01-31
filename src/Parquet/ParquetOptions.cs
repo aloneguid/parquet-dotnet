@@ -6,12 +6,12 @@ namespace Parquet {
     /// </summary>
     public class ParquetOptions {
         /// <summary>
-        /// When true byte arrays will be treated as UTF-8 strings
+        /// When true byte arrays will be treated as UTF-8 strings on read
         /// </summary>
         public bool TreatByteArrayAsString { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether big integers are always treated as dates
+        /// Gets or sets a value indicating whether big integers are always treated as dates on read
         /// </summary>
         public bool TreatBigIntegersAsDates { get; set; } = true;
 

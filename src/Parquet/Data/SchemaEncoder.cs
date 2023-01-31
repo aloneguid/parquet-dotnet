@@ -148,7 +148,7 @@ namespace Parquet.Data {
                 Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime),
                 Thrift.ConvertedType.DECIMAL, typeof(decimal)
             },
-            { Thrift.Type.INT96, typeof(DateTime) },
+            { Thrift.Type.INT96, typeof(DateTime), 1 },
             { Thrift.Type.INT96, typeof(BigInteger) },
             { Thrift.Type.FLOAT, typeof(float) },
             { Thrift.Type.DOUBLE, typeof(double) },
@@ -310,7 +310,7 @@ namespace Parquet.Data {
         /// <param name="tse"></param>
         private static void AdjustEncoding(DataField df, Thrift.SchemaElement tse) {
             if(df.ClrType == typeof(DateTime)) {
-                if(df is DateTimeDataField dfDateTime)
+                if(df is DateTimeDataField dfDateTime) {
                     switch(dfDateTime.DateTimeFormat) {
                         case DateTimeFormat.DateAndTime:
                             tse.Type = Thrift.Type.INT64;
@@ -323,8 +323,7 @@ namespace Parquet.Data {
 
                             //other cases are just default
                     }
-                else
-                    tse.Converted_type = Thrift.ConvertedType.DATE;
+                }
             } else if(df.ClrType == typeof(decimal)) {
                 if(df is DecimalDataField dfDecimal) {
                     if(dfDecimal.ForceByteArrayEncoding)
@@ -464,6 +463,9 @@ namespace Parquet.Data {
                 throw new InvalidOperationException($"unable to encode {field}");
             }
         }
+
+        public static bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) =>
+            _lt.FindTypeTuple(type, out thriftType, out convertedType);
 
         /// <summary>
         /// Finds corresponding .NET type

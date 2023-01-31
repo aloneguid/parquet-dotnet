@@ -25,12 +25,9 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<Table> ReadTestFileAsTableAsync(string name) {
-            using(Stream s = OpenTestFile(name)) {
-                using(ParquetReader reader = await ParquetReader.CreateAsync(s)) {
-                    return await reader.ReadAsTableAsync();
-                }
-            }
+        protected Task<Table> ReadTestFileAsTableAsync(string name) {
+            using Stream s = OpenTestFile(name);
+            return Table.ReadAsync(s);
         }
 
         protected async Task<Table> WriteReadAsync(Table table, bool saveLocal = false) {

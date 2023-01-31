@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Parquet.Schema;
-using System.Linq;
+using TT = Parquet.Thrift.Type;
+using CT = Parquet.Thrift.ConvertedType;
+using System.Numerics;
 
 namespace Parquet.Test {
     public class SchemaTest : TestBase {
@@ -290,5 +292,32 @@ namespace Parquet.Test {
                 }
             }
         }
+
+        [Theory]
+        [InlineData(typeof(bool), TT.BOOLEAN, null)]
+        [InlineData(typeof(byte), TT.INT32, CT.UINT_8)]
+        [InlineData(typeof(sbyte), TT.INT32, CT.INT_8)]
+        [InlineData(typeof(short), TT.INT32, CT.INT_16)]
+        [InlineData(typeof(ushort), TT.INT32, CT.UINT_16)]
+        [InlineData(typeof(int), TT.INT32, CT.INT_32)]
+        [InlineData(typeof(uint), TT.INT32, CT.UINT_32)]
+        [InlineData(typeof(long), TT.INT64, CT.INT_64)]
+        [InlineData(typeof(ulong), TT.INT64, CT.UINT_64)]
+        [InlineData(typeof(BigInteger), TT.INT96, null)]
+        [InlineData(typeof(float), TT.FLOAT, null)]
+        [InlineData(typeof(double), TT.DOUBLE, null)]
+        [InlineData(typeof(byte[]), TT.BYTE_ARRAY, null)]
+        [InlineData(typeof(string), TT.BYTE_ARRAY, CT.UTF8)]
+        // decimal
+        [InlineData(typeof(DateTime), TT.INT96, null)]
+        // TimeSpan
+        // Interval
+        public void SystemTypeToThriftMapping(Type t, TT expectedTT, CT? expectedCT) {
+            Assert.True(SchemaEncoder.FindTypeTuple(t, out TT foundTT, out CT? foundCT));
+
+            Assert.Equal(expectedTT, foundTT);
+            Assert.Equal(expectedCT, foundCT);
+        }
+
     }
 }
