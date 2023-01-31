@@ -16,10 +16,10 @@ namespace Parquet.PerfRunner.Benchmarks {
     //[ShortRunJob]
     [MarkdownExporter]
     [MemoryDiagnoser]
-    public class Progression {
+    public class VersionedBenchmark {
 
         public static void Run() {
-            BenchmarkRunner.Run<Progression>();
+            BenchmarkRunner.Run<VersionedBenchmark>();
         }
 
         public class NuConfig : ManualConfig {

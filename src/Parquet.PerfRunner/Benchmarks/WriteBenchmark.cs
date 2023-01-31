@@ -54,6 +54,10 @@ namespace Parquet.PerfRunner.Benchmarks {
                 using(LogicalColumnWriter<int?> w = rowGroup.NextColumn().LogicalWriter<int?>()) {
                     w.WriteBatch((int?[])_ar);
                 }
+            } else if(DataType == typeof(string)) {
+                using(LogicalColumnWriter<string> w = rowGroup.NextColumn().LogicalWriter<string>()) {
+                    w.WriteBatch((string[])_ar);
+                }
             } else {
                 throw new InvalidOperationException($"don't know {DataType}");
             }

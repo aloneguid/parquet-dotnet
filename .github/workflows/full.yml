@@ -53,12 +53,17 @@ jobs:
     - name: 'Prep'
       run: mv BenchmarkDotNet.Artifacts ${{ matrix.os }}
       working-directory: src/Parquet.PerfRunner
+
+    - name: debug
+      run: ls -R
+      working-directory: src/Parquet.PerfRunner
+
     - uses: actions/upload-artifact@v3
       name: Collect Results
       with:
         name: benchmarks
         path: |
-          ${{ matrix.os }}/**/*
+          src/Parquet.PerfRunner/${{ matrix.os }}/**/*
 
 
   build:
