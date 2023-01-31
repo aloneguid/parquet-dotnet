@@ -34,17 +34,17 @@ namespace Parquet.PerfRunner.Benchmarks {
         }
 
         private const int DataSize = 1000000;
-        private DataColumn _ints;
+        private DataColumn? _ints;
         private MemoryStream _intsMs;
-        private DataColumn _nullableInts;
+        private DataColumn? _nullableInts;
         private MemoryStream _nullableIntsMs;
-        private DataColumn _doubles;
+        private DataColumn? _doubles;
         private MemoryStream _doublesMs;
-        private DataColumn _nullableDoubles;
+        private DataColumn? _nullableDoubles;
         private MemoryStream _nullableDoublesMs;
-        private DataColumn _randomStrings;
+        private DataColumn? _randomStrings;
         private MemoryStream _randomStringsMs;
-        private DataColumn _repeatingStrings;
+        private DataColumn? _repeatingStrings;
         private MemoryStream _repeatedStringsMs;
 
         #region [ Helpers ]

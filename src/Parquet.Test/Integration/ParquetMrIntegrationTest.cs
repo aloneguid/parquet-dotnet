@@ -79,13 +79,17 @@ namespace Parquet.Test.Integration {
             var se = new StringBuilder();
 
             while(!proc.StandardOutput.EndOfStream) {
-                string line = proc.StandardOutput.ReadLine();
-                so.AppendLine(line);
+                string? line = proc.StandardOutput.ReadLine();
+                if(line != null) {
+                    so.AppendLine(line);
+                }
             }
 
             while(!proc.StandardError.EndOfStream) {
-                string line = proc.StandardError.ReadLine();
-                se.AppendLine(line);
+                string? line = proc.StandardError.ReadLine();
+                if(line != null) {
+                    se.AppendLine(line);
+                }
             }
 
             proc.WaitForExit();
@@ -151,7 +155,7 @@ namespace Parquet.Test.Integration {
             }
 
             for(int i = 0; i < 100; i++) {
-                table.Add((string)null);
+                table.Add((string?)null);
             }
 
             for(int i = 0; i < 100; i++) {

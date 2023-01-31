@@ -8,21 +8,21 @@ using Xunit;
 namespace Parquet.Test {
     public class StatisticsTest : TestBase {
         class TestDesc {
-            public Type Type { get; set; }
+            public Type? Type { get; set; }
 
-            public Array Data { get; set; }
+            public Array? Data { get; set; }
 
             public long? DistinctCount { get; set; }
 
             public long NullCount { get; set; }
 
-            public object Min { get; set; }
+            public object? Min { get; set; }
 
-            public object Max { get; set; }
+            public object? Max { get; set; }
         }
 
 
-        private static Dictionary<string, TestDesc> NameToTest = new Dictionary<string, TestDesc> {
+        private static readonly Dictionary<string, TestDesc> NameToTest = new Dictionary<string, TestDesc> {
             ["int"] =
               new TestDesc {
                   Type = typeof(int),
@@ -93,13 +93,13 @@ namespace Parquet.Test {
         [InlineData("double")]
         [InlineData("dateTime")]
         public async Task Distinct_stat_for_basic_data_types(string name) {
-            TestDesc test = NameToTest[name];
+            TestDesc? test = NameToTest[name];
 
-            var id = new DataField("id", test.Type);
+            var id = new DataField("id", test!.Type!);
 
-            DataColumn rc = await WriteReadSingleColumn(id, new DataColumn(id, test.Data));
+            DataColumn rc = await WriteReadSingleColumn(id, new DataColumn(id, test!.Data!));
 
-            Assert.Equal(test.Data.Length, rc.CalculateRowCount());
+            Assert.Equal(test.Data!.Length, rc.CalculateRowCount());
             //Assert.Equal(test.DistinctCount, rc.Statistics.DistinctCount);
             Assert.Equal(test.NullCount, rc.Statistics.NullCount);
             Assert.Equal(test.Min, rc.Statistics.MinValue);

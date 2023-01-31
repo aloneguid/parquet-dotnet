@@ -101,7 +101,7 @@ namespace Parquet.Rows {
         /// Adds a new row from passed cells
         /// </summary>
         /// <param name="rowCells"></param>
-        public void Add(params object[] rowCells) {
+        public void Add(params object?[] rowCells) {
             var row = new Row(rowCells);
 
             Add(row);
