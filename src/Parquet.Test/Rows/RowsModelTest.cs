@@ -586,10 +586,11 @@ namespace Parquet.Test.Rows {
             var messages = new List<string>();
             using(Stream stream = OpenTestFile("customer.impala.parquet")) {
                 using(ParquetReader reader = await ParquetReader.CreateAsync(stream)) {
-                    t = await reader.ReadAsTableAsync(async (int perc, string msg) => {
+                    t = await reader.ReadAsTableAsync((int perc, string msg) => {
                         Console.WriteLine($"{perc}%: {msg}");
                         timesInvoked++;
                         messages.Add(msg);
+                        return Task.CompletedTask;
                     });
                 }
             }

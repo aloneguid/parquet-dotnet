@@ -13,7 +13,8 @@ using Type = System.Type;
 
 namespace Parquet.Test.Reader {
     public class ParquetCsvComparison : TestBase {
-        protected async Task CompareFilesAsync(string baseName, string encoding, string dataPageVersion, bool treatByteArrayAsString, params Type[] columnTypes) {
+        protected async Task CompareFilesAsync(string baseName, string encoding, string dataPageVersion, bool treatByteArrayAsString,
+            params Type[] columnTypes) {
             string parquetFilePrefix = $"{baseName}";
             if(!string.IsNullOrEmpty(encoding)) {
                 parquetFilePrefix += $".{encoding}";
@@ -27,6 +28,9 @@ namespace Parquet.Test.Reader {
         }
 
         private void Compare(DataColumn[] parquet, DataColumn[] csv, Type[] columnTypes) {
+
+            var errors = new List<string>();
+
             //compar number of columns is the same
             Assert.Equal(parquet.Length, csv.Length);
 
@@ -42,40 +46,47 @@ namespace Parquet.Test.Reader {
 
                 for(int ri = 0; ri < pc.Data.Length; ri++) {
                     Type clrType = pc.Field.ClrType;
-                    object pv = pc.Data.GetValue(ri);
-                    object cv = ChangeType(cc.Data.GetValue(ri), clrType);
+                    object? pv = pc.Data.GetValue(ri);
+                    object? cv = ChangeType(cc.Data.GetValue(ri), clrType);
 
                     if(pv == null) {
                         bool isCsvNull =
                            cv == null ||
                            (cv is string s && s == string.Empty);
 
-                        Assert.True(isCsvNull,
-                           $"expected null value in column {pc.Field.Name}, value #{ri}");
+                        if(!isCsvNull) errors.Add($"expected null value in column {pc.Field.Name}, value #{ri}");
                     }
                     else {
                         if(clrType == typeof(string)) {
-                            Assert.True(((string)pv).Trim() == ((string)cv).Trim(),
-                               $"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                            if(((string)pv).Trim() != ((string?)cv)?.Trim())
+                               errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
                         }
                         else if(clrType == typeof(byte[])) {
                             byte[] pva = (byte[])pv;
                             byte[] cva = (byte[])cv;
-                            Assert.True(pva.Length == cva.Length, $"expected length {cva.Length} but was {pva.Length} in column {pc.Field.Name}, value #{ri}");
+
+                            if(pva.Length != cva.Length)
+                                errors.Add($"expected length {cva.Length} but was {pva.Length} in column {pc.Field.Name}, value #{ri}");
+
                             for(int i = 0; i < pva.Length; i++) {
-                                Assert.True(pva[i] == cva[i], $"expected {cva[i]} but was {pva[i]} in column {pc.Field.Name}, value #{ri}, array index {i}");
+                                if(pva[i] != cva[i])
+                                    errors.Add($"expected {cva[i]} but was {pva[i]} in column {pc.Field.Name}, value #{ri}, array index {i}");
                             }
                         }
                         else {
-                            Assert.True(pv.Equals(cv),
-                               $"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                            if(!pv.Equals(cv))
+                               errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
                         }
                     }
                 }
             }
+
+            if(errors.Count > 0) {
+                Assert.Fail($"{errors.Count} error(s):" + Environment.NewLine + string.Join(Environment.NewLine, errors));
+            }
         }
 
-        private object ChangeType(object v, Type t) {
+        private object? ChangeType(object? v, Type t) {
             if(v == null)
                 return null;
             if(v.GetType() == t)

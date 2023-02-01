@@ -9,7 +9,7 @@ using Parquet.Data;
 using Parquet.Thrift;
 using Parquet.Schema;
 using Parquet.Extensions;
-using Parquet.File.Values;
+using Parquet.Encodings;
 
 namespace Parquet.File {
     class DataColumnReader {
@@ -173,13 +173,12 @@ namespace Parquet.File {
 
             //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
             using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
-            //todo: this is ugly, but will be removed once other parts are migrated to System.Memory
-            using var ms = new MemoryStream(bytes.AsSpan().ToArray());
+
             // Dictionary should not contains null values
             Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
 
             if(!ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values, 
-                   _thriftSchemaElement!, ms, out int dictionaryOffset)) {
+                   _thriftSchemaElement!, bytes.AsSpan(), out int dictionaryOffset)) {
                 throw new IOException("could not decode");
             }
 
@@ -203,21 +202,31 @@ namespace Parquet.File {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             }
 
-            using var ms = new MemoryStream(bytes.AsSpan().ToArray());
+            int dataUsed = 0;
+
             int valueCount = ph.Data_page_header.Num_values;
             if(_maxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
                 if(cd.repetitions == null)
                     cd.repetitions = new int[cd.maxCount];
 
-                cd.repetitionsOffset += ReadLevels(ms, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset, ph.Data_page_header.Num_values);
+                cd.repetitionsOffset += ReadLevels(
+                    bytes.AsSpan(), _maxRepetitionLevel,
+                    cd.repetitions, cd.repetitionsOffset,
+                    ph.Data_page_header.Num_values, null, out int usedLength);
+                dataUsed += usedLength;
             }
 
             if(_maxDefinitionLevel > 0) {
                 cd.definitions ??= new int[cd.maxCount];
 
                 int offsetBeforeReading = cd.definitionsOffset;
-                cd.definitionsOffset += ReadLevels(ms, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header.Num_values);
+                cd.definitionsOffset += ReadLevels(
+                    bytes.AsSpan().Slice(dataUsed), _maxDefinitionLevel,
+                    cd.definitions, cd.definitionsOffset,
+                    ph.Data_page_header.Num_values, null, out int usedLength);
+                dataUsed += usedLength;
+
                 // if no statistics are available, we use the number of values expected, based on the definitions
                 if(ph.Data_page_header.Statistics == null) {
                     valueCount = cd.definitions
@@ -230,7 +239,7 @@ namespace Parquet.File {
             // otherwise the previously counted value from definitions
             int totalValuesInPage = ph.Data_page_header.Statistics == null ? valueCount
                 : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
-            ReadColumn(ms, ph.Data_page_header.Encoding, totalValuesInChunk, totalValuesInPage, cd);
+            ReadColumn(bytes.AsSpan().Slice(dataUsed), ph.Data_page_header.Encoding, totalValuesInChunk, totalValuesInPage, cd);
         }
 
         private async Task ReadDataPageV2Async(Thrift.PageHeader ph, ColumnRawData cd, long maxValues) {
@@ -239,24 +248,29 @@ namespace Parquet.File {
             } 
             
             using IronCompress.IronCompressResult bytes = await ReadPageDataV2Async(ph);
-
-            using var ms = new MemoryStream(bytes.AsSpan().ToArray());
+            int dataUsed = 0;
 
             if(_maxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
                 cd.repetitions ??= new int[cd.maxCount];
-                cd.repetitionsOffset += ReadLevels(ms, _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset, ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Repetition_levels_byte_length);
+                cd.repetitionsOffset += ReadLevels(bytes.AsSpan(),
+                    _maxRepetitionLevel, cd.repetitions, cd.repetitionsOffset,
+                    ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Repetition_levels_byte_length, out int usedLength);
+                dataUsed += usedLength;
             }
 
             if(_maxDefinitionLevel > 0) {
                 cd.definitions ??= new int[cd.maxCount];
-                cd.definitionsOffset += ReadLevels(ms, _maxDefinitionLevel, cd.definitions, cd.definitionsOffset, ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Definition_levels_byte_length);
+                cd.definitionsOffset += ReadLevels(bytes.AsSpan().Slice(dataUsed),
+                    _maxDefinitionLevel, cd.definitions, cd.definitionsOffset,
+                    ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Definition_levels_byte_length, out int usedLength);
+                dataUsed += usedLength;
             }
 
             int maxReadCount = ph.Data_page_header_v2.Num_values - ph.Data_page_header_v2.Num_nulls;
 
             if((!ph.Data_page_header_v2.Is_compressed) || _thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
-                ReadColumn(ms, ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
+                ReadColumn(bytes.AsSpan().Slice(dataUsed), ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
                 return;
             }
 
@@ -266,25 +280,26 @@ namespace Parquet.File {
             int decompressedSize = ph.Uncompressed_page_size - ph.Data_page_header_v2.Repetition_levels_byte_length -
                                    ph.Data_page_header_v2.Definition_levels_byte_length;
             
-            byte[] dataBytes = ms.ReadBytesExactly(dataSize);
-            
             IronCompress.IronCompressResult decompressedDataByes = Compressor.Decompress(
                 (CompressionMethod)(int)_thriftColumnChunk.Meta_data.Codec,
-                dataBytes.AsSpan(),
+                bytes.AsSpan().Slice(dataUsed),
                 decompressedSize);
 
-            using var dataMs = new MemoryStream(decompressedDataByes.AsSpan().ToArray());
-
-            ReadColumn(dataMs, ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
+            ReadColumn(decompressedDataByes.AsSpan(), ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, cd);
         }
 
-        private int ReadLevels(Stream s, int maxLevel, int[] dest, int offset, int pageSize, int length = 0) {
+        private int ReadLevels(Span<byte> s, int maxLevel,
+            int[] dest, int destOffset,
+            int pageSize,
+            int? length, out int usedLength) {
+
             int bitWidth = maxLevel.GetBitWidth();
 
-            return RleEncoder.Decode(s, bitWidth, length, dest, offset, pageSize);
+            return RleBitpackedHybridEncoder.Decode(s, bitWidth, length, out usedLength, dest, destOffset, pageSize);
         }
 
-        private void ReadColumn(Stream s, Thrift.Encoding encoding, long totalValuesInChunk, int totalValuesInPage,
+        private void ReadColumn(Span<byte> src,
+            Thrift.Encoding encoding, long totalValuesInChunk, int totalValuesInPage,
             ColumnRawData cd) {
 
             //dictionary encoding uses RLE to encode data
@@ -292,66 +307,69 @@ namespace Parquet.File {
             cd.values ??= _dataField.CreateArray((int)totalValuesInChunk);
 
             switch(encoding) {
-                case Thrift.Encoding.PLAIN: {
+                case Thrift.Encoding.PLAIN: { // 0
                         if(!ParquetPlainEncoder.Decode(cd.values,
                             cd.valuesOffset,
                             totalValuesInPage,
-                            _thriftSchemaElement!, s, out int read)) {
+                            _thriftSchemaElement!, src, out int read)) {
                             throw new IOException("could not decode");
                         }
                         cd.valuesOffset += read;
                     }
                     break;
 
-                case Thrift.Encoding.RLE: {
+                case Thrift.Encoding.PLAIN_DICTIONARY: // 2  // values are still encoded in RLE
+                case Thrift.Encoding.RLE_DICTIONARY: { // 8
                         cd.indexes ??= new int[(int)totalValuesInChunk];
-                        int indexCount = RleEncoder.Decode(s, cd.indexes, 0, _thriftSchemaElement!.Type_length, totalValuesInPage);
+                        int indexCount = ReadRleDictionary(src, totalValuesInPage, cd.indexes, 0);
                         cd.dictionary!.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;
 
-                case Thrift.Encoding.PLAIN_DICTIONARY:  // values are still encoded in RLE
-                case Thrift.Encoding.RLE_DICTIONARY: {
+                case Thrift.Encoding.RLE: { // 3
                         cd.indexes ??= new int[(int)totalValuesInChunk];
-                        int indexCount = ReadRleDictionary(s, totalValuesInPage, cd.indexes, 0);
+                        int indexCount = RleBitpackedHybridEncoder.Decode(src,
+                            _thriftSchemaElement!.Type_length,
+                            src.Length, out int usedLength, cd.indexes, 0, totalValuesInPage);
                         cd.dictionary!.ExplodeFast(cd.indexes.AsSpan(), cd.values, cd.valuesOffset, indexCount);
                         cd.valuesOffset += indexCount;
                     }
                     break;
 
-                case Thrift.Encoding.DELTA_BYTE_ARRAY:
-                    cd.valuesOffset += DeltaByteArrayReader.Read(s, cd.values, cd.valuesOffset, totalValuesInPage);
+                case Thrift.Encoding.DELTA_BINARY_PACKED: // 5
+                    cd.valuesOffset += DeltaBinaryPackedEncoder.Decode(src, cd.values, cd.valuesOffset, totalValuesInPage);
                     break;
 
-                case Encoding.BIT_PACKED:
-                case Encoding.DELTA_BINARY_PACKED:
-                case Encoding.DELTA_LENGTH_BYTE_ARRAY:
-                case Encoding.BYTE_STREAM_SPLIT:
+                case Thrift.Encoding.BIT_PACKED:                // 4 (deprecated)
+                case Thrift.Encoding.DELTA_LENGTH_BYTE_ARRAY:   // 6
+                case Thrift.Encoding.DELTA_BYTE_ARRAY:          // 7
+                case Thrift.Encoding.BYTE_STREAM_SPLIT:         // 9
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");
             }
         }
 
-        private static int ReadRleDictionary(Stream s, int maxReadCount, int[] dest, int offset) {
-            int start = offset;
-            int bitWidth = s.ReadByte();
+        private static int ReadRleDictionary(Span<byte> s, int maxReadCount, int[] dest, int destOffset) {
+            int offset = 0;
+            int start = destOffset;
+            int bitWidth = s[offset++];
 
-            int length = GetRemainingLength(s);
+            int length = s.Length - 1;
 
             //when bit width is zero reader must stop and just repeat zero maxValue number of times
             if(bitWidth == 0 || length == 0) {
                 for(int i = 0; i < maxReadCount; i++) {
-                    dest[offset++] = 0;
+                    dest[destOffset++] = 0;
                 }
             }
             else {
                 if(length != 0) {
-                    offset += RleEncoder.Decode(s, bitWidth, length, dest, offset, maxReadCount);
+                    destOffset += RleBitpackedHybridEncoder.Decode(s.Slice(1), bitWidth, length, out int usedLength, dest, destOffset, maxReadCount);
                 }
             }
 
-            return offset - start;
+            return destOffset - start;
         }
 
         private static int GetRemainingLength(Stream s) => (int)(s.Length - s.Position);

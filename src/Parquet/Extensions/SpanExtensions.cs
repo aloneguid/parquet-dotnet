@@ -1,12 +1,64 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 
 namespace System {
     internal static class SpanExtensions {
-        public static int ReadInt32(this Span<byte> span) {
+        public static int ReadInt32(this Span<byte> span, int offset) {
             if(BitConverter.IsLittleEndian)
-                return (int)span[0] | ((int)span[1] << 8) | ((int)span[2] << 16) | ((int)span[3] << 24);
-            return ((int)span[0] << 24) | ((int)span[1] << 16) | ((int)span[2] << 8) | (int)span[3];
+                return (int)span[0 + offset] |
+                    ((int)span[1 + offset] << 8) |
+                    ((int)span[2 + offset] << 16) | 
+                    ((int)span[3 + offset] << 24);
+
+            return ((int)span[0 + offset] << 24) |
+                ((int)span[1 + offset] << 16) |
+                ((int)span[2 + offset] << 8) |
+                (int)span[3 + offset];
+        }
+
+        public static long ReadInt64(this Span<byte> span, int offset) {
+#if NETSTANDARD2_0
+            return BitConverter.ToInt64(span.Slice(offset, sizeof(long)).ToArray(), 0);
+#else
+            return BitConverter.ToInt64(span.Slice(offset, sizeof(long)));
+#endif
+        }
+
+        /// <summary>
+        /// Read a value using the unsigned, variable int encoding.
+        /// </summary>
+        public static int ReadUnsignedVarInt(this Span<byte> data, ref int offset) {
+            int result = 0;
+            int shift = 0;
+
+            while(true) {
+                byte b = data[offset++];
+                result |= ((b & 0x7F) << shift);
+                if((b & 0x80) == 0)
+                    break;
+                shift += 7;
+            }
+
+            return result;
+        }
+
+        public static long ReadUnsignedVarLong(this Span<byte> data, ref int offset) {
+            long value = 0;
+            int i = 0;
+            long b;
+            while(((b = data[offset++]) & 0x80) != 0) {
+                value |= (b & 0x7F) << i;
+                i += 7;
+            }
+            return value | (b << i);
+        }
+
+
+        public static long ReadZigZagVarLong(this Span<byte> data, ref int offset) {
+            long raw = data.ReadUnsignedVarLong(ref offset);
+            long temp = (((raw << 63) >> 63) ^ raw) >> 1;
+            return temp ^ (raw & (1L << 63));
         }
 
         // All of these could be replaced with generic math, but we don't have access to it due to supporting older than .NET 6

@@ -1,5 +1,5 @@
 ﻿using System;
-using Parquet.Data;
+using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.File;
 

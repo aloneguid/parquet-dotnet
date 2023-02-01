@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using Parquet.Data;
+using Parquet.Encodings;
 
 namespace Parquet.File {
 

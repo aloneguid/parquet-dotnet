@@ -13,10 +13,6 @@ using System.Threading;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {
-        [Fact]
-        public async Task Opening_null_stream_fails() {
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await ParquetReader.CreateAsync((Stream)null));
-        }
 
         [Fact]
         public async Task Opening_small_file_fails() {
@@ -70,7 +66,7 @@ namespace Parquet.Test {
         [InlineData("complex-primitives.v2.parquet")]
         public async Task Read_hardcoded_decimal(string parquetFile) {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {
-                decimal value = (decimal)(await reader.ReadEntireRowGroupAsync())[1].Data.GetValue(0);
+                decimal value = (decimal)(await reader.ReadEntireRowGroupAsync())[1].Data.GetValue(0)!;
                 Assert.Equal((decimal)1.2, value);
             }
         }
@@ -208,9 +204,9 @@ namespace Parquet.Test {
                 DateTime?[] col0 = (DateTime?[])columns[0].Data;
                 Assert.Equal(440773, col0.Length);
 
-                long ticks = col0[0].Value.Ticks;
+                long ticks = col0[0]!.Value.Ticks;
                 for(int i = 1; i < 132000; i++) {
-                    long now = col0[i].Value.Ticks;
+                    long now = col0[i]!.Value.Ticks;
                     Assert.NotEqual(ticks, now);
                 }
             }

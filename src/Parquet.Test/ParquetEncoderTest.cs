@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Parquet.Data;
+using Parquet.Encodings;
 using Xunit;
 
 namespace Parquet.Test {
@@ -14,7 +14,7 @@ namespace Parquet.Test {
                 1,   1,   1,   1, 1, 1, 1, 1, 1 });
 
             var decoded = new TimeSpan[2];
-            ParquetPlainEncoder.Decode(source, decoded.AsSpan(), new Thrift.SchemaElement { Type = Thrift.Type.INT64 });
+            ParquetPlainEncoder.Decode(source.ToArray().AsSpan(), decoded.AsSpan(), new Thrift.SchemaElement { Type = Thrift.Type.INT64 });
 
             Assert.Equal(new TimeSpan(0, 0, 1), decoded[0]);
             Assert.Equal(new TimeSpan(0, 0, 30), decoded[1]);
