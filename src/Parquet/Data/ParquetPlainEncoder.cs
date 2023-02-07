@@ -441,11 +441,11 @@ namespace Parquet.Data {
                     result = BitConverter.GetBytes(days);
                     return true;
                 case Thrift.Type.INT64:
-                    long unixTime = value.ToUnixMilliseconds();
+                    long unixTime = value.ToUtc().ToUnixMilliseconds();
                     result = BitConverter.GetBytes(unixTime);
                     return true;
                 case Thrift.Type.INT96:
-                    var nano = new NanoTime(value);
+                    var nano = new NanoTime(value.ToUtc());
                     result = nano.GetBytes();
                     return true;
                 default:
@@ -890,14 +890,14 @@ namespace Parquet.Data {
                     break;
                 case Thrift.Type.INT64:
                     foreach(DateTime element in data) {
-                        long unixTime = element.ToUnixMilliseconds();
+                        long unixTime = element.ToUtc().ToUnixMilliseconds();
                         byte[] raw = BitConverter.GetBytes(unixTime);
                         destination.Write(raw, 0, raw.Length);
                     }
                     break;
                 case Thrift.Type.INT96:
                     foreach(DateTime element in data) {
-                        var nano = new NanoTime(element);
+                        var nano = new NanoTime(element.ToUtc());
                         nano.Write(destination);
                     }
                     break;

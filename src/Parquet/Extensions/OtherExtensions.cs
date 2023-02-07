@@ -39,6 +39,11 @@ namespace Parquet {
             return (int)diff.TotalDays;
         }
 
+        public static DateTime ToUtc(this DateTime dto) =>
+            dto.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(dto, DateTimeKind.Utc)
+                : dto.ToUniversalTime();
+
         public static string AddPath(this string s, params string[] parts) {
             var path = new List<string>(parts.Length + 1);
 
