@@ -11,7 +11,7 @@ Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4,
 
 ## Quick Start
 
-Why should I use this? I think you shouldn't. Go away and look at better alternatives, like [PyArrow](https://arrow.apache.org/docs/python/) that does it much better in Python. Also I'd rather you use [Apache Spark](https://spark.apache.org/) with native support for Parquet and other commercial alternatives. Seriously. Comparing to those, this library is just pure shite, developed in spare time by one person. Despite that, it's a de facto standard for .NET when it comes to reading and writing Parquet files. Why? Because:
+Why should I use this? I think you shouldn't. Go away and look at better alternatives, like [PyArrow](https://arrow.apache.org/docs/python/) that does it much better in Python or [DuckDB](https://duckdb.org/) that you can use from any language. Also I'd rather you use [Apache Spark](https://spark.apache.org/) with native support for Parquet and other commercial alternatives. Seriously. Comparing to those, this library is just pure shite, developed in spare time by one person. Despite that, it's a de facto standard for .NET when it comes to reading and writing Parquet files. Why? Because:
 
 - It has zero dependencies - pure library that just works.
 - It's really fast. Faster than Python and Java implementations.
