@@ -137,8 +137,6 @@ namespace Parquet.Encodings {
             return false;
         }
 
-        // todo: instead of Stream, use Span<byte>, because we already read it all into memorystream!
-
         public static bool Decode(
             Array data, int offset, int count,
             SchemaElement tse,
@@ -458,7 +456,7 @@ namespace Parquet.Encodings {
             int srcOffset = 0;
 
             int ibit = 0;
-            while(srcOffset < data.Length && tgtOffset < data.Length) {
+            while(srcOffset < source.Length && tgtOffset < data.Length) {
                 byte b = source[srcOffset++];
 
                 while(ibit < 8 && tgtOffset < data.Length && tgtOffset < data.Length) {

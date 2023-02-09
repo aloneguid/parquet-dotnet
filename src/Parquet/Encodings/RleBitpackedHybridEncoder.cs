@@ -14,11 +14,11 @@ namespace Parquet.Encodings {
         /// Writes to target stream without jumping around, therefore can be used in forward-only stream.
         /// Before writing actual data, writes out int32 value indicating total data binary length.
         /// </summary>
-        public static void EncodeWithLength(Stream s, int bitWidth, int[] data, int count) {
+        public static void EncodeWithLength(Stream s, int bitWidth, Span<int> data) {
             //write data to a memory buffer, as we need data length to be written before the data
             using(var ms = new MemoryStream()) {
                 //write actual data
-                Encode(ms, data, count, bitWidth);
+                Encode(ms, data, bitWidth);
 
                 //int32 - length of data
                 s.WriteInt32((int)ms.Length);
@@ -29,9 +29,9 @@ namespace Parquet.Encodings {
             }
         }
 
-        public static void Encode(Stream s, int[] data, int count, int bitWidth) {
+        public static void Encode(Stream s, Span<int> data, int bitWidth) {
             using(var list = new SpanBackedByteList()) {
-                Encode(list, data, count, bitWidth);
+                Encode(list, data, bitWidth);
                 list.Write(s);
             }
         }
@@ -39,7 +39,7 @@ namespace Parquet.Encodings {
         /// <summary>
         /// Encodes input data
         /// </summary>
-        public static void Encode(IList<byte> s, int[] data, int count, int bitWidth) {
+        public static void Encode(IList<byte> s, Span<int> data, int bitWidth) {
             //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
             const int maxCount = int.MaxValue >> 1;  //max count for an integer with one lost bit
@@ -47,7 +47,7 @@ namespace Parquet.Encodings {
             //chunk identical values and write
             int lastValue = 0;
             int chunkCount = 0;
-            for(int i = 0; i < count; i++) {
+            for(int i = 0; i < data.Length; i++) {
                 int item = data[i];
 
                 if(chunkCount == 0) {
@@ -126,7 +126,7 @@ namespace Parquet.Encodings {
             int bitWidth,
             int? spanLength,
             out int usedSpanLength,
-            int[] dest, int destOffset, int pageSize) {
+            Span<int> dest, int pageSize) {
 
             int length;
             if(spanLength == null) {
@@ -139,7 +139,7 @@ namespace Parquet.Encodings {
                 usedSpanLength = length;
             }
 
-            return Decode(s, bitWidth, dest, destOffset, pageSize);
+            return Decode(s, bitWidth, dest, pageSize);
         }
 
         /* from specs:
@@ -157,29 +157,29 @@ namespace Parquet.Encodings {
          * repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
          */
 
-        public static int Decode(Span<byte> data, int bitWidth, int[] dest, int destOffset, int pageSize) {
+        public static int Decode(Span<byte> data, int bitWidth, Span<int> dest, int pageSize) {
             int dataOffset = 0;
 
             int byteWidth = (bitWidth + 7) / 8; //round up to next byte
-            int startOffset = destOffset;
+            int destOffset = 0;
             while(dataOffset < data.Length) {
                 int header = data.ReadUnsignedVarInt(ref dataOffset);
                 bool isRle = (header & 1) == 0;
 
                 if(isRle)
-                    destOffset += ReadRle(header, data, ref dataOffset, byteWidth, dest, destOffset, pageSize - (destOffset - startOffset));
+                    destOffset += ReadRle(header, data, ref dataOffset, byteWidth, dest.Slice(destOffset), pageSize - destOffset);
                 else
-                    destOffset += DecodeBitpacked(header, data, ref dataOffset, bitWidth, dest, destOffset, pageSize - (destOffset - startOffset));
+                    destOffset += DecodeBitpacked(header, data, ref dataOffset, bitWidth, dest.Slice(destOffset), pageSize - destOffset);
             }
 
-            return destOffset - startOffset;
+            return destOffset;
         }
 
-        private static int ReadRle(int header, Span<byte> data, ref int offset, int byteWidth, int[] dest, int destOffset, int maxItems) {
+        private static int ReadRle(int header, Span<byte> data, ref int offset, int byteWidth, Span<int> dest, int maxItems) {
             // The count is determined from the header and the width is used to grab the
             // value that's repeated. Yields the value repeated count times.
 
-            int start = destOffset;
+            int destOffset = 0;
             int headerCount = header >> 1;
             if(headerCount == 0)
                 return 0; // important not to continue reading as will result in data corruption in data page further
@@ -190,56 +190,34 @@ namespace Parquet.Encodings {
             for(int i = 0; i < count; i++)
                 dest[destOffset++] = value;
 
-            return destOffset - start;
+            return destOffset;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns>Number of values put into destination buffer</returns>
         internal static int DecodeBitpacked(int header, Span<byte> data, ref int dataOffset,
             int bitWidth,
-            int[] dest, int destOffset, int maxItems) {
+            Span<int> dest, int maxItems) {
 
-            int start = destOffset;
-            int groupCount = header >> 1;
+            int unpacked = 0;
+            int numGroups = header >> 1;
 
-            if(groupCount == 0)
+            if(numGroups == 0)
                 return 0;
 
-            int count = groupCount * 8;
-            int byteCount = bitWidth * count / 8;
+            int count = numGroups * 8;
+            int bytesToRead = (int)Math.Ceiling(bitWidth * count / 8.0);
+            bytesToRead = Math.Min(bytesToRead, data.Length - dataOffset);
+            Span<byte> rawSpan = data.Slice(dataOffset, bytesToRead);
+            dataOffset += bytesToRead;
 
-            int toRead = Math.Min(data.Length - dataOffset, byteCount);
-            Span<byte> rawSpan = data.Slice(dataOffset, toRead);
-            byteCount = toRead;  //sometimes there will be less data available, typically on the last page
-            dataOffset += toRead;
+            for(int valueIndex = 0, byteIndex = 0; valueIndex < count; valueIndex += 8, byteIndex += bitWidth) {
+                BitPackedEncoder.Unpack8Values(rawSpan.Slice(byteIndex), dest.Slice(valueIndex), bitWidth);
+                unpacked += 8;
+            }
 
-            int mask = MaskForBits(bitWidth);
+            //if(unpacked > maxItems)
+            //    throw new InvalidOperationException($"{unpacked} > {maxItems}");
 
-            int i = 0;
-            uint b = rawSpan[i];
-            int total = byteCount * 8;
-            int bwl = 8;
-            int bwr = 0;
-            while(total >= bitWidth && destOffset - start < maxItems)
-                if(bwr >= 8) {
-                    bwr -= 8;
-                    bwl -= 8;
-                    b >>= 8;
-                } else if(bwl - bwr >= bitWidth) {
-                    int r = (int)((b >> bwr) & mask);
-                    total -= bitWidth;
-                    bwr += bitWidth;
-
-                    dest[destOffset++] = r;
-                } else if(i + 1 < byteCount) {
-                    i += 1;
-                    b |= (uint)(rawSpan[i] << bwl);
-                    bwl += 8;
-                }
-
-            return destOffset - start;
+            return Math.Min(unpacked, maxItems);
         }
 
         private static int ReadIntOnBytes(Span<byte> data) {

@@ -127,7 +127,7 @@ namespace Parquet.Schema {
         /// <returns></returns>
         internal Array CreateArray(int length) => Array.CreateInstance(ClrType, length);
 
-        internal Array UnpackDefinitions(Array definedData, int[] definitionLevels, int maxDefinitionLevel) {
+        internal Array UnpackDefinitions(Array definedData, Span<int> definitionLevels, int maxDefinitionLevel) {
             if(IsNullable) {
                 Array result = Array.CreateInstance(ClrNullableIfHasNullsType, definitionLevels.Length);
                 definedData.UnpackNullsFast(definitionLevels, maxDefinitionLevel, result);

@@ -15,12 +15,12 @@ namespace Parquet.Test.Encodings {
             using var ms = new MemoryStream();
 
             // encode
-            RleBitpackedHybridEncoder.Encode(ms, input, input.Length, bitWidth);
+            RleBitpackedHybridEncoder.Encode(ms, input.AsSpan(), bitWidth);
 
             //decode
             ms.Position = 0;
             int[] r2 = new int[input.Length];
-            RleBitpackedHybridEncoder.Decode(ms.ToArray().AsSpan(), bitWidth, r2.Length, out _, r2, 0, r2.Length);
+            RleBitpackedHybridEncoder.Decode(ms.ToArray().AsSpan(), bitWidth, r2.Length, out _, r2.AsSpan(), r2.Length);
 
             Assert.Equal(input, r2);
         }
@@ -28,7 +28,7 @@ namespace Parquet.Test.Encodings {
         [Fact]
         public void Encode0to7() {
             using var ms = new MemoryStream();
-            RleBitpackedHybridEncoder.Encode(ms, new[] { 0, 1, 2, 3, 4, 5, 6, 7 }, 8, 3);
+            RleBitpackedHybridEncoder.Encode(ms, new[] { 0, 1, 2, 3, 4, 5, 6, 7 }.AsSpan(), 3);
             byte[] ebytes = ms.ToArray();
         }
 
@@ -40,11 +40,11 @@ namespace Parquet.Test.Encodings {
             Assert.Equal(10, bitWidth);
             int[] data = Enumerable.Range(0, count).ToArray();
 
-            RleBitpackedHybridEncoder.Encode(ms, data, count, bitWidth);
+            RleBitpackedHybridEncoder.Encode(ms, data.AsSpan(), bitWidth);
 
             ms.Position = 0;
             int[] data2 = new int[count];
-            int count2 = RleBitpackedHybridEncoder.Decode(ms.ToArray().AsSpan(), bitWidth, ms.ToArray().Length, out _, data2, 0, count);
+            int count2 = RleBitpackedHybridEncoder.Decode(ms.ToArray().AsSpan(), bitWidth, ms.ToArray().Length, out _, data2.AsSpan(), count);
 
             Assert.Equal(data, data2);
 
@@ -58,11 +58,11 @@ namespace Parquet.Test.Encodings {
             Assert.Equal(18, bitWidth);
             int[] data = Enumerable.Range(0, count).ToArray();
 
-            RleBitpackedHybridEncoder.Encode(ms, data, count, bitWidth);
+            RleBitpackedHybridEncoder.Encode(ms, data.AsSpan(), bitWidth);
 
             ms.Position = 0;
             int[] data2 = new int[count];
-            int count2 = RleBitpackedHybridEncoder.Decode(ms.ToArray().AsSpan(), bitWidth, ms.ToArray().Length, out _, data2, 0, count);
+            int count2 = RleBitpackedHybridEncoder.Decode(ms.ToArray().AsSpan(), bitWidth, ms.ToArray().Length, out _, data2.AsSpan(), count);
 
             Assert.Equal(data, data2);
 

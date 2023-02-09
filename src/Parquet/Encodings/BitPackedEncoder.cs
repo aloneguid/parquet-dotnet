@@ -13,16 +13,6 @@ namespace Parquet.Encodings {
             throw new NotImplementedException();
         }
 
-        private static int PaddedByteCountFromBits(int bitWidth) => (bitWidth + 7) / 8;
-
-        public static void Unpack8Values(Span<byte> src, int bitWidth, Span<int> dest) {
-            Unpack8Values(src, bitWidth, dest, false);
-        }
-
-        public static void Unpack8Values(Span<byte> src, int bitWidth, Span<long> dest) {
-            Unpack8Values(src, bitWidth, dest, false);
-        }
-
         public static int Decode(Span<byte> src, int bitWidth, Span<int> dest) {
             throw new NotImplementedException();
         }

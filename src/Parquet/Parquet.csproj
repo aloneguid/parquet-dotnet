@@ -68,26 +68,26 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+        <None Include="Encodings\BitPackedEncoder.Precompiled.cs">
+          <DependentUpon>BitPackedEncoder.Precompiled.tt</DependentUpon>
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+        </None>
         <None Include="Encodings\DeltaBinaryPackedEncoder.Variations.cs">
           <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
           <DesignTime>True</DesignTime>
           <AutoGen>True</AutoGen>
         </None>
-        <None Include="Encodings\BitPackedEncoder.Variations.cs">
-          <DesignTime>True</DesignTime>
-          <AutoGen>True</AutoGen>
-          <DependentUpon>BitPackedEncoder.Variations.tt</DependentUpon>
-        </None>
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Encodings\BitPackedEncoder.Precompiled.tt">
+        <LastGenOutput>BitPackedEncoder.Precompiled.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
       <None Update="Encodings\DeltaBinaryPackedEncoder.Variations.tt">
         <LastGenOutput>DeltaBinaryPackedEncoder.Variations.cs</LastGenOutput>
         <Generator>TextTemplatingFileGenerator</Generator>
-      </None>
-      <None Update="Encodings\BitPackedEncoder.Variations.tt">
-        <Generator>TextTemplatingFileGenerator</Generator>
-        <LastGenOutput>BitPackedEncoder.Variations.cs</LastGenOutput>
       </None>
       <None Update="Extensions\UntypedArrayExtensions.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
@@ -100,10 +100,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Encodings\BitPackedEncoder.Variations.cs">
+      <Compile Update="Encodings\BitPackedEncoder.Precompiled.cs">
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>
-        <DependentUpon>BitPackedEncoder.Variations.tt</DependentUpon>
+        <DependentUpon>BitPackedEncoder.Precompiled.tt</DependentUpon>
       </Compile>
       <Compile Update="Encodings\DeltaBinaryPackedEncoder.Variations.cs">
         <DesignTime>True</DesignTime>
