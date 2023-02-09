@@ -290,5 +290,28 @@ namespace Parquet.Test {
                 }
             }
         }
+
+        [Fact]
+        public async Task ReadSchemaActuallyEqualToWriteSchema() {
+            var field = new DateTimeDataField("Date", DateTimeFormat.DateAndTime, true);
+            var schema = new ParquetSchema(field);
+
+            using(var memoryStream = new MemoryStream()) {
+                using(var parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream)) {
+                    using(var groupWriter = parquetWriter.CreateRowGroup()) {
+                        var dataColumn = new DataColumn(field, new List<DateTime>() { DateTime.Now }.ToArray());
+                        await groupWriter.WriteColumnAsync(dataColumn);
+                    }
+                }
+
+                using(var parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
+                    parquetReader.Schema.Fields.ToString();
+
+                    Assert.Single(schema.Fields);
+                    Assert.Equal(schema.Fields.Count, parquetReader.Schema.Fields.Count);
+                    Assert.Equal(schema.Fields.First().GetType(), parquetReader.Schema.Fields.First().GetType());
+                }
+            }
+        }
     }
 }
