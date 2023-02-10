@@ -89,7 +89,7 @@ namespace Parquet {
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
             bool append = false) {
-            using(Stream destination = System.IO.File.Create(filePath)) {
+            using(Stream destination = System.IO.File.Open(filePath, FileMode.OpenOrCreate)) {
                 return await SerializeAsync(objectInstances, destination, schema, compressionMethod, rowGroupSize,
                     append);
             }
