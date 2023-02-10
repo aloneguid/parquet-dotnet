@@ -32,11 +32,13 @@ namespace Parquet.Test.Reader {
             var errors = new List<string>();
 
             //compar number of columns is the same
-            Assert.Equal(parquet.Length, csv.Length);
+            Assert.True(parquet.Length == csv.Length, $"parquet has {parquet.Length} column(s) but CSV has {csv.Length}");
 
             //compare column names
             for(int i = 0; i < parquet.Length; i++) {
-                Assert.Contains(csv, dc => dc.Field.Name == parquet[i].Field.Name);
+                string colName = parquet[i].Field.Name;
+                bool contains = csv.Any(f => f.Field.Name == colName);
+                Assert.True(contains, $"csv does not contain column '{colName}'");
             }
 
             //compare column values one by one
@@ -58,8 +60,10 @@ namespace Parquet.Test.Reader {
                     }
                     else {
                         if(clrType == typeof(string)) {
-                            if(((string)pv).Trim() != ((string?)cv)?.Trim())
-                               errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                            if(((string)pv).Trim() != ((string?)cv)?.Trim()) {
+                                errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                                //errors.Add(pv.ToString());
+                            }
                         }
                         else if(clrType == typeof(byte[])) {
                             byte[] pva = (byte[])pv;
