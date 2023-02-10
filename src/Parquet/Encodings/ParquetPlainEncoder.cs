@@ -696,11 +696,12 @@ namespace Parquet.Encodings {
                             return 0;
 
                         byte[] chunk = new byte[tl];
-                        for(int offset = 0, i = 0; offset + tl <= data.Length * tl; offset += tl, i++) {
+                        int i = 0;
+                        for(int offset = 0; offset + tl <= source.Length && i < data.Length; offset += tl, i++) {
                             decimal dc = new BigDecimal(source.Slice(offset, tl).ToArray(), tse);
                             data[i] = dc;
                         }
-                        return data.Length;
+                        return i;
                     }
                 case Thrift.Type.BYTE_ARRAY: {
                         // type_length: 0

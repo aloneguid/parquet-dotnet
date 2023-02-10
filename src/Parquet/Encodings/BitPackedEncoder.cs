@@ -4,17 +4,72 @@ using System.Collections.Generic;
 namespace Parquet.Encodings {
     static partial class BitPackedEncoder {
 
-        private const int MaxBitWidth = 32;
-
         /// <summary>
-        /// Bit-packing used in RLE
+        /// Bit-packing used in RLE. Unlike pack, checks for boundaries.
         /// </summary>
-        public static void Encode(IEnumerable<int> values, int bitWidth, IList<byte> dest) {
-            throw new NotImplementedException();
+        /// <returns>Number of bytes written</returns>
+        public static int Encode8Values(Span<int> src, Span<byte> dest, int bitWidth) {
+
+            bool needsTempBuffer = dest.Length < bitWidth;
+            int written = bitWidth;
+
+            Span<int> src1;
+            Span<byte> dest1;
+            if(needsTempBuffer) {
+                src1 = new int[8];
+                src.CopyTo(src1);
+                dest1 = new byte[bitWidth];
+                written = dest.Length;
+            } else {
+                src1 = src;
+                dest1 = dest;
+            }
+
+            Pack8Values(src1, dest1, bitWidth);
+
+            if(needsTempBuffer) {
+                for(int i = 0; i < bitWidth && i < dest.Length; i++) {
+                    dest[i] = dest1[i];
+                }
+            }
+
+            return written;
         }
 
-        public static int Decode(Span<byte> src, int bitWidth, Span<int> dest) {
-            throw new NotImplementedException();
+        /// <summary>
+        /// Unlike unpack, checks for boundaries
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="bitWidth"></param>
+        /// <param name="dest"></param>
+        /// <returns>Number of values encoded</returns>
+        public static int Decode8Values(Span<byte> src, Span<int> dest, int bitWidth) {
+
+            // we always need at least bitWidth bytes available to decode 8 values
+            bool needsTempFuffer = src.Length < bitWidth;
+            int decoded = 8;
+
+            Span<byte> src1;
+            Span<int> dest1;
+            if (needsTempFuffer) {
+                src1 = new byte[bitWidth];
+                src.CopyTo(src1);
+                dest1 = new int[8];
+                decoded = src.Length * 8 / bitWidth;
+            } else {
+                src1 = src;
+                dest1 = dest;
+            }
+
+            Unpack8Values(src1, dest1, bitWidth);
+
+            if(needsTempFuffer) {
+                for(int i = 0; i < decoded; i++) {
+                    dest[i] = dest1[i];
+                }
+            }
+
+            return decoded;
         }
 
         /// <summary>

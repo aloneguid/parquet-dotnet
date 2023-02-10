@@ -31,8 +31,8 @@ namespace Parquet.Test.Encodings {
 
         [Fact]
         public void Encode1to7WithBitWidth3() {
-            var dest = new List<byte>();
-            BitPackedEncoder.Encode(new[] { 0, 1, 2, 3, 4, 5, 6, 7 }, 3, dest);
+            byte[] dest = new byte[3];
+            BitPackedEncoder.Encode8Values(new[] { 0, 1, 2, 3, 4, 5, 6, 7 }, dest, 3);
 
             Assert.Equal(BytesFromBinaryString(Binary0to7WithBitWidth3), dest.ToArray());
         }
@@ -40,7 +40,7 @@ namespace Parquet.Test.Encodings {
         [Fact]
         public void Decode1to7WithBitWidth3() {
             Span<int> ints = new int[8];
-            BitPackedEncoder.Decode(BytesFromBinaryString(Binary0to7WithBitWidth3).AsSpan(), 3, ints);
+            BitPackedEncoder.Decode8Values(BytesFromBinaryString(Binary0to7WithBitWidth3).AsSpan(), ints, 3);
             Assert.Equal(new int[] { 0, 1, 2, 3, 4, 5, 6, 7 }, ints.ToArray());
         }
 

@@ -180,6 +180,7 @@ namespace Parquet.Test {
 
         [Theory]
         [InlineData("/special/multi_page_bit_packed_near_page_border.parquet")]
+        // v2 has a mix of pages: dictionary, data (dictionary indexes), data (plain values)
         [InlineData("/special/multi_page_bit_packed_near_page_border.v2.parquet")]
         public async Task Read_bit_packed_at_page_boundary(string parquetFile) {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {

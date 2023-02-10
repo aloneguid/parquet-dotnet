@@ -165,7 +165,7 @@ namespace Parquet.File {
 
             int dataUsed = 0;
 
-            int valueCount = ph.Data_page_header.Num_values;
+            int nonNullValueCount = ph.Data_page_header.Num_values;
             if(_maxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
 
@@ -183,18 +183,19 @@ namespace Parquet.File {
                     pc.GetWriteableDefinitionLevelSpan(),
                     ph.Data_page_header.Num_values, null, out int usedLength);
                 dataUsed += usedLength;
-                pc.MarkDefinitionLevels(levelsRead);
-            }
+                pc.MarkDefinitionLevels(levelsRead, ph.Data_page_header.__isset.statistics ? -1 : _maxDefinitionLevel, out int nullCount);
 
-            // if statistics are defined, use null count to determine the exact number of items we should read,
-            // otherwise the previously counted value from definitions
-            int totalValuesInPage = ph.Data_page_header.Statistics == null ? valueCount
-                : ph.Data_page_header.Num_values - (int)ph.Data_page_header.Statistics.Null_count;
+                if(ph.Data_page_header.__isset.statistics) {
+                    nonNullValueCount -= (int)ph.Data_page_header.Statistics!.Null_count;
+                } else {
+                    nonNullValueCount -= nullCount;
+                }
+            }
 
             ReadColumn(
                 bytes.AsSpan().Slice(dataUsed),
                 ph.Data_page_header.Encoding,
-                totalValuesInChunk, totalValuesInPage,
+                totalValuesInChunk, nonNullValueCount,
                 pc);
         }
 
@@ -220,7 +221,7 @@ namespace Parquet.File {
                     _maxDefinitionLevel, pc.GetWriteableDefinitionLevelSpan(),
                     ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Definition_levels_byte_length, out int usedLength);
                 dataUsed += usedLength;
-                pc.MarkDefinitionLevels(levelsRead);
+                pc.MarkDefinitionLevels(levelsRead, -1, out _);
             }
 
             int maxReadCount = ph.Data_page_header_v2.Num_values - ph.Data_page_header_v2.Num_nulls;
@@ -241,7 +242,10 @@ namespace Parquet.File {
                 bytes.AsSpan().Slice(dataUsed),
                 decompressedSize);
 
-            ReadColumn(decompressedDataByes.AsSpan(), ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, pc);
+            ReadColumn(decompressedDataByes.AsSpan(),
+                ph.Data_page_header_v2.Encoding,
+                maxValues, maxReadCount,
+                pc);
         }
 
         private int ReadLevels(Span<byte> s, int maxLevel,

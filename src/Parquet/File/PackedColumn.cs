@@ -76,7 +76,7 @@ namespace Parquet.File {
             if(_dictionaryIndexes == null)
                 _dictionaryIndexes = IntPool.Rent(max);
 
-            return _dictionaryIndexes.AsSpan();
+            return _dictionaryIndexes.AsSpan(_dictionaryIndexesOffset);
         }
 
         public void MarkUsefulDictionaryIndexes(int count) {
@@ -104,7 +104,15 @@ namespace Parquet.File {
             return _definitionLevels.AsSpan(_definitionOffset);
         }
 
-        public void MarkDefinitionLevels(int count) {
+        public void MarkDefinitionLevels(int count, int calculateNullLevel, out int nullCount) {
+            nullCount = 0;
+            if(calculateNullLevel != -1) {
+                foreach(int level in _definitionLevels.AsSpan(_definitionOffset, count)) {
+                    if(level != calculateNullLevel) {
+                        nullCount++;
+                    }
+                }
+            } 
             _definitionOffset += count;
         }
 
