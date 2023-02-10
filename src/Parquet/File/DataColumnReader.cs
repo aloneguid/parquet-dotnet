@@ -284,6 +284,7 @@ namespace Parquet.File {
                         Span<int> span = pc.AllocateOrGetDictionaryIndexes((int)totalValuesInChunk);
                         int indexCount = ReadRleDictionary(src, totalValuesInPage, span);
                         pc.MarkUsefulDictionaryIndexes(indexCount);
+                        pc.UnpackCheckpoint();
                         //cd.dictionary!.ExplodeFast(span.Slice(0, totalValuesInPage), cd.values, cd.valuesOffset, indexCount);
                         //cd.valuesOffset += indexCount;
                     }
@@ -295,6 +296,7 @@ namespace Parquet.File {
                             _thriftSchemaElement!.Type_length,
                             src.Length, out int usedLength, span, totalValuesInPage);
                         pc.MarkUsefulDictionaryIndexes(indexCount);
+                        pc.UnpackCheckpoint();
                         //cd.dictionary!.ExplodeFast(span.Slice(0, totalValuesInPage), cd.values, cd.valuesOffset, indexCount);
                         //cd.valuesOffset += indexCount;
                     }

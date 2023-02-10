@@ -188,13 +188,23 @@ namespace Parquet.File {
             }
         }
 
-        public DataColumn Unpack(int maxDefinitionLevel, int maxRepetitionLevel) {
+        public void UnpackCheckpoint() {
 
-            if(HasDictionary && _dictionary != null) {
+            if(_dictionaryIndexes != null && _dictionary != null) {
                 _dictionary.ExplodeFast(
                     _dictionaryIndexes.AsSpan(0, _dictionaryIndexesOffset),
-                    _plainData, 0, _dictionaryIndexesOffset);
+                    _plainData, _plainDataCount, _dictionaryIndexesOffset);
+                _plainDataCount += _dictionaryIndexesOffset;
+
+                IntPool.Return(_dictionaryIndexes);
+                _dictionaryIndexes = null;
+                _dictionaryIndexesOffset = 0;
             }
+        }
+
+        public DataColumn Unpack(int maxDefinitionLevel, int maxRepetitionLevel) {
+
+            UnpackCheckpoint();
 
             if(_plainData == null)
                 throw new InvalidOperationException("no plain data");
