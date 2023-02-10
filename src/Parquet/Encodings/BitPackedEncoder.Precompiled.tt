@@ -64,28 +64,28 @@ namespace Parquet.Encodings {
     static partial class BitPackedEncoder {
 
         public static void Pack8Values(Span<int> src, Span<byte> dest, int bitWidth) {
-        <# for(int i = 0; i < sizeof(int) * 8; i++) { 
+        <# for(int i = 0; i <= sizeof(int) * 8; i++) { 
             #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
                 IntPack8Values_<#= i #>(src, dest);
         <#} #>
         }
 
         public static void Unpack8Values(Span<byte> src, Span<int> dest, int bitWidth) {
-        <# for(int i = 0; i < sizeof(int) * 8; i++) { 
+        <# for(int i = 0; i <= sizeof(int) * 8; i++) { 
             #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
                 IntUnpack8Values_<#= i #>(src, dest);
         <#} #>
         }
 
         public static void Pack8Values(Span<long> src, Span<byte> dest, int bitWidth) {
-        <# for(int i = 0; i < sizeof(long) * 8; i++) { 
+        <# for(int i = 0; i <= sizeof(long) * 8; i++) { 
             #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
                 LongPack8Values_<#= i #>(src, dest);
         <#} #>
         }
 
         public static void Unpack8Values(Span<byte> src, Span<long> dest, int bitWidth) {
-        <# for(int i = 0; i < sizeof(long) * 8; i++) { 
+        <# for(int i = 0; i <= sizeof(long) * 8; i++) { 
             #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
                 LongUnpack8Values_<#= i #>(src, dest);
         <#} #>
@@ -97,7 +97,7 @@ namespace Parquet.Encodings {
     string ntCap = nt.Substring(0, 1).ToUpper() + nt.Substring(1);
     string maskName = "ShiftMask" + ntCap;
     
-    for(int w = 0; w < maxWidth; w++) {
+    for(int w = 0; w <= maxWidth; w++) {
  #>
         private static void <#= ntCap #>Unpack8Values_<#= w #>(Span<byte> src, Span<<#= nt #>> dest) {
         <# if(w > 0) {
@@ -112,6 +112,7 @@ namespace Parquet.Encodings {
 
                     var shiftMask = getShiftMask(w, false, byteIndex, valueIndex);
                     var ss = "";
+                    if(nt == "int" && shiftMask.Item2 == 4294967295) shiftMask = Tuple.Create<int, long>(shiftMask.Item1, -1);
 
                     if(shiftMask.Item1 < 0) {
                         ss = " >> " + (- shiftMask.Item1);

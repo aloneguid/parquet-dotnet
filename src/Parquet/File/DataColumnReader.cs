@@ -302,14 +302,29 @@ namespace Parquet.File {
                     }
                     break;
 
-                case Thrift.Encoding.DELTA_BINARY_PACKED: // 5
-                    //cd.valuesOffset += DeltaBinaryPackedEncoder.Decode(src, cd.values, cd.valuesOffset, totalValuesInPage);
-                    throw new NotImplementedException();
-                    //break;
+                case Thrift.Encoding.DELTA_BINARY_PACKED: {// 5
+                        //cd.valuesOffset += DeltaBinaryPackedEncoder.Decode(src, cd.values, cd.valuesOffset, totalValuesInPage);
+                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                        int read = DeltaBinaryPackedEncoder.Decode(src, plainData, offset, totalValuesInPage, out _);
+                        pc.MarkUsefulPlainData(read);
+                    }
+                    break;
+
+                case Thrift.Encoding.DELTA_LENGTH_BYTE_ARRAY: {  // 6
+                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                        int read = DeltaLengthByteArrayEncoder.Decode(src, plainData, offset, totalValuesInPage);
+                        pc.MarkUsefulPlainData(read);
+                    }
+                    break;
+
+                case Thrift.Encoding.DELTA_BYTE_ARRAY: {         // 7
+                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                        int read = DeltaByteArrayEncoder.Decode(src, plainData, offset, totalValuesInPage);
+                        pc.MarkUsefulPlainData(read);
+                    }
+                    break;
 
                 case Thrift.Encoding.BIT_PACKED:                // 4 (deprecated)
-                case Thrift.Encoding.DELTA_LENGTH_BYTE_ARRAY:   // 6
-                case Thrift.Encoding.DELTA_BYTE_ARRAY:          // 7
                 case Thrift.Encoding.BYTE_STREAM_SPLIT:         // 9
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");

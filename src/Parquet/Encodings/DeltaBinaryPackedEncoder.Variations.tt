@@ -8,7 +8,7 @@ namespace Parquet.Encodings {
 
     static partial class DeltaBinaryPackedEncoder {
 <# foreach(string nt in types) { #>
-        private static int Decode(Span<byte> s, Span<<#= nt#>> dest) {
+        private static int Decode(Span<byte> s, Span<<#= nt#>> dest, out int consumedBytes) {
 
             int spos = 0;
 
@@ -64,6 +64,7 @@ namespace Parquet.Encodings {
                 }
             }
 
+            consumedBytes = spos;
             return read;
         }
 <# } #>

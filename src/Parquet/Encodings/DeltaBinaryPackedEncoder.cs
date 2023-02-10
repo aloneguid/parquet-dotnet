@@ -10,15 +10,15 @@ namespace Parquet.Encodings {
     /// </summary>
     static partial class DeltaBinaryPackedEncoder {
 
-        public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount) {
+        public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount, out int consumedBytes) {
             Type? elementType = dest.GetType().GetElementType();
             if(elementType != null) {
                 if(elementType == typeof(long) ) {
                     Span<long> span = ((long[])dest).AsSpan(destOffset);
-                    return Decode(s, span);
+                    return Decode(s, span, out consumedBytes);
                 } else if (elementType == typeof(int)) {
                     Span<int> span = ((int[])dest).AsSpan(destOffset);
-                    return Decode(s, span);
+                    return Decode(s, span, out consumedBytes);
                 }
                 else {
                     throw new NotSupportedException($"only {Thrift.Type.INT32} and {Thrift.Type.INT64} are supported in {Thrift.Encoding.DELTA_BINARY_PACKED} but element type passed is {elementType}");

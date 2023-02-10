@@ -5,7 +5,7 @@ namespace Parquet.Encodings {
 
     static partial class DeltaBinaryPackedEncoder {
 
-        private static int Decode(Span<byte> s, Span<int> dest) {
+        private static int Decode(Span<byte> s, Span<int> dest, out int consumedBytes) {
 
             int spos = 0;
 
@@ -61,10 +61,11 @@ namespace Parquet.Encodings {
                 }
             }
 
+            consumedBytes = spos;
             return read;
         }
 
-        private static int Decode(Span<byte> s, Span<long> dest) {
+        private static int Decode(Span<byte> s, Span<long> dest, out int consumedBytes) {
 
             int spos = 0;
 
@@ -120,6 +121,7 @@ namespace Parquet.Encodings {
                 }
             }
 
+            consumedBytes = spos;
             return read;
         }
 
