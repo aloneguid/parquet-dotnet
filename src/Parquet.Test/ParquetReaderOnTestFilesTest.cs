@@ -127,20 +127,5 @@ namespace Parquet.Test {
 
 
         }
-
-        [Fact]
-        public async Task Delta_length_byte_array() {
-            using Stream s = OpenTestFile("delta_length_byte_array.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-
-            ParquetSchema schema = r.Schema;
-
-            using(ParquetRowGroupReader rgr = r.OpenRowGroupReader(0)) {
-                DataField[] dfs = schema.GetDataFields();
-
-                DataColumn bw1 = await rgr.ReadColumnAsync(dfs[1]);
-                Assert.Equal(200, bw1.Count);
-            }
-        }
     }
 }

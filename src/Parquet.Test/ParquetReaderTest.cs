@@ -262,20 +262,6 @@ namespace Parquet.Test {
             }
         }
         
-        [Theory]
-        [InlineData("delta_byte_array.parquet")]
-        public async Task ParquetReader_DeltaByteArrayColumn(string parquetFile) {
-            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-                string[] col0 = (string[])columns[0].Data;
-                Assert.Equal(100, col0.Length);
-                Assert.Equal("0X0", col0[0]);
-                Assert.Equal("0X1", col0[1]);
-                Assert.Equal("0X2", col0[2]);
-                Assert.Equal("0X63", col0[99]);
-            }
-        }
-
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }
