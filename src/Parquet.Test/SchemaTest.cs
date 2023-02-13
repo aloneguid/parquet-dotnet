@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Parquet.Schema;
+using System.Linq;
 using TT = Parquet.Thrift.Type;
 using CT = Parquet.Thrift.ConvertedType;
 using System.Numerics;
