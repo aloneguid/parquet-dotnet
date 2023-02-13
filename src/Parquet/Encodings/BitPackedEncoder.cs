@@ -5,12 +5,11 @@ namespace Parquet.Encodings {
 
     static partial class BitPackedEncoder {
 
-    #region [ Public Methods ]
-
+        #region [ Public Methods ]
 
 
         /// <summary>
-        /// Bit-packing used in RLE. Unlike pack, checks for boundaries.
+        /// Encodes exactly 8 values from input span. Unlike pack, checks for boundaries.
         /// </summary>
         /// <returns>Number of bytes written</returns>
         public static int Encode8ValuesLE(Span<int> src, Span<byte> dest, int bitWidth) {
@@ -116,12 +115,9 @@ namespace Parquet.Encodings {
         }
 
         /// <summary>
-        /// Unlike unpack, checks for boundaries
+        /// Decodes exactly 8 values from input span. Unlike unpack, checks for boundaries.
         /// </summary>
-        /// <param name="src"></param>
-        /// <param name="bitWidth"></param>
-        /// <param name="dest"></param>
-        /// <returns>Number of values encoded</returns>
+        /// <returns>Number of values unpacked</returns>
         public static int Decode8ValuesLE(Span<byte> src, Span<int> dest, int bitWidth) {
 
             // we always need at least bitWidth bytes available to decode 8 values
@@ -227,7 +223,7 @@ namespace Parquet.Encodings {
     
 
         /// <summary>
-        /// Bit-packing used in RLE. Unlike pack, checks for boundaries.
+        /// Encodes exactly 8 values from input span. Unlike pack, checks for boundaries.
         /// </summary>
         /// <returns>Number of bytes written</returns>
         public static int Encode8ValuesBE(Span<int> src, Span<byte> dest, int bitWidth) {
@@ -333,12 +329,9 @@ namespace Parquet.Encodings {
         }
 
         /// <summary>
-        /// Unlike unpack, checks for boundaries
+        /// Decodes exactly 8 values from input span. Unlike unpack, checks for boundaries.
         /// </summary>
-        /// <param name="src"></param>
-        /// <param name="bitWidth"></param>
-        /// <param name="dest"></param>
-        /// <returns>Number of values encoded</returns>
+        /// <returns>Number of values unpacked</returns>
         public static int Decode8ValuesBE(Span<byte> src, Span<int> dest, int bitWidth) {
 
             // we always need at least bitWidth bytes available to decode 8 values
@@ -444,7 +437,7 @@ namespace Parquet.Encodings {
     
 
         /// <summary>
-        /// Bit-packing used in RLE. Unlike pack, checks for boundaries.
+        /// Encodes exactly 8 values from input span. Unlike pack, checks for boundaries.
         /// </summary>
         /// <returns>Number of bytes written</returns>
         public static int Encode8ValuesLE(Span<long> src, Span<byte> dest, int bitWidth) {
@@ -614,12 +607,9 @@ namespace Parquet.Encodings {
         }
 
         /// <summary>
-        /// Unlike unpack, checks for boundaries
+        /// Decodes exactly 8 values from input span. Unlike unpack, checks for boundaries.
         /// </summary>
-        /// <param name="src"></param>
-        /// <param name="bitWidth"></param>
-        /// <param name="dest"></param>
-        /// <returns>Number of values encoded</returns>
+        /// <returns>Number of values unpacked</returns>
         public static int Decode8ValuesLE(Span<byte> src, Span<long> dest, int bitWidth) {
 
             // we always need at least bitWidth bytes available to decode 8 values
@@ -789,7 +779,7 @@ namespace Parquet.Encodings {
     
 
         /// <summary>
-        /// Bit-packing used in RLE. Unlike pack, checks for boundaries.
+        /// Encodes exactly 8 values from input span. Unlike pack, checks for boundaries.
         /// </summary>
         /// <returns>Number of bytes written</returns>
         public static int Encode8ValuesBE(Span<long> src, Span<byte> dest, int bitWidth) {
@@ -959,12 +949,9 @@ namespace Parquet.Encodings {
         }
 
         /// <summary>
-        /// Unlike unpack, checks for boundaries
+        /// Decodes exactly 8 values from input span. Unlike unpack, checks for boundaries.
         /// </summary>
-        /// <param name="src"></param>
-        /// <param name="bitWidth"></param>
-        /// <param name="dest"></param>
-        /// <returns>Number of values encoded</returns>
+        /// <returns>Number of values unpacked</returns>
         public static int Decode8ValuesBE(Span<byte> src, Span<long> dest, int bitWidth) {
 
             // we always need at least bitWidth bytes available to decode 8 values
@@ -1132,9 +1119,9 @@ namespace Parquet.Encodings {
 
         }
     
-    #endregion
+        #endregion
 
-    #region [ Precompiled methods per bit width ]
+        #region [ Precompiled methods per bit width ]
 
 
         private static void Unpack8IntValuesLE0(Span<byte> src, Span<int> dest) {
@@ -20946,7 +20933,7 @@ namespace Parquet.Encodings {
         }
 
 
-    #endregion
+        #endregion
 
     } // class
 } // ns

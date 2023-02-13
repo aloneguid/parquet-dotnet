@@ -8,9 +8,11 @@ if(args.Length == 1) {
         case "write":
             BenchmarkRunner.Run<WriteBenchmark>();
             break;
+        case "progression":
+            VersionedBenchmark.Run();
+            break;
     }
 } else {
     //new VsParquetSharp().Main();
     await new DataTypes().NullableInts();
-    //Progression.Run();
 }

@@ -50,7 +50,7 @@ namespace Parquet.Test.Serialisation {
                 StructureWithIgnoredProperties[] structures2 = await ParquetConvert.DeserializeAsync<StructureWithIgnoredProperties>(ms);
 
                 StructureWithIgnoredProperties[] structuresArray = structures.ToArray();
-                Func<Type, Object> GetDefaultValue = (type) => type.IsValueType ? Activator.CreateInstance(type) : null;
+                Func<Type, object?> GetDefaultValue = (type) => type.IsValueType ? Activator.CreateInstance(type) : null;
 
                 for(int i = 0; i < 10; i++) {
                     Assert.Equal(structuresArray[i].Id, structures2[i].Id);
@@ -164,7 +164,7 @@ namespace Parquet.Test.Serialisation {
                     Assert.Equal(structuresArray[i].PersonName, structures2[i].PersonName);
                     Assert.Equal(structuresArray[i].NullableDecimal.HasValue, structures2[i].NullableDecimal.HasValue);
                     if(structuresArray[i].NullableDecimal.HasValue)
-                        Assert.Equal(structuresArray[i].NullableDecimal.Value, structures2[i].NullableDecimal.Value, 5);
+                        Assert.Equal(structuresArray[i].NullableDecimal!.Value, structures2[i].NullableDecimal!.Value, 5);
                 }
             }
         }
@@ -216,9 +216,9 @@ namespace Parquet.Test.Serialisation {
 
                 SimpleWithListField[] structuresArray = structures.ToArray();
                 for(int i = 0; i < 10; i++) {
-                    Assert.True(Enumerable.SequenceEqual(structuresArray[i].col1, structures2[i].col1));
-                    Assert.True(Enumerable.SequenceEqual(structuresArray[i].col2, structures2[i].col2));
-                    Assert.True(Enumerable.SequenceEqual(structuresArray[i].col3, structures2[i].col3));
+                    Assert.True(Enumerable.SequenceEqual(structuresArray[i].col1!, structures2[i].col1!));
+                    Assert.True(Enumerable.SequenceEqual(structuresArray[i].col2!, structures2[i].col2!));
+                    Assert.True(Enumerable.SequenceEqual(structuresArray[i].col3!, structures2[i].col3!));
                 }
             }
         }
@@ -248,8 +248,8 @@ namespace Parquet.Test.Serialisation {
 
                     Assert.Equal(structuresArray[2 * r].Id, rowGroupRecords[0].Id);
                     Assert.Equal(structuresArray[2 * r].Name, rowGroupRecords[0].Name);
-                    Assert.Equal(structuresArray[2 * r + 1].Id, rowGroupRecords[1].Id);
-                    Assert.Equal(structuresArray[2 * r + 1].Name, rowGroupRecords[1].Name);
+                    Assert.Equal(structuresArray[(2 * r) + 1].Id, rowGroupRecords[1].Id);
+                    Assert.Equal(structuresArray[(2 * r) + 1].Name, rowGroupRecords[1].Name);
 
                 }
                 await Assert.ThrowsAsync<ArgumentOutOfRangeException>("index", () => ParquetConvert.DeserializeAsync<SimpleStructure>(ms, 5));
@@ -285,10 +285,10 @@ namespace Parquet.Test.Serialisation {
                     Assert.Equal(structuresArray[2 * r].NullableId, rowGroupRecords[0].NullableId);
                     Assert.Equal(structuresArray[2 * r].Name, rowGroupRecords[0].Name);
                     Assert.Equal(structuresArray[2 * r].Date, rowGroupRecords[0].Date);
-                    Assert.Equal(structuresArray[2 * r + 1].Id, rowGroupRecords[1].Id);
-                    Assert.Equal(structuresArray[2 * r + 1].NullableId, rowGroupRecords[1].NullableId);
-                    Assert.Equal(structuresArray[2 * r + 1].Name, rowGroupRecords[1].Name);
-                    Assert.Equal(structuresArray[2 * r + 1].Date, rowGroupRecords[1].Date);
+                    Assert.Equal(structuresArray[(2 * r) + 1].Id, rowGroupRecords[1].Id);
+                    Assert.Equal(structuresArray[(2 * r) + 1].NullableId, rowGroupRecords[1].NullableId);
+                    Assert.Equal(structuresArray[(2 * r) + 1].Name, rowGroupRecords[1].Name);
+                    Assert.Equal(structuresArray[(2 * r) + 1].Date, rowGroupRecords[1].Date);
 
                 }
                 await Assert.ThrowsAsync<ArgumentOutOfRangeException>("index", () => ParquetConvert.DeserializeAsync<SimpleStructure>(ms, 5));
@@ -542,13 +542,13 @@ namespace Parquet.Test.Serialisation {
         public class SimplestStructure {
             public int Id { get; set; }
 
-            public string Name { get; set; }
+            public string? Name { get; set; }
         }
 
         public class SimpleRepeated {
             public int Id { get; set; }
 
-            public int[] Areas { get; set; }
+            public int[]? Areas { get; set; }
         }
 
         public class SimpleStructure {
@@ -556,21 +556,21 @@ namespace Parquet.Test.Serialisation {
 
             public int? NullableId { get; set; }
 
-            public string Name { get; set; }
+            public string? Name { get; set; }
 
             public DateTime Date { get; set; }
         }
 
         public class SimpleStructureWithFewProperties {
             public int Id { get; set; }
-            public string Name { get; set; }
+            public string? Name { get; set; }
         }
         public class StructureWithIgnoredProperties {
             public int Id { get; set; }
-            public string Name { get; set; }
+            public string? Name { get; set; }
 
             [ParquetIgnore]
-            public string SSN { get; set; }
+            public string? SSN { get; set; }
 
             [ParquetIgnore]
             public DateTime NonNullableDateTime { get; set; }
@@ -593,7 +593,7 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
 
             [ParquetColumn("Name")]
-            public string PersonName { get; set; }
+            public string? PersonName { get; set; }
 
             //Validate Backwards compatibility of default Decimal Precision and Scale values broken in v3.9.
             [ParquetColumn("DecimalColumnRenamed")]
@@ -602,11 +602,13 @@ namespace Parquet.Test.Serialisation {
 
         public class SimpleWithListField {
             [ParquetColumn(UseListField = true, ListContainerName = "bag", ListElementName = "array_element")]
-            public int[] col1 { get; set; }
+            public int[]? col1 { get; set; }
+
             [ParquetColumn(UseListField = true)]
-            public int[] col2 { get; set; }
+            public int[]? col2 { get; set; }
+
             [ParquetColumn]
-            public int[] col3 { get; set; }
+            public int[]? col3 { get; set; }
         }
 
         public class SimpleWithDateTimeAndDecimal {
@@ -616,12 +618,12 @@ namespace Parquet.Test.Serialisation {
         }
 
         public class StructureWithTestType<T> {
-            T testValue;
+            T? testValue;
 
-            public string Id { get; set; }
+            public string? Id { get; set; }
 
             // public T TestValue { get; set; }
-            public T TestValue { get { return testValue; } set { testValue = value; } }
+            public T? TestValue { get { return testValue; } set { testValue = value; } }
         }
     }
 }

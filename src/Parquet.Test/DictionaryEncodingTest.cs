@@ -11,7 +11,7 @@ namespace Parquet.Test {
 
         [Fact]
         public async Task DictionaryEncodingTest2() {
-            string[] data = new string?[]
+            string?[] data = new string?[]
             {
             "xxx",
             "xxx",
@@ -62,7 +62,7 @@ namespace Parquet.Test {
             Assert.Equal(400, c0.Count);
             Assert.Equal(Enumerable.Repeat("one", 100).ToArray(), c0.AsSpan<string>(0, 100).ToArray());
             Assert.Equal(Enumerable.Repeat("two", 100).ToArray(), c0.AsSpan<string>(100, 100).ToArray());
-            Assert.Equal(Enumerable.Repeat((string)null, 100).ToArray(), c0.AsSpan<string>(200, 100).ToArray());
+            Assert.Equal(Enumerable.Repeat((string?)null, 100).ToArray(), c0.AsSpan<string>(200, 100).ToArray());
             Assert.Equal(Enumerable.Repeat("three", 100).ToArray(), c0.AsSpan<string>(300, 100).ToArray());
         }
     }

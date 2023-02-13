@@ -12,7 +12,7 @@ namespace Parquet.Test {
     class Record {
         public DateTime Timestamp { get; set; }
 
-        public string EventName { get; set; }
+        public string? EventName { get; set; }
 
         public double MeterValue { get; set; }
     }
@@ -153,6 +153,8 @@ namespace Parquet.Test {
 
             using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
                 using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
+                    parquetWriter.CompressionMethod = CompressionMethod.Gzip;
+                    parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
                     // create a new row group in the file
                     using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
                         await groupWriter.WriteColumnAsync(idColumn);

@@ -1,4 +1,5 @@
 ﻿using NetBox.FileFormats;
+using NetBox.FileFormats.Csv;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
@@ -127,17 +128,17 @@ namespace Parquet.Test.Reader {
         private DataColumn[] ReadCsv(string name) {
             var columns = new List<List<string>>();
 
-            string[] columnNames = null;
+            string[]? columnNames = null;
 
             using(Stream fs = OpenTestFile(name)) {
                 var reader = new CsvReader(fs, Encoding.UTF8);
 
                 //header
                 columnNames = reader.ReadNextRow();
-                columns.AddRange(columnNames.Select(n => new List<string>()));
+                columns.AddRange(columnNames!.Select(n => new List<string>()));
 
                 //values
-                string[] values;
+                string[]? values;
                 while((values = reader.ReadNextRow()) != null) {
                     for(int i = 0; i < values.Length; i++) {
                         List<string> column = columns[i];

@@ -90,7 +90,7 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<object> WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None) {
+        protected async Task<object> WriteReadSingle(DataField field, object? value, CompressionMethod compressionMethod = CompressionMethod.None) {
             //for sanity, use disconnected streams
             byte[] data;
 

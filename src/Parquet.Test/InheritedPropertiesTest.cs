@@ -58,11 +58,11 @@ namespace Parquet.Test {
         }
 
         private class BaseClass {
-            public string BaseProperty { get; set; }
+            public string? BaseProperty { get; set; }
         }
 
         private class InheritedClass : BaseClass {
-            public string InheritedProperty { get; set; }
+            public string? InheritedProperty { get; set; }
         }
     }
 }
