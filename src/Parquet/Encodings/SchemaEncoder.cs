@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Thrift;
 using SType = System.Type;
 using Type = Parquet.Thrift.Type;
 
-namespace Parquet.Data {
+namespace Parquet.Encodings {
     static class SchemaEncoder {
 
         class LookupItem {
@@ -60,9 +61,9 @@ namespace Parquet.Data {
                 AddSystemTypeInfo(thriftType, t, null, priority);
 
                 _supportedTypes.Add(t);
-                for(int i = 0; i < options.Length; i+=2) { 
+                for(int i = 0; i < options.Length; i += 2) {
                     var ct = (Thrift.ConvertedType)options[i];
-                    var clr = (System.Type)options[i+1];
+                    var clr = (System.Type)options[i + 1];
                     _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
 
                     // more specific version overrides less specific
@@ -73,9 +74,10 @@ namespace Parquet.Data {
             }
 
             public SType? FindSystemType(Thrift.SchemaElement se) {
-                if(!se.__isset.type) return null;
+                if(!se.__isset.type)
+                    return null;
 
-                if(se.__isset.converted_type && 
+                if(se.__isset.converted_type &&
                     _typeAndConvertedTypeToType.TryGetValue(
                         new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type),
                         out SType? match)) {
@@ -149,7 +151,7 @@ namespace Parquet.Data {
                 Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime),
                 Thrift.ConvertedType.DECIMAL, typeof(decimal)
             },
-            { Thrift.Type.INT96, typeof(DateTime) },
+            { Thrift.Type.INT96, typeof(DateTime), 1 },
             { Thrift.Type.INT96, typeof(BigInteger) },
             { Thrift.Type.FLOAT, typeof(float) },
             { Thrift.Type.DOUBLE, typeof(double) },
@@ -214,7 +216,7 @@ namespace Parquet.Data {
             bool isMap = root.__isset.converted_type &&
                 (root.Converted_type == Thrift.ConvertedType.MAP || root.Converted_type == Thrift.ConvertedType.MAP_KEY_VALUE);
             if(!isMap) {
-                ownedChildren= 0;
+                ownedChildren = 0;
                 field = null;
                 return false;
             }
@@ -334,7 +336,7 @@ namespace Parquet.Data {
         /// <param name="tse"></param>
         private static void AdjustEncoding(DataField df, Thrift.SchemaElement tse) {
             if(df.ClrType == typeof(DateTime)) {
-                if(df is DateTimeDataField dfDateTime)
+                if(df is DateTimeDataField dfDateTime) {
                     switch(dfDateTime.DateTimeFormat) {
                         case DateTimeFormat.DateAndTime:
                             tse.Type = Thrift.Type.INT64;
@@ -347,8 +349,7 @@ namespace Parquet.Data {
 
                             //other cases are just default
                     }
-                else
-                    tse.Converted_type = Thrift.ConvertedType.DATE;
+                }
             } else if(df.ClrType == typeof(decimal)) {
                 if(df is DecimalDataField dfDecimal) {
                     if(dfDecimal.ForceByteArrayEncoding)
@@ -363,8 +364,7 @@ namespace Parquet.Data {
                     tse.Precision = dfDecimal.Precision;
                     tse.Scale = dfDecimal.Scale;
                     tse.Type_length = BigDecimal.GetBufferSize(dfDecimal.Precision);
-                }
-                else {
+                } else {
                     //set defaults
                     tse.Precision = DecimalFormatDefaults.DefaultPrecision;
                     tse.Scale = DecimalFormatDefaults.DefaultScale;
@@ -489,11 +489,14 @@ namespace Parquet.Data {
             }
         }
 
+        public static bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) =>
+            _lt.FindTypeTuple(type, out thriftType, out convertedType);
+
         /// <summary>
         /// Finds corresponding .NET type
         /// </summary>
         [Obsolete]
-        public static SType? FindSystemType(DataType dataType) => 
+        public static SType? FindSystemType(DataType dataType) =>
             (from pair in _systemTypeToObsoleteType where pair.Value == dataType select pair.Key).FirstOrDefault();
 
         [Obsolete]

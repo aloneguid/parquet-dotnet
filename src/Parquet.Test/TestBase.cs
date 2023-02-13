@@ -26,11 +26,8 @@ namespace Parquet.Test {
         }
 
         protected async Task<Table> ReadTestFileAsTableAsync(string name) {
-            using(Stream s = OpenTestFile(name)) {
-                using(ParquetReader reader = await ParquetReader.CreateAsync(s)) {
-                    return await reader.ReadAsTableAsync();
-                }
-            }
+            using Stream s = OpenTestFile(name);
+            return await Table.ReadAsync(s);
         }
 
         protected async Task<Table> WriteReadAsync(Table table, bool saveLocal = false) {
@@ -93,7 +90,7 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<object> WriteReadSingle(DataField field, object value, CompressionMethod compressionMethod = CompressionMethod.None) {
+        protected async Task<object> WriteReadSingle(DataField field, object? value, CompressionMethod compressionMethod = CompressionMethod.None) {
             //for sanity, use disconnected streams
             byte[] data;
 

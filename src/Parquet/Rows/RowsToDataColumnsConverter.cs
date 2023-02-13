@@ -41,15 +41,15 @@ namespace Parquet.Rows {
                         break;
 
                     case SchemaType.Map:
-                        ProcessMap((MapField)f, (IReadOnlyCollection<Row>)row[cellIndex], level + 1, indexes);
+                        ProcessMap((MapField)f, (IReadOnlyCollection<Row>)row[cellIndex]!, level + 1, indexes);
                         break;
 
                     case SchemaType.Struct:
-                        ProcessRow(((StructField)f).Fields, (Row)row[cellIndex], level + 1, indexes);
+                        ProcessRow(((StructField)f).Fields, (Row)row[cellIndex]!, level + 1, indexes);
                         break;
 
                     case SchemaType.List:
-                        ProcessList((ListField)f, row[cellIndex], level + 1, indexes);
+                        ProcessList((ListField)f, row[cellIndex]!, level + 1, indexes);
                         break;
 
                     default:
@@ -86,7 +86,7 @@ namespace Parquet.Rows {
             }
         }
 
-        private void ProcessDataValue(Field f, object value, LevelIndex[] indexes) {
+        private void ProcessDataValue(Field f, object? value, LevelIndex[] indexes) {
             GetAppender(f).Add(value, indexes);
         }
 

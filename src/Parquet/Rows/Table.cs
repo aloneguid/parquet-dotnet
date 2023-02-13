@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
@@ -99,7 +101,7 @@ namespace Parquet.Rows {
         /// Adds a new row from passed cells
         /// </summary>
         /// <param name="rowCells"></param>
-        public void Add(params object[] rowCells) {
+        public void Add(params object?[] rowCells) {
             var row = new Row(rowCells);
 
             Add(row);
@@ -296,5 +298,31 @@ namespace Parquet.Rows {
 
             return sb.ToString();
         }
+
+        #region [ Utilities ]
+
+        /// <summary>
+        /// Read table from stream. Reads all columns and all row groups
+        /// </summary>
+        public static async Task<Table> ReadAsync(Stream stream,
+            ParquetOptions? parquetOptions = null,
+            TableReaderProgressCallback? progressCallback = null) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(stream, parquetOptions)) {
+                return await reader.ReadAsTableAsync(progressCallback);
+            }
+        }
+
+        /// <summary>
+        /// Read table from local file. Reads all columns and all row groups.
+        /// </summary>
+        public static async Task<Table> ReadAsync(string fileName,
+            ParquetOptions? parquetOptions = null,
+            TableReaderProgressCallback? progressCallback = null) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(fileName, parquetOptions)) {
+                return await reader.ReadAsTableAsync(progressCallback);
+            }
+        }
+
+        #endregion
     }
 }

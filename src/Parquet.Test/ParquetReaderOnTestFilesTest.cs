@@ -33,8 +33,8 @@ namespace Parquet.Test {
                 using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
-                    offset = (DateTime)(columns[1].Data.GetValue(0));
-                    offset2 = (DateTime)(columns[1].Data.GetValue(1));
+                    offset = (DateTime)(columns[1].Data.GetValue(0)!);
+                    offset2 = (DateTime)(columns[1].Data.GetValue(1)!);
                 }
             }
 
@@ -46,31 +46,31 @@ namespace Parquet.Test {
         [InlineData("datetime_other_system.parquet")]
         [InlineData("datetime_other_system.v2.parquet")]
         public async Task DateTime_FromOtherSystem(string parquetFile) {
-            DateTime offset;
+            DateTime? offset;
             using(Stream s = OpenTestFile(parquetFile)) {
                 using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
-                    DataColumn as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
+                    DataColumn? as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
                     Assert.NotNull(as_at_date_col);
 
-                    offset = (DateTime)(as_at_date_col.Data.GetValue(0));
-                    Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset.Date);
+                    offset = (DateTime?)(as_at_date_col.Data.GetValue(0));
+                    Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset!.Value.Date);
                 }
             }
         }
 
-        public async Task OptionalValues_WithoutStatistics(string parquetFile) {
+        private async Task OptionalValues_WithoutStatistics(string parquetFile) {
             using(Stream s = OpenTestFile(parquetFile)) {
                 using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
-                    DataColumn id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
-                    DataColumn value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
+                    DataColumn? id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
+                    DataColumn? value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
                     Assert.NotNull(id_col);
                     Assert.NotNull(value_col);
 
                     int index = Enumerable.Range(0, id_col.Data.Length)
-                        .First(i => (long)id_col.Data.GetValue(i) == 20908539289);
+                        .First(i => (long)id_col.Data.GetValue(i)! == 20908539289);
 
                     Assert.Equal(0, value_col.Data.GetValue(index));
                 }
@@ -87,7 +87,7 @@ namespace Parquet.Test {
                     DataColumn id_col = columns[0];
                     DataColumn cls_value_8 = columns[9];
                     int index = Enumerable.Range(0, id_col.Data.Length)
-                        .First(i => (int)id_col.Data.GetValue(i) == 256779);
+                        .First(i => (int)id_col.Data.GetValue(i)! == 256779);
                     Assert.Equal("MOSTRU\u00C1RIO-000", cls_value_8.Data.GetValue(index));
 
                 }
@@ -109,6 +109,23 @@ namespace Parquet.Test {
             Assert.Equal(
                 Enumerable.Range(1, 24).Select(i => (decimal?)i),
                 (decimal?[])dc.Data);
+        }
+
+        [Fact]
+        public async Task Read_delta_binary_packed() {
+            using Stream s = OpenTestFile("delta_binary_packed.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+            ParquetSchema schema = r.Schema;
+
+            using(ParquetRowGroupReader rgr = r.OpenRowGroupReader(0)) {
+                DataField[] dfs = schema.GetDataFields();
+
+                DataColumn bw1 = await rgr.ReadColumnAsync(dfs[1]);
+                Assert.Equal(200, bw1.Count);
+            }
+
+
         }
     }
 }

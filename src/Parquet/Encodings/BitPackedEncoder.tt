@@ -1,0 +1,244 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<#
+    var types = new[] { "int", "long" };
+    var maxWidths = new[] { sizeof(int) * 8, sizeof(long) * 8 };
+
+    long genMask(int bitWidth) {  
+        long mask = 0;
+        for (int i = 0; i < bitWidth; i++) {
+          mask <<= 1;
+          mask |= 1;
+        }
+        return mask;
+    }
+
+    int paddedByteCountFromBits(int bitLength) {
+        return (bitLength + 7) / 8;
+    }
+
+    Tuple<int, long> getShiftMask(int bitWidth, bool msbFirst,
+        int byteIndex, int valueIndex) {
+
+        // relative positions of the start and end of the value to the start and end of the byte
+        int valueStartBitIndex = (valueIndex * bitWidth) - (8 * (byteIndex));
+        int valueEndBitIndex = ((valueIndex + 1) * bitWidth) - (8 * (byteIndex + 1));
+
+        // boundaries of the current value that we want
+        int valueStartBitWanted;
+        int valueEndBitWanted;
+        // boundaries of the current byte that will receive them
+        int byteStartBitWanted;
+        int byteEndBitWanted;
+
+        int shift;
+        int widthWanted;
+
+        if (msbFirst) {
+            valueStartBitWanted = valueStartBitIndex < 0 ? bitWidth - 1 + valueStartBitIndex : bitWidth - 1;
+            valueEndBitWanted = valueEndBitIndex > 0 ? valueEndBitIndex : 0;
+            byteStartBitWanted = valueStartBitIndex < 0 ? 8 : 7 - valueStartBitIndex;
+            byteEndBitWanted = valueEndBitIndex > 0 ? 0 : -valueEndBitIndex;
+            shift = valueEndBitWanted - byteEndBitWanted;
+            widthWanted = Math.Min(7, byteStartBitWanted) - Math.Min(7, byteEndBitWanted) + 1;
+        } else {
+            valueStartBitWanted = bitWidth - 1 - (valueEndBitIndex > 0 ? valueEndBitIndex : 0);
+            valueEndBitWanted = bitWidth - 1 - (valueStartBitIndex < 0 ? bitWidth - 1 + valueStartBitIndex : bitWidth - 1);
+            byteStartBitWanted = 7 - (valueEndBitIndex > 0 ? 0 : -valueEndBitIndex);
+            byteEndBitWanted = 7 - (valueStartBitIndex < 0 ? 8 : 7 - valueStartBitIndex);
+            shift = valueStartBitWanted - byteStartBitWanted;
+            widthWanted = Math.Max(0, byteStartBitWanted) - Math.Max(0, byteEndBitWanted) + 1;
+        }
+
+        int maskWidth = widthWanted + Math.Max(0, shift);
+
+        return Tuple.Create(shift, genMask(maskWidth));
+    }
+
+#>
+namespace Parquet.Encodings {
+    using System;
+
+    static partial class BitPackedEncoder {
+
+        #region [ Public Methods ]
+<# for(int i = 0; i < types.Length; i++) { 
+    string nt = types[i];
+    int maxWidth = maxWidths[i];
+    string ntCap = nt.Substring(0, 1).ToUpper() + nt.Substring(1);
+    foreach(string ed in new[] { "LE", "BE" }) {
+        string encodingName = ed == "LE" ? "little-endian" : "big-endian";
+    #>
+
+        /// <summary>
+        /// Encodes exactly 8 values from input span. Unlike pack, checks for boundaries.
+        /// </summary>
+        /// <returns>Number of bytes written</returns>
+        public static int Encode8Values<#= ed #>(Span<<#= nt #>> src, Span<byte> dest, int bitWidth) {
+
+            bool needsTempBuffer = dest.Length < bitWidth;
+            int written = bitWidth;
+
+            Span<<#= nt #>> src1;
+            Span<byte> dest1;
+            if(needsTempBuffer) {
+                src1 = new <#= nt #>[8];
+                src.CopyTo(src1);
+                dest1 = new byte[bitWidth];
+                written = dest.Length;
+            } else {
+                src1 = src;
+                dest1 = dest;
+            }
+
+            Pack8Values<#= ed #>(src1, dest1, bitWidth);
+
+            if(needsTempBuffer) {
+                for(int i = 0; i < bitWidth && i < dest.Length; i++) {
+                    dest[i] = dest1[i];
+                }
+            }
+
+            return written;
+        }
+    
+
+        /// <summary>
+        /// Packs exactly 8 <#= nt #> values using <#= encodingName #> encoding from src into dest without checking for boundaries.
+        /// </summary>
+        public static void Pack8Values<#= ed #>(Span<<#= nt #>> src, Span<byte> dest, int bitWidth) {
+        <# for(int w = 0; w <= maxWidth; w++) { 
+            #>    <#if(w == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= w #>)
+                Pack8<#= ntCap #>Values<#= ed #><#= w #>(src, dest);
+        <#} #>
+        }
+
+        /// <summary>
+        /// Decodes exactly 8 values from input span. Unlike unpack, checks for boundaries.
+        /// </summary>
+        /// <returns>Number of values unpacked</returns>
+        public static int Decode8Values<#= ed #>(Span<byte> src, Span<<#= nt #>> dest, int bitWidth) {
+
+            // we always need at least bitWidth bytes available to decode 8 values
+            bool needsTempFuffer = src.Length < bitWidth;
+            int decoded = 8;
+
+            Span<byte> src1;
+            Span<<#= nt #>> dest1;
+            if (needsTempFuffer) {
+                src1 = new byte[bitWidth];
+                src.CopyTo(src1);
+                dest1 = new <#= nt #>[8];
+                decoded = src.Length * 8 / bitWidth;
+            } else {
+                src1 = src;
+                dest1 = dest;
+            }
+
+            Unpack8Values<#= ed #>(src1, dest1, bitWidth);
+
+            if(needsTempFuffer) {
+                for(int i = 0; i < decoded; i++) {
+                    dest[i] = dest1[i];
+                }
+            }
+
+            return decoded;
+        }
+
+        /// <summary>
+        /// Unpacks exactly 8 <#= nt #> values using <#= encodingName #> encoding from src into dest without checking for boundaries.
+        /// </summary>
+        public static void Unpack8Values<#= ed #>(Span<byte> src, Span<<#= nt #>> dest, int bitWidth) {
+        <# for(int w = 0; w <= maxWidth; w++) { 
+            #>    <#if(w == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= w #>)
+                Unpack8<#= ntCap #>Values<#= ed #><#= w #>(src, dest);
+        <#} #>
+
+        }
+    <#
+    }
+}
+#>
+        #endregion
+
+        #region [ Precompiled methods per bit width ]
+
+<# for(int i = 0; i < types.Length; i++) { 
+    string nt = types[i];
+    int maxWidth = maxWidths[i];
+    string ntCap = nt.Substring(0, 1).ToUpper() + nt.Substring(1);
+    string maskName = "ShiftMask" + ntCap;
+    
+    for(int w = 0; w <= maxWidth; w++) {
+        foreach(bool msbFirst in new[] { false, true }) {
+            string msbSuffix = msbFirst ? "BE" : "LE";
+ #>
+        private static void Unpack8<#= ntCap #>Values<#= msbSuffix #><#= w #>(Span<byte> src, Span<<#= nt #>> dest) {
+        <# if(w > 0) {
+            for (int valueIndex = 0; valueIndex < 8; ++valueIndex) { 
+                int startIndex = valueIndex * w / 8;
+                int endIndex = paddedByteCountFromBits((valueIndex + 1) * w);
+            #>
+            dest[<#= valueIndex #>] = <#
+
+                for (int byteIndex = startIndex; byteIndex < endIndex; byteIndex++) {
+                    if(byteIndex == startIndex) {#><#} else {#> | <#}
+
+                    var shiftMask = getShiftMask(w, msbFirst, byteIndex, valueIndex);
+                    var ss = "";
+                    if(nt == "int" && shiftMask.Item2 == 4294967295) shiftMask = Tuple.Create<int, long>(shiftMask.Item1, -1);
+
+                    if(shiftMask.Item1 < 0) {
+                        ss = " >> " + (- shiftMask.Item1);
+                    } else if(shiftMask.Item1 > 0) {
+                        ss = " << " + shiftMask.Item1;
+                    }
+
+                    #>((((<#= nt #>)src[<#= byteIndex #>])<#= ss #>) & <#= shiftMask.Item2 #>)<#
+                }
+
+            #>;<#
+            }
+        } else { #> <#} #>
+        }
+
+        private static void Pack8<#= ntCap #>Values<#= msbSuffix #><#= w #>(Span<<#= nt #>> src, Span<byte> dest) {
+        <#
+            long mask = genMask(w);
+            for (int byteIndex = 0; byteIndex < w; ++byteIndex) { #>
+            dest[<#= byteIndex #>] = 
+                (byte)((<#
+                int startIndex = (byteIndex * 8) / w;
+                int endIndex = ((byteIndex + 1) * 8 + w - 1) / w;
+                for (int valueIndex = startIndex; valueIndex < endIndex; valueIndex++) {
+                    var shiftMask = getShiftMask(w, msbFirst, byteIndex, valueIndex);
+                    var ss = "";
+                    if(shiftMask.Item1 > 0) {
+                        ss = " >> " + shiftMask.Item1;
+                    } else if(shiftMask.Item1 < 0) {
+                        ss = " << " + (-shiftMask.Item1);
+                    }
+
+                    if(valueIndex == startIndex) {#><#} else {#>
+                | <#}
+
+                    #>((src[<#= valueIndex #>] & <#= mask #>)<#= ss #>)<#
+                } // for valueIndex
+                #>) & 255);
+                <#
+            } // for byteIndex
+         #>
+        }
+<#
+    } // for msbFirst
+    } // for w
+} // for types
+#>
+
+        #endregion
+
+    } // class
+} // ns

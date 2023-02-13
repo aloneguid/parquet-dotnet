@@ -51,7 +51,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
 
             string myJson = t.ToString("j");
-            string mrJson = ExecAndGetOutput(_javaExecName, $"-jar {_toolsJarPath} cat -j {testFileName}");
+            string mrJson = ExecAndGetOutput(_javaExecName, $"-jar \"{_toolsJarPath}\" cat -j \"{testFileName}\"");
 
             if(jsonPreprocessor != null) {
                 myJson = jsonPreprocessor(myJson);
@@ -60,7 +60,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(myJson, mrJson);
         }
 
-        private static string ExecAndGetOutput(string fileName, string arguments) {
+        private static string? ExecAndGetOutput(string fileName, string arguments) {
             var psi = new ProcessStartInfo {
                 FileName = fileName,
                 Arguments = arguments,
@@ -79,13 +79,17 @@ namespace Parquet.Test.Integration {
             var se = new StringBuilder();
 
             while(!proc.StandardOutput.EndOfStream) {
-                string line = proc.StandardOutput.ReadLine();
-                so.AppendLine(line);
+                string? line = proc.StandardOutput.ReadLine();
+                if(line != null) {
+                    so.AppendLine(line);
+                }
             }
 
             while(!proc.StandardError.EndOfStream) {
-                string line = proc.StandardError.ReadLine();
-                se.AppendLine(line);
+                string? line = proc.StandardError.ReadLine();
+                if(line != null) {
+                    se.AppendLine(line);
+                }
             }
 
             proc.WaitForExit();
@@ -151,7 +155,7 @@ namespace Parquet.Test.Integration {
             }
 
             for(int i = 0; i < 100; i++) {
-                table.Add((string)null);
+                table.Add((string?)null);
             }
 
             for(int i = 0; i < 100; i++) {

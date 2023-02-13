@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
@@ -32,8 +33,7 @@ namespace Parquet {
             ParquetSchema? schema = null,
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
-            bool append = false)
-            where T : new() {
+            bool append = false) {
 
             if(objectInstances == null)
                 throw new ArgumentNullException(nameof(objectInstances));
@@ -88,8 +88,7 @@ namespace Parquet {
             ParquetSchema? schema = null,
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
-            bool append = false)
-            where T : new() {
+            bool append = false) {
             using(Stream destination = System.IO.File.Create(filePath)) {
                 return await SerializeAsync(objectInstances, destination, schema, compressionMethod, rowGroupSize,
                     append);
@@ -99,16 +98,14 @@ namespace Parquet {
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="input">Stream</param>
-        /// <param name="rowGroupIndex">int</param>
-        /// <param name="fileSchema">Schema</param>
-        /// <returns></returns>
-        public static async Task<T[]> DeserializeAsync<T>(Stream input, int rowGroupIndex = -1,
-            ParquetSchema? fileSchema = null
-        ) where T : new() {
+        public static async Task<T[]> DeserializeAsync<T>(Stream input,
+            int rowGroupIndex = -1,
+            ParquetSchema? fileSchema = null,
+            ParquetOptions? options = null,
+            CancellationToken cancellationToken = default)
+            where T : new() {
             var result = new List<T>();
-            using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(input, options, true, cancellationToken)) {
                 if(fileSchema == null) {
                     fileSchema = new SchemaReflector(typeof(T)).Reflect();
                 }
@@ -131,6 +128,19 @@ namespace Parquet {
             }
 
             return result.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static async Task<T[]> DeserializeAsync<T>(string fileName,
+            int rowGroupIndex = -1,
+            ParquetSchema? fileSchema = null,
+            ParquetOptions? options = null,
+            CancellationToken cancellationToken = default)
+            where T : new() {
+            using Stream fs = System.IO.File.OpenRead(fileName);
+            return await DeserializeAsync<T>(fs, rowGroupIndex, fileSchema, options, cancellationToken);
         }
 
         private static async Task<T[]> ReadAndDeserializeByRowGroupAsync<T>(int rowGroupIndex, ParquetReader reader,

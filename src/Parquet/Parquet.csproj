@@ -2,16 +2,10 @@
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-        <Description>
-            Pure managed .NET library to read and write Apache Parquet files, targeting .NET Standand 2.0 and up.
-
-            Linux, Windows and Mac are first class citizens, but also works everywhere .NET is running (Android, iOS, IOT). Has zero dependencies on third-party libraries or any native code. Provides both low-level access to Apache Parquet files, and high-level utilities for more traditional and humanly understandable row-based access. Includes automatic serializer/deserializer from C# classes into parquet files that works by generating MSIL (bytecode) on the fly and is therefore super fast.
-        </Description>
         <Company></Company>
         <PackageId>Parquet.Net</PackageId>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <PackageReleaseNotes>see full release notes at https://github.com/aloneguid/parquet-dotnet/releases</PackageReleaseNotes>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <WarningsAsErrors />
         <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>
@@ -35,6 +29,8 @@
         <RepositoryUrl>https://github.com/aloneguid/parquet-dotnet</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageIcon>icon.png</PackageIcon>
+        <Description>Fully managed Apache Parquet implementation.</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
 
     </PropertyGroup>
 
@@ -50,8 +46,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Remove="Encodings\BitPackedEncoder - Copy.Variations.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="IronCompress" Version="1.3.0" />
-        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.1" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -60,13 +60,35 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="..\..\docs\README.md">
+          <Pack>True</Pack>
+          <PackagePath>\</PackagePath>
+        </None>
         <None Include="..\icon.png">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+        <None Include="Encodings\BitPackedEncoder.cs">
+          <DependentUpon>BitPackedEncoder.tt</DependentUpon>
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+        </None>
+        <None Include="Encodings\DeltaBinaryPackedEncoder.Variations.cs">
+          <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Encodings\BitPackedEncoder.tt">
+        <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
+      <None Update="Encodings\DeltaBinaryPackedEncoder.Variations.tt">
+        <LastGenOutput>DeltaBinaryPackedEncoder.Variations.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
       <None Update="Extensions\UntypedArrayExtensions.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>UntypedArrayExtensions.cs</LastGenOutput>
@@ -78,6 +100,21 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Update="Encodings\BitPackedEncoder.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>BitPackedEncoder.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Encodings\BitPackedEncoder.Precompiled.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>BitPackedEncoder.Precompiled.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Encodings\DeltaBinaryPackedEncoder.Variations.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
+      </Compile>
       <Compile Update="Extensions\UntypedArrayExtensions.cs">
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>

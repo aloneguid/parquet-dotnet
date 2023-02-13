@@ -53,17 +53,15 @@ namespace Parquet {
             return await ThriftStream.ReadAsync<Thrift.FileMetaData>(cancellationToken);
         }
 
-        internal void GoToBeginning() => _fileStream.Seek(0, SeekOrigin.Begin);
-
-        internal void GoToEnd() => _fileStream.Seek(0, SeekOrigin.End);
-
-        internal async Task GoBeforeFooterAsync() {
+        internal async ValueTask<int> GoBeforeFooterAsync() {
             //go to -4 bytes (PAR1) -4 bytes (footer length number)
             _fileStream.Seek(-8, SeekOrigin.End);
             int footerLength = await _fileStream.ReadInt32Async();
 
             //set just before footer starts
             _fileStream.Seek(-8 - footerLength, SeekOrigin.End);
+
+            return footerLength;
         }
     }
 }
