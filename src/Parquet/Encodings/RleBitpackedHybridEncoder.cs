@@ -210,7 +210,7 @@ namespace Parquet.Encodings {
             dataOffset += bytesToRead;
 
             for(int valueIndex = 0, byteIndex = 0; valueIndex < count; valueIndex += 8, byteIndex += bitWidth) {
-                unpacked += BitPackedEncoder.Decode8Values(rawSpan.Slice(byteIndex), dest.Slice(valueIndex), bitWidth);
+                unpacked += BitPackedEncoder.Decode8ValuesLE(rawSpan.Slice(byteIndex), dest.Slice(valueIndex), bitWidth);
             }
 
             //if(unpacked > maxItems)

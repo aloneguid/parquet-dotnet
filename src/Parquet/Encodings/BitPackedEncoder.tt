@@ -63,33 +63,112 @@ namespace Parquet.Encodings {
 
     static partial class BitPackedEncoder {
 
-        public static void Pack8Values(Span<int> src, Span<byte> dest, int bitWidth) {
-        <# for(int i = 0; i <= sizeof(int) * 8; i++) { 
-            #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
-                IntPack8Values_<#= i #>(src, dest);
+    #region [ Public Methods ]
+
+<# for(int i = 0; i < types.Length; i++) { 
+    string nt = types[i];
+    int maxWidth = maxWidths[i];
+    string ntCap = nt.Substring(0, 1).ToUpper() + nt.Substring(1);
+    foreach(string ed in new[] { "LE", "BE" }) {
+        string encodingName = ed == "LE" ? "little-endian" : "big-endian";
+    #>
+
+        /// <summary>
+        /// Bit-packing used in RLE. Unlike pack, checks for boundaries.
+        /// </summary>
+        /// <returns>Number of bytes written</returns>
+        public static int Encode8Values<#= ed #>(Span<<#= nt #>> src, Span<byte> dest, int bitWidth) {
+
+            bool needsTempBuffer = dest.Length < bitWidth;
+            int written = bitWidth;
+
+            Span<<#= nt #>> src1;
+            Span<byte> dest1;
+            if(needsTempBuffer) {
+                src1 = new <#= nt #>[8];
+                src.CopyTo(src1);
+                dest1 = new byte[bitWidth];
+                written = dest.Length;
+            } else {
+                src1 = src;
+                dest1 = dest;
+            }
+
+            Pack8Values<#= ed #>(src1, dest1, bitWidth);
+
+            if(needsTempBuffer) {
+                for(int i = 0; i < bitWidth && i < dest.Length; i++) {
+                    dest[i] = dest1[i];
+                }
+            }
+
+            return written;
+        }
+    
+
+        /// <summary>
+        /// Packs exactly 8 <#= nt #> values using <#= encodingName #> encoding from src into dest without checking for boundaries.
+        /// </summary>
+        public static void Pack8Values<#= ed #>(Span<<#= nt #>> src, Span<byte> dest, int bitWidth) {
+        <# for(int w = 0; w <= maxWidth; w++) { 
+            #>    <#if(w == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= w #>)
+                Pack8<#= ntCap #>Values<#= ed #><#= w #>(src, dest);
         <#} #>
         }
 
-        public static void Unpack8Values(Span<byte> src, Span<int> dest, int bitWidth) {
-        <# for(int i = 0; i <= sizeof(int) * 8; i++) { 
-            #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
-                IntUnpack8Values_<#= i #>(src, dest);
-        <#} #>
+        /// <summary>
+        /// Unlike unpack, checks for boundaries
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="bitWidth"></param>
+        /// <param name="dest"></param>
+        /// <returns>Number of values encoded</returns>
+        public static int Decode8Values<#= ed #>(Span<byte> src, Span<<#= nt #>> dest, int bitWidth) {
+
+            // we always need at least bitWidth bytes available to decode 8 values
+            bool needsTempFuffer = src.Length < bitWidth;
+            int decoded = 8;
+
+            Span<byte> src1;
+            Span<<#= nt #>> dest1;
+            if (needsTempFuffer) {
+                src1 = new byte[bitWidth];
+                src.CopyTo(src1);
+                dest1 = new <#= nt #>[8];
+                decoded = src.Length * 8 / bitWidth;
+            } else {
+                src1 = src;
+                dest1 = dest;
+            }
+
+            Unpack8Values<#= ed #>(src1, dest1, bitWidth);
+
+            if(needsTempFuffer) {
+                for(int i = 0; i < decoded; i++) {
+                    dest[i] = dest1[i];
+                }
+            }
+
+            return decoded;
         }
 
-        public static void Pack8Values(Span<long> src, Span<byte> dest, int bitWidth) {
-        <# for(int i = 0; i <= sizeof(long) * 8; i++) { 
-            #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
-                LongPack8Values_<#= i #>(src, dest);
+        /// <summary>
+        /// Unpacks exactly 8 <#= nt #> values using <#= encodingName #> encoding from src into dest without checking for boundaries.
+        /// </summary>
+        public static void Unpack8Values<#= ed #>(Span<byte> src, Span<<#= nt #>> dest, int bitWidth) {
+        <# for(int w = 0; w <= maxWidth; w++) { 
+            #>    <#if(w == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= w #>)
+                Unpack8<#= ntCap #>Values<#= ed #><#= w #>(src, dest);
         <#} #>
-        }
 
-        public static void Unpack8Values(Span<byte> src, Span<long> dest, int bitWidth) {
-        <# for(int i = 0; i <= sizeof(long) * 8; i++) { 
-            #>    <#if(i == 0) {#><#} else {#>else <#} #>if(bitWidth == <#= i #>)
-                LongUnpack8Values_<#= i #>(src, dest);
-        <#} #>
         }
+    <#
+    }
+}
+#>
+    #endregion
+
+    #region [ Precompiled methods per bit width ]
 
 <# for(int i = 0; i < types.Length; i++) { 
     string nt = types[i];
@@ -98,8 +177,10 @@ namespace Parquet.Encodings {
     string maskName = "ShiftMask" + ntCap;
     
     for(int w = 0; w <= maxWidth; w++) {
+        foreach(bool msbFirst in new[] { false, true }) {
+            string msbSuffix = msbFirst ? "BE" : "LE";
  #>
-        private static void <#= ntCap #>Unpack8Values_<#= w #>(Span<byte> src, Span<<#= nt #>> dest) {
+        private static void Unpack8<#= ntCap #>Values<#= msbSuffix #><#= w #>(Span<byte> src, Span<<#= nt #>> dest) {
         <# if(w > 0) {
             for (int valueIndex = 0; valueIndex < 8; ++valueIndex) { 
                 int startIndex = valueIndex * w / 8;
@@ -110,7 +191,7 @@ namespace Parquet.Encodings {
                 for (int byteIndex = startIndex; byteIndex < endIndex; byteIndex++) {
                     if(byteIndex == startIndex) {#><#} else {#> | <#}
 
-                    var shiftMask = getShiftMask(w, false, byteIndex, valueIndex);
+                    var shiftMask = getShiftMask(w, msbFirst, byteIndex, valueIndex);
                     var ss = "";
                     if(nt == "int" && shiftMask.Item2 == 4294967295) shiftMask = Tuple.Create<int, long>(shiftMask.Item1, -1);
 
@@ -128,7 +209,7 @@ namespace Parquet.Encodings {
         } else { #> <#} #>
         }
 
-        private static void <#= ntCap #>Pack8Values_<#= w #>(Span<<#= nt #>> src, Span<byte> dest) {
+        private static void Pack8<#= ntCap #>Values<#= msbSuffix #><#= w #>(Span<<#= nt #>> src, Span<byte> dest) {
         <#
             long mask = genMask(w);
             for (int byteIndex = 0; byteIndex < w; ++byteIndex) { #>
@@ -137,7 +218,7 @@ namespace Parquet.Encodings {
                 int startIndex = (byteIndex * 8) / w;
                 int endIndex = ((byteIndex + 1) * 8 + w - 1) / w;
                 for (int valueIndex = startIndex; valueIndex < endIndex; valueIndex++) {
-                    var shiftMask = getShiftMask(w, false, byteIndex, valueIndex);
+                    var shiftMask = getShiftMask(w, msbFirst, byteIndex, valueIndex);
                     var ss = "";
                     if(shiftMask.Item1 > 0) {
                         ss = " >> " + shiftMask.Item1;
@@ -154,11 +235,14 @@ namespace Parquet.Encodings {
                 <#
             } // for byteIndex
          #>
-        } // method
-
+        }
 <#
+    } // for msbFirst
     } // for w
 } // for types
 #>
+
+    #endregion
+
     } // class
 } // ns

@@ -68,8 +68,8 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
-        <None Include="Encodings\BitPackedEncoder.Precompiled.cs">
-          <DependentUpon>BitPackedEncoder.Precompiled.tt</DependentUpon>
+        <None Include="Encodings\BitPackedEncoder.cs">
+          <DependentUpon>BitPackedEncoder.tt</DependentUpon>
           <DesignTime>True</DesignTime>
           <AutoGen>True</AutoGen>
         </None>
@@ -81,8 +81,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Encodings\BitPackedEncoder.Precompiled.tt">
-        <LastGenOutput>BitPackedEncoder.Precompiled.cs</LastGenOutput>
+      <None Update="Encodings\BitPackedEncoder.tt">
+        <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
         <Generator>TextTemplatingFileGenerator</Generator>
       </None>
       <None Update="Encodings\DeltaBinaryPackedEncoder.Variations.tt">
@@ -100,6 +100,11 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Update="Encodings\BitPackedEncoder.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>BitPackedEncoder.tt</DependentUpon>
+      </Compile>
       <Compile Update="Encodings\BitPackedEncoder.Precompiled.cs">
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>

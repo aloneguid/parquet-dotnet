@@ -48,7 +48,7 @@ namespace Parquet.Encodings {
 
                         // mini block has a size of 8*n, unpack 8 values each time
                         for(int j = 0; j < valuesPerMiniblock; j += 8) {
-                            BitPackedEncoder.Unpack8Values(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
+                            BitPackedEncoder.Unpack8ValuesLE(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
                             spos += bitWidth;
                         }
 
@@ -108,7 +108,7 @@ namespace Parquet.Encodings {
 
                         // mini block has a size of 8*n, unpack 8 values each time
                         for(int j = 0; j < valuesPerMiniblock; j += 8) {
-                            BitPackedEncoder.Unpack8Values(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
+                            BitPackedEncoder.Unpack8ValuesLE(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
                             spos += bitWidth;
                         }
 
