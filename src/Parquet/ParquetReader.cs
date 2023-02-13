@@ -15,7 +15,7 @@ namespace Parquet {
     public class ParquetReader : ParquetActor, IDisposable {
         private readonly Stream _input;
         private Thrift.FileMetaData? _meta;
-        private ThriftFooter? _footer;
+        private ThriftFooter _footer;
         private readonly ParquetOptions _parquetOptions;
         private readonly List<ParquetRowGroupReader> _groupReaders = new();
         private readonly bool _leaveStreamOpen;
@@ -30,6 +30,9 @@ namespace Parquet {
                 throw new IOException("not a Parquet file (size too small)");
 
             _parquetOptions = parquetOptions ?? new ParquetOptions();
+
+            // _footer will be initialised right now in the InitialiseAsync
+            _footer = ThriftFooter.Empty;
         }
 
         private async Task InitialiseAsync(CancellationToken cancellationToken) {
@@ -80,7 +83,7 @@ namespace Parquet {
         /// <summary>
         /// Gets custom key-value pairs for metadata
         /// </summary>
-        public Dictionary<string, string>? CustomMetadata => _footer?.CustomMetadata;
+        public Dictionary<string, string> CustomMetadata => _footer.CustomMetadata;
 
 
         #region [ Helpers ]

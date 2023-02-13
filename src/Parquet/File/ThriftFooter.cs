@@ -12,6 +12,13 @@ namespace Parquet.File {
         private readonly Thrift.FileMetaData _fileMeta;
         private readonly ThriftSchemaTree _tree;
 
+        internal static ThriftFooter Empty => new ThriftFooter();
+
+        internal ThriftFooter() {
+            _fileMeta= new Thrift.FileMetaData();
+            _tree= new ThriftSchemaTree();
+        }
+
         public ThriftFooter(Thrift.FileMetaData fileMeta) {
             _fileMeta = fileMeta ?? throw new ArgumentNullException(nameof(fileMeta));
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
@@ -270,6 +277,10 @@ namespace Parquet.File {
             }
 
             public Node root;
+
+            internal ThriftSchemaTree() {
+                root = new Node();
+            }
 
             public ThriftSchemaTree(List<Thrift.SchemaElement> schema) {
                 root = new Node { element = schema[0] };
