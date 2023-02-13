@@ -44,9 +44,10 @@ namespace Parquet.Data {
         }
 
         internal DataColumn(DataField field,
-           Array definedData,
-           int[]? definitionLevels, int maxDefinitionLevel,
-           int[]? repetitionLevels, int maxRepetitionLevel) : this(field) {
+            Array definedData,
+            Span<int> definitionLevels, int maxDefinitionLevel,
+            int[]? repetitionLevels, int maxRepetitionLevel) : this(field) {
+
             Data = definedData;
 
             // 1. Apply definitions

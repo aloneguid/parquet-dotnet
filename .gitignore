@@ -3,5 +3,6 @@
 .vs/
 bin/
 obj/
+BenchmarkDotNet.Artifacts/
 *.swp
 Parquet.sln.DotSettings.user

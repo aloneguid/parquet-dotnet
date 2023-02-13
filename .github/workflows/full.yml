@@ -1,7 +1,7 @@
 name: 'Full Workflow'
 
 env:
-  VERSION: 4.4.6
+  VERSION: 4.4.7
   ASM_VERSION: 4.0.0
 
 on:
@@ -32,6 +32,40 @@ jobs:
     - name: 'test on ${{ matrix.os }}'
       run: dotnet test src/Parquet.sln -c release
 
+  #run-benchmarks:
+  #  runs-on: ${{ matrix.os }}
+  #  strategy:
+  #    matrix:
+  #      os: [ubuntu-latest, windows-latest, macos-latest]
+  #    fail-fast: false
+  #  steps:
+  #  - uses: actions/checkout@v3
+  #  - name: Setup .NET
+  #    uses: actions/setup-dotnet@v3
+  #    with:
+  #      dotnet-version: |
+  #        3.1.x
+  #        6.0.x
+  #        7.0.x
+  #  - name: 'Write Performance'
+  #    run: dotnet run -c release -- write
+  #    working-directory: src/Parquet.PerfRunner
+  #  - name: 'Prep'
+  #    run: mv results ${{ matrix.os }}
+  #    working-directory: src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts
+
+  #  - name: debug
+  #    run: ls -R
+  #    working-directory: src/Parquet.PerfRunner
+
+  #  - uses: actions/upload-artifact@v3
+  #    name: Collect Results
+  #    with:
+  #      name: benchmarks
+  #      path: |
+  #        src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/${{ matrix.os }}/
+
+
   build:
 
     runs-on: 'ubuntu-latest'
@@ -39,9 +73,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: |
+          3.1.x
+          6.0.x
+          7.0.x
     - name: Build
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs

@@ -33,8 +33,7 @@ namespace Parquet {
             ParquetSchema? schema = null,
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
-            bool append = false)
-            where T : new() {
+            bool append = false) {
 
             if(objectInstances == null)
                 throw new ArgumentNullException(nameof(objectInstances));
@@ -89,8 +88,7 @@ namespace Parquet {
             ParquetSchema? schema = null,
             CompressionMethod compressionMethod = CompressionMethod.Snappy,
             int rowGroupSize = 5000,
-            bool append = false)
-            where T : new() {
+            bool append = false) {
             using(Stream destination = System.IO.File.Create(filePath)) {
                 return await SerializeAsync(objectInstances, destination, schema, compressionMethod, rowGroupSize,
                     append);

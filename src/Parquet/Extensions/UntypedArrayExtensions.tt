@@ -105,7 +105,7 @@ namespace Parquet.Extensions {
     #region [ Null Unpacking ]
 
     public static void UnpackNullsFast(this Array array,
-        int[] flags, int fillFlag,
+        Span<int> flags, int fillFlag,
         Array result) {
 
         Type? t = array.GetType().GetElementType();
@@ -127,7 +127,7 @@ namespace Parquet.Extensions {
 
 <# foreach(string nt in types) { #>
     private static void UnpackNullsTypeFast(<#= nn(nt) #>[] array,
-        int[] flags, int fillFlag,
+        Span<int> flags, int fillFlag,
         <#= nt #>[] result) {
 
         int iarray = 0;

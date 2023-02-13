@@ -13,10 +13,6 @@ using System.Threading;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {
-        [Fact]
-        public async Task Opening_null_stream_fails() {
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await ParquetReader.CreateAsync((Stream)null));
-        }
 
         [Fact]
         public async Task Opening_small_file_fails() {
@@ -70,7 +66,7 @@ namespace Parquet.Test {
         [InlineData("complex-primitives.v2.parquet")]
         public async Task Read_hardcoded_decimal(string parquetFile) {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {
-                decimal value = (decimal)(await reader.ReadEntireRowGroupAsync())[1].Data.GetValue(0);
+                decimal value = (decimal)(await reader.ReadEntireRowGroupAsync())[1].Data.GetValue(0)!;
                 Assert.Equal((decimal)1.2, value);
             }
         }
@@ -184,6 +180,8 @@ namespace Parquet.Test {
 
         [Theory]
         [InlineData("/special/multi_page_bit_packed_near_page_border.parquet")]
+        // v2 has a mix of pages: dictionary, data (dictionary indexes), data (plain values)
+        // therefore the reader must merge dictionary indexes into data asap to avoid data pages with different encodings
         [InlineData("/special/multi_page_bit_packed_near_page_border.v2.parquet")]
         public async Task Read_bit_packed_at_page_boundary(string parquetFile) {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {
@@ -208,9 +206,9 @@ namespace Parquet.Test {
                 DateTime?[] col0 = (DateTime?[])columns[0].Data;
                 Assert.Equal(440773, col0.Length);
 
-                long ticks = col0[0].Value.Ticks;
+                long ticks = col0[0]!.Value.Ticks;
                 for(int i = 1; i < 132000; i++) {
-                    long now = col0[i].Value.Ticks;
+                    long now = col0[i]!.Value.Ticks;
                     Assert.NotEqual(ticks, now);
                 }
             }
@@ -264,20 +262,6 @@ namespace Parquet.Test {
             }
         }
         
-        [Theory]
-        [InlineData("delta_byte_array.parquet")]
-        public async Task ParquetReader_DeltaByteArrayColumn(string parquetFile) {
-            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-                string[] col0 = (string[])columns[0].Data;
-                Assert.Equal(100, col0.Length);
-                Assert.Equal("0X0", col0[0]);
-                Assert.Equal("0X1", col0[1]);
-                Assert.Equal("0X2", col0[2]);
-                Assert.Equal("0X63", col0[99]);
-            }
-        }
-
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }

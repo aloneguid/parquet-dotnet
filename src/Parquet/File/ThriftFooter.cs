@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Data;
+using Parquet.Encodings;
 using Parquet.Schema;
 using Parquet.Thrift;
 
@@ -11,6 +11,13 @@ namespace Parquet.File {
     class ThriftFooter {
         private readonly Thrift.FileMetaData _fileMeta;
         private readonly ThriftSchemaTree _tree;
+
+        internal static ThriftFooter Empty => new ThriftFooter();
+
+        internal ThriftFooter() {
+            _fileMeta= new Thrift.FileMetaData();
+            _tree= new ThriftSchemaTree();
+        }
 
         public ThriftFooter(Thrift.FileMetaData fileMeta) {
             _fileMeta = fileMeta ?? throw new ArgumentNullException(nameof(fileMeta));
@@ -270,6 +277,10 @@ namespace Parquet.File {
             }
 
             public Node root;
+
+            internal ThriftSchemaTree() {
+                root = new Node();
+            }
 
             public ThriftSchemaTree(List<Thrift.SchemaElement> schema) {
                 root = new Node { element = schema[0] };

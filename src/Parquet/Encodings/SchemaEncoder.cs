@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Thrift;
 using SType = System.Type;
+using Type = Parquet.Thrift.Type;
 
-namespace Parquet.Data {
+namespace Parquet.Encodings {
     static class SchemaEncoder {
 
         class LookupItem {
@@ -59,9 +61,9 @@ namespace Parquet.Data {
                 AddSystemTypeInfo(thriftType, t, null, priority);
 
                 _supportedTypes.Add(t);
-                for(int i = 0; i < options.Length; i+=2) { 
+                for(int i = 0; i < options.Length; i += 2) {
                     var ct = (Thrift.ConvertedType)options[i];
-                    var clr = (System.Type)options[i+1];
+                    var clr = (System.Type)options[i + 1];
                     _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
 
                     // more specific version overrides less specific
@@ -72,9 +74,10 @@ namespace Parquet.Data {
             }
 
             public SType? FindSystemType(Thrift.SchemaElement se) {
-                if(!se.__isset.type) return null;
+                if(!se.__isset.type)
+                    return null;
 
-                if(se.__isset.converted_type && 
+                if(se.__isset.converted_type &&
                     _typeAndConvertedTypeToType.TryGetValue(
                         new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type),
                         out SType? match)) {
@@ -213,7 +216,7 @@ namespace Parquet.Data {
             bool isMap = root.__isset.converted_type &&
                 (root.Converted_type == Thrift.ConvertedType.MAP || root.Converted_type == Thrift.ConvertedType.MAP_KEY_VALUE);
             if(!isMap) {
-                ownedChildren= 0;
+                ownedChildren = 0;
                 field = null;
                 return false;
             }
@@ -282,8 +285,15 @@ namespace Parquet.Data {
                 if(options != null && options.TreatByteArrayAsString && t == typeof(byte[]))
                     t = typeof(string);
 
-                // successful field built
-                var df = new DataField(se.Name, t);
+                DataField? df;
+                if(t == typeof(DateTime)) {
+                    df = GetDateTimeDataField(se);
+                } 
+                else{
+                    // successful field built
+                    df = new DataField(se.Name, t);
+                }
+
                 df.IsNullable = isNullable;
                 df.IsArray = isArray;
                 f = df;
@@ -301,6 +311,22 @@ namespace Parquet.Data {
             }
 
             return f;
+        }
+
+        private static DataField GetDateTimeDataField(SchemaElement se)
+        {
+            switch (se.Converted_type)
+            {
+                case ConvertedType.TIMESTAMP_MILLIS:
+                    if (se.Type == Type.INT64)
+                        return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
+                    break;
+                case ConvertedType.DATE:
+                    if(se.Type == Type.INT32)
+                        return new DateTimeDataField(se.Name, DateTimeFormat.Date);
+                    break;
+            }
+            return new DateTimeDataField(se.Name, DateTimeFormat.Impala);
         }
 
         /// <summary>
@@ -338,8 +364,7 @@ namespace Parquet.Data {
                     tse.Precision = dfDecimal.Precision;
                     tse.Scale = dfDecimal.Scale;
                     tse.Type_length = BigDecimal.GetBufferSize(dfDecimal.Precision);
-                }
-                else {
+                } else {
                     //set defaults
                     tse.Precision = DecimalFormatDefaults.DefaultPrecision;
                     tse.Scale = DecimalFormatDefaults.DefaultScale;
@@ -471,7 +496,7 @@ namespace Parquet.Data {
         /// Finds corresponding .NET type
         /// </summary>
         [Obsolete]
-        public static SType? FindSystemType(DataType dataType) => 
+        public static SType? FindSystemType(DataType dataType) =>
             (from pair in _systemTypeToObsoleteType where pair.Value == dataType select pair.Key).FirstOrDefault();
 
         [Obsolete]

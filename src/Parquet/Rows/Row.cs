@@ -44,14 +44,14 @@ namespace Parquet.Rows {
         /// <summary>
         /// Initializes a new instance of the <see cref="Row"/> class.
         /// </summary>
-        public Row(params object[] values) {
+        public Row(params object?[] values) {
             Values = values;
         }
 
         /// <summary>
         /// Raw values
         /// </summary>
-        public object[] Values { get; internal set; }
+        public object?[] Values { get; internal set; }
 
         /// <summary>
         /// Gets the number of values in this row
@@ -61,7 +61,7 @@ namespace Parquet.Rows {
         /// <summary>
         /// Gets the row value by index
         /// </summary>
-        public object this[int i] {
+        public object? this[int i] {
             get {
                 return Values[i];
             }
@@ -221,7 +221,7 @@ namespace Parquet.Rows {
             ToString(sb, Values, sf, level, fields);
         }
 
-        internal void ToString(StringBuilder sb, object[]? values, StringFormat sf, int level, IReadOnlyCollection<Field> fields) {
+        internal void ToString(StringBuilder sb, object?[]? values, StringFormat sf, int level, IReadOnlyCollection<Field> fields) {
             if(fields == null || values == null) {
                 sb.AppendFormat("{0} value(s)", values?.Length ?? 0);
                 return;
@@ -231,8 +231,8 @@ namespace Parquet.Rows {
 
             bool first = true;
             int nl = level + 1;
-            foreach(Tuple<object, Field?> valueWithField in values!.IterateWith(fields)) {
-                object v = valueWithField.Item1;
+            foreach(Tuple<object, Field?> valueWithField in values!.IterateWith<object, Field>(fields)) {
+                object? v = valueWithField.Item1;
                 Field? f = valueWithField.Item2;
 
                 if(first)
@@ -357,8 +357,8 @@ namespace Parquet.Rows {
             }
 
             for(int i = 0; i < Values.Length; i++) {
-                object v = Values[i];
-                object ov = other.Values[i];
+                object? v = Values[i];
+                object? ov = other.Values[i];
 
                 if(!Equal(v, ov, i, throwException))
                     return false;
@@ -367,7 +367,7 @@ namespace Parquet.Rows {
             return true;
         }
 
-        private bool Equal(object v, object ov, int position, bool throwException) {
+        private bool Equal(object? v, object? ov, int position, bool throwException) {
             if(v == null || ov == null) {
                 bool equal = v == null && ov == null;
 

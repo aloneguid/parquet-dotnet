@@ -15,23 +15,24 @@ namespace Parquet {
     public class ParquetReader : ParquetActor, IDisposable {
         private readonly Stream _input;
         private Thrift.FileMetaData? _meta;
-        private ThriftFooter? _footer;
-        private readonly ParquetOptions? _parquetOptions;
+        private ThriftFooter _footer;
+        private readonly ParquetOptions _parquetOptions;
         private readonly List<ParquetRowGroupReader> _groupReaders = new();
         private readonly bool _leaveStreamOpen;
 
-        private ParquetReader(Stream input, bool leaveStreamOpen) : base(input) {
+        private ParquetReader(Stream input, ParquetOptions? parquetOptions = null, bool leaveStreamOpen = true) : base(input) {
             _input = input ?? throw new ArgumentNullException(nameof(input));
             _leaveStreamOpen = leaveStreamOpen;
-        }
 
-        private ParquetReader(Stream input, ParquetOptions? parquetOptions = null, bool leaveStreamOpen = true) : this(input, leaveStreamOpen) {
             if(!input.CanRead || !input.CanSeek)
                 throw new ArgumentException("stream must be readable and seekable", nameof(input));
             if(_input.Length <= 8)
                 throw new IOException("not a Parquet file (size too small)");
 
             _parquetOptions = parquetOptions ?? new ParquetOptions();
+
+            // _footer will be initialised right now in the InitialiseAsync
+            _footer = ThriftFooter.Empty;
         }
 
         private async Task InitialiseAsync(CancellationToken cancellationToken) {
@@ -82,7 +83,7 @@ namespace Parquet {
         /// <summary>
         /// Gets custom key-value pairs for metadata
         /// </summary>
-        public Dictionary<string, string>? CustomMetadata => _footer?.CustomMetadata;
+        public Dictionary<string, string> CustomMetadata => _footer.CustomMetadata;
 
 
         #region [ Helpers ]
@@ -115,7 +116,7 @@ namespace Parquet {
         /// <summary>
         /// Reader schema
         /// </summary>
-        public ParquetSchema? Schema => _footer?.CreateModelSchema(_parquetOptions);
+        public ParquetSchema Schema => _footer!.CreateModelSchema(_parquetOptions);
 
         /// <summary>
         /// Internal parquet metadata

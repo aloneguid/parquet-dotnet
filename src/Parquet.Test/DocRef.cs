@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace Parquet.Test {
     class Record {
         public DateTime Timestamp { get; set; }
 
-        public string EventName { get; set; }
+        public string? EventName { get; set; }
 
         public double MeterValue { get; set; }
     }
@@ -153,12 +154,74 @@ namespace Parquet.Test {
 
             using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
                 using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
+                    parquetWriter.CompressionMethod = CompressionMethod.Gzip;
+                    parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
                     // create a new row group in the file
                     using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
                         await groupWriter.WriteColumnAsync(idColumn);
                         await groupWriter.WriteColumnAsync(cityColumn);
                     }
                 }
+            }
+        }
+
+        public async Task AppendDemo() {
+            //write a file with a single row group
+            var id = new DataField<int>("id");
+            var ms = new MemoryStream();
+
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1, 2 }));
+                }
+            }
+
+            //append to this file. Note that you cannot append to existing row group, therefore create a new one
+            ms.Position = 0;    // this is to rewind our memory stream, no need to do it in real code.
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms, append: true)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3, 4 }));
+                }
+            }
+
+            //check that this file now contains two row groups and all the data is valid
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                Assert.Equal(2, reader.RowGroupCount);
+
+                using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                    Assert.Equal(2, rg.RowCount);
+                    Assert.Equal(new int[] { 1, 2 }, (await rg.ReadColumnAsync(id)).Data);
+                }
+
+                using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
+                    Assert.Equal(2, rg.RowCount);
+                    Assert.Equal(new int[] { 3, 4 }, (await rg.ReadColumnAsync(id)).Data);
+                }
+
+            }
+        }
+
+        public async Task CustomMetadata() {
+            var ms = new MemoryStream();
+            var id = new DataField<int>("id");
+
+            //write
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+                writer.CustomMetadata = new Dictionary<string, string> {
+                    ["key1"] = "value1",
+                    ["key2"] = "value2"
+                };
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                }
+            }
+
+            //read back
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                Assert.Equal("value1", reader.CustomMetadata["key1"]);
+                Assert.Equal("value2", reader.CustomMetadata["key2"]);
             }
         }
     }
