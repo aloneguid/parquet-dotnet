@@ -69,20 +69,50 @@ namespace Parquet.Test {
                   Max = 2.1D
               },
             ["dateTime"] =
-              new TestDesc {
-                  Type = typeof(DateTime),
-                  Data = new DateTime[]
-                 {
-                  new DateTime(2019, 12, 16),
-                  new DateTime(2019, 12, 16),
-                  new DateTime(2019, 12, 15),
-                  new DateTime(2019, 12, 17)
-                 },
-                  DistinctCount = 3,
-                  NullCount = 0,
-                  Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Local).ToUniversalTime(),
-                  Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Local).ToUniversalTime()
-              }
+                new TestDesc {
+                    Type = typeof(DateTime),
+                    Data = new DateTime[]
+                    {
+                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Utc),
+                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Utc),
+                        new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Utc),
+                        new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Utc)
+                    },
+                    DistinctCount = 3,
+                    NullCount = 0,
+                    Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Utc),
+                    Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Utc)
+                },
+            ["dateTime unknown"] =
+                new TestDesc {
+                    Type = typeof(DateTime),
+                    Data = new DateTime[]
+                    {
+                        new DateTime(2019, 12, 16),
+                        new DateTime(2019, 12, 16),
+                        new DateTime(2019, 12, 15),
+                        new DateTime(2019, 12, 17)
+                    },
+                    DistinctCount = 3,
+                    NullCount = 0,
+                    Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Utc),
+                    Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Utc)
+                },
+            ["dateTime local"] =
+                new TestDesc {
+                    Type = typeof(DateTime),
+                    Data = new DateTime[]
+                    {
+                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Local),
+                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Local),
+                        new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Local),
+                        new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Local)
+                    },
+                    DistinctCount = 3,
+                    NullCount = 0,
+                    Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Local).ToUniversalTime(),
+                    Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Local).ToUniversalTime()
+                }
         };
 
         [Theory]
@@ -92,6 +122,8 @@ namespace Parquet.Test {
         [InlineData("float")]
         [InlineData("double")]
         [InlineData("dateTime")]
+        [InlineData("dateTime unknown")]
+        [InlineData("dateTime local")]
         public async Task Distinct_stat_for_basic_data_types(string name) {
             TestDesc? test = NameToTest[name];
 

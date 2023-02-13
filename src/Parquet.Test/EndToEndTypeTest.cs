@@ -40,6 +40,12 @@ namespace Parquet.Test {
                ["dateTime"] = (new DataField<DateTime>("dateTime"), DateTime.UtcNow.RoundToSecond()),
                ["impala date"] = (new DateTimeDataField("dateImpala", DateTimeFormat.Impala), DateTime.UtcNow.RoundToSecond()),
                ["dateDateAndTime"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTime), DateTime.UtcNow.RoundToSecond()),
+               ["dateTime unknown kind"] = (new DataField<DateTime>("dateTime unknown kind"), new DateTime(2020, 06, 10, 11, 12, 13)),
+               ["impala date unknown kind"] = (new DateTimeDataField("dateImpala unknown kind", DateTimeFormat.Impala), new DateTime(2020, 06, 10, 11, 12, 13)),
+               ["dateDateAndTime unknown kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13)),
+               ["dateTime local kind"] = (new DataField<DateTime>("dateTime unknown kind"), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
+               ["impala date local kind"] = (new DateTimeDataField("dateImpala unknown kind", DateTimeFormat.Impala), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
+               ["dateDateAndTime local kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                // don't want any excess info in the offset INT32 doesn't contain or care about this data 
                ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
                ["interval"] = (new DataField<Interval>("interval"), new Interval(3, 2, 1)),
@@ -95,6 +101,12 @@ namespace Parquet.Test {
         [InlineData("dateTime")]
         [InlineData("impala date")]
         [InlineData("dateDateAndTime")]
+        [InlineData("dateTime unknown kind")]
+        [InlineData("impala date unknown kind")]
+        [InlineData("dateDateAndTime unknown kind")]
+        [InlineData("dateTime local kind")]
+        [InlineData("impala date local kind")]
+        [InlineData("dateDateAndTime local kind")]
         [InlineData("dateDate")]
         [InlineData("interval")]
         [InlineData("time_micros")]
@@ -137,8 +149,16 @@ namespace Parquet.Test {
             else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null) {
                 equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
             }
-            else {
-                equal = actual.Equals(input.expectedValue);
+            else if(actual.GetType() == typeof(DateTime)) {
+                var dtActual = (DateTime)actual;
+                Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
+                var dtExpected = (DateTime)input.expectedValue;
+                dtExpected = dtExpected.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
+                    : dtExpected.ToUniversalTime();
+                equal = dtActual.Equals(dtExpected);
+            } else {
+                 equal = actual.Equals(input.expectedValue);
             }
 
             Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}");
