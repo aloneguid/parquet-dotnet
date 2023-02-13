@@ -1,0 +1,208 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 2 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet  restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true in C:\dev\parquet-dotnet\src\Parquet.PerfRunner\bin\release\net7.0\fec1cc78-2f7c-47e5-b2f3-4235c9c105a0
+// command took 1.94s and exited with 0
+// start dotnet  build -c Release --no-restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true in C:\dev\parquet-dotnet\src\Parquet.PerfRunner\bin\release\net7.0\fec1cc78-2f7c-47e5-b2f3-4235c9c105a0
+// command took 17.99s and exited with 1
+// start dotnet  build -c Release --no-restore --no-dependencies /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true in C:\dev\parquet-dotnet\src\Parquet.PerfRunner\bin\release\net7.0\fec1cc78-2f7c-47e5-b2f3-4235c9c105a0
+// command took 3.45s and exited with 0
+// ***** Done, took 00:00:23 (23.57 sec)   *****
+// Found 2 benchmarks:
+//   WriteBenchmark.ParquetNet: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3) [DataType=Int32]
+//   WriteBenchmark.ParquetSharp: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3) [DataType=Int32]
+
+Setup power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: High performance)
+// **************************
+// Benchmark: WriteBenchmark.ParquetNet: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3) [DataType=Int32]
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet fec1cc78-2f7c-47e5-b2f3-4235c9c105a0.dll --anonymousPipes 1448 1908 --benchmarkName "Parquet.PerfRunner.Benchmarks.WriteBenchmark.ParquetNet(DataType: typeof(int))" --job ShortRun --benchmarkId 0 in C:\dev\parquet-dotnet\src\Parquet.PerfRunner\bin\release\net7.0\fec1cc78-2f7c-47e5-b2f3-4235c9c105a0\bin\Release\net7.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+OverheadJitting  1: 1 op, 226900.00 ns, 226.9000 us/op
+WorkloadJitting  1: 1 op, 178734700.00 ns, 178.7347 ms/op
+
+WorkloadPilot    1: 2 op, 12910500.00 ns, 6.4553 ms/op
+WorkloadPilot    2: 3 op, 18617100.00 ns, 6.2057 ms/op
+WorkloadPilot    3: 4 op, 21004300.00 ns, 5.2511 ms/op
+WorkloadPilot    4: 5 op, 27022100.00 ns, 5.4044 ms/op
+WorkloadPilot    5: 6 op, 26145000.00 ns, 4.3575 ms/op
+WorkloadPilot    6: 7 op, 28898900.00 ns, 4.1284 ms/op
+WorkloadPilot    7: 8 op, 31896100.00 ns, 3.9870 ms/op
+WorkloadPilot    8: 9 op, 38530500.00 ns, 4.2812 ms/op
+WorkloadPilot    9: 10 op, 44995800.00 ns, 4.4996 ms/op
+WorkloadPilot   10: 11 op, 48850100.00 ns, 4.4409 ms/op
+WorkloadPilot   11: 12 op, 54114200.00 ns, 4.5095 ms/op
+WorkloadPilot   12: 13 op, 62039100.00 ns, 4.7722 ms/op
+WorkloadPilot   13: 14 op, 59117900.00 ns, 4.2227 ms/op
+WorkloadPilot   14: 15 op, 72785700.00 ns, 4.8524 ms/op
+WorkloadPilot   15: 16 op, 67842700.00 ns, 4.2402 ms/op
+WorkloadPilot   16: 32 op, 144104200.00 ns, 4.5033 ms/op
+WorkloadPilot   17: 64 op, 273549200.00 ns, 4.2742 ms/op
+WorkloadPilot   18: 128 op, 516617700.00 ns, 4.0361 ms/op
+
+WorkloadWarmup   1: 128 op, 505626600.00 ns, 3.9502 ms/op
+WorkloadWarmup   2: 128 op, 542568400.00 ns, 4.2388 ms/op
+WorkloadWarmup   3: 128 op, 504733500.00 ns, 3.9432 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 128 op, 499785700.00 ns, 3.9046 ms/op
+WorkloadActual   2: 128 op, 554277700.00 ns, 4.3303 ms/op
+WorkloadActual   3: 128 op, 534070000.00 ns, 4.1724 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 128 op, 499785700.00 ns, 3.9046 ms/op
+WorkloadResult   2: 128 op, 554277700.00 ns, 4.3303 ms/op
+WorkloadResult   3: 128 op, 534070000.00 ns, 4.1724 ms/op
+// GC:  50 50 50 2048999920 128
+// Threading:  128 0 128
+
+// AfterAll
+// Benchmark Process 13420 has exited with code 0.
+
+Mean = 4.136 ms, StdErr = 0.124 ms (3.00%), N = 3, StdDev = 0.215 ms
+Min = 3.905 ms, Q1 = 4.038 ms, Median = 4.172 ms, Q3 = 4.251 ms, Max = 4.330 ms
+IQR = 0.213 ms, LowerFence = 3.719 ms, UpperFence = 4.571 ms
+ConfidenceInterval = [0.209 ms; 8.062 ms] (CI 99.9%), Margin = 3.926 ms (94.94% of Mean)
+Skewness = -0.17, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 1 (50.0%) benchmark(s) to run. Estimated finish 2023-01-31 10:59 (0h 0m from now) **
+Setup power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: High performance)
+// **************************
+// Benchmark: WriteBenchmark.ParquetSharp: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3) [DataType=Int32]
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet fec1cc78-2f7c-47e5-b2f3-4235c9c105a0.dll --anonymousPipes 1756 1452 --benchmarkName "Parquet.PerfRunner.Benchmarks.WriteBenchmark.ParquetSharp(DataType: typeof(int))" --job ShortRun --benchmarkId 1 in C:\dev\parquet-dotnet\src\Parquet.PerfRunner\bin\release\net7.0\fec1cc78-2f7c-47e5-b2f3-4235c9c105a0\bin\Release\net7.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT VectorSize=256
+// Job: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+
+OverheadJitting  1: 1 op, 232700.00 ns, 232.7000 us/op
+WorkloadJitting  1: 1 op, 242646100.00 ns, 242.6461 ms/op
+
+WorkloadPilot    1: 2 op, 64573600.00 ns, 32.2868 ms/op
+WorkloadPilot    2: 3 op, 94146900.00 ns, 31.3823 ms/op
+WorkloadPilot    3: 4 op, 121834000.00 ns, 30.4585 ms/op
+WorkloadPilot    4: 5 op, 153752600.00 ns, 30.7505 ms/op
+WorkloadPilot    5: 6 op, 181752900.00 ns, 30.2921 ms/op
+WorkloadPilot    6: 7 op, 217256300.00 ns, 31.0366 ms/op
+WorkloadPilot    7: 8 op, 268808000.00 ns, 33.6010 ms/op
+WorkloadPilot    8: 9 op, 262983800.00 ns, 29.2204 ms/op
+WorkloadPilot    9: 10 op, 302267100.00 ns, 30.2267 ms/op
+WorkloadPilot   10: 11 op, 332900000.00 ns, 30.2636 ms/op
+WorkloadPilot   11: 12 op, 393090700.00 ns, 32.7576 ms/op
+WorkloadPilot   12: 13 op, 419326000.00 ns, 32.2558 ms/op
+WorkloadPilot   13: 14 op, 454004600.00 ns, 32.4289 ms/op
+WorkloadPilot   14: 15 op, 474368700.00 ns, 31.6246 ms/op
+WorkloadPilot   15: 16 op, 517607000.00 ns, 32.3504 ms/op
+
+WorkloadWarmup   1: 16 op, 497760300.00 ns, 31.1100 ms/op
+WorkloadWarmup   2: 16 op, 524685700.00 ns, 32.7929 ms/op
+WorkloadWarmup   3: 16 op, 484611400.00 ns, 30.2882 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 16 op, 507802400.00 ns, 31.7376 ms/op
+WorkloadActual   2: 16 op, 479198500.00 ns, 29.9499 ms/op
+WorkloadActual   3: 16 op, 482113400.00 ns, 30.1321 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 16 op, 507802400.00 ns, 31.7376 ms/op
+WorkloadResult   2: 16 op, 479198500.00 ns, 29.9499 ms/op
+WorkloadResult   3: 16 op, 482113400.00 ns, 30.1321 ms/op
+// GC:  10 10 10 252036712 16
+// Threading:  0 0 16
+
+// AfterAll
+// Benchmark Process 20624 has exited with code 0.
+
+Mean = 30.607 ms, StdErr = 0.568 ms (1.86%), N = 3, StdDev = 0.984 ms
+Min = 29.950 ms, Q1 = 30.041 ms, Median = 30.132 ms, Q3 = 30.935 ms, Max = 31.738 ms
+IQR = 0.894 ms, LowerFence = 28.700 ms, UpperFence = 32.276 ms
+ConfidenceInterval = [12.659 ms; 48.555 ms] (CI 99.9%), Margin = 17.948 ms (58.64% of Mean)
+Skewness = 0.37, Kurtosis = 0.67, MValue = 2
+
+// ** Remained 0 (0.0%) benchmark(s) to run. Estimated finish 2023-01-31 10:59 (0h 0m from now) **
+Successfully reverted power plan (GUID: 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c FriendlyName: High performance)
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts\results\Parquet.PerfRunner.Benchmarks.WriteBenchmark-report.csv
+  BenchmarkDotNet.Artifacts\results\Parquet.PerfRunner.Benchmarks.WriteBenchmark-report-default.md
+  BenchmarkDotNet.Artifacts\results\Parquet.PerfRunner.Benchmarks.WriteBenchmark-report.html
+
+// * Detailed results *
+WriteBenchmark.ParquetNet: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3) [DataType=Int32]
+Runtime = .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2; GC = Concurrent Workstation
+Mean = 4.136 ms, StdErr = 0.124 ms (3.00%), N = 3, StdDev = 0.215 ms
+Min = 3.905 ms, Q1 = 4.038 ms, Median = 4.172 ms, Q3 = 4.251 ms, Max = 4.330 ms
+IQR = 0.213 ms, LowerFence = 3.719 ms, UpperFence = 4.571 ms
+ConfidenceInterval = [0.209 ms; 8.062 ms] (CI 99.9%), Margin = 3.926 ms (94.94% of Mean)
+Skewness = -0.17, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[3.709 ms ; 4.056 ms) | @
+[4.056 ms ; 4.447 ms) | @@
+---------------------------------------------------
+
+WriteBenchmark.ParquetSharp: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3) [DataType=Int32]
+Runtime = .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2; GC = Concurrent Workstation
+Mean = 30.607 ms, StdErr = 0.568 ms (1.86%), N = 3, StdDev = 0.984 ms
+Min = 29.950 ms, Q1 = 30.041 ms, Median = 30.132 ms, Q3 = 30.935 ms, Max = 31.738 ms
+IQR = 0.894 ms, LowerFence = 28.700 ms, UpperFence = 32.276 ms
+ConfidenceInterval = [12.659 ms; 48.555 ms] (CI 99.9%), Margin = 17.948 ms (58.64% of Mean)
+Skewness = 0.37, Kurtosis = 0.67, MValue = 2
+-------------------- Histogram --------------------
+[29.948 ms ; 31.739 ms) | @@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.4, OS=Windows 11 (10.0.22621.1194)
+Intel Core i7-1065G7 CPU 1.30GHz, 1 CPU, 8 logical and 4 physical cores
+.NET SDK=7.0.102
+  [Host]   : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+  ShortRun : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+
+Job=ShortRun  IterationCount=3  LaunchCount=1  
+WarmupCount=3  
+
+|       Method | DataType |      Mean |     Error |    StdDev |     Gen0 |     Gen1 |     Gen2 | Allocated |
+|------------- |--------- |----------:|----------:|----------:|---------:|---------:|---------:|----------:|
+|   ParquetNet |    Int32 |  4.136 ms |  3.926 ms | 0.2152 ms | 390.6250 | 390.6250 | 390.6250 |  15.27 MB |
+| ParquetSharp |    Int32 | 30.607 ms | 17.948 ms | 0.9838 ms | 625.0000 | 625.0000 | 625.0000 |  15.02 MB |
+// * Config Issues *
+
+// * Warnings *
+Configuration
+  Summary -> The exporter BenchmarkDotNet.Exporters.MarkdownExporter is already present in configuration. There may be unexpected results.
+
+// * Legends *
+  DataType  : Value of the 'DataType' parameter
+  Mean      : Arithmetic mean of all measurements
+  Error     : Half of 99.9% confidence interval
+  StdDev    : Standard deviation of all measurements
+  Gen0      : GC Generation 0 collects per 1000 operations
+  Gen1      : GC Generation 1 collects per 1000 operations
+  Gen2      : GC Generation 2 collects per 1000 operations
+  Allocated : Allocated memory per single operation (managed only, inclusive, 1KB = 1024B)
+  1 ms      : 1 Millisecond (0.001 sec)
+
+// * Diagnostic Output - MemoryDiagnoser *
+
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:14 (14.43 sec), executed benchmarks: 2
+
+Global total time: 00:00:38 (38.33 sec), executed benchmarks: 2
+// * Artifacts cleanup *
