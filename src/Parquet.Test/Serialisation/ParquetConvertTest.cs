@@ -141,6 +141,141 @@ namespace Parquet.Test.Serialisation {
             }
         }
 
+        /// <summary>
+        /// Write to a new file, then append to it. Expect to deserialize it successfully.
+        /// </summary>
+        [Fact]
+        public async Task Serialize_new_file_append_deserialize() {
+            DateTime now = DateTime.Now;
+
+            // Unique filename to avoid issues with existing files from previous test runs
+            string filename = $"testfile-{Guid.NewGuid()}.parquet";
+
+            SimpleStructure[] structures = Enumerable
+               .Range(0, 5)
+               .Select(i => new SimpleStructure {
+                   Id = i,
+                   NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+                   Name = $"row {i}",
+                   Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+               })
+               .ToArray();
+
+            SimpleStructure[] appendStructures = Enumerable
+               .Range(5, 5)
+               .Select(i => new SimpleStructure {
+                   Id = i,
+                   NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+                   Name = $"row {i}",
+                   Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+               })
+               .ToArray();
+
+            await ParquetConvert.SerializeAsync(structures, filename, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            await ParquetConvert.SerializeAsync(appendStructures, filename, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2, append: true);
+
+            SimpleStructure[] structuresRead = await ParquetConvert.DeserializeAsync<SimpleStructure>(filename);
+
+            SimpleStructure[] structuresArray = structures.Concat(appendStructures).ToArray();
+
+            Assert.Equal(structuresArray.Length, structuresRead.Length);
+            for(int i = 0; i < structuresArray.Length; i++) {
+                Assert.Equal(structuresArray[i].Id, structuresRead[i].Id);
+                Assert.Equal(structuresArray[i].NullableId, structuresRead[i].NullableId);
+                Assert.Equal(structuresArray[i].Name, structuresRead[i].Name);
+                Assert.Equal(structuresArray[i].Date, structuresRead[i].Date);
+            }
+
+            System.IO.File.Delete(filename);
+        }
+
+        /// <summary>
+        /// Write to a new file, then overwrite it. Expect to deserialize it successfully.
+        /// </summary>
+        [Fact]
+        public async Task Serialize_overwrite_existing_file_deserialize() {
+            DateTime now = DateTime.Now;
+
+            // Unique filename to avoid issues with existing files from previous test runs
+            string filename = $"testfile-{Guid.NewGuid()}.parquet";
+
+            SimpleStructure[] structures = Enumerable
+               .Range(0, 5)
+               .Select(i => new SimpleStructure {
+                   Id = i,
+                   NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+                   Name = $"row {i}",
+                   Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+               })
+               .ToArray();
+
+            SimpleStructure[] overwriteStructures = Enumerable
+               .Range(5, 5)
+               .Select(i => new SimpleStructure {
+                   Id = i,
+                   NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+                   Name = $"row {i}",
+                   Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+               })
+               .ToArray();
+
+            await ParquetConvert.SerializeAsync(structures, filename, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            await ParquetConvert.SerializeAsync(overwriteStructures, filename, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2, append: false);
+
+            SimpleStructure[] structuresRead = await ParquetConvert.DeserializeAsync<SimpleStructure>(filename);
+
+            Assert.Equal(overwriteStructures.Length, structuresRead.Length);
+            for(int i = 0; i < overwriteStructures.Length; i++) {
+                Assert.Equal(overwriteStructures[i].Id, structuresRead[i].Id);
+                Assert.Equal(overwriteStructures[i].NullableId, structuresRead[i].NullableId);
+                Assert.Equal(overwriteStructures[i].Name, structuresRead[i].Name);
+                Assert.Equal(overwriteStructures[i].Date, structuresRead[i].Date);
+            }
+
+            System.IO.File.Delete(filename);
+        }
+
+        /// <summary>
+        /// Write to a new file, then append to it with a changed schema. Expect thrown <see cref="ParquetException"/>.
+        /// </summary>
+        [Fact]
+        public async Task Serialize_existing_file_append_changedschema_throw() {
+            DateTime now = DateTime.Now;
+
+            // Unique filename to avoid issues with existing files from previous test runs
+            string filename = $"testfile-{Guid.NewGuid()}.parquet";
+
+            SimpleStructure[] structures = Enumerable
+               .Range(0, 5)
+               .Select(i => new SimpleStructure {
+                   Id = i,
+                   NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+                   Name = $"row {i}",
+                   Date = now.AddDays(i).RoundToSecond().ToUniversalTime()
+               })
+               .ToArray();
+
+            SimpleChangedStructure[] appendStructures = Enumerable
+               .Range(5, 5)
+               .Select(i => new SimpleChangedStructure {
+                   Id = i,
+                   NullableId = (i % 2 == 0) ? new int?() : new int?(i),
+                   Name = $"row {i}",
+                   Offset = TimeSpan.FromMinutes(i),
+               })
+               .ToArray();
+
+            await ParquetConvert.SerializeAsync(structures, filename, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2);
+
+            Exception exception = await Assert.ThrowsAsync<ParquetException>(async () => await ParquetConvert.SerializeAsync(appendStructures, filename, compressionMethod: CompressionMethod.Snappy, rowGroupSize: 2, append: true));
+
+            Assert.Contains("passed schema does not match existing file schema", exception.Message);
+
+            System.IO.File.Delete(filename);
+        }
+
         [Fact]
         public async Task Serialise_deserialise_renamed_column() {
             IEnumerable<SimpleRenamed> structures = Enumerable
@@ -559,6 +694,16 @@ namespace Parquet.Test.Serialisation {
             public string? Name { get; set; }
 
             public DateTime Date { get; set; }
+        }
+
+        public class SimpleChangedStructure {
+            public int Id { get; set; }
+
+            public int? NullableId { get; set; }
+
+            public string Name { get; set; }
+
+            public TimeSpan Offset { get; set; }
         }
 
         public class SimpleStructureWithFewProperties {
