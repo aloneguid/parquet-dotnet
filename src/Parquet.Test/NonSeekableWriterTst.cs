@@ -51,7 +51,7 @@ namespace Parquet.Test {
             }
         }
 
-        public class WriteableNonSeekableStream : DelegatedStream {
+        class WriteableNonSeekableStream : DelegatedStream {
             public WriteableNonSeekableStream(Stream master) : base(master) {
             }
 

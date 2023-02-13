@@ -8,6 +8,7 @@ using Parquet.Schema;
 using TT = Parquet.Thrift.Type;
 using CT = Parquet.Thrift.ConvertedType;
 using System.Numerics;
+using Parquet.Encodings;
 
 namespace Parquet.Test {
     public class SchemaTest : TestBase {

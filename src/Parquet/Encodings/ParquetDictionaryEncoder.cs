@@ -2,9 +2,8 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace Parquet.Data {
+namespace Parquet.Encodings {
     static class ParquetDictionaryEncoder {
 
         public static bool TryExtractDictionary(Type elementType,
@@ -22,20 +21,19 @@ namespace Parquet.Data {
             string[] src = (string[])data;
             HashSet<string> distinctSet = Distinct(src, offset, count);
             double factor = distinctSet.Count / (double)count;
-            if(factor > threshold) return false;
+            if(factor > threshold)
+                return false;
 
             // extract indexes
             string[] dictionary = distinctSet.ToArray();
             dictionaryArray = dictionary;
             var valueToIndex = new Dictionary<string, int>(StringComparer.Ordinal);
-            for(int i = 0; i < dictionary.Length; i++) {
+            for(int i = 0; i < dictionary.Length; i++)
                 valueToIndex[dictionary[i]] = i;
-            }
 
             rentedIndexes = ArrayPool<int>.Shared.Rent(count);
-            for(int isrc = offset, itgt = 0; isrc < offset + count; isrc++, itgt++) {
+            for(int isrc = offset, itgt = 0; isrc < offset + count; isrc++, itgt++)
                 rentedIndexes[itgt] = valueToIndex[src[isrc]];
-            }
 
             return true;
         }
@@ -55,9 +53,8 @@ namespace Parquet.Data {
             var hs = new HashSet<string>(strings.Length, StringComparer.Ordinal);
 #endif
 
-            for(int i = offset; i < offset + count; i++) {
+            for(int i = offset; i < offset + count; i++)
                 hs.Add(strings[i]);
-            }
 
             return hs;
         }

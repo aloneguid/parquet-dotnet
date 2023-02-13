@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Data;
+using Parquet.Encodings;
 using Parquet.Schema;
 using Parquet.Thrift;
 

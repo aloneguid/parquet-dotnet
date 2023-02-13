@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using IronCompress;
 using Microsoft.IO;
 using Parquet.Data;
-using Parquet.Extensions;
+using Parquet.Encodings;
 using Parquet.Schema;
 
 namespace Parquet.File {
@@ -140,9 +140,9 @@ namespace Parquet.File {
                     int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
                     int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
-                    RleEncoder.Encode(ms, indexes, indexesLength, bitWidth);
+                    RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
-                    Array data = pc.GetPlainData(out int offset, out int count)!;
+                    Array data = pc.GetPlainData(out int offset, out int count);
                     if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
                         throw new IOException($"failed to encode data page data for column {column}");
                     }
@@ -155,12 +155,12 @@ namespace Parquet.File {
             return r;
         }
 
-        private static void WriteLevels(Stream s, int[] levels, int count, int maxValue) {
+        private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
             int bitWidth = maxValue.GetBitWidth();
-            RleEncoder.EncodeWithLength(s, bitWidth, levels, count);
+            RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
         }
 
-        private static void WriteRleDictionary(Stream s, int[] data, int count, int maxValue) {
+        private static void WriteRleDictionary(Stream s, Span<int> data, int maxValue) {
 
             /*
              * Data page format: https://github.com/apache/parquet-format/blob/master/Encodings.md#dictionary-encoding-plain_dictionary--2-and-rle_dictionary--8
@@ -169,7 +169,7 @@ namespace Parquet.File {
              */
 
             int bitWidth = maxValue.GetBitWidth();
-            RleEncoder.Encode(s, data, count, bitWidth);
+            RleBitpackedHybridEncoder.Encode(s, data, bitWidth);
 
         }
     }

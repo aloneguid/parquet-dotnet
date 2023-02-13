@@ -1,0 +1,72 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<# var types = new[] { "int", "long" }; #>
+namespace Parquet.Encodings {
+    using System;
+
+    static partial class DeltaBinaryPackedEncoder {
+<# foreach(string nt in types) { #>
+        private static int Decode(Span<byte> s, Span<<#= nt#>> dest, out int consumedBytes) {
+
+            int spos = 0;
+
+            // The header is defined as follows:
+            // <block size in values> <number of miniblocks in a block> <total value count> <first value>
+
+            int blockSizeInValues = s.ReadUnsignedVarInt(ref spos);
+            int miniblocksInABlock = s.ReadUnsignedVarInt(ref spos);
+            int totalValueCount = s.ReadUnsignedVarInt(ref spos);       // theoretically equal to "valueCount" param
+            <#= nt#> firstValue = (<#= nt#>)s.ReadZigZagVarLong(ref spos);            // the actual first value
+
+            int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
+            <#= nt#>[] vbuf = new <#= nt#>[valuesPerMiniblock];
+
+            // Each block contains
+            // <min delta> <list of bitwidths of miniblocks> <miniblocks>
+
+            <#= nt#> currentValue = firstValue;
+            int read = 0;
+            int destOffset = 0;
+            while(read < totalValueCount && spos < s.Length) {
+                <#= nt#> minDelta = (<#= nt#>)s.ReadZigZagVarLong(ref spos);
+
+                Span<byte> bitWidths = s.Slice(spos, Math.Min(miniblocksInABlock, s.Length - spos));
+                spos += miniblocksInABlock;
+                foreach(byte bitWidth in bitWidths) {
+
+                    // unpack miniblock
+
+                    if(read >= totalValueCount)
+                        break;
+
+                    if(bitWidth == 0) {
+                        // there's not data for bitwidth 0
+                        for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
+                            dest[destOffset++] = currentValue;
+                            currentValue += minDelta;
+                        }
+                    } else {
+
+                        // mini block has a size of 8*n, unpack 8 values each time
+                        for(int j = 0; j < valuesPerMiniblock; j += 8) {
+                            BitPackedEncoder.Unpack8Values(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
+                            spos += bitWidth;
+                        }
+
+                        for(int i = 0; i < vbuf.Length && destOffset < dest.Length; i++, read++) {
+                            dest[destOffset++] = currentValue;
+                            currentValue += minDelta + vbuf[i];
+                        }
+
+                    }
+                }
+            }
+
+            consumedBytes = spos;
+            return read;
+        }
+<# } #>
+    }
+}

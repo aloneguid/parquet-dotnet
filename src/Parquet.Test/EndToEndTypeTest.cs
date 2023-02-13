@@ -15,8 +15,8 @@ namespace Parquet.Test {
     }
 
     public class EndToEndTypeTest : TestBase {
-        private static readonly Dictionary<string, (DataField field, object expectedValue)> _nameToData =
-           new Dictionary<string, (DataField field, object expectedValue)> {
+        private static readonly Dictionary<string, (DataField field, object? expectedValue)> _nameToData =
+           new Dictionary<string, (DataField field, object? expectedValue)> {
                ["plain string"] = (new DataField<string>("string"), "plain string"),
                ["unicode string"] = (new DataField<string>("unicode string"), "L'Oréal Paris"),
                ["byte array"] = (new DataField<byte[]>("byte array"), Encoding.UTF8.GetBytes("raw byte string")),
@@ -126,7 +126,7 @@ namespace Parquet.Test {
         [InlineData("nullable bool")]
 
         public async Task Type_writes_and_reads_end_to_end(string name) {
-            (DataField field, object expectedValue) input = _nameToData[name];
+            (DataField field, object? expectedValue) input = _nameToData[name];
 
             object actual = await WriteReadSingle(input.field, input.expectedValue);
 

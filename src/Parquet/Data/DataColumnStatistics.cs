@@ -1,4 +1,5 @@
 ﻿using System;
+using Parquet.Encodings;
 
 namespace Parquet.Data {
     /// <summary>

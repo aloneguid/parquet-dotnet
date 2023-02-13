@@ -17,7 +17,7 @@ namespace Parquet.Rows {
             _isRepeated = dataField.MaxRepetitionLevel > 0;
         }
 
-        public void Add(object value, LevelIndex[] indexes) {
+        public void Add(object? value, LevelIndex[] indexes) {
             if(_isRepeated) {
                 int rl = GetRepetitionLevel(indexes, _lastIndexes!);
 

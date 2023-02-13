@@ -17,6 +17,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Include="..\NetBox.cs" Link="Extensions\NetBox.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
