@@ -147,6 +147,8 @@ What's going on?:?:
 3. Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory. 
 4. Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
 
+Read more on writing [here](writing.md).
+
 ### 📖Reading Data
 
 Reading data also has three different approaches, so I'm going to unwrap them here in the same order as above.
