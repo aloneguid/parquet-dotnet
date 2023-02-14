@@ -10,9 +10,11 @@ namespace Parquet.PerfRunner.Benchmarks {
     [MeanColumn]
     [MemoryDiagnoser]
     [MarkdownExporter]
+    [RPlotExporter]
     public class WriteBenchmark : BenchmarkBase {
 
-        [Params(typeof(int), typeof(int?), typeof(string))]
+        //[Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
+        [Params(typeof(string))]
         public Type DataType;
 
         private DataField? _f;
@@ -53,6 +55,14 @@ namespace Parquet.PerfRunner.Benchmarks {
             } else if(DataType == typeof(int?)) {
                 using(LogicalColumnWriter<int?> w = rowGroup.NextColumn().LogicalWriter<int?>()) {
                     w.WriteBatch((int?[])_ar!);
+                }
+            } else if(DataType == typeof(double)) {
+                using(LogicalColumnWriter<double> w = rowGroup.NextColumn().LogicalWriter<double>()) {
+                    w.WriteBatch((double[])_ar!);
+                }
+            } else if(DataType == typeof(double?)) {
+                using(LogicalColumnWriter<double?> w = rowGroup.NextColumn().LogicalWriter<double?>()) {
+                    w.WriteBatch((double?[])_ar!);
                 }
             } else if(DataType == typeof(string)) {
                 using(LogicalColumnWriter<string> w = rowGroup.NextColumn().LogicalWriter<string>()) {

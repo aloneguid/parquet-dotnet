@@ -19,6 +19,10 @@ namespace Parquet.PerfRunner.Benchmarks {
                 ar = Enumerable.Range(0, DataSize).ToArray();
             } else if(t == typeof(int?)) {
                 ar = Enumerable.Range(0, DataSize).Select(i => i < 10000 ? (int?)i : null).ToArray();
+            } else if(t == typeof(double)) {
+                ar = Enumerable.Range(0, DataSize).Select(i => (double)i).ToArray();
+            } else if(t == typeof(double)) {
+                ar = Enumerable.Range(0, DataSize).Select(i => i < 10000 ? (double?)i : null).ToArray();
             } else if(t == typeof(string)) {
                 ar = Enumerable.Range(0, DataSize).Select(i => RandomString(30)).ToArray();
             } else {

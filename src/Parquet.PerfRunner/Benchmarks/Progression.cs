@@ -16,6 +16,7 @@ namespace Parquet.PerfRunner.Benchmarks {
     //[ShortRunJob]
     [MarkdownExporter]
     [MemoryDiagnoser]
+    [RPlotExporter]
     public class VersionedBenchmark {
 
         public static void Run() {
@@ -30,6 +31,7 @@ namespace Parquet.PerfRunner.Benchmarks {
                 AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.0"));
                 AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.2"));
                 AddJob(baseJob.WithNuGet("Parquet.Net", "4.4.1"));
+                AddJob(baseJob.WithNuGet("Parquet.Net", "4.5.0"));
             }
         }
 
