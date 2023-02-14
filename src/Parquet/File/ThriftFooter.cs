@@ -32,10 +32,12 @@ namespace Parquet.File {
             _fileMeta = CreateThriftSchema(schema);
             _fileMeta.Num_rows = totalRowCount;
 
+
+            // Looks like Spark is sensitive about this format. See https://github.com/aloneguid/parquet-dotnet/issues/261
 #if DEBUG
-            _fileMeta.Created_by = "Parquet.Net local dev version";
+            _fileMeta.Created_by = "Parquet.Net version LocalDev (build Local)";
 #else
-            _fileMeta.Created_by = $"Parquet.Net v{Globals.Version}";
+            _fileMeta.Created_by = $"Parquet.Net version {Globals.Version} (build {Globals.GitSha})";
 #endif
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
