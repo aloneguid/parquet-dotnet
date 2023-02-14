@@ -37,7 +37,7 @@ namespace Parquet.File {
 #if DEBUG
             _fileMeta.Created_by = "Parquet.Net version LocalDev (build Local)";
 #else
-            _fileMeta.Created_by = $"Parquet.Net version {Globals.Version} (build {Globals.GitSha})";
+            _fileMeta.Created_by = $"Parquet.Net version {Globals.Version} (build {Globals.GithubSha})";
 #endif
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
