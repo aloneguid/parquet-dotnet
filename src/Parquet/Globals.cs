@@ -10,5 +10,10 @@
         /// Library version
         /// </summary>
         public static readonly string Version = "${VERSION}";
+
+        /// <summary>
+        /// Github Actions stamped commit SHA
+        /// </summary>
+        public static readonly string GithubSha = "${GITHUB_SHA}";
     }
 }
