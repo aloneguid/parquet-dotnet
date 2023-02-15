@@ -12,7 +12,8 @@
         public static readonly string Version = "${VERSION}";
 
         /// <summary>
-        /// Github Actions stamped commit SHA
+        /// Github Actions stamped commit SHA. For more supported variables see
+        /// https://docs.github.com/en/actions/learn-github-actions/variables
         /// </summary>
         public static readonly string GithubSha = "${GITHUB_SHA}";
     }

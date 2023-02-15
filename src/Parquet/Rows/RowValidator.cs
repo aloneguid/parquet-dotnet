@@ -25,7 +25,7 @@ namespace Parquet.Rows {
                     case SchemaType.Struct:
                         if(value is Row row1) {
                             Validate(row1, ((StructField)field).Fields);
-                        } else {
+                        } else if (value != null) {
                             throw new InvalidOperationException("expected Row");
                         }
                         break;

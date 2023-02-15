@@ -35,16 +35,16 @@ namespace Parquet.Rows {
                         _values.Add(null);
                         _rls.Add(0);
                     }
-                }
-                else {
+                } else {
                     _values.Add(value);
                     _rls.Add(rl);
                 }
 
                 _lastIndexes = indexes;
-            }
-            else                 //non-repeated fields can only appear on the first level and have no repetition levels (obviously)
+            } else {
+                //non-repeated fields can only appear on the first level and have no repetition levels (obviously)
                 _values.Add(value);
+            }
 
         }
 
