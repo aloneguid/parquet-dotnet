@@ -221,6 +221,31 @@ namespace Parquet.Test.Rows {
         }
 
         [Fact]
+        public async Task Struct_write_read_with_null_entry() {
+            var table = new Table(
+               new ParquetSchema(
+                  new DataField<string>("isbn"),
+                  new StructField("author",
+                     new DataField<string>("firstName"),
+                     new DataField<string>("lastName"))));
+            var ms = new MemoryStream();
+
+            table.Add("12345-6", new Row("Hazel", "Nut"));
+            table.Add("12345-7", new Row("Marsha", "Mellow"));
+            table.Add("12345-7", null);
+
+            Table table2 = await WriteReadAsync(table);
+
+            // temporary hack as null entry structures are not well supported
+            var tmp = new Table(table.Schema);
+            tmp.Add(table[0]);
+            tmp.Add(table[1]);
+            tmp.Add("12345-7", new Row(new object?[] { null, null }));
+
+            Assert.Equal(tmp.ToString(), table2.ToString(), ignoreLineEndingDifferences: true);
+        }
+
+        [Fact]
         public async Task Struct_with_repeated_field_writes_reads() {
             var t = new Table(new ParquetSchema(
                new DataField<string>("name"),

@@ -26,30 +26,33 @@ namespace Parquet.Rows {
             return result;
         }
 
-        private void ProcessRows(IReadOnlyCollection<Field> fields, IReadOnlyCollection<Row> rows, int level, LevelIndex[] indexes) {
+        private void ProcessRows(IReadOnlyCollection<Field> fields, IReadOnlyCollection<Row>? rows, int level, LevelIndex[] indexes) {
+            if(rows == null)
+                return;
+
             int i = 0;
             foreach(Row row in rows)
                 ProcessRow(fields, row, level, indexes.Append(new LevelIndex(level, i++)));
         }
 
-        private void ProcessRow(IReadOnlyCollection<Field> fields, Row row, int level, LevelIndex[] indexes) {
+        private void ProcessRow(IReadOnlyCollection<Field> fields, Row? row, int level, LevelIndex[] indexes) {
             int cellIndex = 0;
             foreach(Field f in fields) {
                 switch(f.SchemaType) {
                     case SchemaType.Data:
-                        ProcessDataValue(f, row[cellIndex], indexes);
+                        ProcessDataValue(f, row == null ? null : row[cellIndex], indexes);
                         break;
 
                     case SchemaType.Map:
-                        ProcessMap((MapField)f, (IReadOnlyCollection<Row>)row[cellIndex]!, level + 1, indexes);
+                        ProcessMap((MapField)f, row == null ? null : (IReadOnlyCollection<Row>)row[cellIndex]!, level + 1, indexes);
                         break;
 
                     case SchemaType.Struct:
-                        ProcessRow(((StructField)f).Fields, (Row)row[cellIndex]!, level + 1, indexes);
+                        ProcessRow(((StructField)f).Fields, row == null ? null : (Row)row[cellIndex]!, level + 1, indexes);
                         break;
 
                     case SchemaType.List:
-                        ProcessList((ListField)f, row[cellIndex]!, level + 1, indexes);
+                        ProcessList((ListField)f, row == null ? null : row[cellIndex]!, level + 1, indexes);
                         break;
 
                     default:
@@ -60,17 +63,17 @@ namespace Parquet.Rows {
             }
         }
 
-        private void ProcessMap(MapField mapField, IReadOnlyCollection<Row> mapRows, int level, LevelIndex[] indexes) {
+        private void ProcessMap(MapField mapField, IReadOnlyCollection<Row>? mapRows, int level, LevelIndex[] indexes) {
             var fields = new Field[] { mapField.Key, mapField.Value };
 
-            var keyCell = mapRows.Select(r => r[0]).ToList();
-            var valueCell = mapRows.Select(r => r[1]).ToList();
+            List<object?> keyCell = mapRows == null ? new List<object?>() : mapRows.Select(r => r[0]).ToList();
+            List<object?> valueCell = mapRows == null ? new List<object?>() : mapRows.Select(r => r[1]).ToList();
             var row = new Row(keyCell, valueCell);
 
             ProcessRow(fields, row, level, indexes);
         }
 
-        private void ProcessList(ListField listField, object cellValue, int level, LevelIndex[] indexes) {
+        private void ProcessList(ListField listField, object? cellValue, int level, LevelIndex[] indexes) {
             Field f = listField.Item;
 
             switch(f.SchemaType) {
@@ -79,7 +82,7 @@ namespace Parquet.Rows {
                     ProcessDataValue(f, cellValue, indexes);
                     break;
                 case SchemaType.Struct:
-                    ProcessRows(((StructField)f).Fields, (IReadOnlyCollection<Row>)cellValue, level, indexes);
+                    ProcessRows(((StructField)f).Fields, cellValue == null ? null : (IReadOnlyCollection<Row>)cellValue, level, indexes);
                     break;
                 default:
                     throw new NotSupportedException();
