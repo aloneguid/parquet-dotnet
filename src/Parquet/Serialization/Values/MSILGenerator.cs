@@ -343,10 +343,11 @@ namespace Parquet.Serialization.Values {
             PropertyInfo? prop = classType.GetTypeInfo().GetDeclaredProperty(fieldName);
 
             // TODO: trying to get build, probably not the best solution
-            if(prop == null) {
+            var baseType = classType.BaseType;
+            while(prop == null && baseType != null) {
                 // if pi is null, try the base class
-                TypeInfo? baseType = classType.BaseType?.GetTypeInfo();
-                prop = baseType?.GetDeclaredProperty(fieldName);
+                prop = baseType?.GetTypeInfo()?.GetDeclaredProperty(fieldName);
+                baseType = baseType?.BaseType;
             }
 
             return prop;
