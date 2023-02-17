@@ -9,6 +9,7 @@ namespace Parquet.Test {
     public class InheritedPropertiesTest : TestBase {
         private InheritedClass[] GenerateRecordsToSerialize() {
             InheritedClass record = new() {
+                BasePropertyLevel2 = "0",
                 BaseProperty = "A",
                 InheritedProperty = "B"
             };
@@ -55,9 +56,15 @@ namespace Parquet.Test {
             Assert.Equal(expected.InheritedProperty, actual.InheritedProperty);
             Assert.NotNull(actual.BaseProperty);
             Assert.Equal(expected.BaseProperty, actual.BaseProperty);
+            Assert.NotNull(actual.BasePropertyLevel2);
+            Assert.Equal(expected.BasePropertyLevel2, actual.BasePropertyLevel2);
         }
 
-        private class BaseClass {
+        private class BaseClassLevel2 {
+            public string? BasePropertyLevel2 { get; set; }
+        }
+
+        private class BaseClass : BaseClassLevel2 {
             public string? BaseProperty { get; set; }
         }
 

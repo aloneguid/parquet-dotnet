@@ -49,13 +49,18 @@ namespace Parquet.Serialization {
         /// </summary>
         /// <returns><see cref="Schema"/></returns>
         public ParquetSchema ReflectWithInheritedProperties() {
-            IEnumerable<PropertyInfo> properties = _classType.DeclaredProperties;
-            IEnumerable<PropertyInfo>? baseClassProperties = _classType.BaseType?.GetTypeInfo().DeclaredProperties;
+            var properties = new List<PropertyInfo>();
+            Type? classType = _classType;
+            while(classType != null) {
+                var declaredClassProperties = classType.GetTypeInfo().DeclaredProperties.ToList();
+                properties.AddRange(declaredClassProperties);
+                classType = classType.BaseType;
+            }
 
-            if(baseClassProperties == null)
+            if(properties == null)
                 throw new InvalidOperationException("failed to get declared properties");
 
-            List<Field> allValidFields = baseClassProperties.Concat(properties)
+            List<Field> allValidFields = properties
                 .Where(pickSerializableProperties)
                 .Select(GetField)
                 .Where(isNotNull)
