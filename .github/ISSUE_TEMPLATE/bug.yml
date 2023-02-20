@@ -1,0 +1,49 @@
+name: Bug Report
+description: File a bug report
+title: "[BUG]: "
+labels: ["bug", "triage"]
+assignees:
+  - octocat
+body:
+  - type: input
+    id: libversion
+    attributes:
+      label: Library Version
+      description: Which version of Parquet.Net is affected?
+      placeholder: ex. 4.5.1
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      description: Which OS is this affecting?
+      placeholder: ex. Ubuntu Linux
+    validations:
+      required: true
+  - type: dropdown
+    id: os-arch
+    attributes:
+      label: OS Architecture
+      description: OS Architecture
+      options:
+        - 32 bit
+        - 64 bit
+        - ARM 64
+        - Other (please specify)
+    validations:
+      required: true
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: How to reproduce?
+      description: Exact steps to reproduce this bug.
+      value: "1. ...."
+    validations:
+      required: true
+  - type: textarea
+    id: repro-code
+    attributes:
+      label: Failing test
+      description: Providing a failing unit test or runnable piece of code will greatly speed up issue resolution.
+      render: csharp

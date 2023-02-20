@@ -1,0 +1,15 @@
+name: General Issue
+description: NOT a bug report.
+title: "..."
+labels: [ "triage" ]
+assignees:
+  - octocat
+body:
+  - type: textarea
+    id: text
+    attributes:
+      label: Issue description
+      description: Please describe the issue.
+      value: "..."
+    validations:
+      required: true
