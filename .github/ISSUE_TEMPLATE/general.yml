@@ -9,7 +9,7 @@ body:
     id: text
     attributes:
       label: Issue description
-      description: Please describe the issue.
+      description: Please describe the issue. Note that you can also use Discussions tab for general discussions.
       value: "..."
     validations:
       required: true
