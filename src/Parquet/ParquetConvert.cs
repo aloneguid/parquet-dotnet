@@ -6,14 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
-using Parquet.File;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Values;
 
 namespace Parquet {
     /// <summary>
-    /// High-level object oriented API for Apache Parquet
+    /// High-level object oriented API for Apache Parquet.
+    /// Called ParquetConvert due to similarity to the popular library JSON.Net
     /// </summary>
     public static class ParquetConvert {
         /// <summary>
