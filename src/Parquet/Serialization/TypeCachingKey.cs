@@ -1,7 +1,19 @@
 ﻿using System;
+
+/* Unmerged change from project 'Parquet (netstandard2.0)'
+Before:
 using Parquet.Schema;
 
 namespace Parquet.Serialization.Values {
+After:
+using Parquet.Schema;
+using Parquet.Serialization;
+using Parquet.Serialization;
+using Parquet.Serialization.Values {
+*/
+using Parquet.Schema;
+
+namespace Parquet.Serialization {
     class TypeCachingKey : IEquatable<TypeCachingKey> {
         public TypeCachingKey(Type classType, DataField field) {
             ClassType = classType ?? throw new ArgumentNullException(nameof(classType));
@@ -22,7 +34,7 @@ namespace Parquet.Serialization.Values {
         }
 
         public override int GetHashCode() {
-            return (31 * ClassType.GetHashCode()) + Field.GetHashCode();
+            return 31 * ClassType.GetHashCode() + Field.GetHashCode();
         }
     }
 }

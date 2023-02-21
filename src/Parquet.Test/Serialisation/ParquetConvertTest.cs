@@ -661,7 +661,7 @@ namespace Parquet.Test.Serialisation {
                 TestValue = value,
             };
 
-            ParquetSchema schema = SchemaReflector.Reflect<StructureWithTestType<T>>();
+            ParquetSchema schema = typeof(StructureWithTestType<T>).GetParquetSchema(true);
 
             using(MemoryStream stream = new MemoryStream()) {
                 await ParquetConvert.SerializeAsync<StructureWithTestType<T>>(new StructureWithTestType<T>[] { input }, stream, schema);
@@ -701,7 +701,7 @@ namespace Parquet.Test.Serialisation {
 
             public int? NullableId { get; set; }
 
-            public string Name { get; set; }
+            public string? Name { get; set; }
 
             public TimeSpan Offset { get; set; }
         }

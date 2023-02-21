@@ -152,7 +152,7 @@ namespace Parquet.Test {
             else if(actual.GetType() == typeof(DateTime)) {
                 var dtActual = (DateTime)actual;
                 Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
-                var dtExpected = (DateTime)input.expectedValue;
+                var dtExpected = (DateTime)input.expectedValue!;
                 dtExpected = dtExpected.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
                     : dtExpected.ToUniversalTime();

@@ -37,21 +37,21 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         private const int DataSize = 1000000;
         private DataColumn? _ints;
-        private MemoryStream _intsMs;
+        private MemoryStream? _intsMs;
         private DataColumn? _nullableInts;
-        private MemoryStream _nullableIntsMs;
+        private MemoryStream? _nullableIntsMs;
         private DataColumn? _doubles;
-        private MemoryStream _doublesMs;
+        private MemoryStream? _doublesMs;
         private DataColumn? _nullableDoubles;
-        private MemoryStream _nullableDoublesMs;
+        private MemoryStream? _nullableDoublesMs;
         private DataColumn? _randomStrings;
-        private MemoryStream _randomStringsMs;
+        private MemoryStream? _randomStringsMs;
         private DataColumn? _repeatingStrings;
-        private MemoryStream _repeatedStringsMs;
+        private MemoryStream? _repeatedStringsMs;
 
         #region [ Helpers ]
 
-        private static Random random = new Random();
+        private static readonly Random random = new Random();
         public static string RandomString(int length) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
@@ -131,7 +131,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         [Benchmark]
         public Task WriteInts() {
             //Console.WriteLine(Parquet.Globals.Version);
-            return Run(_ints);
+            return Run(_ints!);
         }
 
         //[Benchmark]
@@ -141,7 +141,7 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         [Benchmark]
         public Task WriteNullableInts() {
-            return Run(_nullableInts);
+            return Run(_nullableInts!);
         }
 
         //[Benchmark]
