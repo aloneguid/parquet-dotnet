@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Parquet.Encodings;
 using Parquet.Schema;
 
@@ -66,6 +66,22 @@ namespace Parquet.Serialization {
             return r;
         }
 
+        private static string GetColumnName(PropertyInfo pi) {
+
+            JsonPropertyNameAttribute? stxt = pi.GetCustomAttribute<JsonPropertyNameAttribute>();
+            ParquetColumnAttribute? pc = pi.GetCustomAttribute<ParquetColumnAttribute>();
+
+            return stxt?.Name ?? pc?.Name ?? pi.Name;
+        }
+
+        private static bool ShouldIgnore(PropertyInfo pi) {
+#pragma warning disable CS0618 // Type or member is obsolete
+            return 
+                pi.GetCustomAttribute<ParquetIgnoreAttribute>() != null ||
+                pi.GetCustomAttribute<JsonIgnoreAttribute>() != null;
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
         /// <summary>
         /// Makes field from property. 
         /// </summary>
@@ -74,12 +90,11 @@ namespace Parquet.Serialization {
         /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
         /// <exception cref="NotImplementedException"></exception>
         private static Field? MakeField(PropertyInfo pi, bool forWriting) {
-            bool ignore = pi.GetCustomAttribute<ParquetIgnoreAttribute>() != null;
-            if(ignore)
+            if(ShouldIgnore(pi))
                 return null;
 
             Type t = pi.PropertyType;
-            string name = pi.GetCustomAttribute<ParquetColumnAttribute>()?.Name ?? pi.Name;
+            string name = GetColumnName(pi);
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
             if(bt.TryExtractEnumerableType(out Type? bti)) {

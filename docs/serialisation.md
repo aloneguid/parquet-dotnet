@@ -79,29 +79,7 @@ MyClassV1[] v1structures = ParquetConvert.Deserialize<MyClassV1>(stream,rowGroup
 
 ## Customising Serialisation
 
-You can customise serialisation process by attributing class properties with `[ParquetColumn]` attribute:
+Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
-```csharp
-class MyClass
-{
-   [ParquetColumn(Name = "cust_id")]
-   public int Id { get; set; }
-}
-```
-
-It supports the following properties:
-- **Name** overrides column name in the parquet file.
-
-### Ignoring properties while serializing
-
-You can ignore few properties from serialization process by decorating them with `ParquetIgnore` attribute.
-
- with `[ParquetIgnore]` attribute:
-
-```csharp
-class MyClass
-{
-   [ParquetIgnore]
-   public int Id { get; set; }
-}
-```
+- [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name.
+- [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
