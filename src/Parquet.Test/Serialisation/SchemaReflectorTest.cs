@@ -1,9 +1,24 @@
+using System.Text.Json.Serialization;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
     public class SchemaReflectorTest : TestBase {
+
+
+        /// <summary>
+        /// Essentially all the test cases are this class' fields
+        /// </summary>
+        class PocoClass {
+            public int Id { get; set; }
+
+            [ParquetColumn("AltId")] public int AnnotatedId { get; set; }
+            public float? NullableFloat { get; set; }
+
+            public int[]? IntArray { get; set; }
+        }
+
         [Fact]
         public void I_can_infer_different_types() {
             ParquetSchema schema = typeof(PocoClass).GetParquetSchema(true);
@@ -38,15 +53,15 @@ namespace Parquet.Test.Serialisation {
             Assert.True(intArray.IsArray);
         }
 
+
+        class PocoSubClass : PocoClass {
+            public int ExtraProperty { get; set; }
+        }
+
         [Fact]
         public void I_can_recognize_inherited_properties() {
             ParquetSchema schema = typeof(PocoSubClass).GetParquetSchema(true);
             Assert.Equal(5, schema.Fields.Count);
-            VerifyPocoClassWithInheritedFields(schema);
-            VerifyPocoSubClassField((DataField)schema[0]);
-        }
-
-        private static void VerifyPocoClassWithInheritedFields(ParquetSchema schema) {
             DataField extraProperty = (DataField)schema[0];
             Assert.Equal("ExtraProperty", extraProperty.Name);
             Assert.Equal(typeof(int), extraProperty.ClrType);
@@ -76,29 +91,50 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(typeof(int), intArray.ClrType);
             Assert.False(intArray.IsNullable);
             Assert.True(intArray.IsArray);
-        }
 
-        private static void VerifyPocoSubClassField(DataField extraProp) {
+            var extraProp = (DataField)schema[0];
             Assert.Equal("ExtraProperty", extraProp.Name);
             Assert.Equal(typeof(int), extraProp.ClrType);
             Assert.False(extraProp.IsNullable);
             Assert.False(extraProp.IsArray);
         }
 
-        /// <summary>
-        /// Essentially all the test cases are this class' fields
-        /// </summary>
-        class PocoClass {
-            public int Id { get; set; }
+        class AliasedPoco {
 
-            [ParquetColumn("AltId")] public int AnnotatedId { get; set; }
-            public float? NullableFloat { get; set; }
+            [ParquetColumn(Name = "ID1")]
+            public int _id1 { get; set; }
 
-            public int[]? IntArray { get; set; }
+            [JsonPropertyName("ID2")]
+            public int _id2 { get; set; }
         }
 
-        class PocoSubClass : PocoClass {
-            public int ExtraProperty { get; set; }
+        [Fact]
+        public void AliasedProperties() {
+            ParquetSchema schema = typeof(AliasedPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("ID1"),
+                new DataField<int>("ID2")
+                ), schema);
+        }
+
+        class IgnoredPoco {
+
+            public int NotIgnored { get; set; }
+
+            [ParquetIgnore]
+            public int Ignored1 { get; set; }
+
+            [JsonIgnore]
+            public int Ignored2 { get; set; }
+        }
+
+        [Fact]
+        public void IgnoredProperties() {
+            ParquetSchema schema = typeof(IgnoredPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("NotIgnored")), schema);
         }
     }
 }

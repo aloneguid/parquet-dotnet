@@ -35,6 +35,7 @@ namespace Parquet {
 
         /// <summary>
         /// Column name. When undefined a default property name is used which is simply the declared property name on the class.
+        /// Prefer using <see cref="System.Text.Json.Serialization.JsonPropertyNameAttribute"/> which serves the same purpose.
         /// </summary>
         public string? Name { get; set; }
 
