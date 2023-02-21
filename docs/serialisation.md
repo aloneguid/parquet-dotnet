@@ -2,9 +2,11 @@
 
 Parquet library is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
 
-For this reason the library implements a fast serialiser/deserialiser for parquet files.
+Class serialisation is **really fast** as it generates [MSIL](https://en.wikipedia.org/wiki/Common_Intermediate_Language) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
 
-They both generate IL code in runtime for a class type to work with, therefore there is a tiny bit of a startup compilation delay which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast. Note that this is still faster than reflection. In general, we see around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records).
+> At the moment class serialisation supports only simple first-level class *properties* (having a getter and a setter). None of the complex types such as arrays etc. are supported. This is mostly due to lack of time rather than technical limitations.
+
+## Quick Start
 
 Both serialiser and deserialiser works with array of classes. Let's say you have the following class definition:
 
@@ -103,9 +105,3 @@ class MyClass
    public int Id { get; set; }
 }
 ```
-
-## Limitations
-
-At the moment serialiser supports only simple first-level class *properties* (having a getter and a setter).  See the [inheritance docs](inheritance.md) for details on inherited properties.
-
-None of the complex types such as arrays etc. are supported. We would love to hear your feedback whether this functionality is required though!

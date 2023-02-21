@@ -9,7 +9,6 @@ using Parquet.Extensions;
 using Parquet.File;
 using Parquet.Schema;
 using Parquet.Serialization;
-using Parquet.Serialization.Values;
 
 namespace Parquet {
     /// <summary>
@@ -44,7 +43,7 @@ namespace Parquet {
 
             //if schema is not passed reflect it
             if(schema == null) {
-                schema = SchemaReflector.Reflect<T>();
+                schema = typeof(T).GetParquetSchema(false);
             }
 
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination, append: append)) {
@@ -107,7 +106,7 @@ namespace Parquet {
             var result = new List<T>();
             using(ParquetReader reader = await ParquetReader.CreateAsync(input, options, true, cancellationToken)) {
                 if(fileSchema == null) {
-                    fileSchema = new SchemaReflector(typeof(T)).Reflect();
+                    fileSchema = typeof(T).GetParquetSchema(true);
                 }
 
                 DataField[] dataFields = fileSchema.GetDataFields();

@@ -6,9 +6,19 @@ using System.Reflection.Emit;
 using Parquet.Data;
 using Parquet.Rows;
 using Parquet.Schema;
+
+/* Unmerged change from project 'Parquet (netstandard2.0)'
+Before:
+using static System.Reflection.Emit.OpCodes;
+After:
+using Parquet.Serialization;
+using Parquet.Serialization;
+using Parquet.Serialization.Values;
+using static System.Reflection.Emit.OpCodes;
+*/
 using static System.Reflection.Emit.OpCodes;
 
-namespace Parquet.Serialization.Values {
+namespace Parquet.Serialization {
     class MSILGenerator {
         private static readonly TypeConversion[] conversions = new TypeConversion[] {
             NullableDateTimeToDateTimeConversion.Instance,
@@ -115,17 +125,14 @@ namespace Parquet.Serialization.Values {
                         il.Emit(Ldarg_3);
                         il.StLoc(rl);
                     }
-                }
-                else {
+                } else {
                     //hold item
                     LocalBuilder item = il.DeclareLocal(f.ClrNullableIfHasNullsType);
 
                     //get current value, converting if necessary
                     il.Emit(Ldloc, currentElement.LocalIndex);
                     il.Emit(Callvirt, getValueMethod);
-                    if(conversion != null) {
-                        conversion.Emit(il);
-                    }
+                    if(conversion != null)                         conversion.Emit(il);
                     il.Emit(Stloc, item.LocalIndex);
 
                     //store in destination list
@@ -212,8 +219,7 @@ namespace Parquet.Serialization.Values {
 
                     il.Increment(ci);
                 }
-            }
-            else {
+            } else {
                 //get values
                 LocalBuilder data = il.DeclareLocal(typeof(Array));
                 if(getDataMethod == null)
@@ -243,10 +249,16 @@ namespace Parquet.Serialization.Values {
                     if(conversion != null) {
                         il.LdLoc(dataItem);
                         conversion.Emit(il);
+
+/* Unmerged change from project 'Parquet (netstandard2.0)'
+Before:
                     }
                     else {
                         il.Emit(Ldloc, dataItem.LocalIndex);
-                    }
+After:
+                    } else                         il.Emit(Ldloc, dataItem.LocalIndex);
+*/
+                    } else                         il.Emit(Ldloc, dataItem.LocalIndex);
 
                     //assign data item to class property
                     il.Emit(Callvirt, setValueMethod);
@@ -259,7 +271,8 @@ namespace Parquet.Serialization.Values {
         private TypeConversion? GetConversion(Type? fromType, Type? toType) {
             if(fromType == null || toType == null)
                 return null;
-            if(fromType == toType) return null;
+            if(fromType == toType)
+                return null;
             return conversions.FirstOrDefault(c => c.FromType == fromType && c.ToType == toType);
         }
 
@@ -282,12 +295,12 @@ namespace Parquet.Serialization.Values {
             public override void Emit(ILGenerator il) {
                 if(method == null)
                     throw new InvalidOperationException("method not found");
-                il.Emit(OpCodes.Call, method);
+                il.Emit(Call, method);
             }
         }
 
-        sealed class NullableBooleanToBooleanConversion : TypeConversion<Boolean?, Boolean> {
-            public static readonly TypeConversion<Boolean?, Boolean> Instance = new NullableBooleanToBooleanConversion();
+        sealed class NullableBooleanToBooleanConversion : TypeConversion<bool?, bool> {
+            public static readonly TypeConversion<bool?, bool> Instance = new NullableBooleanToBooleanConversion();
 
             private static readonly MethodInfo? method = typeof(ConversionHelpers).GetTypeInfo().GetDeclaredMethod("NullableBooleanToBooleanConversion");
 
@@ -295,7 +308,7 @@ namespace Parquet.Serialization.Values {
                 if(method == null)
                     throw new InvalidOperationException("method not found");
 
-                il.Emit(OpCodes.Call, method);
+                il.Emit(Call, method);
             }
         }
     }
@@ -318,9 +331,8 @@ namespace Parquet.Serialization.Values {
         /// </summary>
         /// <param name="value">Boolean?</param>
         /// <returns>Boolean</returns>
-        public static Boolean NullableBooleanToBooleanConversion(Boolean? value) {
-            if(!value.HasValue) { return false; }
-            return value.Value;
+        public static bool NullableBooleanToBooleanConversion(bool? value) {
+            if(!value.HasValue) return false;             return value.Value;
 
         }
     }

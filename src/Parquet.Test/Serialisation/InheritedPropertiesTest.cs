@@ -5,7 +5,7 @@ using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 
-namespace Parquet.Test {
+namespace Parquet.Test.Serialisation {
     public class InheritedPropertiesTest : TestBase {
         private InheritedClass[] GenerateRecordsToSerialize() {
             InheritedClass record = new() {
@@ -14,7 +14,7 @@ namespace Parquet.Test {
                 InheritedProperty = "B"
             };
 
-            InheritedClass[] recordsToSerialize = new InheritedClass[1] {
+            var recordsToSerialize = new InheritedClass[1] {
                 record
             };
 
@@ -22,27 +22,9 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task Serialize_class_without_inherited_properties() {
-            InheritedClass[] recordsToSerialize = GenerateRecordsToSerialize();
-            ParquetSchema schema = SchemaReflector.Reflect<InheritedClass>();
-
-            // TODO: is there some `with/using` syntax i should use here?
-            MemoryStream stream = new();
-            await ParquetConvert.SerializeAsync(recordsToSerialize, stream, schema);
-            InheritedClass[] deserializedRecords =
-                await ParquetConvert.DeserializeAsync<InheritedClass>(stream, fileSchema: schema);
-
-            InheritedClass expected = recordsToSerialize[0];
-            InheritedClass actual = deserializedRecords[0];
-
-            Assert.Null(actual.BaseProperty);
-            Assert.Equal(expected.InheritedProperty, actual.InheritedProperty);
-        }
-
-        [Fact]
         public async Task Serialize_class_with_inherited_properties() {
             InheritedClass[] recordsToSerialize = GenerateRecordsToSerialize();
-            ParquetSchema schema = SchemaReflector.ReflectWithInheritedProperties<InheritedClass>();
+            ParquetSchema schema = typeof(InheritedClass).GetParquetSchema(true);
 
             // TODO: is there some `with/using` syntax i should use here?
             MemoryStream stream = new();
