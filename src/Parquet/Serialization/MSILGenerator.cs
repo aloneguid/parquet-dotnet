@@ -355,7 +355,7 @@ After:
             PropertyInfo? prop = classType.GetTypeInfo().GetDeclaredProperty(fieldName);
 
             // TODO: trying to get build, probably not the best solution
-            var baseType = classType.BaseType;
+            Type? baseType = classType.BaseType;
             while(prop == null && baseType != null) {
                 // if pi is null, try the base class
                 prop = baseType?.GetTypeInfo()?.GetDeclaredProperty(fieldName);

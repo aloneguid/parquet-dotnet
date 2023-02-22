@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Parquet.Schema;
 using Parquet.Serialization;
@@ -135,6 +136,23 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(new ParquetSchema(
                 new DataField<int>("NotIgnored")), schema);
+        }
+
+        class SimpleMapPoco {
+            public int? Id { get; set; }
+
+            public Dictionary<string, int> Tags { get; set; } = new Dictionary<string, int>();
+        }
+
+        [Fact]
+        public void SimpleMap() {
+            ParquetSchema schema = typeof(SimpleMapPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int?>("Id"),
+                new MapField("Tags", 
+                    new DataField<string>("Key"),
+                    new DataField<int>("Value"))), schema);
         }
     }
 }

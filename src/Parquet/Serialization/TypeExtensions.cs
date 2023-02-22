@@ -82,6 +82,19 @@ namespace Parquet.Serialization {
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
+        private static MapField ConstructMapField(string name, string propertyName,
+            Type tKey, Type tValue,
+            bool forWriting) {
+
+            Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
+            PropertyInfo piKey = kvpType.GetProperty("Key")!;
+            PropertyInfo piValue = kvpType.GetProperty("Value")!;
+
+            var mf = new MapField(name, MakeField(piKey, forWriting)!, MakeField(piValue, forWriting)!);
+            mf.ClrPropName = propertyName;
+            return mf;
+        }
+
         /// <summary>
         /// Makes field from property. 
         /// </summary>
@@ -104,9 +117,9 @@ namespace Parquet.Serialization {
             if(SchemaEncoder.IsSupported(bt)) {
                 return ConstructDataField(name, pi.Name, t, pi);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-                throw new NotImplementedException("dictionaries!");
+                return ConstructMapField(name, pi.Name, tKey!, tValue!, forWriting);
             } else if(t.TryExtractEnumerableType(out Type? elementType)) {
-                throw new NotImplementedException("lists!");
+                throw new NotImplementedException("lists are not implemented yet");
             } else if(t.IsClass) {
                 // must be a struct then!
                 List<PropertyInfo> props = FindProperties(t, forWriting);

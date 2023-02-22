@@ -26,7 +26,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Declares a map field
         /// </summary>
-        public MapField(string name, DataField keyField, DataField valueField)
+        public MapField(string name, Field keyField, Field valueField)
            : base(name, SchemaType.Map) {
             Key = keyField;
             Value = valueField;
