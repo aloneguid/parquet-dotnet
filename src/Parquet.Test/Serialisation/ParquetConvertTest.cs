@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Parquet.Schema;
@@ -769,6 +770,18 @@ namespace Parquet.Test.Serialisation {
 
             // public T TestValue { get; set; }
             public T? TestValue { get { return testValue; } set { testValue = value; } }
+        }
+
+        public class SimpleMap {
+
+            [JsonPropertyName("t")]
+            public DateTime Timestamp { get; set; }
+
+            [JsonPropertyName("ip")]
+            public string IpAddress { get; set; }
+
+            [JsonPropertyName("tags")]
+            public Dictionary<string, string?> Tags { get; set; }
         }
     }
 }
