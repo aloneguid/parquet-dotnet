@@ -23,8 +23,6 @@ namespace Parquet.Test.Serialisation {
             program.CallVirt(typeof(Arg1).GetProperty(nameof(Arg1.Number)).SetMethod,
                 Ldarg_0, Ldc_I4_3);
 
-            program.Op(Ldc_I4_3);
-
             // program end
 
             Action<Arg1> dg = program.ToDelegate();
