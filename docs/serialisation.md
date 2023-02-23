@@ -56,6 +56,10 @@ Serialisation tries to fit into C# ecosystem like a ninja 🥷, including custom
 
 You can also serialize more complex types supported by the Parquet format.
 
+### Lists
+
+
+
 ### Maps (Dictionaries)
 
 

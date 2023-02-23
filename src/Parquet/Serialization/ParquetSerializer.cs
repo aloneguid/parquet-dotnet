@@ -96,6 +96,8 @@ namespace Parquet.Serialization {
             if(clrPath.Length > 1)
                 throw new NotImplementedException();
 
+            bool isDictionary = typeof(TClass) == typeof(Dictionary<string, object>);
+
             ParameterExpression classesParam = Expression.Parameter(typeof(IEnumerable<TClass>), "classes");
             ParameterExpression dcParam = Expression.Parameter(typeof(DataColumn), "dc");
 

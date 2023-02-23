@@ -11,33 +11,24 @@ Arrays *aka repeatable fields* is a basis for understanding how more complex dat
 ```csharp
 var field = new DataField<IEnumerable<int>>("items");
 ```
-or
-```csharp
-var field= new DataField("items", DataType.Int32, isArray: true);
-```
+To check if the field is repeated you can always test `.IsArray` Boolean flag.
 
-Apparently to check if the field is repeated you can always check `.IsArray` Boolean flag.
+Parquet columns are flat, so in order to store an array in the array which can only keep simple elements and not other arrays, you would *flatten* them. For instance to store two elements:
 
-Array column is also a usual instance of the `DataColumm` class, however in order to populate it you need to pass **repetition levels**. Repetition levels specify *at which level array starts* (please read more details on this in the link above). 
+- `[1, 2, 3]`
+- `[4, 5]`
 
-### Example
+in a flat array, it will look like `[1, 2, 3, 4, 5]`. And that's exactly how parquet stores them. Now, the problem starts when you want to read the values back. Is this `[1, 2]` and `[3, 4, 5]` or `[1]` and `[2, 3, 4, 5]`? There's no way to know without an extra information. Therefore, parquet also stores that extra information an an extra column per data column, which is called *repetition levels*. In the previous example, our array of arrays will expand into the following two columns:
 
-Let's say you have a following array of integer arrays:
+| #    | Data Column | Repetition Levels Column |
+| ---- | ----------- | ------------------------ |
+| 0    | 1           | 0                        |
+| 1    | 2           | 1                        |
+| 2    | 3           | 1                        |
+| 3    | 4           | 0                        |
+| 4    | 5           | 1                        |
 
-```
-[1 2 3]
-[4 5]
-[6 7 8 9]
-```
-
-This can be represented as:
-
-```
-values:             [1 2 3 4 5 6 7 8 9]
-repetition levels:  [0 1 1 0 1 0 1 1 1]
-```
-
-Where `0` means that this is a start of an array and `1` - it's a value continuation.
+In other words - it is the level at which we have to create a new list for the current value. In other words, the repetition level can be seen as a marker of when to start a new list and at which level.
 
 To represent this in C# code:
 
@@ -45,37 +36,8 @@ To represent this in C# code:
 var field = new DataField<IEnumerable<int>>("items");
 var column = new DataColumn(
    field,
-   new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
-   new int[] { 0, 1, 1, 0, 1, 0, 1, 1, 1 });
+   new int[] { 1, 2, 3, 4, 5 },
+   new int[] { 0, 1, 1, 0, 1 });
 ```
 
-### Empty Arrays
 
-Empty arrays can be represented by simply having no element in them. For instance
-
-```
-[1 2]
-[]
-[3 4]
-```
-
-Goes into following:
-
-```
-values:             [1 2 null 3 4]
-repetition levels:  [0 1 0    0 1]
-```
-
-> Note that anything other than plain columns add a performance overhead due to obvious reasons for the need to pack and unpack data structures.
-
-## Structures
-
-todo
-
-## Lists
-
-todo
-
-## Maps
-
-##
