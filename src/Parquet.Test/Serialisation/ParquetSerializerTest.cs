@@ -43,5 +43,6 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(data2, data);
         }
+
     }
 }

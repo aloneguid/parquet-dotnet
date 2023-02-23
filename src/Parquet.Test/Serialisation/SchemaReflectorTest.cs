@@ -154,5 +154,29 @@ namespace Parquet.Test.Serialisation {
                     new DataField<string>("Key"),
                     new DataField<int>("Value"))), schema);
         }
+
+        class StructMemberPoco {
+            public string? FirstName { get; set; }
+
+            public string? LastName { get; set; }
+        }
+
+        class StructMasterPoco {
+            public int Id { get; set; }
+
+            public StructMemberPoco? Name { get; set; }
+        }
+
+        [Fact]
+        public void SimpleStruct() {
+            ParquetSchema schema = typeof(StructMasterPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("Id"),
+                new StructField("Name",
+                    new DataField<string>("FirstName"),
+                    new DataField<string>("LastName")
+                )), schema);
+        }
     }
 }
