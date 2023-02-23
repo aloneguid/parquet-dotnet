@@ -124,8 +124,16 @@ namespace Parquet.Test {
                 DataColumn bw1 = await rgr.ReadColumnAsync(dfs[1]);
                 Assert.Equal(200, bw1.Count);
             }
+        }
 
-
+        [Fact]
+        public async Task NYCtaxi() {
+            ParquetReader reader = await ParquetReader.CreateAsync("c:\\users\\alone\\Downloads\\data.parquet");
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            
+            foreach(DataField df in reader.Schema.GetDataFields()) {
+                DataColumn col = await rgr.ReadColumnAsync(df);
+            }
         }
     }
 }

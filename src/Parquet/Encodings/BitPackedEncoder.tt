@@ -122,7 +122,7 @@ namespace Parquet.Encodings {
         public static int Decode8Values<#= ed #>(Span<byte> src, Span<<#= nt #>> dest, int bitWidth) {
 
             // we always need at least bitWidth bytes available to decode 8 values
-            bool needsTempFuffer = src.Length < bitWidth;
+            bool needsTempFuffer = src.Length < bitWidth || dest.Length < 8;
             int decoded = 8;
 
             Span<byte> src1;
@@ -131,7 +131,7 @@ namespace Parquet.Encodings {
                 src1 = new byte[bitWidth];
                 src.CopyTo(src1);
                 dest1 = new <#= nt #>[8];
-                decoded = src.Length * 8 / bitWidth;
+                decoded = Math.Min(src.Length * 8 / bitWidth, dest.Length);
             } else {
                 src1 = src;
                 dest1 = dest;
