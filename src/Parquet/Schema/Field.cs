@@ -78,6 +78,11 @@ namespace Parquet.Schema {
             //only used by some schema fields internally to help construct a field hierarchy
         }
 
+        /// <summary>
+        /// Get child fields, which only makes sense for complex types
+        /// </summary>
+        internal virtual Field[] Children { get; } = new Field[0];
+
         internal bool Equals(Thrift.SchemaElement tse) {
             if(ReferenceEquals(tse, null))
                 return false;

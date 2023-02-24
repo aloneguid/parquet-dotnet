@@ -52,9 +52,44 @@ Serialisation tries to fit into C# ecosystem like a ninja 🥷, including custom
 - [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name.
 - [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
 
-## Non-Trivial Types
+## Nested Types
 
-You can also serialize more complex types supported by the Parquet format.
+You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format.
+
+### Structures
+
+Structures are just class members of a class and are completely transparent. For instance, `AddressBookEntry` class may contain a structure called `Address`:
+
+```csharp
+class Address {
+    public string? Country { get; set; }
+
+    public string? City { get; set; }
+}
+
+class AddressBookEntry {
+    public string? FirstName { get; set; }
+
+    public string? LastName { get; set; }   
+
+    public Address? Address { get; set; }
+}
+```
+
+Populated with the following fake data:
+
+```csharp
+var data = Enumerable.Range(0, 1_000_000).Select(i => new AddressBookEntry {
+            FirstName = "Joe",
+            LastName = "Bloggs",
+            Address = new Address() {
+                Country = "UK",
+                City = "Unknown"
+            }
+        }).ToList();
+```
+
+You can serialise/deserialise those using the same `ParquetSerializer.SerializeAsync` / `ParquetSerializer.DeserializeAsync` methods. It does understand subclasses and will magically traverse inside them.
 
 ### Lists
 

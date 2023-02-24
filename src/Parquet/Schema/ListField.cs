@@ -82,6 +82,8 @@ namespace Parquet.Schema {
             }
         }
 
+        internal override Field[] Children => new Field[] { Item };
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             int rl = parentRepetitionLevel;
             int dl = parentDefinitionLevel;

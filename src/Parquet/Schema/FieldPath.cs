@@ -74,6 +74,11 @@ namespace Parquet.Schema {
         public string? FirstPart => _parts.Count == 0 ? null : _parts[0];
 
         /// <summary>
+        /// Gets part by index
+        /// </summary>
+        public string this[int i] => _parts[i];
+
+        /// <summary>
         /// Number of elements in path
         /// </summary>
         public int Length => _parts.Count;

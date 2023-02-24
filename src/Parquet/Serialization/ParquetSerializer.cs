@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -25,10 +27,88 @@ namespace Parquet.Serialization {
             return Expression.Call(typeof(Console).GetMethod("WriteLine", new[] { typeof(string) })!, Expression.Constant(s));
         }
 
-        private static Func<IEnumerable<TClass>, Array> CreateCollectionExpression<TClass>(Type listElementType, FieldPath clrPath) {
+        private static Expression AccessProperty<TClass>(
+            ParquetSchema schema, DataField df, ParameterExpression classElementVar) {
 
-            if(clrPath.Length > 1)
-                throw new NotImplementedException();
+            Expression result = classElementVar;
+            Field[] levelFields = schema.Fields.ToArray();
+
+            for(int i = 0; i < df.Path.Length; i++) {
+                string cp = df.Path[i];
+                Field? cf = levelFields.FirstOrDefault(x => x.Name == cp);
+                if(cf == null)
+                    break;
+
+                //bool isValue = i == df.Path.Length - 1;
+
+                string name = cf.ClrPropName ?? cf.Name;
+                result = Expression.Property(result, name);
+
+                levelFields = cf.Children;
+            }
+
+            return result;
+        }
+
+        private static Expression SetProperty<TClass>(
+            ParquetSchema schema, DataField df,
+            ParameterExpression classInstanceVar, ParameterExpression valueVar) {
+
+            Expression levelProperty = classInstanceVar;
+            Type levelType = typeof(TClass);
+            Field[] levelFields = schema.Fields.ToArray();
+            var procreateExpressions = new List<Expression>();
+
+            for(int i = 0; i < df.Path.Length; i++) {
+                string cp = df.Path[i];
+                Field? cf = levelFields.FirstOrDefault(x => x.Name == cp);
+                if(cf == null)
+                    break;
+
+                bool isValue = i == df.Path.Length - 1;
+                string name = cf.ClrPropName ?? cf.Name;
+                levelProperty = Expression.Property(levelProperty, name);
+
+                if(!isValue) {
+                    PropertyInfo pi = levelType.GetProperty(name)!;
+
+                    ConditionalExpression pro = Expression.IfThen(
+                        Expression.Equal(levelProperty, Expression.Constant(null)), // test
+
+                        // if null, create a new instance
+                        Expression.Assign(levelProperty, Expression.New(pi.PropertyType))
+                        );
+                    procreateExpressions.Add(pro);
+
+                    levelFields = cf.Children;
+                    levelType = pi.PropertyType;
+                }
+            }
+
+            // assemble
+            BinaryExpression pas = Expression.Assign(levelProperty, valueVar);
+            if(procreateExpressions.Count == 0) {
+                return pas;
+            }
+
+            procreateExpressions.Add(pas);
+            return Expression.Block(procreateExpressions);
+        }
+
+        /// <summary>
+        /// Responsible for creating instances of child properties
+        /// </summary>
+        private static Action<TClass>? Procreate<TClass>(ParquetSchema schema) {
+
+            foreach(DataField df in schema.GetDataFields().Where(f => f.Path.Length > 0)) {
+                // todo
+            }
+
+            return null;
+        }
+
+        private static Func<IEnumerable<TClass>, Array> CreateCollectionExpression<TClass>(Type listElementType,
+            ParquetSchema schema, DataField df) {
 
             Type listType = typeof(List<>).MakeGenericType(listElementType);
 
@@ -61,7 +141,7 @@ namespace Parquet.Serialization {
                         Expression.Assign(classElementVar, Expression.Property(enumeratorVar, nameof(IEnumerator<TClass>.Current))),
 
                         // get value of the property
-                        Expression.Assign(classPropertyVar, Expression.Property(classElementVar, clrPath.FirstPart!)),
+                        Expression.Assign(classPropertyVar, AccessProperty<TClass>(schema, df, classElementVar)),
 
                         // add propVar to the result list
                         Expression.Call(resultVar, listType.GetMethod(nameof(IList.Add))!, classPropertyVar)
@@ -91,10 +171,8 @@ namespace Parquet.Serialization {
             return Expression.Lambda<Func<IEnumerable<TClass>, Array>>(block, classesParam).Compile();
         }
 
-        private static Action<IEnumerable<TClass>, DataColumn> CreateColumnInjectionExpression<TClass>(DataField df, FieldPath clrPath) {
-
-            if(clrPath.Length > 1)
-                throw new NotImplementedException();
+        private static Action<IEnumerable<TClass>, DataColumn> CreateColumnInjectionExpression<TClass>(
+            ParquetSchema schema, DataField df) {
 
             bool isDictionary = typeof(TClass) == typeof(Dictionary<string, object>);
 
@@ -137,11 +215,8 @@ namespace Parquet.Serialization {
 
 
                         // assign value to class property
-                        Expression.Assign(
-                            Expression.Property(classInstanceVar, clrPath.FirstPart!),
-                            arrayElementVar
-                            )
-                        ),
+                        SetProperty<TClass>(schema, df, classInstanceVar, arrayElementVar)
+                    ),
 
                     // if false
                     Expression.Break(loopBreakLabel)
@@ -169,7 +244,7 @@ namespace Parquet.Serialization {
         }
 
 
-        private static DataColumn CreateDataColumn<TClass>(DataField df, IEnumerable<TClass> classes) {
+        private static DataColumn CreateDataColumn<TClass>(ParquetSchema schema, DataField df, IEnumerable<TClass> classes) {
             // we need to collect instance field into 2 collections:
             // 1. Actual list of values (including nulls, as DataColumn will pack them on serialization into definition levels)
             // 2. Repetition levels (for complex types only)
@@ -178,7 +253,7 @@ namespace Parquet.Serialization {
             Type valueType = df.ClrNullableIfHasNullsType;
 
             // now extract the values
-            Func<IEnumerable<TClass>, Array> cx = CreateCollectionExpression<TClass>(valueType, df.Path);
+            Func<IEnumerable<TClass>, Array> cx = CreateCollectionExpression<TClass>(valueType, schema, df);
             Array data = cx(classes);
             return new DataColumn(df, data);
         }
@@ -198,7 +273,7 @@ namespace Parquet.Serialization {
                     if(df.MaxRepetitionLevel > 0)
                         throw new NotImplementedException("complex types are not implemented yet");
 
-                    DataColumn dc = CreateDataColumn(df, objectInstances);
+                    DataColumn dc = CreateDataColumn(schema, df, objectInstances);
                     await rg.WriteColumnAsync(dc, cancellationToken);
                 }
             }
@@ -216,7 +291,10 @@ namespace Parquet.Serialization {
         public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
             CancellationToken cancellationToken = default)
             where T : new() {
+
             var result = new List<T>();
+            ParquetSchema cschema = typeof(T).GetParquetSchema(true);
+            Action<T>? procreate = Procreate<T>(cschema);
             using ParquetReader reader = await ParquetReader.CreateAsync(source);
             DataField[] dataFields = reader.Schema.GetDataFields();
 
@@ -226,14 +304,16 @@ namespace Parquet.Serialization {
                 // add more empty class instances to the result
                 int prevRowCount = result.Count;
                 for(int i = 0; i < rg.RowCount; i++) {
-                    result.Add(new T());
+                    var ne = new T();
+                    if(procreate != null) procreate(ne);
+                    result.Add(ne);
                 }
                 
                 foreach(DataField df in dataFields) {
                     // todo: check if destination type contain this property?
 
                     DataColumn dc = await rg.ReadColumnAsync(df, cancellationToken);
-                    Action<IEnumerable<T>, DataColumn> xtree = CreateColumnInjectionExpression<T>(df, df.Path);
+                    Action<IEnumerable<T>, DataColumn> xtree = CreateColumnInjectionExpression<T>(reader.Schema, df);
                     xtree(result, dc);
                 }
             }

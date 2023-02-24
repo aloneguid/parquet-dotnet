@@ -16,11 +16,13 @@ namespace Parquet.Schema {
         /// <param name="name">Structure name</param>
         /// <param name="elements">List of elements</param>
         public StructField(string name, params Field[] elements) : this(name) {
-            if(elements == null || elements.Length == 0)                 throw new ArgumentException($"structure '{name}' requires at least one element");
+            if(elements == null || elements.Length == 0)
+                throw new ArgumentException($"structure '{name}' requires at least one element");
 
             //path for structures has no weirdnes, yay!
 
-            foreach(Field field in elements)                 _fields.Add(field);
+            foreach(Field field in elements)
+                _fields.Add(field);
 
             Path = name;
             PathPrefix = null;
@@ -35,10 +37,13 @@ namespace Parquet.Schema {
             }
         }
 
+        internal override Field[] Children => Fields.ToArray(); // make a copy
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             //struct is a container, it doesn't have any levels
 
-            foreach(Field f in Fields)                 f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel);
+            foreach(Field f in Fields)
+                f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel);
         }
 
         private StructField(string name) : base(name, SchemaType.Struct) {
