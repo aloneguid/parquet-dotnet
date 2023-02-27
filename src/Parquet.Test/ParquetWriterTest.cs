@@ -69,6 +69,7 @@ namespace Parquet.Test {
             }
         }
 
+#if NET7_0_OR_GREATER
         [Fact]
         public async Task Write_in_small_row_groups_write_only_stream() {
             //write to a write-only stream that does not implement the Position property
@@ -123,6 +124,8 @@ namespace Parquet.Test {
             //run the work and ensure that nothing throws
             await reader;
         }
+#endif
+
 
         [Fact]
         public async Task Append_to_file_reads_all_data() {
