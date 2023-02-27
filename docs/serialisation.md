@@ -54,7 +54,7 @@ Serialisation tries to fit into C# ecosystem like a ninja 🥷, including custom
 
 ## Nested Types
 
-You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format.
+You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format. If you would like to use low-level API for complex types, there is a [guide](nested_types.md) available too.
 
 ### Structures
 

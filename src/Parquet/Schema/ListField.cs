@@ -10,6 +10,11 @@ namespace Parquet.Schema {
         private bool _itemAssigned = false;
 
         /// <summary>
+        /// Name of the element item for schema definition.
+        /// </summary>
+        public const string ElementName = "element";
+
+        /// <summary>
         /// Default container name for a list
         /// </summary>
         public const string DefaultContainerName = "list";

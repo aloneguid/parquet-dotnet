@@ -183,5 +183,27 @@ namespace Parquet.Test.Serialisation {
                     new DataField<string>("LastName")
                 )), schema);
         }
+
+        class ListOfStructsPoco {
+            public int Id { get; set; }
+
+            public List<StructMemberPoco>? Members { get; set; }
+        }
+
+        [Fact]
+        public void ListOfStructs() {
+            ParquetSchema actualSchema = typeof(ListOfStructsPoco).GetParquetSchema(true);
+
+            var expectedSchema = new ParquetSchema(
+                new DataField<int>("Id"),
+                new ListField("Members",
+                    new StructField("element",
+                        new DataField<string>("FirstName"),
+                        new DataField<string>("LastName"))));
+
+            Assert.True(
+                expectedSchema.Equals(actualSchema),
+                expectedSchema.GetNotEqualsMessage(actualSchema, "expected", "actual"));
+        }
     }
 }

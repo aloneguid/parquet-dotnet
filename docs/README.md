@@ -134,7 +134,6 @@ using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
             await groupWriter.WriteColumnAsync(column1);
             await groupWriter.WriteColumnAsync(column2);
             await groupWriter.WriteColumnAsync(column3);
-            
         }
     }
 }
@@ -147,7 +146,7 @@ What's going on?:?:
 3. Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory. 
 4. Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
 
-Read more on writing [here](writing.md).
+Read more on writing [here](writing.md) which also includes guides on writing [nested types](nested_types.md) such as lists, maps, and structs.
 
 ### 📖Reading Data
 
@@ -227,4 +226,14 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 
 ## Contributing
 
-Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started-md).
+Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md).
+
+## Special Thanks
+
+Without these tools development would be really painful.
+
+- [Visual Studio Community](https://visualstudio.microsoft.com/vs/community/) - free IDE from Microsoft. The best in class C# and C++ development tool. It's worth using Windows just because Visual Studio exists there.
+- [JetBrains Rider](https://www.jetbrains.com/rider/) - for their cross-platform C# IDE, which has some great features.
+- [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
+- [LINQPad](https://www.linqpad.net/) - extremely powerful C# REPL with unique visualisation features, IL decompiler, expression tree visualiser, benchmarking, charting and so on. Again it's worth having Windows just for this tool. Please support the author and purchase it.
+- [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.

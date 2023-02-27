@@ -132,7 +132,8 @@ namespace Parquet.Serialization {
                     //get current value, converting if necessary
                     il.Emit(Ldloc, currentElement.LocalIndex);
                     il.Emit(Callvirt, getValueMethod);
-                    if(conversion != null)                         conversion.Emit(il);
+                    if(conversion != null)
+                        conversion.Emit(il);
                     il.Emit(Stloc, item.LocalIndex);
 
                     //store in destination list

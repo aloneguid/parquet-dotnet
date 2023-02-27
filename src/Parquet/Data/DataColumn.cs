@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Parquet.Extensions;
 using Parquet.Schema;
@@ -57,6 +58,17 @@ namespace Parquet.Data {
 
             // 2. Apply repetitions
             RepetitionLevels = repetitionLevels;
+        }
+
+        /// <summary>
+        /// Convenience used by shredder
+        /// </summary>
+        internal DataColumn(DataField df, Array values, List<int>? dls, int maxDl, List<int>? rls, int maxRl) : this(df) {
+            Data = values;
+            if(dls != null) {
+                Data = df.UnpackDefinitions(Data, dls.ToArray().AsSpan(), maxDl);
+            }
+            RepetitionLevels = rls?.ToArray();
         }
 
         /// <summary>

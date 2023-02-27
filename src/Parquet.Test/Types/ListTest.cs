@@ -7,22 +7,22 @@ namespace Parquet.Test.Types {
     public class ListTest : TestBase {
         [Fact]
         public async Task List_of_structures_writes_reads() {
-            var idsch = new DataField<int>("id");
-            var cnamech = new DataField<string>("name");
-            var ccountrych = new DataField<string>("country");
+            var nameField = new DataField<string>("name");
+            var line1Field = new DataField<string>("line1");
+            var postcodeField = new DataField<string>("postcode");
 
             var schema = new ParquetSchema(
-               idsch,
-               new ListField("cities",
-               new StructField("element",
-                  cnamech,
-                  ccountrych)));
+               nameField,
+               new ListField("addresses",
+               new StructField(ListField.ElementName,
+                  line1Field,
+                  postcodeField)));
 
-            var id = new DataColumn(idsch, new int[] { 1 });
-            var cname = new DataColumn(cnamech, new[] { "London", "New York" }, new[] { 0, 1 });
-            var ccountry = new DataColumn(ccountrych, new[] { "UK", "US" }, new[] { 0, 1 });
+            var nameCol = new DataColumn(nameField, new string[] { "Joe", "Bob" });
+            var line1Col = new DataColumn(line1Field, new[] { "Amazonland", "Disneyland", "Cryptoland" }, new[] { 0, 1, 0 });
+            var postcodeCol = new DataColumn(postcodeField, new[] { "AAABBB", "CCCDDD", "EEEFFF" }, new[] { 0, 1, 0 });
 
-            await WriteReadSingleRowGroup(schema, new[] { id, cname, ccountry });
+            await WriteReadSingleRowGroup(schema, new[] { nameCol, line1Col, postcodeCol });
         }
 
         [Fact]
