@@ -3,7 +3,7 @@ using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test {
+namespace Parquet.Test.Types {
     public class ListTest : TestBase {
         [Fact]
         public async Task List_of_structures_writes_reads() {
@@ -35,19 +35,19 @@ namespace Parquet.Test {
              - 4: []
              */
 
-            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("list_empty_alt.parquet"))) {
-                using(ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0)) {
-                    Assert.Equal(4, groupReader.RowCount);
-                    DataField[] fs = reader.Schema.GetDataFields();
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("list_empty_alt.parquet")))
 
-                    DataColumn id = await groupReader.ReadColumnAsync(fs[0]);
-                    Assert.Equal(4, id.Data.Length);
-                    Assert.False(id.HasRepetitions);
+            using(ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(4, groupReader.RowCount);
+                DataField[] fs = reader.Schema.GetDataFields();
 
-                    DataColumn list = await groupReader.ReadColumnAsync(fs[1]);
-                    Assert.Equal(8, list.Data.Length);
-                    Assert.Equal(new int[] { 0, 1, 1, 0, 0, 1, 1, 0 }, list.RepetitionLevels);
-                }
+                DataColumn id = await groupReader.ReadColumnAsync(fs[0]);
+                Assert.Equal(4, id.Data.Length);
+                Assert.False(id.HasRepetitions);
+
+                DataColumn list = await groupReader.ReadColumnAsync(fs[1]);
+                Assert.Equal(8, list.Data.Length);
+                Assert.Equal(new int[] { 0, 1, 1, 0, 0, 1, 1, 0 }, list.RepetitionLevels);
             }
 
         }

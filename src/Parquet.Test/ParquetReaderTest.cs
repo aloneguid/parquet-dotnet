@@ -16,17 +16,17 @@ namespace Parquet.Test {
 
         [Fact]
         public async Task Opening_small_file_fails() {
-            await Assert.ThrowsAsync<IOException>(async () => await ParquetReader.CreateAsync("small".ToMemoryStream()));
+            await Assert.ThrowsAsync<IOException>(async () => await ParquetReader.CreateAsync("small".ToMemoryStream()!));
         }
 
         [Fact]
         public async Task Opening_file_without_proper_head_fails() {
-            await Assert.ThrowsAsync<IOException>(async () => await ParquetReader.CreateAsync("PAR2dataPAR1".ToMemoryStream()));
+            await Assert.ThrowsAsync<IOException>(async () => await ParquetReader.CreateAsync("PAR2dataPAR1".ToMemoryStream()!));
         }
 
         [Fact]
         public async Task Opening_file_without_proper_tail_fails() {
-            await Assert.ThrowsAsync<IOException>(async () => await ParquetReader.CreateAsync("PAR1dataPAR2".ToMemoryStream()));
+            await Assert.ThrowsAsync<IOException>(async () => await ParquetReader.CreateAsync("PAR1dataPAR2".ToMemoryStream()!));
         }
 
         [Fact]

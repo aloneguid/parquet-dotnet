@@ -68,7 +68,7 @@ namespace Parquet.Test.Reader {
                         }
                         else if(clrType == typeof(byte[])) {
                             byte[] pva = (byte[])pv;
-                            byte[] cva = (byte[])cv;
+                            byte[] cva = (byte[])cv!;
 
                             if(pva.Length != cva.Length)
                                 errors.Add($"expected length {cva.Length} but was {pva.Length} in column {pc.Field.Name}, value #{ri}");
@@ -149,7 +149,7 @@ namespace Parquet.Test.Reader {
 
             //compose result
             return
-               columnNames.Select((n, i) => new DataColumn(new DataField<string>(n), columns[i].ToArray()))
+               columnNames!.Select((n, i) => new DataColumn(new DataField<string>(n), columns[i].ToArray()))
                .ToArray();
         }
 

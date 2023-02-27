@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Parquet.Schema;
@@ -119,6 +120,8 @@ namespace Parquet.Test.Serialisation {
                 ), schema);
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
         class IgnoredPoco {
 
             public int NotIgnored { get; set; }
@@ -129,6 +132,8 @@ namespace Parquet.Test.Serialisation {
             [JsonIgnore]
             public int Ignored2 { get; set; }
         }
+#pragma warning restore CS0618 // Type or member is obsolete
+
 
         [Fact]
         public void IgnoredProperties() {

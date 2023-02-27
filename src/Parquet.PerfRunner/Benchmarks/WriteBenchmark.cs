@@ -15,7 +15,9 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         //[Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
         [Params(typeof(string))]
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public Type DataType;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         private DataField? _f;
         private DataColumn? _c;
@@ -24,12 +26,14 @@ namespace Parquet.PerfRunner.Benchmarks {
         private Array? _ar;
 
         [GlobalSetup]
-        public async Task SetupAsync() {
+        public Task SetupAsync() {
             _f = new DataField("test", DataType!);
             _ar = CreateTestData(DataType);
             _c = new DataColumn(_f, _ar);
 
             _psc = new Column(DataType!, "test");
+
+            return Task.CompletedTask;
         }
 
         [Benchmark]
@@ -45,7 +49,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         public void ParquetSharp() {
             using var ms = new MemoryStream();
             using var writer = new ManagedOutputStream(ms);
-            using var fileWriter = new ParquetFileWriter(writer, new[] { _psc });
+            using var fileWriter = new ParquetFileWriter(writer, new[] { _psc! });
             using RowGroupWriter rowGroup = fileWriter.AppendRowGroup();
 
             if(DataType == typeof(int)) {

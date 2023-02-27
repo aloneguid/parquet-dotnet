@@ -129,9 +129,9 @@ namespace Parquet.Test {
 
             var id = new DataField("id", test!.Type!);
 
-            DataColumn rc = await WriteReadSingleColumn(id, new DataColumn(id, test!.Data!));
+            DataColumn? rc = await WriteReadSingleColumn(id, new DataColumn(id, test!.Data!));
 
-            Assert.Equal(test.Data!.Length, rc.CalculateRowCount());
+            Assert.Equal(test.Data!.Length, rc!.CalculateRowCount());
             //Assert.Equal(test.DistinctCount, rc.Statistics.DistinctCount);
             Assert.Equal(test.NullCount, rc.Statistics.NullCount);
             Assert.Equal(test.Min, rc.Statistics.MinValue);

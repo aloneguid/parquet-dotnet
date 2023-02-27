@@ -29,7 +29,7 @@ namespace Parquet.Test.Integration {
                : "java";
         }
 
-        private async Task CompareWithMr(Table t, Func<string, string> jsonPreprocessor = null) {
+        private async Task CompareWithMr(Table t, Func<string, string>? jsonPreprocessor = null) {
             string testFileName = Path.GetFullPath("temp.parquet");
 
             if(F.Exists(testFileName))
@@ -51,7 +51,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
 
             string myJson = t.ToString("j");
-            string mrJson = ExecAndGetOutput(_javaExecName, $"-jar \"{_toolsJarPath}\" cat -j \"{testFileName}\"");
+            string? mrJson = ExecAndGetOutput(_javaExecName, $"-jar \"{_toolsJarPath}\" cat -j \"{testFileName}\"");
 
             if(jsonPreprocessor != null) {
                 myJson = jsonPreprocessor(myJson);
@@ -109,7 +109,7 @@ namespace Parquet.Test.Integration {
 
             //generate fake data
             for(int i = 0; i < 1000; i++) {
-                table.Add(new Row((sbyte)(i % 127 - 255), (byte)(i % 255), (short)i, (ushort)i, i, (long)i));
+                table.Add(new Row((sbyte)((i % 127) - 255), (byte)(i % 255), (short)i, (ushort)i, i, (long)i));
             }
 
             await CompareWithMr(table);

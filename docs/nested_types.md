@@ -76,7 +76,7 @@ Note that the only indication that this is a part of struct is `Path` property i
 
 ![](img/struct-path.png)
 
-## Arrays
+## Lists and Arrays
 
 Arrays *aka repeatable fields* is a basis for understanding how more complex data structures work in Parquet.
 
