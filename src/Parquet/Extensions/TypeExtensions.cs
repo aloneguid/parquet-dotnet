@@ -57,6 +57,21 @@ namespace Parquet {
             return false;
         }
 
+        public static Type ExtractElementTypeFromEnumerableType(this Type t) {
+            if(!t.TryExtractEnumerableType(out Type? iet))
+                throw new ArgumentException($"type {t} is not enumerable", nameof(t));
+            return iet!;
+        }
+
+        public static MethodInfo GetGenericListAddMethod(this Type listType) {
+            Type elementType = listType.ExtractElementTypeFromEnumerableType();
+            Type genericListType = typeof(List<>).MakeGenericType(elementType);
+            MethodInfo? method = genericListType.GetMethod(nameof(IList.Add));
+            if(method == null)
+                throw new InvalidOperationException("method not present");
+            return method;
+        }
+
         public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
             TypeInfo ti = t.GetTypeInfo();
 

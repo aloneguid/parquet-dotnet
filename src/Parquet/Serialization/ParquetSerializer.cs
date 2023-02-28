@@ -142,7 +142,7 @@ namespace Parquet.Serialization {
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            Striper<T> striper = new Shredder<T>().CreateStriper();
+            Striper<T> striper = new Dremel<T>().CreateStriper();
 
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination)) {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
@@ -172,7 +172,7 @@ namespace Parquet.Serialization {
             CancellationToken cancellationToken = default)
             where T : new() {
 
-            Assembler<T> asm = new Shredder<T>().CreateAssembler();
+            Assembler<T> asm = new Dremel<T>().CreateAssembler();
             var result = new List<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source);
@@ -191,7 +191,7 @@ namespace Parquet.Serialization {
                     try {
                         fasm.Assemble(result.Skip(prevRowCount), dc);
                     } catch(Exception ex) {
-                        throw new InvalidOperationException($"failed to deserialise column '{fasm.Field.Path}'", ex);
+                        throw new InvalidOperationException($"failed to deserialise column '{fasm.Field.Path}', pseude code: ['{fasm.GetPseudoCode()}']", ex);
                     }
                 }
             }

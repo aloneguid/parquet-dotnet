@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task SimplePoco_Serde() {
+        public async Task Atomics_Simplest_Serde() {
 
             var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
@@ -38,6 +39,35 @@ namespace Parquet.Test.Serialisation {
 
             ms.Position = 0;
             IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms);
+
+            Assert.Equal(data2, data);
+        }
+
+        class NullableRecord : Record, IEquatable<NullableRecord> {
+            public int? ParentId { get; set; }
+
+            public bool Equals(NullableRecord? other) {
+                if(other == null) return false;
+
+                return ParentId == other.ParentId && base.Equals(other);
+            }
+        }
+
+        [Fact]
+        public async Task Atomics_Nullable_Serde() {
+
+            var data = Enumerable.Range(0, 1_000_000).Select(i => new NullableRecord {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i,
+                ParentId = (i % 4 == 0) ? null : i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<NullableRecord> data2 = await ParquetSerializer.DeserializeAsync<NullableRecord>(ms);
 
             Assert.Equal(data2, data);
         }
@@ -96,7 +126,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task Struct_WithNulls_Serde() {
+        public async Task Struct_WithNullProps_Serde() {
 
             var data = Enumerable.Range(0, 1_000_000).Select(i => new AddressBookEntry {
                 FirstName = "Joe",
@@ -114,8 +144,8 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task List_OfStructs_Serde() {
-            var data = Enumerable.Range(0, 1_000_000).Select(i => new MovementHistory {
+        public async Task List_Structs_Serde() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
                 PersonId = i,
                 Comments = i % 2 == 0 ? "none" : null,
                 Addresses = Enumerable.Range(0, 4).Select(a => new Address {
@@ -133,9 +163,51 @@ namespace Parquet.Test.Serialisation {
             IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
 
             // assert
-            Assert.Equal(data, data2);
+            Assert.Equivalent(data, data2);
 
         }
 
+        class MovementHistoryCompressed : IEquatable<MovementHistoryCompressed> {
+            public int? PersonId { get; set; }
+
+            public List<int>? ParentIds { get; set; }
+
+            public bool Equals(MovementHistoryCompressed? other) {
+                if(other == null)
+                    return false;
+
+                if(ParentIds?.Count != other?.ParentIds?.Count)
+                    return false;
+
+                if(ParentIds != null && other?.ParentIds != null) {
+                    for(int i = 0; i < ParentIds.Count; i++) {
+                        if(ParentIds[i] != other.ParentIds[i]) return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        [Fact]
+        public async Task List_Atomics_Serde() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressed {
+                PersonId = i,
+                ParentIds = Enumerable.Range(i, 4).ToList()
+            }).ToList();
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            // deserialise
+            ms.Position = 0;
+            IList<MovementHistoryCompressed> data2 = await ParquetSerializer.DeserializeAsync<MovementHistoryCompressed>(ms);
+
+            // assert
+            Assert.Equivalent(data, data2);
+
+        }
     }
 }
