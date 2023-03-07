@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet.Schema {
 
@@ -22,6 +24,16 @@ namespace Parquet.Schema {
         /// schema and you shouldn't build any reasonable business logic based on it.
         /// </summary>
         public FieldPath Path { get; internal set; }
+
+        internal List<string> GetNaturalChildPath(List<string> path) {
+            if(SchemaType == SchemaType.List) {
+                // element.list.element.child
+                return path.Skip(3).ToList();
+            }
+
+            // element.child
+            return path.Skip(1).ToList();
+        }
 
         /// <summary>
         /// Max repetition level
@@ -82,6 +94,16 @@ namespace Parquet.Schema {
         /// Get child fields, which only makes sense for complex types
         /// </summary>
         internal virtual Field[] Children { get; } = new Field[0];
+
+        internal virtual Field[] NaturalChildren {
+            get {
+                if(SchemaType == SchemaType.List) {
+                    return Children[0].Children;
+                }
+
+                return Children;
+            }
+        }
 
         internal bool Equals(Thrift.SchemaElement tse) {
             if(ReferenceEquals(tse, null))

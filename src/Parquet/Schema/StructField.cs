@@ -42,8 +42,11 @@ namespace Parquet.Schema {
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             //struct is a container, it doesn't have any levels
 
-            foreach(Field f in Fields)
-                f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel);
+            MaxDefinitionLevel = parentDefinitionLevel + 1; // structs are always OPTIONAL
+
+            foreach(Field f in Fields) {
+                f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel + 1);
+            }
         }
 
         private StructField(string name) : base(name, SchemaType.Struct) {

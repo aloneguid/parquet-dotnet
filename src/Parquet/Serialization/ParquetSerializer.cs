@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
+using Parquet.Serialization.Dremel;
 
 namespace Parquet.Serialization {
 
@@ -142,7 +143,7 @@ namespace Parquet.Serialization {
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            Striper<T> striper = new Dremel<T>().CreateStriper();
+            Striper<T> striper = new Dremel1<T>().CreateStriper();
 
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination)) {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
@@ -150,7 +151,8 @@ namespace Parquet.Serialization {
                 foreach(FieldStriper<T> fs in striper.FieldStripers) {
                     DataColumn dc;
                     try {
-                        dc = fs.Stripe(fs.Field, objectInstances);
+                        ShreddedColumn sc = fs.Stripe(fs.Field, objectInstances);
+                        dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels, sc.RepetitionLevels);
                         await rg.WriteColumnAsync(dc, cancellationToken);
                     } catch(Exception ex) {
                         throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
@@ -172,7 +174,7 @@ namespace Parquet.Serialization {
             CancellationToken cancellationToken = default)
             where T : new() {
 
-            Assembler<T> asm = new Dremel<T>().CreateAssembler();
+            Assembler<T> asm = new Dremel1<T>().CreateAssembler();
             var result = new List<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source);

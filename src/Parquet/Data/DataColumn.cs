@@ -63,10 +63,10 @@ namespace Parquet.Data {
         /// <summary>
         /// Convenience used by shredder
         /// </summary>
-        internal DataColumn(DataField df, Array values, List<int>? dls, int maxDl, List<int>? rls, int maxRl) : this(df) {
+        internal DataColumn(DataField df, Array values, List<int>? dls, List<int>? rls) : this(df) {
             Data = values;
             if(dls != null) {
-                Data = df.UnpackDefinitions(Data, dls.ToArray().AsSpan(), maxDl);
+                Data = df.UnpackDefinitions(Data, dls.ToArray().AsSpan(), df.MaxDefinitionLevel);
             }
             RepetitionLevels = rls?.ToArray();
         }

@@ -90,21 +90,18 @@ namespace Parquet.Schema {
         internal override Field[] Children => new Field[] { Item };
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            int rl = parentRepetitionLevel;
-            int dl = parentDefinitionLevel;
 
-            //"container" is optional, therefore +1 to DL
-            dl += 1;
+            // both get +1
+            MaxDefinitionLevel = parentDefinitionLevel + 1;
+            MaxRepetitionLevel = parentRepetitionLevel + 1;
 
-            //"list" is repeated, both get +1
-            rl += 1;
-            dl += 1;
-
-            MaxRepetitionLevel = rl;
-            MaxDefinitionLevel = dl;
+            // structs in list elements are required, re-adjusting
+            if(Item.SchemaType == SchemaType.Struct) {
+                MaxDefinitionLevel--;
+            }
 
             //push to child item
-            Item.PropagateLevels(rl, dl);
+            Item.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
         }
 
         internal static ListField CreateWithNoItem(string name) {

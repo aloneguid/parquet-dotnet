@@ -116,8 +116,15 @@ namespace Parquet.Schema {
         /// see <see cref="ThriftFooter.GetLevels(Thrift.ColumnChunk, out int, out int)"/>
         /// </summary>
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            MaxRepetitionLevel = parentRepetitionLevel + (IsArray ? 1 : 0);
-            MaxDefinitionLevel = parentDefinitionLevel + (IsNullable ? 1 : 0);
+            MaxRepetitionLevel = parentRepetitionLevel;
+            if(IsArray)
+                MaxRepetitionLevel++;
+
+            MaxDefinitionLevel = parentDefinitionLevel;
+            if(IsArray)
+                MaxDefinitionLevel++;
+            if(IsNullable)
+                MaxDefinitionLevel++;
         }
 
         /// <summary>

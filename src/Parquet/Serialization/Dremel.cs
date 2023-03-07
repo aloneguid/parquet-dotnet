@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Parquet.Data;
 using Parquet.Schema;
+using Parquet.Serialization.Dremel;
 
 namespace Parquet.Serialization {
 
@@ -34,11 +35,12 @@ namespace Parquet.Serialization {
 
     class FieldStriper<TClass> : FieldWorker<TClass> {
 
-        public FieldStriper(DataField field, Func<DataField, IEnumerable<TClass>, DataColumn> striper, Expression expression) : base(field, expression) {
+        public FieldStriper(DataField field, Func<DataField, IEnumerable<TClass>, ShreddedColumn> striper, Expression expression) 
+            : base(field, expression) {
             Stripe = striper;
         }
 
-        public Func<DataField, IEnumerable<TClass>, DataColumn> Stripe { get; }
+        public Func<DataField, IEnumerable<TClass>, ShreddedColumn> Stripe { get; }
     }
 
     class FieldAssembler<TClass> : FieldWorker<TClass> {
@@ -48,20 +50,6 @@ namespace Parquet.Serialization {
         }
 
         public Action<IEnumerable<TClass>, DataColumn> Assemble { get; }
-    }
-
-    /// <summary>
-    /// Not a stripper
-    /// </summary>
-    class Striper<TClass> {
-
-        public Striper(ParquetSchema schema) {
-            Schema = schema;
-        }
-
-        public ParquetSchema Schema { get; }
-
-        public List<FieldStriper<TClass>> FieldStripers { get; } = new();
     }
 
     class Assembler<TClass> {
@@ -79,7 +67,7 @@ namespace Parquet.Serialization {
     /// See also: https://github.com/julienledem/redelm/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper
     /// Original Dremel paper: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/36632.pdf
     /// </summary>
-    class Dremel<TClass> {
+    class Dremel1<TClass> {
 
         private static readonly MethodInfo LevelsAddMethod = typeof(List<int>).GetMethod(nameof(IList.Add))!;
 
@@ -675,13 +663,7 @@ namespace Parquet.Serialization {
             return Expression.Lambda<Action<IEnumerable<TClass>, DataColumn>>(block, classesParam, dcParam).Compile();
         }
 
-        public Striper<TClass> CreateStriper() {
-            ParquetSchema schema = typeof(TClass).GetParquetSchema(false);
-            DataField[] dataFields = schema.GetDataFields();
-            var result = new Striper<TClass>(schema);
-            result.FieldStripers.AddRange(dataFields.Select(df => new FieldStriper<TClass>(df, CreateStriper(df, schema, out Expression code), code)));
-            return result;
-        }
+        public Striper<TClass> CreateStriper() => new Striper<TClass>(typeof(TClass).GetParquetSchema(false));
 
         public Assembler<TClass> CreateAssembler() {
             ParquetSchema schema = typeof(TClass).GetParquetSchema(true);

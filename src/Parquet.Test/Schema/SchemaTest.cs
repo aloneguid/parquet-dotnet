@@ -232,10 +232,10 @@ namespace Parquet.Test.Schema {
                      nameField)));
 
             Assert.Equal(1, idField.MaxRepetitionLevel);
-            Assert.Equal(2, idField.MaxDefinitionLevel);
+            Assert.Equal(1, idField.MaxDefinitionLevel);
 
             Assert.Equal(1, nameField.MaxRepetitionLevel);
-            Assert.Equal(3, nameField.MaxDefinitionLevel);
+            Assert.Equal(2, nameField.MaxDefinitionLevel);
         }
 
         [Theory]
