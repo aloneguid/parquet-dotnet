@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Extensions;
 using Parquet.Schema;
 using Parquet.Serialization.Dremel;
 
@@ -193,7 +194,7 @@ namespace Parquet.Serialization {
                     try {
                         fasm.Assemble(result.Skip(prevRowCount), dc);
                     } catch(Exception ex) {
-                        throw new InvalidOperationException($"failed to deserialise column '{fasm.Field.Path}', pseude code: ['{fasm.GetPseudoCode()}']", ex);
+                        throw new InvalidOperationException($"failed to deserialise column '{fasm.Field.Path}', pseude code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
                     }
                 }
             }

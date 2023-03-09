@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Parquet.Extensions {
     static class ExpressionExtensions {
@@ -13,12 +14,12 @@ namespace Parquet.Extensions {
             Type enumeratorGenericType = typeof(IEnumerator<>).MakeGenericType(elementType);
             Type enumerableGenericType = typeof(IEnumerable<>).MakeGenericType(elementType);
 
-            ParameterExpression enumeratorVar = Expression.Variable(enumeratorGenericType, "enumerator");
+            ParameterExpression enumeratorVar = Expression.Variable(enumeratorGenericType);
             MethodCallExpression getEnumeratorCall = Expression.Call(collection,
                 enumerableGenericType.GetMethod(nameof(IEnumerable.GetEnumerator))!);
             MethodCallExpression moveNextCall = Expression.Call(enumeratorVar,
                 typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext))!);
-            LabelTarget loopBreakLabel = Expression.Label("loopBreak");
+            LabelTarget loopBreakLabel = Expression.Label();
 
             // doc: Expression.Loop is an infinite loop that can be exited with "break"
             LoopExpression loop = Expression.Loop(
@@ -43,14 +44,23 @@ namespace Parquet.Extensions {
             return Expression.Block(
                 new[] { enumeratorVar, element },
 
-                Expression.IfThen(Expression.NotEqual(collection, Expression.Constant(null)),
-                    Expression.Block(
-                        // get enumerator from class collection
-                        Expression.Assign(enumeratorVar, getEnumeratorCall),
+                // get enumerator from class collection
+                Expression.Assign(enumeratorVar, getEnumeratorCall),
 
-                        // loop over classes
-                        loop)
-                ));
+                // loop over classes
+                loop);
+        }
+
+        /// <summary>
+        /// Gets internal property "DebugView" which is normally only available in Visual Studio debugging session
+        /// </summary>
+        /// <returns></returns>
+        public static string GetPseudoCode(this Expression expression) {
+            PropertyInfo? propertyInfo = typeof(Expression).GetProperty("DebugView", BindingFlags.Instance | BindingFlags.NonPublic);
+            if(propertyInfo == null)
+                return string.Empty;
+
+            return (string)propertyInfo.GetValue(expression)!;
         }
     }
 }

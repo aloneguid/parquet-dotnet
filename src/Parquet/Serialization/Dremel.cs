@@ -10,42 +10,9 @@ using Parquet.Serialization.Dremel;
 
 namespace Parquet.Serialization {
 
-    class FieldWorker<TClass> {
-        public DataField Field { get; }
-
-        public Expression Expression { get; }
-
-        public FieldWorker(DataField field, Expression expression) {
-            Field = field;
-            Expression = expression;
-        }
-
-        /// <summary>
-        /// Gets internal property "DebugView" which is normally only available in Visual Studio debugging session
-        /// </summary>
-        /// <returns></returns>
-        public string GetPseudoCode() {
-            PropertyInfo? propertyInfo = typeof(Expression).GetProperty("DebugView", BindingFlags.Instance | BindingFlags.NonPublic);
-            if(propertyInfo == null)
-                return string.Empty;
-
-            return (string)propertyInfo.GetValue(Expression)!;
-        }
-    }
-
-    class FieldStriper<TClass> : FieldWorker<TClass> {
-
-        public FieldStriper(DataField field, Func<DataField, IEnumerable<TClass>, ShreddedColumn> striper, Expression expression) 
-            : base(field, expression) {
-            Stripe = striper;
-        }
-
-        public Func<DataField, IEnumerable<TClass>, ShreddedColumn> Stripe { get; }
-    }
-
     class FieldAssembler<TClass> : FieldWorker<TClass> {
 
-        public FieldAssembler(DataField field, Action<IEnumerable<TClass>, DataColumn> assembler, Expression expression) : base(field, expression) {
+        public FieldAssembler(DataField field, Action<IEnumerable<TClass>, DataColumn> assembler, Expression expression) : base(field, expression, Expression.Empty()) {
             Assemble = assembler;
         }
 
