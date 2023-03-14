@@ -51,6 +51,57 @@ namespace Parquet.Extensions {
                 loop);
         }
 
+        public static Expression ForLoop(this Expression fromVar, Expression toVar,
+            ParameterExpression iVar, Expression body) {
+
+            LabelTarget loopBreakLabel = Expression.Label();
+            return Expression.Block(
+                new[] { iVar },
+                Expression.Assign(iVar, fromVar),
+
+                Expression.Loop(
+                    Expression.IfThenElse(
+                        Expression.LessThan(iVar, toVar),
+                        
+                        Expression.Block(
+                            body,
+                            Expression.PostIncrementAssign(iVar)),
+                        
+                        Expression.Break(loopBreakLabel)),
+                    loopBreakLabel)
+                );
+        }
+
+        /// <summary>
+        /// Calls <see cref="Array.Clear(Array, int, int)"/>
+        /// </summary>
+        public static Expression ClearArray(this ParameterExpression array, Expression? fromIndexVar = null) {
+
+            Expression from = fromIndexVar ?? Expression.Constant(0);
+            Expression length = Expression.Property(array, nameof(Array.Length));
+            if(fromIndexVar != null) length = Expression.Subtract(length, fromIndexVar);
+
+            return Expression.Call(
+                typeof(Array).GetMethod(
+                    nameof(Array.Clear),
+                    BindingFlags.Static | BindingFlags.Public,
+                    null,
+                    new[] { typeof(Array), typeof(int), typeof(int) },
+                    null)!,
+                array, from, length);
+        }
+
+        public static Expression CollectionCount(this Expression collection) {
+            return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
+        }
+
+        public static Expression CollectionAdd(this Expression collection, Type collectionType, Expression element) {
+            return Expression.Call(
+                collection,
+                collectionType.GetMethod(nameof(IList.Add))!,
+                element);
+        }
+
         /// <summary>
         /// Gets internal property "DebugView" which is normally only available in Visual Studio debugging session
         /// </summary>

@@ -13,11 +13,6 @@ namespace Parquet.Data {
         private readonly int _offset;
         private readonly int _count = -1;
 
-        private DataColumn(DataField field) {
-            Field = field ?? throw new ArgumentNullException(nameof(field));
-            Data = Array.Empty<int>();
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -36,7 +31,8 @@ namespace Parquet.Data {
         /// <param name="offset"></param>
         /// <param name="count"></param>
         /// <param name="repetitionLevels"></param>
-        public DataColumn(DataField field, Array data, int offset, int count, int[]? repetitionLevels = null) : this(field) {
+        public DataColumn(DataField field, Array data, int offset, int count, int[]? repetitionLevels = null) {
+            Field = field ?? throw new ArgumentNullException(nameof(field));
             Data = data ?? throw new ArgumentNullException(nameof(data));
             _offset = offset;
             _count = count;
@@ -47,13 +43,21 @@ namespace Parquet.Data {
         internal DataColumn(DataField field,
             Array definedData,
             Span<int> definitionLevels, int maxDefinitionLevel,
-            int[]? repetitionLevels, int maxRepetitionLevel) : this(field) {
+            int[]? repetitionLevels, int maxRepetitionLevel,
+            bool unpackDefinitions = true) {
 
+            Field = field ?? throw new ArgumentNullException(nameof(field));
             Data = definedData;
 
             // 1. Apply definitions
-            if(definitionLevels != null) {
-                Data = field.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
+            if(unpackDefinitions) {
+                if(definitionLevels != null) {
+                    Data = field.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
+                }
+            } else {
+                if(definitionLevels != null) {
+                    DefinitionLevels = definitionLevels.ToArray();
+                }
             }
 
             // 2. Apply repetitions
@@ -61,12 +65,15 @@ namespace Parquet.Data {
         }
 
         /// <summary>
-        /// Convenience used by shredder
+        /// Convenience used by Dremel algorithm
         /// </summary>
-        internal DataColumn(DataField df, Array values, List<int>? dls, List<int>? rls) : this(df) {
+        internal DataColumn(DataField df, Array values, List<int>? dls, List<int>? rls, bool unpackDefinitions = true) {
+            Field = df ?? throw new ArgumentNullException(nameof(df));
             Data = values;
-            if(dls != null) {
+            if(dls != null && unpackDefinitions) {
                 Data = df.UnpackDefinitions(Data, dls.ToArray().AsSpan(), df.MaxDefinitionLevel);
+            } else {
+                DefinitionLevels = dls?.ToArray();
             }
             RepetitionLevels = rls?.ToArray();
         }
@@ -102,10 +109,12 @@ namespace Parquet.Data {
             return ar.AsSpan(offset ?? Offset, count ?? Count);
         }
 
+        internal int[]? DefinitionLevels { get; }
+
         /// <summary>
         /// Repetition levels if any.
         /// </summary>
-        public int[]? RepetitionLevels { get; private set; }
+        public int[]? RepetitionLevels { get; }
 
         /// <summary>
         /// Data field

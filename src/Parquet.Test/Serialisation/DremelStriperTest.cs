@@ -12,60 +12,11 @@ namespace Parquet.Test.Serialisation {
     /// Dremel Paper written by google. 
     /// Link to original paper: https://research.google/pubs/pub36632/
     /// </summary>
-    public class StriperTest {
-
-        private readonly Document _r1 = new() {
-            DocId = 10,
-            Links = new Links {
-                Forward = new List<long> { 20, 40, 60 }
-            },
-            Name = new List<Name> {
-                    new Name {
-                        Language = new List<Language> {
-                            new Language {
-                                Code = "en-us",
-                                Country = "us"
-                            },
-                            new Language {
-                                Code = "en"
-                            }
-                        },
-                        Url = "http://A"
-                    },
-                    new Name {
-                        Url = "http://B"
-                    },
-                    new Name {
-                        Language = new List<Language> {
-                            new Language {
-                                Code = "en-gb",
-                                Country = "gb"
-                            }
-                        }
-                    }
-                }
-        };
-
-        private readonly Document _r2 = new() {
-            DocId = 20,
-            Links = new Links {
-                Backward = new List<long> { 10, 30 },
-                Forward = new List<long> { 80 }
-            },
-            Name = new List<Name> {
-                    new Name {
-                        Url = "http://C"
-                    }
-                }
-        };
-
-        private readonly List<Document> _data;
+    public class DremelStriperTest {
 
         private readonly Striper<Document> _striper;
 
-        public StriperTest() {
-            _data = new List<Document> { _r1, _r2 };
-
+        public DremelStriperTest() {
             _striper = new Striper<Document>(typeof(Document).GetParquetSchema(false));
         }
 
@@ -75,20 +26,28 @@ namespace Parquet.Test.Serialisation {
             ParquetSchema schema = typeof(Document).GetParquetSchema(false);
 
             // DocId
-            Assert.Equal(0, schema[0].MaxRepetitionLevel);
-            Assert.Equal(0, schema[0].MaxDefinitionLevel);
+            Field docId = schema[0];
+            Assert.Equal("DocId", docId.Path);
+            Assert.Equal(0, docId.MaxRepetitionLevel);
+            Assert.Equal(0, docId.MaxDefinitionLevel);
 
             // Links
-            Assert.Equal(0, schema[1].MaxRepetitionLevel);
-            Assert.Equal(1, schema[1].MaxDefinitionLevel);
+            Field links = schema[1];
+            Assert.Equal("Links", links.Path);
+            Assert.Equal(0, links.MaxRepetitionLevel);
+            Assert.Equal(1, links.MaxDefinitionLevel);
 
             // Links.Backward
-            Assert.Equal(1, schema[1].Children[0].MaxRepetitionLevel);
-            Assert.Equal(2, schema[1].Children[0].MaxDefinitionLevel);
+            Field lBack = schema[1].Children[0];
+            Assert.Equal("Links.Backward", lBack.Path);
+            Assert.Equal(1, lBack.MaxRepetitionLevel);
+            Assert.Equal(2, lBack.MaxDefinitionLevel);
 
             // Links.Forward
-            Assert.Equal(1, schema[1].Children[1].MaxRepetitionLevel);
-            Assert.Equal(2, schema[1].Children[1].MaxDefinitionLevel);
+            Field lForw = schema[1].Children[1];
+            Assert.Equal("Links.Forward", lForw.Path);
+            Assert.Equal(1, lForw.MaxRepetitionLevel);
+            Assert.Equal(2, lForw.MaxDefinitionLevel);
 
             // Name.Language.Code
             Field nlCode = schema[2].NaturalChildren[0].NaturalChildren[0];
@@ -119,7 +78,7 @@ namespace Parquet.Test.Serialisation {
         public void Field_1_DocId() {
             // DocId (field 1 of 6)
             FieldStriper<Document> striper = _striper.FieldStripers[0];
-            ShreddedColumn col = striper.Stripe(striper.Field, _data);
+            ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new long[] { 10, 20 }, col.Data);
             Assert.Null(col.RepetitionLevels);
             Assert.Null(col.DefinitionLevels);
@@ -130,7 +89,7 @@ namespace Parquet.Test.Serialisation {
 
             // Links.Backward (field 2 of 6)
             FieldStriper<Document> striper = _striper.FieldStripers[1];
-            ShreddedColumn col = striper.Stripe(striper.Field, _data);
+            ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new long[] { 10, 30 }, col.Data);
             Assert.Equal(new int[] { 0, 0, 1 }, col.RepetitionLevels!);
             Assert.Equal(new int[] { 1, 2, 2 }, col.DefinitionLevels!);
@@ -140,7 +99,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void Field_3_Links_Forward() {
             FieldStriper<Document> striper = _striper.FieldStripers[2];
-            ShreddedColumn col = striper.Stripe(striper.Field, _data);
+            ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new long[] { 20, 40, 60, 80 }, col.Data);
             Assert.Equal(new int[] { 0, 1, 1, 0 }, col.RepetitionLevels!);
             Assert.Equal(new int[] { 2, 2, 2, 2 }, col.DefinitionLevels!);
@@ -149,7 +108,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void Field_4_Name_Language_Code() {
             FieldStriper<Document> striper = _striper.FieldStripers[3];
-            ShreddedColumn col = striper.Stripe(striper.Field, _data);
+            ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new string[] { "en-us", "en", "en-gb" }, col.Data);
             Assert.Equal(new int[] { 0, 2, 1, 1, 0 }, col.RepetitionLevels!);
             Assert.Equal(new int[] { 3, 3, 1, 3, 1 }, col.DefinitionLevels!);
@@ -158,7 +117,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void Field_5_Name_Language_Country() {
             FieldStriper<Document> striper = _striper.FieldStripers[4];
-            ShreddedColumn col = striper.Stripe(striper.Field, _data);
+            ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new string[] { "us", "gb" }, col.Data);
             Assert.Equal(new int[] { 0, 2, 1, 1, 0 }, col.RepetitionLevels!);
             Assert.Equal(new int[] { 3, 2, 1, 3, 1 }, col.DefinitionLevels!);
@@ -167,7 +126,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void Field_6_Name_Url() {
             FieldStriper<Document> striper = _striper.FieldStripers[5];
-            ShreddedColumn col = striper.Stripe(striper.Field, _data);
+            ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new string[] { "http://A", "http://B", "http://C" }, col.Data);
             Assert.Equal(new int[] { 0, 1, 1, 0 }, col.RepetitionLevels!);
             Assert.Equal(new int[] { 2, 2, 1, 2 }, col.DefinitionLevels!);

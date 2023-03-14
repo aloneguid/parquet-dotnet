@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -24,127 +21,11 @@ namespace Parquet.Serialization {
     /// - append to file
     /// </summary>
     internal static class ParquetSerializer {
-
-        private static Expression SetProperty<TClass>(
-            ParquetSchema schema, DataField df,
-            ParameterExpression classInstanceVar, ParameterExpression valueVar) {
-
-            Expression levelProperty = classInstanceVar;
-            Type levelType = typeof(TClass);
-            Field[] levelFields = schema.Fields.ToArray();
-            var procreateExpressions = new List<Expression>();
-
-            for(int i = 0; i < df.Path.Length; i++) {
-                string cp = df.Path[i];
-                Field? cf = levelFields.FirstOrDefault(x => x.Name == cp);
-                if(cf == null)
-                    break;
-
-                bool isValue = i == df.Path.Length - 1;
-                string name = cf.ClrPropName ?? cf.Name;
-                levelProperty = Expression.Property(levelProperty, name);
-
-                if(!isValue) {
-                    PropertyInfo pi = levelType.GetProperty(name)!;
-
-                    ConditionalExpression pro = Expression.IfThen(
-                        Expression.Equal(levelProperty, Expression.Constant(null)), // test
-
-                        // if null, create a new instance
-                        Expression.Assign(levelProperty, Expression.New(pi.PropertyType))
-                        );
-                    procreateExpressions.Add(pro);
-
-                    levelFields = cf.Children;
-                    levelType = pi.PropertyType;
-                }
-            }
-
-            // assemble
-            BinaryExpression pas = Expression.Assign(levelProperty, valueVar);
-            if(procreateExpressions.Count == 0) {
-                return pas;
-            }
-
-            procreateExpressions.Add(pas);
-            return Expression.Block(procreateExpressions);
-        }
-
-        private static Action<IEnumerable<TClass>, DataColumn> CreateColumnInjectionExpression<TClass>(
-            ParquetSchema schema, DataField df) {
-
-            ParameterExpression classesParam = Expression.Parameter(typeof(IEnumerable<TClass>), "classes");
-            ParameterExpression dcParam = Expression.Parameter(typeof(DataColumn), "dc");
-
-            // loop over collection of classes
-            ParameterExpression enumeratorVar = Expression.Variable(typeof(IEnumerator<TClass>), "enumerator");
-            MethodCallExpression getEnumeratorCall = Expression.Call(classesParam,
-                typeof(IEnumerable<TClass>).GetMethod(nameof(IEnumerable.GetEnumerator))!);
-            MethodCallExpression moveNextCall = Expression.Call(enumeratorVar,
-                typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext))!);
-            ParameterExpression classInstanceVar = Expression.Variable(typeof(TClass), "curr");
-            LabelTarget loopBreakLabel = Expression.Label("loopBreak");
-
-            ParameterExpression arrayElementVar = Expression.Variable(df.ClrNullableIfHasNullsType, "currProp");
-            ParameterExpression arrayVar = Expression.Variable(df.ClrNullableIfHasNullsType.MakeArrayType(), "data");
-            ParameterExpression arrayIndexVar = Expression.Variable(typeof(int), "dataIdx");
-
-
-            LoopExpression loop = Expression.Loop(
-                Expression.IfThenElse(
-
-                    // test
-                    Expression.Equal(moveNextCall, Expression.Constant(true)),
-
-                    // if true
-                    Expression.Block(
-                        // the variables are scoped to this block, do not redefine variables from the outer block!
-                        new[] { classInstanceVar, arrayElementVar },
-
-                        // get class element into loopVar
-                        Expression.Assign(classInstanceVar, Expression.Property(enumeratorVar, nameof(IEnumerator<TClass>.Current))),
-
-                        // get array element value
-                        Expression.Assign(arrayElementVar, 
-                            Expression.ArrayAccess(
-                                arrayVar,
-                                Expression.PostIncrementAssign(arrayIndexVar))),
-
-
-                        // assign value to class property
-                        SetProperty<TClass>(schema, df, classInstanceVar, arrayElementVar)
-                    ),
-
-                    // if false
-                    Expression.Break(loopBreakLabel)
-
-                    ),
-                loopBreakLabel);
-
-            // final assembly
-
-            BlockExpression block = Expression.Block(
-                new[] { enumeratorVar, arrayVar, arrayIndexVar, },
-
-                // get enumerator from class collection
-                Expression.Assign(enumeratorVar, getEnumeratorCall),
-
-                // initialise array vars
-                Expression.Assign(arrayVar,
-                    Expression.Convert(Expression.Property(dcParam, nameof(DataColumn.Data)), df.ClrNullableIfHasNullsType.MakeArrayType())),
-                Expression.Assign(arrayIndexVar, Expression.Property(dcParam, nameof(DataColumn.Offset))),
-
-                // loop over classes
-                loop);
-
-            return Expression.Lambda<Action<IEnumerable<TClass>, DataColumn>>(block, classesParam, dcParam).Compile();
-        }
-
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            Striper<T> striper = new Dremel1<T>().CreateStriper();
+            Striper<T> striper = new Striper<T>(typeof(T).GetParquetSchema(false));
 
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination)) {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
@@ -175,10 +56,10 @@ namespace Parquet.Serialization {
             CancellationToken cancellationToken = default)
             where T : new() {
 
-            Assembler<T> asm = new Dremel1<T>().CreateAssembler();
+            Assembler<T> asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
             var result = new List<T>();
 
-            using ParquetReader reader = await ParquetReader.CreateAsync(source);
+            using ParquetReader reader = await ParquetReader.CreateAsync(source, new ParquetOptions { UnpackDefinitions = false });
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 

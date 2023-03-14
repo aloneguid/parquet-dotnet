@@ -18,7 +18,7 @@ namespace Parquet.File {
         private readonly Thrift.ColumnChunk _thriftColumnChunk;
         private readonly Thrift.SchemaElement? _thriftSchemaElement;
         private readonly ThriftFooter _footer;
-        private readonly ParquetOptions? _options;
+        private readonly ParquetOptions _options;
         private readonly ThriftStream _thriftStream;
         private readonly int _maxRepetitionLevel;
         private readonly int _maxDefinitionLevel;
@@ -71,7 +71,7 @@ namespace Parquet.File {
             }
 
             // all the data is available here!
-            DataColumn column = pc.Unpack(_maxDefinitionLevel, _maxRepetitionLevel);
+            DataColumn column = pc.Unpack(_maxDefinitionLevel, _maxRepetitionLevel, _options.UnpackDefinitions);
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
