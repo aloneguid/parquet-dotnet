@@ -246,31 +246,24 @@ namespace Parquet.Serialization.Dremel {
                         );
                 }
 
-                iteration = Expression.Block(
-
-                    Expression.IfThen(
-                        // levelProperty == null ?
-                        Expression.Equal(levelProperty, Expression.Constant(null)),
-                        // levelProperty = new
-                        Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
-
-                    leafExpr
-                    );
+                iteration = leafExpr;
 
             } else {
                 if(isAtomic) {
-                    // levelProperty = (levelPropertyType)_dataElementVar
-                    // conversion compensates for nullable types and maybe implicit conversions
-                    iteration = Expression.Assign(levelProperty, Expression.Convert(_dataElementVar, levelPropertyType));
+
+                    // C#: dlDepth <= _dlVar?
+                    iteration =
+                        Expression.IfThen(
+                            Expression.Equal(Expression.Constant(dlDepth), _dlVar),
+                            // levelProperty = (levelPropertyType)_dataElementVar
+                            // conversion compensates for nullable types and maybe implicit conversions
+                            Expression.Assign(levelProperty, Expression.Convert(_dataElementVar, levelPropertyType))
+                        );
                 } else {
                     ParameterExpression deepVar = Expression.Variable(levelPropertyType);
 
                     iteration = Expression.Block(
                         new[] { deepVar },
-
-                        Expression.IfThen(
-                            Expression.Equal(levelProperty, Expression.Constant(null)),
-                            Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
 
                         Expression.Assign(deepVar, levelProperty),
 
@@ -279,6 +272,20 @@ namespace Parquet.Serialization.Dremel {
                             field.GetNaturalChildPath(path),
                             dlDepth, rlDepth));
                 }
+            }
+
+            if(!isAtomic || isRepeated) {
+
+                iteration = Expression.IfThen(
+                    // C#: dlDepth <= _dlVar?
+                    Expression.LessThanOrEqual(Expression.Constant(dlDepth), _dlVar),
+
+                    Expression.Block(
+                        Expression.IfThen(
+                            Expression.Equal(levelProperty, Expression.Constant(null)),
+                            Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
+
+                        iteration));
             }
 
             return Expression.Block(
@@ -320,12 +327,13 @@ namespace Parquet.Serialization.Dremel {
                         : Expression.Empty(),
 
                     // only proceed when value if defined (if definition levels are used)
-                    _df.MaxDefinitionLevel > 0
-                        ? Expression.IfThen(Expression.Equal(_dlVar, Expression.Constant(_df.MaxDefinitionLevel)), body)
-                        : body,
+                    //_df.MaxDefinitionLevel > 0
+                    //    ? Expression.IfThen(Expression.Equal(_dlVar, Expression.Constant(_df.MaxDefinitionLevel)), body)
+                    //    : body,
+                    body,
 
 
-                    // be careful to check for NEXT RL, not the currentone
+                    // be careful to check for NEXT RL, not the current one
                     // repeat until RL == 0 (always zero for non-repeated fields so we are OK here in any situation)
                     Expression.IfThen(
                         Expression.Equal(GetCurrentRLOr0(), Expression.Constant(0)),

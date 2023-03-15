@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Serialization;
+using Parquet.Test.Xunit;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
@@ -131,13 +132,14 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
+            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
 
             // deserialise
             ms.Position = 0;
             IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
 
             // assert
-            Assert.Equivalent(data, data2);
+            XAssert.JsonEquivalent(data, data2);
 
         }
 
