@@ -143,26 +143,10 @@ namespace Parquet.Test.Serialisation {
 
         }
 
-        class MovementHistoryCompressed : IEquatable<MovementHistoryCompressed> {
+        class MovementHistoryCompressed  {
             public int? PersonId { get; set; }
 
             public List<int>? ParentIds { get; set; }
-
-            public bool Equals(MovementHistoryCompressed? other) {
-                if(other == null)
-                    return false;
-
-                if(ParentIds?.Count != other?.ParentIds?.Count)
-                    return false;
-
-                if(ParentIds != null && other?.ParentIds != null) {
-                    for(int i = 0; i < ParentIds.Count; i++) {
-                        if(ParentIds[i] != other.ParentIds[i]) return false;
-                    }
-                }
-
-                return true;
-            }
         }
 
         [Fact]
@@ -183,6 +167,35 @@ namespace Parquet.Test.Serialisation {
 
             // assert
             Assert.Equivalent(data, data2);
+
+        }
+
+        class IdWithTags {
+            public int Id { get; set; }
+
+            public Dictionary<string, string>? Tags { get; set; }
+        }
+
+
+        [Fact]
+        public async Task Map_Simple_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new IdWithTags { 
+                Id = i,
+                Tags = new Dictionary<string, string> {
+                    ["id"] = i.ToString(),
+                    ["gen"] = DateTime.UtcNow.ToString()
+                }}).ToList();
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            // deserialise
+            ms.Position = 0;
+            IList<IdWithTags> data2 = await ParquetSerializer.DeserializeAsync<IdWithTags>(ms);
+
+            // assert
+            XAssert.JsonEquivalent(data, data2);
 
         }
     }

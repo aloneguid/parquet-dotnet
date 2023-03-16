@@ -49,17 +49,11 @@ namespace Parquet.Serialization.Dremel {
             _valuesListAddMethod = typeof(List<>).MakeGenericType(_df.ClrType).GetMethod(nameof(IList.Add))!;
         }
 
-        private void Discover(Field field, out bool isRepeated, out bool hasDefinition) {
-            isRepeated = field.SchemaType ==
-                SchemaType.List ||
+        private static void Discover(Field field, out bool isRepeated) {
+            isRepeated =
+                field.SchemaType == SchemaType.List ||
+                field.SchemaType == SchemaType.Map ||
                 (field.SchemaType == SchemaType.Data && field is DataField rdf && rdf.IsArray);
-
-            // The current definitionLevel is uniquely determined by the tree position of the current writer,
-            // as the sum of the number of optional and repeated fields in the field’s path.
-            hasDefinition = (isRepeated ||
-                (field.SchemaType == SchemaType.Struct) ||  // structs are always optional
-                (field.SchemaType == SchemaType.Map) ||
-                (field.SchemaType == SchemaType.Data && field is DataField ddf && ddf.IsNullable));
         }
 
         /// <summary>
@@ -174,10 +168,10 @@ namespace Parquet.Serialization.Dremel {
             string currentPathPart = path.First();
             Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
             if(field == null)
-                throw new NotSupportedException("field not found");
+                throw new NotSupportedException($"field '{currentPathPart}' not found");
             int dl = field.MaxDefinitionLevel;
 
-            Discover(field, out bool isRepeated, out _);
+            FieldStriperCompiler<TClass>.Discover(field, out bool isRepeated);
             bool isAtomic = path.Count == 1;
             if(isRepeated)
                 rlDepth += 1;

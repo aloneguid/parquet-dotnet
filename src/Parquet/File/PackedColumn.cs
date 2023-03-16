@@ -97,9 +97,7 @@ namespace Parquet.File {
         }
 
         public Span<int> GetWriteableDefinitionLevelSpan() {
-            if(_definitionLevels == null) {
-                _definitionLevels = IntPool.Rent(_plainData.Length + 8);
-            }
+            _definitionLevels ??= IntPool.Rent(_plainData.Length + 8);
 
             return _definitionLevels.AsSpan(_definitionOffset);
         }
@@ -156,7 +154,7 @@ namespace Parquet.File {
                 Array packedData = _column.Field.CreateArray(_column.Count - nullCount);
                 _definitionLevels = IntPool.Rent(_column.Count);
 
-                _column.PackDefinitions(_definitionLevels.AsSpan(0, _column.Count),
+                DataColumn.PackDefinitions(_definitionLevels.AsSpan(0, _column.Count),
                     _plainData!, _plainDataOffset, _plainDataCount,
                     packedData,
                     maxDefinitionLevel);
@@ -210,8 +208,8 @@ namespace Parquet.File {
                 throw new InvalidOperationException("no plain data");
 
             return new DataColumn(_field, _plainData,
-                DefinitionLevels == null ? null : DefinitionLevels.AsSpan(0,  _definitionOffset).ToArray(),
-                RepetitionLevels == null ? null : RepetitionLevels.AsSpan(0, _repetitionOffset).ToArray(),
+                DefinitionLevels?.AsSpan(0,  _definitionOffset).ToArray(),
+                RepetitionLevels?.AsSpan(0, _repetitionOffset).ToArray(),
                 unpackDefinitions);
         }
 

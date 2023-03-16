@@ -103,10 +103,9 @@ namespace Parquet.Data {
         /// </summary>
         /// <exception cref="InvalidOperationException">When T is invalid type</exception>
         public Span<T> AsSpan<T>(int? offset = null, int? count = null) {
-            if(Data is not T[] ar)
-                throw new InvalidOperationException($"data is not castable to {typeof(T)}[]");
-
-            return ar.AsSpan(offset ?? Offset, count ?? Count);
+            return Data is not T[] ar
+                ? throw new InvalidOperationException($"data is not castable to {typeof(T)}[]")
+                : ar.AsSpan(offset ?? Offset, count ?? Count);
         }
 
         internal int[]? DefinitionLevels { get; }
@@ -137,21 +136,12 @@ namespace Parquet.Data {
             return Data.CalculateNullCountFast(Offset, Count);
         }
 
-        internal void PackDefinitions(Span<int> definitions,
+        internal static void PackDefinitions(Span<int> definitions,
             Array data, int dataOffset, int dataCount,
             Array packedData,
-            int maxDefinitionLevel) {
+            int maxDefinitionLevel) => data.PackNullsFast(dataOffset, dataCount, packedData, definitions, maxDefinitionLevel);
 
-            data.PackNullsFast(dataOffset, dataCount, packedData, definitions, maxDefinitionLevel);
-        }
-
-        internal long CalculateRowCount() {
-            if(Field.MaxRepetitionLevel > 0) {
-                return RepetitionLevels?.Count(rl => rl == 0) ?? 0;
-            }
-
-            return Count;
-        }
+        internal long CalculateRowCount() => Field.MaxRepetitionLevel > 0 ? RepetitionLevels?.Count(rl => rl == 0) ?? 0 : Count;
 
         /// <summary>
         /// pretty print

@@ -16,5 +16,7 @@
         /// https://docs.github.com/en/actions/learn-github-actions/variables
         /// </summary>
         public static readonly string GithubSha = "${GITHUB_SHA}";
+
+        internal const string DataTypeEnumObsolete = "Please resort to using System.Type overloads. Will be removed in v6.";
     }
 }

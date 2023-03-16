@@ -8,7 +8,7 @@ namespace Parquet.Schema {
     /// Represents a structure i.e. a container for other fields.
     /// </summary>
     public class StructField : Field, IEquatable<StructField> {
-        private readonly List<Field> _fields = new List<Field>();
+        private readonly List<Field> _fields = new();
 
         private StructField(string name) : base(name, SchemaType.Struct) {
             IsNullable = true;

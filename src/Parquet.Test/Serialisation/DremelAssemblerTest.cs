@@ -67,7 +67,7 @@ namespace Parquet.Test.Serialisation {
 
             // Name count is 3, regardless of the null value
             Assert.Equal(3, docs[0].Name!.Count);
-            Assert.Equal(1, docs[1].Name!.Count);
+            Assert.Single(docs[1].Name!);
 
             // Language count
             Assert.Equal(2, docs[0].Name![0].Language!.Count);
@@ -112,7 +112,7 @@ namespace Parquet.Test.Serialisation {
             Assert.NotNull(docs[1].Name);
 
             Assert.Equal(3, docs[0].Name!.Count);
-            Assert.Equal(1, docs[1].Name!.Count);
+            Assert.Single(docs[1].Name!);
         }
 
         [Fact]

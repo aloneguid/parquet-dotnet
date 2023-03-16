@@ -36,6 +36,11 @@ namespace Parquet.Schema {
                 return path.Skip(3).ToList();
             }
 
+            if(SchemaType == SchemaType.Map) {
+                // element.key_value.key|value
+                return path.Skip(2).ToList();
+            }
+
             // element.child
             return path.Skip(1).ToList();
         }
@@ -98,7 +103,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Get child fields, which only makes sense for complex types
         /// </summary>
-        internal virtual Field[] Children { get; } = new Field[0];
+        internal virtual Field[] Children { get; } = Array.Empty<Field>();
 
         internal virtual Field[] NaturalChildren {
             get {

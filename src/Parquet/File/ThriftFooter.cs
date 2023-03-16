@@ -12,7 +12,7 @@ namespace Parquet.File {
         private readonly Thrift.FileMetaData _fileMeta;
         private readonly ThriftSchemaTree _tree;
 
-        internal static ThriftFooter Empty => new ThriftFooter();
+        internal static ThriftFooter Empty => new();
 
         internal ThriftFooter() {
             _fileMeta = new Thrift.FileMetaData();
@@ -98,15 +98,14 @@ namespace Parquet.File {
 
         public Thrift.RowGroup AddRowGroup() {
             var rg = new Thrift.RowGroup();
-            if(_fileMeta.Row_groups == null)
-                _fileMeta.Row_groups = new List<Thrift.RowGroup>();
+            _fileMeta.Row_groups ??= new List<Thrift.RowGroup>();
             _fileMeta.Row_groups.Add(rg);
             return rg;
         }
 
         public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
             Thrift.Type columnType, FieldPath path, int valuesCount) {
-            Thrift.CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
+            CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
 
             var chunk = new Thrift.ColumnChunk();
             long startPos = output.Position;
@@ -127,18 +126,16 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public Thrift.PageHeader CreateDataPage(int valueCount, bool isDictionary) {
-            var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
-            ph.Data_page_header = new Thrift.DataPageHeader {
-                Encoding = isDictionary ? Thrift.Encoding.PLAIN_DICTIONARY : Thrift.Encoding.PLAIN,
-                Definition_level_encoding = Thrift.Encoding.RLE,
-                Repetition_level_encoding = Thrift.Encoding.RLE,
-                Num_values = valueCount,
-                Statistics = new Thrift.Statistics()
+        public Thrift.PageHeader CreateDataPage(int valueCount, bool isDictionary) => 
+            new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0) {
+                Data_page_header = new Thrift.DataPageHeader {
+                    Encoding = isDictionary ? Thrift.Encoding.PLAIN_DICTIONARY : Thrift.Encoding.PLAIN,
+                    Definition_level_encoding = Thrift.Encoding.RLE,
+                    Repetition_level_encoding = Thrift.Encoding.RLE,
+                    Num_values = valueCount,
+                    Statistics = new Thrift.Statistics()
+                }
             };
-
-            return ph;
-        }
 
         public Thrift.PageHeader CreateDictionaryPage(int numValues) {
             var ph = new Thrift.PageHeader(Thrift.PageType.DICTIONARY_PAGE, 0, 0);
@@ -206,7 +203,7 @@ namespace Parquet.File {
             meta.Schema = new List<Thrift.SchemaElement>();
             meta.Row_groups = new List<Thrift.RowGroup>();
 
-            Thrift.SchemaElement root = AddRoot(meta.Schema);
+            Thrift.SchemaElement root = ThriftFooter.AddRoot(meta.Schema);
             foreach(Field se in schema.Fields) {
                 SchemaEncoder.Encode(se, root, meta.Schema);
             }
@@ -215,7 +212,7 @@ namespace Parquet.File {
         }
 
 
-        private Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container) {
+        private static Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container) {
             var root = new Thrift.SchemaElement("root");
             container.Add(root);
             return root;

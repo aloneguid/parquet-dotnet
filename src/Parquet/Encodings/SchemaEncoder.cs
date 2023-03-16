@@ -234,9 +234,10 @@ namespace Parquet.Encodings {
 
             //followed by a key and a value, but we declared them as owned
 
-            var map = new MapField(root.Name);
-            map.Path = new FieldPath(root.Name, tseContainer.Name);
-            map.IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED;
+            var map = new MapField(root.Name) {
+                Path = new FieldPath(root.Name, tseContainer.Name),
+                IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED
+            };
 
             index += 1;
             ownedChildren = 2;

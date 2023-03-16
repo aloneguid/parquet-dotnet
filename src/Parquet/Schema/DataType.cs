@@ -4,7 +4,7 @@ namespace Parquet.Schema {
     /// <summary>
     /// List of supported data types
     /// </summary>
-    [Obsolete("Please remove references to this enum and use System.Type where appropriate. WIll be removed in the next major release or end of 2023 (whichever comes first).")]
+    [Obsolete(Globals.DataTypeEnumObsolete)]
     public enum DataType {
         /// <summary>
         /// Type is not specified, shouldn't be used.

@@ -15,7 +15,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Parquet data type of this element
         /// </summary>
-        [Obsolete]
+        [Obsolete(Globals.DataTypeEnumObsolete)]
         public DataType DataType { get; }
 
         /// <summary>

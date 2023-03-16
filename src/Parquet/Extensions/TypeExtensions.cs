@@ -59,7 +59,7 @@ namespace Parquet {
 
         public static Type ExtractElementTypeFromEnumerableType(this Type t) {
             if(!t.TryExtractEnumerableType(out Type? iet))
-                throw new ArgumentException($"type {t} is not enumerable", nameof(t));
+                throw new ArgumentException($"type {t} is not single-element generic enumerable", nameof(t));
             return iet!;
         }
 
@@ -67,9 +67,7 @@ namespace Parquet {
             Type elementType = listType.ExtractElementTypeFromEnumerableType();
             Type genericListType = typeof(List<>).MakeGenericType(elementType);
             MethodInfo? method = genericListType.GetMethod(nameof(IList.Add));
-            if(method == null)
-                throw new InvalidOperationException("method not present");
-            return method;
+            return method ?? throw new InvalidOperationException("method not present");
         }
 
         public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
