@@ -202,7 +202,7 @@ namespace Parquet.File {
             }
         }
 
-        public DataColumn Unpack(int maxDefinitionLevel, int maxRepetitionLevel, bool unpackDefinitions) {
+        public DataColumn Unpack(bool unpackDefinitions) {
 
             UnpackCheckpoint();
 
@@ -210,8 +210,8 @@ namespace Parquet.File {
                 throw new InvalidOperationException("no plain data");
 
             return new DataColumn(_field, _plainData,
-                DefinitionLevels == null ? null : DefinitionLevels.AsSpan(0,  _definitionOffset).ToArray(), maxDefinitionLevel,
-                RepetitionLevels == null ? null : RepetitionLevels.AsSpan(0, _repetitionOffset).ToArray(), maxRepetitionLevel,
+                DefinitionLevels == null ? null : DefinitionLevels.AsSpan(0,  _definitionOffset).ToArray(),
+                RepetitionLevels == null ? null : RepetitionLevels.AsSpan(0, _repetitionOffset).ToArray(),
                 unpackDefinitions);
         }
 

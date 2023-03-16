@@ -65,37 +65,37 @@ namespace Parquet.Test.Serialisation.Paper {
                 return new DataColumn[] {
                     new DataColumn(new DataField<long>("DocId"),
                         new long[] { 10, 20 },
-                        null,
+                        (List<int>?)null,
                         null,
                         false),
 
                     new DataColumn(new DataField<long>("Backward"),
                         new long[] { 10, 30 },
-                        new() { 1, 2, 2 },
+                        new List<int> { 1, 2, 2 },
                         new() { 0, 0, 1 },
                         false),
 
                     new DataColumn(new DataField<long>("Forward"),
                         new long[] { 20, 40, 60, 80 },
-                        new() { 2, 2, 2, 2 },
+                        new List<int> { 2, 2, 2, 2 },
                         new() { 0, 1, 1, 0 },
                         false),
 
                     new DataColumn(new DataField<string>("Code"),
                         new string[] { "en-us", "en", "en-gb" },
-                        new() { 3, 3, 1, 3, 1 },
+                        new List<int> { 7, 7, 2, 7, 2 },
                         new() { 0, 2, 1, 1, 0 },
                         false),
 
                     new DataColumn(new DataField<string>("Country"),
                         new string[] { "us", "gb" },
-                        new() { 3, 2, 1, 3, 1 },
+                        new List<int> { 7, 6, 4, 7, 4 },
                         new() { 0, 2, 1, 1, 0 },
                         false),
 
                     new DataColumn(new DataField<string>("Url"),
                         new string[] { "http://A", "http://B", "http://C" },
-                        new() { 2, 2, 1, 2 },
+                        new List<int> { 4, 4, 3, 4 },
                         new() { 0, 1, 1, 0 },
                         false)
                 };

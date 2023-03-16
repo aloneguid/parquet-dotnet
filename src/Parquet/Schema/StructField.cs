@@ -10,6 +10,10 @@ namespace Parquet.Schema {
     public class StructField : Field, IEquatable<StructField> {
         private readonly List<Field> _fields = new List<Field>();
 
+        private StructField(string name) : base(name, SchemaType.Struct) {
+            IsNullable = true;
+        }
+
         /// <summary>
         /// Creates a new structure field 
         /// </summary>
@@ -40,17 +44,16 @@ namespace Parquet.Schema {
         internal override Field[] Children => Fields.ToArray(); // make a copy
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            //struct is a container, it doesn't have any levels
+            //struct is a container, it doesn't have any repetition levels
 
-            MaxDefinitionLevel = parentDefinitionLevel + 1; // structs are always OPTIONAL
+            MaxRepetitionLevel = parentRepetitionLevel;
+            MaxDefinitionLevel = parentDefinitionLevel;
+            if(IsNullable)
+                MaxDefinitionLevel++;
 
             foreach(Field f in Fields) {
-                f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel + 1);
+                f.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
             }
-        }
-
-        private StructField(string name) : base(name, SchemaType.Struct) {
-
         }
 
         internal static StructField CreateWithNoElements(string name) {

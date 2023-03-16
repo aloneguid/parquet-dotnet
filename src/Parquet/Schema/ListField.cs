@@ -26,6 +26,13 @@ namespace Parquet.Schema {
         /// </summary>
         public Field Item { get; internal set; }
 
+        private ListField(string name) : base(name, SchemaType.List) {
+            ContainerName = "list";
+            Item = new DataField<int>("invalid");
+            IsNullable = true;  // lists are always nullable
+        }
+
+
         /// <summary>
         /// Creates a new instance of <see cref="ListField"/>
         /// </summary>
@@ -73,11 +80,7 @@ namespace Parquet.Schema {
             _itemAssigned = true;
             ContainerName = containerName;
             PathPrefix = null;
-        }
-
-        private ListField(string name) : base(name, SchemaType.List) {
-            ContainerName = "list";
-            Item = new DataField<int>("invalid");
+            IsNullable = true;  // lists are always nullable
         }
 
         internal override FieldPath? PathPrefix {
@@ -89,23 +92,28 @@ namespace Parquet.Schema {
 
         internal override Field[] Children => new Field[] { Item };
 
+        internal Thrift.SchemaElement? GroupSchemaElement { get; set; } = null;
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
 
-            // both get +1
-            MaxDefinitionLevel = parentDefinitionLevel + 1;
-            MaxRepetitionLevel = parentRepetitionLevel + 1;
+            // both get
+            MaxDefinitionLevel = parentDefinitionLevel;
+            MaxRepetitionLevel = parentRepetitionLevel + 1; // because it's repeated ;)
 
-            // structs in list elements are required, re-adjusting
-            if(Item.SchemaType == SchemaType.Struct) {
-                MaxDefinitionLevel--;
+            if(IsNullable) {
+                MaxDefinitionLevel++;
+            }
+
+            if(GroupSchemaElement == null || GroupSchemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED) {
+                MaxDefinitionLevel++;
             }
 
             //push to child item
             Item.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
         }
 
-        internal static ListField CreateWithNoItem(string name) {
-            return new ListField(name);
+        internal static ListField CreateWithNoItem(string name, bool isNullable) {
+            return new ListField(name) { IsNullable = isNullable };
         }
 
         internal override void Assign(Field field) {

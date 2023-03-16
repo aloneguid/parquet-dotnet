@@ -25,6 +25,11 @@ namespace Parquet.Schema {
         /// </summary>
         public FieldPath Path { get; internal set; }
 
+        /// <summary>
+        /// Original nullability
+        /// </summary>
+        public virtual bool IsNullable { get; internal set; } = false;
+
         internal List<string> GetNaturalChildPath(List<string> path) {
             if(SchemaType == SchemaType.List) {
                 // element.list.element.child

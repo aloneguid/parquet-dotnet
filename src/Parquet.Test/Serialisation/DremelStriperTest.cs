@@ -53,18 +53,18 @@ namespace Parquet.Test.Serialisation {
             Field nlCode = schema[2].NaturalChildren[0].NaturalChildren[0];
             Assert.Equal("Name.list.element.Language.list.element.Code", nlCode.Path);
             Assert.Equal(2, nlCode.MaxRepetitionLevel);
-            Assert.Equal(3, nlCode.MaxDefinitionLevel);
+            Assert.Equal(7, nlCode.MaxDefinitionLevel);
 
             // Name.Language.Country
             Field nlCountry = schema[2].NaturalChildren[0].NaturalChildren[1];
             Assert.Equal("Name.list.element.Language.list.element.Country", nlCountry.Path);
             Assert.Equal(2, nlCountry.MaxRepetitionLevel);
-            Assert.Equal(3, nlCountry.MaxDefinitionLevel);
+            Assert.Equal(7, nlCountry.MaxDefinitionLevel);
 
             // Name.Url
             Assert.Equal("Name.list.element.Url", schema[2].Children[0].Children[1].Path);
             Assert.Equal(1, schema[2].Children[0].Children[1].MaxRepetitionLevel);
-            Assert.Equal(2, schema[2].Children[0].Children[1].MaxDefinitionLevel);
+            Assert.Equal(4, schema[2].Children[0].Children[1].MaxDefinitionLevel);
         }
 
 
@@ -111,7 +111,7 @@ namespace Parquet.Test.Serialisation {
             ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new string[] { "en-us", "en", "en-gb" }, col.Data);
             Assert.Equal(new int[] { 0, 2, 1, 1, 0 }, col.RepetitionLevels!);
-            Assert.Equal(new int[] { 3, 3, 1, 3, 1 }, col.DefinitionLevels!);
+            Assert.Equal(new int[] { 7, 7, 4, 7, 4 }, col.DefinitionLevels!);
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Parquet.Test.Serialisation {
             ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new string[] { "us", "gb" }, col.Data);
             Assert.Equal(new int[] { 0, 2, 1, 1, 0 }, col.RepetitionLevels!);
-            Assert.Equal(new int[] { 3, 2, 1, 3, 1 }, col.DefinitionLevels!);
+            Assert.Equal(new int[] { 7, 6, 4, 7, 4 }, col.DefinitionLevels!);
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace Parquet.Test.Serialisation {
             ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
             Assert.Equal(new string[] { "http://A", "http://B", "http://C" }, col.Data);
             Assert.Equal(new int[] { 0, 1, 1, 0 }, col.RepetitionLevels!);
-            Assert.Equal(new int[] { 2, 2, 1, 2 }, col.DefinitionLevels!);
+            Assert.Equal(new int[] { 4, 4, 3, 4 }, col.DefinitionLevels!);
         }
     }
 }

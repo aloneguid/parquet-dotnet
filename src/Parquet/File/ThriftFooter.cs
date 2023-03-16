@@ -15,7 +15,7 @@ namespace Parquet.File {
         internal static ThriftFooter Empty => new ThriftFooter();
 
         internal ThriftFooter() {
-            _fileMeta= new Thrift.FileMetaData();
+            _fileMeta = new Thrift.FileMetaData();
             _tree= new ThriftSchemaTree();
         }
 
@@ -90,49 +90,6 @@ namespace Parquet.File {
 
             path.Reverse();
             return new FieldPath(path);
-        }
-
-        // could use value tuple, would that nuget ref be ok to bring in?
-        readonly Dictionary<StringListComparer, Tuple<int, int>> _memoizedLevels = new Dictionary<StringListComparer, Tuple<int, int>>();
-
-        public void GetLevels(Thrift.ColumnChunk columnChunk, out int maxRepetitionLevel, out int maxDefinitionLevel) {
-            maxRepetitionLevel = 0;
-            maxDefinitionLevel = 0;
-
-            int i = 0;
-            List<string> path = columnChunk.Meta_data.Path_in_schema;
-
-            var comparer = new StringListComparer(path);
-            if(_memoizedLevels.TryGetValue(comparer, out Tuple<int, int>? t)) {
-                maxRepetitionLevel = t.Item1;
-                maxDefinitionLevel = t.Item2;
-                return;
-            }
-
-            int fieldCount = _fileMeta.Schema.Count;
-
-            foreach(string pp in path) {
-                while(i < fieldCount) {
-                    SchemaElement schemaElement = _fileMeta.Schema[i];
-                    if(string.CompareOrdinal(schemaElement.Name, pp) == 0) {
-                        Thrift.SchemaElement se = schemaElement;
-
-                        bool repeated = (se.__isset.repetition_type && se.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
-                        bool defined = (se.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
-
-                        if(repeated)
-                            maxRepetitionLevel += 1;
-                        if(!defined)
-                            maxDefinitionLevel += 1;
-
-                        break;
-                    }
-
-                    i++;
-                }
-            }
-
-            _memoizedLevels.Add(comparer, Tuple.Create(maxRepetitionLevel, maxDefinitionLevel));
         }
 
         public Thrift.SchemaElement[] GetWriteableSchema() {

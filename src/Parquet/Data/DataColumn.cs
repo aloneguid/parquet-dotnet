@@ -42,8 +42,8 @@ namespace Parquet.Data {
 
         internal DataColumn(DataField field,
             Array definedData,
-            Span<int> definitionLevels, int maxDefinitionLevel,
-            int[]? repetitionLevels, int maxRepetitionLevel,
+            Span<int> definitionLevels,
+            int[]? repetitionLevels,
             bool unpackDefinitions = true) {
 
             Field = field ?? throw new ArgumentNullException(nameof(field));
@@ -52,7 +52,7 @@ namespace Parquet.Data {
             // 1. Apply definitions
             if(unpackDefinitions) {
                 if(definitionLevels != null) {
-                    Data = field.UnpackDefinitions(Data, definitionLevels, maxDefinitionLevel);
+                    Data = field.UnpackDefinitions(Data, definitionLevels);
                 }
             } else {
                 if(definitionLevels != null) {
@@ -71,7 +71,7 @@ namespace Parquet.Data {
             Field = df ?? throw new ArgumentNullException(nameof(df));
             Data = values;
             if(dls != null && unpackDefinitions) {
-                Data = df.UnpackDefinitions(Data, dls.ToArray().AsSpan(), df.MaxDefinitionLevel);
+                Data = df.UnpackDefinitions(Data, dls.ToArray().AsSpan());
             } else {
                 DefinitionLevels = dls?.ToArray();
             }

@@ -154,7 +154,7 @@ namespace Parquet.Serialization.Dremel {
                     WriteValue(valueVar, dl, chRepetitionLevelVar, isLeafVar, isAtomic),
                     isAtomic
                         ? Expression.Empty()
-                        : DissectRecord(valueVar, field.NaturalChildren, field.GetNaturalChildPath(path), elementType, rlDepth, dl, chRepetitionLevelVar)
+                        : DissectRecord(valueVar, field.NaturalChildren, field.GetNaturalChildPath(path), elementType, rlDepth, chRepetitionLevelVar)
                 )
 
             ); ;
@@ -166,7 +166,6 @@ namespace Parquet.Serialization.Dremel {
             List<string> path,
             Type rootType,
             int rlDepth,
-            int dl,
             ParameterExpression currentRlVar) {
 
             // walk schema, not class instance
@@ -176,11 +175,10 @@ namespace Parquet.Serialization.Dremel {
             Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
             if(field == null)
                 throw new NotSupportedException("field not found");
+            int dl = field.MaxDefinitionLevel;
 
-            Discover(field, out bool isRepeated, out bool hasDefinition);
+            Discover(field, out bool isRepeated, out _);
             bool isAtomic = path.Count == 1;
-            if(hasDefinition)
-                dl += 1;
             if(isRepeated)
                 rlDepth += 1;
 
@@ -222,7 +220,7 @@ namespace Parquet.Serialization.Dremel {
 
             ParameterExpression currentRl = Expression.Variable(typeof(int), "currentRl");
 
-            Expression iteration = DissectRecord(_classElementVar, _schema.Fields.ToArray(), _df.Path.ToList(), typeof(TClass), 0, 0, currentRl);
+            Expression iteration = DissectRecord(_classElementVar, _schema.Fields.ToArray(), _df.Path.ToList(), typeof(TClass), 0, currentRl);
             Expression iterationLoop = iteration.Loop(_classesParam, typeof(TClass), _classElementVar);
 
             BlockExpression block = Expression.Block(

@@ -25,13 +25,13 @@ namespace Parquet.Test.Types {
                 ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
                 await rgw.WriteColumnAsync(
-                    new DataColumn(new DataField<string>("name"), new[] { "Joe" }));
+                    new DataColumn((DataField)schema[0], new[] { "Joe" }));
 
                 await rgw.WriteColumnAsync(
-                    new DataColumn(new DataField<string>("line1"), new[] { "Amazonland" }));
+                    new DataColumn((DataField)schema[1].NaturalChildren[0], new[] { "Amazonland" }));
 
                 await rgw.WriteColumnAsync(
-                    new DataColumn(new DataField<string>("postcode"), new[] { "AAABBB" }));
+                    new DataColumn((DataField)schema[1].NaturalChildren[1], new[] { "AAABBB" }));
             }
 
             ms.Position = 0;

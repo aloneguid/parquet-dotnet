@@ -196,20 +196,18 @@ namespace Parquet.Serialization.Dremel {
                 resultElementVar);
         }
 
-        private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path,
-            int dlDepth, int rlDepth) {
+        private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path) {
 
             string currentPathPart = path.First();
             Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
             if(field == null)
                 throw new NotSupportedException($"field '{currentPathPart}' not found");
-            Discover(field, out bool isRepeated, out bool hasDefinition);
-            bool isAtomic = path.Count == 1;
-            if(hasDefinition)
-                dlDepth += 1;
-            if(isRepeated)
-                rlDepth += 1;
 
+            int dlDepth = field.MaxDefinitionLevel;
+            int rlDepth = field.MaxRepetitionLevel;
+
+            Discover(field, out bool isRepeated, out _);
+            bool isAtomic = path.Count == 1;
             string levelPropertyName = field.ClrPropName ?? field.Name;
             Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
             Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
@@ -240,8 +238,7 @@ namespace Parquet.Serialization.Dremel {
 
                         // keep traversing the tree
                         InjectLevel(collectionElementVar, levelPropertyElementType,
-                            field.NaturalChildren, field.GetNaturalChildPath(path),
-                            dlDepth, rlDepth)
+                            field.NaturalChildren, field.GetNaturalChildPath(path))
 
                         );
                 }
@@ -269,8 +266,7 @@ namespace Parquet.Serialization.Dremel {
 
                         InjectLevel(deepVar, levelPropertyType,
                             field.NaturalChildren,
-                            field.GetNaturalChildPath(path),
-                            dlDepth, rlDepth));
+                            field.GetNaturalChildPath(path)));
                 }
             }
 
@@ -312,7 +308,7 @@ namespace Parquet.Serialization.Dremel {
 
             // process current value tuple (_dataVar, _dlVar, _rlVar)
             Expression body = 
-                InjectLevel(_classElementVar, typeof(TClass), _schema.Fields.ToArray(), _df.Path.ToList(), 0, 0);
+                InjectLevel(_classElementVar, typeof(TClass), _schema.Fields.ToArray(), _df.Path.ToList());
 
             return Expression.Block(
 

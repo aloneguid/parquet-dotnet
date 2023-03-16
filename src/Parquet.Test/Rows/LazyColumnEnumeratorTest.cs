@@ -9,28 +9,21 @@ namespace Parquet.Test.Rows {
         [Fact]
         public void Two_level_rep_levels() {
             //prepare columns with two items, each item has two inline items
-            var dc = new DataColumn(new DataField<int>("openingHours") { MaxRepetitionLevel = 2 },
-               new[]
-               {
-               1, 2, 3, 4,
-               5, 6,
+            var dc = new DataColumn(
+                new DataField<int>("openingHours") { MaxRepetitionLevel = 2, MaxDefinitionLevel = 1 },
+                new[] {
+                    1, 2, 3, 4,
+                    5, 6,
 
-               7, 8, 9,
-               10, 11, 12, 13
+                    7, 8, 9,
+                    10, 11, 12, 13 },
+                null,
+                new[] {
+                    0, 2, 2, 2,
+                    1, 2,
 
-               },
-               null,
-               1,
-               new[]
-               {
-               0, 2, 2, 2,
-               1, 2,
-
-               0, 2, 2,
-               1, 2, 2, 2
-               },
-               2
-               );
+                    0, 2, 2,
+                    1, 2, 2, 2 });
 
             var e = new LazyColumnEnumerator(dc);
 
@@ -51,20 +44,15 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Simple_array() {
-            var dc = new DataColumn(new DataField<int>("ids") { MaxRepetitionLevel = 1 },
-            new[]
-            {
-            1, 2, 3, 4,
-            5, 6
-            },
-            null,
-            1,
-            new[]
-            {
-            0, 1, 1, 1,
-            0, 1
-            },
-            2);
+            var dc = new DataColumn(
+                new DataField<int>("ids") { MaxRepetitionLevel = 1, MaxDefinitionLevel = 1 },
+                new[] {
+                    1, 2, 3, 4,
+                    5, 6 },
+                null,
+                new[] {
+                    0, 1, 1, 1,
+                    0, 1 });
 
             var e = new LazyColumnEnumerator(dc);
 
@@ -78,22 +66,18 @@ namespace Parquet.Test.Rows {
 
         [Fact]
         public void Empty_list() {
-            var dc = new DataColumn(new DataField<int?>("ids") { MaxRepetitionLevel = 1 },
-            new int?[]
-            {
-            1, 2,
-            null,
-            5, 6
-            },
-            null,
-            1,
-            new[]
-            {
-            0, 1,
-            0,
-            0, 1
-            },
-            2);
+            var dc = new DataColumn(
+                new DataField<int?>("ids") { MaxRepetitionLevel = 1, MaxDefinitionLevel = 1 },
+                new int?[] {
+                    1, 2,
+                    null,
+                    5, 6 },
+                null,
+                new[] {
+                    0, 1,
+                    0,
+                    0, 1
+                    });
 
             var e = new LazyColumnEnumerator(dc);
 

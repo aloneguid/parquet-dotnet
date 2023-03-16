@@ -225,14 +225,17 @@ namespace Parquet.Test.Schema {
             var nameField = new DataField<string>("name");
 
             var schema = new ParquetSchema(
-               new DataField<int>("id"),
+               new DataField<int>("topLevelId"),
                new ListField("structs",
                   new StructField("mystruct",
                      idField,
                      nameField)));
 
+            Assert.Equal(0, schema[0].MaxRepetitionLevel);
+            Assert.Equal(0, schema[0].MaxDefinitionLevel);
+
             Assert.Equal(1, idField.MaxRepetitionLevel);
-            Assert.Equal(3, idField.MaxDefinitionLevel);
+            Assert.Equal(3, idField.MaxDefinitionLevel); // optional list + optional group + optional struct + required field
 
             Assert.Equal(1, nameField.MaxRepetitionLevel);
             Assert.Equal(4, nameField.MaxDefinitionLevel);
@@ -335,6 +338,5 @@ namespace Parquet.Test.Schema {
             Assert.Equal(expectedTT, foundTT);
             Assert.Equal(expectedCT, foundCT);
         }
-
     }
 }
