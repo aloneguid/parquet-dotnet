@@ -132,7 +132,7 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
-            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
+            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
 
             // deserialise
             ms.Position = 0;

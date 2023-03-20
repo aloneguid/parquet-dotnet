@@ -1,8 +1,9 @@
 name: 'Full Workflow'
 
 env:
-  VERSION: 4.5.4
-  ASM_VERSION: 4.0.0
+  VERSION: 5.0.0
+  ASM_VERSION: 5.0.0
+  P_VERSION: $VERSION-preview-01
 
 on:
   push:

@@ -148,7 +148,65 @@ and data:
 +--------+---------------+
 ```
 
+Or as a more complicate example, here is a list of structures (classes in C#):
 
+```csharp
+class Address {
+    public string? Country { get; set; }
+
+    public string? City { get; set; }
+}
+
+class MovementHistory {
+    public int? PersonId { get; set; }
+
+    public string? Comments { get; set; }
+
+    public List<Address>? Addresses { get; set; }
+}
+
+ var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
+                PersonId = i,
+                Comments = i % 2 == 0 ? "none" : null,
+                Addresses = Enumerable.Range(0, 4).Select(a => new Address {
+                    City = "Birmingham",
+                    Country = "United Kingdom"
+                }).ToList()
+            }).ToList();
+
+await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
+```
+
+that by reading from Spark produced the following schema
+
+```
+root
+ |-- PersonId: integer (nullable = true)
+ |-- Comments: string (nullable = true)
+ |-- Addresses: array (nullable = true)
+ |    |-- element: struct (containsNull = true)
+ |    |    |-- Country: string (nullable = true)
+ |    |    |-- City: string (nullable = true)
+```
+
+and data
+
+```
++--------+--------+--------------------+
+|PersonId|Comments|           Addresses|
++--------+--------+--------------------+
+|       0|    none|[{United Kingdom,...|
+|       1|    null|[{United Kingdom,...|
+|       2|    none|[{United Kingdom,...|
+|       3|    null|[{United Kingdom,...|
+|       4|    none|[{United Kingdom,...|
+|       5|    null|[{United Kingdom,...|
+|       6|    none|[{United Kingdom,...|
+|       7|    null|[{United Kingdom,...|
+|       8|    none|[{United Kingdom,...|
+|       9|    null|[{United Kingdom,...|
++--------+--------+--------------------+
+```
 
 ### Maps (Dictionaries)
 
