@@ -3,7 +3,7 @@ name: 'Full Workflow'
 env:
   VERSION: 5.0.0
   ASM_VERSION: 5.0.0
-  P_VERSION: $VERSION-preview-01
+  P_VERSION: ${{ env.VERSION }}-preview-01
 
 on:
   push:
@@ -33,39 +33,6 @@ jobs:
     - name: 'test on ${{ matrix.os }}'
       run: dotnet test src/Parquet.sln -c release
 
-  #run-benchmarks:
-  #  runs-on: ${{ matrix.os }}
-  #  strategy:
-  #    matrix:
-  #      os: [ubuntu-latest, windows-latest, macos-latest]
-  #    fail-fast: false
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  - name: Setup .NET
-  #    uses: actions/setup-dotnet@v3
-  #    with:
-  #      dotnet-version: |
-  #        3.1.x
-  #        6.0.x
-  #        7.0.x
-  #  - name: 'Write Performance'
-  #    run: dotnet run -c release -- write
-  #    working-directory: src/Parquet.PerfRunner
-  #  - name: 'Prep'
-  #    run: mv results ${{ matrix.os }}
-  #    working-directory: src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts
-
-  #  - name: debug
-  #    run: ls -R
-  #    working-directory: src/Parquet.PerfRunner
-
-  #  - uses: actions/upload-artifact@v3
-  #    name: Collect Results
-  #    with:
-  #      name: benchmarks
-  #      path: |
-  #        src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/${{ matrix.os }}/
-
 
   build:
 
@@ -84,7 +51,7 @@ jobs:
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.sln -c release /p:Version=$P_VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - uses: actions/upload-artifact@v3
       name: save
@@ -108,7 +75,7 @@ jobs:
       - name: create gh release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.VERSION }}
-          name: ${{ env.VERSION }}
+          tag_name: ${{ env.P_VERSION }}
+          name: ${{ env.P_VERSION }}
           files: "src/Parquet/bin/Release/*.nupkg"
           generate_release_notes: true
