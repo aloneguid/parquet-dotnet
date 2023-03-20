@@ -7,15 +7,22 @@
 
 **Fully portable, managed** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files. Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
-Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs and much more.
+Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more,  Parquet.NET has you covered. 
+
+## Why
+
+Parquet is a great format for storing and processing large amounts of data, but it can be tricky to use with .NET. That's why this library is here to help. It's a pure library that doesn't need any external dependencies, and it's super fast - faster than Python and Java, and other C# solutions. It's also native to .NET, so you don't have to deal with any wrappers or adapters that might slow you down or limit your options.
+
+This library is the best option for parquet files in .NET. It has a simple and intuitive API, supports all the parquet features you need, and handles complex scenarios with ease.
+
+Also it:
+
+- Has zero dependencies - pure library that just works.
+- Really fast. Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
+- .NET native. Designed to utilise .NET and made for .NET developers, not the other way around.
+- Not a "wrapper" that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 
 ## Quick Start
-
-Why should I use this? I think you shouldn't. Go away and look at better alternatives, like [PyArrow](https://arrow.apache.org/docs/python/) that does it much better in Python. Also I'd rather you use [Apache Spark](https://spark.apache.org/) with native support for Parquet and other commercial alternatives. Seriously. Comparing to those, this library is just pure shite, developed in spare time by one person. Despite that, it's a de facto standard for .NET when it comes to reading and writing Parquet files. Why? Because:
-
-- It has zero dependencies - pure library that just works.
-- It's really fast. Faster than Python and Java implementations.
-- It's .NET native. Designed to utilise .NET and made for .NET developers.
 
 Parquet is designed to handle *complex data in bulk*. It's *column-oriented* meaning that data is physically stored in columns rather than rows. This is very important for big data systems if you want to process only a subset of columns - reading just the right columns is extremely efficient.
 

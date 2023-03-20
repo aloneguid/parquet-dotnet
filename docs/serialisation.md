@@ -6,7 +6,7 @@ Parquet library is generally extremely flexible in terms of supporting internals
 
 Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
 
-Class serialisation philosophy is trying to simply mimic .NET's built-in **json** serialisation infrastructure in order to ease in learning path and reuse as much existing code as possible.
+Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serialisers and deserialisers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
 
 ## Quick Start
 
@@ -54,7 +54,9 @@ Serialisation tries to fit into C# ecosystem like a ninja 🥷, including custom
 
 ## Nested Types
 
-You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format. If you would like to use low-level API for complex types, there is a [guide](nested_types.md) available too.
+You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format. Sometimes you might want to store more complex data in your parquet files, like lists or maps. These are called *nested types* and they can be useful for organizing your information. However, they also come with a trade-off: they make your code slower and use more CPU resources. That's why you should only use them when you really need them and not just because they look cool. Simple columns are faster and easier to work with, so stick to them whenever you can.
+
+> If you would like to use low-level API for complex types, there is a [guide](nested_types.md) available too.
 
 ### Structures
 
@@ -93,14 +95,83 @@ You can serialise/deserialise those using the same `ParquetSerializer.SerializeA
 
 ### Lists
 
+One of the cool things about lists is that Parquet can handle any kind of data structure in a list. You can have a list of atoms, like `1, 2, 3`, or a list of lists, `[[1, 2], [3, 4], [5, 6]]`, or even a list of structures. Parquet.Net is awesome like that!
+
+For instance, a simple `MovementHistory` class with `Id` and list of `ParentIds` looking like the following:
+
+```csharp
+class MovementHistoryCompressed  {
+    public int? PersonId { get; set; }
+
+    public List<int>? ParentIds { get; set; }
+}
+```
+
+Is totally fine to serialise/deserialise:
+
+```csharp
+var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressed {
+    PersonId = i,
+    ParentIds = Enumerable.Range(i, 4).ToList()
+}).ToList();
+
+await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\lat.parquet");
+```
+
+
+
+ Reading it in `Spark` produces the following schema
+
+```
+root
+ |-- PersonId: integer (nullable = true)
+ |-- ParentIds: array (nullable = true)
+ |    |-- element: integer (containsNull = true)
+```
+
+and data:
+
+```
++--------+---------------+
+|PersonId|ParentIds      |
++--------+---------------+
+|0       |[0, 1, 2, 3]   |
+|1       |[1, 2, 3, 4]   |
+|2       |[2, 3, 4, 5]   |
+|3       |[3, 4, 5, 6]   |
+|4       |[4, 5, 6, 7]   |
+|5       |[5, 6, 7, 8]   |
+|6       |[6, 7, 8, 9]   |
+|7       |[7, 8, 9, 10]  |
+|8       |[8, 9, 10, 11] |
+|9       |[9, 10, 11, 12]|
++--------+---------------+
+```
+
 
 
 ### Maps (Dictionaries)
 
 
 
+### Supported Collection Types
+
+Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-collection-types?pivots=dotnet-7-0), here are collections Parquet.Net currently supports:
+
+| Type                                                         | Serialization | Deserialization |
+| ------------------------------------------------------------ | ------------- | --------------- |
+| [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ❌             | ❌               |
+| [Muti-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
+| [`IList<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ❌`**`           |
+| [`List<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ✔️               |
+| [`IDictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.idictionary-2?view=net-7.0) `**` | ❌             | ❌               |
+| [`Dictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=net-7.0) | ✔️             | ✔️               |
+
+`*` Technically impossible.
+`**` Technically possible, but not implemented yet.
+
 ## FAQ
 
 **Q.** Can I specify schema for serialisation/deserialisation.
 
-**A.** No. Your class definition is the schema, so you don't need to supply it separately.
+**A.** If you're using a class-based approach to define your data model, you don't have to worry about providing a schema separately. The class definition itself is the schema, meaning it specifies the fields and types of your data. This makes it easier to write and maintain your code, since you only have to define your data model once and use it everywhere.

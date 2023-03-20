@@ -141,7 +141,7 @@ namespace Parquet.Serialization.Dremel {
 
                 isAtomic
                     ? Expression.Assign(isLeafVar, Expression.Constant(true))
-                    : Expression.Assign(isLeafVar, Expression.Equal(valueVar, Expression.Constant(null))),
+                    : Expression.Assign(isLeafVar, elementType.IsValueType ? Expression.Constant(false) : valueVar.IsNull()),
 
                 Expression.IfThenElse(
                     Expression.IsTrue(isLeafVar),
@@ -151,8 +151,19 @@ namespace Parquet.Serialization.Dremel {
                         : DissectRecord(valueVar, field.NaturalChildren, field.GetNaturalChildPath(path), elementType, rlDepth, chRepetitionLevelVar)
                 )
 
-            ); ;
+            );
         }
+
+        private static Type ExtractElementTypeFromEnumerableType(Type t) {
+            if(t.TryExtractDictionaryType(out Type? keyType, out Type? valueType))
+                return typeof(KeyValuePair<,>).MakeGenericType(keyType!, valueType!);
+
+            if(t.TryExtractIEnumerableType(out Type? iet))
+                return iet!;
+
+            throw new ArgumentException($"type {t} is not single-element generic enumerable", nameof(t));
+        }
+
 
         private Expression DissectRecord(
             Expression rootVar,
@@ -187,7 +198,7 @@ namespace Parquet.Serialization.Dremel {
 
             Expression extraBody;
             if(isRepeated) {
-                Type elementType = levelPropertyType.ExtractElementTypeFromEnumerableType();
+                Type elementType = ExtractElementTypeFromEnumerableType(levelPropertyType);
                 Expression collection = levelProperty;
                 ParameterExpression element = Expression.Variable(elementType, "element");
                 Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenFieldsVar, field, rlDepth, elementType, path);

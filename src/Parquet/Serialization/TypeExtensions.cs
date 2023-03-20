@@ -128,7 +128,7 @@ namespace Parquet.Serialization {
             bool forWriting) {
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(bt.TryExtractEnumerableType(out Type? bti)) {
+            if(!bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
                 bt = bti!;
             }
 
@@ -136,10 +136,10 @@ namespace Parquet.Serialization {
                 return ConstructDataField(columnName, propertyName, t, pi);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
-            } else if(t.TryExtractEnumerableType(out Type? elementType)) {
+            } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
                 return ConstructListField(columnName, propertyName, elementType!, forWriting);
-            } else if(t.IsClass) {
-                // must be a struct then!
+            } else if(t.IsClass || t.IsValueType) {
+                // must be a struct then (c# class or c# struct)!
                 List<PropertyInfo> props = FindProperties(t, forWriting);
                 Field[] fields = props.Select(p => MakeField(p, forWriting)).Where(f => f != null).Select(f => f!).ToArray();
 

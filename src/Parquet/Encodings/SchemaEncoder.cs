@@ -236,7 +236,8 @@ namespace Parquet.Encodings {
 
             var map = new MapField(root.Name) {
                 Path = new FieldPath(root.Name, tseContainer.Name),
-                IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED
+                IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED,
+                GroupSchemaElement = tseContainer
             };
 
             index += 1;

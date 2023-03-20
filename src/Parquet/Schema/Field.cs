@@ -125,7 +125,7 @@ namespace Parquet.Schema {
         #endregion
 
         /// <inheritdoc/>
-        public override string ToString() => $"{Path} ({SchemaType})";
+        public override string ToString() => $"{Path} ({SchemaType}, RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel})";
 
         /// <summary>
         /// Basic equality check

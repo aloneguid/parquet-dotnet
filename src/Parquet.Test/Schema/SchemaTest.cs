@@ -85,7 +85,7 @@ namespace Parquet.Test.Schema {
 
         [Fact]
         public void Invalid_dictionary_declaration() {
-            Assert.Throws<ArgumentException>(() => new DataField<Dictionary<int, int>>("d"));
+            Assert.Throws<NotSupportedException>(() => new DataField<Dictionary<int, int>>("d"));
         }
 
         [Fact]

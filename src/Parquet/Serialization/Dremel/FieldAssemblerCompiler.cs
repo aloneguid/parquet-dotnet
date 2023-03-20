@@ -137,17 +137,11 @@ namespace Parquet.Serialization.Dremel {
                 Expression.Assign(_hasData, Expression.Constant(false)));
         }
 
-        private static void Discover(Field field, out bool isRepeated, out bool hasDefinition) {
-            isRepeated = field.SchemaType ==
-                SchemaType.List ||
+        private static void Discover(Field field, out bool isRepeated) {
+            isRepeated =
+                field.SchemaType == SchemaType.List ||
+                field.SchemaType == SchemaType.Map ||
                 (field.SchemaType == SchemaType.Data && field is DataField rdf && rdf.IsArray);
-
-            // The current definitionLevel is uniquely determined by the tree position of the current writer,
-            // as the sum of the number of optional and repeated fields in the field’s path.
-            hasDefinition = (isRepeated ||
-                (field.SchemaType == SchemaType.Struct) ||  // structs are always optional
-                (field.SchemaType == SchemaType.Map) ||
-                (field.SchemaType == SchemaType.Data && field is DataField ddf && ddf.IsNullable));
         }
 
         private static void InjectLevelDebug(string levelPropertyName,
@@ -177,6 +171,7 @@ namespace Parquet.Serialization.Dremel {
             Type collectionType, Type elementType) {
             ParameterExpression indexVar = Expression.Variable(typeof(int), "index");
             ParameterExpression resultElementVar = Expression.Variable(elementType, "resultElement");
+            Expression downcastedCollection = Expression.Convert(collection, collectionType);
             return Expression.Block(
                 new[] { indexVar, resultElementVar },
 
@@ -184,16 +179,25 @@ namespace Parquet.Serialization.Dremel {
                 Expression.Assign(indexVar, Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1))),
 
                 Expression.IfThenElse(
-                    Expression.LessThanOrEqual(collection.CollectionCount(), indexVar),
+                    Expression.LessThanOrEqual(downcastedCollection.CollectionCount(collectionType), indexVar),
 
                     Expression.Block(
                         Expression.Assign(resultElementVar, Expression.New(elementType)),
-                        collection.CollectionAdd(collectionType, resultElementVar)),
+                        downcastedCollection.CollectionAdd(collectionType, resultElementVar, elementType)),
 
-                    Expression.Assign(resultElementVar, Expression.Property(collection, "Item", indexVar))
+                    Expression.Assign(resultElementVar, Expression.Property(downcastedCollection, "Item", indexVar))
                     ),
 
                 resultElementVar);
+        }
+
+        private static void ReplaceIDictionaryTypes(Type t, out Type dictionaryType, out Type elementType) {
+            if(!t.TryExtractDictionaryType(out Type? keyType, out Type? valueType)) {
+                throw new NotSupportedException($"{t} is not a dictionary");
+            }
+
+            dictionaryType = typeof(ParquetDictionary<,>).MakeGenericType(keyType!, valueType!);
+            elementType = typeof(ParquetDictionary<,>.ParquetDictionaryElement).MakeGenericType(keyType!, valueType!);
         }
 
         private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path) {
@@ -206,7 +210,7 @@ namespace Parquet.Serialization.Dremel {
             int dlDepth = field.MaxDefinitionLevel;
             int rlDepth = field.MaxRepetitionLevel;
 
-            Discover(field, out bool isRepeated, out _);
+            Discover(field, out bool isRepeated);
             bool isAtomic = path.Count == 1;
             string levelPropertyName = field.ClrPropName ?? field.Name;
             Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
@@ -215,9 +219,14 @@ namespace Parquet.Serialization.Dremel {
             Expression iteration = Expression.Empty();
 
             if(isRepeated) {
-
                 Expression rsmAccess = Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1));
-                Type levelPropertyElementType = levelPropertyType.ExtractElementTypeFromEnumerableType();
+
+                Type levelPropertyElementType;
+                if(levelPropertyType.IsGenericIDictionary()) {
+                    ReplaceIDictionaryTypes(levelPropertyType, out levelPropertyType, out levelPropertyElementType);
+                } else {
+                    levelPropertyElementType = levelPropertyType.ExtractElementTypeFromEnumerableType();
+                }
 
                 Expression leafExpr;
 
@@ -228,6 +237,8 @@ namespace Parquet.Serialization.Dremel {
                         Expression.Convert(_dataElementVar, levelPropertyElementType));
 
                 } else {
+
+                    // Map is also repeated type, but key and value cannot be constructed independently.
 
                     ParameterExpression collectionElementVar = Expression.Variable(levelPropertyElementType, "collectionElement");
                     leafExpr = Expression.Block(

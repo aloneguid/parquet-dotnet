@@ -160,6 +160,7 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
+            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\lat.parquet");
 
             // deserialise
             ms.Position = 0;
@@ -186,9 +187,12 @@ namespace Parquet.Test.Serialisation {
                     ["gen"] = DateTime.UtcNow.ToString()
                 }}).ToList();
 
+            var t = new Dictionary<string, string>();
+
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
+            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\map.parquet");
 
             // deserialise
             ms.Position = 0;

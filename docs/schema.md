@@ -1,6 +1,6 @@
 # Declaring Schema
 
-Due to the fact that Parquet is s strong typed format you need to declare a schema before writing any data.
+Parquet is a format that stores data in a structured way. It has different types for different kinds of data, like numbers, strings, dates and so on. This means that you have to tell Parquet what type each column of your data is before you can write it to a file. This is called declaring a schema. Declaring a schema helps Parquet to compress and read your data more efficiently.
 
 Schema can be defined by creating an instance of `ParquetSchema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `ParquetSchema` exist to simplify the schema declaration, but we are going to be more specific on this page.
 

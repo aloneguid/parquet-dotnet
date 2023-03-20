@@ -94,7 +94,7 @@ namespace Parquet.Serialization {
                 Type? prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, f)?.PropertyType;
                 if(prop == null)
                     throw new InvalidOperationException("cannot get property");
-                bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
+                bool underlyingTypeIsEnumerable = prop.TryExtractIEnumerableType(out _);
                 if(f.IsArray || underlyingTypeIsEnumerable) {
 
                     if(addRepLevelMethod == null)
@@ -194,7 +194,7 @@ namespace Parquet.Serialization {
             Type? prop = PropertyHelpers.GetDeclaredPropertyFromClassType(classType, field)?.PropertyType;
             if(prop == null)
                 throw new InvalidOperationException("cannot get property type");
-            bool underlyingTypeIsEnumerable = prop.TryExtractEnumerableType(out _);
+            bool underlyingTypeIsEnumerable = prop.TryExtractIEnumerableType(out _);
             if(field.IsArray || underlyingTypeIsEnumerable) {
                 LocalBuilder repItem = il.DeclareLocal(typeof(int));
                 LocalBuilder dce = il.DeclareLocal(typeof(DataColumnEnumerator));

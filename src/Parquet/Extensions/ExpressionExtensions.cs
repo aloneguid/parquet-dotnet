@@ -91,15 +91,25 @@ namespace Parquet.Extensions {
                 array, from, length);
         }
 
-        public static Expression CollectionCount(this Expression collection) {
+        public static Expression CollectionCount(this Expression collection, Type collectionType) {
             return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
         }
 
-        public static Expression CollectionAdd(this Expression collection, Type collectionType, Expression element) {
+        public static Expression CollectionAdd(this Expression collection, Type collectionType, Expression element, Type elementType) {
+
+            MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), new[] { elementType });
+
+            if(method == null)
+                throw new NotSupportedException($"can't find {nameof(IList.Add)} method");
+
             return Expression.Call(
                 collection,
-                collectionType.GetMethod(nameof(IList.Add))!,
+                method,
                 element);
+        }
+
+        public static Expression IsNull(this Expression nullableVar) {
+            return Expression.Equal(nullableVar, Expression.Constant(null));
         }
 
         /// <summary>

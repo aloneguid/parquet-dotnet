@@ -177,11 +177,11 @@ namespace Parquet.Schema {
             isNullable = false;
 
             //throw a useful hint
-            if(t.TryExtractDictionaryType(out Type? dKey, out Type? dValue)) {
-                throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
+            if(t.IsGenericIDictionary()) {
+                throw new NotSupportedException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
             }
 
-            if(t.TryExtractEnumerableType(out Type? enumItemType)) {
+            if(t.TryExtractIEnumerableType(out Type? enumItemType)) {
                 baseType = enumItemType!;
                 isArray = true;
             }

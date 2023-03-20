@@ -35,11 +35,13 @@ namespace Parquet.Schema {
             Path = name.AddPath(ContainerName);
             Key.PathPrefix = Path;
             Value.PathPrefix = Path;
+            IsNullable = true;
         }
 
         internal MapField(string name)
            : base(name, SchemaType.Map) {
             Key = Value = new DataField<int>("invalid");
+            IsNullable = true;
         }
 
         internal override void Assign(Field se) {
@@ -64,20 +66,24 @@ namespace Parquet.Schema {
 
         internal override Field[] Children => new Field[] { Key, Value };
 
+        internal Thrift.SchemaElement? GroupSchemaElement { get; set; } = null;
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            int rl = parentRepetitionLevel;
-            int dl = parentDefinitionLevel;
 
-            //"container" is optional and adds on 1 DL
-            dl += 1;
+            MaxDefinitionLevel = parentDefinitionLevel;
+            MaxRepetitionLevel = parentRepetitionLevel + 1; // because map is actually a list of key-values
 
-            //"key_value" is repeated therefore it adds on 1 RL + 1 DL
-            rl += 1;
-            dl += 1;
+            if(IsNullable) {
+                MaxDefinitionLevel++;
+            }
+
+            if(GroupSchemaElement == null || GroupSchemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED) {
+                MaxDefinitionLevel++;
+            }
 
             //push to children
-            Key.PropagateLevels(rl, dl);
-            Value.PropagateLevels(rl, dl);
+            Key.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
+            Value.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
         }
 
         /// <summary>
