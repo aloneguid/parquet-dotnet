@@ -10,6 +10,8 @@ using Parquet.Serialization;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
+
+    [Obsolete]
     public class ParquetConvertTest : TestBase {
 
         [Fact]

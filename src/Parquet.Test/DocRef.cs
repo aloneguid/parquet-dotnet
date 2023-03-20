@@ -21,21 +21,6 @@ namespace Parquet.Test {
     public class DocTest {
 
         //[Fact]
-        public async Task Write1() {
-            var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
-                Timestamp = DateTime.UtcNow.AddSeconds(i),
-                EventName = i % 2 == 0 ? "on" : "off",
-                MeterValue = i 
-            }).ToList();
-
-            System.IO.File.Delete("c:\\tmp\\data.parquet");
-            await ParquetConvert.SerializeAsync(data, "c:\\tmp\\data.parquet");
-
-            Record[] data2 = await ParquetConvert.DeserializeAsync<Record>("c:\\tmp\\data.parquet");
-            Assert.NotNull(data2);
-        }
-
-        //[Fact]
         public async Task Write2() {
             var table = new Table(
                 new DataField<DateTime>("Timestamp"),

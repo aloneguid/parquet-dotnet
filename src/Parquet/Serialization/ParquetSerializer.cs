@@ -12,22 +12,34 @@ using Parquet.Serialization.Dremel;
 namespace Parquet.Serialization {
 
     /// <summary>
-    /// High-level object serialisation V2. Internal only while being worked on.
+    /// High-level object serialisation.
     /// Comes as a rewrite of ParquetConvert/ClrBridge/MSILGenerator and supports nested types as well.
-    /// TODO:
-    /// - lists
-    /// - maps
-    /// - structs
-    /// - append to file
     /// </summary>
-    internal static class ParquetSerializer {
+    public static class ParquetSerializer {
+
+        /// <summary>
+        /// Serialize 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="objectInstances"></param>
+        /// <param name="destination"></param>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
             Striper<T> striper = new Striper<T>(typeof(T).GetParquetSchema(false));
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination, null, false, cancellationToken)) {
+
+                if(options != null) {
+                    writer.CompressionMethod = options.CompressionMethod;
+                    writer.CompressionLevel = options.CompressionLevel;
+                }
+
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
 
                 foreach(FieldStriper<T> fs in striper.FieldStripers) {
@@ -45,6 +57,15 @@ namespace Parquet.Serialization {
             return striper.Schema;
         }
 
+        /// <summary>
+        /// Serialise
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="objectInstances"></param>
+        /// <param name="filePath"></param>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
@@ -52,6 +73,14 @@ namespace Parquet.Serialization {
             return await SerializeAsync(objectInstances, fs, options, cancellationToken);
         }
 
+        /// <summary>
+        /// Deserialise
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
             CancellationToken cancellationToken = default)
             where T : new() {

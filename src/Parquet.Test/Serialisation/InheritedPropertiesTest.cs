@@ -4,6 +4,7 @@ using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
+using System;
 
 namespace Parquet.Test.Serialisation {
     public class InheritedPropertiesTest : TestBase {
@@ -21,7 +22,7 @@ namespace Parquet.Test.Serialisation {
             return recordsToSerialize;
         }
 
-        [Fact]
+        [Obsolete, Fact]
         public async Task Serialize_class_with_inherited_properties() {
             InheritedClass[] recordsToSerialize = GenerateRecordsToSerialize();
             ParquetSchema schema = typeof(InheritedClass).GetParquetSchema(true);

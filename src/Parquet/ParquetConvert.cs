@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
-using Parquet.File;
 using Parquet.Schema;
 using Parquet.Serialization;
 
@@ -14,6 +13,7 @@ namespace Parquet {
     /// <summary>
     /// High-level object oriented API for Apache Parquet
     /// </summary>
+    [Obsolete(Globals.ParquetConvertObsolete)]
     public static class ParquetConvert {
         /// <summary>
         /// Serialises a collection of classes into a Parquet stream

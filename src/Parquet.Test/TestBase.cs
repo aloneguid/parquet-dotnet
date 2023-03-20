@@ -15,6 +15,7 @@ namespace Parquet.Test {
             return F.OpenRead("./data/" + name);
         }
 
+        [Obsolete]
         protected async Task<T[]> ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T : new() {
             using var ms = new MemoryStream();
             ParquetSchema s = await ParquetConvert.SerializeAsync<T>(instances, ms);
