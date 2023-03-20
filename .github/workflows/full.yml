@@ -3,7 +3,7 @@ name: 'Full Workflow'
 env:
   VERSION: 5.0.0
   ASM_VERSION: 5.0.0
-  P_VERSION: ${{ env.VERSION }}-preview-01
+  P_VERSION: ${{ vars.VERSION }}-preview-01
 
 on:
   push:
