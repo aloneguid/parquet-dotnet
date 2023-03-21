@@ -178,33 +178,37 @@ namespace Parquet.Encodings {
             }
 
             Thrift.SchemaElement tseList = schema[index];
-            field = ListField.CreateWithNoItem(tseList.Name);
+            field = ListField.CreateWithNoItem(tseList.Name, tseList.Repetition_type != FieldRepetitionType.REQUIRED);
 
             //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
             Thrift.SchemaElement tseRepeated = schema[index + 1];
 
-            //Rule 1. If the repeated field is not a group, then its type is the element type and elements are required.
-            //not implemented
+            // Rule 1. If the repeated field is not a group, then its type is the element type and elements are required.
+            // todo: not implemented
 
-            //Rule 2. If the repeated field is a group with multiple fields, then its type is the element type and elements are required.
-            //not implemented
+            // Rule 2. If the repeated field is a group with multiple fields, then its type is the element type and elements are required.
+            // todo: not implemented
 
-            //Rule 3. f the repeated field is a group with one field and is named either array or uses
-            //the LIST-annotated group's name with _tuple appended then the repeated type is the element
-            //type and elements are required.
+            // Rule 3. If the repeated field is a group with one field and is named either "array" or uses
+            // the "LIST"-annotated group's name with "_tuple" appended then the repeated type is the element
+            // type and elements are required.
+            // todo: not implemented fully, only "array"
 
             // "group with one field and is named either array":
             if(tseList.Num_children == 1 && tseRepeated.Name == "array") {
-                field.Path = tseList.Name;
+                field.Path = new FieldPath(tseList.Name);
                 index += 1; //only skip this element
                 ownedChildren = 1;
                 return true;
             }
 
+            // Normal "modern" LIST:
             //as we are skipping elements set path hint
-            field.Path = new FieldPath(tseList.Name, schema[index + 1].Name);
+            Thrift.SchemaElement tseRepeatedGroup = schema[index + 1];
+            field.Path = new FieldPath(tseList.Name, tseRepeatedGroup.Name);
+            field.GroupSchemaElement = tseRepeatedGroup;
             index += 2;          //skip this element and child container
-            ownedChildren = 1; //we should get this element assigned back
+            ownedChildren = 1;   //we should get this element assigned back
             return true;
         }
 
@@ -230,8 +234,11 @@ namespace Parquet.Encodings {
 
             //followed by a key and a value, but we declared them as owned
 
-            var map = new MapField(root.Name);
-            map.Path = new FieldPath(root.Name, tseContainer.Name);
+            var map = new MapField(root.Name) {
+                Path = new FieldPath(root.Name, tseContainer.Name),
+                IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED,
+                GroupSchemaElement = tseContainer
+            };
 
             index += 1;
             ownedChildren = 2;
@@ -253,6 +260,7 @@ namespace Parquet.Encodings {
             index++;
             ownedChildren = container.Num_children; //make then owned to receive in .Assign()
             field = StructField.CreateWithNoElements(container.Name);
+            field.IsNullable = container.Repetition_type != FieldRepetitionType.REQUIRED;
             return true;
         }
 
@@ -397,7 +405,7 @@ namespace Parquet.Encodings {
             //add list container
             var root = new Thrift.SchemaElement(listField.Name) {
                 Converted_type = Thrift.ConvertedType.LIST,
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+                Repetition_type = listField.IsNullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED,
                 Num_children = 1  //field container below
             };
             container.Add(root);

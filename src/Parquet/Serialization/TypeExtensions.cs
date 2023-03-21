@@ -43,10 +43,10 @@ namespace Parquet.Serialization {
                 : props.Where(p => p.CanRead).ToList();
         }
 
-        private static Field ConstructDataField(string name, string propertyName, Type t, PropertyInfo pi) {
+        private static Field ConstructDataField(string name, string propertyName, Type t, PropertyInfo? pi) {
             var r = new DataField(name, t, propertyName: propertyName);
 
-            ParquetColumnAttribute? columnAttr = pi.GetCustomAttribute<ParquetColumnAttribute>();
+            ParquetColumnAttribute? columnAttr = pi?.GetCustomAttribute<ParquetColumnAttribute>();
 
             if(columnAttr != null) {
                 if(columnAttr.UseListField) {
@@ -95,40 +95,58 @@ namespace Parquet.Serialization {
             return mf;
         }
 
-        /// <summary>
-        /// Makes field from property. 
-        /// </summary>
-        /// <param name="pi"></param>
-        /// <param name="forWriting"></param>
-        /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        private static ListField ConstructListField(string name, string propertyName,
+            Type elementType,
+            bool forWriting) {
+
+            return new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting)!);
+        }
+
         private static Field? MakeField(PropertyInfo pi, bool forWriting) {
             if(ShouldIgnore(pi))
                 return null;
 
             Type t = pi.PropertyType;
             string name = GetColumnName(pi);
+            string propertyName = pi.Name;
+
+            return MakeField(t, name, propertyName, pi, forWriting);
+        }
+
+        /// <summary>
+        /// Makes field from property. 
+        /// </summary>
+        /// <param name="t">Type of property</param>
+        /// <param name="columnName">Parquet file column name</param>
+        /// <param name="propertyName">Class property name</param>
+        /// <param name="pi">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
+        /// <param name="forWriting"></param>
+        /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
+        /// <exception cref="NotImplementedException"></exception>
+        private static Field MakeField(Type t, string columnName, string propertyName,
+            PropertyInfo? pi,
+            bool forWriting) {
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(bt.TryExtractEnumerableType(out Type? bti)) {
+            if(!bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
                 bt = bti!;
             }
 
             if(SchemaEncoder.IsSupported(bt)) {
-                return ConstructDataField(name, pi.Name, t, pi);
+                return ConstructDataField(columnName, propertyName, t, pi);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-                return ConstructMapField(name, pi.Name, tKey!, tValue!, forWriting);
-            } else if(t.TryExtractEnumerableType(out Type? elementType)) {
-                throw new NotImplementedException("lists are not implemented yet");
-            } else if(t.IsClass) {
-                // must be a struct then!
+                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
+            } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
+                return ConstructListField(columnName, propertyName, elementType!, forWriting);
+            } else if(t.IsClass || t.IsValueType) {
+                // must be a struct then (c# class or c# struct)!
                 List<PropertyInfo> props = FindProperties(t, forWriting);
                 Field[] fields = props.Select(p => MakeField(p, forWriting)).Where(f => f != null).Select(f => f!).ToArray();
 
                 if(fields.Length == 0)
-                    return null;
+                    throw new InvalidOperationException($"property '{propertyName}' has no fields");
 
-                return new StructField(name, fields);
+                return new StructField(columnName, fields);
             }
 
             throw new NotImplementedException();

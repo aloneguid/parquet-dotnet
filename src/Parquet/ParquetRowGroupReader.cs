@@ -17,7 +17,7 @@ namespace Parquet {
         private readonly Stream _stream;
         private readonly ThriftStream _thriftStream;
         private readonly ParquetOptions? _parquetOptions;
-        private readonly Dictionary<FieldPath, Thrift.ColumnChunk> _pathToChunk = new Dictionary<FieldPath, Thrift.ColumnChunk>();
+        private readonly Dictionary<FieldPath, Thrift.ColumnChunk> _pathToChunk = new();
 
         internal ParquetRowGroupReader(
            Thrift.RowGroup rowGroup,

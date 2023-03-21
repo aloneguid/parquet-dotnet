@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Parquet.Schema {
 
@@ -22,6 +24,26 @@ namespace Parquet.Schema {
         /// schema and you shouldn't build any reasonable business logic based on it.
         /// </summary>
         public FieldPath Path { get; internal set; }
+
+        /// <summary>
+        /// Original nullability
+        /// </summary>
+        public virtual bool IsNullable { get; internal set; } = false;
+
+        internal List<string> GetNaturalChildPath(List<string> path) {
+            if(SchemaType == SchemaType.List) {
+                // element.list.element.child
+                return path.Skip(3).ToList();
+            }
+
+            if(SchemaType == SchemaType.Map) {
+                // element.key_value.key|value
+                return path.Skip(2).ToList();
+            }
+
+            // element.child
+            return path.Skip(1).ToList();
+        }
 
         /// <summary>
         /// Max repetition level
@@ -78,6 +100,21 @@ namespace Parquet.Schema {
             //only used by some schema fields internally to help construct a field hierarchy
         }
 
+        /// <summary>
+        /// Get child fields, which only makes sense for complex types
+        /// </summary>
+        internal virtual Field[] Children { get; } = Array.Empty<Field>();
+
+        internal virtual Field[] NaturalChildren {
+            get {
+                if(SchemaType == SchemaType.List) {
+                    return Children[0].Children;
+                }
+
+                return Children;
+            }
+        }
+
         internal bool Equals(Thrift.SchemaElement tse) {
             if(ReferenceEquals(tse, null))
                 return false;
@@ -88,7 +125,7 @@ namespace Parquet.Schema {
         #endregion
 
         /// <inheritdoc/>
-        public override string ToString() => $"{Path} ({SchemaType})";
+        public override string ToString() => $"{Path} ({SchemaType}, RL: {MaxRepetitionLevel}, DL: {MaxDefinitionLevel})";
 
         /// <summary>
         /// Basic equality check

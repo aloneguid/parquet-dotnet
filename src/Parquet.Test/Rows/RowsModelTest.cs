@@ -426,7 +426,7 @@ namespace Parquet.Test.Rows {
              });
 
             Table t1 = await WriteReadAsync(t);
-            Assert.Equal(3, ((object[])t1[0][1]).Length);
+            Assert.Equal(3, ((object[])t1[0]![1]!).Length);
             Assert.Equal(t.ToString(), t1.ToString(), ignoreLineEndingDifferences: true);
         }
 
@@ -503,10 +503,10 @@ namespace Parquet.Test.Rows {
             Table ds = await ReadTestFileAsTableAsync(parquetFile);
 
             Row row = ds[0];
-            Assert.Equal(1, (int)row[0]);
-            Assert.Equal(1.2m, (decimal)row[1], 2);
+            Assert.Equal(1, (int)row[0]!);
+            Assert.Equal(1.2m, (decimal)row[1]!, 2);
             Assert.Null(row[2]);
-            Assert.Equal(-1m, (decimal)row[3], 2);
+            Assert.Equal(-1m, (decimal)row[3]!, 2);
         }
 
         [Fact]

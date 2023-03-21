@@ -10,6 +10,11 @@ namespace Parquet.Schema {
         private bool _itemAssigned = false;
 
         /// <summary>
+        /// Name of the element item for schema definition.
+        /// </summary>
+        public const string ElementName = "element";
+
+        /// <summary>
         /// Default container name for a list
         /// </summary>
         public const string DefaultContainerName = "list";
@@ -20,6 +25,13 @@ namespace Parquet.Schema {
         /// Item contained within this list
         /// </summary>
         public Field Item { get; internal set; }
+
+        private ListField(string name) : base(name, SchemaType.List) {
+            ContainerName = "list";
+            Item = new DataField<int>("invalid");
+            IsNullable = true;  // lists are always nullable
+        }
+
 
         /// <summary>
         /// Creates a new instance of <see cref="ListField"/>
@@ -43,7 +55,7 @@ namespace Parquet.Schema {
         /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
         /// <param name="containerName">Container name</param>
         /// <param name="elementName">Element name</param>
-        [Obsolete]
+        [Obsolete(Globals.DataTypeEnumObsolete)]
         public ListField(string name, DataType dataType, bool hasNulls = true, string? propertyName = null, string containerName = "list", string? elementName = null) : this(name) {
             Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
             _itemAssigned = true;
@@ -68,40 +80,40 @@ namespace Parquet.Schema {
             _itemAssigned = true;
             ContainerName = containerName;
             PathPrefix = null;
-        }
-
-        private ListField(string name) : base(name, SchemaType.List) {
-            ContainerName = "list";
-            Item = new DataField<int>("invalid");
+            IsNullable = true;  // lists are always nullable
         }
 
         internal override FieldPath? PathPrefix {
             set {
-                Path = value + Name + ContainerName;
+                Path = value + new FieldPath(Name, ContainerName);
                 Item.PathPrefix = Path;
             }
         }
 
+        internal override Field[] Children => new Field[] { Item };
+
+        internal Thrift.SchemaElement? GroupSchemaElement { get; set; } = null;
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            int rl = parentRepetitionLevel;
-            int dl = parentDefinitionLevel;
 
-            //"container" is optional, therefore +1 to DL
-            dl += 1;
+            // both get
+            MaxDefinitionLevel = parentDefinitionLevel;
+            MaxRepetitionLevel = parentRepetitionLevel + 1; // because it's repeated ;)
 
-            //"list" is repeated, both get +1
-            rl += 1;
-            dl += 1;
+            if(IsNullable) {
+                MaxDefinitionLevel++;
+            }
 
-            MaxRepetitionLevel = rl;
-            MaxDefinitionLevel = dl;
+            if(GroupSchemaElement == null || GroupSchemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED) {
+                MaxDefinitionLevel++;
+            }
 
             //push to child item
-            Item.PropagateLevels(rl, dl);
+            Item.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
         }
 
-        internal static ListField CreateWithNoItem(string name) {
-            return new ListField(name);
+        internal static ListField CreateWithNoItem(string name, bool isNullable) {
+            return new ListField(name) { IsNullable = isNullable };
         }
 
         internal override void Assign(Field field) {

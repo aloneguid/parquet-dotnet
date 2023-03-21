@@ -18,10 +18,8 @@ namespace Parquet.File {
         private readonly Thrift.ColumnChunk _thriftColumnChunk;
         private readonly Thrift.SchemaElement? _thriftSchemaElement;
         private readonly ThriftFooter _footer;
-        private readonly ParquetOptions? _options;
+        private readonly ParquetOptions _options;
         private readonly ThriftStream _thriftStream;
-        private readonly int _maxRepetitionLevel;
-        private readonly int _maxDefinitionLevel;
 
         public DataColumnReader(
            DataField dataField,
@@ -35,12 +33,13 @@ namespace Parquet.File {
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
+            if(!dataField.IsAttachedToSchema) {
+                throw new ArgumentException(
+                    $"Field [{dataField}] is not attached to any schema. You need to construct a schema passing in this field first.",
+                    nameof(dataField));
+            }
+
             _thriftStream = new ThriftStream(inputStream);
-            _footer.GetLevels(_thriftColumnChunk, out int mrl, out int mdl);
-            _dataField.MaxRepetitionLevel = mrl;
-            _dataField.MaxDefinitionLevel = mdl;
-            _maxRepetitionLevel = mrl;
-            _maxDefinitionLevel = mdl;
             _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
         }
 
@@ -71,7 +70,7 @@ namespace Parquet.File {
             }
 
             // all the data is available here!
-            DataColumn column = pc.Unpack(_maxDefinitionLevel, _maxRepetitionLevel);
+            DataColumn column = pc.Unpack(_options.UnpackDefinitions);
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
@@ -166,24 +165,26 @@ namespace Parquet.File {
             int dataUsed = 0;
 
             int nonNullValueCount = ph.Data_page_header.Num_values;
-            if(_maxRepetitionLevel > 0) {
+            if(_dataField.MaxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
 
                 int levelsRead = ReadLevels(
-                    bytes.AsSpan(), _maxRepetitionLevel,
+                    bytes.AsSpan(), _dataField.MaxRepetitionLevel,
                     pc.GetWriteableRepetitionLevelSpan(),
                     ph.Data_page_header.Num_values, null, out int usedLength);
                 pc.MarkRepetitionLevels(levelsRead);
                 dataUsed += usedLength;
             }
 
-            if(_maxDefinitionLevel > 0) {
+            if(_dataField.MaxDefinitionLevel > 0) {
                 int levelsRead = ReadLevels(
-                    bytes.AsSpan().Slice(dataUsed), _maxDefinitionLevel,
+                    bytes.AsSpan().Slice(dataUsed), _dataField.MaxDefinitionLevel,
                     pc.GetWriteableDefinitionLevelSpan(),
                     ph.Data_page_header.Num_values, null, out int usedLength);
                 dataUsed += usedLength;
-                pc.MarkDefinitionLevels(levelsRead, ph.Data_page_header.__isset.statistics ? -1 : _maxDefinitionLevel, out int nullCount);
+                pc.MarkDefinitionLevels(levelsRead,
+                    ph.Data_page_header.__isset.statistics ? -1 : _dataField.MaxDefinitionLevel,
+                    out int nullCount);
 
                 if(ph.Data_page_header.__isset.statistics) {
                     nonNullValueCount -= (int)ph.Data_page_header.Statistics!.Null_count;
@@ -207,18 +208,18 @@ namespace Parquet.File {
             using IronCompress.IronCompressResult bytes = await ReadPageDataV2Async(ph);
             int dataUsed = 0;
 
-            if(_maxRepetitionLevel > 0) {
+            if(_dataField.MaxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
                 int levelsRead = ReadLevels(bytes.AsSpan(),
-                    _maxRepetitionLevel, pc.GetWriteableRepetitionLevelSpan(),
+                    _dataField.MaxRepetitionLevel, pc.GetWriteableRepetitionLevelSpan(),
                     ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Repetition_levels_byte_length, out int usedLength);
                 dataUsed += usedLength;
                 pc.MarkRepetitionLevels(levelsRead);
             }
 
-            if(_maxDefinitionLevel > 0) {
+            if(_dataField.MaxDefinitionLevel > 0) {
                 int levelsRead = ReadLevels(bytes.AsSpan().Slice(dataUsed),
-                    _maxDefinitionLevel, pc.GetWriteableDefinitionLevelSpan(),
+                    _dataField.MaxDefinitionLevel, pc.GetWriteableDefinitionLevelSpan(),
                     ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Definition_levels_byte_length, out int usedLength);
                 dataUsed += usedLength;
                 pc.MarkDefinitionLevels(levelsRead, -1, out _);

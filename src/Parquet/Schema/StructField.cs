@@ -8,7 +8,11 @@ namespace Parquet.Schema {
     /// Represents a structure i.e. a container for other fields.
     /// </summary>
     public class StructField : Field, IEquatable<StructField> {
-        private readonly List<Field> _fields = new List<Field>();
+        private readonly List<Field> _fields = new();
+
+        private StructField(string name) : base(name, SchemaType.Struct) {
+            IsNullable = true;
+        }
 
         /// <summary>
         /// Creates a new structure field 
@@ -16,33 +20,40 @@ namespace Parquet.Schema {
         /// <param name="name">Structure name</param>
         /// <param name="elements">List of elements</param>
         public StructField(string name, params Field[] elements) : this(name) {
-            if(elements == null || elements.Length == 0)                 throw new ArgumentException($"structure '{name}' requires at least one element");
+            if(elements == null || elements.Length == 0)
+                throw new ArgumentException($"structure '{name}' requires at least one element");
 
             //path for structures has no weirdnes, yay!
 
-            foreach(Field field in elements)                 _fields.Add(field);
+            foreach(Field field in elements)
+                _fields.Add(field);
 
-            Path = name;
+            Path = new FieldPath(name);
             PathPrefix = null;
         }
 
         internal override FieldPath? PathPrefix {
             set {
-                Path = value + Name;
+                Path = value + new FieldPath(Name);
 
                 foreach(Field field in _fields)
                     field.PathPrefix = Path;
             }
         }
 
+        internal override Field[] Children => Fields.ToArray(); // make a copy
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            //struct is a container, it doesn't have any levels
+            //struct is a container, it doesn't have any repetition levels
 
-            foreach(Field f in Fields)                 f.PropagateLevels(parentRepetitionLevel, parentDefinitionLevel);
-        }
+            MaxRepetitionLevel = parentRepetitionLevel;
+            MaxDefinitionLevel = parentDefinitionLevel;
+            if(IsNullable)
+                MaxDefinitionLevel++;
 
-        private StructField(string name) : base(name, SchemaType.Struct) {
-
+            foreach(Field f in Fields) {
+                f.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
+            }
         }
 
         internal static StructField CreateWithNoElements(string name) {

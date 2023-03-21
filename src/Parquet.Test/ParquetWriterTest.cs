@@ -69,6 +69,7 @@ namespace Parquet.Test {
             }
         }
 
+#if NET7_0_OR_GREATER
         [Fact]
         public async Task Write_in_small_row_groups_write_only_stream() {
             //write to a write-only stream that does not implement the Position property
@@ -123,6 +124,8 @@ namespace Parquet.Test {
             //run the work and ensure that nothing throws
             await reader;
         }
+#endif
+
 
         [Fact]
         public async Task Append_to_file_reads_all_data() {
@@ -207,7 +210,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(3, reader.ThriftMetadata.Num_rows);
+                Assert.Equal(3, reader.ThriftMetadata!.Num_rows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(new int[] { 1, 2, 3 }, (await rg.ReadColumnAsync(id)).Data);
@@ -229,7 +232,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(3, reader.ThriftMetadata.Num_rows);
+                Assert.Equal(3, reader.ThriftMetadata!.Num_rows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(new int[] { 2, 3, 4 }, (await rg.ReadColumnAsync(id)).Data);
@@ -251,7 +254,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(4, reader.ThriftMetadata.Num_rows);
+                Assert.Equal(4, reader.ThriftMetadata!.Num_rows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(4, rg.RowCount);
@@ -277,7 +280,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(6, reader.ThriftMetadata.Num_rows);
+                Assert.Equal(6, reader.ThriftMetadata!.Num_rows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(4, rg.RowCount);

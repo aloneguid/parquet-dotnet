@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
+using System.Linq;
 
 namespace Parquet {
     static class TypeExtensions {
@@ -20,7 +21,7 @@ namespace Parquet {
         /// <param name="t"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        public static bool TryExtractEnumerableType(this Type t, out Type? baseType) {
+        public static bool TryExtractIEnumerableType(this Type t, out Type? baseType) {
             if(typeof(byte[]) == t) {
                 //it's a special case to avoid confustion between byte arrays and repeatable bytes
                 baseType = null;
@@ -30,13 +31,13 @@ namespace Parquet {
             TypeInfo ti = t.GetTypeInfo();
             Type[] args = ti.GenericTypeArguments;
 
-            if(args.Length == 1) {
+            if(args.Length > 0) {
                 //check derived interfaces
                 foreach(Type interfaceType in ti.ImplementedInterfaces) {
                     TypeInfo iti = interfaceType.GetTypeInfo();
                     if(iti.IsGenericType && iti.GetGenericTypeDefinition() == typeof(IEnumerable<>)) {
 
-                        baseType = ti.GenericTypeArguments[0];
+                        baseType = iti.GenericTypeArguments[0];
                         return true;
                     }
                 }
@@ -57,10 +58,30 @@ namespace Parquet {
             return false;
         }
 
-        public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
-            TypeInfo ti = t.GetTypeInfo();
+        public static Type ExtractElementTypeFromEnumerableType(this Type t) {
+            if(t.TryExtractIEnumerableType(out Type? iet))
+                return iet!;
 
-            if(ti.IsGenericType && ti.GetGenericTypeDefinition().GetTypeInfo().IsAssignableFrom(typeof(Dictionary<,>).GetTypeInfo())) {
+            throw new ArgumentException($"type {t} is not single-element generic enumerable", nameof(t));
+
+        }
+
+        public static MethodInfo GetGenericListAddMethod(this Type listType) {
+            Type elementType = listType.ExtractElementTypeFromEnumerableType();
+            Type genericListType = typeof(List<>).MakeGenericType(elementType);
+            MethodInfo? method = genericListType.GetMethod(nameof(IList.Add));
+            return method ?? throw new InvalidOperationException("method not present");
+        }
+
+        public static bool IsGenericIDictionary(this Type t) {
+            return t.IsGenericType &&
+                (t.GetGenericTypeDefinition() == typeof(IDictionary<,>) ||
+                t.GetInterfaces().Any(x => x.IsGenericType && typeof(IDictionary<,>) == x.GetGenericTypeDefinition()));
+        }
+
+        public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
+            if(t.IsGenericIDictionary()) {
+                TypeInfo ti = t.GetTypeInfo();
                 keyType = ti.GenericTypeArguments[0];
                 valueType = ti.GenericTypeArguments[1];
                 return true;

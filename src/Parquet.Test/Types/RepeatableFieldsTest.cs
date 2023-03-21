@@ -17,11 +17,11 @@ namespace Parquet.Test.Types {
                new int[] { 0, 1, 1, 0, 1 });
 
             // act
-            DataColumn rc = await WriteReadSingleColumn(field, column);
+            DataColumn? rc = await WriteReadSingleColumn(field, column);
 
             // assert
-            Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc.Data);
-            Assert.Equal(new int[] { 0, 1, 1, 0, 1 }, rc.RepetitionLevels);
+            Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc!.Data);
+            Assert.Equal(new int[] { 0, 1, 1, 0, 1 }, rc!.RepetitionLevels);
         }
     }
 }

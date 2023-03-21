@@ -125,4 +125,4 @@ using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
 
 # Complex Types
 
-To write complex types (arrays, lists, maps, structs) read [this guide](complex-types.md).
+To write complex types (arrays, lists, maps, structs) read [this guide](nested_types.md).

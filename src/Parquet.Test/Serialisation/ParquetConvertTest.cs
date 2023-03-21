@@ -10,6 +10,8 @@ using Parquet.Serialization;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
+
+    [Obsolete]
     public class ParquetConvertTest : TestBase {
 
         [Fact]
@@ -711,6 +713,9 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
             public string? Name { get; set; }
         }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+
         public class StructureWithIgnoredProperties {
             public int Id { get; set; }
             public string? Name { get; set; }
@@ -734,6 +739,8 @@ namespace Parquet.Test.Serialisation {
             [ParquetIgnore]
             public decimal? NullableDecimal { get; set; }
         }
+#pragma warning restore CS0618 // Type or member is obsolete
+
 
         public class SimpleRenamed {
             public int Id { get; set; }
@@ -778,10 +785,10 @@ namespace Parquet.Test.Serialisation {
             public DateTime Timestamp { get; set; }
 
             [JsonPropertyName("ip")]
-            public string IpAddress { get; set; }
+            public string? IpAddress { get; set; }
 
             [JsonPropertyName("tags")]
-            public Dictionary<string, string?> Tags { get; set; }
+            public Dictionary<string, string?>? Tags { get; set; }
         }
     }
 }

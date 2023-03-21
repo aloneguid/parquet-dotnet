@@ -12,10 +12,10 @@ namespace Parquet.File {
         private readonly Thrift.FileMetaData _fileMeta;
         private readonly ThriftSchemaTree _tree;
 
-        internal static ThriftFooter Empty => new ThriftFooter();
+        internal static ThriftFooter Empty => new();
 
         internal ThriftFooter() {
-            _fileMeta= new Thrift.FileMetaData();
+            _fileMeta = new Thrift.FileMetaData();
             _tree= new ThriftSchemaTree();
         }
 
@@ -92,64 +92,20 @@ namespace Parquet.File {
             return new FieldPath(path);
         }
 
-        // could use value tuple, would that nuget ref be ok to bring in?
-        readonly Dictionary<StringListComparer, Tuple<int, int>> _memoizedLevels = new Dictionary<StringListComparer, Tuple<int, int>>();
-
-        public void GetLevels(Thrift.ColumnChunk columnChunk, out int maxRepetitionLevel, out int maxDefinitionLevel) {
-            maxRepetitionLevel = 0;
-            maxDefinitionLevel = 0;
-
-            int i = 0;
-            List<string> path = columnChunk.Meta_data.Path_in_schema;
-
-            var comparer = new StringListComparer(path);
-            if(_memoizedLevels.TryGetValue(comparer, out Tuple<int, int>? t)) {
-                maxRepetitionLevel = t.Item1;
-                maxDefinitionLevel = t.Item2;
-                return;
-            }
-
-            int fieldCount = _fileMeta.Schema.Count;
-
-            foreach(string pp in path) {
-                while(i < fieldCount) {
-                    SchemaElement schemaElement = _fileMeta.Schema[i];
-                    if(string.CompareOrdinal(schemaElement.Name, pp) == 0) {
-                        Thrift.SchemaElement se = schemaElement;
-
-                        bool repeated = (se.__isset.repetition_type && se.Repetition_type == Thrift.FieldRepetitionType.REPEATED);
-                        bool defined = (se.Repetition_type == Thrift.FieldRepetitionType.REQUIRED);
-
-                        if(repeated)
-                            maxRepetitionLevel += 1;
-                        if(!defined)
-                            maxDefinitionLevel += 1;
-
-                        break;
-                    }
-
-                    i++;
-                }
-            }
-
-            _memoizedLevels.Add(comparer, Tuple.Create(maxRepetitionLevel, maxDefinitionLevel));
-        }
-
         public Thrift.SchemaElement[] GetWriteableSchema() {
             return _fileMeta.Schema.Where(tse => tse.__isset.type).ToArray();
         }
 
         public Thrift.RowGroup AddRowGroup() {
             var rg = new Thrift.RowGroup();
-            if(_fileMeta.Row_groups == null)
-                _fileMeta.Row_groups = new List<Thrift.RowGroup>();
+            _fileMeta.Row_groups ??= new List<Thrift.RowGroup>();
             _fileMeta.Row_groups.Add(rg);
             return rg;
         }
 
         public Thrift.ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
             Thrift.Type columnType, FieldPath path, int valuesCount) {
-            Thrift.CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
+            CompressionCodec codec = (Thrift.CompressionCodec)(int)compression;
 
             var chunk = new Thrift.ColumnChunk();
             long startPos = output.Position;
@@ -170,18 +126,16 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public Thrift.PageHeader CreateDataPage(int valueCount, bool isDictionary) {
-            var ph = new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0);
-            ph.Data_page_header = new Thrift.DataPageHeader {
-                Encoding = isDictionary ? Thrift.Encoding.PLAIN_DICTIONARY : Thrift.Encoding.PLAIN,
-                Definition_level_encoding = Thrift.Encoding.RLE,
-                Repetition_level_encoding = Thrift.Encoding.RLE,
-                Num_values = valueCount,
-                Statistics = new Thrift.Statistics()
+        public Thrift.PageHeader CreateDataPage(int valueCount, bool isDictionary) => 
+            new Thrift.PageHeader(Thrift.PageType.DATA_PAGE, 0, 0) {
+                Data_page_header = new Thrift.DataPageHeader {
+                    Encoding = isDictionary ? Thrift.Encoding.PLAIN_DICTIONARY : Thrift.Encoding.PLAIN,
+                    Definition_level_encoding = Thrift.Encoding.RLE,
+                    Repetition_level_encoding = Thrift.Encoding.RLE,
+                    Num_values = valueCount,
+                    Statistics = new Thrift.Statistics()
+                }
             };
-
-            return ph;
-        }
 
         public Thrift.PageHeader CreateDictionaryPage(int numValues) {
             var ph = new Thrift.PageHeader(Thrift.PageType.DICTIONARY_PAGE, 0, 0);
@@ -227,18 +181,6 @@ namespace Parquet.File {
             }
         }
 
-        private void ThrowNoHandler(Thrift.SchemaElement tse) {
-            string? ct = tse.__isset.converted_type
-               ? $" ({tse.Converted_type})"
-               : null;
-
-            string t = tse.__isset.type
-               ? $"'{tse.Type}'"
-               : "<unspecified>";
-
-            throw new NotSupportedException($"cannot find data type handler for schema element '{tse.Name}' (type: {t}{ct})");
-        }
-
 #endregion
 
 #region [ Convertion from Model Schema ]
@@ -249,7 +191,7 @@ namespace Parquet.File {
             meta.Schema = new List<Thrift.SchemaElement>();
             meta.Row_groups = new List<Thrift.RowGroup>();
 
-            Thrift.SchemaElement root = AddRoot(meta.Schema);
+            Thrift.SchemaElement root = ThriftFooter.AddRoot(meta.Schema);
             foreach(Field se in schema.Fields) {
                 SchemaEncoder.Encode(se, root, meta.Schema);
             }
@@ -258,7 +200,7 @@ namespace Parquet.File {
         }
 
 
-        private Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container) {
+        private static Thrift.SchemaElement AddRoot(IList<Thrift.SchemaElement> container) {
             var root = new Thrift.SchemaElement("root");
             container.Add(root);
             return root;

@@ -44,10 +44,9 @@ namespace Parquet.File {
             Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(
                 _compressionMethod, _stream, _schemaElement.Type, fullPath, column.Count);
 
-            _footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
+            //_footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
 
             ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
-                maxRepetitionLevel, maxDefinitionLevel,
                 cancellationToken);
             //generate stats for column chunk
             chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
@@ -97,9 +96,14 @@ namespace Parquet.File {
 
         private async Task<ColumnSizes> WriteColumnAsync(DataColumn column,
            Thrift.SchemaElement tse,
-           int maxRepetitionLevel,
-           int maxDefinitionLevel,
            CancellationToken cancellationToken = default) {
+
+            if(!column.Field.IsAttachedToSchema) {
+                throw new ArgumentException(
+                    $"Field [{column.Field}] is not attached to any schema. You need to construct a schema passing in this field first.",
+                    nameof(column));
+            }
+
             var r = new ColumnSizes();
 
             /*
@@ -109,7 +113,7 @@ namespace Parquet.File {
              */
 
             using var pc = new PackedColumn(column);
-            pc.Pack(maxDefinitionLevel, _options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
+            pc.Pack(column.Field.MaxDefinitionLevel, _options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
 
             // dictionary page
             if(pc.HasDictionary) {
@@ -129,10 +133,10 @@ namespace Parquet.File {
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 Thrift.PageHeader ph = _footer.CreateDataPage(column.Count, pc.HasDictionary);
                 if(pc.HasRepetitionLevels) {
-                    WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, maxRepetitionLevel);
+                    WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
                 if(pc.HasDefinitionLevels) {
-                    WriteLevels(ms, pc.DefinitionLevels!, column.Count, maxDefinitionLevel);
+                    WriteLevels(ms, pc.DefinitionLevels!, column.Count, column.Field.MaxDefinitionLevel);
                 }
 
                 if(pc.HasDictionary) {

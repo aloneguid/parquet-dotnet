@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Parquet.Schema;
@@ -119,6 +120,8 @@ namespace Parquet.Test.Serialisation {
                 ), schema);
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
         class IgnoredPoco {
 
             public int NotIgnored { get; set; }
@@ -129,6 +132,8 @@ namespace Parquet.Test.Serialisation {
             [JsonIgnore]
             public int Ignored2 { get; set; }
         }
+#pragma warning restore CS0618 // Type or member is obsolete
+
 
         [Fact]
         public void IgnoredProperties() {
@@ -153,6 +158,52 @@ namespace Parquet.Test.Serialisation {
                 new MapField("Tags", 
                     new DataField<string>("Key"),
                     new DataField<int>("Value"))), schema);
+        }
+
+        class StructMemberPoco {
+            public string? FirstName { get; set; }
+
+            public string? LastName { get; set; }
+        }
+
+        class StructMasterPoco {
+            public int Id { get; set; }
+
+            public StructMemberPoco? Name { get; set; }
+        }
+
+        [Fact]
+        public void SimpleStruct() {
+            ParquetSchema schema = typeof(StructMasterPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("Id"),
+                new StructField("Name",
+                    new DataField<string>("FirstName"),
+                    new DataField<string>("LastName")
+                )), schema);
+        }
+
+        class ListOfStructsPoco {
+            public int Id { get; set; }
+
+            public List<StructMemberPoco>? Members { get; set; }
+        }
+
+        [Fact]
+        public void ListOfStructs() {
+            ParquetSchema actualSchema = typeof(ListOfStructsPoco).GetParquetSchema(true);
+
+            var expectedSchema = new ParquetSchema(
+                new DataField<int>("Id"),
+                new ListField("Members",
+                    new StructField("element",
+                        new DataField<string>("FirstName"),
+                        new DataField<string>("LastName"))));
+
+            Assert.True(
+                expectedSchema.Equals(actualSchema),
+                expectedSchema.GetNotEqualsMessage(actualSchema, "expected", "actual"));
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Parquet.Rows {
         }
 
         private static void ValidateMap(MapField mf, object? value) {
-            if(value == null || !value.GetType().TryExtractEnumerableType(out Type? elementType))
+            if(value == null || !value.GetType().TryExtractIEnumerableType(out Type? elementType))
                 throw new ArgumentException($"map must be a collection, but found {value?.GetType()}");
 
             if(elementType != typeof(Row))
@@ -54,7 +54,7 @@ namespace Parquet.Rows {
 
         private static void ValidateList(ListField lf, object? value) {
             Type? elementType = null;
-            bool isEnumerable = value?.GetType().TryExtractEnumerableType(out elementType) ?? false;
+            bool isEnumerable = value?.GetType().TryExtractIEnumerableType(out elementType) ?? false;
 
             //value must be an enumeration of items
             if(!isEnumerable)

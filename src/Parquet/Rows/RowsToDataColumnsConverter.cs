@@ -9,7 +9,7 @@ namespace Parquet.Rows {
     class RowsToDataColumnsConverter {
         private readonly ParquetSchema _schema;
         private readonly IReadOnlyCollection<Row> _rows;
-        private readonly Dictionary<string, DataColumnAppender> _pathToDataColumn = new Dictionary<string, DataColumnAppender>();
+        private readonly Dictionary<FieldPath, DataColumnAppender> _pathToDataColumn = new();
 
         public RowsToDataColumnsConverter(ParquetSchema schema, IReadOnlyCollection<Row> rows) {
             _schema = schema;

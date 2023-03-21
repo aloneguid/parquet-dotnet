@@ -7,15 +7,22 @@
 
 **Fully portable, managed** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files. Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
-Runs everywhere .NET runs Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs and much more.
+Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more,  Parquet.NET has you covered. 
+
+## Why
+
+Parquet is a great format for storing and processing large amounts of data, but it can be tricky to use with .NET. That's why this library is here to help. It's a pure library that doesn't need any external dependencies, and it's super fast - faster than Python and Java, and other C# solutions. It's also native to .NET, so you don't have to deal with any wrappers or adapters that might slow you down or limit your options.
+
+This library is the best option for parquet files in .NET. It has a simple and intuitive API, supports all the parquet features you need, and handles complex scenarios with ease.
+
+Also it:
+
+- Has zero dependencies - pure library that just works.
+- Really fast. Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
+- .NET native. Designed to utilise .NET and made for .NET developers, not the other way around.
+- Not a "wrapper" that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 
 ## Quick Start
-
-Why should I use this? I think you shouldn't. Go away and look at better alternatives, like [PyArrow](https://arrow.apache.org/docs/python/) that does it much better in Python. Also I'd rather you use [Apache Spark](https://spark.apache.org/) with native support for Parquet and other commercial alternatives. Seriously. Comparing to those, this library is just pure shite, developed in spare time by one person. Despite that, it's a de facto standard for .NET when it comes to reading and writing Parquet files. Why? Because:
-
-- It has zero dependencies - pure library that just works.
-- It's really fast. Faster than Python and Java implementations.
-- It's .NET native. Designed to utilise .NET and made for .NET developers.
 
 Parquet is designed to handle *complex data in bulk*. It's *column-oriented* meaning that data is physically stored in columns rather than rows. This is very important for big data systems if you want to process only a subset of columns - reading just the right columns is extremely efficient.
 
@@ -54,7 +61,7 @@ var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
 Now, to write these to a file in say `/mnt/storage/data.parquet` you can use the following **line** of code:
 
 ```csharp
-await ParquetConvert.SerializeAsync(data, "/mnt/storage/data.parquet");
+await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 ```
 
 That's pretty much it! You can [customise many things](serialisation.md) in addition to the magical magic process, but if you are a really lazy person that will do just fine for today.
@@ -134,7 +141,6 @@ using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
             await groupWriter.WriteColumnAsync(column1);
             await groupWriter.WriteColumnAsync(column2);
             await groupWriter.WriteColumnAsync(column3);
-            
         }
     }
 }
@@ -147,7 +153,7 @@ What's going on?:?:
 3. Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory. 
 4. Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
 
-Read more on writing [here](writing.md).
+Read more on writing [here](writing.md) which also includes guides on writing [nested types](nested_types.md) such as lists, maps, and structs.
 
 ### 📖Reading Data
 
@@ -158,7 +164,7 @@ Reading data also has three different approaches, so I'm going to unwrap them he
 Provided that you have written the data, or just have some external data with the same structure as above, you can read those by simply doing the following:
 
 ```csharp
-Record[] data2 = await ParquetConvert.DeserializeAsync<Record>("/mnt/storage/data.parquet");
+IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
 
 This will give us an array with one million class instances similar to this:
@@ -216,15 +222,25 @@ This is what's happening:
 
 If you have a choice, then the choice is easy - use Low Level API. They are the fastest and the most flexible. But what if you for some reason don't have a choice? Then think about this:
 
-| Feature               | 🚤Class Serialisation   | 🌛Table API       | ⚙️Low Level API   |
-| --------------------- | ---------------------- | ---------------- | ---------------- |
-| Performance           | high                   | very low         | very high        |
-| Developer Convenience | feels like C# (great!) | feels like Excel | close to Parquet |
-| Row based access      | easy                   | easy             | hard             |
-| Column based access   | hard                   | hard             | easy             |
+| Feature               | 🚤Class Serialisation | 🌛Table API       | ⚙️Low Level API             |
+| --------------------- | -------------------- | ---------------- | -------------------------- |
+| Performance           | high                 | very low         | very high                  |
+| Developer Convenience | C# native            | feels like Excel | close to Parquet internals |
+| Row based access      | easy                 | easy             | hard                       |
+| Column based access   | C# native            | hard             | easy                       |
 
 
 
 ## Contributing
 
-Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started-md).
+Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md).
+
+## Special Thanks
+
+Without these tools development would be really painful.
+
+- [Visual Studio Community](https://visualstudio.microsoft.com/vs/community/) - free IDE from Microsoft. The best in class C# and C++ development tool. It's worth using Windows just because Visual Studio exists there.
+- [JetBrains Rider](https://www.jetbrains.com/rider/) - for their cross-platform C# IDE, which has some great features.
+- [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
+- [LINQPad](https://www.linqpad.net/) - extremely powerful C# REPL with unique visualisation features, IL decompiler, expression tree visualiser, benchmarking, charting and so on. Again it's worth having Windows just for this tool. Please support the author and purchase it.
+- [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.

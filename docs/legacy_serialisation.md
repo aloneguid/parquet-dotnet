@@ -1,5 +1,7 @@
 # Class Serialisation
 
+> This document refers to legacy serialisation, which is still in the library, but is marked as obsolete and will be removed by the end of 2023. No new features will be added and you should [migrate](serialisation.md).
+
 Parquet library is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
 
 Class serialisation is **really fast** as it generates [MSIL](https://en.wikipedia.org/wiki/Common_Intermediate_Language) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 
 namespace Parquet {
     /// <summary>
@@ -27,5 +28,9 @@ namespace Parquet {
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
 
+        /// <summary>
+        /// When set (default) <see cref="DataColumn"/> contains values with defnition levels applied.
+        /// </summary>
+        internal bool UnpackDefinitions { get; set; } = true;
     }
 }

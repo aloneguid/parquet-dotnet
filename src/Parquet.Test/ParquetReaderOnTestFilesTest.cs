@@ -1,4 +1,5 @@
 using Parquet.Data;
+using Parquet.Rows;
 using Parquet.Schema;
 using System;
 using System.IO;
@@ -124,6 +125,13 @@ namespace Parquet.Test {
                 DataColumn bw1 = await rgr.ReadColumnAsync(dfs[1]);
                 Assert.Equal(200, bw1.Count);
             }
+        }
+
+        [Fact]
+        public async Task Read_col_names_with_trailing_dots() {
+            using Stream s = OpenTestFile("trailing_dot_col_name.parquet");
+            Table tbl = await ParquetReader.ReadTableFromStreamAsync(s);
+            Assert.NotNull(tbl);
         }
     }
 }

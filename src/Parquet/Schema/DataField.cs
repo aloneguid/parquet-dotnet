@@ -15,14 +15,14 @@ namespace Parquet.Schema {
         /// <summary>
         /// Parquet data type of this element
         /// </summary>
-        [Obsolete]
+        [Obsolete(Globals.DataTypeEnumObsolete)]
         public DataType DataType { get; }
 
         /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
         /// Changes <see cref="ClrNullableIfHasNullsType"/> property accordingly.
         /// </summary>
-        public bool IsNullable {
+        public override bool IsNullable {
             get => _isNullable; internal set {
                 _isNullable = value;
                 ClrNullableIfHasNullsType = value ? ClrType.GetNullable() : ClrType;
@@ -112,12 +112,22 @@ namespace Parquet.Schema {
             set => Path = value + new FieldPath(Name);
         }
 
-        /// <summary>
-        /// see <see cref="ThriftFooter.GetLevels(Thrift.ColumnChunk, out int, out int)"/>
-        /// </summary>
+        internal bool IsAttachedToSchema { get; set; } = false;
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            MaxRepetitionLevel = parentRepetitionLevel + (IsArray ? 1 : 0);
-            MaxDefinitionLevel = parentDefinitionLevel + (IsNullable ? 1 : 0);
+            MaxRepetitionLevel = parentRepetitionLevel;
+            if(IsArray)
+                MaxRepetitionLevel++;
+
+            MaxDefinitionLevel = parentDefinitionLevel;
+
+            // can't be both array and nullable
+            if(IsArray)
+                MaxDefinitionLevel++;
+            else if(IsNullable)
+                MaxDefinitionLevel++;
+
+            IsAttachedToSchema = true;
         }
 
         /// <summary>
@@ -127,10 +137,10 @@ namespace Parquet.Schema {
         /// <returns></returns>
         internal Array CreateArray(int length) => Array.CreateInstance(ClrType, length);
 
-        internal Array UnpackDefinitions(Array definedData, Span<int> definitionLevels, int maxDefinitionLevel) {
+        internal Array UnpackDefinitions(Array definedData, Span<int> definitionLevels) {
             if(IsNullable) {
                 Array result = Array.CreateInstance(ClrNullableIfHasNullsType, definitionLevels.Length);
-                definedData.UnpackNullsFast(definitionLevels, maxDefinitionLevel, result);
+                definedData.UnpackNullsFast(definitionLevels, MaxDefinitionLevel, result);
                 return result;
             } else {
                 return definedData;
@@ -167,11 +177,11 @@ namespace Parquet.Schema {
             isNullable = false;
 
             //throw a useful hint
-            if(t.TryExtractDictionaryType(out Type? dKey, out Type? dValue)) {
-                throw new ArgumentException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
+            if(t.IsGenericIDictionary()) {
+                throw new NotSupportedException($"cannot declare a dictionary this way, please use {nameof(MapField)}.");
             }
 
-            if(t.TryExtractEnumerableType(out Type? enumItemType)) {
+            if(t.TryExtractIEnumerableType(out Type? enumItemType)) {
                 baseType = enumItemType!;
                 isArray = true;
             }

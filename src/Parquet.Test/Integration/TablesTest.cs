@@ -15,21 +15,9 @@ namespace Parquet.Test.Integration {
     /// This class does some fairly basic integration tests by compring results with parquet-mr using parquet-tools jar package.
     /// You must have java available in PATH.
     /// </summary>
-    public class ParquetMrIntegrationTest : TestBase {
-        private readonly string _toolsPath;
-        private readonly string _toolsJarPath;
-        private readonly string _javaExecName;
+    public class TablesTest : IntegrationBase {
 
-        public ParquetMrIntegrationTest() {
-            _toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
-            _toolsJarPath = Path.Combine(_toolsPath, "parquet-tools-1.9.0.jar");
-
-            _javaExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
-               ? "java.exe"
-               : "java";
-        }
-
-        private async Task CompareWithMr(Table t, Func<string, string> jsonPreprocessor = null) {
+        private async Task CompareWithMr(Table t, Func<string, string>? jsonPreprocessor = null) {
             string testFileName = Path.GetFullPath("temp.parquet");
 
             if(F.Exists(testFileName))
@@ -51,7 +39,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(t.ToString("j"), t2.ToString("j"), ignoreLineEndingDifferences: true);
 
             string myJson = t.ToString("j");
-            string mrJson = ExecAndGetOutput(_javaExecName, $"-jar \"{_toolsJarPath}\" cat -j \"{testFileName}\"");
+            string? mrJson = ExecMrCat(testFileName);
 
             if(jsonPreprocessor != null) {
                 myJson = jsonPreprocessor(myJson);
@@ -60,46 +48,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal(myJson, mrJson);
         }
 
-        private static string? ExecAndGetOutput(string fileName, string arguments) {
-            var psi = new ProcessStartInfo {
-                FileName = fileName,
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
 
-            var proc = new Process { StartInfo = psi };
-
-            if(!proc.Start())
-                return null;
-
-            var so = new StringBuilder();
-            var se = new StringBuilder();
-
-            while(!proc.StandardOutput.EndOfStream) {
-                string? line = proc.StandardOutput.ReadLine();
-                if(line != null) {
-                    so.AppendLine(line);
-                }
-            }
-
-            while(!proc.StandardError.EndOfStream) {
-                string? line = proc.StandardError.ReadLine();
-                if(line != null) {
-                    se.AppendLine(line);
-                }
-            }
-
-            proc.WaitForExit();
-
-            if(proc.ExitCode != 0) {
-                throw new Exception("process existed with code " + proc.ExitCode + ", error: " + se.ToString());
-            }
-
-            return so.ToString().Trim();
-        }
 
         [Fact]
         public async Task Integers_all_types() {
@@ -109,7 +58,7 @@ namespace Parquet.Test.Integration {
 
             //generate fake data
             for(int i = 0; i < 1000; i++) {
-                table.Add(new Row((sbyte)(i % 127 - 255), (byte)(i % 255), (short)i, (ushort)i, i, (long)i));
+                table.Add(new Row((sbyte)((i % 127) - 255), (byte)(i % 255), (short)i, (ushort)i, i, (long)i));
             }
 
             await CompareWithMr(table);

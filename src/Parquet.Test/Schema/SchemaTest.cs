@@ -85,7 +85,7 @@ namespace Parquet.Test.Schema {
 
         [Fact]
         public void Invalid_dictionary_declaration() {
-            Assert.Throws<ArgumentException>(() => new DataField<Dictionary<int, int>>("d"));
+            Assert.Throws<NotSupportedException>(() => new DataField<Dictionary<int, int>>("d"));
         }
 
         [Fact]
@@ -180,9 +180,9 @@ namespace Parquet.Test.Schema {
         [Fact]
         public void List_maintains_path_prefix() {
             var list = new ListField("List", new DataField<int>("id"));
-            list.PathPrefix = "Parent";
+            list.PathPrefix = new FieldPath("Parent");
 
-            Assert.Equal("Parent.List.list.id", list.Item.Path);
+            Assert.Equal(new FieldPath("Parent", "List", "list", "id"), list.Item.Path);
         }
 
         [Fact]
@@ -225,17 +225,20 @@ namespace Parquet.Test.Schema {
             var nameField = new DataField<string>("name");
 
             var schema = new ParquetSchema(
-               new DataField<int>("id"),
+               new DataField<int>("topLevelId"),
                new ListField("structs",
                   new StructField("mystruct",
                      idField,
                      nameField)));
 
+            Assert.Equal(0, schema[0].MaxRepetitionLevel);
+            Assert.Equal(0, schema[0].MaxDefinitionLevel);
+
             Assert.Equal(1, idField.MaxRepetitionLevel);
-            Assert.Equal(2, idField.MaxDefinitionLevel);
+            Assert.Equal(3, idField.MaxDefinitionLevel); // optional list + optional group + optional struct + required field
 
             Assert.Equal(1, nameField.MaxRepetitionLevel);
-            Assert.Equal(3, nameField.MaxDefinitionLevel);
+            Assert.Equal(4, nameField.MaxDefinitionLevel);
         }
 
         [Theory]
@@ -335,6 +338,5 @@ namespace Parquet.Test.Schema {
             Assert.Equal(expectedTT, foundTT);
             Assert.Equal(expectedCT, foundCT);
         }
-
     }
 }
