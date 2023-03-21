@@ -85,7 +85,7 @@ namespace Parquet.Schema {
 
         internal override FieldPath? PathPrefix {
             set {
-                Path = value + Name + ContainerName;
+                Path = value + new FieldPath(Name, ContainerName);
                 Item.PathPrefix = Path;
             }
         }

@@ -181,18 +181,6 @@ namespace Parquet.File {
             }
         }
 
-        private void ThrowNoHandler(Thrift.SchemaElement tse) {
-            string? ct = tse.__isset.converted_type
-               ? $" ({tse.Converted_type})"
-               : null;
-
-            string t = tse.__isset.type
-               ? $"'{tse.Type}'"
-               : "<unspecified>";
-
-            throw new NotSupportedException($"cannot find data type handler for schema element '{tse.Name}' (type: {t}{ct})");
-        }
-
 #endregion
 
 #region [ Convertion from Model Schema ]

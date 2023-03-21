@@ -180,9 +180,9 @@ namespace Parquet.Test.Schema {
         [Fact]
         public void List_maintains_path_prefix() {
             var list = new ListField("List", new DataField<int>("id"));
-            list.PathPrefix = "Parent";
+            list.PathPrefix = new FieldPath("Parent");
 
-            Assert.Equal("Parent.List.list.id", list.Item.Path);
+            Assert.Equal(new FieldPath("Parent", "List", "list", "id"), list.Item.Path);
         }
 
         [Fact]

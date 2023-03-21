@@ -28,13 +28,13 @@ namespace Parquet.Schema {
             foreach(Field field in elements)
                 _fields.Add(field);
 
-            Path = name;
+            Path = new FieldPath(name);
             PathPrefix = null;
         }
 
         internal override FieldPath? PathPrefix {
             set {
-                Path = value + Name;
+                Path = value + new FieldPath(Name);
 
                 foreach(Field field in _fields)
                     field.PathPrefix = Path;

@@ -196,7 +196,7 @@ namespace Parquet.Encodings {
 
             // "group with one field and is named either array":
             if(tseList.Num_children == 1 && tseRepeated.Name == "array") {
-                field.Path = tseList.Name;
+                field.Path = new FieldPath(tseList.Name);
                 index += 1; //only skip this element
                 ownedChildren = 1;
                 return true;

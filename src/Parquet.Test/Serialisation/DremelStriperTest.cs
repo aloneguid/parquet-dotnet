@@ -27,42 +27,42 @@ namespace Parquet.Test.Serialisation {
 
             // DocId
             Field docId = schema[0];
-            Assert.Equal("DocId", docId.Path);
+            Assert.Equal(new FieldPath("DocId"), docId.Path);
             Assert.Equal(0, docId.MaxRepetitionLevel);
             Assert.Equal(0, docId.MaxDefinitionLevel);
 
             // Links
             Field links = schema[1];
-            Assert.Equal("Links", links.Path);
+            Assert.Equal(new FieldPath("Links"), links.Path);
             Assert.Equal(0, links.MaxRepetitionLevel);
             Assert.Equal(1, links.MaxDefinitionLevel);
 
             // Links.Backward
             Field lBack = schema[1].Children[0];
-            Assert.Equal("Links.Backward", lBack.Path);
+            Assert.Equal(new FieldPath("Links", "Backward"), lBack.Path);
             Assert.Equal(1, lBack.MaxRepetitionLevel);
             Assert.Equal(2, lBack.MaxDefinitionLevel);
 
             // Links.Forward
             Field lForw = schema[1].Children[1];
-            Assert.Equal("Links.Forward", lForw.Path);
+            Assert.Equal(new FieldPath("Links", "Forward"), lForw.Path);
             Assert.Equal(1, lForw.MaxRepetitionLevel);
             Assert.Equal(2, lForw.MaxDefinitionLevel);
 
             // Name.Language.Code
             Field nlCode = schema[2].NaturalChildren[0].NaturalChildren[0];
-            Assert.Equal("Name.list.element.Language.list.element.Code", nlCode.Path);
+            Assert.Equal(new FieldPath("Name", "list", "element", "Language", "list", "element", "Code"), nlCode.Path);
             Assert.Equal(2, nlCode.MaxRepetitionLevel);
             Assert.Equal(7, nlCode.MaxDefinitionLevel);
 
             // Name.Language.Country
             Field nlCountry = schema[2].NaturalChildren[0].NaturalChildren[1];
-            Assert.Equal("Name.list.element.Language.list.element.Country", nlCountry.Path);
+            Assert.Equal(new FieldPath("Name", "list", "element", "Language", "list", "element", "Country"), nlCountry.Path);
             Assert.Equal(2, nlCountry.MaxRepetitionLevel);
             Assert.Equal(7, nlCountry.MaxDefinitionLevel);
 
             // Name.Url
-            Assert.Equal("Name.list.element.Url", schema[2].Children[0].Children[1].Path);
+            Assert.Equal(new FieldPath("Name", "list", "element", "Url"), schema[2].Children[0].Children[1].Path);
             Assert.Equal(1, schema[2].Children[0].Children[1].MaxRepetitionLevel);
             Assert.Equal(4, schema[2].Children[0].Children[1].MaxDefinitionLevel);
         }

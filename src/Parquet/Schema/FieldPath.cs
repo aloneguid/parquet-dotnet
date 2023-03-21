@@ -10,25 +10,14 @@ namespace Parquet.Schema {
     /// </summary>
     public sealed class FieldPath : IEquatable<FieldPath> {
 
-        /// <summary>
-        /// Path separator
-        /// </summary>
-        public const string Separator = ".";
-
         private readonly List<string> _parts;
-        private string _str;
 
         /// <summary>
-        /// Construct path from raw string (unsafe!)
+        /// Construct path single part, which becomes the first part in the result path.
         /// </summary>
-        /// <param name="path"></param>
-        public FieldPath(string path) {
-            _str = path ?? throw new ArgumentNullException(nameof(path));
-#if NETSTANDARD2_0
-            _parts = path.Split(new[] { Separator[0] }, StringSplitOptions.RemoveEmptyEntries).ToList();
-#else
-            _parts = path.Split(Separator, StringSplitOptions.RemoveEmptyEntries).ToList();
-#endif
+        /// <param name="firstPart"></param>
+        public FieldPath(string firstPart) {
+            _parts = new List<string> { firstPart ?? throw new ArgumentNullException(nameof(firstPart)) };
         }
 
         /// <summary>
@@ -38,8 +27,6 @@ namespace Parquet.Schema {
             _parts = parts
                 .Where(i => !string.IsNullOrEmpty(i))
                 .ToList();
-            _str = string.Join(Separator, _parts);
-
         }
 
         /// <summary>
@@ -59,7 +46,6 @@ namespace Parquet.Schema {
                 return;
 
             _parts.Add(value);
-            _str = string.Join(Separator, _parts);
         }
 
         /// <summary>
@@ -90,19 +76,38 @@ namespace Parquet.Schema {
             if(ReferenceEquals(this, other))
                 return true;
 
-            return _str.Equals(other?._str);
+            if(other?._parts.Count != _parts.Count)
+                return false;
 
+            for(int i = 0; i < _parts.Count; i++) {
+                if(_parts[i] != other._parts[i]) return false;
+            }
+
+            return true;
         }
 
-        /// <summary>
-        /// Hash code of string path
-        /// </summary>
-        public override int GetHashCode() => _str.GetHashCode();
+        /// <inheritdoc/>
+        public override int GetHashCode() {
+            int hash = 19;
+            unchecked {
+                foreach(string part in _parts) {
+                    hash = (hash * 31) + part.GetHashCode();
+                }
+            }
+            return hash;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) {
+            if(obj is not FieldPath fp) return false;
+
+            return Equals(fp);
+        }
 
         /// <summary>
         /// String repr
         /// </summary>
-        public override string ToString() => _str;
+        public override string ToString() => string.Join("/", _parts);
 
         /// <summary>
         /// Combines two paths safely
@@ -115,15 +120,5 @@ namespace Parquet.Schema {
                 parts.AddRange(right._parts);
             return new FieldPath(parts);
         }
-
-        /// <summary>
-        /// String repr
-        /// </summary>
-        public static implicit operator string(FieldPath p) => p._str;
-
-        /// <summary>
-        /// Unsafe path constructor
-        /// </summary>
-        public static implicit operator FieldPath(string s) => new FieldPath(s);
     }
 }

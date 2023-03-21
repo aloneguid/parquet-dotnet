@@ -32,7 +32,7 @@ namespace Parquet.Schema {
             Value = valueField;
             _keyAssigned = _valueAssigned = true;
 
-            Path = name.AddPath(ContainerName);
+            Path = new FieldPath(name, ContainerName);
             Key.PathPrefix = Path;
             Value.PathPrefix = Path;
             IsNullable = true;
@@ -58,7 +58,7 @@ namespace Parquet.Schema {
 
         internal override FieldPath? PathPrefix {
             set {
-                Path = value + Name + ContainerName;
+                Path = value + new FieldPath(Name, ContainerName);
                 Key.PathPrefix = Path;
                 Value.PathPrefix = Path;
             }
