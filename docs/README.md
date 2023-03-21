@@ -216,7 +216,7 @@ This is what's happening:
 4. Explicitly open row group for reading.
 5. Read each `DataField` from the row group, in the same order as it's declared in the schema.
 
-> Hint: you can also use web based [reader app](https://parquetdbg.aloneguid.uk/) to test your files, which was created using this library!
+> Hint: you can also use web based [reader app](https://aloneguid.github.io/parquet-online/) to test your files, which was created using this library!
 
 ## Choosing the API
 
