@@ -210,6 +210,71 @@ and data
 
 ### Maps (Dictionaries)
 
+Maps are useful constructs if you need to serialize key-value pairs where each row can have different amount of keys. For example, if you want to store the names and hobbies of your friends, you can use a map like this:
+
+```json
+{"Alice": ["reading", "cooking", "gardening"], "Bob": ["gaming", "coding", "sleeping"], "Charlie": ["traveling"]}
+```
+
+Notice how Alice has three hobbies, Bob has two and Charlie has only one. A map allows you to handle this variability without wasting space or creating empty values. Of course, you could also use a list, but then you would have to remember the order of the elements and deal with missing data. A map makes your life easier by letting you access the values by their keys.
+
+In this library, maps are represented as an instance of generic `IDictionary<TKey, TValue>` type. 
+
+To give you a minimal example, let's say we have the following class with two properties: `Id` and `Tags`. The `Id` property is an integer that can be used to identify a row or an item in a collection. The `Tags` property is a dictionary of strings that can store arbitrary key-value pairs. For example, the `Tags` property can be used to store metadata or attributes of the item:
+
+```csharp
+class IdWithTags {
+    public int Id { get; set; }
+
+    public Dictionary<string, string>? Tags { get; set; }
+}
+```
+
+
+
+You can easily use `ParquetSerializer` to work with this class:
+
+```csharp
+var data = Enumerable.Range(0, 10).Select(i => new IdWithTags { 
+    Id = i,
+    Tags = new Dictionary<string, string> {
+        ["id"] = i.ToString(),
+        ["gen"] = DateTime.UtcNow.ToString()
+    }}).ToList();
+
+await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\map.parquet");
+```
+
+When read by Spark, the schema looks like the following:
+
+```
+root
+ |-- Id: integer (nullable = true)
+ |-- Tags: map (nullable = true)
+ |    |-- key: string
+ |    |-- value: string (valueContainsNull = true)
+
+```
+
+And the data:
+
+```
++---+-------------------------------------+
+|Id |Tags                                 |
++---+-------------------------------------+
+|0  |{id -> 0, gen -> 17/03/2023 13:06:04}|
+|1  |{id -> 1, gen -> 17/03/2023 13:06:04}|
+|2  |{id -> 2, gen -> 17/03/2023 13:06:04}|
+|3  |{id -> 3, gen -> 17/03/2023 13:06:04}|
+|4  |{id -> 4, gen -> 17/03/2023 13:06:04}|
+|5  |{id -> 5, gen -> 17/03/2023 13:06:04}|
+|6  |{id -> 6, gen -> 17/03/2023 13:06:04}|
+|7  |{id -> 7, gen -> 17/03/2023 13:06:04}|
+|8  |{id -> 8, gen -> 17/03/2023 13:06:04}|
+|9  |{id -> 9, gen -> 17/03/2023 13:06:04}|
++---+-------------------------------------+
+```
+
 
 
 ### Supported Collection Types

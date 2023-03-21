@@ -61,7 +61,7 @@ var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
 Now, to write these to a file in say `/mnt/storage/data.parquet` you can use the following **line** of code:
 
 ```csharp
-await ParquetConvert.SerializeAsync(data, "/mnt/storage/data.parquet");
+await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 ```
 
 That's pretty much it! You can [customise many things](serialisation.md) in addition to the magical magic process, but if you are a really lazy person that will do just fine for today.
@@ -164,7 +164,7 @@ Reading data also has three different approaches, so I'm going to unwrap them he
 Provided that you have written the data, or just have some external data with the same structure as above, you can read those by simply doing the following:
 
 ```csharp
-Record[] data2 = await ParquetConvert.DeserializeAsync<Record>("/mnt/storage/data.parquet");
+IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
 
 This will give us an array with one million class instances similar to this:
@@ -222,12 +222,12 @@ This is what's happening:
 
 If you have a choice, then the choice is easy - use Low Level API. They are the fastest and the most flexible. But what if you for some reason don't have a choice? Then think about this:
 
-| Feature               | 🚤Class Serialisation   | 🌛Table API       | ⚙️Low Level API   |
-| --------------------- | ---------------------- | ---------------- | ---------------- |
-| Performance           | high                   | very low         | very high        |
-| Developer Convenience | feels like C# (great!) | feels like Excel | close to Parquet |
-| Row based access      | easy                   | easy             | hard             |
-| Column based access   | hard                   | hard             | easy             |
+| Feature               | 🚤Class Serialisation | 🌛Table API       | ⚙️Low Level API             |
+| --------------------- | -------------------- | ---------------- | -------------------------- |
+| Performance           | high                 | very low         | very high                  |
+| Developer Convenience | C# native            | feels like Excel | close to Parquet internals |
+| Row based access      | easy                 | easy             | hard                       |
+| Column based access   | C# native            | hard             | easy                       |
 
 
 
