@@ -202,5 +202,41 @@ namespace Parquet.Test.Serialisation {
             XAssert.JsonEquivalent(data, data2);
 
         }
+
+        [Fact]
+        public async Task Append_reads_all_data() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new Record {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+
+            const int batchSize = 100;
+            for(int i = 0; i < data.Count; i += batchSize) {
+                List<Record> dataBatch = data.Skip(i).Take(batchSize).ToList();
+
+                ms.Position = 0;
+                await ParquetSerializer.SerializeAsync(dataBatch, ms, new ParquetSerializerOptions { Append = i > 0 });
+            }
+
+            ms.Position = 0;
+            IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms);
+
+            Assert.Equivalent(data2, data);
+        }
+
+        [Fact]
+        public async Task Append_to_new_file_fails() {
+            var data = Enumerable.Range(0, 10).Select(i => new Record {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await Assert.ThrowsAsync<IOException>(async () => await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { Append = true }));
+        }
     }
 }

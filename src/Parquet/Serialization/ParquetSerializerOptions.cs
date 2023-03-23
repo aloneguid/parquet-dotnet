@@ -5,6 +5,12 @@ namespace Parquet.Serialization {
     /// Parquet serializer options
     /// </summary>
     public class ParquetSerializerOptions {
+
+        /// <summary>
+        /// When set to true, appends to file by creating a new row group.
+        /// </summary>
+        public bool Append { get; set; } = false;
+
         /// <summary>
         /// Page compression method
         /// </summary>
@@ -15,6 +21,6 @@ namespace Parquet.Serialization {
         /// Page compression level
         /// </summary>
 
-        public CompressionLevel CompressionLevel = CompressionLevel.Optimal;
+        public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.Optimal;
     }
 }

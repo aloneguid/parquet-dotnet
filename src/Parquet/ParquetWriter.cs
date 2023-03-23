@@ -93,6 +93,9 @@ namespace Parquet {
                 if(!Stream.CanSeek)
                     throw new IOException("destination stream must be seekable for append operations.");
 
+                if(Stream.Length == 0)
+                    throw new IOException($"you can only append to existing streams, but current stream is empty.");
+
                 await ValidateFileAsync();
 
                 Thrift.FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);

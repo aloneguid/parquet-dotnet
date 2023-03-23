@@ -293,6 +293,31 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 `*` Technically impossible.
 `**` Technically possible, but not implemented yet.
 
+## Appending to Files
+
+`ParquetSerializer` supports appending data to an existing Parquet file. This can be useful when you have multiple batches of data that need to be written to the same file.
+
+To use this feature, you need to set the `Append` flag to `true` in the `ParquetSerializerOptions` object that you pass to the `SerializeAsync` method. This will tell the library to append the data batch to the end of the file stream instead of overwriting it. For example:
+
+```csharp
+await ParquetSerializer.SerializeAsync(dataBatch, ms, new ParquetSerializerOptions { Append = true });
+```
+
+However, there is one caveat: you should not set the `Append` flag to `true` for the first batch of data that you write to a new file. This is because a Parquet file has a header and a footer that contain metadata about the schema and statistics of the data. If you try to append data to an empty file stream, you will get an `IOException` because there is no header or footer to read from. Therefore, you should always set the `Append` flag to `false` for the first batch (or not pass any options, which makes it `false` by default) and then switch it to `true` for subsequent batches. For example:
+
+```csharp
+// First batch
+await ParquetSerializer.SerializeAsync(dataBatch1, ms, new ParquetSerializerOptions { Append = false });
+
+// Second batch
+await ParquetSerializer.SerializeAsync(dataBatch2, ms, new ParquetSerializerOptions { Append = true });
+
+// Third batch
+await ParquetSerializer.SerializeAsync(dataBatch3, ms, new ParquetSerializerOptions { Append = true });
+```
+
+By following this pattern, you can easily append data to a Parquet file using `ParquetSerializer`.
+
 ## FAQ
 
 **Q.** Can I specify schema for serialisation/deserialisation.

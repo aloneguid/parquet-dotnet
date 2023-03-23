@@ -33,7 +33,8 @@ namespace Parquet.Serialization {
 
             Striper<T> striper = new Striper<T>(typeof(T).GetParquetSchema(false));
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination, null, false, cancellationToken)) {
+            bool append = options != null && options.Append;
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination, null, append, cancellationToken)) {
 
                 if(options != null) {
                     writer.CompressionMethod = options.CompressionMethod;
