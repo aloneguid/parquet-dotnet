@@ -1,13 +1,15 @@
 # Apache Parquet for .NET [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
 
 
-![Icon](img/banner.svg)
+![Icon](img/banner.png)
 
+**Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
+Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.NET has you covered. 
 
-**Fully portable, managed** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files. Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
+Make sure to check out [Apache Parquet Viewer](https://aloneguid.github.io/parquet-online/) built with this library:
 
-Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more,  Parquet.NET has you covered. 
+[![](img/pv.png)](https://aloneguid.github.io/parquet-online/)
 
 ## Why
 
@@ -233,7 +235,7 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 
 ## Contributing
 
-Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md).
+Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md). The first important thing you can do is simply star ⭐ this project.
 
 ## Special Thanks
 
@@ -244,3 +246,4 @@ Without these tools development would be really painful.
 - [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
 - [LINQPad](https://www.linqpad.net/) - extremely powerful C# REPL with unique visualisation features, IL decompiler, expression tree visualiser, benchmarking, charting and so on. Again it's worth having Windows just for this tool. Please support the author and purchase it.
 - [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.
+- **You** starring ⭐ this project!
