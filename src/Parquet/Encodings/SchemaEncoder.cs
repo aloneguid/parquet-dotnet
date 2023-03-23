@@ -206,6 +206,7 @@ namespace Parquet.Encodings {
             //as we are skipping elements set path hint
             Thrift.SchemaElement tseRepeatedGroup = schema[index + 1];
             field.Path = new FieldPath(tseList.Name, tseRepeatedGroup.Name);
+            field.ThriftSchemaElement = se;
             field.GroupSchemaElement = tseRepeatedGroup;
             index += 2;          //skip this element and child container
             ownedChildren = 1;   //we should get this element assigned back
@@ -237,7 +238,8 @@ namespace Parquet.Encodings {
             var map = new MapField(root.Name) {
                 Path = new FieldPath(root.Name, tseContainer.Name),
                 IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED,
-                GroupSchemaElement = tseContainer
+                GroupSchemaElement = tseContainer,
+                ThriftSchemaElement = root
             };
 
             index += 1;
@@ -261,6 +263,7 @@ namespace Parquet.Encodings {
             ownedChildren = container.Num_children; //make then owned to receive in .Assign()
             field = StructField.CreateWithNoElements(container.Name);
             field.IsNullable = container.Repetition_type != FieldRepetitionType.REQUIRED;
+            field.ThriftSchemaElement = container;
             return true;
         }
 
@@ -304,6 +307,7 @@ namespace Parquet.Encodings {
 
                 df.IsNullable = isNullable;
                 df.IsArray = isArray;
+                df.ThriftSchemaElement = se;
                 f = df;
 
                 index++;

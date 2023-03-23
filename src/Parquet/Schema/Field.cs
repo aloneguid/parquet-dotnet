@@ -60,6 +60,12 @@ namespace Parquet.Schema {
         /// </summary>
         internal string? ClrPropName { get; set; }
 
+        /// <summary>
+        /// Low-level thrift schema element corresponding to this high-level schema element.
+        /// Only set when reading files.
+        /// </summary>
+        public Thrift.SchemaElement? ThriftSchemaElement { get; internal set; }
+
         internal virtual FieldPath? PathPrefix { set { } }
 
         /// <summary>
