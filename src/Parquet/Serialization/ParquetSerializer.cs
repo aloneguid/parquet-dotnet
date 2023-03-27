@@ -17,6 +17,8 @@ namespace Parquet.Serialization {
     /// </summary>
     public static class ParquetSerializer {
 
+        private static readonly Dictionary<Type, object> _typeToStriper = new();
+
         /// <summary>
         /// Serialize 
         /// </summary>
@@ -31,7 +33,14 @@ namespace Parquet.Serialization {
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            Striper<T> striper = new Striper<T>(typeof(T).GetParquetSchema(false));
+            Striper<T> striper;
+
+            if(_typeToStriper.TryGetValue(typeof(T), out object? boxedStriper)) {
+                striper = (Striper<T>)boxedStriper;
+            } else {
+                striper = new Striper<T>(typeof(T).GetParquetSchema(false));
+                _typeToStriper[typeof(T)] = striper;
+            }
 
             bool append = options != null && options.Append;
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination, null, append, cancellationToken)) {
