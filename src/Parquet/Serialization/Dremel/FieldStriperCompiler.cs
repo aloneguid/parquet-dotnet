@@ -135,13 +135,15 @@ namespace Parquet.Serialization.Dremel {
                 // L9-13
                 Expression.IfThenElse(
                     // if seenFields.Contains(field.Path)
-                    Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Contains")!, Expression.Constant(field.Path.ToString())),
+                    //Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Contains")!, Expression.Constant(field.Path.ToString())),
+                    Expression.IsTrue(seenFieldsVar),
 
                     // chRepetitionLevelVar = treeDepth
                     Expression.Assign(chRepetitionLevelVar, Expression.Constant(rlDepth)),
 
                     // seenFields.Add(field.Path)
-                    Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Add")!, Expression.Constant(field.Path.ToString()))
+                    //Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Add")!, Expression.Constant(field.Path.ToString()))
+                    Expression.Assign(seenFieldsVar, Expression.Constant(true))
                     ),
 
                 // L14-
@@ -203,13 +205,14 @@ namespace Parquet.Serialization.Dremel {
             Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
             Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
             ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
+            ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
 
             Expression extraBody;
             if(isRepeated) {
                 Type elementType = ExtractElementTypeFromEnumerableType(levelPropertyType);
                 Expression collection = levelProperty;
                 ParameterExpression element = Expression.Variable(elementType, "element");
-                Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenFieldsVar, field, rlDepth, elementType, path);
+                Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, elementType, path);
                 extraBody = elementProcessor.Loop(collection, elementType, element);
 
                 // todo: if levelProperty (collection) is null, we need extra iteration with null value (which rep and def level?)
@@ -220,12 +223,12 @@ namespace Parquet.Serialization.Dremel {
                         extraBody);
             } else {
                 Expression element = levelProperty;
-                extraBody = WhileBody(element, isAtomic, dl, currentRlVar, seenFieldsVar, field, rlDepth, levelPropertyType, path);
+                extraBody = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, levelPropertyType, path);
             }
 
             return Expression.Block(
-                new[] { seenFieldsVar },
-                Expression.Assign(seenFieldsVar, Expression.New(typeof(HashSet<string>))),
+                new[] { seenVar },
+                Expression.Assign(seenVar, Expression.Constant(false)),
                 extraBody);
         }
 
