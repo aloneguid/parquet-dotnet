@@ -4,12 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Parquet.Data;
 using Parquet.Rows;
 using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Rows {
+
     public class RowsModelTest : TestBase {
         #region [ Flat Tables ]
 
@@ -544,6 +544,7 @@ namespace Parquet.Test.Rows {
         /// This essentially proves that we can READ complicated data structures, but not write (see other tests)
         /// </summary>
         [Fact]
+        [UseCulture("en-US")] //as culture specific number format is expected in test
         public async Task BigFatOne_variations_from_Apache_Spark() {
             Table t;
             using(Stream stream = OpenTestFile("all_var1.parquet")) {
