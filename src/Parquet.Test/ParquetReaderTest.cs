@@ -261,7 +261,23 @@ namespace Parquet.Test {
                 Assert.Equal(new DateTime(2020,12,23,13,45,51).AddTicks(12 * 10), col0[2]);
             }
         }
-        
+
+        [Theory]
+        [InlineData("repeated_with_nulls.parquet")]
+        public async Task ParquetReader_RepeatedWithNulls(string parquetFile) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false,
+                      parquetOptions: new ParquetOptions() { TreatByteArrayAsString = true })) {
+                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+                int?[] col0 = (int?[])columns[0].Data;
+                int[]? col0_repetitionLevels = (int[]?)columns[0].RepetitionLevels;
+                
+                Assert.Equal(5, col0.Length);
+                Assert.Equal(5, col0_repetitionLevels.Length);
+                Assert.Equal(new int?[] { 1, 2, null, 4, 5}, col0);
+                Assert.Equal(new int[] { 0, 1, 0, 0, 1 }, col0_repetitionLevels);
+            }
+        }
+
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }
