@@ -74,13 +74,16 @@ namespace Parquet.Schema {
         public DataField[] GetDataFields() {
             var result = new List<DataField>();
 
-            void analyse(Field f) {
+            void analyse(Field f, bool nullable = false) {
                 switch(f.SchemaType) {
                     case SchemaType.Data:
-                        result?.Add((DataField)f);
+                        DataField df = (DataField)f;
+                        if (nullable)
+                            df.IsNullable = nullable;
+                        result?.Add(df);
                         break;
                     case SchemaType.List:
-                        analyse(((ListField)f).Item);
+                        analyse(((ListField)f).Item, true);
                         break;
                     case SchemaType.Map:
                         MapField mf = (MapField)f;
