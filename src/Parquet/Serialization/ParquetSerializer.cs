@@ -17,6 +17,9 @@ namespace Parquet.Serialization {
     /// </summary>
     public static class ParquetSerializer {
 
+        private static readonly Dictionary<Type, object> _typeToStriper = new();
+        private static readonly Dictionary<Type, object> _typeToAssembler = new();
+
         /// <summary>
         /// Serialize 
         /// </summary>
@@ -31,7 +34,14 @@ namespace Parquet.Serialization {
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            Striper<T> striper = new Striper<T>(typeof(T).GetParquetSchema(false));
+            Striper<T> striper;
+
+            if(_typeToStriper.TryGetValue(typeof(T), out object? boxedStriper)) {
+                striper = (Striper<T>)boxedStriper;
+            } else {
+                striper = new Striper<T>(typeof(T).GetParquetSchema(false));
+                _typeToStriper[typeof(T)] = striper;
+            }
 
             bool append = options != null && options.Append;
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination, null, append, cancellationToken)) {
@@ -86,7 +96,15 @@ namespace Parquet.Serialization {
             CancellationToken cancellationToken = default)
             where T : new() {
 
-            Assembler<T> asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
+            Assembler<T> asm;
+
+            if(_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler)) {
+                asm = (Assembler<T>)boxedAssembler;
+            } else {
+                asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
+                _typeToAssembler[typeof(T)] = asm;
+            }
+
             var result = new List<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, new ParquetOptions { UnpackDefinitions = false });

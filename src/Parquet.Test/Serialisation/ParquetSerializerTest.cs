@@ -118,6 +118,31 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(data2, data);
         }
 
+        //[Fact]
+        public async Task Struct_With_NestedNulls_Serde() {
+
+            var data = new List<AddressBookEntry> {
+                new AddressBookEntry {
+                    FirstName = "Joe",
+                    LastName = "Bloggs",
+                    Address = new Address() {
+                        City = null,
+                        Country = null
+                    }
+                }
+            };
+
+            // serialiser puts (null, 0) for Address.City, but should put (null, 1)
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
+
+            XAssert.JsonEquivalent(data, data2);
+        }
+
         [Fact]
         public async Task List_Structs_Serde() {
             var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {

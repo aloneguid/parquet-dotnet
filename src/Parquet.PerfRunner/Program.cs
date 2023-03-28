@@ -11,8 +11,14 @@ if(args.Length == 1) {
         case "progression":
             VersionedBenchmark.Run();
             break;
+        case "classes":
+            BenchmarkRunner.Run<Classes>();
+            break;
     }
 } else {
     //new VsParquetSharp().Main();
-    await new DataTypes().NullableInts();
+    //await new DataTypes().NullableInts();
+    var c = new Classes();
+    c.SetUp();
+    c.Serialise();
 }

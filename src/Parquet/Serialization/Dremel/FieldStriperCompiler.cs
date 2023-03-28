@@ -15,6 +15,8 @@ namespace Parquet.Serialization.Dremel {
 
         private readonly ParquetSchema _schema;
         private readonly DataField _df;
+        private readonly bool _hasRls;
+        private readonly bool _hasDls;
 
         // input parameters
         private readonly ParameterExpression _dfParam = Expression.Parameter(typeof(DataField), "df");
@@ -34,10 +36,14 @@ namespace Parquet.Serialization.Dremel {
         // currently iterated class element
         private readonly ParameterExpression _classElementVar = Expression.Variable(typeof(TClass), "curr");
 
+        private static readonly Expression NullListOfInt = Expression.Convert(Expression.Constant(null), typeof(List<int>));
+
         public FieldStriperCompiler(ParquetSchema schema, DataField df) {
 
             _schema = schema;
             _df = df;
+            _hasRls = _df.MaxRepetitionLevel > 0;
+            _hasDls = _df.MaxDefinitionLevel > 0;
 
             //
             _valuesListType = typeof(List<>).MakeGenericType(df.ClrType);
@@ -82,38 +88,40 @@ namespace Parquet.Serialization.Dremel {
 
                         // only need RL and DL-1
                         Expression.Block(
-                            Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl - 1)),
-                            Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar)),
+                            _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl - 1)) : Expression.Empty(),
+                            _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty()),
 
                         // everything, but value must be non-null
                         Expression.Block(
                             Expression.Call(_valuesVar, _valuesListAddMethod, getNonNullValue),
-                            Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)),
-                            Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar)));
+                            _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
+                            _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty()));
 
                 } else {
                     // required atomics are simple - add value, RL and DL as is
                     return Expression.Block(
                         Expression.Call(_valuesVar, _valuesListAddMethod, valueVar),
-                        Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)),
-                        Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar));
+                        _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
+                        _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
                 }
             }
 
             // non-atomics still need RL and DL dumped
             return Expression.Block(
-                Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)),
-                Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar));
+                _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
+                _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
 
         }
 
         private Expression WriteMissingValue(int dl, Expression currentRlVar) {
             return Expression.Block(
-                Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)),
-                Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar));
+                _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
+                _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
         }
 
-        private Expression WhileBody(Expression element, bool isAtomic, int dl, ParameterExpression currentRlVar, ParameterExpression seenFieldsVar, Field field, int rlDepth, Type elementType, List<string> path) {
+        private Expression WhileBody(Expression element, bool isAtomic, int dl, ParameterExpression currentRlVar,
+            ParameterExpression seenFieldsVar, Field field, int rlDepth, Type elementType, List<string> path) {
+
             string suffix = field.Path.ToString().Replace(".", "_");
             ParameterExpression chRepetitionLevelVar = Expression.Variable(typeof(int), $"chRepetitionLevel_{suffix}");
             ParameterExpression valueVar = Expression.Variable(elementType, $"value_{suffix}");
@@ -127,13 +135,15 @@ namespace Parquet.Serialization.Dremel {
                 // L9-13
                 Expression.IfThenElse(
                     // if seenFields.Contains(field.Path)
-                    Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Contains")!, Expression.Constant(field.Path.ToString())),
+                    //Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Contains")!, Expression.Constant(field.Path.ToString())),
+                    Expression.IsTrue(seenFieldsVar),
 
                     // chRepetitionLevelVar = treeDepth
                     Expression.Assign(chRepetitionLevelVar, Expression.Constant(rlDepth)),
 
                     // seenFields.Add(field.Path)
-                    Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Add")!, Expression.Constant(field.Path.ToString()))
+                    //Expression.Call(seenFieldsVar, typeof(HashSet<string>).GetMethod("Add")!, Expression.Constant(field.Path.ToString()))
+                    Expression.Assign(seenFieldsVar, Expression.Constant(true))
                     ),
 
                 // L14-
@@ -195,13 +205,14 @@ namespace Parquet.Serialization.Dremel {
             Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
             Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
             ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
+            ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
 
             Expression extraBody;
             if(isRepeated) {
                 Type elementType = ExtractElementTypeFromEnumerableType(levelPropertyType);
                 Expression collection = levelProperty;
                 ParameterExpression element = Expression.Variable(elementType, "element");
-                Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenFieldsVar, field, rlDepth, elementType, path);
+                Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, elementType, path);
                 extraBody = elementProcessor.Loop(collection, elementType, element);
 
                 // todo: if levelProperty (collection) is null, we need extra iteration with null value (which rep and def level?)
@@ -212,12 +223,12 @@ namespace Parquet.Serialization.Dremel {
                         extraBody);
             } else {
                 Expression element = levelProperty;
-                extraBody = WhileBody(element, isAtomic, dl, currentRlVar, seenFieldsVar, field, rlDepth, levelPropertyType, path);
+                extraBody = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, levelPropertyType, path);
             }
 
             return Expression.Block(
-                new[] { seenFieldsVar },
-                Expression.Assign(seenFieldsVar, Expression.New(typeof(HashSet<string>))),
+                new[] { seenVar },
+                Expression.Assign(seenVar, Expression.Constant(false)),
                 extraBody);
         }
 
@@ -236,16 +247,16 @@ namespace Parquet.Serialization.Dremel {
                 // init 3 building blocks
                 Expression.Block(
                     Expression.Assign(_valuesVar, Expression.New(_valuesListType)),
-                    Expression.Assign(_dlsVar, Expression.New(typeof(List<int>))),
-                    Expression.Assign(_rlsVar, Expression.New(typeof(List<int>)))),
+                    Expression.Assign(_dlsVar, _hasDls ? Expression.New(typeof(List<int>)) : NullListOfInt),
+                    Expression.Assign(_rlsVar, _hasRls ?  Expression.New(typeof(List<int>)) : NullListOfInt)),
 
                 iterationLoop,
 
                 // result: use triple to construct ShreddedColumn and return (last element in the block)
                 Expression.New(ShreddedColumnConstructor,
                     Expression.Call(_valuesVar, _valuesListType.GetMethod("ToArray")!),
-                        _df.MaxDefinitionLevel == 0 ? Expression.Convert(Expression.Constant(null), typeof(List<int>)) : _dlsVar,
-                        _df.MaxRepetitionLevel == 0 ? Expression.Convert(Expression.Constant(null), typeof(List<int>)) : _rlsVar)
+                        _dlsVar,
+                        _rlsVar)
                 );
 
             Func<DataField, IEnumerable<TClass>, ShreddedColumn> lambda = Expression

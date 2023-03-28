@@ -144,6 +144,7 @@ namespace Parquet.Serialization.Dremel {
                 (field.SchemaType == SchemaType.Data && field is DataField rdf && rdf.IsArray);
         }
 
+#if DEBUG
         private static void InjectLevelDebug(string levelPropertyName,
             object value, int dataIdx,
             int dl, int rl,
@@ -151,6 +152,7 @@ namespace Parquet.Serialization.Dremel {
             int[] rsm) {
             Console.WriteLine("debug");
         }
+#endif
 
         /// <summary>
         /// Transitions RSM for current RL iteration
@@ -259,7 +261,7 @@ namespace Parquet.Serialization.Dremel {
             } else {
                 if(isAtomic) {
 
-                    // C#: dlDepth <= _dlVar?
+                    // C#: dlDepth == _dlVar?
                     iteration =
                         Expression.IfThen(
                             Expression.Equal(Expression.Constant(dlDepth), _dlVar),
