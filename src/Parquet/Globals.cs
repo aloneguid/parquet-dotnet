@@ -17,7 +17,7 @@
         /// </summary>
         public static readonly string GithubSha = "${GITHUB_SHA}";
 
-        internal const string DataTypeEnumObsolete = "Please resort to using System.Type overloads. Will be removed in v6.";
-        internal const string ParquetConvertObsolete = "ParquetConvert was an experimental project and is not obsolete. Consider switching to ParquetSerializer which supports all data types, including nested ones, and is just superior. ParquetConvert will be removed in v6.";
+        internal const string DataTypeEnumObsolete = "Please resort to using System.Type overloads. Will be removed in v5.";
+        internal const string ParquetConvertObsolete = "ParquetConvert was an experimental project and is now obsolete. Consider switching to ParquetSerializer which supports all data types, including nested ones, and is just superior. ParquetConvert will be removed in v5.";
     }
 }

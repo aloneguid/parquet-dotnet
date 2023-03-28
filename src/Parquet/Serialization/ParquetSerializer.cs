@@ -18,6 +18,7 @@ namespace Parquet.Serialization {
     public static class ParquetSerializer {
 
         private static readonly Dictionary<Type, object> _typeToStriper = new();
+        private static readonly Dictionary<Type, object> _typeToAssembler = new();
 
         /// <summary>
         /// Serialize 
@@ -95,7 +96,15 @@ namespace Parquet.Serialization {
             CancellationToken cancellationToken = default)
             where T : new() {
 
-            Assembler<T> asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
+            Assembler<T> asm;
+
+            if(_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler)) {
+                asm = (Assembler<T>)boxedAssembler;
+            } else {
+                asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
+                _typeToAssembler[typeof(T)] = asm;
+            }
+
             var result = new List<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, new ParquetOptions { UnpackDefinitions = false });
