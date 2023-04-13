@@ -115,7 +115,7 @@ namespace Parquet.Test.Serialisation {
 
             // Address.Country/City must be RL: 0, DL: 0 as Address is null
 
-            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\x.parquet");
+            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\x.parquet");
 
             ms.Position = 0;
             IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
