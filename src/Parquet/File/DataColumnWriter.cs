@@ -98,11 +98,7 @@ namespace Parquet.File {
            Thrift.SchemaElement tse,
            CancellationToken cancellationToken = default) {
 
-            if(!column.Field.IsAttachedToSchema) {
-                throw new ArgumentException(
-                    $"Field [{column.Field}] is not attached to any schema. You need to construct a schema passing in this field first.",
-                    nameof(column));
-            }
+            column.Field.EnsureAttachedToSchema(nameof(column));
 
             var r = new ColumnSizes();
 
@@ -113,18 +109,15 @@ namespace Parquet.File {
              */
 
             using var pc = new PackedColumn(column);
-            pc.Pack(column.Field.MaxDefinitionLevel, _options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
+            pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
 
             // dictionary page
             if(pc.HasDictionary) {
                 Thrift.PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
                 using MemoryStream ms = _rmsMgr.GetStream();
-                if(!ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
+                ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
                        tse,
-                       ms, column.Statistics)) {
-
-                    throw new IOException("failed to encode dictionary data for column " + column);
-                }
+                       ms, column.Statistics);
 
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             }
@@ -147,9 +140,7 @@ namespace Parquet.File {
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
-                    if(!ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics)) {
-                        throw new IOException($"failed to encode data page data for column {column}");
-                    }
+                    ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
                 }
 
                 ph.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(tse);

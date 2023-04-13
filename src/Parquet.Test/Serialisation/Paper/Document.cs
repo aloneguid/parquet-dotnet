@@ -58,46 +58,63 @@ namespace Parquet.Test.Serialisation.Paper {
                 }
         };
 
-        public static List<Document> Both => new List<Document>{ R1, R2 };
+        public static List<Document> Both => new List<Document> { R1, R2 };
 
         public static DataColumn[] RawColumns {
             get {
+
+                var schema = new ParquetSchema(
+
+                    new DataField<long>("DocId"),
+
+                    new StructField("Links",
+                        new ListField("Backward", new DataField<long>("element")),
+                        new ListField("Forward", new DataField<long>("element"))),
+
+                    new ListField("Name",
+                        new StructField("element",
+                            new ListField("Language",
+                                new StructField("element", 
+                                    new DataField<string>("Code"),
+                                    new DataField<string>("Country"))),
+
+                            new DataField<string>("Url")
+                        )));
+
+                DataField[] dfs = schema.GetDataFields();
+
                 return new DataColumn[] {
-                    new DataColumn(new DataField<long>("DocId"),
-                        new long[] { 10, 20 },
-                        (List<int>?)null,
-                        null,
-                        false),
+                    new DataColumn(dfs[0], new long[] { 10, 20 }),
 
-                    new DataColumn(new DataField<long>("Backward"),
+                    // Links/Backwards
+                    new DataColumn(dfs[1],
                         new long[] { 10, 30 },
-                        new List<int> { 1, 2, 2 },
-                        new() { 0, 0, 1 },
-                        false),
+                        new int[] { 1, 2, 2 },
+                        new int[] { 0, 0, 1 }),
 
-                    new DataColumn(new DataField<long>("Forward"),
+                    // Links/Forwards
+                    new DataColumn(dfs[2],
                         new long[] { 20, 40, 60, 80 },
-                        new List<int> { 2, 2, 2, 2 },
-                        new() { 0, 1, 1, 0 },
-                        false),
+                        new int[] { 2, 2, 2, 2 },
+                        new int[] { 0, 1, 1, 0 }),
 
-                    new DataColumn(new DataField<string>("Code"),
+                    // Code
+                    new DataColumn(dfs[3],
                         new string[] { "en-us", "en", "en-gb" },
-                        new List<int> { 7, 7, 2, 7, 2 },
-                        new() { 0, 2, 1, 1, 0 },
-                        false),
+                        new int[] { 7, 7, 2, 7, 2 },
+                        new int[] { 0, 2, 1, 1, 0 }),
 
-                    new DataColumn(new DataField<string>("Country"),
+                    // Country
+                    new DataColumn(dfs[4],
                         new string[] { "us", "gb" },
-                        new List<int> { 7, 6, 4, 7, 4 },
-                        new() { 0, 2, 1, 1, 0 },
-                        false),
+                        new int[] { 7, 6, 4, 7, 4 },
+                        new int[] { 0, 2, 1, 1, 0 }),
 
-                    new DataColumn(new DataField<string>("Url"),
+                    // Url
+                    new DataColumn(dfs[5],
                         new string[] { "http://A", "http://B", "http://C" },
-                        new List<int> { 4, 4, 3, 4 },
-                        new() { 0, 1, 1, 0 },
-                        false)
+                        new int[] { 4, 4, 3, 4 },
+                        new int[] { 0, 1, 1, 0 })
                 };
             }
         }

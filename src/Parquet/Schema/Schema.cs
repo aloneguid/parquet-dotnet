@@ -68,7 +68,7 @@ namespace Parquet.Schema {
         }
 
         /// <summary>
-        /// Gets a flat list of all data fields in this schema
+        /// Gets a flat list of all data fields in this schema. Traverses schema tree in order to do that.
         /// </summary>
         /// <returns></returns>
         public DataField[] GetDataFields() {

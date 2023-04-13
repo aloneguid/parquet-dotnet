@@ -67,7 +67,7 @@ namespace Parquet.Serialization.Dremel {
         }
 
         private Expression GetDataLength() {
-            return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.Data)), nameof(Array.Length));
+            return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), nameof(Array.Length));
         }
 
 
@@ -93,8 +93,8 @@ namespace Parquet.Serialization.Dremel {
                 ? Expression.Condition(
                     Expression.LessThan(_rlIdxVar, GetRlLength()),
                     GetRLAt(_rlIdxVar),
-                    Expression.Constant(0))
-                : Expression.Constant(0);
+                    Zero)
+                : Zero;
         }
 
         private Expression TakeCurrentValuesAndAdvance() {
@@ -345,7 +345,7 @@ namespace Parquet.Serialization.Dremel {
                     // be careful to check for NEXT RL, not the current one
                     // repeat until RL == 0 (always zero for non-repeated fields so we are OK here in any situation)
                     Expression.IfThen(
-                        Expression.Equal(GetCurrentRLOr0(), Expression.Constant(0)),
+                        Expression.Equal(GetCurrentRLOr0(), Zero),
                         Expression.Break(rlBreakLabel))
 
                     ), rlBreakLabel));
@@ -362,12 +362,12 @@ namespace Parquet.Serialization.Dremel {
 
                 // initialise array vars
                 Expression.Assign(_dataVar,
-                    Expression.Convert(Expression.Property(_dcParam, nameof(DataColumn.Data)), _df.ClrType.MakeArrayType())),
-                Expression.Assign(_dataIdxVar, Expression.Property(_dcParam, nameof(DataColumn.Offset))),
-                Expression.Assign(_rlIdxVar, Expression.Constant(0)),
-                Expression.Assign(_rlVar, Expression.Constant(0)),
-                Expression.Assign(_dlIdxVar, Expression.Constant(0)),
-                Expression.Assign(_dlVar, Expression.Constant(0)),
+                    Expression.Convert(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), _df.ClrType.MakeArrayType())),
+                Expression.Assign(_dataIdxVar, Zero),
+                Expression.Assign(_rlIdxVar, Zero),
+                Expression.Assign(_rlVar, Zero),
+                Expression.Assign(_dlIdxVar, Zero),
+                Expression.Assign(_dlVar, Zero),
 
                 // allocate state machine
                 Expression.Assign(_rsmVar, Expression.NewArrayBounds(typeof(int), Expression.Constant(_df.MaxRepetitionLevel))),

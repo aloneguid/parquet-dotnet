@@ -114,6 +114,15 @@ namespace Parquet.Schema {
 
         internal bool IsAttachedToSchema { get; set; } = false;
 
+        internal void EnsureAttachedToSchema(string argName) {
+            if(IsAttachedToSchema)
+                return;
+
+            throw new ArgumentException(
+                    $"Field [{this}] is not attached to any schema. You need to construct a schema passing in this field first.",
+                    argName);
+        }
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             MaxRepetitionLevel = parentRepetitionLevel;
             if(IsArray)

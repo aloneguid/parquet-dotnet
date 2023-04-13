@@ -48,10 +48,10 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<DataColumn?> WriteReadSingleColumn(DataField field, DataColumn dataColumn) {
+        protected async Task<DataColumn?> WriteReadSingleColumn(DataColumn dataColumn) {
             using var ms = new MemoryStream();
             // write with built-in extension method
-            await ms.WriteSingleRowGroupParquetFileAsync(new ParquetSchema(field), dataColumn);
+            await ms.WriteSingleRowGroupParquetFileAsync(new ParquetSchema(dataColumn.Field), dataColumn);
             ms.Position = 0;
 
             //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
@@ -62,7 +62,7 @@ namespace Parquet.Test {
                 return null;
             ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
-            return await rgReader.ReadColumnAsync(field);
+            return await rgReader.ReadColumnAsync(dataColumn.Field);
         }
 
         protected async Task<Tuple<DataColumn[], ParquetSchema>> WriteReadSingleRowGroup(

@@ -115,7 +115,7 @@ namespace Parquet.Test.Serialisation {
             ms.Position = 0;
             IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
 
-            Assert.Equivalent(data2, data);
+            XAssert.JsonEquivalent(data, data2);
         }
 
         //[Fact]

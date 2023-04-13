@@ -265,15 +265,14 @@ namespace Parquet.Test.Schema {
         [Fact]
         public async Task Column_called_root() {
 
+            var schema = new ParquetSchema(
+                new DataField<string>("root"),
+                new DataField<string>("other"));
             var columns = new List<DataColumn>();
-            columns.Add(new DataColumn(new DataField<string>("root"), new string[] { "AAA" }));
-            columns.Add(new DataColumn(new DataField<string>("other"), new string[] { "BBB" }));
-            var fields = new List<Field>();
-            foreach(DataColumn column in columns)
-                fields.Add(column.Field);
+            columns.Add(new DataColumn(schema.GetDataFields()[0], new string[] { "AAA" }));
+            columns.Add(new DataColumn(schema.GetDataFields()[1], new string[] { "BBB" }));
 
             // the writer used to create structure type under "root" (https://github.com/aloneguid/parquet-dotnet/issues/143)
-            var schema = new ParquetSchema(fields);
             var ms = new MemoryStream();
             using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms))
             using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())
@@ -281,14 +280,13 @@ namespace Parquet.Test.Schema {
                     await groupWriter.WriteColumnAsync(column);
 
             ms.Position = 0;
-            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(ms)) {
-                DataField[] dataFields = parquetReader.Schema.GetDataFields();
-                for(int i = 0; i < parquetReader.RowGroupCount; i++)
-                    using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i))
-                        foreach(DataColumn column in columns) {
-                            DataColumn c = await groupReader.ReadColumnAsync(column.Field);
-                        }
-            }
+            using ParquetReader parquetReader = await ParquetReader.CreateAsync(ms);
+            DataField[] dataFields = parquetReader.Schema.GetDataFields();
+            for(int i = 0; i < parquetReader.RowGroupCount; i++)
+                using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i))
+                    foreach(DataColumn column in columns) {
+                        DataColumn c = await groupReader.ReadColumnAsync(column.Field);
+                    }
         }
 
         [Fact]
@@ -296,20 +294,20 @@ namespace Parquet.Test.Schema {
             var field = new DateTimeDataField("Date", DateTimeFormat.DateAndTime, true);
             var schema = new ParquetSchema(field);
 
-            using(var memoryStream = new MemoryStream()) {
-                using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream))
-                using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
-                    var dataColumn = new DataColumn(field, new List<DateTime>() { DateTime.Now }.ToArray());
-                    await groupWriter.WriteColumnAsync(dataColumn);
-                }
+            using var memoryStream = new MemoryStream();
 
-                using(ParquetReader parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
-                    parquetReader.Schema.Fields.ToString();
+            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream))
+            using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
+                var dataColumn = new DataColumn(field, new List<DateTime?>() { DateTime.Now }.ToArray());
+                await groupWriter.WriteColumnAsync(dataColumn);
+            }
 
-                    Assert.Single(schema.Fields);
-                    Assert.Equal(schema.Fields.Count, parquetReader.Schema.Fields.Count);
-                    Assert.Equal(schema.Fields.First().GetType(), parquetReader.Schema.Fields.First().GetType());
-                }
+            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
+                parquetReader.Schema.Fields.ToString();
+
+                Assert.Single(schema.Fields);
+                Assert.Equal(schema.Fields.Count, parquetReader.Schema.Fields.Count);
+                Assert.Equal(schema.Fields.First().GetType(), parquetReader.Schema.Fields.First().GetType());
             }
         }
 

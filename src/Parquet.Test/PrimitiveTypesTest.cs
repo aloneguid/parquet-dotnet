@@ -18,7 +18,7 @@ namespace Parquet.Test {
                 data[i] = true;
             }
 
-            DataColumn? read = await WriteReadSingleColumn(id, new DataColumn(id, data));
+            DataColumn? read = await WriteReadSingleColumn(new DataColumn(id, data));
 
             for(int i = 0; i < count; i++) {
                 Assert.True((bool)read!.Data.GetValue(i)!, $"got FALSE at position {i}");
@@ -29,14 +29,14 @@ namespace Parquet.Test {
         [Theory]
         [InlineData(100)]
         public async Task Write_bunch_of_uints(uint count) {
-            var id = new DataField<uint>("uint");
+            var schema = new ParquetSchema(new DataField<uint>("uint"));
 
             uint[] data = new uint[count];
             for(uint i = 0; i < count; i++) {
                 data[i] = uint.MaxValue - i;
             }
 
-            DataColumn? read = await WriteReadSingleColumn(id, new DataColumn(id, data));
+            DataColumn? read = await WriteReadSingleColumn(new DataColumn(schema.GetDataFields()[0], data));
             for(uint i = 0; i < count; i++) {
                 uint result = (uint)read!.Data.GetValue(i)!;
                 Assert.Equal(uint.MaxValue - i, result);
@@ -46,14 +46,14 @@ namespace Parquet.Test {
         [Theory]
         [InlineData(100)]
         public async Task Write_bunch_of_ulongs(ulong count) {
-            var id = new DataField<ulong>("longs");
+            var schema = new ParquetSchema(new DataField<ulong>("longs"));
 
             ulong[] data = new ulong[count];
             for(uint i = 0; i < count; i++) {
                 data[i] = ulong.MaxValue - i;
             }
 
-            DataColumn? read = await WriteReadSingleColumn(id, new DataColumn(id, data));
+            DataColumn? read = await WriteReadSingleColumn(new DataColumn(schema.GetDataFields()[0], data));
             for(uint i = 0; i < count; i++) {
                 ulong result = (ulong)read!.Data.GetValue(i)!;
                 Assert.Equal(ulong.MaxValue - i, result);
