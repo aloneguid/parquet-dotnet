@@ -119,15 +119,15 @@ Then, data columns need to be prepared for writing. As parquet is column-based f
 
 ```csharp
 var column1 = new DataColumn(
-    (DataField)schema[0],
+    schema.DataFields[0],
     Enumerable.Range(0, 1_000_000).Select(i => DateTime.UtcNow.AddSeconds(i)).ToArray());
 
 var column2 = new DataColumn(
-    (DataField)schema[1],
+    schema.DataFields[1],
     Enumerable.Range(0, 1_000_000).Select(i => i % 2 == 0 ? "on" : "off").ToArray());
 
 var column3 = new DataColumn(
-    (DataField)schema[2],
+    schema.DataFields[2],
     Enumerable.Range(0, 1_000_000).Select(i => (double)i).ToArray());
 ```
 

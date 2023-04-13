@@ -106,6 +106,11 @@ namespace Parquet.Schema {
         }
 
         /// <summary>
+        /// Gets data fields in this schema, including from nested types. Equivalent to <see cref="GetDataFields"/>
+        /// </summary>
+        public DataField[] DataFields => GetDataFields();
+
+        /// <summary>
         /// Indicates whether the current object is equal to another object of the same type.
         /// </summary>
         /// <param name="other">An object to compare with this object.</param>

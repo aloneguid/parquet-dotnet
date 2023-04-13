@@ -125,17 +125,19 @@ namespace Parquet.Test {
         }
 
         public async Task WriteIntro() {
+            // create file schema
+            var schema = new ParquetSchema(
+                new DataField<int>("id"),
+                new DataField<string>("city"));
+
             //create data columns with schema metadata and the data you need
             var idColumn = new DataColumn(
-               new DataField<int>("id"),
+               schema.DataFields[0],
                new int[] { 1, 2 });
 
             var cityColumn = new DataColumn(
-               new DataField<string>("city"),
+               schema.DataFields[1],
                new string[] { "London", "Derby" });
-
-            // create file schema
-            var schema = new ParquetSchema(idColumn.Field, cityColumn.Field);
 
             using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
                 using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
@@ -152,20 +154,20 @@ namespace Parquet.Test {
 
         public async Task AppendDemo() {
             //write a file with a single row group
-            var id = new DataField<int>("id");
+            var schema = new ParquetSchema(new DataField<int>("id"));
             var ms = new MemoryStream();
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1, 2 }));
+                    await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 1, 2 }));
                 }
             }
 
             //append to this file. Note that you cannot append to existing row group, therefore create a new one
             ms.Position = 0;    // this is to rewind our memory stream, no need to do it in real code.
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms, append: true)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, append: true)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                    await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3, 4 }));
+                    await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 3, 4 }));
                 }
             }
 
@@ -176,12 +178,12 @@ namespace Parquet.Test {
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(2, rg.RowCount);
-                    Assert.Equal(new int[] { 1, 2 }, (await rg.ReadColumnAsync(id)).Data);
+                    Assert.Equal(new int[] { 1, 2 }, (await rg.ReadColumnAsync(schema.DataFields[0])).Data);
                 }
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
                     Assert.Equal(2, rg.RowCount);
-                    Assert.Equal(new int[] { 3, 4 }, (await rg.ReadColumnAsync(id)).Data);
+                    Assert.Equal(new int[] { 3, 4 }, (await rg.ReadColumnAsync(schema.DataFields[0])).Data);
                 }
 
             }
@@ -189,17 +191,17 @@ namespace Parquet.Test {
 
         public async Task CustomMetadata() {
             var ms = new MemoryStream();
-            var id = new DataField<int>("id");
+            var schema = new ParquetSchema(new DataField<int>("id"));
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 writer.CustomMetadata = new Dictionary<string, string> {
                     ["key1"] = "value1",
                     ["key2"] = "value2"
                 };
 
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                    await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new[] { 1, 2, 3, 4 }));
                 }
             }
 
