@@ -33,11 +33,7 @@ namespace Parquet.File {
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
-            if(!dataField.IsAttachedToSchema) {
-                throw new ArgumentException(
-                    $"Field [{dataField}] is not attached to any schema. You need to construct a schema passing in this field first.",
-                    nameof(dataField));
-            }
+            dataField.EnsureAttachedToSchema(nameof(dataField));
 
             _thriftStream = new ThriftStream(inputStream);
             _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
@@ -70,7 +66,7 @@ namespace Parquet.File {
             }
 
             // all the data is available here!
-            DataColumn column = pc.Unpack(_options.UnpackDefinitions);
+            DataColumn column = pc.Unpack();
 
             if(_thriftColumnChunk.Meta_data.Statistics != null) {
 
@@ -137,10 +133,8 @@ namespace Parquet.File {
             // Dictionary should not contains null values
             Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
 
-            if(!ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values,
-                   _thriftSchemaElement!, bytes.AsSpan(), out int dictionaryOffset)) {
-                throw new IOException("could not decode");
-            }
+            ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values,
+                   _thriftSchemaElement!, bytes.AsSpan(), out int dictionaryOffset);
 
             pc.AssignDictionary(dictionary);
         }
@@ -270,12 +264,10 @@ namespace Parquet.File {
             switch(encoding) {
                 case Thrift.Encoding.PLAIN: { // 0
                         Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        if(!ParquetPlainEncoder.Decode(plainData,
+                        ParquetPlainEncoder.Decode(plainData,
                             offset,
                             totalValuesInPage,
-                            _thriftSchemaElement!, src, out int read)) {
-                            throw new IOException("could not decode");
-                        }
+                            _thriftSchemaElement!, src, out int read);
                         pc.MarkUsefulPlainData(read);
                     }
                     break;
@@ -285,7 +277,7 @@ namespace Parquet.File {
                         Span<int> span = pc.AllocateOrGetDictionaryIndexes((int)totalValuesInChunk);
                         int indexCount = ReadRleDictionary(src, totalValuesInPage, span);
                         pc.MarkUsefulDictionaryIndexes(indexCount);
-                        pc.UnpackCheckpoint();
+                        pc.Checkpoint();
                         //cd.dictionary!.ExplodeFast(span.Slice(0, totalValuesInPage), cd.values, cd.valuesOffset, indexCount);
                         //cd.valuesOffset += indexCount;
                     }
@@ -297,7 +289,7 @@ namespace Parquet.File {
                             _thriftSchemaElement!.Type_length,
                             src.Length, out int usedLength, span, totalValuesInPage);
                         pc.MarkUsefulDictionaryIndexes(indexCount);
-                        pc.UnpackCheckpoint();
+                        pc.Checkpoint();
                         //cd.dictionary!.ExplodeFast(span.Slice(0, totalValuesInPage), cd.values, cd.valuesOffset, indexCount);
                         //cd.valuesOffset += indexCount;
                     }

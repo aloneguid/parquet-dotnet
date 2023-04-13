@@ -8,7 +8,8 @@ using Parquet.Schema;
 namespace Parquet.File {
 
     /// <summary>
-    /// Represents column data packed into Parquet logical parts.
+    /// Represents column data packed into Parquet logical parts. This is an intermediate data structure that
+    /// will be incorporated into <see cref="DataColumn"/> when the times are better.
     /// </summary>
     class PackedColumn : IDisposable {
 
@@ -28,9 +29,9 @@ namespace Parquet.File {
 
         private int[]? _definitionLevels;
         private int _definitionOffset = 0;
+        private bool _areDefinitionsPooled;
 
         private Array _plainData;
-        private int _plainDataOffset;
         private int _plainDataCount;
 
         private readonly DataColumn? _column;
@@ -38,10 +39,10 @@ namespace Parquet.File {
         public PackedColumn(DataColumn column) {
             _field = column.Field;
             _column = column;
+            _definitionLevels = column.DefinitionLevels;
             _repetitionLevels = column.RepetitionLevels;
-            _plainData = column.Data;
-            _plainDataOffset = column.Offset;
-            _plainDataCount = column.Count;
+            _plainData = column.DefinedData;
+            _plainDataCount = column.DefinedData.Length;
         }
 
         public PackedColumn(DataField df, int valueCountIncludingNulls) {
@@ -98,6 +99,7 @@ namespace Parquet.File {
 
         public Span<int> GetWriteableDefinitionLevelSpan() {
             _definitionLevels ??= IntPool.Rent(_plainData.Length + 8);
+            _areDefinitionsPooled = true;
 
             return _definitionLevels.AsSpan(_definitionOffset);
         }
@@ -117,7 +119,7 @@ namespace Parquet.File {
         public int DefinitionsRead => _definitionOffset;
 
         public Array GetPlainData(out int offset, out int count) {
-            offset = _plainDataOffset;
+            offset = 0;
             count = _plainDataCount;
             return _plainData;
         }
@@ -142,42 +144,22 @@ namespace Parquet.File {
         /// <summary>
         /// Sets statistics: null count
         /// </summary>
-        public void Pack(int maxDefinitionLevel, bool useDictionaryEncoding, double dictionaryThreshold) {
+        public void Pack(bool useDictionaryEncoding, double dictionaryThreshold) {
 
-            // 1. definition levels
+            if(_column == null)
+                throw new NullReferenceException();
 
-            if(maxDefinitionLevel > 0) {
-                int nullCount = _column!.CalculateNullCount();
-                _column.Statistics.NullCount = nullCount;
-
-                // having exact null count we can allocate/rent just the right buffer
-                Array packedData = _column.Field.CreateArray(_column.Count - nullCount);
-                _definitionLevels = IntPool.Rent(_column.Count);
-
-                DataColumn.PackDefinitions(_definitionLevels.AsSpan(0, _column.Count),
-                    _plainData!, _plainDataOffset, _plainDataCount,
-                    packedData,
-                    maxDefinitionLevel);
-
-                _plainData = packedData;
-                _plainDataOffset = 0;
-                _plainDataCount = _column.Count - nullCount;
-            } else {
-                _column!.Statistics.NullCount = 0;
-            }
-
-            // 2. try to extract dictionary
+            // try to extract dictionary
 
             if(useDictionaryEncoding && 
                 // for some reason some readers do NOT understand dictionary-encoded arrays, but lists or plain columns are just fine
                 !_column.Field.IsArray &&
                 ParquetDictionaryEncoder.TryExtractDictionary(_column.Field.ClrType,
-                    _plainData!, _plainDataOffset, _plainDataCount,
+                    _plainData!, 0, _plainDataCount,
                     out _dictionary, out _dictionaryIndexes, dictionaryThreshold)) {
 
                 // if dictionary is successfully extracted, plainData is invalid
                 _plainData = Array.Empty<string>();
-                _plainDataOffset = 0;
                 _plainDataCount = 0;
 
                 _column.Statistics.DistinctCount = _dictionary!.Length;
@@ -186,7 +168,7 @@ namespace Parquet.File {
             }
         }
 
-        public void UnpackCheckpoint() {
+        public void Checkpoint() {
 
             if(_dictionaryIndexes != null && _dictionary != null) {
                 _dictionary.ExplodeFast(
@@ -200,17 +182,26 @@ namespace Parquet.File {
             }
         }
 
-        public DataColumn Unpack(bool unpackDefinitions) {
+        public DataColumn Unpack() {
 
-            UnpackCheckpoint();
+            Checkpoint();
 
             if(_plainData == null)
                 throw new InvalidOperationException("no plain data");
 
-            return new DataColumn(_field, _plainData,
-                DefinitionLevels?.AsSpan(0,  _definitionOffset).ToArray(),
-                RepetitionLevels?.AsSpan(0, _repetitionOffset).ToArray(),
-                unpackDefinitions);
+            // todo: slice array to _plainDataCount
+
+            Array dcData;
+            if(_plainDataCount != _plainData.Length) {
+                dcData = _field.CreateArray(_plainDataCount);
+                Array.Copy(_plainData, dcData, _plainDataCount);
+            } else {
+                dcData = _plainData;
+            }
+
+            return new DataColumn(_field, dcData,
+                DefinitionLevels?.AsSpan(0, _definitionOffset).ToArray(),
+                RepetitionLevels?.AsSpan(0, _repetitionOffset).ToArray());
         }
 
         public void Dispose() {
@@ -219,7 +210,7 @@ namespace Parquet.File {
                 IntPool.Return(_repetitionLevels);
             }
 
-            if(_definitionLevels != null) {
+            if(_definitionLevels != null && _areDefinitionsPooled) {
                 IntPool.Return(_definitionLevels);
             }
 

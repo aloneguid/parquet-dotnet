@@ -27,10 +27,5 @@ namespace Parquet {
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
-
-        /// <summary>
-        /// When set (default) <see cref="DataColumn"/> contains values with defnition levels applied.
-        /// </summary>
-        internal bool UnpackDefinitions { get; set; } = true;
     }
 }

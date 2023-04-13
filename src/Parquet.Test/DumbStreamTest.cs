@@ -19,7 +19,7 @@ namespace Parquet.Test {
                 DateTime[] data = new DateTime[10000];
                 for(int i = 0; i < 10000; i++)
                     data[i] = DateTime.UtcNow.AddMilliseconds(i);
-                await rowGroupWriter.WriteColumnAsync(new DataColumn(field, data, 0, 10000));
+                await rowGroupWriter.WriteColumnAsync(new DataColumn(field, data));
             }
 
             int fileSize = (int)memoryFileStream.Length;

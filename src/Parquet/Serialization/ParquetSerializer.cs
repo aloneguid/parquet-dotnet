@@ -57,7 +57,7 @@ namespace Parquet.Serialization {
                     DataColumn dc;
                     try {
                         ShreddedColumn sc = fs.Stripe(fs.Field, objectInstances);
-                        dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels, sc.RepetitionLevels);
+                        dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels?.ToArray(), sc.RepetitionLevels?.ToArray());
                         await rg.WriteColumnAsync(dc, cancellationToken);
                     } catch(Exception ex) {
                         throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
@@ -107,7 +107,7 @@ namespace Parquet.Serialization {
 
             var result = new List<T>();
 
-            using ParquetReader reader = await ParquetReader.CreateAsync(source, new ParquetOptions { UnpackDefinitions = false });
+            using ParquetReader reader = await ParquetReader.CreateAsync(source);
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 

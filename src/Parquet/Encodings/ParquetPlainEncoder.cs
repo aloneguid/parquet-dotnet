@@ -21,7 +21,7 @@ namespace Parquet.Encodings {
         private static readonly byte[] ZeroInt32 = BitConverter.GetBytes(0);
         private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
-        public static bool Encode(
+        public static void Encode(
             Array data, int offset, int count,
             SchemaElement tse,
             Stream destination,
@@ -32,112 +32,94 @@ namespace Parquet.Encodings {
                 Span<bool> span = ((bool[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 // no stats for bools
-                return true;
             } else if(t == typeof(byte[])) {
                 Span<byte> span = ((byte[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(sbyte[])) {
                 Span<sbyte> span = ((sbyte[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(short[])) {
                 Span<short> span = ((short[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(ushort[])) {
                 Span<ushort> span = ((ushort[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(int[])) {
                 Span<int> span = ((int[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(uint[])) {
                 Span<uint> span = ((uint[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(long[])) {
                 Span<long> span = ((long[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(ulong[])) {
                 Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(BigInteger[])) {
                 Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(decimal[])) {
                 Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(float[])) {
                 Span<float> span = ((float[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
                 Encode(span, destination);
-                return true;
             } else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(Interval[])) {
                 Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 // no stats, maybe todo
-                return true;
             } else if(t == typeof(string[])) {
                 Span<string> span = ((string[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
+            } else {
+                throw new NotSupportedException($"no PLAIN encoder exists for {t}");
             }
-
-            return false;
         }
 
-        public static bool Decode(
+        public static void Decode(
             Array data, int offset, int count,
             SchemaElement tse,
             Span<byte> source,
@@ -151,77 +133,57 @@ namespace Parquet.Encodings {
 
             if(t == typeof(bool[])) {
                 elementsRead = Decode(source, ((bool[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(byte[])) {
                 elementsRead = Decode(source, ((byte[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(sbyte[])) {
                 elementsRead = Decode(source, ((sbyte[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(short[])) {
                 elementsRead = Decode(source, ((short[])data).AsSpan(offset, count));
-                return true;
-
             } else if(t == typeof(ushort[])) {
                 elementsRead = Decode(source, ((ushort[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(int[])) {
                 Span<int> span = ((int[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(uint[])) {
                 Span<uint> span = ((uint[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(long[])) {
                 Span<long> span = ((long[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(ulong[])) {
                 Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(BigInteger[])) {
                 Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(decimal[])) {
                 Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
             } else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
-
             } else if(t == typeof(float[])) {
                 Span<float> span = ((float[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
             } else if(t == typeof(Interval[])) {
                 Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(string[])) {
                 Span<string> span = ((string[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
+            } else {
+                elementsRead = 0;
+                throw new NotSupportedException($"no PLAIN decoder exists for {t}");
             }
-
-            elementsRead = 0;
-            return false;
         }
 
         #region [ Single Value Encoding ]

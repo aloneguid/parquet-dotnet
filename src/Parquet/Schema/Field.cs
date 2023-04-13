@@ -48,12 +48,12 @@ namespace Parquet.Schema {
         /// <summary>
         /// Max repetition level
         /// </summary>
-        public int MaxRepetitionLevel { get; internal set; }
+        public int MaxRepetitionLevel { get; protected set; }
 
         /// <summary>
         /// Max definition level
         /// </summary>
-        public int MaxDefinitionLevel { get; internal set; }
+        public int MaxDefinitionLevel { get; protected set; }
 
         /// <summary>
         /// Used internally for serialisation

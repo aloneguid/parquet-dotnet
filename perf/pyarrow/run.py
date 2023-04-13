@@ -10,6 +10,7 @@ import pyarrow.parquet as pq
 
 df = pd.DataFrame({
     "ints": [1, 2, 3],
+    "tags": [[1, 2], [3, 4], [5, 6]]
 }, index=list("abc"))
 
 table = pa.Table.from_pandas(df, preserve_index=False)

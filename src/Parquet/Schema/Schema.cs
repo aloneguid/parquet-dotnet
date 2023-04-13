@@ -68,7 +68,7 @@ namespace Parquet.Schema {
         }
 
         /// <summary>
-        /// Gets a flat list of all data fields in this schema
+        /// Gets a flat list of all data fields in this schema. Traverses schema tree in order to do that.
         /// </summary>
         /// <returns></returns>
         public DataField[] GetDataFields() {
@@ -104,6 +104,11 @@ namespace Parquet.Schema {
 
             return result.ToArray();
         }
+
+        /// <summary>
+        /// Gets data fields in this schema, including from nested types. Equivalent to <see cref="GetDataFields"/>
+        /// </summary>
+        public DataField[] DataFields => GetDataFields();
 
         /// <summary>
         /// Indicates whether the current object is equal to another object of the same type.

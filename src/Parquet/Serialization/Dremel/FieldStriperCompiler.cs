@@ -106,9 +106,13 @@ namespace Parquet.Serialization.Dremel {
                 }
             }
 
+
             // non-atomics still need RL and DL dumped
             return Expression.Block(
-                _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
+                _hasDls
+                    ? Expression.Call(_dlsVar, LevelsAddMethod,
+                        Expression.Condition(isLeaf, Expression.Constant(dl -1), Expression.Constant(dl)))
+                    : Expression.Empty(),
                 _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
 
         }
@@ -121,6 +125,8 @@ namespace Parquet.Serialization.Dremel {
 
         private Expression WhileBody(Expression element, bool isAtomic, int dl, ParameterExpression currentRlVar,
             ParameterExpression seenFieldsVar, Field field, int rlDepth, Type elementType, List<string> path) {
+
+            // dl is DL of current element in path, not end DataField
 
             string suffix = field.Path.ToString().Replace(".", "_");
             ParameterExpression chRepetitionLevelVar = Expression.Variable(typeof(int), $"chRepetitionLevel_{suffix}");
