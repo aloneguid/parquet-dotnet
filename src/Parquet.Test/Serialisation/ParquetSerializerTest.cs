@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Test.Xunit;
 using Xunit;
@@ -103,14 +104,18 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Struct_WithNullProps_Serde() {
 
-            var data = Enumerable.Range(0, 1_000).Select(i => new AddressBookEntry {
+            var data = Enumerable.Range(0, 10).Select(i => new AddressBookEntry {
                 FirstName = "Joe",
                 LastName = "Bloggs"
                 // Address is null
             }).ToList();
 
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
+            ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
+
+            // Address.Country/City must be RL: 0, DL: 0 as Address is null
+
+            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\x.parquet");
 
             ms.Position = 0;
             IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
@@ -118,7 +123,7 @@ namespace Parquet.Test.Serialisation {
             XAssert.JsonEquivalent(data, data2);
         }
 
-        //[Fact]
+        [Fact]
         public async Task Struct_With_NestedNulls_Serde() {
 
             var data = new List<AddressBookEntry> {
@@ -131,8 +136,6 @@ namespace Parquet.Test.Serialisation {
                     }
                 }
             };
-
-            // serialiser puts (null, 0) for Address.City, but should put (null, 1)
 
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
