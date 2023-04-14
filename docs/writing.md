@@ -53,7 +53,6 @@ using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, file
 }
 ```
 
-
 ### Appending to Files
 
 This lib supports pseudo appending to files, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.

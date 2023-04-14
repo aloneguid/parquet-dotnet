@@ -266,5 +266,35 @@ namespace Parquet.Test.Serialisation {
             using var ms = new MemoryStream();
             await Assert.ThrowsAsync<IOException>(async () => await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { Append = true }));
         }
+
+        [Fact]
+        public async Task Specify_row_group_size() {
+            var data = Enumerable.Range(0, 100).Select(i => new Record {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = 20 });
+
+            // validate we have 5 row groups in the resuling file
+            ms.Position = 0;
+            using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+            Assert.Equal(5, reader.RowGroupCount);
+        }
+
+        [Fact]
+        public async Task Specify_row_group_size_too_small() {
+            var data = Enumerable.Range(0, 100).Select(i => new Record {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = 0 }));
+        }
     }
 }

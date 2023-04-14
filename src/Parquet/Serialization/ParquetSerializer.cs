@@ -20,6 +20,24 @@ namespace Parquet.Serialization {
         private static readonly Dictionary<Type, object> _typeToStriper = new();
         private static readonly Dictionary<Type, object> _typeToAssembler = new();
 
+        private static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, Striper<T> striper,
+            IEnumerable<T> objectInstances,
+            CancellationToken cancellationToken) {
+
+            using ParquetRowGroupWriter rg = writer.CreateRowGroup();
+
+            foreach(FieldStriper<T> fs in striper.FieldStripers) {
+                DataColumn dc;
+                try {
+                    ShreddedColumn sc = fs.Stripe(fs.Field, objectInstances);
+                    dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels?.ToArray(), sc.RepetitionLevels?.ToArray());
+                    await rg.WriteColumnAsync(dc, cancellationToken);
+                } catch(Exception ex) {
+                    throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
+                }
+            }
+        }
+
         /// <summary>
         /// Serialize 
         /// </summary>
@@ -51,17 +69,15 @@ namespace Parquet.Serialization {
                     writer.CompressionLevel = options.CompressionLevel;
                 }
 
-                using ParquetRowGroupWriter rg = writer.CreateRowGroup();
-
-                foreach(FieldStriper<T> fs in striper.FieldStripers) {
-                    DataColumn dc;
-                    try {
-                        ShreddedColumn sc = fs.Stripe(fs.Field, objectInstances);
-                        dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels?.ToArray(), sc.RepetitionLevels?.ToArray());
-                        await rg.WriteColumnAsync(dc, cancellationToken);
-                    } catch(Exception ex) {
-                        throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
+                if(options?.RowGroupSize != null) {
+                    int rgs = options.RowGroupSize.Value;
+                    if(rgs < 1)
+                        throw new InvalidOperationException($"row group size must be a positive number, but passed {rgs}");
+                    foreach(T[] chunk in objectInstances.Chunk(rgs)) {
+                        await SerializeRowGroupAsync<T>(writer, striper, chunk, cancellationToken);
                     }
+                } else {
+                    await SerializeRowGroupAsync<T>(writer, striper, objectInstances, cancellationToken);
                 }
             }
 

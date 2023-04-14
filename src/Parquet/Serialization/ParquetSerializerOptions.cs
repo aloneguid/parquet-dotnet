@@ -22,5 +22,15 @@ namespace Parquet.Serialization {
         /// </summary>
 
         public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.Optimal;
+
+        /// <summary>
+        /// Default size of row groups if not specified
+        /// </summary>
+        public const int DefaultRowGroupSize = 1_000_000;
+
+        /// <summary>
+        /// Custom row group size, if different from 
+        /// </summary>
+        public int? RowGroupSize { get; set; }
     }
 }

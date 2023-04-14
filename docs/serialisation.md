@@ -318,6 +318,16 @@ await ParquetSerializer.SerializeAsync(dataBatch3, ms, new ParquetSerializerOpti
 
 By following this pattern, you can easily append data to a Parquet file using `ParquetSerializer`.
 
+## Specifying Row Group Size
+
+Row groups are a logical division of data in a parquet file. They allow efficient filtering and scanning of data based on predicates. By default, all the class instances are serialized into a single row group, which is absolutely fine. If you need to set a custom row group size, you can specify it in `ParquetSerializerOptions` like so:
+
+```csharp
+await ParquetSerializer.SerializeAsync(data, stream, new ParquetSerializerOptions { RowGroupSize = 10_000_000 });
+```
+
+Note that small row groups make parquet files very inefficient in general, so you should use this parameter only when you are absolutely sure what you are doing. For example, if you have a very large dataset that needs to be split into smaller files for distributed processing, you might want to use a smaller row group size to avoid having too many rows in one file. However, this will also increase the file size and the metadata overhead, so you should balance the trade-offs carefully.
+
 ## FAQ
 
 **Q.** Can I specify schema for serialisation/deserialisation.
