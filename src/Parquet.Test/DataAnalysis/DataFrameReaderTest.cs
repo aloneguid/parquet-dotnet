@@ -51,5 +51,11 @@ namespace Parquet.Test.DataAnalysis {
             using Stream fs = OpenTestFile("postcodes.plain.parquet");
             DataFrame df = await fs.ReadParquetAsDataFrameAsync();
         }
+
+        [Fact]
+        public async Task Read_nested_file() {
+            using Stream fs = OpenTestFile("simplenested.parquet");
+            DataFrame df = await fs.ReadParquetAsDataFrameAsync();
+        }
     }
 }

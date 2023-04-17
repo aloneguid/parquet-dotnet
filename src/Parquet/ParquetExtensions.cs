@@ -163,13 +163,20 @@ namespace Parquet {
             using ParquetReader reader = await ParquetReader.CreateAsync(inputStream);
 
             var dfcs = new List<DataFrameColumn>();
+            var readableFields = reader.Schema.DataFields.Where(df => df.MaxRepetitionLevel == 0).ToList();
+            var columns = new List<DataFrameColumn>();
+
             for(int i = 0; i < reader.RowGroupCount; i++) {
                 using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(i);
 
-                foreach(DataField df in reader.Schema.DataFields.Where(df => df.MaxRepetitionLevel == 0)) {
-                    DataColumn dc = await rgr.ReadColumnAsync(df);
-                    DataFrameColumn dfc = DataFrameMapper.ToDataFrameColumn(dc);
-                    dfcs.Add(dfc);
+                for(int idf = 0; idf < readableFields.Count; idf++) {
+                    DataColumn dc = await rgr.ReadColumnAsync(readableFields[idf]);
+
+                    if(idf >= columns.Count) {
+                        dfcs.Add(DataFrameMapper.ToDataFrameColumn(dc));
+                    } else {
+                        DataFrameMapper.AppendValues(dfcs[idf], dc);
+                    }
                 }
             }
 

@@ -22,21 +22,52 @@ using Microsoft.Data.Analysis;
 namespace Parquet.Data.Analysis {
     static class DataFrameMapper {
         public static DataFrameColumn ToDataFrameColumn(DataColumn dc) {
+            string colName = string.Join("_", dc.Field.Path.ToList());
+
             <# foreach(var t in valueTypes) { #>
             if(dc.Field.ClrType == typeof(<#= t #>)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<<#= t #>>(dc.Field.Name, (<#= t #>[])dc.Data);
+                    return new PrimitiveDataFrameColumn<<#= t #>>(colName, (<#= t #>[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<<#= t #>>(dc.Field.Name, (<#= t #>?[])dc.Data);
+                    return new PrimitiveDataFrameColumn<<#= t #>>(colName, (<#= t #>?[])dc.Data);
                 }
             }
             <# } #>
             // special case
             if(dc.Field.ClrType == typeof(string)) {
-                return new StringDataFrameColumn(dc.Field.Name, (string[])dc.Data);
+                return new StringDataFrameColumn(colName, (string[])dc.Data);
             }
 
             throw new NotSupportedException(dc.Field.ClrType.Name);
+        }
+
+        public static void AppendValues(DataFrameColumn dfc, DataColumn dc) {
+            <# foreach(var t in valueTypes) { #>
+            if(dc.Field.ClrType == typeof(<#= t #>)) {
+                var tdfc = (PrimitiveDataFrameColumn<<#= t #>>)dfc;
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    foreach(<#= t #> el in (<#= t #>[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                } else {
+                    foreach(<#= t #>? el in (<#= t #>?[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                }
+                return;
+            }
+            <# } #>
+            // special case
+            if(dc.Field.ClrType == typeof(string)) {
+                var tdfc = (StringDataFrameColumn)dfc;
+                foreach(string el in (string[])dc.Data) {
+                    tdfc.Append(el);
+                }
+                return;
+            }
+
+            throw new NotSupportedException(dc.Field.ClrType.Name);
+
         }
     }
 }
