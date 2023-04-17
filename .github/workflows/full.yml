@@ -53,7 +53,7 @@ jobs:
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.sln -c release /p:Version=$VERSION-alpha-01 /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - uses: actions/upload-artifact@v3
       name: save
@@ -81,16 +81,3 @@ jobs:
           name: ${{ env.VERSION }}
           files: "src/Parquet/bin/Release/*.nupkg"
           generate_release_notes: true
-
-  publish-alpha:
-    needs: [build]
-    runs-on: ubuntu-latest
-    if: github.head_ref == 'dataframe2'
-    environment: nuget
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: nuget
-          path: nuget/
-      - name: Do It!
-        run: dotnet nuget push nuget/* --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
