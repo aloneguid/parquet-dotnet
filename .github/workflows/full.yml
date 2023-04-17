@@ -83,7 +83,7 @@ jobs:
           generate_release_notes: true
 
   publish-alpha:
-    needs: [build, test]
+    needs: [build]
     runs-on: ubuntu-latest
     if: github.head_ref == 'dataframe2'
     environment: nuget

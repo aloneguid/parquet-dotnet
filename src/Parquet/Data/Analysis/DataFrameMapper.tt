@@ -4,8 +4,19 @@
 <#@ output extension=".cs" #><#
     var valueTypes = new[] {
         "bool",
-        "int" };
+        "int",
+        "uint",
+        "long",
+        "ulong",
+        "byte",
+        "sbyte",
+        "DateTime",
+        "TimeSpan",
+        "decimal",
+        "float",
+        "double" };
 #>using System;
+using System.Numerics;
 using Microsoft.Data.Analysis;
 
 namespace Parquet.Data.Analysis {

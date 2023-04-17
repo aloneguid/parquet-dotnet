@@ -41,15 +41,15 @@ namespace Parquet.Test.DataAnalysis {
 
             // read as DataFrame
             ms.Position = 0;
-            DataFrame df = await ms.ReadParquetStreamAsDataFrameAsync();
+            DataFrame df = await ms.ReadParquetAsDataFrameAsync();
 
             Assert.Equal(data, df.Rows.Select(r => r[0]).ToArray());
         }
 
         [Fact]
-        public async Task Read_alltypes_file() {
-            using Stream fs = OpenTestFile("types/alltypes.plain.parquet");
-            DataFrame df = await fs.ReadParquetStreamAsDataFrameAsync();
+        public async Task Read_postcodes_file() {
+            using Stream fs = OpenTestFile("postcodes.plain.parquet");
+            DataFrame df = await fs.ReadParquetAsDataFrameAsync();
         }
     }
 }

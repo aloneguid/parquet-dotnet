@@ -159,7 +159,7 @@ namespace Parquet {
         /// </summary>
         /// <param name="inputStream"></param>
         /// <returns></returns>
-        public static async Task<DataFrame> ReadParquetStreamAsDataFrameAsync(this Stream inputStream) {
+        public static async Task<DataFrame> ReadParquetAsDataFrameAsync(this Stream inputStream) {
             using ParquetReader reader = await ParquetReader.CreateAsync(inputStream);
 
             var dfcs = new List<DataFrameColumn>();
