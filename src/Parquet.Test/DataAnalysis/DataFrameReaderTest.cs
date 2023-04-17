@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.Analysis;
 using Parquet.Encodings;
@@ -9,45 +7,43 @@ using Parquet.Schema;
 using Xunit;
 using System.Linq;
 using Parquet.Data;
-using NetBox.Generator;
 
 namespace Parquet.Test.DataAnalysis {
     public class DataFrameReaderTest {
 
-        private Array CreateData(Type t) {
-            switch (t) {
-                case Type intType when intType == typeof(int):
-                    return new int[] { 1, 2, 3 };
-                case Type boolType when boolType == typeof(bool):
-                    return new[] { true, false, true };
-                default:
-                    throw new NotImplementedException(t.ToString());
-            }
-        }
+        [Theory]
+        [InlineData(typeof(int), 1, 2)]
+        [InlineData(typeof(int?), null, 2)]
+        [InlineData(typeof(bool), true, false)]
+        [InlineData(typeof(bool?), true, null)]
+        [InlineData(typeof(string), "1", "2")]
+        [InlineData(typeof(string), null, "2")]
+        public async Task Read_all_types(Type t, object el1, object el2) {
 
-        [Fact]
-        public async Task Read_all_types() {
+            // arrange
             using var ms = new MemoryStream();
+            var data = Array.CreateInstance(t, 2);
+            data.SetValue(el1, 0);
+            data.SetValue(el2, 1);
 
-            Type[] types = SchemaEncoder.SupportedTypes.Take(2).ToArray();
 
             // make schema
-            var schema = new ParquetSchema(types.Select(t => new DataField(t.Name, t)).ToList());
+            var schema = new ParquetSchema(new DataField(t.Name, t));
 
             // make data
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
-                foreach(Type t in types) {
-                    var dc = new DataColumn(
-                        schema.DataFields.First(f => f.Name == t.Name), CreateData(t));
-                    await rgw.WriteColumnAsync(dc);
-                }
+                var dc = new DataColumn(schema.DataFields[0], data);
+
+                await rgw.WriteColumnAsync(dc);
             }
 
             // read as DataFrame
             ms.Position = 0;
             DataFrame df = await ms.ReadParquetStreamAsDataFrameAsync();
+
+            Assert.Equal(data, df.Rows.Select(r => r[0]).ToArray());
         }
     }
 }

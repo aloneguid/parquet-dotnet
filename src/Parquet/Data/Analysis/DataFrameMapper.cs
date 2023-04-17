@@ -1,28 +1,30 @@
-﻿
-
-using System;
+﻿using System;
 using Microsoft.Data.Analysis;
 
 namespace Parquet.Data.Analysis {
     static class DataFrameMapper {
         public static DataFrameColumn ToDataFrameColumn(DataColumn dc) {
             
-            if(dc.Field.ClrType == typeof(System.Boolean)) {
-                var dfc = new PrimitiveDataFrameColumn<System.Boolean>(dc.Field.Name);
-                foreach(System.Boolean el in (System.Boolean[])dc.Data) {
-                    dfc.Append(el);
+            if(dc.Field.ClrType == typeof(bool)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new PrimitiveDataFrameColumn<bool>(dc.Field.Name, (bool[])dc.Data);
+                } else {
+                    return new PrimitiveDataFrameColumn<bool>(dc.Field.Name, (bool?[])dc.Data);
                 }
-                return dfc;
             }
             
-            if(dc.Field.ClrType == typeof(System.Int32)) {
-                var dfc = new PrimitiveDataFrameColumn<System.Int32>(dc.Field.Name);
-                foreach(System.Int32 el in (System.Int32[])dc.Data) {
-                    dfc.Append(el);
+            if(dc.Field.ClrType == typeof(int)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new PrimitiveDataFrameColumn<int>(dc.Field.Name, (int[])dc.Data);
+                } else {
+                    return new PrimitiveDataFrameColumn<int>(dc.Field.Name, (int?[])dc.Data);
                 }
-                return dfc;
             }
             
+            // special case
+            if(dc.Field.ClrType == typeof(string)) {
+                return new StringDataFrameColumn(dc.Field.Name, (string[])dc.Data);
+            }
 
             throw new NotSupportedException(dc.Field.ClrType.Name);
         }

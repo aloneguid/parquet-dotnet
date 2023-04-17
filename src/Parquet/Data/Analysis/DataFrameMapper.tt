@@ -1,25 +1,29 @@
 ﻿<#@ template debug="false" hostspecific="false" language="C#" #>
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.Collections.Generic" #>
-<#@ output extension=".cs" #>
-<#
-    var types = new[] { typeof(bool), typeof(int) };
-#>
-using System;
+<#@ output extension=".cs" #><#
+    var valueTypes = new[] {
+        "bool",
+        "int" };
+#>using System;
 using Microsoft.Data.Analysis;
 
 namespace Parquet.Data.Analysis {
     static class DataFrameMapper {
         public static DataFrameColumn ToDataFrameColumn(DataColumn dc) {
-            <# foreach(var t in types) { #>
+            <# foreach(var t in valueTypes) { #>
             if(dc.Field.ClrType == typeof(<#= t #>)) {
-                var dfc = new PrimitiveDataFrameColumn<<#= t #>>(dc.Field.Name);
-                foreach(<#= t #> el in (<#= t #>[])dc.Data) {
-                    dfc.Append(el);
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new PrimitiveDataFrameColumn<<#= t #>>(dc.Field.Name, (<#= t #>[])dc.Data);
+                } else {
+                    return new PrimitiveDataFrameColumn<<#= t #>>(dc.Field.Name, (<#= t #>?[])dc.Data);
                 }
-                return dfc;
             }
             <# } #>
+            // special case
+            if(dc.Field.ClrType == typeof(string)) {
+                return new StringDataFrameColumn(dc.Field.Name, (string[])dc.Data);
+            }
 
             throw new NotSupportedException(dc.Field.ClrType.Name);
         }
