@@ -1,7 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.Analysis;
 using Parquet.Data;
+using Parquet.Data.Analysis;
 using Parquet.Rows;
 using Parquet.Schema;
 
@@ -147,6 +152,35 @@ namespace Parquet {
             foreach(DataColumn dc in table.ExtractDataColumns()) {
                 await writer.WriteColumnAsync(dc);
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="inputStream"></param>
+        /// <returns></returns>
+        public static async Task<DataFrame> ReadParquetAsDataFrameAsync(this Stream inputStream) {
+            using ParquetReader reader = await ParquetReader.CreateAsync(inputStream);
+
+            var dfcs = new List<DataFrameColumn>();
+            var readableFields = reader.Schema.DataFields.Where(df => df.MaxRepetitionLevel == 0).ToList();
+            var columns = new List<DataFrameColumn>();
+
+            for(int i = 0; i < reader.RowGroupCount; i++) {
+                using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(i);
+
+                for(int idf = 0; idf < readableFields.Count; idf++) {
+                    DataColumn dc = await rgr.ReadColumnAsync(readableFields[idf]);
+
+                    if(idf >= columns.Count) {
+                        dfcs.Add(DataFrameMapper.ToDataFrameColumn(dc));
+                    } else {
+                        DataFrameMapper.AppendValues(dfcs[idf], dc);
+                    }
+                }
+            }
+
+            return new DataFrame(dfcs);
         }
     }
 }

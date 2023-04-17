@@ -1,7 +1,7 @@
 name: 'Full Workflow'
 
 env:
-  VERSION: 4.7.1
+  VERSION: 4.8.0
   ASM_VERSION: 4.0.0
 
 on:
@@ -40,6 +40,7 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
+    - run: echo ${{ github.head_ref }}
     - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3

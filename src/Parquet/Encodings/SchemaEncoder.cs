@@ -105,6 +105,8 @@ namespace Parquet.Encodings {
             }
 
             public bool IsSupported(SType? t) => t != null && _supportedTypes.Contains(t);
+
+            public SType[] SupportedTypes => _supportedTypes.ToArray();
         }
 
         [Obsolete]
@@ -265,6 +267,8 @@ namespace Parquet.Encodings {
         }
 
         public static bool IsSupported(SType? t) => t == typeof(DateTime) || _lt.IsSupported(t);
+
+        public static SType[] SupportedTypes => _lt.SupportedTypes;
 
         /// <summary>
         /// Builds <see cref="Field"/> from thrift schema
