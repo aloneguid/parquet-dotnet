@@ -48,7 +48,7 @@ namespace Parquet.Test.DataAnalysis {
 
         [Fact]
         public async Task Read_alltypes_file() {
-            using Stream fs = OpenTestFile("types/alltypes.parquet");
+            using Stream fs = OpenTestFile("types/alltypes.plain.parquet");
             DataFrame df = await fs.ReadParquetStreamAsDataFrameAsync();
         }
     }

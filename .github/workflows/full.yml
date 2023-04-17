@@ -85,7 +85,7 @@ jobs:
   publish-alpha:
     needs: [build, test]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dataframe2'
+    if: github.head_ref == 'dataframe2'
     environment: nuget
     steps:
       - uses: actions/download-artifact@v2
