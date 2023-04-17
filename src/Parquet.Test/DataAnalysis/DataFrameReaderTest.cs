@@ -47,7 +47,7 @@ namespace Parquet.Test.DataAnalysis {
 
             // read as DataFrame
             ms.Position = 0;
-            DataFrame df = await ms.ReadAsDataFrameAsync();
+            DataFrame df = await ms.ReadParquetStreamAsDataFrameAsync();
         }
     }
 }

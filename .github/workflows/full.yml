@@ -80,3 +80,16 @@ jobs:
           name: ${{ env.VERSION }}
           files: "src/Parquet/bin/Release/*.nupkg"
           generate_release_notes: true
+
+  publish-alpha:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dataframe2'
+    environment: nuget
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: nuget
+          path: nuget/
+      - name: Do It!
+        run: dotnet nuget push nuget/* --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
