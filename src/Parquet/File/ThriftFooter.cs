@@ -24,6 +24,18 @@ namespace Parquet.File {
             _tree = new ThriftSchemaTree(_fileMeta.Schema);
         }
 
+        internal static ParquetSchema Parse(params Thrift.SchemaElement[] elements) {
+
+            var slst = new List<Thrift.SchemaElement> {
+                new Thrift.SchemaElement("root") { Num_children = 1 },
+            };
+            slst.AddRange(elements);
+
+            return new ThriftFooter(new Thrift.FileMetaData {
+                Schema = slst
+            }).CreateModelSchema(null);
+        }
+
         public ThriftFooter(ParquetSchema schema, long totalRowCount) {
             if(schema == null) {
                 throw new ArgumentNullException(nameof(schema));

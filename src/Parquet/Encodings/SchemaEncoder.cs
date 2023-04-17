@@ -169,22 +169,28 @@ namespace Parquet.Encodings {
             ref int index, out int ownedChildren,
             out ListField? field) {
 
-            Thrift.SchemaElement se = schema[index];
+            Thrift.SchemaElement outerGroup = schema[index];
 
-            if(!(se.__isset.converted_type && se.Converted_type == Thrift.ConvertedType.LIST)) {
+            if(!(outerGroup.__isset.converted_type && outerGroup.Converted_type == Thrift.ConvertedType.LIST)) {
                 ownedChildren = 0;
                 field = null;
                 return false;
             }
 
-            Thrift.SchemaElement tseList = schema[index];
-            field = ListField.CreateWithNoItem(tseList.Name, tseList.Repetition_type != FieldRepetitionType.REQUIRED);
+            field = ListField.CreateWithNoItem(outerGroup.Name, outerGroup.Repetition_type != FieldRepetitionType.REQUIRED);
 
             //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
-            Thrift.SchemaElement tseRepeated = schema[index + 1];
+            Thrift.SchemaElement midGroup = schema[index + 1];
+            bool midIsGroup = midGroup.Num_children > 0;
 
             // Rule 1. If the repeated field is not a group, then its type is the element type and elements are required.
-            // todo: not implemented
+            if(!midIsGroup) {
+                field.Path = new FieldPath(outerGroup.Name);
+                field.ThriftSchemaElement = outerGroup;
+                index += 1; //only skip this element
+                ownedChildren = 1;  // next element is list's item
+                return true;
+            }
 
             // Rule 2. If the repeated field is a group with multiple fields, then its type is the element type and elements are required.
             // todo: not implemented
@@ -194,20 +200,11 @@ namespace Parquet.Encodings {
             // type and elements are required.
             // todo: not implemented fully, only "array"
 
-            // "group with one field and is named either array":
-            if(tseList.Num_children == 1 && tseRepeated.Name == "array") {
-                field.Path = new FieldPath(tseList.Name);
-                index += 1; //only skip this element
-                ownedChildren = 1;
-                return true;
-            }
-
             // Normal "modern" LIST:
-            //as we are skipping elements set path hint
-            Thrift.SchemaElement tseRepeatedGroup = schema[index + 1];
-            field.Path = new FieldPath(tseList.Name, tseRepeatedGroup.Name);
-            field.ThriftSchemaElement = se;
-            field.GroupSchemaElement = tseRepeatedGroup;
+            // as we are skipping elements set path hint
+            field.Path = new FieldPath(outerGroup.Name, midGroup.Name);
+            field.ThriftSchemaElement = outerGroup;
+            field.GroupSchemaElement = midGroup;
             index += 2;          //skip this element and child container
             ownedChildren = 1;   //we should get this element assigned back
             return true;

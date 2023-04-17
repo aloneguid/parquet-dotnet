@@ -10,6 +10,7 @@ using TT = Parquet.Thrift.Type;
 using CT = Parquet.Thrift.ConvertedType;
 using System.Numerics;
 using Parquet.Encodings;
+using Parquet.File;
 
 namespace Parquet.Test.Schema {
     public class SchemaTest : TestBase {
@@ -335,6 +336,55 @@ namespace Parquet.Test.Schema {
 
             Assert.Equal(expectedTT, foundTT);
             Assert.Equal(expectedCT, foundCT);
+        }
+
+        [Fact]
+        public void Decode_list_normal() {
+            ParquetSchema schema = ThriftFooter.Parse(
+                new Thrift.SchemaElement("my_list") {
+                    Converted_type = CT.LIST,
+                    Num_children = 1
+                },
+                new Thrift.SchemaElement("list") {
+                    Repetition_type = Thrift.FieldRepetitionType.REPEATED,
+                    Num_children = 1
+                },
+                new Thrift.SchemaElement("element") {
+                    Repetition_type = Thrift.FieldRepetitionType.REQUIRED,
+                    Type = TT.INT32
+                });
+
+            Field f = schema[0];
+            if(f is ListField lf) {
+                Assert.Equal("my_list", lf.Name);
+                Assert.Equal("element", lf.Item.Name);
+            } else {
+                Assert.Fail("list expected");
+            }
+        }
+
+        [Fact]
+        public void Decode_list_legacy_no_mid_group() {
+            ParquetSchema schema = ThriftFooter.Parse(
+                new Thrift.SchemaElement("my_list") {
+                    Converted_type = CT.LIST
+                },
+                new Thrift.SchemaElement("list") {
+                    Repetition_type = Thrift.FieldRepetitionType.REPEATED,
+                    Num_children = 1
+                },
+                new Thrift.SchemaElement("element") {
+                    Repetition_type = Thrift.FieldRepetitionType.REQUIRED,
+                    Type = TT.INT32
+                });
+
+            Field f = schema[0];
+            if(f is ListField lf) {
+                Assert.Equal("my_list", lf.Name);
+                Assert.Equal("element", lf.Item.Name);
+            } else {
+                Assert.Fail("list expected");
+            }
         }
     }
 }
