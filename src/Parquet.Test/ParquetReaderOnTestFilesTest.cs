@@ -133,5 +133,17 @@ namespace Parquet.Test {
             Table tbl = await ParquetReader.ReadTableFromStreamAsync(s);
             Assert.NotNull(tbl);
         }
+
+        [Fact]
+        public async Task Read_legacy_list() {
+            using Stream s = OpenTestFile("special/legacy-list.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Equal(3, cols.Length);
+            Assert.Equal(new string[] { "1_0", "1_0" }, cols[0].Data);
+            Assert.Equal(new double[] { 2004, 2004 }, cols[1].Data);
+            Assert.Equal(Enumerable.Range(0, 168).Concat(Enumerable.Range(0, 168)).ToArray(), cols[2].Data);
+        }
     }
 }
