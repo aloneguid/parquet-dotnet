@@ -9,7 +9,7 @@ using System.Linq;
 using Parquet.Data;
 
 namespace Parquet.Test.DataAnalysis {
-    public class DataFrameReaderTest {
+    public class DataFrameReaderTest : TestBase {
 
         [Theory]
         [InlineData(typeof(int), 1, 2)]
@@ -44,6 +44,12 @@ namespace Parquet.Test.DataAnalysis {
             DataFrame df = await ms.ReadParquetStreamAsDataFrameAsync();
 
             Assert.Equal(data, df.Rows.Select(r => r[0]).ToArray());
+        }
+
+        [Fact]
+        public async Task Read_alltypes_file() {
+            using Stream fs = OpenTestFile("types/alltypes.parquet");
+            DataFrame df = await fs.ReadParquetStreamAsDataFrameAsync();
         }
     }
 }
