@@ -292,6 +292,7 @@ namespace Parquet.Serialization.Dremel {
                 }
             }
 
+            // know when to stop
             if(!isAtomic || isRepeated) {
 
                 iteration = Expression.IfThen(
@@ -305,6 +306,17 @@ namespace Parquet.Serialization.Dremel {
                             Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
 
                         iteration));
+
+                if(isRepeated) {
+                    iteration = Expression.IfThen(
+                        Expression.GreaterThanOrEqual(_dlVar, Expression.Constant(dlDepth - 1)),
+                        Expression.Block(
+                            Expression.IfThen(
+                                Expression.Equal(levelProperty, Expression.Constant(null)),
+                                Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
+
+                            iteration));
+                }
             }
 
             return Expression.Block(

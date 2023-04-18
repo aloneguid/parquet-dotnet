@@ -116,8 +116,6 @@ namespace Parquet.Test.Serialisation {
 
             // Address.Country/City must be RL: 0, DL: 0 as Address is null
 
-            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\x.parquet");
-
             ms.Position = 0;
             IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
 
@@ -161,7 +159,6 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
-            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
 
             // deserialise
             ms.Position = 0;
@@ -170,6 +167,47 @@ namespace Parquet.Test.Serialisation {
             // assert
             XAssert.JsonEquivalent(data, data2);
 
+        }
+
+        [Fact]
+        public async Task List_Null_Structs_Serde() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
+                PersonId = i,
+                Comments = i % 2 == 0 ? "none" : null,
+                Addresses = null
+            }).ToList();
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            // deserialise
+            ms.Position = 0;
+            IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
+
+            // assert
+            XAssert.JsonEquivalent(data, data2);
+        }
+
+        [Fact]
+        public async Task List_Empty_Structs_Serde() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
+                PersonId = i,
+                Comments = i % 2 == 0 ? "none" : null,
+                Addresses = new()
+            }).ToList();
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
+
+            // deserialise
+            ms.Position = 0;
+            IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
+
+            // assert
+            XAssert.JsonEquivalent(data, data2);
         }
 
         class MovementHistoryCompressed  {
@@ -189,7 +227,6 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
-            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\lat.parquet");
 
             // deserialise
             ms.Position = 0;
@@ -220,7 +257,6 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
-            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\emp.parquet");
 
 
             // low-level validate that the file has correct levels
@@ -261,7 +297,6 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
-            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\null.parquet");
 
             // low-level validate that the file has correct levels
             ms.Position = 0;
@@ -301,7 +336,6 @@ namespace Parquet.Test.Serialisation {
             // serialise
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
-            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\map.parquet");
 
             // deserialise
             ms.Position = 0;
