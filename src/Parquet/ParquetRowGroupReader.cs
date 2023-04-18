@@ -36,6 +36,11 @@ namespace Parquet {
         }
 
         /// <summary>
+        /// Exposes raw thrift metadata about this row group
+        /// </summary>
+        public Thrift.RowGroup ThriftRowGroup => _rowGroup;
+
+        /// <summary>
         /// Gets the number of rows in this row group
         /// </summary>
         public long RowCount => _rowGroup.Num_rows;

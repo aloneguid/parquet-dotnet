@@ -1,7 +1,6 @@
 # Apache Parquet for .NET [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
 
-
-![Icon](img/banner.png)
+![Icon](https://www.aloneguid.uk/parquet/banner.png)
 
 **Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
@@ -21,7 +20,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 Make sure to check out [Apache Parquet Viewer](https://aloneguid.github.io/parquet-online/) built with this library:
 
-[![](img/pv.png)](https://aloneguid.github.io/parquet-online/)
+[![](https://www.aloneguid.uk/parquet/pv.png)](https://aloneguid.github.io/parquet-online/)
 
 ## Why
 
@@ -183,7 +182,7 @@ IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/stor
 
 This will give us an array with one million class instances similar to this:
 
-![](img/read-classes.png)
+![](https://www.aloneguid.uk/parquet/read-classes.png)
 
 Of course [class serialisation](serialisation.md) has more to it, and you can customise it further than that.
 
@@ -197,7 +196,7 @@ Table tbl = await Table.ReadAsync("/mnt/storage/data.parquet");
 
 This will do the magic behind the scenes, give you table schema and rows, similar to this:
 
-![](img/read-rows.png)
+![](https://www.aloneguid.uk/parquet/read-rows.png)
 
 As always, there's [more to it](rows.md).
 
