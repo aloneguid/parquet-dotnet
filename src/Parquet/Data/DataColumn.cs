@@ -43,6 +43,7 @@ namespace Parquet.Data {
                     DefinedData = field.CreateArray(data.Length - nullCount);
                     DefinitionLevels = new int[data.Length];
                     data.PackNullsFast(0, data.Length, DefinedData, DefinitionLevels, field.MaxDefinitionLevel);
+                    Statistics.NullCount = nullCount;
                 } else {
 
                     if(field.MaxDefinitionLevel > 0 && definitionLevels == null && data.Length > 0) {
@@ -51,13 +52,14 @@ namespace Parquet.Data {
 
                     DefinedData = data;
                     DefinitionLevels = definitionLevels;
+                    Statistics.NullCount = definitionLevels == null
+                        ? 0
+                        : definitionLevels.Count(l => l != field.MaxDefinitionLevel);
                 }
             }
 
             Field = field ?? throw new ArgumentNullException(nameof(field));
             RepetitionLevels = repetitionLevels;
-
-            Statistics.NullCount = Data.Length - DefinedData.Length;
         }
 
         /// <summary>
@@ -143,17 +145,12 @@ namespace Parquet.Data {
         /// Basic statistics for this data column (populated only on read)
         /// </summary>
         public DataColumnStatistics Statistics { get; internal set; } =
-            new DataColumnStatistics(0, 0, null, null);
+            new DataColumnStatistics(null, null, null, null);
 
         /// <summary>
-        /// Length of the array
+        /// Number of actual values in this column, including nulls and null/empty lists polyfills.
         /// </summary>
-        public int Count => Data.Length;
-
-        /// <summary>
-        /// Count of elements not including nulls, if statistics contains null count.
-        /// </summary>
-        public int CountWithoutNulls => (int)(Count - Statistics.NullCount);
+        public int NumValues => DefinitionLevels?.Length ?? DefinedData.Length;
 
         /// <summary>
         /// Casts <see cref="Data"/> to <see cref="Span{T}"/>
@@ -171,16 +168,10 @@ namespace Parquet.Data {
             return span;
         }
 
-        internal int CalculateNullCount() {
-            return Data.CalculateNullCountFast(0, Count);
-        }
-
-        internal static void PackDefinitions(Span<int> definitions,
-            Array data, int dataOffset, int dataCount,
-            Array packedData,
-            int maxDefinitionLevel) => data.PackNullsFast(dataOffset, dataCount, packedData, definitions, maxDefinitionLevel);
-
-        internal long CalculateRowCount() => Field.MaxRepetitionLevel > 0 ? RepetitionLevels?.Count(rl => rl == 0) ?? 0 : Count;
+        internal long CalculateRowCount() =>
+            Field.MaxRepetitionLevel > 0
+                ? RepetitionLevels?.Count(rl => rl == 0) ?? 0
+                : NumValues;
 
         /// <inheritdoc/>
         public override string ToString() {

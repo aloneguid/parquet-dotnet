@@ -124,9 +124,10 @@ namespace Parquet {
         public Thrift.FileMetaData? ThriftMetadata => _meta;
 
         /// <summary>
-        /// 
+        /// Opens row group reader. Note that this operation is really cheap as all the metadata is already present.
+        /// It only gets expensive when you read actual data, not the metadata itself.
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="index">Row group index, starting from 0. See <see cref="RowGroupCount"/> to get number of row groups in this file.</param>
         /// <returns></returns>
         public ParquetRowGroupReader OpenRowGroupReader(int index) {
             return _groupReaders[index];

@@ -89,13 +89,13 @@ namespace Parquet.Test.Serialisation.Paper {
                     // Links/Backwards
                     new DataColumn(dfs[1],
                         new long[] { 10, 30 },
-                        new int[] { 1, 2, 2 },
+                        new int[] { 1, 3, 3 },
                         new int[] { 0, 0, 1 }),
 
                     // Links/Forwards
                     new DataColumn(dfs[2],
                         new long[] { 20, 40, 60, 80 },
-                        new int[] { 2, 2, 2, 2 },
+                        new int[] { 3, 3, 3, 3 },
                         new int[] { 0, 1, 1, 0 }),
 
                     // Code
@@ -107,7 +107,7 @@ namespace Parquet.Test.Serialisation.Paper {
                     // Country
                     new DataColumn(dfs[4],
                         new string[] { "us", "gb" },
-                        new int[] { 7, 6, 4, 7, 4 },
+                        new int[] { 7, 6, 2, 7, 2 },
                         new int[] { 0, 2, 1, 1, 0 }),
 
                     // Url

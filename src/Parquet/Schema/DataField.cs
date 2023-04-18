@@ -156,6 +156,8 @@ namespace Parquet.Schema {
             }
         }
 
+        internal override bool IsAtomic => true;
+
         /// <inheritdoc/>
         public override string ToString() => 
             $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";

@@ -115,5 +115,16 @@ namespace Parquet.Test {
                 return column.Data.GetValue(0)!;
             }
         }
+
+        protected async Task<List<DataColumn>> ReadColumns(Stream s) {
+            using ParquetReader reader = await ParquetReader.CreateAsync(s);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            var r = new List<DataColumn>();
+            foreach(DataField df in reader.Schema.DataFields) {
+                DataColumn dc = await rgr.ReadColumnAsync(df);
+                r.Add(dc);
+            }
+            return r;
+        }
     }
 }

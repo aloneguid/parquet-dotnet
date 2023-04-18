@@ -48,11 +48,14 @@ namespace Parquet.Test.Serialisation {
             Assert.True(nullableFloat.IsNullable);
             Assert.False(nullableFloat.IsArray);
 
-            DataField intArray = (DataField)schema[3];
+            ListField intArray = (ListField)schema[3];
             Assert.Equal("IntArray", intArray.Name);
-            Assert.Equal(typeof(int), intArray.ClrType);
-            Assert.False(intArray.IsNullable);
-            Assert.True(intArray.IsArray);
+            Assert.True(intArray.IsNullable);
+
+            DataField intArrayData = (DataField)intArray.Item;
+            Assert.Equal(typeof(int), intArrayData.ClrType);
+            Assert.False(intArrayData.IsNullable);
+            Assert.False(intArrayData.IsArray);
         }
 
 
@@ -88,11 +91,9 @@ namespace Parquet.Test.Serialisation {
             Assert.True(nullableFloat.IsNullable);
             Assert.False(nullableFloat.IsArray);
 
-            DataField intArray = (DataField)schema[4];
+            ListField intArray = (ListField)schema[4];
             Assert.Equal("IntArray", intArray.Name);
-            Assert.Equal(typeof(int), intArray.ClrType);
-            Assert.False(intArray.IsNullable);
-            Assert.True(intArray.IsArray);
+            Assert.True(intArray.IsNullable);
 
             var extraProp = (DataField)schema[0];
             Assert.Equal("ExtraProperty", extraProp.Name);

@@ -62,7 +62,7 @@ namespace Parquet {
                 throw new ArgumentNullException(nameof(column));
 
             if(RowCount == null) {
-                if(column.Count > 0 || column.Field.MaxRepetitionLevel == 0)
+                if(column.NumValues > 0 || column.Field.MaxRepetitionLevel == 0)
                     RowCount = column.CalculateRowCount();
             }
 

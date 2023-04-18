@@ -202,6 +202,16 @@ namespace Parquet.Serialization.Dremel {
             elementType = typeof(ParquetDictionary<,>.ParquetDictionaryElement).MakeGenericType(keyType!, valueType!);
         }
 
+        private static void GetReadLevels(Field f, out int dlDepth, out int rlDepth) {
+            if(f is ListField lf && lf.IsAtomic) {
+                dlDepth = lf.Item.MaxDefinitionLevel;
+                rlDepth = lf.Item.MaxRepetitionLevel;
+            } else {
+                dlDepth = f.MaxDefinitionLevel;
+                rlDepth = f.MaxRepetitionLevel;
+            }
+        }
+
         private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path) {
 
             string currentPathPart = path.First();
@@ -209,11 +219,10 @@ namespace Parquet.Serialization.Dremel {
             if(field == null)
                 throw new NotSupportedException($"field '{currentPathPart}' not found");
 
-            int dlDepth = field.MaxDefinitionLevel;
-            int rlDepth = field.MaxRepetitionLevel;
+            GetReadLevels(field, out int dlDepth, out int rlDepth);
 
             Discover(field, out bool isRepeated);
-            bool isAtomic = path.Count == 1;
+            bool isAtomic = field.IsAtomic;
             string levelPropertyName = field.ClrPropName ?? field.Name;
             Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
             Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
@@ -283,11 +292,13 @@ namespace Parquet.Serialization.Dremel {
                 }
             }
 
+            // know when to stop
             if(!isAtomic || isRepeated) {
 
                 iteration = Expression.IfThen(
-                    // C#: dlDepth <= _dlVar?
-                    Expression.LessThanOrEqual(Expression.Constant(dlDepth), _dlVar),
+
+                    // C#: _dlVar >= dlDepth?
+                    Expression.GreaterThanOrEqual(_dlVar, Expression.Constant(dlDepth)),
 
                     Expression.Block(
                         Expression.IfThen(
@@ -295,6 +306,17 @@ namespace Parquet.Serialization.Dremel {
                             Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
 
                         iteration));
+
+                if(isRepeated) {
+                    iteration = Expression.IfThen(
+                        Expression.GreaterThanOrEqual(_dlVar, Expression.Constant(dlDepth - 1)),
+                        Expression.Block(
+                            Expression.IfThen(
+                                Expression.Equal(levelProperty, Expression.Constant(null)),
+                                Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
+
+                            iteration));
+                }
             }
 
             return Expression.Block(
