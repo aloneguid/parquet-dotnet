@@ -135,6 +135,8 @@ namespace Parquet.Schema {
             _itemAssigned = true;
         }
 
+        internal override bool IsAtomic => base.IsAtomic || Item.IsAtomic;
+
         /// <inheritdoc/>
         public override bool Equals(object? obj) {
             if(obj is not ListField other) return false;

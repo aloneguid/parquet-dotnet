@@ -9,7 +9,8 @@ namespace Parquet.Extensions {
         public static Expression Loop(this Expression iteration,
             Expression collection,
             Type elementType,
-            ParameterExpression element) {
+            ParameterExpression element,
+            ParameterExpression? countVar = null) {
 
             Type enumeratorGenericType = typeof(IEnumerator<>).MakeGenericType(elementType);
             Type enumerableGenericType = typeof(IEnumerable<>).MakeGenericType(elementType);
@@ -35,7 +36,11 @@ namespace Parquet.Extensions {
                         // get class element into loopVar
                         Expression.Assign(element, Expression.Property(enumeratorVar, nameof(IEnumerator.Current))),
 
-                        iteration),
+                        iteration,
+                        
+                        countVar == null
+                            ? Expression.Empty()
+                            : Expression.PostIncrementAssign(countVar)),
 
                     // if false
                     Expression.Break(loopBreakLabel)

@@ -2,6 +2,7 @@ using Parquet.Data;
 using Parquet.Rows;
 using Parquet.Schema;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -123,7 +124,7 @@ namespace Parquet.Test {
                 DataField[] dfs = schema.GetDataFields();
 
                 DataColumn bw1 = await rgr.ReadColumnAsync(dfs[1]);
-                Assert.Equal(200, bw1.Count);
+                Assert.Equal(200, bw1.NumValues);
             }
         }
 
@@ -144,6 +145,13 @@ namespace Parquet.Test {
             Assert.Equal(new string[] { "1_0", "1_0" }, cols[0].Data);
             Assert.Equal(new double[] { 2004, 2004 }, cols[1].Data);
             Assert.Equal(Enumerable.Range(0, 168).Concat(Enumerable.Range(0, 168)).ToArray(), cols[2].Data);
+        }
+
+        [Fact]
+        public async Task Read_empty_and_null_lists() {
+            using Stream s = OpenTestFile("list_empty_and_null.parquet");
+            List<DataColumn> cols = await ReadColumns(s);
+            Assert.Equal(2, cols.Count);
         }
     }
 }

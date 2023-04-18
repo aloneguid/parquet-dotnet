@@ -213,9 +213,6 @@ namespace Parquet.Encodings {
                 unpacked += BitPackedEncoder.Decode8ValuesLE(rawSpan.Slice(byteIndex), dest.Slice(valueIndex), bitWidth);
             }
 
-            //if(unpacked > maxItems)
-            //    throw new InvalidOperationException($"{unpacked} > {maxItems}");
-
             return Math.Min(unpacked, maxItems);
         }
 

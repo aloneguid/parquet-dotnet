@@ -47,6 +47,7 @@ namespace Parquet.Test.Types {
 
                 DataColumn list = await groupReader.ReadColumnAsync(fs[1]);
                 Assert.Equal(8, list.Data.Length);
+                Assert.Equal(new int[] { 3, 3, 3, 1, 3, 3, 3, 1 }, list.DefinitionLevels);
                 Assert.Equal(new int[] { 0, 1, 1, 0, 0, 1, 1, 0 }, list.RepetitionLevels);
             }
 

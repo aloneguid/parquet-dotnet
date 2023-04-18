@@ -59,7 +59,7 @@ namespace Parquet.Test {
             Assert.Single(cols);
             DataColumn c0 = cols[0];
 
-            Assert.Equal(400, c0.Count);
+            Assert.Equal(400, c0.NumValues);
             Assert.Equal(Enumerable.Repeat("one", 100).ToArray(), c0.AsSpan<string>(0, 100).ToArray());
             Assert.Equal(Enumerable.Repeat("two", 100).ToArray(), c0.AsSpan<string>(100, 100).ToArray());
             Assert.Equal(Enumerable.Repeat((string?)null, 100).ToArray(), c0.AsSpan<string>(200, 100).ToArray());

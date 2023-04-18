@@ -11,16 +11,12 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 - [Class Serialisation](serialisation.md)
   - [Legacy Serialisation](legacy)
-
 - [Writing](writing.md) and [Reading](reading.md) (low-level API)
-
 - [Row (Table) API](rows.md)
-
 - Diving Deeper
   - [Schema](schema.md)
   - [DataColumn](column.md)
   - [Nested Types](nested_types.md)
-
 - Integration with [Microsoft.Data.Analysis](dataframe.md).
 
 Make sure to check out [Apache Parquet Viewer](https://aloneguid.github.io/parquet-online/) built with this library:

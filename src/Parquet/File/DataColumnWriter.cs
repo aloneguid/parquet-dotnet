@@ -41,19 +41,14 @@ namespace Parquet.File {
             FieldPath fullPath, DataColumn column,
             CancellationToken cancellationToken = default) {
 
+            // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
             Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(
-                _compressionMethod, _stream, _schemaElement.Type, fullPath, column.Count);
-
-            //_footer.GetLevels(chunk, out int maxRepetitionLevel, out int maxDefinitionLevel);
+                _compressionMethod, _stream, _schemaElement.Type, fullPath, column.NumValues);
 
             ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
                 cancellationToken);
             //generate stats for column chunk
             chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
-
-            //this count must be set to number of all values in the column, including nulls.
-            //for hierarchy/repeated columns this is a count of flattened list, including nulls.
-            chunk.Meta_data.Num_values = column.Count;
 
             //the following counters must include both data size and header size
             chunk.Meta_data.Total_compressed_size = columnSizes.CompressedSize;
@@ -124,12 +119,13 @@ namespace Parquet.File {
 
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
-                Thrift.PageHeader ph = _footer.CreateDataPage(column.Count, pc.HasDictionary);
+                // data page Num_values also does include NULLs
+                Thrift.PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
                 if(pc.HasDefinitionLevels) {
-                    WriteLevels(ms, pc.DefinitionLevels!, column.Count, column.Field.MaxDefinitionLevel);
+                    WriteLevels(ms, pc.DefinitionLevels!, column.DefinitionLevels!.Length, column.Field.MaxDefinitionLevel);
                 }
 
                 if(pc.HasDictionary) {

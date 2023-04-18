@@ -180,6 +180,12 @@ namespace Parquet.Serialization.Dremel {
             throw new ArgumentException($"type {t} is not single-element generic enumerable", nameof(t));
         }
 
+        private static int GetWriteableDL(Field f) {
+            if(f is ListField lf && lf.IsAtomic)
+                return lf.Item.MaxDefinitionLevel;
+
+            return f.MaxDefinitionLevel;
+        }
 
         private Expression DissectRecord(
             Expression rootVar,
@@ -196,14 +202,12 @@ namespace Parquet.Serialization.Dremel {
             Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
             if(field == null)
                 throw new NotSupportedException($"field '{currentPathPart}' not found");
-            int dl = field.MaxDefinitionLevel;
+            int dl = GetWriteableDL(field);
 
             FieldStriperCompiler<TClass>.Discover(field, out bool isRepeated);
-            bool isAtomic = path.Count == 1;
+            bool isAtomic = field.IsAtomic;
             if(isRepeated)
                 rlDepth += 1;
-
-            // --
 
             // while "decoder"
 
@@ -213,29 +217,39 @@ namespace Parquet.Serialization.Dremel {
             ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
             ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
 
-            Expression extraBody;
+            Expression body;
             if(isRepeated) {
                 Type elementType = ExtractElementTypeFromEnumerableType(levelPropertyType);
                 Expression collection = levelProperty;
-                ParameterExpression element = Expression.Variable(elementType, "element");
+                ParameterExpression element = Expression.Variable(elementType, $"element_{levelPropertyName}");
+                ParameterExpression countVar = Expression.Variable(typeof(int), $"count_{levelPropertyName}");
                 Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, elementType, path);
-                extraBody = elementProcessor.Loop(collection, elementType, element);
+                body = elementProcessor.Loop(collection, elementType, element, countVar);
 
-                // todo: if levelProperty (collection) is null, we need extra iteration with null value (which rep and def level?)
+                // if levelProperty (collection) is null, we need extra iteration with null value (which rep and def level?)
                 // we do this iteration with non-collection condition below, so need to be done for collection as well.
-                extraBody = Expression.IfThenElse(
+                body = Expression.Block(
+                    new[] { countVar },
+                    Expression.Assign(countVar, Expression.Constant(0)),
+                    Expression.IfThenElse(
                         Expression.Equal(levelProperty, Expression.Constant(null)),
-                        WriteMissingValue(dl - 1, currentRlVar),
-                        extraBody);
+                        WriteMissingValue(dl - 2, currentRlVar),
+                        Expression.Block(
+                            body,
+                            // check if no elements are written and write out empty list if so
+                            Expression.IfThen(
+                                Expression.Equal(countVar, Expression.Constant(0)),
+                                WriteMissingValue(dl - 1, currentRlVar))
+                            )));
             } else {
                 Expression element = levelProperty;
-                extraBody = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, levelPropertyType, path);
+                body = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, levelPropertyType, path);
             }
 
             return Expression.Block(
                 new[] { seenVar },
                 Expression.Assign(seenVar, Expression.Constant(false)),
-                extraBody);
+                body);
         }
 
         public FieldStriper<TClass> Compile() {

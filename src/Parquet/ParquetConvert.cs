@@ -43,7 +43,7 @@ namespace Parquet {
 
             //if schema is not passed reflect it
             if(schema == null) {
-                schema = typeof(T).GetParquetSchema(false);
+                schema = typeof(T).GetParquetLegacySchema(false);
             }
 
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination, append: append)) {
@@ -106,7 +106,7 @@ namespace Parquet {
             var result = new List<T>();
             using(ParquetReader reader = await ParquetReader.CreateAsync(input, options, true, cancellationToken)) {
                 if(fileSchema == null) {
-                    fileSchema = typeof(T).GetParquetSchema(true);
+                    fileSchema = typeof(T).GetParquetLegacySchema(true);
                 }
 
                 DataField[] dataFields = fileSchema.GetDataFields();

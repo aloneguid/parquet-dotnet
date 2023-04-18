@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Test.Xunit;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
-    public class ParquetSerializerTest {
+    public class ParquetSerializerTest : TestBase {
 
         class Record {
             public DateTime Timestamp { get; set; }
@@ -115,7 +116,7 @@ namespace Parquet.Test.Serialisation {
 
             // Address.Country/City must be RL: 0, DL: 0 as Address is null
 
-            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\x.parquet");
+            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\x.parquet");
 
             ms.Position = 0;
             IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
@@ -196,8 +197,88 @@ namespace Parquet.Test.Serialisation {
 
             // assert
             Assert.Equivalent(data, data2);
-
         }
+
+        [Fact]
+        public async Task List_Atomics_Empty_Serde() {
+
+            var data = new List<MovementHistoryCompressed> {
+                new MovementHistoryCompressed {
+                    PersonId = 0,
+                    ParentIds = new() { 1, 2 }
+                },
+                new MovementHistoryCompressed {
+                    PersonId = 1,
+                    ParentIds = new List<int>()
+                },
+                new MovementHistoryCompressed {
+                    PersonId = 2,
+                    ParentIds = new() { 3, 4, 5 }
+                }
+            };
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\emp.parquet");
+
+
+            // low-level validate that the file has correct levels
+            ms.Position = 0;
+            List<Data.DataColumn> cols = await ReadColumns(ms);
+            DataColumn pidsCol = cols[1];
+            Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, pidsCol.DefinedData);
+            Assert.Equal(new int[] { 2, 2, 1, 2, 2, 2 }, pidsCol.DefinitionLevels);
+            Assert.Equal(new int[] { 0, 1, 0, 0, 1, 1 }, pidsCol.RepetitionLevels);
+
+
+            // deserialise
+            ms.Position = 0;
+            IList<MovementHistoryCompressed> data2 = await ParquetSerializer.DeserializeAsync<MovementHistoryCompressed>(ms);
+
+            // assert
+            XAssert.JsonEquivalent(data, data2);
+        }
+
+        [Fact]
+        public async Task List_Atomics_Null_Serde() {
+
+            var data = new List<MovementHistoryCompressed> {
+                new MovementHistoryCompressed {
+                    PersonId = 0,
+                    ParentIds = new() { 1, 2 }
+                },
+                new MovementHistoryCompressed {
+                    PersonId = 1,
+                    ParentIds = null
+                },
+                new MovementHistoryCompressed {
+                    PersonId = 2,
+                    ParentIds = new() { 3, 4 }
+                }
+            };
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+            await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\null.parquet");
+
+            // low-level validate that the file has correct levels
+            ms.Position = 0;
+            List<Data.DataColumn> cols = await ReadColumns(ms);
+            DataColumn pidsCol = cols[1];
+            Assert.Equal(new int[] { 1, 2, 3, 4 }, pidsCol.DefinedData);
+            Assert.Equal(new int[] { 2, 2, 0, 2, 2 }, pidsCol.DefinitionLevels);
+            Assert.Equal(new int[] { 0, 1, 0, 0, 1 }, pidsCol.RepetitionLevels);
+
+            // deserialise
+            ms.Position = 0;
+            IList<MovementHistoryCompressed> data2 = await ParquetSerializer.DeserializeAsync<MovementHistoryCompressed>(ms);
+
+            // assert
+            XAssert.JsonEquivalent(data, data2);
+        }
+
 
         class IdWithTags {
             public int Id { get; set; }

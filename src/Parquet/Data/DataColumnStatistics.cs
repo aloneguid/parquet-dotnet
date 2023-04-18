@@ -16,7 +16,7 @@ namespace Parquet.Data {
         /// <summary>
         /// 
         /// </summary>
-        public DataColumnStatistics(long nullCount, long distinctCount, object? minValue, object? maxValue) {
+        public DataColumnStatistics(long? nullCount, long? distinctCount, object? minValue, object? maxValue) {
             NullCount = nullCount;
             DistinctCount = distinctCount;
             MinValue = minValue;
@@ -26,7 +26,7 @@ namespace Parquet.Data {
         /// <summary>
         /// Number of null values
         /// </summary>
-        public long NullCount { get; internal set; }
+        public long? NullCount { get; internal set; }
 
         /// <summary>
         /// Number of distinct values if set.
@@ -53,17 +53,15 @@ namespace Parquet.Data {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
-            var r = new Thrift.Statistics {
-                Null_count = NullCount,
-                Min = min,
-                Min_value = min,
-                Max = max,
-                Max_value = max
-            };
-
-            if(DistinctCount!= null) {
+            var r = new Thrift.Statistics();
+            if(NullCount != null)
+                r.Null_count = NullCount.Value;
+            if(DistinctCount != null)
                 r.Distinct_count = DistinctCount.Value;
-            }
+            if(min != null)
+                r.Min = r.Min_value = min;
+            if(max != null)
+                r.Max = r.Max_value = max;
 
             return r;
         }

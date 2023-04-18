@@ -87,21 +87,6 @@ namespace Parquet.Schema {
         /// </summary>
         internal abstract void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel);
 
-        internal int[] GenerateRepetitions(int count) {
-            int[] rl = new int[count];
-
-            if(count > 0) {
-                rl[0] = 0;
-            }
-
-            int mrl = MaxRepetitionLevel;
-            for(int i = 1; i < count; i++) {
-                rl[i] = mrl;
-            }
-
-            return rl;
-        }
-
         internal virtual void Assign(Field field) {
             //only used by some schema fields internally to help construct a field hierarchy
         }
@@ -120,6 +105,8 @@ namespace Parquet.Schema {
                 return Children;
             }
         }
+
+        internal virtual bool IsAtomic => false;
 
         internal bool Equals(Thrift.SchemaElement tse) {
             if(ReferenceEquals(tse, null))
