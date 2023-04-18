@@ -15,7 +15,6 @@ namespace Parquet {
         private readonly Thrift.RowGroup _rowGroup;
         private readonly ThriftFooter _footer;
         private readonly Stream _stream;
-        private readonly ThriftStream _thriftStream;
         private readonly ParquetOptions? _parquetOptions;
         private readonly Dictionary<FieldPath, Thrift.ColumnChunk> _pathToChunk = new();
 
@@ -27,7 +26,6 @@ namespace Parquet {
             _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _thriftStream = thriftStream ?? throw new ArgumentNullException(nameof(thriftStream));
             _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             //cache chunks
