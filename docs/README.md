@@ -9,7 +9,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 ## Index
 
 - [Class Serialisation](serialisation.md)
-  - [Legacy Serialisation](legacy)
+  - [Legacy Serialisation](legacy_serialisation.md)
 - [Writing](writing.md) and [Reading](reading.md) (low-level API)
 - [Row (Table) API](rows.md)
 - Diving Deeper
