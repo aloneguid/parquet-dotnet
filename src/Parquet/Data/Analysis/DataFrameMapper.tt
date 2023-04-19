@@ -16,6 +16,7 @@
         "float",
         "double" };
 #>using System;
+using System.Linq;
 using System.Numerics;
 using Microsoft.Data.Analysis;
 
@@ -24,8 +25,7 @@ namespace Parquet.Data.Analysis {
         public static DataFrameColumn ToDataFrameColumn(DataColumn dc) {
             string colName = string.Join("_", dc.Field.Path.ToList());
 
-            <# foreach(var t in valueTypes) { #>
-            if(dc.Field.ClrType == typeof(<#= t #>)) {
+            <# foreach(var t in valueTypes) { #>if(dc.Field.ClrType == typeof(<#= t #>)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
                     return new PrimitiveDataFrameColumn<<#= t #>>(colName, (<#= t #>[])dc.Data);
                 } else {
@@ -42,8 +42,7 @@ namespace Parquet.Data.Analysis {
         }
 
         public static void AppendValues(DataFrameColumn dfc, DataColumn dc) {
-            <# foreach(var t in valueTypes) { #>
-            if(dc.Field.ClrType == typeof(<#= t #>)) {
+            <# foreach(var t in valueTypes) { #>if(dc.Field.ClrType == typeof(<#= t #>)) {
                 var tdfc = (PrimitiveDataFrameColumn<<#= t #>>)dfc;
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
                     foreach(<#= t #> el in (<#= t #>[])dc.Data) {
@@ -68,6 +67,20 @@ namespace Parquet.Data.Analysis {
 
             throw new NotSupportedException(dc.Field.ClrType.Name);
 
+        }
+
+        public static Array GetTypedDataFast(DataFrameColumn col) {
+            <# foreach(var t in valueTypes) { #>
+            if(col.DataType == typeof(<#= t #>)) {
+                return ((PrimitiveDataFrameColumn<<#= t #>>)col).ToArray();
+            }
+            <# } #>
+            // special case
+            if(col.DataType == typeof(string)) {
+                return ((StringDataFrameColumn)col).ToArray();
+            }
+
+            throw new NotSupportedException($"type {col.DataType} is not supported (column: {col.Name})");
         }
     }
 }
