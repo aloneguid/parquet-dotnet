@@ -24,7 +24,7 @@ namespace Parquet.Schema {
         /// Initializes a new instance of the <see cref="ParquetSchema"/> class from schema elements.
         /// </summary>
         /// <param name="fields">The elements.</param>
-        public ParquetSchema(IReadOnlyCollection<Field> fields) : this(fields.ToList()) {
+        public ParquetSchema(IEnumerable<Field> fields) : this(fields.ToList()) {
             if(fields == null) {
                 throw new ArgumentNullException(nameof(fields));
             }

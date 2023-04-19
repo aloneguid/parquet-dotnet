@@ -18,7 +18,7 @@ namespace Parquet.Test.DataAnalysis {
         [InlineData(typeof(bool?), true, null)]
         [InlineData(typeof(string), "1", "2")]
         [InlineData(typeof(string), null, "2")]
-        public async Task Read_all_types(Type t, object el1, object el2) {
+        public async Task Roundtrip_all_types(Type t, object el1, object el2) {
 
             // arrange
             using var ms = new MemoryStream();
@@ -44,6 +44,19 @@ namespace Parquet.Test.DataAnalysis {
             DataFrame df = await ms.ReadParquetAsDataFrameAsync();
 
             Assert.Equal(data, df.Rows.Select(r => r[0]).ToArray());
+
+            // write DataFrame to file
+            using var ms1 = new MemoryStream();
+            await df.WriteAsync(ms1);
+
+            // validate both are the same
+            ms1.Position = 0;
+            DataFrame df1 = await ms1.ReadParquetAsDataFrameAsync();
+
+            Assert.Equal(df.Columns.Count, df1.Columns.Count);
+            for(int i = 0; i < df.Columns.Count; i++) {
+                Assert.Equal(df.Columns[i], df1.Columns[i]);
+            }
         }
 
         [Fact]
