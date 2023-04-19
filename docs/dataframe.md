@@ -27,11 +27,12 @@ DataFrame df = await fs.ReadParquetAsDataFrameAsync();
 
 ## Samples
 
-For your convenience, there is a [sample Jupyter notebook](../notebooks/read_dataframe.ipynb) available that demonstrates reading parquet files into `DataFrame` and displaying them. 
+For your convenience, there is a [sample Jupyter notebook](../notebooks/read_dataframe.ipynb) available that demonstrates reading parquet files into `DataFrame` and displaying them:
 
-In order to run this notebook, you can use [VS Code](https://code.visualstudio.com/) with [Polyglot Notebooks extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode). In case `.ipynb` doesnt render for you, here is a preview:
+[![](img/ipynb-preview.png)](../notebooks/read_dataframe.ipynb)
 
-https://www.aloneguid.uk/parquet/ipynb-preview.mp4
+
+In order to run this notebook, you can use [VS Code](https://code.visualstudio.com/) with [Polyglot Notebooks extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode). 
 
 ## Related Links
 
