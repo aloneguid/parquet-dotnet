@@ -31,7 +31,7 @@ For your convenience, there is a [sample Jupyter notebook](../notebooks/read_dat
 
 In order to run this notebook, you can use [VS Code](https://code.visualstudio.com/) with [Polyglot Notebooks extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode). In case `.ipynb` doesnt render for you, here is a preview:
 
-![](img/ipynb-preview.mp4)
+https://www.aloneguid.uk/parquet/ipynb-preview.mp4
 
 ## Related Links
 
