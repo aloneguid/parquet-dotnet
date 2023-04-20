@@ -85,11 +85,12 @@ namespace Parquet.Serialization {
                 r = new DataField(name, t, propertyName: propertyName);
             }
 
+            // legacy attribute parsing
             ParquetColumnAttribute? columnAttr = pi?.GetCustomAttribute<ParquetColumnAttribute>();
-
             if(columnAttr != null) {
                 if(columnAttr.UseListField) {
-                    return new ListField(r.Name, t, propertyName, columnAttr.ListContainerName, columnAttr.ListElementName);
+                    Type nt = new DataField(name, t).ClrNullableIfHasNullsType;
+                    return new ListField(r.Name, nt, propertyName, columnAttr.ListContainerName, columnAttr.ListElementName);
                 }
 
                 if(t == typeof(TimeSpan))
