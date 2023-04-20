@@ -103,6 +103,16 @@ namespace Parquet.Serialization {
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
+        private static int? GetPropertyOrder(PropertyInfo pi) {
+
+#if NETCOREAPP3_1
+            return null;
+#else
+            JsonPropertyOrderAttribute? po = pi.GetCustomAttribute<JsonPropertyOrderAttribute>();
+            return po?.Order;
+#endif
+        }
+
         private static MapField ConstructMapField(string name, string propertyName,
             Type tKey, Type tValue,
             bool forWriting,
@@ -133,7 +143,9 @@ namespace Parquet.Serialization {
             string name = GetColumnName(pi);
             string propertyName = pi.Name;
 
-            return MakeField(t, name, propertyName, pi, forWriting, makeArrays);
+            Field r = MakeField(t, name, propertyName, pi, forWriting, makeArrays);
+            r.Order = GetPropertyOrder(pi);
+            return r;
         }
 
         /// <summary>
@@ -166,7 +178,11 @@ namespace Parquet.Serialization {
             } else if(t.IsClass || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
                 List<PropertyInfo> props = FindProperties(t, forWriting);
-                Field[] fields = props.Select(p => MakeField(p, forWriting, makeArrays)).Where(f => f != null).Select(f => f!).ToArray();
+                Field[] fields = props
+                    .Select(p => MakeField(p, forWriting, makeArrays))
+                    .Where(f => f != null)
+                    .Select(f => f!)
+                    .ToArray();
 
                 if(fields.Length == 0)
                     throw new InvalidOperationException($"property '{propertyName}' has no fields");
@@ -182,7 +198,12 @@ namespace Parquet.Serialization {
             // get it all, including base class properties (may be a hierarchy)
 
             List<PropertyInfo> props = FindProperties(t, forWriting);
-            List<Field> fields = props.Select(p => MakeField(p, forWriting, makeArrays)).Where(f => f != null).Select(f => f!).ToList();
+            List<Field> fields = props
+                .Select(p => MakeField(p, forWriting, makeArrays))
+                .Where(f => f != null)
+                .Select(f => f!)
+                .OrderBy(f => f.Order)
+                .ToList();
 
             return new ParquetSchema(fields);
         }

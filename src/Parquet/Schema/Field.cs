@@ -68,6 +68,8 @@ namespace Parquet.Schema {
 
         internal virtual FieldPath? PathPrefix { set { } }
 
+        internal int? Order { get; set; }
+
         /// <summary>
         /// Constructs a field with only requiremd parameters
         /// </summary>

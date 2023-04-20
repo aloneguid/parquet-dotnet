@@ -109,28 +109,6 @@ namespace Parquet.Encodings {
             public SType[] SupportedTypes => _supportedTypes.ToArray();
         }
 
-        [Obsolete]
-        private static readonly Dictionary<SType, DataType> _systemTypeToObsoleteType = new() {
-            { typeof(bool), DataType.Boolean },
-            { typeof(byte), DataType.Byte },
-            { typeof(sbyte), DataType.SignedByte },
-            { typeof(short), DataType.Int16 },
-            { typeof(ushort), DataType.UnsignedInt16 },
-            { typeof(int), DataType.Int32 },
-            { typeof(uint), DataType.UnsignedInt32 },
-            { typeof(long), DataType.Int64 },
-            { typeof(ulong), DataType.UnsignedInt64 },
-            { typeof(BigInteger), DataType.Int96 },
-            { typeof(byte[]), DataType.ByteArray },
-            { typeof(string), DataType.String },
-            { typeof(float), DataType.Float },
-            { typeof(double), DataType.Double },
-            { typeof(decimal), DataType.Decimal },
-            { typeof(DateTime), DataType.DateTimeOffset },
-            { typeof(Interval), DataType.Interval },
-            { typeof(TimeSpan), DataType.TimeSpan }
-        };
-
         private static readonly LookupTable _lt = new() {
             { Thrift.Type.BOOLEAN, typeof(bool) },
             { Thrift.Type.INT32, typeof(int),
@@ -410,6 +388,7 @@ namespace Parquet.Encodings {
             //add list container
             var root = new Thrift.SchemaElement(listField.Name) {
                 Converted_type = Thrift.ConvertedType.LIST,
+                LogicalType = new Thrift.LogicalType { LIST = new Thrift.ListType() },
                 Repetition_type = listField.IsNullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED,
                 Num_children = 1  //field container below
             };
@@ -431,6 +410,7 @@ namespace Parquet.Encodings {
             //add the root container where map begins
             var root = new Thrift.SchemaElement(mapField.Name) {
                 Converted_type = Thrift.ConvertedType.MAP,
+                LogicalType = new Thrift.LogicalType { MAP = new Thrift.MapType() },
                 Num_children = 1,
                 Repetition_type = Thrift.FieldRepetitionType.OPTIONAL
             };
@@ -458,7 +438,8 @@ namespace Parquet.Encodings {
 
         private static void Encode(StructField structField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
             var tseStruct = new Thrift.SchemaElement(structField.Name) {
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL
+                // no logical or converted type annotations for structs
             };
             container.Add(tseStruct);
             parent.Num_children += 1;
@@ -504,15 +485,5 @@ namespace Parquet.Encodings {
 
         public static bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) =>
             _lt.FindTypeTuple(type, out thriftType, out convertedType);
-
-        /// <summary>
-        /// Finds corresponding .NET type
-        /// </summary>
-        [Obsolete]
-        public static SType? FindSystemType(DataType dataType) =>
-            (from pair in _systemTypeToObsoleteType where pair.Value == dataType select pair.Key).FirstOrDefault();
-
-        [Obsolete]
-        public static DataType? FindDataType(SType type) => _systemTypeToObsoleteType[type];
     }
 }

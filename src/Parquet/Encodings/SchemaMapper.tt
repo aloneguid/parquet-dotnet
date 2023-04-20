@@ -1,0 +1,50 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Numerics" #>
+<#@ output extension=".cs" #>
+<#
+
+Dictionary<string, string> _systemTypeToObsoleteType = new() {
+    { "bool", "Boolean" },
+    { "byte", "Byte" },
+    { "sbyte", "SignedByte" },
+    { "short", "Int16" },
+    { "ushort", "UnsignedInt16" },
+    { "int", "Int32" },
+    { "uint", "UnsignedInt32" },
+    { "long", "Int64" },
+    { "ulong", "UnsignedInt64" },
+    { "BigInteger", "Int96" },
+    { "byte[]", "ByteArray" },
+    { "string", "String" },
+    { "float", "Float" },
+    { "double", "Double" },
+    { "decimal", "Decimal" },
+    { "DateTime", "DateTimeOffset" },
+    { "Interval", "Interval" },
+    { "TimeSpan", "TimeSpan" }
+};
+#>
+using System;
+using System.Numerics;
+using Parquet.Schema;
+using Parquet.File.Values.Primitives;
+using SType = System.Type;
+using Type = Parquet.Thrift.Type;
+
+namespace Parquet.Encodings {
+    static class SchemaMapper {
+        [Obsolete]
+        public static DataType? FindDataType(SType type) {
+            <# foreach(var pair in _systemTypeToObsoleteType) { #>if(type == typeof(<#= pair.Key #>)) return DataType.<#= pair.Value #>;
+            <# } #>return null;
+        }
+
+        [Obsolete]
+        public static SType? FindSystemType(DataType type) {
+            <# foreach(var pair in _systemTypeToObsoleteType) { #>if(type == DataType.<#= pair.Value #>) return typeof(<#= pair.Key #>);
+            <# } #>return null;
+        }
+    }
+}

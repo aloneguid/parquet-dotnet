@@ -84,7 +84,7 @@ namespace Parquet.Schema {
 
 #pragma warning disable CS0612 // Type or member is obsolete
 #pragma warning disable CS0618
-            DataType = SchemaEncoder.FindDataType(ClrType) ?? DataType.Unspecified;
+            DataType = SchemaMapper.FindDataType(ClrType) ?? DataType.Unspecified;
 #pragma warning restore CS0618
 #pragma warning restore CS0612 // Type or member is obsolete
         }
@@ -102,7 +102,7 @@ namespace Parquet.Schema {
             base(name, SchemaType.Data) {
 
             DataType = dataType;
-            ClrType = SchemaEncoder.FindSystemType(dataType)!;
+            ClrType = SchemaMapper.FindSystemType(dataType)!;
             IsNullable = isNullable;
             IsArray = isArray;
             ClrPropName = propertyName ?? name;

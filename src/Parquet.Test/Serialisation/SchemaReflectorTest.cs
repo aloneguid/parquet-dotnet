@@ -144,6 +144,39 @@ namespace Parquet.Test.Serialisation {
                 new DataField<int>("NotIgnored")), schema);
         }
 
+        public class UnorderedProps {
+            public int Id { get; set; }
+
+            public string? Name { get; set; }
+        }
+
+        [Fact]
+        public void Fields_in_class_order() {
+            ParquetSchema schema = typeof(UnorderedProps).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(new DataField<int>("Id"), new DataField<string>("Name")), schema);
+        }
+
+#if !NETCOREAPP3_1
+
+        public class OrderedProps {
+
+            [JsonPropertyOrder(1)]
+            public int Id { get; set; }
+
+            [JsonPropertyOrder(0)]
+            public string? Name { get; set; }
+        }
+
+        [Fact]
+        public void Fields_in_reorder_order() {
+            ParquetSchema schema = typeof(OrderedProps).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(new DataField<string>("Name"), new DataField<int>("Id")), schema);
+        }
+
+#endif
+
         class SimpleMapPoco {
             public int? Id { get; set; }
 
