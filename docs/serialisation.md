@@ -68,6 +68,15 @@ If you need to rather use a normal non-legacy date type, just annotate a propert
 public DateTime TimestampDate { get; set; }
 ```
 
+### Times
+
+By default, time (`TimeSpan`) is serialised with millisecond precision. but you can increase it by adding `[ParquetMicroSecondsTime]` attribute:
+
+```csharp
+[ParquetMicroSecondsTime]
+public TimeSpan MicroTime { get; set; }
+```
+
 ### Decimals Numbers
 
 By default, `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute:

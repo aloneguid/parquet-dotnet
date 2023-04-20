@@ -74,6 +74,12 @@ namespace Parquet.Serialization {
                 r = new DateTimeDataField(name,
                     isTimestamp ? DateTimeFormat.DateAndTime : DateTimeFormat.Impala,
                     propertyName: propertyName);
+            } else if(t == typeof(TimeSpan)) {
+                r = new TimeSpanDataField(name,
+                    pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
+                        ? TimeSpanFormat.MilliSeconds
+                        : TimeSpanFormat.MicroSeconds,
+                    propertyName: propertyName);
             } else if(t == typeof(decimal)) {
                 ParquetDecimalAttribute? ps = pi?.GetCustomAttribute<ParquetDecimalAttribute>();
                 r = ps == null
@@ -200,6 +206,7 @@ namespace Parquet.Serialization {
                     .Select(p => MakeField(p, forWriting, makeArrays))
                     .Where(f => f != null)
                     .Select(f => f!)
+                    .OrderBy(f => f.Order)
                     .ToArray();
 
                 if(fields.Length == 0)

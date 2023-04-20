@@ -247,6 +247,11 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetTimestamp]
             public DateTime TimestampDate { get; set; }
+
+            public TimeSpan DefaultTime { get; set; }
+
+            [ParquetMicroSecondsTime]
+            public TimeSpan MicroTime { get; set; }
         }
 
         [Fact]
@@ -264,6 +269,24 @@ namespace Parquet.Test.Serialisation {
             Assert.True(s.DataFields[1] is DateTimeDataField);
             Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[1]).DateTimeFormat);
         }
+
+        [Fact]
+        public void Time_default() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[2] is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)s.DataFields[2]).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void Time_micros() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[3] is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)s.DataFields[3]).TimeSpanFormat);
+        }
+
+
 
         class DecimalPoco {
             public decimal Default { get; set; }

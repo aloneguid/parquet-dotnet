@@ -418,20 +418,34 @@ namespace Parquet.Encodings {
                     tse.Type = Thrift.Type.INT96;
                 }
             } else if(st == typeof(TimeSpan)) {         // TimeSpan
-                tse.Type = Thrift.Type.INT32;
                 if(field is TimeSpanDataField dfTime) {
                     switch(dfTime.TimeSpanFormat) {
-                        case TimeSpanFormat.MicroSeconds:
-                            tse.Type = Thrift.Type.INT64;
-                            tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
-                            break;
                         case TimeSpanFormat.MilliSeconds:
                             tse.Type = Thrift.Type.INT32;
+                            tse.LogicalType.TIME = new Thrift.TimeType {
+                                IsAdjustedToUTC = true,
+                                Unit = new Thrift.TimeUnit { MILLIS = new Thrift.MilliSeconds() }
+                            };
                             tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
                             break;
-
-                            //other cases are just default
+                        case TimeSpanFormat.MicroSeconds:
+                            tse.Type = Thrift.Type.INT64;
+                            tse.LogicalType.TIME = new Thrift.TimeType {
+                                IsAdjustedToUTC = true,
+                                Unit = new Thrift.TimeUnit { MICROS = new Thrift.MicroSeconds() }
+                            };
+                            tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
+                            break;
+                        default:
+                            throw new NotImplementedException($"{dfTime.TimeSpanFormat} time format is not implemented");
                     }
+                } else {
+                    tse.Type = Thrift.Type.INT32;
+                    tse.LogicalType.TIME = new Thrift.TimeType {
+                        IsAdjustedToUTC = true,
+                        Unit = new Thrift.TimeUnit { MILLIS = new Thrift.MilliSeconds() }
+                    };
+                    tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
                 }
             } else if(st == typeof(Interval)) {         // Interval
                 tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;

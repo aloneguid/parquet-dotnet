@@ -16,9 +16,10 @@ namespace Parquet.Schema {
         /// <param name="name">The name.</param>
         /// <param name="format">The format.</param>
         /// <param name="isNullable"></param>
-        public TimeSpanDataField(string name, TimeSpanFormat format, bool isNullable = false)
-           : base(name, typeof(TimeSpan)) {
-            IsNullable = isNullable;
+        /// <param name="isArray"></param>
+        /// <param name="propertyName"></param>
+        public TimeSpanDataField(string name, TimeSpanFormat format, bool? isNullable = null, bool? isArray = null, string? propertyName = null)
+           : base(name, typeof(TimeSpan), isNullable, isArray, propertyName) {
             TimeSpanFormat = format;
         }
     }
