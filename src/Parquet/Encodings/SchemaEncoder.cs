@@ -23,6 +23,9 @@ namespace Parquet.Encodings {
             typeof(decimal),
             typeof(BigInteger),
             typeof(DateTime),
+#if NET6_0_OR_GREATER
+            typeof(DateOnly),
+#endif
             typeof(TimeSpan),
             typeof(Interval),
             typeof(byte[]),
@@ -181,7 +184,11 @@ namespace Parquet.Encodings {
                     Thrift.ConvertedType.UINT_16 => typeof(ushort),
                     Thrift.ConvertedType.INT_32 => typeof(int),
                     Thrift.ConvertedType.UINT_32 => typeof(uint),
+#if NET6_0_OR_GREATER
+                    Thrift.ConvertedType.DATE => options.UseDateOnlyTypeForDates ? typeof(DateOnly) : typeof(DateTime),
+#else
                     Thrift.ConvertedType.DATE => typeof(DateTime),
+#endif
                     Thrift.ConvertedType.DECIMAL => typeof(decimal),
                     Thrift.ConvertedType.TIME_MILLIS => typeof(TimeSpan),
                     Thrift.ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
@@ -417,6 +424,12 @@ namespace Parquet.Encodings {
                 } else {
                     tse.Type = Thrift.Type.INT96;
                 }
+#if NET6_0_OR_GREATER
+            } else if(st == typeof(DateOnly)) {         // DateOnly
+                tse.Type = Thrift.Type.INT32;
+                tse.LogicalType.DATE = new Thrift.DateType();
+                tse.Converted_type = Thrift.ConvertedType.DATE;
+#endif
             } else if(st == typeof(TimeSpan)) {         // TimeSpan
                 if(field is TimeSpanDataField dfTime) {
                     switch(dfTime.TimeSpanFormat) {

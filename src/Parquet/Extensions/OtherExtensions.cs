@@ -39,6 +39,13 @@ namespace Parquet {
             return (int)diff.TotalDays;
         }
 
+#if NET6_0_OR_GREATER
+        public static int ToUnixDays(this DateOnly dto) {
+            TimeSpan diff = new DateTime(dto.Year, dto.Month, dto.Day) - UnixEpoch;
+            return (int)diff.TotalDays;
+        }
+#endif
+
         public static DateTime ToUtc(this DateTime dto) =>
             dto.Kind == DateTimeKind.Unspecified
                 ? DateTime.SpecifyKind(dto, DateTimeKind.Utc)

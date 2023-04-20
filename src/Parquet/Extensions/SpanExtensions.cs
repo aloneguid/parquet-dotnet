@@ -206,6 +206,19 @@ namespace System {
             }
         }
 
+#if NET6_0_OR_GREATER
+        public static void MinMax(this ReadOnlySpan<DateOnly> span, out DateOnly min, out DateOnly max) {
+            min = span.IsEmpty ? default(DateOnly) : span[0];
+            max = min;
+            foreach(DateOnly i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
+#endif
+
         public static void MinMax(this ReadOnlySpan<TimeSpan> span, out TimeSpan min, out TimeSpan max) {
             min = span.IsEmpty ? default(TimeSpan) : span[0];
             max = min;
