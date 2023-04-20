@@ -12,137 +12,21 @@ using Type = Parquet.Thrift.Type;
 namespace Parquet.Encodings {
     static class SchemaEncoder {
 
-        class LookupItem {
-            public Thrift.Type ThriftType { get; set; }
-
-            public SType? SystemType { get; set; }
-
-            public Dictionary<Thrift.ConvertedType, SType>? ConvertedTypes { get; set; }
-        }
-
-        class LookupTable : List<LookupItem> {
-
-            class SystemTypeInfo {
-                public Thrift.Type tt;
-                public Thrift.ConvertedType? tct;
-                public int priority;
-            }
-
-            // all the cached lookups built during static initialisation
-            private readonly HashSet<SType> _supportedTypes = new();
-            private readonly Dictionary<Thrift.Type, SType> _typeToDefaultType = new();
-            private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, SType> _typeAndConvertedTypeToType = new();
-            private readonly Dictionary<SType, SystemTypeInfo> _systemTypeToTypeTuple = new();
-
-            public void Add(Thrift.Type thriftType, SType t, params object[] options) {
-                Add(thriftType, t, int.MaxValue, options);
-            }
-
-            private void AddSystemTypeInfo(Thrift.Type thriftType, SType t, Thrift.ConvertedType? ct, int priority) {
-                if(_systemTypeToTypeTuple.TryGetValue(t, out SystemTypeInfo? sti)) {
-                    if(priority <= sti.priority) {
-                        sti.tt = thriftType;
-                        sti.tct = ct;
-                        sti.priority = priority;
-                    }
-                } else {
-                    _systemTypeToTypeTuple[t] = new SystemTypeInfo {
-                        tt = thriftType,
-                        tct = ct,
-                        priority = priority
-                    };
-                }
-            }
-
-            public void Add(Thrift.Type thriftType, SType t, int priority, params object[] options) {
-
-                _typeToDefaultType[thriftType] = t;
-
-                AddSystemTypeInfo(thriftType, t, null, priority);
-
-                _supportedTypes.Add(t);
-                for(int i = 0; i < options.Length; i += 2) {
-                    var ct = (Thrift.ConvertedType)options[i];
-                    var clr = (System.Type)options[i + 1];
-                    _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
-
-                    // more specific version overrides less specific
-                    AddSystemTypeInfo(thriftType, clr, ct, int.MaxValue);
-
-                    _supportedTypes.Add(clr);
-                }
-            }
-
-            public SType? FindSystemType(Thrift.SchemaElement se) {
-                if(!se.__isset.type)
-                    return null;
-
-                if(se.__isset.converted_type &&
-                    _typeAndConvertedTypeToType.TryGetValue(
-                        new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type),
-                        out SType? match)) {
-                    return match;
-                }
-
-                if(_typeToDefaultType.TryGetValue(se.Type, out match)) {
-                    return match;
-                }
-
-                return null;
-            }
-
-            public bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) {
-
-                if(!_systemTypeToTypeTuple.TryGetValue(type, out SystemTypeInfo? sti)) {
-                    thriftType = default;
-                    convertedType = null;
-                    return false;
-                }
-
-                thriftType = sti.tt;
-                convertedType = sti.tct;
-                return true;
-            }
-
-            public bool IsSupported(SType? t) => t != null && _supportedTypes.Contains(t);
-
-            public SType[] SupportedTypes => _supportedTypes.ToArray();
-        }
-
-        private static readonly LookupTable _lt = new() {
-            { Thrift.Type.BOOLEAN, typeof(bool) },
-            { Thrift.Type.INT32, typeof(int),
-                Thrift.ConvertedType.UINT_8, typeof(byte),
-                Thrift.ConvertedType.INT_8, typeof(sbyte),
-                Thrift.ConvertedType.UINT_16, typeof(ushort),
-                Thrift.ConvertedType.INT_16, typeof(short),
-                Thrift.ConvertedType.UINT_32, typeof(uint),
-                Thrift.ConvertedType.INT_32, typeof(int),
-                Thrift.ConvertedType.DATE, typeof(DateTime),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal),
-                Thrift.ConvertedType.TIME_MILLIS, typeof(TimeSpan),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime)
-            },
-            { Thrift.Type.INT64 , typeof(long),
-                Thrift.ConvertedType.INT_64, typeof(long),
-                Thrift.ConvertedType.UINT_64, typeof(ulong),
-                Thrift.ConvertedType.TIME_MICROS, typeof(TimeSpan),
-                Thrift.ConvertedType.TIMESTAMP_MICROS, typeof(DateTime),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal)
-            },
-            { Thrift.Type.INT96, typeof(DateTime), 1 },
-            { Thrift.Type.INT96, typeof(BigInteger) },
-            { Thrift.Type.FLOAT, typeof(float) },
-            { Thrift.Type.DOUBLE, typeof(double) },
-            { Thrift.Type.BYTE_ARRAY, typeof(byte[]), 1,
-                Thrift.ConvertedType.UTF8, typeof(string),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal)
-            },
-            { Thrift.Type.FIXED_LEN_BYTE_ARRAY, typeof(byte[]),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal),
-                Thrift.ConvertedType.INTERVAL, typeof(Interval)
-            }
+        public static readonly SType[] SupportedTypes = new[] {
+            typeof(bool),
+            typeof(byte), typeof(sbyte),
+            typeof(short), typeof(ushort),
+            typeof(int), typeof(uint),
+            typeof(long), typeof(ulong),
+            typeof(float),
+            typeof(double),
+            typeof(decimal),
+            typeof(BigInteger),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Interval),
+            typeof(byte[]),
+            typeof(string)
         };
 
         static bool TryBuildList(List<Thrift.SchemaElement> schema,
@@ -244,9 +128,7 @@ namespace Parquet.Encodings {
             return true;
         }
 
-        public static bool IsSupported(SType? t) => t == typeof(DateTime) || _lt.IsSupported(t);
-
-        public static SType[] SupportedTypes => _lt.SupportedTypes;
+        public static bool IsSupported(SType? t) => SupportedTypes.Contains(t);
 
         /// <summary>
         /// Builds <see cref="Field"/> from thrift schema
@@ -266,29 +148,8 @@ namespace Parquet.Encodings {
             Field? f = null;
             ownedChildCount = 0;
 
-            SType? t = _lt.FindSystemType(se);
-            if(t != null) {
-                // correction taking int account passed options
-                if(options != null && options.TreatBigIntegersAsDates && t == typeof(BigInteger))
-                    t = typeof(DateTime);
-
-                if(options != null && options.TreatByteArrayAsString && t == typeof(byte[]))
-                    t = typeof(string);
-
-                DataField? df;
-                if(t == typeof(DateTime)) {
-                    df = GetDateTimeDataField(se);
-                } 
-                else{
-                    // successful field built
-                    df = new DataField(se.Name, t);
-                }
-
-                df.IsNullable = isNullable;
-                df.IsArray = isArray;
-                df.ThriftSchemaElement = se;
+            if(TryBuildDataField(se, options, out DataField? df)) {
                 f = df;
-
                 index++;
                 return f;
             }
@@ -304,12 +165,82 @@ namespace Parquet.Encodings {
             return f;
         }
 
-        private static DataField GetDateTimeDataField(SchemaElement se)
-        {
-            switch (se.Converted_type)
-            {
+        private static bool TryBuildDataField(SchemaElement se, ParquetOptions? options, out DataField? df) {
+            df = null;
+
+            if(!se.__isset.type)
+                return false;
+
+            SType? st = se.Type switch {
+                Thrift.Type.BOOLEAN => typeof(bool),
+
+                Thrift.Type.INT32 => se.Converted_type switch {
+                    Thrift.ConvertedType.INT_8 => typeof(sbyte),
+                    Thrift.ConvertedType.UINT_8 => typeof(byte),
+                    Thrift.ConvertedType.INT_16 => typeof(short),
+                    Thrift.ConvertedType.UINT_16 => typeof(ushort),
+                    Thrift.ConvertedType.INT_32 => typeof(int),
+                    Thrift.ConvertedType.UINT_32 => typeof(uint),
+                    Thrift.ConvertedType.DATE => typeof(DateTime),
+                    Thrift.ConvertedType.DECIMAL => typeof(decimal),
+                    Thrift.ConvertedType.TIME_MILLIS => typeof(TimeSpan),
+                    Thrift.ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
+                    _ => typeof(int)
+                },
+
+                Thrift.Type.INT64 => se.Converted_type switch {
+                    Thrift.ConvertedType.INT_64 => typeof(long),
+                    Thrift.ConvertedType.UINT_64 => typeof(ulong),
+                    Thrift.ConvertedType.TIME_MICROS => typeof(TimeSpan),
+                    Thrift.ConvertedType.TIMESTAMP_MICROS => typeof(DateTime),
+                    Thrift.ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
+                    Thrift.ConvertedType.DECIMAL => typeof(decimal),
+                    _ => typeof(long)
+                },
+
+                Thrift.Type.INT96 when (options != null && options.TreatBigIntegersAsDates) => typeof(DateTime),
+                Thrift.Type.INT96 => typeof(BigInteger),
+                Thrift.Type.FLOAT => typeof(float),
+                Thrift.Type.DOUBLE => typeof(double),
+
+                Thrift.Type.BYTE_ARRAY => se.Converted_type switch {
+                    Thrift.ConvertedType.UTF8 => typeof(string),
+                    Thrift.ConvertedType.DECIMAL => typeof(decimal),
+                    _ when (options != null && options.TreatByteArrayAsString) => typeof(string),
+                    _ => typeof(byte[])
+                },
+
+                Thrift.Type.FIXED_LEN_BYTE_ARRAY => se.Converted_type switch {
+                    Thrift.ConvertedType.DECIMAL => typeof(decimal),
+                    Thrift.ConvertedType.INTERVAL => typeof(Interval),
+                    _ when (options != null && options.TreatByteArrayAsString) => typeof(string),
+                    _ => typeof(byte[])
+                },
+
+                _ => null
+            };
+
+            if(st == null)
+                return false;
+
+            if(st == typeof(DateTime)) {
+                df = GetDateTimeDataField(se);
+            } else {
+                // successful field built
+                df = new DataField(se.Name, st);
+            }
+            bool isNullable = se.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
+            bool isArray = se.Repetition_type == Thrift.FieldRepetitionType.REPEATED;
+            df.IsNullable = isNullable;
+            df.IsArray = isArray;
+            df.ThriftSchemaElement = se;
+            return true;
+        }
+
+        private static DataField GetDateTimeDataField(SchemaElement se) {
+            switch(se.Converted_type) {
                 case ConvertedType.TIMESTAMP_MILLIS:
-                    if (se.Type == Type.INT64)
+                    if(se.Type == Type.INT64)
                         return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
                     break;
                 case ConvertedType.DATE:
@@ -318,68 +249,6 @@ namespace Parquet.Encodings {
                     break;
             }
             return new DateTimeDataField(se.Name, DateTimeFormat.Impala);
-        }
-
-        /// <summary>
-        /// Adjust type-specific schema encodings that do not always follow generic use case
-        /// </summary>
-        /// <param name="df"></param>
-        /// <param name="tse"></param>
-        private static void AdjustEncoding(DataField df, Thrift.SchemaElement tse) {
-            if(df.ClrType == typeof(DateTime)) {
-                if(df is DateTimeDataField dfDateTime) {
-                    switch(dfDateTime.DateTimeFormat) {
-                        case DateTimeFormat.DateAndTime:
-                            tse.Type = Thrift.Type.INT64;
-                            tse.Converted_type = Thrift.ConvertedType.TIMESTAMP_MILLIS;
-                            break;
-                        case DateTimeFormat.Date:
-                            tse.Type = Thrift.Type.INT32;
-                            tse.Converted_type = Thrift.ConvertedType.DATE;
-                            break;
-
-                            //other cases are just default
-                    }
-                }
-            } else if(df.ClrType == typeof(decimal)) {
-                if(df is DecimalDataField dfDecimal) {
-                    if(dfDecimal.ForceByteArrayEncoding)
-                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-                    else if(dfDecimal.Precision <= 9)
-                        tse.Type = Thrift.Type.INT32;
-                    else if(dfDecimal.Precision <= 18)
-                        tse.Type = Thrift.Type.INT64;
-                    else
-                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-
-                    tse.Precision = dfDecimal.Precision;
-                    tse.Scale = dfDecimal.Scale;
-                    tse.Type_length = BigDecimal.GetBufferSize(dfDecimal.Precision);
-                } else {
-                    //set defaults
-                    tse.Precision = DecimalFormatDefaults.DefaultPrecision;
-                    tse.Scale = DecimalFormatDefaults.DefaultScale;
-                    tse.Type_length = 16;
-                }
-            } else if(df.ClrType == typeof(Interval)) {
-                //set type length to 12
-                tse.Type_length = 12;
-            } else if(df.ClrType == typeof(TimeSpan)) {
-                if(df is TimeSpanDataField dfTime) {
-                    switch(dfTime.TimeSpanFormat) {
-                        case TimeSpanFormat.MicroSeconds:
-                            tse.Type = Thrift.Type.INT64;
-                            tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
-                            break;
-                        case TimeSpanFormat.MilliSeconds:
-                            tse.Type = Thrift.Type.INT32;
-                            tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
-                            break;
-
-                            //other cases are just default
-                    }
-                }
-            }
         }
 
         private static void Encode(ListField listField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
@@ -449,19 +318,132 @@ namespace Parquet.Encodings {
             }
         }
 
+        public static Thrift.SchemaElement Encode(DataField field) {
+            SType st = field.ClrType;
+            var tse = new Thrift.SchemaElement(field.Name);
+            tse.LogicalType = new Thrift.LogicalType();
+
+            if(st == typeof(bool)) {                                // boolean
+                tse.Type = Thrift.Type.BOOLEAN;
+            } else if(st == typeof(byte) || st == typeof(sbyte) ||  // 32-bit numbers
+                st == typeof(short) || st == typeof(ushort) ||
+                st == typeof(int) || st == typeof(uint)) {
+
+                tse.Type = Thrift.Type.INT32;
+                sbyte bw = 0;
+                if(st == typeof(byte) || st == typeof(sbyte))
+                    bw = 8;
+                else if(st == typeof(short) || st == typeof(ushort))
+                    bw = 16;
+                else if(st == typeof(int) || st == typeof(uint))
+                    bw = 32;
+                bool signed = st == typeof(sbyte) || st == typeof(short) || st == typeof(int);
+
+                tse.LogicalType.INTEGER = new Thrift.IntType {
+                    BitWidth = bw,
+                    IsSigned = signed
+                };
+                tse.Converted_type = bw switch {
+                    8 => signed ? Thrift.ConvertedType.INT_8 : Thrift.ConvertedType.UINT_8,
+                    16 => signed ? Thrift.ConvertedType.INT_16 : Thrift.ConvertedType.UINT_16,
+                    32 => signed ? Thrift.ConvertedType.INT_32 : Thrift.ConvertedType.UINT_32,
+                    _ => Thrift.ConvertedType.INT_32
+                };
+            } else if(st == typeof(long) || st == typeof(ulong)) {  // 64-bit number
+                tse.Type = Thrift.Type.INT64;
+                tse.LogicalType.INTEGER = new Thrift.IntType { BitWidth = 64, IsSigned = st == typeof(long) };
+                tse.Converted_type = st == typeof(long) ? Thrift.ConvertedType.INT_64 : Thrift.ConvertedType.UINT_64;
+            } else if(st == typeof(float)) {                        // float
+                tse.Type = Thrift.Type.FLOAT;
+            } else if(st == typeof(double)) {                       // double
+                tse.Type = Thrift.Type.DOUBLE;
+            } else if(st == typeof(BigInteger)) {                   // BigInteger
+                tse.Type = Thrift.Type.INT96;
+            } else if(st == typeof(string)) {                       // string
+                tse.Type = Thrift.Type.BYTE_ARRAY;
+                tse.LogicalType.STRING = new Thrift.StringType();
+                tse.Converted_type = Thrift.ConvertedType.UTF8;
+            } else if(st == typeof(decimal)) {                      // decimal
+
+                int precision;
+                int scale;
+
+                if(field is DecimalDataField dfDecimal) {
+                    if(dfDecimal.ForceByteArrayEncoding)
+                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+                    else if(dfDecimal.Precision <= 9)
+                        tse.Type = Thrift.Type.INT32;
+                    else if(dfDecimal.Precision <= 18)
+                        tse.Type = Thrift.Type.INT64;
+                    else
+                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+
+                    precision = dfDecimal.Precision;
+                    scale = dfDecimal.Scale;
+                    tse.Type_length = BigDecimal.GetBufferSize(dfDecimal.Precision);
+                } else {
+                    //set defaults
+                    tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+                    precision = DecimalFormatDefaults.DefaultPrecision;
+                    scale = DecimalFormatDefaults.DefaultScale;
+                    tse.Type_length = 16;
+                }
+
+                tse.LogicalType.DECIMAL = new Thrift.DecimalType {
+                    Precision = precision,
+                    Scale = scale
+                };
+                tse.Precision = precision;
+                tse.Scale = scale;
+            } else if(st == typeof(byte[])) {           // byte[]
+                tse.Type = Thrift.Type.BYTE_ARRAY;
+            } else if(st == typeof(DateTime)) {         // DateTime
+                if(field is DateTimeDataField dfDateTime) {
+                    switch(dfDateTime.DateTimeFormat) {
+                        case DateTimeFormat.DateAndTime:
+                            tse.Type = Thrift.Type.INT64;
+                            tse.Converted_type = Thrift.ConvertedType.TIMESTAMP_MILLIS;
+                            break;
+                        case DateTimeFormat.Date:
+                            tse.Type = Thrift.Type.INT32;
+                            tse.Converted_type = Thrift.ConvertedType.DATE;
+                            break;
+
+                            //other cases are just default
+                    }
+                } else {
+                    tse.Type = Thrift.Type.INT96;
+                }
+            } else if(st == typeof(TimeSpan)) {         // TimeSpan
+                tse.Type = Thrift.Type.INT32;
+                if(field is TimeSpanDataField dfTime) {
+                    switch(dfTime.TimeSpanFormat) {
+                        case TimeSpanFormat.MicroSeconds:
+                            tse.Type = Thrift.Type.INT64;
+                            tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
+                            break;
+                        case TimeSpanFormat.MilliSeconds:
+                            tse.Type = Thrift.Type.INT32;
+                            tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
+                            break;
+
+                            //other cases are just default
+                    }
+                }
+            } else if(st == typeof(Interval)) {         // Interval
+                tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
+                tse.Type_length = 12;
+                tse.Converted_type = Thrift.ConvertedType.INTERVAL;
+            } else {
+                throw new InvalidOperationException($"type {st} is not supported");
+            }
+
+            return tse;
+        }
+
         public static void Encode(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
             if(field.SchemaType == SchemaType.Data && field is DataField dataField) {
-                var tse = new Thrift.SchemaElement(field.Name);
-
-                if(!_lt.FindTypeTuple(dataField.ClrType, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType)) {
-                    throw new NotSupportedException($"could not find type tuple for {dataField.ClrType}");
-                }
-
-                tse.Type = thriftType;
-                if(convertedType != null) {
-                    // be careful calling thrift setter as it sets other hidden flags
-                    tse.Converted_type = convertedType.Value;
-                }
+                Thrift.SchemaElement tse = Encode(dataField);
 
                 bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
 
@@ -470,8 +452,6 @@ namespace Parquet.Encodings {
                    : (dataField.IsNullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
                 container.Add(tse);
                 parent.Num_children += 1;
-
-                AdjustEncoding(dataField, tse);
             } else if(field.SchemaType == SchemaType.List && field is ListField listField) {
                 Encode(listField, parent, container);
             } else if(field.SchemaType == SchemaType.Map && field is MapField mapField) {
@@ -482,8 +462,5 @@ namespace Parquet.Encodings {
                 throw new InvalidOperationException($"unable to encode {field}");
             }
         }
-
-        public static bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) =>
-            _lt.FindTypeTuple(type, out thriftType, out convertedType);
     }
 }

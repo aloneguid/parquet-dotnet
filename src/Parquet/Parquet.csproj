@@ -126,4 +126,8 @@
       </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Serialization\Attributes\" />
+    </ItemGroup>
+
 </Project>

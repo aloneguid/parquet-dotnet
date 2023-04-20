@@ -143,9 +143,11 @@ namespace Parquet.Test.Types {
             object actual = await WriteReadSingle(input.field, input.expectedValue);
 
             bool equal;
-            if(input.expectedValue == null && actual == null)                 equal = true;
-else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null)                 equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
-else if(actual.GetType() == typeof(DateTime)) {
+            if(input.expectedValue == null && actual == null)
+                equal = true;
+            else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null)
+                equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
+            else if(actual.GetType() == typeof(DateTime)) {
                 var dtActual = (DateTime)actual;
                 Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
                 var dtExpected = (DateTime)input.expectedValue!;
@@ -153,7 +155,8 @@ else if(actual.GetType() == typeof(DateTime)) {
                     ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
                     : dtExpected.ToUniversalTime();
                 equal = dtActual.Equals(dtExpected);
-            } else                 equal = actual.Equals(input.expectedValue);
+            } else
+                equal = actual.Equals(input.expectedValue);
 
             Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}");
         }

@@ -239,5 +239,17 @@ namespace Parquet.Test.Serialisation {
                 expectedSchema.Equals(actualSchema),
                 expectedSchema.GetNotEqualsMessage(actualSchema, "expected", "actual"));
         }
+
+        class DatesPoco {
+
+            public DateTime DateOnly { get; set; }
+        }
+
+        [Fact]
+        public void Date_only() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField dateOnly = s.DataFields[0];
+        }
     }
 }
