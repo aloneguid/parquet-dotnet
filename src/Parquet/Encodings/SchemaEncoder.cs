@@ -139,7 +139,7 @@ namespace Parquet.Encodings {
         /// <param name="ownedChildCount"></param>
         /// <returns></returns>
         public static Field? Decode(List<Thrift.SchemaElement> schema,
-            ParquetOptions? options,
+            ParquetOptions options,
             ref int index, out int ownedChildCount) {
 
             Thrift.SchemaElement se = schema[index];
@@ -165,7 +165,7 @@ namespace Parquet.Encodings {
             return f;
         }
 
-        private static bool TryBuildDataField(SchemaElement se, ParquetOptions? options, out DataField? df) {
+        private static bool TryBuildDataField(SchemaElement se, ParquetOptions options, out DataField? df) {
             df = null;
 
             if(!se.__isset.type)
@@ -174,7 +174,7 @@ namespace Parquet.Encodings {
             SType? st = se.Type switch {
                 Thrift.Type.BOOLEAN => typeof(bool),
 
-                Thrift.Type.INT32 => se.Converted_type switch {
+                Thrift.Type.INT32 when se.__isset.converted_type => se.Converted_type switch {
                     Thrift.ConvertedType.INT_8 => typeof(sbyte),
                     Thrift.ConvertedType.UINT_8 => typeof(byte),
                     Thrift.ConvertedType.INT_16 => typeof(short),
@@ -187,8 +187,9 @@ namespace Parquet.Encodings {
                     Thrift.ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
                     _ => typeof(int)
                 },
+                Thrift.Type.INT32 => typeof(int),
 
-                Thrift.Type.INT64 => se.Converted_type switch {
+                Thrift.Type.INT64 when se.__isset.converted_type => se.Converted_type switch {
                     Thrift.ConvertedType.INT_64 => typeof(long),
                     Thrift.ConvertedType.UINT_64 => typeof(ulong),
                     Thrift.ConvertedType.TIME_MICROS => typeof(TimeSpan),
@@ -197,25 +198,26 @@ namespace Parquet.Encodings {
                     Thrift.ConvertedType.DECIMAL => typeof(decimal),
                     _ => typeof(long)
                 },
+                Thrift.Type.INT64 => typeof(long),
 
-                Thrift.Type.INT96 when (options != null && options.TreatBigIntegersAsDates) => typeof(DateTime),
+                Thrift.Type.INT96 when options.TreatBigIntegersAsDates => typeof(DateTime),
                 Thrift.Type.INT96 => typeof(BigInteger),
                 Thrift.Type.FLOAT => typeof(float),
                 Thrift.Type.DOUBLE => typeof(double),
 
-                Thrift.Type.BYTE_ARRAY => se.Converted_type switch {
+                Thrift.Type.BYTE_ARRAY when se.__isset.converted_type => se.Converted_type switch {
                     Thrift.ConvertedType.UTF8 => typeof(string),
                     Thrift.ConvertedType.DECIMAL => typeof(decimal),
-                    _ when (options != null && options.TreatByteArrayAsString) => typeof(string),
                     _ => typeof(byte[])
                 },
+                Thrift.Type.BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
 
-                Thrift.Type.FIXED_LEN_BYTE_ARRAY => se.Converted_type switch {
+                Thrift.Type.FIXED_LEN_BYTE_ARRAY when se.__isset.converted_type => se.Converted_type switch {
                     Thrift.ConvertedType.DECIMAL => typeof(decimal),
                     Thrift.ConvertedType.INTERVAL => typeof(Interval),
-                    _ when (options != null && options.TreatByteArrayAsString) => typeof(string),
                     _ => typeof(byte[])
                 },
+                Thrift.Type.FIXED_LEN_BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
 
                 _ => null
             };
@@ -408,8 +410,9 @@ namespace Parquet.Encodings {
                             tse.Type = Thrift.Type.INT32;
                             tse.Converted_type = Thrift.ConvertedType.DATE;
                             break;
-
-                            //other cases are just default
+                        default:
+                            tse.Type = Thrift.Type.INT96;
+                            break;
                     }
                 } else {
                     tse.Type = Thrift.Type.INT96;
