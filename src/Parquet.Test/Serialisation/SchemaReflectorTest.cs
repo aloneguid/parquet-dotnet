@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Parquet.Schema;
 using Parquet.Serialization;
+using Parquet.Serialization.Attributes;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
@@ -242,14 +243,52 @@ namespace Parquet.Test.Serialisation {
 
         class DatesPoco {
 
-            public DateTime DateOnly { get; set; }
+            public DateTime ImpalaDate { get; set; }
+
+            [ParquetTimestamp]
+            public DateTime TimestampDate { get; set; }
         }
 
         [Fact]
-        public void Date_only() {
+        public void Date_default_impala() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            DataField dateOnly = s.DataFields[0];
+            Assert.True(s.DataFields[0] is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.Impala, ((DateTimeDataField)s.DataFields[0]).DateTimeFormat);
         }
+
+        [Fact]
+        public void Date_timestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[1] is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[1]).DateTimeFormat);
+        }
+
+        class DecimalPoco {
+            public decimal Default { get; set; }
+
+            [ParquetDecimal(40, 20)]
+            public decimal With_40_20 { get; set; }
+        }
+
+        [Fact]
+        public void Decimal_default() {
+            ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[0] is DecimalDataField);
+            Assert.Equal(38, ((DecimalDataField)s.DataFields[0]).Precision);
+            Assert.Equal(18, ((DecimalDataField)s.DataFields[0]).Scale);
+        }
+
+        [Fact]
+        public void Decimal_override() {
+            ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[1] is DecimalDataField);
+            Assert.Equal(40, ((DecimalDataField)s.DataFields[1]).Precision);
+            Assert.Equal(20, ((DecimalDataField)s.DataFields[1]).Scale);
+        }
+
     }
 }

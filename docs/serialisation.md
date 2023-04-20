@@ -57,7 +57,27 @@ Where built-in JSON attributes are not sufficient, extra attributes are added.
 
 ### Dates
 
-By default, dates (`DateTime`) are serialized as `INT96` number
+By default, dates (`DateTime`) are serialized as `INT96` number, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet, however older systems such as Impala and Hive are still actively using it to represent dates.
+
+Therefore, when this library sees `INT96` type, it will automatically treat it as a date for both serialization and deserialization.
+
+If you need to rather use a normal non-legacy date type, just annotate a property with `[ParquetTimestamp]`:
+
+```csharp
+[ParquetTimestamp]
+public DateTime TimestampDate { get; set; }
+```
+
+### Decimals Numbers
+
+By default, `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute:
+
+```csharp
+[ParquetDecimal(40, 20)]
+public decimal With_40_20 { get; set; }
+```
+
+
 
 ## Nested Types
 

@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Schema;
+using Parquet.Serialization.Attributes;
 
 namespace Parquet.Serialization {
 
@@ -65,14 +67,29 @@ namespace Parquet.Serialization {
         }
 
         private static Field ConstructDataField(string name, string propertyName, Type t, PropertyInfo? pi) {
-            var r = new DataField(name, t, propertyName: propertyName);
+            Field r;
+
+            if(t == typeof(DateTime)) {
+                bool isTimestamp = pi?.GetCustomAttribute<ParquetTimestampAttribute>() != null;
+                r = new DateTimeDataField(name,
+                    isTimestamp ? DateTimeFormat.DateAndTime : DateTimeFormat.Impala,
+                    propertyName: propertyName);
+            } else if(t == typeof(decimal)) {
+                ParquetDecimalAttribute? ps = pi?.GetCustomAttribute<ParquetDecimalAttribute>();
+                r = ps == null
+                    ? new DecimalDataField(name,
+                        DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
+                        propertyName: propertyName)
+                    : new DecimalDataField(name, ps.Precision, ps.Scale, propertyName: propertyName);
+            } else {
+                r = new DataField(name, t, propertyName: propertyName);
+            }
 
             ParquetColumnAttribute? columnAttr = pi?.GetCustomAttribute<ParquetColumnAttribute>();
 
             if(columnAttr != null) {
                 if(columnAttr.UseListField) {
-                    return new ListField(r.Name, r.ClrNullableIfHasNullsType, propertyName,
-                        columnAttr.ListContainerName, columnAttr.ListElementName);
+                    return new ListField(r.Name, t, propertyName, columnAttr.ListContainerName, columnAttr.ListElementName);
                 }
 
                 if(t == typeof(TimeSpan))

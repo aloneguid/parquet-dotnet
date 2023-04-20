@@ -10,6 +10,7 @@
         /// The Default Precision value used when not explicitly defined; this is the value used prior to parquet-dotnet v3.9.
         /// </summary>
         public const int DefaultPrecision = 38;
+
         /// <summary>
         /// The Default Scale value used when not explicitly defined; this is the value used prior to parquet-dotnet v3.9.
         /// </summary>
