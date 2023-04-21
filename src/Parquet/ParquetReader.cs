@@ -161,7 +161,7 @@ namespace Parquet {
                 throw new InvalidOperationException("no row groups in metadata");
 
             foreach(Thrift.RowGroup thriftRowGroup in _meta.Row_groups) {
-                _groupReaders.Add(new ParquetRowGroupReader(thriftRowGroup, _footer!, Stream, ThriftStream, _parquetOptions));
+                _groupReaders.Add(new ParquetRowGroupReader(thriftRowGroup, _footer!, Stream, _parquetOptions));
             }
         }
 

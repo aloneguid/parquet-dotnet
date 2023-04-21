@@ -72,7 +72,7 @@ namespace Parquet {
         public ParquetRowGroupWriter CreateRowGroup() {
             _dataWritten = true;
 
-            var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer!,
+            var writer = new ParquetRowGroupWriter(_schema, Stream, _footer!,
                CompressionMethod, _formatOptions, CompressionLevel);
 
             _openedWriters.Add(writer);
@@ -146,7 +146,7 @@ namespace Parquet {
             //finalize file
             //long size = _footer.WriteAsync(ThriftStream).Result;
 
-            var sizeTask = Task.Run(() => _footer!.WriteAsync(ThriftStream));
+            var sizeTask = Task.Run(() => _footer!.WriteAsync(Stream));
             sizeTask.Wait();
             long size = sizeTask.Result;
 

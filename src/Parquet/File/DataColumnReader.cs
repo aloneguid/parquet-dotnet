@@ -18,7 +18,6 @@ namespace Parquet.File {
         private readonly Thrift.SchemaElement? _thriftSchemaElement;
         private readonly ThriftFooter _footer;
         private readonly ParquetOptions _options;
-        private readonly ThriftStream _thriftStream;
         private readonly DataColumnStatistics? _stats;
 
         public DataColumnReader(
@@ -35,7 +34,6 @@ namespace Parquet.File {
 
             dataField.EnsureAttachedToSchema(nameof(dataField));
 
-            _thriftStream = new ThriftStream(inputStream);
             _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
 
             // read stats as soon as possible
@@ -64,7 +62,7 @@ namespace Parquet.File {
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
             while(pc.ValuesRead < totalValuesInChunk) {
-                Thrift.PageHeader ph = await _thriftStream.ReadAsync<Thrift.PageHeader>(cancellationToken);
+                Thrift.PageHeader ph = await ThriftIO.ReadAsync<Thrift.PageHeader>(_inputStream, cancellationToken);
 
                 switch(ph.Type) {
                     case PageType.DICTIONARY_PAGE:

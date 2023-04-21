@@ -21,7 +21,7 @@ namespace Parquet {
         internal ParquetRowGroupReader(
            Thrift.RowGroup rowGroup,
            ThriftFooter footer,
-           Stream stream, ThriftStream thriftStream,
+           Stream stream,
            ParquetOptions? parquetOptions) {
             _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));

@@ -18,7 +18,6 @@ namespace Parquet {
 
         private readonly Stream _fileStream;
         private BinaryWriter? _binaryWriter;
-        private ThriftStream? _thriftStream;
 
         internal ParquetActor(Stream? fileStream) =>
             _fileStream = fileStream ?? throw new ArgumentNullException(nameof(fileStream));
@@ -29,8 +28,6 @@ namespace Parquet {
         protected Stream Stream => _fileStream;
 
         internal BinaryWriter Writer => _binaryWriter ??= new BinaryWriter(_fileStream);
-
-        internal ThriftStream ThriftStream => _thriftStream ??= new ThriftStream(_fileStream);
 
         /// <summary>
         /// Validates that this file is a valid parquet file by reading head and tail of it
@@ -48,9 +45,9 @@ namespace Parquet {
                 throw new IOException($"not a parquet file, head: {head.ToHexString()}, tail: {tail.ToHexString()}");
         }
 
-        internal async Task<Thrift.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
-            await GoBeforeFooterAsync();
-            return await ThriftStream.ReadAsync<Thrift.FileMetaData>(cancellationToken);
+        internal async ValueTask<Thrift.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
+            int footerLength = await GoBeforeFooterAsync();
+            return await ThriftIO.ReadAsync<Thrift.FileMetaData>(_fileStream, footerLength, cancellationToken);
         }
 
         internal async ValueTask<int> GoBeforeFooterAsync() {

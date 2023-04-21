@@ -12,7 +12,6 @@ using Parquet.Schema;
 namespace Parquet.File {
     class DataColumnWriter {
         private readonly Stream _stream;
-        private readonly ThriftStream _thriftStream;
         private readonly ThriftFooter _footer;
         private readonly Thrift.SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
@@ -22,14 +21,12 @@ namespace Parquet.File {
 
         public DataColumnWriter(
            Stream stream,
-           ThriftStream thriftStream,
            ThriftFooter footer,
            Thrift.SchemaElement schemaElement,
            CompressionMethod compressionMethod,
            ParquetOptions options,
            CompressionLevel compressionLevel) {
             _stream = stream;
-            _thriftStream = thriftStream;
             _footer = footer;
             _schemaElement = schemaElement;
             _compressionMethod = compressionMethod;
@@ -75,7 +72,7 @@ namespace Parquet.File {
             ph.Compressed_page_size = compressedData.AsSpan().Length;
 
             //write the header in
-            int headerSize = await _thriftStream.WriteAsync(ph, false, cancellationToken);
+            int headerSize = await ThriftIO.WriteAsync(_stream, ph, cancellationToken);
 #if NETSTANDARD2_0
                 byte[] tmp = compressedData.AsSpan().ToArray();
                 _stream.Write(tmp, 0, tmp.Length);
