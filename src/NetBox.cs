@@ -3,7 +3,7 @@
 | \ | | ___| |_| __ )  _____  __
 |  \| |/ _ \ __|  _ \ / _ \ \/ /
 | |\  |  __/ |_| |_) | (_) >  <
-|_| \_|\___|\__|____/ \___/_/\_\   v4.1.9 by @aloneguid
+|_| \_|\___|\__|____/ \___/_/\_\   v4.1.11 by @aloneguid
 
 https://github.com/aloneguid/netbox
 */
@@ -824,9 +824,12 @@ namespace NetBox.IO
 // FILE: src/NetBox/System/StreamExtensions.cs
 
 namespace System {
+    using System.Threading.Tasks;
+    using System.Threading;
     using global::System.Collections.Generic;
     using global::System.IO;
     using global::System.Text;
+    using System.Diagnostics;
 
     /// <summary>
     /// <see cref="Stream"/> extension

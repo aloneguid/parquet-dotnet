@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,8 +77,8 @@ namespace Parquet.File {
             _fileMeta.Num_rows += totalRowCount;
         }
 
-        public async Task<long> WriteAsync(ThriftStream thriftStream, CancellationToken cancellationToken = default) {
-            return await thriftStream.WriteAsync(_fileMeta, false, cancellationToken);
+        public async Task<long> WriteAsync(Stream s, CancellationToken cancellationToken = default) {
+            return await ThriftIO.WriteAsync(s, _fileMeta, cancellationToken);
         }
 
         public Thrift.SchemaElement? GetSchemaElement(Thrift.ColumnChunk columnChunk) {

@@ -20,7 +20,6 @@ namespace Parquet {
     {
         private readonly ParquetSchema _schema;
         private readonly Stream _stream;
-        private readonly ThriftStream _thriftStream;
         private readonly ThriftFooter _footer;
         private readonly CompressionMethod _compressionMethod;
         private readonly CompressionLevel _compressionLevel;
@@ -31,14 +30,12 @@ namespace Parquet {
 
         internal ParquetRowGroupWriter(ParquetSchema schema,
            Stream stream,
-           ThriftStream thriftStream,
            ThriftFooter footer,
            CompressionMethod compressionMethod,
            ParquetOptions formatOptions,
            CompressionLevel compressionLevel) {
             _schema = schema ?? throw new ArgumentNullException(nameof(schema));
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _thriftStream = thriftStream ?? throw new ArgumentNullException(nameof(thriftStream));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _compressionMethod = compressionMethod;
             _compressionLevel = compressionLevel;
@@ -74,7 +71,7 @@ namespace Parquet {
 
             FieldPath path = _footer.GetPath(tse);
 
-            var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
+            var writer = new DataColumnWriter(_stream, _footer, tse,
                _compressionMethod,
                _formatOptions,
                _compressionLevel);
