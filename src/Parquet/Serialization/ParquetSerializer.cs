@@ -62,7 +62,9 @@ namespace Parquet.Serialization {
             }
 
             bool append = options != null && options.Append;
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination, null, append, cancellationToken)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
+                options?.ParquetOptions,
+                append, cancellationToken)) {
 
                 if(options != null) {
                     writer.CompressionMethod = options.CompressionMethod;
@@ -105,10 +107,12 @@ namespace Parquet.Serialization {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
+        /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
+            ParquetOptions? options = null,
             CancellationToken cancellationToken = default)
             where T : new() {
 
@@ -123,7 +127,7 @@ namespace Parquet.Serialization {
 
             var result = new List<T>();
 
-            using ParquetReader reader = await ParquetReader.CreateAsync(source);
+            using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 

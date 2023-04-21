@@ -32,5 +32,10 @@ namespace Parquet.Serialization {
         /// Custom row group size, if different from 
         /// </summary>
         public int? RowGroupSize { get; set; }
+
+        /// <summary>
+        /// Further customisations
+        /// </summary>
+        public ParquetOptions? ParquetOptions { get; set; } = new ParquetOptions();
     }
 }

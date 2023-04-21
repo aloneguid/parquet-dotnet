@@ -48,6 +48,9 @@ namespace Parquet.Test.Types {
                ["dateDateAndTime local kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                // don't want any excess info in the offset INT32 doesn't contain or care about this data 
                ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
+#if !NETCOREAPP3_1
+               ["dateOnly"] = (new DataField<DateOnly>("dateOnly"), DateOnly.FromDateTime(DateTime.UtcNow)),
+#endif
                ["interval"] = (new DataField<Interval>("interval"), new Interval(3, 2, 1)),
                // time test(loses precision slightly)
                ["time_micros"] = (new TimeSpanDataField("timeMicros", TimeSpanFormat.MicroSeconds), new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10)),
@@ -108,6 +111,9 @@ namespace Parquet.Test.Types {
         [InlineData("impala date local kind")]
         [InlineData("dateDateAndTime local kind")]
         [InlineData("dateDate")]
+#if !NETCOREAPP3_1
+        [InlineData("dateOnly")]
+#endif
         [InlineData("interval")]
         [InlineData("time_micros")]
         [InlineData("time_millis")]
@@ -143,9 +149,11 @@ namespace Parquet.Test.Types {
             object actual = await WriteReadSingle(input.field, input.expectedValue);
 
             bool equal;
-            if(input.expectedValue == null && actual == null)                 equal = true;
-else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null)                 equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
-else if(actual.GetType() == typeof(DateTime)) {
+            if(input.expectedValue == null && actual == null)
+                equal = true;
+            else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null) {
+                equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
+            } else if(actual.GetType() == typeof(DateTime)) {
                 var dtActual = (DateTime)actual;
                 Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
                 var dtExpected = (DateTime)input.expectedValue!;
@@ -153,7 +161,9 @@ else if(actual.GetType() == typeof(DateTime)) {
                     ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
                     : dtExpected.ToUniversalTime();
                 equal = dtActual.Equals(dtExpected);
-            } else                 equal = actual.Equals(input.expectedValue);
+            } else {
+                equal = actual.Equals(input.expectedValue);
+            }
 
             Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}");
         }

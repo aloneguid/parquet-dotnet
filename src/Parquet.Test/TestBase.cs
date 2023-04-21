@@ -87,10 +87,16 @@ namespace Parquet.Test {
             //for sanity, use disconnected streams
             byte[] data;
 
+            var options = new ParquetOptions();
+#if !NETCOREAPP3_1
+            if(value is DateOnly)
+                options.UseDateOnlyTypeForDates = true;
+#endif
+
             using(var ms = new MemoryStream()) {
                 // write single value
 
-                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
+                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms, options)) {
                     writer.CompressionMethod = compressionMethod;
 
                     using ParquetRowGroupWriter rg = writer.CreateRowGroup();

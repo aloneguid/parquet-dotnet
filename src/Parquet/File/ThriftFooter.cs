@@ -33,7 +33,7 @@ namespace Parquet.File {
 
             return new ThriftFooter(new Thrift.FileMetaData {
                 Schema = slst
-            }).CreateModelSchema(null);
+            }).CreateModelSchema(new ParquetOptions());
         }
 
         public ThriftFooter(ParquetSchema schema, long totalRowCount) {
@@ -160,7 +160,7 @@ namespace Parquet.File {
 
 #region [ Conversion to Model Schema ]
 
-        public ParquetSchema CreateModelSchema(ParquetOptions? formatOptions) {
+        public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
             int si = 0;
             Thrift.SchemaElement tse = _fileMeta.Schema[si++];
             var container = new List<Field>();
@@ -170,7 +170,7 @@ namespace Parquet.File {
             return new ParquetSchema(container);
         }
 
-        private void CreateModelSchema(FieldPath? path, IList<Field> container, int childCount, ref int si, ParquetOptions? formatOptions) {
+        private void CreateModelSchema(FieldPath? path, IList<Field> container, int childCount, ref int si, ParquetOptions formatOptions) {
             for(int i = 0; i < childCount && si < _fileMeta.Schema.Count; i++) {
                 Field? se = SchemaEncoder.Decode(_fileMeta.Schema, formatOptions, ref si, out int ownedChildCount);
                 if(se == null)

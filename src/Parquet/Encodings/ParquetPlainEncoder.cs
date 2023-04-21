@@ -100,6 +100,13 @@ namespace Parquet.Encodings {
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
+#if NET6_0_OR_GREATER
+            } else if(t == typeof(DateOnly[])) {
+                Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null)
+                    FillStats(span, stats);
+#endif
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
@@ -171,6 +178,11 @@ namespace Parquet.Encodings {
             } else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
+#if NET6_0_OR_GREATER
+            } else if(t == typeof(DateOnly[])) {
+                Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+#endif
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
@@ -238,6 +250,10 @@ namespace Parquet.Encodings {
                 return true;
             } else if(t == typeof(DateTime))
                 return TryEncode((DateTime)value, tse, out result);
+#if NET6_0_OR_GREATER
+            else if(t == typeof(DateOnly))
+                return TryEncode((DateOnly)value, tse, out result);
+#endif
             else if(t == typeof(TimeSpan))
                 return TryEncode((TimeSpan)value, tse, out result);
             else if(t == typeof(Interval)) {
@@ -338,6 +354,14 @@ namespace Parquet.Encodings {
 
             }
         }
+
+#if NET6_0_OR_GREATER
+        private static bool TryEncode(DateOnly value, SchemaElement tse, out byte[] result) {
+            int days = value.ToUnixDays();
+            result = BitConverter.GetBytes(days);
+            return true;
+        }
+#endif
 
         private static bool TryEncode(decimal value, SchemaElement tse, out byte[] result) {
             try {
@@ -766,6 +790,16 @@ namespace Parquet.Encodings {
             }
         }
 
+#if NET6_0_OR_GREATER
+        public static void Encode(ReadOnlySpan<DateOnly> data, Stream destination, SchemaElement tse) {
+            foreach(DateOnly element in data) {
+                int days = element.ToUnixDays();
+                byte[] raw = BitConverter.GetBytes(days);
+                destination.Write(raw, 0, raw.Length);
+            }
+        }
+#endif
+
         public static int Decode(Span<byte> source, Span<DateTime> data, SchemaElement tse) {
             switch(tse.Type) {
                 case Thrift.Type.INT32:
@@ -815,6 +849,20 @@ namespace Parquet.Encodings {
                     throw new NotSupportedException();
             }
         }
+
+#if NET6_0_OR_GREATER
+        public static int Decode(Span<byte> source, Span<DateOnly> data, SchemaElement tse) {
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            try {
+                int intsRead = Decode(source, ints.AsSpan(0, data.Length));
+                for(int i = 0; i < intsRead; i++)
+                    data[i] = DateOnly.FromDateTime(ints[i].AsUnixDaysInDateTime());
+                return intsRead;
+            } finally {
+                ArrayPool<int>.Shared.Return(ints);
+            }
+        }
+#endif
 
         public static void Encode(ReadOnlySpan<TimeSpan> data, Stream destination, SchemaElement tse) {
             switch(tse.Type) {
@@ -1075,6 +1123,15 @@ namespace Parquet.Encodings {
             stats.MinValue = min;
             stats.MaxValue = max;
         }
+
+#if NET6_0_OR_GREATER
+        public static void FillStats(ReadOnlySpan<DateOnly> data, DataColumnStatistics stats) {
+            data.MinMax(out DateOnly min, out DateOnly max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+#endif
 
         public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {
             data.MinMax(out TimeSpan min, out TimeSpan max);

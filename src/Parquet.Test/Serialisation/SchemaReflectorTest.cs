@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Parquet.Schema;
 using Parquet.Serialization;
+using Parquet.Serialization.Attributes;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
@@ -239,5 +240,78 @@ namespace Parquet.Test.Serialisation {
                 expectedSchema.Equals(actualSchema),
                 expectedSchema.GetNotEqualsMessage(actualSchema, "expected", "actual"));
         }
+
+        class DatesPoco {
+
+            public DateTime ImpalaDate { get; set; }
+
+            [ParquetTimestamp]
+            public DateTime TimestampDate { get; set; }
+
+            public TimeSpan DefaultTime { get; set; }
+
+            [ParquetMicroSecondsTime]
+            public TimeSpan MicroTime { get; set; }
+        }
+
+        [Fact]
+        public void Date_default_impala() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[0] is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.Impala, ((DateTimeDataField)s.DataFields[0]).DateTimeFormat);
+        }
+
+        [Fact]
+        public void Date_timestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[1] is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[1]).DateTimeFormat);
+        }
+
+        [Fact]
+        public void Time_default() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[2] is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)s.DataFields[2]).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void Time_micros() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[3] is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)s.DataFields[3]).TimeSpanFormat);
+        }
+
+
+
+        class DecimalPoco {
+            public decimal Default { get; set; }
+
+            [ParquetDecimal(40, 20)]
+            public decimal With_40_20 { get; set; }
+        }
+
+        [Fact]
+        public void Decimal_default() {
+            ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[0] is DecimalDataField);
+            Assert.Equal(38, ((DecimalDataField)s.DataFields[0]).Precision);
+            Assert.Equal(18, ((DecimalDataField)s.DataFields[0]).Scale);
+        }
+
+        [Fact]
+        public void Decimal_override() {
+            ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[1] is DecimalDataField);
+            Assert.Equal(40, ((DecimalDataField)s.DataFields[1]).Precision);
+            Assert.Equal(20, ((DecimalDataField)s.DataFields[1]).Scale);
+        }
+
     }
 }
