@@ -18,9 +18,9 @@ if(args.Length == 1) {
     }
 } else {
     //new VsParquetSharp().Main();
-    //await new DataTypes().NullableInts();
+    await new DataTypes().NullableInts();
     //var c = new Classes();
     //c.SetUp();
     //c.Serialise();
-    await ParquetReader.ReadTableFromFileAsync("C:\\Users\\alone\\Downloads\\wide_parquet\\wide_parquet.parquet");
+    //await ParquetReader.ReadTableFromFileAsync("C:\\Users\\alone\\Downloads\\wide_parquet\\wide_parquet.parquet");
 }
