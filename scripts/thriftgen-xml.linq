@@ -207,6 +207,27 @@ private string GenerateAtomicWriter(string typeId, string getter, out string ele
     }
 }
 
+private string GenerateAtomicReader(string typeId) {
+    switch (typeId) {
+        case "bool":
+            return "compactType == Types.BooleanTrue;";
+        case "i8":
+            return $"proto.ReadByte();";
+        case "i16":
+            return $"proto.ReadI16();";
+        case "i32":
+            return $"proto.ReadI32();";
+        case "i64":
+            return $"proto.ReadI64();";
+        case "binary":
+            return $"proto.ReadBinary();";
+        case "string":
+            return $"proto.ReadString();";
+        default:
+            return "atom?";
+    }
+}
+
 void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames) {
     sb.AppendLine($"{Spacing}{Spacing}internal void Write(ThriftCompactProtocolWriter proto) {{");
     
@@ -292,6 +313,33 @@ void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<s
     sb.AppendLine($"{Spacing}{Spacing}}}");
 }
 
+void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames) {
+    sb.AppendLine($"{Spacing}{Spacing}internal static {enclosingTypeName} Read(ThriftCompactProtocolReader proto) {{");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}var r = new {enclosingTypeName}();");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}while(proto.ReadNextField(out short fieldId, out byte compactType)) {{");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}switch(fieldId) {{");
+
+    foreach (ThriftField f in fields) {
+        sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}case {f.id}: // {f.csName}, {f.typeId}");
+
+        if (IsAtomic(f.typeId)) {
+            string body = GenerateAtomicReader(f.typeId);
+            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {body}");
+        }
+        
+        sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}break;");
+    }
+
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}default:");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}proto.SkipField(compactType);");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}break;");
+
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}}}");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}}}");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}return r;");
+    sb.AppendLine($"{Spacing}{Spacing}}}");
+}
+
 string ProcessStruct(XElement xStruct, StringBuilder sb, HashSet<string> enumTypeNames) {
     var fields = new List<ThriftField>();
     //xStruct.Dump();
@@ -328,6 +376,7 @@ string ProcessStruct(XElement xStruct, StringBuilder sb, HashSet<string> enumTyp
     }
     
     GenerateCompactWriter(fields, sb, enumTypeNames);
+    GenerateCompactReader(typeName, fields, sb, enumTypeNames);
     
     sb.AppendLine($"{Spacing}}}");
     sb.AppendLine();

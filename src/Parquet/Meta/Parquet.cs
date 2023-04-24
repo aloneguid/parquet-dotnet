@@ -297,6 +297,35 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static Statistics Read(ThriftCompactProtocolReader proto) {
+            var r = new Statistics();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Max, binary
+                        r.Max = proto.ReadBinary();
+                        break;
+                    case 2: // Min, binary
+                        r.Min = proto.ReadBinary();
+                        break;
+                    case 3: // NullCount, i64
+                        r.NullCount = proto.ReadI64();
+                        break;
+                    case 4: // DistinctCount, i64
+                        r.DistinctCount = proto.ReadI64();
+                        break;
+                    case 5: // MaxValue, binary
+                        r.MaxValue = proto.ReadBinary();
+                        break;
+                    case 6: // MinValue, binary
+                        r.MinValue = proto.ReadBinary();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -306,11 +335,33 @@ namespace Parquet.Meta {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
         }
+        internal static StringType Read(ThriftCompactProtocolReader proto) {
+            var r = new StringType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class UUIDType {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static UUIDType Read(ThriftCompactProtocolReader proto) {
+            var r = new UUIDType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -318,11 +369,33 @@ namespace Parquet.Meta {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
         }
+        internal static MapType Read(ThriftCompactProtocolReader proto) {
+            var r = new MapType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class ListType {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static ListType Read(ThriftCompactProtocolReader proto) {
+            var r = new ListType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -330,11 +403,33 @@ namespace Parquet.Meta {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
         }
+        internal static EnumType Read(ThriftCompactProtocolReader proto) {
+            var r = new EnumType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class DateType {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static DateType Read(ThriftCompactProtocolReader proto) {
+            var r = new DateType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -344,6 +439,17 @@ namespace Parquet.Meta {
     public class NullType {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static NullType Read(ThriftCompactProtocolReader proto) {
+            var r = new NullType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -365,6 +471,23 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static DecimalType Read(ThriftCompactProtocolReader proto) {
+            var r = new DecimalType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Scale, i32
+                        r.Scale = proto.ReadI32();
+                        break;
+                    case 2: // Precision, i32
+                        r.Precision = proto.ReadI32();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -374,17 +497,50 @@ namespace Parquet.Meta {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
         }
+        internal static MilliSeconds Read(ThriftCompactProtocolReader proto) {
+            var r = new MilliSeconds();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class MicroSeconds {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
         }
+        internal static MicroSeconds Read(ThriftCompactProtocolReader proto) {
+            var r = new MicroSeconds();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class NanoSeconds {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static NanoSeconds Read(ThriftCompactProtocolReader proto) {
+            var r = new NanoSeconds();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -416,6 +572,23 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static TimeUnit Read(ThriftCompactProtocolReader proto) {
+            var r = new TimeUnit();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // MILLIS, id
+                        break;
+                    case 2: // MICROS, id
+                        break;
+                    case 3: // NANOS, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -436,6 +609,22 @@ namespace Parquet.Meta {
             Unit.Write(proto);
 
             proto.StructEnd();
+        }
+        internal static TimestampType Read(ThriftCompactProtocolReader proto) {
+            var r = new TimestampType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // IsAdjustedToUTC, bool
+                        r.IsAdjustedToUTC = compactType == Types.BooleanTrue;
+                        break;
+                    case 2: // Unit, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -458,6 +647,22 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static TimeType Read(ThriftCompactProtocolReader proto) {
+            var r = new TimeType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // IsAdjustedToUTC, bool
+                        r.IsAdjustedToUTC = compactType == Types.BooleanTrue;
+                        break;
+                    case 2: // Unit, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -478,6 +683,23 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static IntType Read(ThriftCompactProtocolReader proto) {
+            var r = new IntType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // BitWidth, i8
+                        r.BitWidth = proto.ReadByte();
+                        break;
+                    case 2: // IsSigned, bool
+                        r.IsSigned = compactType == Types.BooleanTrue;
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -487,6 +709,17 @@ namespace Parquet.Meta {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
         }
+        internal static JsonType Read(ThriftCompactProtocolReader proto) {
+            var r = new JsonType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -495,6 +728,17 @@ namespace Parquet.Meta {
     public class BsonType {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static BsonType Read(ThriftCompactProtocolReader proto) {
+            var r = new BsonType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -599,6 +843,43 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static LogicalType Read(ThriftCompactProtocolReader proto) {
+            var r = new LogicalType();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // STRING, id
+                        break;
+                    case 2: // MAP, id
+                        break;
+                    case 3: // LIST, id
+                        break;
+                    case 4: // ENUM, id
+                        break;
+                    case 5: // DECIMAL, id
+                        break;
+                    case 6: // DATE, id
+                        break;
+                    case 7: // TIME, id
+                        break;
+                    case 8: // TIMESTAMP, id
+                        break;
+                    case 10: // INTEGER, id
+                        break;
+                    case 11: // UNKNOWN, id
+                        break;
+                    case 12: // JSON, id
+                        break;
+                    case 13: // BSON, id
+                        break;
+                    case 14: // UUID, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -697,6 +978,43 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static SchemaElement Read(ThriftCompactProtocolReader proto) {
+            var r = new SchemaElement();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Type, id
+                        break;
+                    case 2: // TypeLength, i32
+                        r.TypeLength = proto.ReadI32();
+                        break;
+                    case 3: // RepetitionType, id
+                        break;
+                    case 4: // Name, string
+                        r.Name = proto.ReadString();
+                        break;
+                    case 5: // NumChildren, i32
+                        r.NumChildren = proto.ReadI32();
+                        break;
+                    case 6: // ConvertedType, id
+                        break;
+                    case 7: // Scale, i32
+                        r.Scale = proto.ReadI32();
+                        break;
+                    case 8: // Precision, i32
+                        r.Precision = proto.ReadI32();
+                        break;
+                    case 9: // FieldId, i32
+                        r.FieldId = proto.ReadI32();
+                        break;
+                    case 10: // LogicalType, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -747,11 +1065,44 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static DataPageHeader Read(ThriftCompactProtocolReader proto) {
+            var r = new DataPageHeader();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // NumValues, i32
+                        r.NumValues = proto.ReadI32();
+                        break;
+                    case 2: // Encoding, id
+                        break;
+                    case 3: // DefinitionLevelEncoding, id
+                        break;
+                    case 4: // RepetitionLevelEncoding, id
+                        break;
+                    case 5: // Statistics, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class IndexPageHeader {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static IndexPageHeader Read(ThriftCompactProtocolReader proto) {
+            var r = new IndexPageHeader();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -787,6 +1138,25 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static DictionaryPageHeader Read(ThriftCompactProtocolReader proto) {
+            var r = new DictionaryPageHeader();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // NumValues, i32
+                        r.NumValues = proto.ReadI32();
+                        break;
+                    case 2: // Encoding, id
+                        break;
+                    case 3: // IsSorted, bool
+                        r.IsSorted = compactType == Types.BooleanTrue;
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -861,6 +1231,39 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static DataPageHeaderV2 Read(ThriftCompactProtocolReader proto) {
+            var r = new DataPageHeaderV2();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // NumValues, i32
+                        r.NumValues = proto.ReadI32();
+                        break;
+                    case 2: // NumNulls, i32
+                        r.NumNulls = proto.ReadI32();
+                        break;
+                    case 3: // NumRows, i32
+                        r.NumRows = proto.ReadI32();
+                        break;
+                    case 4: // Encoding, id
+                        break;
+                    case 5: // DefinitionLevelsByteLength, i32
+                        r.DefinitionLevelsByteLength = proto.ReadI32();
+                        break;
+                    case 6: // RepetitionLevelsByteLength, i32
+                        r.RepetitionLevelsByteLength = proto.ReadI32();
+                        break;
+                    case 7: // IsCompressed, bool
+                        r.IsCompressed = compactType == Types.BooleanTrue;
+                        break;
+                    case 8: // Statistics, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -869,6 +1272,17 @@ namespace Parquet.Meta {
     public class SplitBlockAlgorithm {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static SplitBlockAlgorithm Read(ThriftCompactProtocolReader proto) {
+            var r = new SplitBlockAlgorithm();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -892,6 +1306,19 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static BloomFilterAlgorithm Read(ThriftCompactProtocolReader proto) {
+            var r = new BloomFilterAlgorithm();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // BLOCK, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -900,6 +1327,17 @@ namespace Parquet.Meta {
     public class XxHash {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static XxHash Read(ThriftCompactProtocolReader proto) {
+            var r = new XxHash();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -923,6 +1361,19 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static BloomFilterHash Read(ThriftCompactProtocolReader proto) {
+            var r = new BloomFilterHash();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // XXHASH, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -931,6 +1382,17 @@ namespace Parquet.Meta {
     public class Uncompressed {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static Uncompressed Read(ThriftCompactProtocolReader proto) {
+            var r = new Uncompressed();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -947,6 +1409,19 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static BloomFilterCompression Read(ThriftCompactProtocolReader proto) {
+            var r = new BloomFilterCompression();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // UNCOMPRESSED, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -990,6 +1465,26 @@ namespace Parquet.Meta {
             Compression.Write(proto);
 
             proto.StructEnd();
+        }
+        internal static BloomFilterHeader Read(ThriftCompactProtocolReader proto) {
+            var r = new BloomFilterHeader();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // NumBytes, i32
+                        r.NumBytes = proto.ReadI32();
+                        break;
+                    case 2: // Algorithm, id
+                        break;
+                    case 3: // Hash, id
+                        break;
+                    case 4: // Compression, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1058,6 +1553,36 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static PageHeader Read(ThriftCompactProtocolReader proto) {
+            var r = new PageHeader();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Type, id
+                        break;
+                    case 2: // UncompressedPageSize, i32
+                        r.UncompressedPageSize = proto.ReadI32();
+                        break;
+                    case 3: // CompressedPageSize, i32
+                        r.CompressedPageSize = proto.ReadI32();
+                        break;
+                    case 4: // Crc, i32
+                        r.Crc = proto.ReadI32();
+                        break;
+                    case 5: // DataPageHeader, id
+                        break;
+                    case 6: // IndexPageHeader, id
+                        break;
+                    case 7: // DictionaryPageHeader, id
+                        break;
+                    case 8: // DataPageHeaderV2, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -1079,6 +1604,23 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static KeyValue Read(ThriftCompactProtocolReader proto) {
+            var r = new KeyValue();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Key, string
+                        r.Key = proto.ReadString();
+                        break;
+                    case 2: // Value, string
+                        r.Value = proto.ReadString();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1113,6 +1655,26 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static SortingColumn Read(ThriftCompactProtocolReader proto) {
+            var r = new SortingColumn();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // ColumnIdx, i32
+                        r.ColumnIdx = proto.ReadI32();
+                        break;
+                    case 2: // Descending, bool
+                        r.Descending = compactType == Types.BooleanTrue;
+                        break;
+                    case 3: // NullsFirst, bool
+                        r.NullsFirst = compactType == Types.BooleanTrue;
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -1145,6 +1707,24 @@ namespace Parquet.Meta {
             proto.WriteI32Field(3, Count);
 
             proto.StructEnd();
+        }
+        internal static PageEncodingStats Read(ThriftCompactProtocolReader proto) {
+            var r = new PageEncodingStats();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // PageType, id
+                        break;
+                    case 2: // Encoding, id
+                        break;
+                    case 3: // Count, i32
+                        r.Count = proto.ReadI32();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1281,11 +1861,68 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static ColumnMetaData Read(ThriftCompactProtocolReader proto) {
+            var r = new ColumnMetaData();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Type, id
+                        break;
+                    case 2: // Encodings, list
+                        break;
+                    case 3: // PathInSchema, list
+                        break;
+                    case 4: // Codec, id
+                        break;
+                    case 5: // NumValues, i64
+                        r.NumValues = proto.ReadI64();
+                        break;
+                    case 6: // TotalUncompressedSize, i64
+                        r.TotalUncompressedSize = proto.ReadI64();
+                        break;
+                    case 7: // TotalCompressedSize, i64
+                        r.TotalCompressedSize = proto.ReadI64();
+                        break;
+                    case 8: // KeyValueMetadata, list
+                        break;
+                    case 9: // DataPageOffset, i64
+                        r.DataPageOffset = proto.ReadI64();
+                        break;
+                    case 10: // IndexPageOffset, i64
+                        r.IndexPageOffset = proto.ReadI64();
+                        break;
+                    case 11: // DictionaryPageOffset, i64
+                        r.DictionaryPageOffset = proto.ReadI64();
+                        break;
+                    case 12: // Statistics, id
+                        break;
+                    case 13: // EncodingStats, list
+                        break;
+                    case 14: // BloomFilterOffset, i64
+                        r.BloomFilterOffset = proto.ReadI64();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class EncryptionWithFooterKey {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static EncryptionWithFooterKey Read(ThriftCompactProtocolReader proto) {
+            var r = new EncryptionWithFooterKey();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1315,6 +1952,22 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static EncryptionWithColumnKey Read(ThriftCompactProtocolReader proto) {
+            var r = new EncryptionWithColumnKey();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // PathInSchema, list
+                        break;
+                    case 2: // KeyMetadata, binary
+                        r.KeyMetadata = proto.ReadBinary();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class ColumnCryptoMetaData {
@@ -1337,6 +1990,21 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static ColumnCryptoMetaData Read(ThriftCompactProtocolReader proto) {
+            var r = new ColumnCryptoMetaData();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // ENCRYPTIONWITHFOOTERKEY, id
+                        break;
+                    case 2: // ENCRYPTIONWITHCOLUMNKEY, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1428,6 +2096,42 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static ColumnChunk Read(ThriftCompactProtocolReader proto) {
+            var r = new ColumnChunk();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // FilePath, string
+                        r.FilePath = proto.ReadString();
+                        break;
+                    case 2: // FileOffset, i64
+                        r.FileOffset = proto.ReadI64();
+                        break;
+                    case 3: // MetaData, id
+                        break;
+                    case 4: // OffsetIndexOffset, i64
+                        r.OffsetIndexOffset = proto.ReadI64();
+                        break;
+                    case 5: // OffsetIndexLength, i32
+                        r.OffsetIndexLength = proto.ReadI32();
+                        break;
+                    case 6: // ColumnIndexOffset, i64
+                        r.ColumnIndexOffset = proto.ReadI64();
+                        break;
+                    case 7: // ColumnIndexLength, i32
+                        r.ColumnIndexLength = proto.ReadI32();
+                        break;
+                    case 8: // CryptoMetadata, id
+                        break;
+                    case 9: // EncryptedColumnMetadata, binary
+                        r.EncryptedColumnMetadata = proto.ReadBinary();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class RowGroup {
@@ -1500,6 +2204,36 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static RowGroup Read(ThriftCompactProtocolReader proto) {
+            var r = new RowGroup();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Columns, list
+                        break;
+                    case 2: // TotalByteSize, i64
+                        r.TotalByteSize = proto.ReadI64();
+                        break;
+                    case 3: // NumRows, i64
+                        r.NumRows = proto.ReadI64();
+                        break;
+                    case 4: // SortingColumns, list
+                        break;
+                    case 5: // FileOffset, i64
+                        r.FileOffset = proto.ReadI64();
+                        break;
+                    case 6: // TotalCompressedSize, i64
+                        r.TotalCompressedSize = proto.ReadI64();
+                        break;
+                    case 7: // Ordinal, i16
+                        r.Ordinal = proto.ReadI16();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -1508,6 +2242,17 @@ namespace Parquet.Meta {
     public class TypeDefinedOrder {
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.WriteEmptyStruct();
+        }
+        internal static TypeDefinedOrder Read(ThriftCompactProtocolReader proto) {
+            var r = new TypeDefinedOrder();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1530,6 +2275,19 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static ColumnOrder Read(ThriftCompactProtocolReader proto) {
+            var r = new ColumnOrder();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // TYPEORDER, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1561,6 +2319,26 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static PageLocation Read(ThriftCompactProtocolReader proto) {
+            var r = new PageLocation();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Offset, i64
+                        r.Offset = proto.ReadI64();
+                        break;
+                    case 2: // CompressedPageSize, i32
+                        r.CompressedPageSize = proto.ReadI32();
+                        break;
+                    case 3: // FirstRowIndex, i64
+                        r.FirstRowIndex = proto.ReadI64();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class OffsetIndex {
@@ -1579,6 +2357,19 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static OffsetIndex Read(ThriftCompactProtocolReader proto) {
+            var r = new OffsetIndex();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // PageLocations, list
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1638,6 +2429,27 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static ColumnIndex Read(ThriftCompactProtocolReader proto) {
+            var r = new ColumnIndex();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // NullPages, list
+                        break;
+                    case 2: // MinValues, list
+                        break;
+                    case 3: // MaxValues, list
+                        break;
+                    case 4: // BoundaryOrder, id
+                        break;
+                    case 5: // NullCounts, list
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class AesGcmV1 {
@@ -1673,6 +2485,26 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static AesGcmV1 Read(ThriftCompactProtocolReader proto) {
+            var r = new AesGcmV1();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // AadPrefix, binary
+                        r.AadPrefix = proto.ReadBinary();
+                        break;
+                    case 2: // AadFileUnique, binary
+                        r.AadFileUnique = proto.ReadBinary();
+                        break;
+                    case 3: // SupplyAadPrefix, bool
+                        r.SupplyAadPrefix = compactType == Types.BooleanTrue;
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1710,6 +2542,26 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static AesGcmCtrV1 Read(ThriftCompactProtocolReader proto) {
+            var r = new AesGcmCtrV1();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // AadPrefix, binary
+                        r.AadPrefix = proto.ReadBinary();
+                        break;
+                    case 2: // AadFileUnique, binary
+                        r.AadFileUnique = proto.ReadBinary();
+                        break;
+                    case 3: // SupplyAadPrefix, bool
+                        r.SupplyAadPrefix = compactType == Types.BooleanTrue;
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     public class EncryptionAlgorithm {
@@ -1732,6 +2584,21 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static EncryptionAlgorithm Read(ThriftCompactProtocolReader proto) {
+            var r = new EncryptionAlgorithm();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // AESGCMV1, id
+                        break;
+                    case 2: // AESGCMCTRV1, id
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
@@ -1831,6 +2698,39 @@ namespace Parquet.Meta {
 
             proto.StructEnd();
         }
+        internal static FileMetaData Read(ThriftCompactProtocolReader proto) {
+            var r = new FileMetaData();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // Version, i32
+                        r.Version = proto.ReadI32();
+                        break;
+                    case 2: // Schema, list
+                        break;
+                    case 3: // NumRows, i64
+                        r.NumRows = proto.ReadI64();
+                        break;
+                    case 4: // RowGroups, list
+                        break;
+                    case 5: // KeyValueMetadata, list
+                        break;
+                    case 6: // CreatedBy, string
+                        r.CreatedBy = proto.ReadString();
+                        break;
+                    case 7: // ColumnOrders, list
+                        break;
+                    case 8: // EncryptionAlgorithm, id
+                        break;
+                    case 9: // FooterSigningKeyMetadata, binary
+                        r.FooterSigningKeyMetadata = proto.ReadBinary();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
+        }
     }
 
     /// <summary>
@@ -1859,6 +2759,22 @@ namespace Parquet.Meta {
             }
 
             proto.StructEnd();
+        }
+        internal static FileCryptoMetaData Read(ThriftCompactProtocolReader proto) {
+            var r = new FileCryptoMetaData();
+            while(proto.ReadNextField(out short fieldId, out byte compactType)) {
+                switch(fieldId) {
+                    case 1: // EncryptionAlgorithm, id
+                        break;
+                    case 2: // KeyMetadata, binary
+                        r.KeyMetadata = proto.ReadBinary();
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            return r;
         }
     }
 
