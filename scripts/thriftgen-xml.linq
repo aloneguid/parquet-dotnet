@@ -53,7 +53,7 @@ string ProcessEnum(XElement xEnum, StringBuilder sb) {
     return typeName;
 }
 
-private string ToCSType(string thriftType, bool isRequired, XElement xMember, out bool isRequiredClass,
+private string ToCSType(string thriftType, bool isRequired, XElement? xMember, out bool isRequiredClass,
     out string? subType, out string? subTypeSubType) {
 
     isRequiredClass = false;
@@ -72,11 +72,11 @@ private string ToCSType(string thriftType, bool isRequired, XElement xMember, ou
 
     if (thriftType == "binary") return isRequired ? "byte[]" : "byte[]?";
 
-    //if (thriftType == "string") return isRequired ? "string" : "string?";
-    if (thriftType == "string") return "string?";
+    if (thriftType == "string") return isRequired ? "string" : "string?";
+    //if (thriftType == "string") return "string?";
     
     if(thriftType == "id") {
-        string typeId = xMember.Attribute("type-id")!.Value.ToString();
+        string typeId = xMember!.Attribute("type-id")!.Value.ToString();
         subType = typeId;
         if(!isRequired) typeId += "?";
         isRequiredClass = isRequired;
@@ -86,7 +86,7 @@ private string ToCSType(string thriftType, bool isRequired, XElement xMember, ou
     if(thriftType == "list") {
         //xMember.Dump();
         
-        XElement xElemType = xMember.Element("elemType")!;
+        XElement xElemType = xMember!.Element("elemType")!;
         string xElemTypeType = xElemType.Attribute("type")!.Value;
         string elemCsType;
         isRequiredClass = isRequired;
@@ -144,11 +144,69 @@ private static class Types {
     public const byte Uuid = 0x0D;
 }
 
+private static readonly HashSet<string> AtomicTypeIds = new() {
+    "bool", "i8", "i16", "i32", "i64", "binary", "string"
+};
+
+private bool IsAtomic(string typeId) => AtomicTypeIds.Contains(typeId);
+
+private void GenerateAtomicFieldWriter(int fieldId, string typeId, string getter, bool required, StringBuilder sb) {
+    switch (typeId) {
+        case "bool":
+            if (!required) getter += ".Value";
+            sb.AppendLine($"proto.WriteBoolField({fieldId}, {getter});");
+            break;
+        case "i8":
+            if (!required) getter += ".Value";
+            sb.AppendLine($"proto.WriteByteField({fieldId}, {getter});");
+            break;
+        case "i16":
+            if (!required) getter += ".Value";
+            sb.AppendLine($"proto.WriteI16Field({fieldId}, {getter});");
+            break;
+        case "i32":
+            if (!required) getter += ".Value";
+            sb.AppendLine($"proto.WriteI32Field({fieldId}, {getter});");
+            break;
+        case "i64":
+            if (!required) getter += ".Value";
+            sb.AppendLine($"proto.WriteI64Field({fieldId}, {getter});");
+            break;
+        case "binary":
+            sb.AppendLine($"proto.WriteBinaryField({fieldId}, {getter});");
+            break;
+        case "string":
+            if (required) getter += " ?? string.Empty";
+            sb.AppendLine($"proto.WriteStringField({fieldId}, {getter});");
+            break;
+    }
+}
+
+private string GenerateAtomicWriter(string typeId, string getter, out string elementType) {
+    switch (typeId) {
+        case "bool":
+            elementType = "bool";
+            return $"proto.WriteBoolValue({getter});";
+        case "i64":
+            elementType = "long";
+            return $"proto.WriteI64Value({getter});";
+        case "binary":
+            elementType = "byte[]";
+            return $"proto.WriteBinaryValue({getter});";
+        case "string":
+            elementType = "string";
+            return $"proto.WriteStringValue({getter});";
+        default:
+            elementType = "atom?";
+            return "atom?";
+    }
+}
+
 void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames) {
     sb.AppendLine($"{Spacing}{Spacing}internal void Write(ThriftCompactProtocolWriter proto) {{");
     
     if(fields.Count == 0) {
-        sb.AppendLine($"{Spacing}{Spacing}{Spacing}proto.StructEmpty();");
+        sb.AppendLine($"{Spacing}{Spacing}{Spacing}proto.WriteEmptyStruct();");
     } else {
 
         sb.AppendLine($"{Spacing}{Spacing}{Spacing}proto.StructBegin();");
@@ -158,63 +216,62 @@ void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<s
             sb.Append($"{Spacing}{Spacing}{Spacing}");
             sb.AppendLine($"// {f.id}: {f.csName}, {f.typeId}");
 
-            sb.Append($"{Spacing}{Spacing}{Spacing}");
+            string spacing = $"{Spacing}{Spacing}{Spacing}";
+            sb.Append(spacing);
             if (!f.required) {
-                sb.AppendLine($"if({f.csName} != null)");
-                sb.Append($"{Spacing}{Spacing}{Spacing}{Spacing}");
+                sb.AppendLine($"if({f.csName} != null) {{");
+                spacing = $"{Spacing}{Spacing}{Spacing}{Spacing}";
+                sb.Append(spacing);
             }
             string getter = f.csName;
+            
+            if(IsAtomic(f.typeId)) {
+                GenerateAtomicFieldWriter(f.id, f.typeId, getter, f.required, sb);
+            } else if (f.typeId == "id") {
+                if (enumTypeNames.Contains(f.subTypeId!)) {
+                    sb.AppendLine($"proto.WriteI32Field({f.id}, (int){getter});");
+                } else {
+                    sb.AppendLine($"proto.BeginInlineStruct({f.id});");
+                    sb.AppendLine($"{spacing}{getter}.Write(proto);");
+                }
+            } else if (f.typeId == "list" && f.subTypeId != null) {
+                sb.AppendLine($"proto.WriteListBegin({f.id}, 0, {getter}.Count);");
 
-            switch (f.typeId) {
-                case "bool":
-                    if (!f.required) getter += ".Value";
-                    sb.AppendLine($"proto.WriteBoolField({f.id}, {getter});");
-                    break;
-                case "i8":
-                    if (!f.required) getter += ".Value";
-                    sb.AppendLine($"proto.WriteByteField({f.id}, {getter});");
-                    break;
-                case "i16":
-                    if (!f.required) getter += ".Value";
-                    sb.AppendLine($"proto.WriteI16Field({f.id}, {getter});");
-                    break;
-                case "i32":
-                    if (!f.required) getter += ".Value";
-                    sb.AppendLine($"proto.WriteI32Field({f.id}, {getter});");
-                    break;
-                case "i64":
-                    if (!f.required) getter += ".Value";
-                    sb.AppendLine($"proto.WriteI64Field({f.id}, {getter});");
-                    break;
-                case "binary":
-                    sb.AppendLine($"proto.WriteBinaryField({f.id}, {getter});");
-                    break;
-                case "string":
-                    if(f.required) getter += " ?? string.Empty";
-                    sb.AppendLine($"proto.WriteStringField({f.id}, {getter});");
-                    break;
-                    
-                case "id":
-                    if (enumTypeNames.Contains(f.subTypeId!)) {
-                        sb.AppendLine($"proto.WriteI32Field({f.id}, (int){getter});");
-                    } else {
-                        sb.Append("{ ");
-                        sb.Append($"proto.BeginInlineStruct({f.id});");
-                        sb.Append(" ");
-                        sb.Append($"{getter}.Write(proto);");
-                        sb.AppendLine(" }");
-                    }
-                    break;
+                string elementType;
+                string body;
 
-                //case "list":
-                //if(f.subTypeId == "id"
-                //break;
+                if (IsAtomic(f.subTypeId)) {
+                    body = GenerateAtomicWriter(f.subTypeId, "element", out elementType);
+                } else if (f.subTypeId == "id" && f.subTypeSubTypeId != null && enumTypeNames.Contains(f.subTypeSubTypeId)) {
+                    elementType = f.subTypeSubTypeId;
+                    body = $"proto.WriteI32Value((int)element);";
+                } else if(f.subTypeSubTypeId != null) {
+                    elementType = f.subTypeSubTypeId;
+                    body = $"element.Write(proto);";
+                } else {
+                    elementType = "?";
+                    body = "?";
+                }
 
-                default:
-                    Console.WriteLine($"unknown type: {f.typeId} for property {f.csName} (subtype: {f.subTypeId}, {f.subTypeSubTypeId})");
-                    sb.AppendLine("System.Console.WriteLine(\"todo\");");
-                    //throw new InvalidOperationException($"unknown type: {f.typeId} for {f.csName}");
-                    break;
+                sb.AppendLine($"{spacing}foreach({elementType} element in {getter}) {{");
+
+                sb.Append($"{spacing}{Spacing}");
+                sb.Append(body);
+                sb.AppendLine();
+
+
+
+                //sb.AppendLine($"{spacing}{Spacing}// write");
+                sb.AppendLine($"{spacing}}}");
+            } else {
+                Console.WriteLine($"unknown type: {f.typeId} for property {f.csName} (subtype: {f.subTypeId}, {f.subTypeSubTypeId})");
+                sb.AppendLine("System.Console.WriteLine(\"todo\");");
+                //throw new InvalidOperationException($"unknown type: {f.typeId} for {f.csName}");
+
+            }
+            
+            if(!f.required) {
+                sb.AppendLine($"{Spacing}{Spacing}{Spacing}}}");
             }
 
             //sb.AppendLine();
@@ -241,7 +298,12 @@ string ProcessStruct(XElement xStruct, StringBuilder sb, HashSet<string> enumTyp
         string csType = ToCSType(mTypeId, required, xMember, out bool isRequiredClass, out string? subType, out string? subTypeSubType);
         string csName = mName.Pascalize();
         sb.Append($"{Spacing}{Spacing}public {csType} {csName} {{ get; set; }}");
-        if (isRequiredClass) sb.Append($" = new {csType}();");
+        if (isRequiredClass) {
+            sb.Append($" = new {csType}();");
+        }
+        else if (csType == "string" && required) {
+            sb.Append(" = string.Empty;");
+        }
         sb.AppendLine();
         sb.AppendLine();
         

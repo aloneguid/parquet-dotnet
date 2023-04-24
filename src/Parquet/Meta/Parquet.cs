@@ -271,23 +271,29 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: Max, binary
-            if(Max != null)
+            if(Max != null) {
                 proto.WriteBinaryField(1, Max);
+            }
             // 2: Min, binary
-            if(Min != null)
+            if(Min != null) {
                 proto.WriteBinaryField(2, Min);
+            }
             // 3: NullCount, i64
-            if(NullCount != null)
+            if(NullCount != null) {
                 proto.WriteI64Field(3, NullCount.Value);
+            }
             // 4: DistinctCount, i64
-            if(DistinctCount != null)
+            if(DistinctCount != null) {
                 proto.WriteI64Field(4, DistinctCount.Value);
+            }
             // 5: MaxValue, binary
-            if(MaxValue != null)
+            if(MaxValue != null) {
                 proto.WriteBinaryField(5, MaxValue);
+            }
             // 6: MinValue, binary
-            if(MinValue != null)
+            if(MinValue != null) {
                 proto.WriteBinaryField(6, MinValue);
+            }
 
             proto.StructEnd();
         }
@@ -298,37 +304,37 @@ namespace Parquet.Meta {
     /// </summary>
     public class StringType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class UUIDType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class MapType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class ListType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class EnumType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class DateType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -337,7 +343,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class NullType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -366,19 +372,19 @@ namespace Parquet.Meta {
     /// </summary>
     public class MilliSeconds {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class MicroSeconds {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
     public class NanoSeconds {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -393,14 +399,20 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: MILLIS, id
-            if(MILLIS != null)
-                { proto.BeginInlineStruct(1); MILLIS.Write(proto); }
+            if(MILLIS != null) {
+                proto.BeginInlineStruct(1);
+                MILLIS.Write(proto);
+            }
             // 2: MICROS, id
-            if(MICROS != null)
-                { proto.BeginInlineStruct(2); MICROS.Write(proto); }
+            if(MICROS != null) {
+                proto.BeginInlineStruct(2);
+                MICROS.Write(proto);
+            }
             // 3: NANOS, id
-            if(NANOS != null)
-                { proto.BeginInlineStruct(3); NANOS.Write(proto); }
+            if(NANOS != null) {
+                proto.BeginInlineStruct(3);
+                NANOS.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -420,7 +432,8 @@ namespace Parquet.Meta {
             // 1: IsAdjustedToUTC, bool
             proto.WriteBoolField(1, IsAdjustedToUTC);
             // 2: Unit, id
-            { proto.BeginInlineStruct(2); Unit.Write(proto); }
+            proto.BeginInlineStruct(2);
+            Unit.Write(proto);
 
             proto.StructEnd();
         }
@@ -440,7 +453,8 @@ namespace Parquet.Meta {
             // 1: IsAdjustedToUTC, bool
             proto.WriteBoolField(1, IsAdjustedToUTC);
             // 2: Unit, id
-            { proto.BeginInlineStruct(2); Unit.Write(proto); }
+            proto.BeginInlineStruct(2);
+            Unit.Write(proto);
 
             proto.StructEnd();
         }
@@ -471,7 +485,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class JsonType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -480,7 +494,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class BsonType {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -518,44 +532,70 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: STRING, id
-            if(STRING != null)
-                { proto.BeginInlineStruct(1); STRING.Write(proto); }
+            if(STRING != null) {
+                proto.BeginInlineStruct(1);
+                STRING.Write(proto);
+            }
             // 2: MAP, id
-            if(MAP != null)
-                { proto.BeginInlineStruct(2); MAP.Write(proto); }
+            if(MAP != null) {
+                proto.BeginInlineStruct(2);
+                MAP.Write(proto);
+            }
             // 3: LIST, id
-            if(LIST != null)
-                { proto.BeginInlineStruct(3); LIST.Write(proto); }
+            if(LIST != null) {
+                proto.BeginInlineStruct(3);
+                LIST.Write(proto);
+            }
             // 4: ENUM, id
-            if(ENUM != null)
-                { proto.BeginInlineStruct(4); ENUM.Write(proto); }
+            if(ENUM != null) {
+                proto.BeginInlineStruct(4);
+                ENUM.Write(proto);
+            }
             // 5: DECIMAL, id
-            if(DECIMAL != null)
-                { proto.BeginInlineStruct(5); DECIMAL.Write(proto); }
+            if(DECIMAL != null) {
+                proto.BeginInlineStruct(5);
+                DECIMAL.Write(proto);
+            }
             // 6: DATE, id
-            if(DATE != null)
-                { proto.BeginInlineStruct(6); DATE.Write(proto); }
+            if(DATE != null) {
+                proto.BeginInlineStruct(6);
+                DATE.Write(proto);
+            }
             // 7: TIME, id
-            if(TIME != null)
-                { proto.BeginInlineStruct(7); TIME.Write(proto); }
+            if(TIME != null) {
+                proto.BeginInlineStruct(7);
+                TIME.Write(proto);
+            }
             // 8: TIMESTAMP, id
-            if(TIMESTAMP != null)
-                { proto.BeginInlineStruct(8); TIMESTAMP.Write(proto); }
+            if(TIMESTAMP != null) {
+                proto.BeginInlineStruct(8);
+                TIMESTAMP.Write(proto);
+            }
             // 10: INTEGER, id
-            if(INTEGER != null)
-                { proto.BeginInlineStruct(10); INTEGER.Write(proto); }
+            if(INTEGER != null) {
+                proto.BeginInlineStruct(10);
+                INTEGER.Write(proto);
+            }
             // 11: UNKNOWN, id
-            if(UNKNOWN != null)
-                { proto.BeginInlineStruct(11); UNKNOWN.Write(proto); }
+            if(UNKNOWN != null) {
+                proto.BeginInlineStruct(11);
+                UNKNOWN.Write(proto);
+            }
             // 12: JSON, id
-            if(JSON != null)
-                { proto.BeginInlineStruct(12); JSON.Write(proto); }
+            if(JSON != null) {
+                proto.BeginInlineStruct(12);
+                JSON.Write(proto);
+            }
             // 13: BSON, id
-            if(BSON != null)
-                { proto.BeginInlineStruct(13); BSON.Write(proto); }
+            if(BSON != null) {
+                proto.BeginInlineStruct(13);
+                BSON.Write(proto);
+            }
             // 14: UUID, id
-            if(UUID != null)
-                { proto.BeginInlineStruct(14); UUID.Write(proto); }
+            if(UUID != null) {
+                proto.BeginInlineStruct(14);
+                UUID.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -583,7 +623,7 @@ namespace Parquet.Meta {
         /// <summary>
         /// Name of the field in the schema.
         /// </summary>
-        public string? Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Nested fields.  Since thrift does not support nested fields, the nesting is flattened to a single list by a depth-first traversal. The children count is used to construct the nested relationship. This field is not set when the element is a primitive type.
@@ -616,34 +656,44 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: Type, id
-            if(Type != null)
+            if(Type != null) {
                 proto.WriteI32Field(1, (int)Type);
+            }
             // 2: TypeLength, i32
-            if(TypeLength != null)
+            if(TypeLength != null) {
                 proto.WriteI32Field(2, TypeLength.Value);
+            }
             // 3: RepetitionType, id
-            if(RepetitionType != null)
+            if(RepetitionType != null) {
                 proto.WriteI32Field(3, (int)RepetitionType);
+            }
             // 4: Name, string
             proto.WriteStringField(4, Name ?? string.Empty);
             // 5: NumChildren, i32
-            if(NumChildren != null)
+            if(NumChildren != null) {
                 proto.WriteI32Field(5, NumChildren.Value);
+            }
             // 6: ConvertedType, id
-            if(ConvertedType != null)
+            if(ConvertedType != null) {
                 proto.WriteI32Field(6, (int)ConvertedType);
+            }
             // 7: Scale, i32
-            if(Scale != null)
+            if(Scale != null) {
                 proto.WriteI32Field(7, Scale.Value);
+            }
             // 8: Precision, i32
-            if(Precision != null)
+            if(Precision != null) {
                 proto.WriteI32Field(8, Precision.Value);
+            }
             // 9: FieldId, i32
-            if(FieldId != null)
+            if(FieldId != null) {
                 proto.WriteI32Field(9, FieldId.Value);
+            }
             // 10: LogicalType, id
-            if(LogicalType != null)
-                { proto.BeginInlineStruct(10); LogicalType.Write(proto); }
+            if(LogicalType != null) {
+                proto.BeginInlineStruct(10);
+                LogicalType.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -690,8 +740,10 @@ namespace Parquet.Meta {
             // 4: RepetitionLevelEncoding, id
             proto.WriteI32Field(4, (int)RepetitionLevelEncoding);
             // 5: Statistics, id
-            if(Statistics != null)
-                { proto.BeginInlineStruct(5); Statistics.Write(proto); }
+            if(Statistics != null) {
+                proto.BeginInlineStruct(5);
+                Statistics.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -699,7 +751,7 @@ namespace Parquet.Meta {
 
     public class IndexPageHeader {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -730,8 +782,9 @@ namespace Parquet.Meta {
             // 2: Encoding, id
             proto.WriteI32Field(2, (int)Encoding);
             // 3: IsSorted, bool
-            if(IsSorted != null)
+            if(IsSorted != null) {
                 proto.WriteBoolField(3, IsSorted.Value);
+            }
 
             proto.StructEnd();
         }
@@ -797,11 +850,14 @@ namespace Parquet.Meta {
             // 6: RepetitionLevelsByteLength, i32
             proto.WriteI32Field(6, RepetitionLevelsByteLength);
             // 7: IsCompressed, bool
-            if(IsCompressed != null)
+            if(IsCompressed != null) {
                 proto.WriteBoolField(7, IsCompressed.Value);
+            }
             // 8: Statistics, id
-            if(Statistics != null)
-                { proto.BeginInlineStruct(8); Statistics.Write(proto); }
+            if(Statistics != null) {
+                proto.BeginInlineStruct(8);
+                Statistics.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -812,7 +868,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class SplitBlockAlgorithm {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -829,8 +885,10 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: BLOCK, id
-            if(BLOCK != null)
-                { proto.BeginInlineStruct(1); BLOCK.Write(proto); }
+            if(BLOCK != null) {
+                proto.BeginInlineStruct(1);
+                BLOCK.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -841,7 +899,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class XxHash {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -858,8 +916,10 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: XXHASH, id
-            if(XXHASH != null)
-                { proto.BeginInlineStruct(1); XXHASH.Write(proto); }
+            if(XXHASH != null) {
+                proto.BeginInlineStruct(1);
+                XXHASH.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -870,7 +930,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class Uncompressed {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -881,8 +941,10 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: UNCOMPRESSED, id
-            if(UNCOMPRESSED != null)
-                { proto.BeginInlineStruct(1); UNCOMPRESSED.Write(proto); }
+            if(UNCOMPRESSED != null) {
+                proto.BeginInlineStruct(1);
+                UNCOMPRESSED.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -918,11 +980,14 @@ namespace Parquet.Meta {
             // 1: NumBytes, i32
             proto.WriteI32Field(1, NumBytes);
             // 2: Algorithm, id
-            { proto.BeginInlineStruct(2); Algorithm.Write(proto); }
+            proto.BeginInlineStruct(2);
+            Algorithm.Write(proto);
             // 3: Hash, id
-            { proto.BeginInlineStruct(3); Hash.Write(proto); }
+            proto.BeginInlineStruct(3);
+            Hash.Write(proto);
             // 4: Compression, id
-            { proto.BeginInlineStruct(4); Compression.Write(proto); }
+            proto.BeginInlineStruct(4);
+            Compression.Write(proto);
 
             proto.StructEnd();
         }
@@ -967,20 +1032,29 @@ namespace Parquet.Meta {
             // 3: CompressedPageSize, i32
             proto.WriteI32Field(3, CompressedPageSize);
             // 4: Crc, i32
-            if(Crc != null)
+            if(Crc != null) {
                 proto.WriteI32Field(4, Crc.Value);
+            }
             // 5: DataPageHeader, id
-            if(DataPageHeader != null)
-                { proto.BeginInlineStruct(5); DataPageHeader.Write(proto); }
+            if(DataPageHeader != null) {
+                proto.BeginInlineStruct(5);
+                DataPageHeader.Write(proto);
+            }
             // 6: IndexPageHeader, id
-            if(IndexPageHeader != null)
-                { proto.BeginInlineStruct(6); IndexPageHeader.Write(proto); }
+            if(IndexPageHeader != null) {
+                proto.BeginInlineStruct(6);
+                IndexPageHeader.Write(proto);
+            }
             // 7: DictionaryPageHeader, id
-            if(DictionaryPageHeader != null)
-                { proto.BeginInlineStruct(7); DictionaryPageHeader.Write(proto); }
+            if(DictionaryPageHeader != null) {
+                proto.BeginInlineStruct(7);
+                DictionaryPageHeader.Write(proto);
+            }
             // 8: DataPageHeaderV2, id
-            if(DataPageHeaderV2 != null)
-                { proto.BeginInlineStruct(8); DataPageHeaderV2.Write(proto); }
+            if(DataPageHeaderV2 != null) {
+                proto.BeginInlineStruct(8);
+                DataPageHeaderV2.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -990,7 +1064,7 @@ namespace Parquet.Meta {
     /// Wrapper struct to store key values.
     /// </summary>
     public class KeyValue {
-        public string? Key { get; set; }
+        public string Key { get; set; } = string.Empty;
 
         public string? Value { get; set; }
 
@@ -1000,8 +1074,9 @@ namespace Parquet.Meta {
             // 1: Key, string
             proto.WriteStringField(1, Key ?? string.Empty);
             // 2: Value, string
-            if(Value != null)
+            if(Value != null) {
                 proto.WriteStringField(2, Value);
+            }
 
             proto.StructEnd();
         }
@@ -1090,7 +1165,7 @@ namespace Parquet.Meta {
         /// <summary>
         /// Path in schema.
         /// </summary>
-        public List<string?> PathInSchema { get; set; } = new List<string?>();
+        public List<string> PathInSchema { get; set; } = new List<string>();
 
         /// <summary>
         /// Compression codec.
@@ -1153,9 +1228,15 @@ namespace Parquet.Meta {
             // 1: Type, id
             proto.WriteI32Field(1, (int)Type);
             // 2: Encodings, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(2, 0, Encodings.Count);
+            foreach(Encoding element in Encodings) {
+                proto.WriteI32Value((int)element);
+            }
             // 3: PathInSchema, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(3, 0, PathInSchema.Count);
+            foreach(string element in PathInSchema) {
+                proto.WriteStringValue(element);
+            }
             // 4: Codec, id
             proto.WriteI32Field(4, (int)Codec);
             // 5: NumValues, i64
@@ -1165,25 +1246,38 @@ namespace Parquet.Meta {
             // 7: TotalCompressedSize, i64
             proto.WriteI64Field(7, TotalCompressedSize);
             // 8: KeyValueMetadata, list
-            if(KeyValueMetadata != null)
-                System.Console.WriteLine("todo");
+            if(KeyValueMetadata != null) {
+                proto.WriteListBegin(8, 0, KeyValueMetadata.Count);
+                foreach(KeyValue element in KeyValueMetadata) {
+                    element.Write(proto);
+                }
+            }
             // 9: DataPageOffset, i64
             proto.WriteI64Field(9, DataPageOffset);
             // 10: IndexPageOffset, i64
-            if(IndexPageOffset != null)
+            if(IndexPageOffset != null) {
                 proto.WriteI64Field(10, IndexPageOffset.Value);
+            }
             // 11: DictionaryPageOffset, i64
-            if(DictionaryPageOffset != null)
+            if(DictionaryPageOffset != null) {
                 proto.WriteI64Field(11, DictionaryPageOffset.Value);
+            }
             // 12: Statistics, id
-            if(Statistics != null)
-                { proto.BeginInlineStruct(12); Statistics.Write(proto); }
+            if(Statistics != null) {
+                proto.BeginInlineStruct(12);
+                Statistics.Write(proto);
+            }
             // 13: EncodingStats, list
-            if(EncodingStats != null)
-                System.Console.WriteLine("todo");
+            if(EncodingStats != null) {
+                proto.WriteListBegin(13, 0, EncodingStats.Count);
+                foreach(PageEncodingStats element in EncodingStats) {
+                    element.Write(proto);
+                }
+            }
             // 14: BloomFilterOffset, i64
-            if(BloomFilterOffset != null)
+            if(BloomFilterOffset != null) {
                 proto.WriteI64Field(14, BloomFilterOffset.Value);
+            }
 
             proto.StructEnd();
         }
@@ -1191,7 +1285,7 @@ namespace Parquet.Meta {
 
     public class EncryptionWithFooterKey {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -1199,7 +1293,7 @@ namespace Parquet.Meta {
         /// <summary>
         /// Column path in schema.
         /// </summary>
-        public List<string?> PathInSchema { get; set; } = new List<string?>();
+        public List<string> PathInSchema { get; set; } = new List<string>();
 
         /// <summary>
         /// Retrieval metadata of column encryption key.
@@ -1210,10 +1304,14 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: PathInSchema, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(1, 0, PathInSchema.Count);
+            foreach(string element in PathInSchema) {
+                proto.WriteStringValue(element);
+            }
             // 2: KeyMetadata, binary
-            if(KeyMetadata != null)
+            if(KeyMetadata != null) {
                 proto.WriteBinaryField(2, KeyMetadata);
+            }
 
             proto.StructEnd();
         }
@@ -1228,11 +1326,15 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: ENCRYPTIONWITHFOOTERKEY, id
-            if(ENCRYPTIONWITHFOOTERKEY != null)
-                { proto.BeginInlineStruct(1); ENCRYPTIONWITHFOOTERKEY.Write(proto); }
+            if(ENCRYPTIONWITHFOOTERKEY != null) {
+                proto.BeginInlineStruct(1);
+                ENCRYPTIONWITHFOOTERKEY.Write(proto);
+            }
             // 2: ENCRYPTIONWITHCOLUMNKEY, id
-            if(ENCRYPTIONWITHCOLUMNKEY != null)
-                { proto.BeginInlineStruct(2); ENCRYPTIONWITHCOLUMNKEY.Write(proto); }
+            if(ENCRYPTIONWITHCOLUMNKEY != null) {
+                proto.BeginInlineStruct(2);
+                ENCRYPTIONWITHCOLUMNKEY.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -1288,31 +1390,41 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: FilePath, string
-            if(FilePath != null)
+            if(FilePath != null) {
                 proto.WriteStringField(1, FilePath);
+            }
             // 2: FileOffset, i64
             proto.WriteI64Field(2, FileOffset);
             // 3: MetaData, id
-            if(MetaData != null)
-                { proto.BeginInlineStruct(3); MetaData.Write(proto); }
+            if(MetaData != null) {
+                proto.BeginInlineStruct(3);
+                MetaData.Write(proto);
+            }
             // 4: OffsetIndexOffset, i64
-            if(OffsetIndexOffset != null)
+            if(OffsetIndexOffset != null) {
                 proto.WriteI64Field(4, OffsetIndexOffset.Value);
+            }
             // 5: OffsetIndexLength, i32
-            if(OffsetIndexLength != null)
+            if(OffsetIndexLength != null) {
                 proto.WriteI32Field(5, OffsetIndexLength.Value);
+            }
             // 6: ColumnIndexOffset, i64
-            if(ColumnIndexOffset != null)
+            if(ColumnIndexOffset != null) {
                 proto.WriteI64Field(6, ColumnIndexOffset.Value);
+            }
             // 7: ColumnIndexLength, i32
-            if(ColumnIndexLength != null)
+            if(ColumnIndexLength != null) {
                 proto.WriteI32Field(7, ColumnIndexLength.Value);
+            }
             // 8: CryptoMetadata, id
-            if(CryptoMetadata != null)
-                { proto.BeginInlineStruct(8); CryptoMetadata.Write(proto); }
+            if(CryptoMetadata != null) {
+                proto.BeginInlineStruct(8);
+                CryptoMetadata.Write(proto);
+            }
             // 9: EncryptedColumnMetadata, binary
-            if(EncryptedColumnMetadata != null)
+            if(EncryptedColumnMetadata != null) {
                 proto.WriteBinaryField(9, EncryptedColumnMetadata);
+            }
 
             proto.StructEnd();
         }
@@ -1358,23 +1470,33 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: Columns, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(1, 0, Columns.Count);
+            foreach(ColumnChunk element in Columns) {
+                element.Write(proto);
+            }
             // 2: TotalByteSize, i64
             proto.WriteI64Field(2, TotalByteSize);
             // 3: NumRows, i64
             proto.WriteI64Field(3, NumRows);
             // 4: SortingColumns, list
-            if(SortingColumns != null)
-                System.Console.WriteLine("todo");
+            if(SortingColumns != null) {
+                proto.WriteListBegin(4, 0, SortingColumns.Count);
+                foreach(SortingColumn element in SortingColumns) {
+                    element.Write(proto);
+                }
+            }
             // 5: FileOffset, i64
-            if(FileOffset != null)
+            if(FileOffset != null) {
                 proto.WriteI64Field(5, FileOffset.Value);
+            }
             // 6: TotalCompressedSize, i64
-            if(TotalCompressedSize != null)
+            if(TotalCompressedSize != null) {
                 proto.WriteI64Field(6, TotalCompressedSize.Value);
+            }
             // 7: Ordinal, i16
-            if(Ordinal != null)
+            if(Ordinal != null) {
                 proto.WriteI16Field(7, Ordinal.Value);
+            }
 
             proto.StructEnd();
         }
@@ -1385,7 +1507,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class TypeDefinedOrder {
         internal void Write(ThriftCompactProtocolWriter proto) {
-            proto.StructEmpty();
+            proto.WriteEmptyStruct();
         }
     }
 
@@ -1402,8 +1524,10 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: TYPEORDER, id
-            if(TYPEORDER != null)
-                { proto.BeginInlineStruct(1); TYPEORDER.Write(proto); }
+            if(TYPEORDER != null) {
+                proto.BeginInlineStruct(1);
+                TYPEORDER.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -1449,7 +1573,10 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: PageLocations, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(1, 0, PageLocations.Count);
+            foreach(PageLocation element in PageLocations) {
+                element.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -1485,16 +1612,29 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: NullPages, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(1, 0, NullPages.Count);
+            foreach(bool element in NullPages) {
+                proto.WriteBoolValue(element);
+            }
             // 2: MinValues, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(2, 0, MinValues.Count);
+            foreach(byte[] element in MinValues) {
+                proto.WriteBinaryValue(element);
+            }
             // 3: MaxValues, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(3, 0, MaxValues.Count);
+            foreach(byte[] element in MaxValues) {
+                proto.WriteBinaryValue(element);
+            }
             // 4: BoundaryOrder, id
             proto.WriteI32Field(4, (int)BoundaryOrder);
             // 5: NullCounts, list
-            if(NullCounts != null)
-                System.Console.WriteLine("todo");
+            if(NullCounts != null) {
+                proto.WriteListBegin(5, 0, NullCounts.Count);
+                foreach(long element in NullCounts) {
+                    proto.WriteI64Value(element);
+                }
+            }
 
             proto.StructEnd();
         }
@@ -1520,14 +1660,17 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: AadPrefix, binary
-            if(AadPrefix != null)
+            if(AadPrefix != null) {
                 proto.WriteBinaryField(1, AadPrefix);
+            }
             // 2: AadFileUnique, binary
-            if(AadFileUnique != null)
+            if(AadFileUnique != null) {
                 proto.WriteBinaryField(2, AadFileUnique);
+            }
             // 3: SupplyAadPrefix, bool
-            if(SupplyAadPrefix != null)
+            if(SupplyAadPrefix != null) {
                 proto.WriteBoolField(3, SupplyAadPrefix.Value);
+            }
 
             proto.StructEnd();
         }
@@ -1553,14 +1696,17 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: AadPrefix, binary
-            if(AadPrefix != null)
+            if(AadPrefix != null) {
                 proto.WriteBinaryField(1, AadPrefix);
+            }
             // 2: AadFileUnique, binary
-            if(AadFileUnique != null)
+            if(AadFileUnique != null) {
                 proto.WriteBinaryField(2, AadFileUnique);
+            }
             // 3: SupplyAadPrefix, bool
-            if(SupplyAadPrefix != null)
+            if(SupplyAadPrefix != null) {
                 proto.WriteBoolField(3, SupplyAadPrefix.Value);
+            }
 
             proto.StructEnd();
         }
@@ -1575,11 +1721,15 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: AESGCMV1, id
-            if(AESGCMV1 != null)
-                { proto.BeginInlineStruct(1); AESGCMV1.Write(proto); }
+            if(AESGCMV1 != null) {
+                proto.BeginInlineStruct(1);
+                AESGCMV1.Write(proto);
+            }
             // 2: AESGCMCTRV1, id
-            if(AESGCMCTRV1 != null)
-                { proto.BeginInlineStruct(2); AESGCMCTRV1.Write(proto); }
+            if(AESGCMCTRV1 != null) {
+                proto.BeginInlineStruct(2);
+                AESGCMCTRV1.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -1640,26 +1790,44 @@ namespace Parquet.Meta {
             // 1: Version, i32
             proto.WriteI32Field(1, Version);
             // 2: Schema, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(2, 0, Schema.Count);
+            foreach(SchemaElement element in Schema) {
+                element.Write(proto);
+            }
             // 3: NumRows, i64
             proto.WriteI64Field(3, NumRows);
             // 4: RowGroups, list
-            System.Console.WriteLine("todo");
+            proto.WriteListBegin(4, 0, RowGroups.Count);
+            foreach(RowGroup element in RowGroups) {
+                element.Write(proto);
+            }
             // 5: KeyValueMetadata, list
-            if(KeyValueMetadata != null)
-                System.Console.WriteLine("todo");
+            if(KeyValueMetadata != null) {
+                proto.WriteListBegin(5, 0, KeyValueMetadata.Count);
+                foreach(KeyValue element in KeyValueMetadata) {
+                    element.Write(proto);
+                }
+            }
             // 6: CreatedBy, string
-            if(CreatedBy != null)
+            if(CreatedBy != null) {
                 proto.WriteStringField(6, CreatedBy);
+            }
             // 7: ColumnOrders, list
-            if(ColumnOrders != null)
-                System.Console.WriteLine("todo");
+            if(ColumnOrders != null) {
+                proto.WriteListBegin(7, 0, ColumnOrders.Count);
+                foreach(ColumnOrder element in ColumnOrders) {
+                    element.Write(proto);
+                }
+            }
             // 8: EncryptionAlgorithm, id
-            if(EncryptionAlgorithm != null)
-                { proto.BeginInlineStruct(8); EncryptionAlgorithm.Write(proto); }
+            if(EncryptionAlgorithm != null) {
+                proto.BeginInlineStruct(8);
+                EncryptionAlgorithm.Write(proto);
+            }
             // 9: FooterSigningKeyMetadata, binary
-            if(FooterSigningKeyMetadata != null)
+            if(FooterSigningKeyMetadata != null) {
                 proto.WriteBinaryField(9, FooterSigningKeyMetadata);
+            }
 
             proto.StructEnd();
         }
@@ -1683,10 +1851,12 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: EncryptionAlgorithm, id
-            { proto.BeginInlineStruct(1); EncryptionAlgorithm.Write(proto); }
+            proto.BeginInlineStruct(1);
+            EncryptionAlgorithm.Write(proto);
             // 2: KeyMetadata, binary
-            if(KeyMetadata != null)
+            if(KeyMetadata != null) {
                 proto.WriteBinaryField(2, KeyMetadata);
+            }
 
             proto.StructEnd();
         }

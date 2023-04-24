@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -56,7 +57,7 @@ namespace Parquet.Meta.Proto {
         /// <summary>
         /// Optimisation to write an empty struct - avoid push/pop
         /// </summary>
-        public void StructEmpty() {
+        public void WriteEmptyStruct() {
             // write stop field
             _outputStream.WriteByte(Types.Stop);
         }
@@ -142,6 +143,10 @@ namespace Parquet.Meta.Proto {
             WriteFieldBegin(fieldId, Types.Struct);
         }
 
+        public void WriteBoolValue(bool value) {
+            _outputStream.WriteByte(value ? Types.BooleanTrue : Types.BooleanFalse);
+        }
+
         public void WriteBoolField(short fieldId, bool value) {
             if(value)
                 WriteFieldBegin(fieldId, Types.BooleanTrue);
@@ -161,31 +166,38 @@ namespace Parquet.Meta.Proto {
             _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
         }
 
+        public void WriteI32Value(int value) {
+            Int32ToVarInt(IntToZigzag(value), ref PreAllocatedVarInt);
+            _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
+        }
+
         public void WriteI32Field(short fieldId, int value) {
             WriteFieldBegin(fieldId, Types.I32);
+            WriteI32Value(value);
+        }
 
-            Int32ToVarInt(IntToZigzag(value), ref PreAllocatedVarInt);
+        public void WriteI64Value(long value) {
+            Int64ToVarInt(LongToZigzag(value), ref PreAllocatedVarInt);
             _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
         }
 
         public void WriteI64Field(short fieldId, long value) {
             WriteFieldBegin(fieldId, Types.I64);
-
-            Int64ToVarInt(LongToZigzag(value), ref PreAllocatedVarInt);
-            _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
+            WriteI64Value(value);
         }
 
-        public void WriteBinaryField(short fieldId, byte[] value) {
-            WriteFieldBegin(fieldId, Types.Binary);
-
+        public void WriteBinaryValue(byte[] value) {
             Int32ToVarInt((uint)value.Length, ref PreAllocatedVarInt);
             _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
             _outputStream.Write(value, 0, value.Length);
         }
 
-        public void WriteStringField(short fieldId, string value) {
+        public void WriteBinaryField(short fieldId, byte[] value) {
             WriteFieldBegin(fieldId, Types.Binary);
+            WriteBinaryValue(value);
+        }
 
+        public void WriteStringValue(string value) {
             byte[] buf = ArrayPool<byte>.Shared.Rent(System.Text.Encoding.UTF8.GetByteCount(value));
             try {
                 int numberOfBytes = System.Text.Encoding.UTF8.GetBytes(value, 0, value.Length, buf, 0);
@@ -197,6 +209,25 @@ namespace Parquet.Meta.Proto {
             }
         }
 
+        public void WriteStringField(short fieldId, string value) {
+            WriteFieldBegin(fieldId, Types.Binary);
+            WriteStringValue(value);
+        }
+
+        public void WriteListBegin(short fieldId, byte elementType, int elementCount) {
+            WriteFieldBegin(fieldId, elementType);
+
+            if(elementCount <= 14) {
+                byte b = (byte)((elementCount << 4) | elementType);
+                _outputStream.WriteByte(b);
+            } else {
+                byte b = (byte)(0xf0 | elementType);
+                _outputStream.WriteByte(b);
+
+                Int32ToVarInt((uint)elementCount, ref PreAllocatedVarInt);
+                _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
+            }
+        }
 
         #endregion
     }
