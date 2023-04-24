@@ -983,11 +983,13 @@ namespace Parquet.Meta {
             while(proto.ReadNextField(out short fieldId, out byte compactType)) {
                 switch(fieldId) {
                     case 1: // Type, id
+                        r.Type = (Type)proto.ReadI32();
                         break;
                     case 2: // TypeLength, i32
                         r.TypeLength = proto.ReadI32();
                         break;
                     case 3: // RepetitionType, id
+                        r.RepetitionType = (FieldRepetitionType)proto.ReadI32();
                         break;
                     case 4: // Name, string
                         r.Name = proto.ReadString();
@@ -996,6 +998,7 @@ namespace Parquet.Meta {
                         r.NumChildren = proto.ReadI32();
                         break;
                     case 6: // ConvertedType, id
+                        r.ConvertedType = (ConvertedType)proto.ReadI32();
                         break;
                     case 7: // Scale, i32
                         r.Scale = proto.ReadI32();
@@ -1073,10 +1076,13 @@ namespace Parquet.Meta {
                         r.NumValues = proto.ReadI32();
                         break;
                     case 2: // Encoding, id
+                        r.Encoding = (Encoding)proto.ReadI32();
                         break;
                     case 3: // DefinitionLevelEncoding, id
+                        r.DefinitionLevelEncoding = (Encoding)proto.ReadI32();
                         break;
                     case 4: // RepetitionLevelEncoding, id
+                        r.RepetitionLevelEncoding = (Encoding)proto.ReadI32();
                         break;
                     case 5: // Statistics, id
                         break;
@@ -1147,6 +1153,7 @@ namespace Parquet.Meta {
                         r.NumValues = proto.ReadI32();
                         break;
                     case 2: // Encoding, id
+                        r.Encoding = (Encoding)proto.ReadI32();
                         break;
                     case 3: // IsSorted, bool
                         r.IsSorted = compactType == Types.BooleanTrue;
@@ -1245,6 +1252,7 @@ namespace Parquet.Meta {
                         r.NumRows = proto.ReadI32();
                         break;
                     case 4: // Encoding, id
+                        r.Encoding = (Encoding)proto.ReadI32();
                         break;
                     case 5: // DefinitionLevelsByteLength, i32
                         r.DefinitionLevelsByteLength = proto.ReadI32();
@@ -1558,6 +1566,7 @@ namespace Parquet.Meta {
             while(proto.ReadNextField(out short fieldId, out byte compactType)) {
                 switch(fieldId) {
                     case 1: // Type, id
+                        r.Type = (PageType)proto.ReadI32();
                         break;
                     case 2: // UncompressedPageSize, i32
                         r.UncompressedPageSize = proto.ReadI32();
@@ -1713,8 +1722,10 @@ namespace Parquet.Meta {
             while(proto.ReadNextField(out short fieldId, out byte compactType)) {
                 switch(fieldId) {
                     case 1: // PageType, id
+                        r.PageType = (PageType)proto.ReadI32();
                         break;
                     case 2: // Encoding, id
+                        r.Encoding = (Encoding)proto.ReadI32();
                         break;
                     case 3: // Count, i32
                         r.Count = proto.ReadI32();
@@ -1866,12 +1877,14 @@ namespace Parquet.Meta {
             while(proto.ReadNextField(out short fieldId, out byte compactType)) {
                 switch(fieldId) {
                     case 1: // Type, id
+                        r.Type = (Type)proto.ReadI32();
                         break;
                     case 2: // Encodings, list
                         break;
                     case 3: // PathInSchema, list
                         break;
                     case 4: // Codec, id
+                        r.Codec = (CompressionCodec)proto.ReadI32();
                         break;
                     case 5: // NumValues, i64
                         r.NumValues = proto.ReadI64();
@@ -2440,6 +2453,7 @@ namespace Parquet.Meta {
                     case 3: // MaxValues, list
                         break;
                     case 4: // BoundaryOrder, id
+                        r.BoundaryOrder = (BoundaryOrder)proto.ReadI32();
                         break;
                     case 5: // NullCounts, list
                         break;

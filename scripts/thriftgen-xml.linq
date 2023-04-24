@@ -325,6 +325,8 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
         if (IsAtomic(f.typeId)) {
             string body = GenerateAtomicReader(f.typeId);
             sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {body}");
+        } else if (f.typeId == "id" && f.subTypeId != null && enumTypeNames.Contains(f.subTypeId)) {
+            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = ({f.subTypeId})proto.ReadI32();");
         }
         
         sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}break;");
