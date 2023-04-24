@@ -10,6 +10,23 @@ const string Spacing = "    ";
 const string inputPath = @"C:\dev\parquet-dotnet\src\Parquet\Meta\parquet.xml";
 const string outputDir = @"C:\dev\parquet-dotnet\src\Parquet\Meta\";
 
+private static class Types {
+    public const byte Stop = 0x00;
+    public const byte BooleanTrue = 0x01;
+    public const byte BooleanFalse = 0x02;
+    public const byte Byte = 0x03;
+    public const byte I16 = 0x04;
+    public const byte I32 = 0x05;
+    public const byte I64 = 0x06;
+    public const byte Double = 0x07;
+    public const byte Binary = 0x08;
+    public const byte List = 0x09;
+    public const byte Set = 0x0A;
+    public const byte Map = 0x0B;
+    public const byte Struct = 0x0C;
+    public const byte Uuid = 0x0D;
+}
+
 private void ProcessXmlDoc(XElement xEntry, int spaces, StringBuilder sb) {
     string? doc = xEntry.Attribute("doc")?.Value.ToString();
     if (doc == null) return;
@@ -127,23 +144,6 @@ class ThriftField {
     public bool required;
 }
 
-private static class Types {
-    public const byte Stop = 0x00;
-    public const byte BooleanTrue = 0x01;
-    public const byte BooleanFalse = 0x02;
-    public const byte Byte = 0x03;
-    public const byte I16 = 0x04;
-    public const byte I32 = 0x05;
-    public const byte I64 = 0x06;
-    public const byte Double = 0x07;
-    public const byte Binary = 0x08;
-    public const byte List = 0x09;
-    public const byte Set = 0x0A;
-    public const byte Map = 0x0B;
-    public const byte Struct = 0x0C;
-    public const byte Uuid = 0x0D;
-}
-
 private static readonly HashSet<string> AtomicTypeIds = new() {
     "bool", "i8", "i16", "i32", "i64", "binary", "string"
 };
@@ -182,22 +182,27 @@ private void GenerateAtomicFieldWriter(int fieldId, string typeId, string getter
     }
 }
 
-private string GenerateAtomicWriter(string typeId, string getter, out string elementType) {
+private string GenerateAtomicWriter(string typeId, string getter, out string elementType, out byte atomicType) {
     switch (typeId) {
         case "bool":
             elementType = "bool";
+            atomicType = Types.BooleanTrue;
             return $"proto.WriteBoolValue({getter});";
         case "i64":
             elementType = "long";
+            atomicType = Types.I64;
             return $"proto.WriteI64Value({getter});";
         case "binary":
             elementType = "byte[]";
+            atomicType = Types.Binary;
             return $"proto.WriteBinaryValue({getter});";
         case "string":
             elementType = "string";
+            atomicType = Types.Binary;
             return $"proto.WriteStringValue({getter});";
         default:
             elementType = "atom?";
+            atomicType = 0;
             return "atom?";
     }
 }
@@ -235,24 +240,28 @@ void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<s
                     sb.AppendLine($"{spacing}{getter}.Write(proto);");
                 }
             } else if (f.typeId == "list" && f.subTypeId != null) {
-                sb.AppendLine($"proto.WriteListBegin({f.id}, 0, {getter}.Count);");
-
+            
+                byte atomicType;
                 string elementType;
                 string body;
 
                 if (IsAtomic(f.subTypeId)) {
-                    body = GenerateAtomicWriter(f.subTypeId, "element", out elementType);
+                    body = GenerateAtomicWriter(f.subTypeId, "element", out elementType, out atomicType);
                 } else if (f.subTypeId == "id" && f.subTypeSubTypeId != null && enumTypeNames.Contains(f.subTypeSubTypeId)) {
                     elementType = f.subTypeSubTypeId;
+                    atomicType = Types.I32;
                     body = $"proto.WriteI32Value((int)element);";
                 } else if(f.subTypeSubTypeId != null) {
                     elementType = f.subTypeSubTypeId;
+                    atomicType = Types.Struct;
                     body = $"element.Write(proto);";
                 } else {
                     elementType = "?";
+                    atomicType = Types.Byte;
                     body = "?";
                 }
 
+                sb.AppendLine($"proto.WriteListBegin({f.id}, {atomicType}, {getter}.Count);");
                 sb.AppendLine($"{spacing}foreach({elementType} element in {getter}) {{");
 
                 sb.Append($"{spacing}{Spacing}");

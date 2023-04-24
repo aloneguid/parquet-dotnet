@@ -203,7 +203,7 @@ namespace Parquet.Meta.Proto {
                 int numberOfBytes = System.Text.Encoding.UTF8.GetBytes(value, 0, value.Length, buf, 0);
                 Int32ToVarInt((uint)numberOfBytes, ref PreAllocatedVarInt);
                 _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
-                _outputStream.Write(buf, 0, buf.Length);
+                _outputStream.Write(buf, 0, numberOfBytes);
             } finally {
                 ArrayPool<byte>.Shared.Return(buf);
             }
@@ -215,7 +215,7 @@ namespace Parquet.Meta.Proto {
         }
 
         public void WriteListBegin(short fieldId, byte elementType, int elementCount) {
-            WriteFieldBegin(fieldId, elementType);
+            WriteFieldBegin(fieldId, Types.List);
 
             if(elementCount <= 14) {
                 byte b = (byte)((elementCount << 4) | elementType);

@@ -1228,12 +1228,12 @@ namespace Parquet.Meta {
             // 1: Type, id
             proto.WriteI32Field(1, (int)Type);
             // 2: Encodings, list
-            proto.WriteListBegin(2, 0, Encodings.Count);
+            proto.WriteListBegin(2, 5, Encodings.Count);
             foreach(Encoding element in Encodings) {
                 proto.WriteI32Value((int)element);
             }
             // 3: PathInSchema, list
-            proto.WriteListBegin(3, 0, PathInSchema.Count);
+            proto.WriteListBegin(3, 8, PathInSchema.Count);
             foreach(string element in PathInSchema) {
                 proto.WriteStringValue(element);
             }
@@ -1247,7 +1247,7 @@ namespace Parquet.Meta {
             proto.WriteI64Field(7, TotalCompressedSize);
             // 8: KeyValueMetadata, list
             if(KeyValueMetadata != null) {
-                proto.WriteListBegin(8, 0, KeyValueMetadata.Count);
+                proto.WriteListBegin(8, 12, KeyValueMetadata.Count);
                 foreach(KeyValue element in KeyValueMetadata) {
                     element.Write(proto);
                 }
@@ -1269,7 +1269,7 @@ namespace Parquet.Meta {
             }
             // 13: EncodingStats, list
             if(EncodingStats != null) {
-                proto.WriteListBegin(13, 0, EncodingStats.Count);
+                proto.WriteListBegin(13, 12, EncodingStats.Count);
                 foreach(PageEncodingStats element in EncodingStats) {
                     element.Write(proto);
                 }
@@ -1304,7 +1304,7 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: PathInSchema, list
-            proto.WriteListBegin(1, 0, PathInSchema.Count);
+            proto.WriteListBegin(1, 8, PathInSchema.Count);
             foreach(string element in PathInSchema) {
                 proto.WriteStringValue(element);
             }
@@ -1470,7 +1470,7 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: Columns, list
-            proto.WriteListBegin(1, 0, Columns.Count);
+            proto.WriteListBegin(1, 12, Columns.Count);
             foreach(ColumnChunk element in Columns) {
                 element.Write(proto);
             }
@@ -1480,7 +1480,7 @@ namespace Parquet.Meta {
             proto.WriteI64Field(3, NumRows);
             // 4: SortingColumns, list
             if(SortingColumns != null) {
-                proto.WriteListBegin(4, 0, SortingColumns.Count);
+                proto.WriteListBegin(4, 12, SortingColumns.Count);
                 foreach(SortingColumn element in SortingColumns) {
                     element.Write(proto);
                 }
@@ -1573,7 +1573,7 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: PageLocations, list
-            proto.WriteListBegin(1, 0, PageLocations.Count);
+            proto.WriteListBegin(1, 12, PageLocations.Count);
             foreach(PageLocation element in PageLocations) {
                 element.Write(proto);
             }
@@ -1612,17 +1612,17 @@ namespace Parquet.Meta {
             proto.StructBegin();
 
             // 1: NullPages, list
-            proto.WriteListBegin(1, 0, NullPages.Count);
+            proto.WriteListBegin(1, 1, NullPages.Count);
             foreach(bool element in NullPages) {
                 proto.WriteBoolValue(element);
             }
             // 2: MinValues, list
-            proto.WriteListBegin(2, 0, MinValues.Count);
+            proto.WriteListBegin(2, 8, MinValues.Count);
             foreach(byte[] element in MinValues) {
                 proto.WriteBinaryValue(element);
             }
             // 3: MaxValues, list
-            proto.WriteListBegin(3, 0, MaxValues.Count);
+            proto.WriteListBegin(3, 8, MaxValues.Count);
             foreach(byte[] element in MaxValues) {
                 proto.WriteBinaryValue(element);
             }
@@ -1630,7 +1630,7 @@ namespace Parquet.Meta {
             proto.WriteI32Field(4, (int)BoundaryOrder);
             // 5: NullCounts, list
             if(NullCounts != null) {
-                proto.WriteListBegin(5, 0, NullCounts.Count);
+                proto.WriteListBegin(5, 6, NullCounts.Count);
                 foreach(long element in NullCounts) {
                     proto.WriteI64Value(element);
                 }
@@ -1790,20 +1790,20 @@ namespace Parquet.Meta {
             // 1: Version, i32
             proto.WriteI32Field(1, Version);
             // 2: Schema, list
-            proto.WriteListBegin(2, 0, Schema.Count);
+            proto.WriteListBegin(2, 12, Schema.Count);
             foreach(SchemaElement element in Schema) {
                 element.Write(proto);
             }
             // 3: NumRows, i64
             proto.WriteI64Field(3, NumRows);
             // 4: RowGroups, list
-            proto.WriteListBegin(4, 0, RowGroups.Count);
+            proto.WriteListBegin(4, 12, RowGroups.Count);
             foreach(RowGroup element in RowGroups) {
                 element.Write(proto);
             }
             // 5: KeyValueMetadata, list
             if(KeyValueMetadata != null) {
-                proto.WriteListBegin(5, 0, KeyValueMetadata.Count);
+                proto.WriteListBegin(5, 12, KeyValueMetadata.Count);
                 foreach(KeyValue element in KeyValueMetadata) {
                     element.Write(proto);
                 }
@@ -1814,7 +1814,7 @@ namespace Parquet.Meta {
             }
             // 7: ColumnOrders, list
             if(ColumnOrders != null) {
-                proto.WriteListBegin(7, 0, ColumnOrders.Count);
+                proto.WriteListBegin(7, 12, ColumnOrders.Count);
                 foreach(ColumnOrder element in ColumnOrders) {
                     element.Write(proto);
                 }

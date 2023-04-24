@@ -23,6 +23,9 @@ using StringTypeMy = Parquet.Meta.StringType;
 using IntTypeThriftGen = Parquet.Thrift.IntType;
 using IntTypeMy = Parquet.Meta.IntType;
 
+using CMThriftGen = Parquet.Thrift.ColumnMetaData;
+using CMMy = Parquet.Meta.ColumnMetaData;
+
 namespace Parquet.Test {
     public class ThriftTest {
 
@@ -126,6 +129,30 @@ namespace Parquet.Test {
             var dcMy = new IntTypeMy {
                 BitWidth = 8,
                 IsSigned = true
+            };
+
+            dcMy.Write(_myWriter);
+            byte[] bufferMy = _myMs.ToArray();
+
+            Assert.Equal(bufferGen, bufferMy);
+        }
+
+        [Fact]
+        public async Task Write_Lists() {
+            // write with gen
+            var dcGen = new CMThriftGen {
+                Encodings = new List<Thrift.Encoding> { Thrift.Encoding.PLAIN, Thrift.Encoding.PLAIN_DICTIONARY },
+                Path_in_schema = new List<string> { "1", "22" }
+            };
+
+            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
+            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+
+            // write with my
+            var dcMy = new CMMy {
+                Encodings = new List<Meta.Encoding> {  Meta.Encoding.PLAIN, Meta.Encoding.PLAIN_DICTIONARY },
+                PathInSchema = new List<string> { "1", "22" }
+
             };
 
             dcMy.Write(_myWriter);
