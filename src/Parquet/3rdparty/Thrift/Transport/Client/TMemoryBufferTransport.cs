@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace Thrift.Transport.Client {
     // ReSharper disable once InconsistentNaming
-    class TMemoryBufferTransport : TEndpointTransport {
+    internal class TMemoryBufferTransport : TEndpointTransport {
         private bool IsDisposed;
         private byte[] Bytes;
         private int _bytesUsed;

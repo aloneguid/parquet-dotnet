@@ -35,7 +35,7 @@ namespace Thrift.Protocol
 {
 
     // ReSharper disable once InconsistentNaming
-    public class TCompactProtocol : TProtocol
+    internal class TCompactProtocol : TProtocol
     {
         private const byte ProtocolId = 0x82;
         private const byte Version = 1;
