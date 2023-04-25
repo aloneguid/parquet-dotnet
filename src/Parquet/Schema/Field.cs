@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.Meta;
 
 namespace Parquet.Schema {
 
@@ -61,10 +62,10 @@ namespace Parquet.Schema {
         internal string? ClrPropName { get; set; }
 
         /// <summary>
-        /// Low-level thrift schema element corresponding to this high-level schema element.
+        /// Low-level schema element corresponding to this high-level schema element.
         /// Only set when reading files.
         /// </summary>
-        public Thrift.SchemaElement? ThriftSchemaElement { get; internal set; }
+        public SchemaElement? SchemaElement { get; internal set; }
 
         internal virtual FieldPath? PathPrefix { set { } }
 
@@ -110,7 +111,7 @@ namespace Parquet.Schema {
 
         internal virtual bool IsAtomic => false;
 
-        internal bool Equals(Thrift.SchemaElement tse) {
+        internal bool Equals(SchemaElement tse) {
             if(ReferenceEquals(tse, null))
                 return false;
 

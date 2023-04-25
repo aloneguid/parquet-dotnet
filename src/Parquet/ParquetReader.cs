@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Parquet.Schema;
 using Parquet.Rows;
+using Parquet.Meta;
 
 namespace Parquet {
     /// <summary>
@@ -14,8 +15,8 @@ namespace Parquet {
     /// </summary>
     public class ParquetReader : ParquetActor, IDisposable {
         private readonly Stream _input;
-        private Thrift.FileMetaData? _meta;
-        private ThriftFooter _footer;
+        private FileMetaData? _meta;
+        private ThriftFooter _thriftFooter;
         private readonly ParquetOptions _parquetOptions;
         private readonly List<ParquetRowGroupReader> _groupReaders = new();
         private readonly bool _leaveStreamOpen;
@@ -31,8 +32,8 @@ namespace Parquet {
 
             _parquetOptions = parquetOptions ?? new ParquetOptions();
 
-            // _footer will be initialised right now in the InitialiseAsync
-            _footer = ThriftFooter.Empty;
+            // _fThriftFooter will be initialised right now in the InitialiseAsync
+            _thriftFooter = ThriftFooter.Empty;
         }
 
         private async Task InitialiseAsync(CancellationToken cancellationToken) {
@@ -40,7 +41,7 @@ namespace Parquet {
 
             //read metadata instantly, now
             _meta = await ReadMetadataAsync(cancellationToken);
-            _footer = new ThriftFooter(_meta);
+            _thriftFooter = new ThriftFooter(_meta);
 
             InitRowGroupReaders();
         }
@@ -83,7 +84,7 @@ namespace Parquet {
         /// <summary>
         /// Gets custom key-value pairs for metadata
         /// </summary>
-        public Dictionary<string, string> CustomMetadata => _footer.CustomMetadata;
+        public Dictionary<string, string> CustomMetadata => _thriftFooter.CustomMetadata;
 
 
         #region [ Helpers ]
@@ -111,17 +112,17 @@ namespace Parquet {
         /// <summary>
         /// Gets the number of rows groups in this file
         /// </summary>
-        public int RowGroupCount => _meta?.Row_groups.Count ?? -1;
+        public int RowGroupCount => _meta?.RowGroups.Count ?? -1;
 
         /// <summary>
         /// Reader schema
         /// </summary>
-        public ParquetSchema Schema => _footer!.CreateModelSchema(_parquetOptions);
+        public ParquetSchema Schema => _thriftFooter!.CreateModelSchema(_parquetOptions);
 
         /// <summary>
         /// Internal parquet metadata
         /// </summary>
-        public Thrift.FileMetaData? ThriftMetadata => _meta;
+        public FileMetaData? Metadata => _meta;
 
         /// <summary>
         /// Opens row group reader. Note that this operation is really cheap as all the metadata is already present.
@@ -157,11 +158,11 @@ namespace Parquet {
 
         private void InitRowGroupReaders() {
             _groupReaders.Clear();
-            if(_meta?.Row_groups == null)
+            if(_meta?.RowGroups == null)
                 throw new InvalidOperationException("no row groups in metadata");
 
-            foreach(Thrift.RowGroup thriftRowGroup in _meta.Row_groups) {
-                _groupReaders.Add(new ParquetRowGroupReader(thriftRowGroup, _footer!, Stream, _parquetOptions));
+            foreach(RowGroup rowGroup in _meta.RowGroups) {
+                _groupReaders.Add(new ParquetRowGroupReader(rowGroup, _thriftFooter!, Stream, _parquetOptions));
             }
         }
 

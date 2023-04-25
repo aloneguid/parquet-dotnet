@@ -30,14 +30,14 @@ using Parquet.Meta;
 namespace Parquet.Test {
     public class ThriftTest : TestBase {
 
-        private readonly TMemoryBufferTransport _thriftGenTransport;
-        private readonly TCompactProtocol _thriftGenProto;
+        private readonly TMemoryBufferTransport _enTransport;
+        private readonly TCompactProtocol _enProto;
         private readonly MemoryStream _myMs = new MemoryStream();
         private readonly ThriftCompactProtocolWriter _myWriter;
 
         public ThriftTest() {
-            _thriftGenTransport = new TMemoryBufferTransport(null);
-            _thriftGenProto = new TCompactProtocol(_thriftGenTransport);
+            _enTransport = new TMemoryBufferTransport(null);
+            _enProto = new TCompactProtocol(_enTransport);
             _myWriter = new ThriftCompactProtocolWriter(_myMs);
         }
 
@@ -50,8 +50,8 @@ namespace Parquet.Test {
                 Scale = 1
             };
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             // write with my
             var dcMy = new DecimalTypeMy {
@@ -77,8 +77,8 @@ namespace Parquet.Test {
             dcGen.Max_value = dcGen.Max;
             dcGen.Min_value = dcGen.Min;
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             // write with my
             var dcMy = new StatisticsMy {
@@ -108,8 +108,8 @@ namespace Parquet.Test {
             dcGen.Max_value = dcGen.Max;
             dcGen.Min_value = dcGen.Min;
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             // read with mine
             StatisticsMy dcMy = StatisticsMy.Read(new ThriftCompactProtocolReader(new MemoryStream(bufferGen)));
@@ -127,8 +127,8 @@ namespace Parquet.Test {
             var dcGen = new StringTypeThriftGen {
             };
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             // write with my
             var dcMy = new StringTypeMy {
@@ -148,8 +148,8 @@ namespace Parquet.Test {
                 IsSigned = true
             };
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             // write with my
             var dcMy = new IntTypeMy {
@@ -171,8 +171,8 @@ namespace Parquet.Test {
                 Path_in_schema = new List<string> { "1", "22" }
             };
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             // write with my
             var dcMy = new CMMy {
@@ -195,8 +195,8 @@ namespace Parquet.Test {
                 Path_in_schema = new List<string> { "1", "22" }
             };
 
-            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
-            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+            await dcGen.WriteAsync(_enProto, CancellationToken.None);
+            byte[] bufferGen = _enTransport.GetBuffer();
 
             CMMy dcMy = CMMy.Read(new ThriftCompactProtocolReader(new MemoryStream(bufferGen)));
 
@@ -206,7 +206,7 @@ namespace Parquet.Test {
 
         [Fact]
         public async Task TestFileRead_Table() {
-            using Stream fs = OpenTestFile("thrift/table.bin");
+            using Stream fs = OpenTestFile("thrift/wide.bin");
             FileMetaData fileMeta = FileMetaData.Read(new ThriftCompactProtocolReader(fs));
         }
     }

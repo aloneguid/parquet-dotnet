@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
+using Parquet.Meta;
 using Parquet.Schema;
 
 namespace Parquet {
@@ -12,14 +13,14 @@ namespace Parquet {
     /// Reader for Parquet row groups
     /// </summary>
     public class ParquetRowGroupReader : IDisposable {
-        private readonly Thrift.RowGroup _rowGroup;
+        private readonly RowGroup _rowGroup;
         private readonly ThriftFooter _footer;
         private readonly Stream _stream;
         private readonly ParquetOptions? _parquetOptions;
-        private readonly Dictionary<FieldPath, Thrift.ColumnChunk> _pathToChunk = new();
+        private readonly Dictionary<FieldPath, ColumnChunk> _pathToChunk = new();
 
         internal ParquetRowGroupReader(
-           Thrift.RowGroup rowGroup,
+           RowGroup rowGroup,
            ThriftFooter footer,
            Stream stream,
            ParquetOptions? parquetOptions) {
@@ -29,21 +30,21 @@ namespace Parquet {
             _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             //cache chunks
-            foreach(Thrift.ColumnChunk thriftChunk in _rowGroup.Columns) {
-                FieldPath path = thriftChunk.GetPath();
-                _pathToChunk[path] = thriftChunk;
+            foreach(ColumnChunk hunk in _rowGroup.Columns) {
+                FieldPath path = hunk.GetPath();
+                _pathToChunk[path] = hunk;
             }
         }
 
         /// <summary>
-        /// Exposes raw thrift metadata about this row group
+        /// Exposes raw metadata about this row group
         /// </summary>
-        public Thrift.RowGroup ThriftRowGroup => _rowGroup;
+        public RowGroup owGroup => _rowGroup;
 
         /// <summary>
         /// Gets the number of rows in this row group
         /// </summary>
-        public long RowCount => _rowGroup.Num_rows;
+        public long RowCount => _rowGroup.NumRows;
 
         /// <summary>
         /// Reads a column from this row group.
@@ -55,7 +56,7 @@ namespace Parquet {
             if(field == null)
                 throw new ArgumentNullException(nameof(field));
 
-            if(!_pathToChunk.TryGetValue(field.Path, out Thrift.ColumnChunk? columnChunk)) {
+            if(!_pathToChunk.TryGetValue(field.Path, out ColumnChunk? columnChunk)) {
                 throw new ParquetException($"'{field.Path}' does not exist in this file");
             }
 

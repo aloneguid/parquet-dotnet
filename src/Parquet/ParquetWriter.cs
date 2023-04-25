@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Parquet._3rdparty;
 using Parquet.Schema;
 using Parquet.File;
+using Parquet.Meta;
 
 namespace Parquet {
     /// <summary>
@@ -98,7 +99,7 @@ namespace Parquet {
 
                 await ValidateFileAsync();
 
-                Thrift.FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
+                FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
                 _footer = new ThriftFooter(fileMeta);
 
                 ValidateSchemasCompatible(_footer, _schema);
@@ -144,7 +145,7 @@ namespace Parquet {
             }
 
             //finalize file
-            //long size = _footer.WriteAsync(ThriftStream).Result;
+            //long size = _footer.WriteAsync(tream).Result;
 
             var sizeTask = Task.Run(() => _footer!.WriteAsync(Stream));
             sizeTask.Wait();

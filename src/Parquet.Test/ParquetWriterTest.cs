@@ -24,7 +24,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task Write_in_small_row_groups() {
+        public async Task Write_in_small_RowGroups() {
             //write a single file having 3 row groups
             var id = new DataField<int>("id");
             var ms = new MemoryStream();
@@ -71,7 +71,7 @@ namespace Parquet.Test {
 
 #if NET7_0_OR_GREATER
         [Fact]
-        public async Task Write_in_small_row_groups_write_only_stream() {
+        public async Task Write_in_small_RowGroups_write_only_stream() {
             //write to a write-only stream that does not implement the Position property
             var id = new DataField<int>("id");
             var pipe = new System.IO.Pipelines.Pipe();
@@ -207,7 +207,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(4, reader.ThriftMetadata!.Num_rows);
+                Assert.Equal(4, reader.Metadata!.NumRows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(4, rg.RowCount);
@@ -216,7 +216,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task FileMetadata_sets_num_rows_on_file_and_row_group_multiple_row_groups() {
+        public async Task FileMetadata_sets_num_rows_on_file_and_row_group_multiple_RowGroups() {
             var ms = new MemoryStream();
             var id = new DataField<int>("id");
 
@@ -233,7 +233,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(6, reader.ThriftMetadata!.Num_rows);
+                Assert.Equal(6, reader.Metadata!.NumRows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(4, rg.RowCount);

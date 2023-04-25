@@ -46,19 +46,12 @@ namespace Parquet {
                 throw new IOException($"not a parquet file, head: {head.ToHexString()}, tail: {tail.ToHexString()}");
         }
 
-        internal async ValueTask<Thrift.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
+        internal async ValueTask<Parquet.Meta.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
             int footerLength = await GoBeforeFooterAsync();
-            Thrift.FileMetaData meta = await ThriftIO.ReadAsync<Thrift.FileMetaData>(_fileStream, footerLength, cancellationToken);
-
-            await GoBeforeFooterAsync();
             byte[] footerData = await _fileStream.ReadBytesExactlyAsync(footerLength);
-            var ms = new MemoryStream(footerData);
-            System.IO.File.WriteAllBytes(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\thrift\table.thrift", footerData);
-
-
-            Meta.FileMetaData meta2 = Parquet.Meta.FileMetaData.Read(new Meta.Proto.ThriftCompactProtocolReader(ms));
-
-            return meta;
+            using var ms = new MemoryStream(footerData);
+            System.IO.File.WriteAllBytes(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\thrift\wide.bin", footerData);
+            return Parquet.Meta.FileMetaData.Read(new Meta.Proto.ThriftCompactProtocolReader(ms));
         }
 
         internal async ValueTask<int> GoBeforeFooterAsync() {

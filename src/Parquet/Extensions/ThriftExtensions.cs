@@ -1,35 +1,32 @@
 ﻿using System.Linq;
 using Parquet.Data;
+using Parquet.Meta;
 using Parquet.Schema;
 
 namespace Parquet {
     /// <summary>
-    /// Internal thrift data structure helpers
+    /// Internal data structure helpers
     /// </summary>
     static class ThriftExtensions {
-        public static bool IsAnnotatedWithAny(this Thrift.SchemaElement schemaElement, Thrift.ConvertedType[] convertedTypes) {
+        public static bool IsAnnotatedWithAny(this SchemaElement schemaElement, ConvertedType[] convertedTypes) {
             if(convertedTypes == null || convertedTypes.Length == 0)
                 return false;
 
             return
-               schemaElement.__isset.converted_type &&
-               convertedTypes.Any(ct => ct == schemaElement.Converted_type);
+               schemaElement.ConvertedType != null &&
+               convertedTypes.Any(ct => ct == schemaElement.ConvertedType);
         }
 
-        public static bool IsNullable(this Thrift.SchemaElement schemaElement) {
-            return schemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
+        public static bool IsNullable(this SchemaElement schemaElement) {
+            return schemaElement.RepetitionType != FieldRepetitionType.REQUIRED;
         }
 
-        public static FieldPath GetPath(this Thrift.ColumnChunk columnChunk) {
-            return new FieldPath(columnChunk.Meta_data.Path_in_schema);
+        public static FieldPath GetPath(this ColumnChunk columnChunk) {
+            return new FieldPath(columnChunk.MetaData!.PathInSchema);
         }
 
-        public static string Describe(this Thrift.SchemaElement se) {
-            string t = se.__isset.type ? se.Type.ToString() : "<not set>";
-            string ct = se.__isset.converted_type ? se.Converted_type.ToString() : "<not set>";
-            string rt = se.__isset.repetition_type ? se.Repetition_type.ToString() : "<not set>";
-
-            return $"[n: {se.Name}, t: {t}, ct: {ct}, rt: {rt}, c: {se.Num_children}]";
+        public static string Describe(this SchemaElement se) {
+            return $"[n: {se.Name}, t: {se.Type}, ct: {se.ConvertedType}, rt: {se.RepetitionType}, c: {se.NumChildren}]";
         }
     }
 }

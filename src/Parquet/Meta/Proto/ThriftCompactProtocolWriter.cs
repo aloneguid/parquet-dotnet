@@ -6,7 +6,7 @@ namespace Parquet.Meta.Proto {
 
     class ThriftCompactProtocolWriter {
         // Used to keep track of the last field for the current and previous structs, so we can do the delta stuff.
-        private readonly Stack<short> _lastField = new Stack<short>(15);    // 15 is max recursion for thrift
+        private readonly Stack<short> _lastField = new Stack<short>(15);    // 15 is max recursion
         private readonly Stream _outputStream;
         private short _lastFieldId;
 

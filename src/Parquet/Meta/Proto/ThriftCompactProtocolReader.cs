@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using Thrift.Protocol;
-using System.Diagnostics;
 using Parquet.Extensions;
 
 namespace Parquet.Meta.Proto {

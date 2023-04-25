@@ -510,7 +510,7 @@ namespace Parquet.Test.Rows {
         }
 
         [Fact]
-        public async Task Special_read_file_with_multiple_row_groups() {
+        public async Task Special_read_file_with_multiple_RowGroups() {
             var ms = new MemoryStream();
 
             //create multirowgroup file

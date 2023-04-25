@@ -26,8 +26,6 @@ if(args.Length == 1) {
     //c.SetUp();
     //c.Serialise();
     //await ParquetReader.ReadTableFromFileAsync("C:\\Users\\alone\\Downloads\\wide_parquet\\wide_parquet.parquet");
-
-    //await new ThriftRewriteBenchmark().WriteDecimalType_ThriftGen();
-    await new ThriftRewriteBenchmark().WriteDecimalType_MyGen();
+    await new ThriftRewriteBenchmark().Read_My();
     
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using Parquet.Meta;
+using Type = System.Type;
 
 namespace Parquet.Schema {
     /// <summary>
@@ -92,20 +94,20 @@ namespace Parquet.Schema {
 
         internal override Field[] Children => new Field[] { Item };
 
-        internal Thrift.SchemaElement? GroupSchemaElement { get; set; } = null;
+        internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
 
             MaxDefinitionLevel = parentDefinitionLevel;
             MaxRepetitionLevel = parentRepetitionLevel;
 
-            if(ThriftSchemaElement != null) {
+            if(SchemaElement != null) {
                 // building from file
                 if(IsNullable)
                     MaxDefinitionLevel += 1;
 
                 if(GroupSchemaElement != null) {
-                    if(GroupSchemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED)
+                    if(GroupSchemaElement.RepetitionType != FieldRepetitionType.REQUIRED)
                         MaxDefinitionLevel += 1;
 
                     MaxRepetitionLevel += 1;
