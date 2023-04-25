@@ -335,7 +335,6 @@ namespace Parquet.Encodings {
         public static SchemaElement Encode(DataField field) {
             SType st = field.ClrType;
             var tse = new SchemaElement { Name = field.Name };
-            tse.LogicalType = new LogicalType();
 
             if(st == typeof(bool)) {                                // boolean
                 tse.Type = Type.BOOLEAN;
@@ -353,9 +352,11 @@ namespace Parquet.Encodings {
                     bw = 32;
                 bool signed = st == typeof(sbyte) || st == typeof(short) || st == typeof(int);
 
-                tse.LogicalType.INTEGER = new IntType {
-                    BitWidth = bw,
-                    IsSigned = signed
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new IntType {
+                        BitWidth = bw,
+                        IsSigned = signed
+                    }
                 };
                 tse.ConvertedType = bw switch {
                     8 => signed ? ConvertedType.INT_8 : ConvertedType.UINT_8,
@@ -365,7 +366,12 @@ namespace Parquet.Encodings {
                 };
             } else if(st == typeof(long) || st == typeof(ulong)) {  // 64-bit number
                 tse.Type = Type.INT64;
-                tse.LogicalType.INTEGER = new IntType { BitWidth = 64, IsSigned = st == typeof(long) };
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new IntType {
+                        BitWidth = 64,
+                        IsSigned = st == typeof(long)
+                    }
+                };
                 tse.ConvertedType = st == typeof(long) ? ConvertedType.INT_64 : ConvertedType.UINT_64;
             } else if(st == typeof(float)) {                        // float
                 tse.Type = Type.FLOAT;
@@ -375,7 +381,9 @@ namespace Parquet.Encodings {
                 tse.Type = Type.INT96;
             } else if(st == typeof(string)) {                       // string
                 tse.Type = Type.BYTE_ARRAY;
-                tse.LogicalType.STRING = new StringType();
+                tse.LogicalType = new LogicalType {
+                    STRING = new StringType()
+                };
                 tse.ConvertedType = ConvertedType.UTF8;
             } else if(st == typeof(decimal)) {                      // decimal
 
@@ -403,9 +411,11 @@ namespace Parquet.Encodings {
                     tse.TypeLength = 16;
                 }
 
-                tse.LogicalType.DECIMAL = new DecimalType {
-                    Precision = precision,
-                    Scale = scale
+                tse.LogicalType = new LogicalType {
+                    DECIMAL = new DecimalType {
+                        Precision = precision,
+                        Scale = scale
+                    }
                 };
                 tse.Precision = precision;
                 tse.Scale = scale;
@@ -432,7 +442,7 @@ namespace Parquet.Encodings {
 #if NET6_0_OR_GREATER
             } else if(st == typeof(DateOnly)) {         // DateOnly
                 tse.Type = Type.INT32;
-                tse.LogicalType.DATE = new DateType();
+                tse.LogicalType = new LogicalType { DATE = new DateType() };
                 tse.ConvertedType = ConvertedType.DATE;
 #endif
             } else if(st == typeof(TimeSpan)) {         // TimeSpan
@@ -440,17 +450,21 @@ namespace Parquet.Encodings {
                     switch(dfTime.TimeSpanFormat) {
                         case TimeSpanFormat.MilliSeconds:
                             tse.Type = Type.INT32;
-                            tse.LogicalType.TIME = new TimeType {
-                                IsAdjustedToUTC = true,
-                                Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                                }
                             };
                             tse.ConvertedType = ConvertedType.TIME_MILLIS;
                             break;
                         case TimeSpanFormat.MicroSeconds:
                             tse.Type = Type.INT64;
-                            tse.LogicalType.TIME = new TimeType {
-                                IsAdjustedToUTC = true,
-                                Unit = new TimeUnit { MICROS = new MicroSeconds() }
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MICROS = new MicroSeconds() }
+                                }
                             };
                             tse.ConvertedType = ConvertedType.TIME_MICROS;
                             break;
@@ -459,9 +473,11 @@ namespace Parquet.Encodings {
                     }
                 } else {
                     tse.Type = Type.INT32;
-                    tse.LogicalType.TIME = new TimeType {
-                        IsAdjustedToUTC = true,
-                        Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                    tse.LogicalType = new LogicalType {
+                        TIME = new TimeType {
+                            IsAdjustedToUTC = true,
+                            Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                        }
                     };
                     tse.ConvertedType = ConvertedType.TIME_MILLIS;
                 }
