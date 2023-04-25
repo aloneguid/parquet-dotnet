@@ -50,7 +50,6 @@ namespace Parquet {
             int footerLength = await GoBeforeFooterAsync();
             byte[] footerData = await _fileStream.ReadBytesExactlyAsync(footerLength);
             using var ms = new MemoryStream(footerData);
-            System.IO.File.WriteAllBytes(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\thrift\wide.bin", footerData);
             return Parquet.Meta.FileMetaData.Read(new Meta.Proto.ThriftCompactProtocolReader(ms));
         }
 
