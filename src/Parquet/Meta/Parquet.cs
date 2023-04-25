@@ -487,7 +487,7 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
-    /// Decimal logical type annotation  To maintain forward-compatibility in v1, implementations using this logical type must also set scale and precision on the annotated SchemaElement.  Allowed for physical types: INT32, INT64, FIXED, and BINARY.
+    /// Decimal logical type annotation  Scale must be zero or a positive integer less than or equal to the precision. Precision must be a non-zero positive integer.  To maintain forward-compatibility in v1, implementations using this logical type must also set scale and precision on the annotated SchemaElement.  Allowed for physical types: INT32, INT64, FIXED, and BINARY.
     /// </summary>
     public class DecimalType {
         public int Scale { get; set; }
@@ -987,7 +987,7 @@ namespace Parquet.Meta {
         public Type? Type { get; set; }
 
         /// <summary>
-        /// If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the vales. Otherwise, if specified, this is the maximum bit length to store any of the values. (e.g. a low cardinality INT col could have this set to 3).  Note that this is in the schema, and therefore fixed for the entire file.
+        /// If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values. Otherwise, if specified, this is the maximum bit length to store any of the values. (e.g. a low cardinality INT col could have this set to 3).  Note that this is in the schema, and therefore fixed for the entire file.
         /// </summary>
         public int? TypeLength { get; set; }
 
@@ -1665,7 +1665,7 @@ namespace Parquet.Meta {
         public int CompressedPageSize { get; set; }
 
         /// <summary>
-        /// The 32bit CRC for the page, to be be calculated as follows: - Using the standard CRC32 algorithm - On the data only, i.e. this header should not be included. &#39;Data&#39;   hereby refers to the concatenation of the repetition levels, the   definition levels and the column value, in this exact order. - On the encoded versions of the repetition levels, definition levels and   column values - On the compressed versions of the repetition levels, definition levels   and column values where possible;   - For v1 data pages, the repetition levels, definition levels and column     values are always compressed together. If a compression scheme is     specified, the CRC shall be calculated on the compressed version of     this concatenation. If no compression scheme is specified, the CRC     shall be calculated on the uncompressed version of this concatenation.   - For v2 data pages, the repetition levels and definition levels are     handled separately from the data and are never compressed (only     encoded). If a compression scheme is specified, the CRC shall be     calculated on the concatenation of the uncompressed repetition levels,     uncompressed definition levels and the compressed column values.     If no compression scheme is specified, the CRC shall be calculated on     the uncompressed concatenation. - In encrypted columns, CRC is calculated after page encryption; the   encryption itself is performed after page compression (if compressed) If enabled, this allows for disabling checksumming in HDFS if only a few pages need to be read.
+        /// The 32-bit CRC checksum for the page, to be be calculated as follows:  - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,   the same as in e.g. GZip). - All page types can have a CRC (v1 and v2 data pages, dictionary pages,   etc.). - The CRC is computed on the serialization binary representation of the page   (as written to disk), excluding the page header. For example, for v1   data pages, the CRC is computed on the concatenation of repetition levels,   definition levels and column values (optionally compressed, optionally   encrypted). - The CRC computation therefore takes place after any compression   and encryption steps, if any.  If enabled, this allows for disabling checksumming in HDFS if only a few pages need to be read.
         /// </summary>
         public int? Crc { get; set; }
 
@@ -1985,6 +1985,11 @@ namespace Parquet.Meta {
         /// </summary>
         public long? BloomFilterOffset { get; set; }
 
+        /// <summary>
+        /// Size of Bloom filter data including the serialized header, in bytes. Added in 2.10 so readers may not read this field from old files and it can be obtained after the BloomFilterHeader has been deserialized. Writers should write this field so readers can read the bloom filter in a single I/O.
+        /// </summary>
+        public int? BloomFilterLength { get; set; }
+
 
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.StructBegin();
@@ -2042,6 +2047,10 @@ namespace Parquet.Meta {
             if(BloomFilterOffset != null) {
                 proto.WriteI64Field(14, BloomFilterOffset.Value);
             }
+            // 15: BloomFilterLength, i32
+            if(BloomFilterLength != null) {
+                proto.WriteI32Field(15, BloomFilterLength.Value);
+            }
 
             proto.StructEnd();
         }
@@ -2092,6 +2101,9 @@ namespace Parquet.Meta {
                         break;
                     case 14: // BloomFilterOffset, i64
                         r.BloomFilterOffset = proto.ReadI64();
+                        break;
+                    case 15: // BloomFilterLength, i32
+                        r.BloomFilterLength = proto.ReadI32();
                         break;
                     default:
                         proto.SkipField(compactType);
@@ -2486,7 +2498,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class ColumnOrder {
         /// <summary>
-        /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - unsigned comparison   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.
+        /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - unsigned comparison   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.      When writing statistics the following rules should be followed:     - NaNs should not be written to min or max statistics fields.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.
         /// </summary>
         public TypeDefinedOrder? TYPEORDER { get; set; }
 
@@ -2629,7 +2641,7 @@ namespace Parquet.Meta {
         public List<byte[]> MaxValues { get; set; } = new List<byte[]>();
 
         /// <summary>
-        /// Stores whether both min_values and max_values are orderd and if so, in which direction. This allows readers to perform binary searches in both lists. Readers cannot assume that max_values[i] &lt;= min_values[i+1], even if the lists are ordered.
+        /// Stores whether both min_values and max_values are ordered and if so, in which direction. This allows readers to perform binary searches in both lists. Readers cannot assume that max_values[i] &lt;= min_values[i+1], even if the lists are ordered.
         /// </summary>
         public BoundaryOrder BoundaryOrder { get; set; } = new BoundaryOrder();
 

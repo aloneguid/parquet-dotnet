@@ -22,7 +22,6 @@ specific language governing permissions and limitations
 under the License.">
     <namespace name="cpp" value="parquet" />
     <namespace name="java" value="org.apache.parquet.format" />
-    <namespace name="netstd" value="Parquet.Thrift" />
     <enum name="Type" doc="Types supported by Parquet.  These types are intended to be used in combination
 with the encodings to control the on disk storage format.
 For example INT16 is not included as a type since a good encoding of INT32
@@ -213,6 +212,9 @@ null and the physical type can&apos;t be determined. This annotation signals
 the case where the physical type was guessed from all null values." />
     <struct name="DecimalType" doc="Decimal logical type annotation
 
+Scale must be zero or a positive integer less than or equal to the precision.
+Precision must be a non-zero positive integer.
+
 To maintain forward-compatibility in v1, implementations using this logical
 type must also set scale and precision on the annotated SchemaElement.
 
@@ -278,7 +280,7 @@ from the following table.">
  - if it is a primitive type (leaf) then type is defined and num_children is undefined
 the nodes are listed in depth first traversal order.">
       <field name="type" field-id="1" doc="Data type for this field. Not set if the current element is a non-leaf node" required="optional" type="id" type-module="parquet" type-id="Type" />
-      <field name="type_length" field-id="2" doc="If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the vales.
+      <field name="type_length" field-id="2" doc="If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values.
 Otherwise, if specified, this is the maximum bit length to store any of the values.
 (e.g. a low cardinality INT col could have this set to 3).  Note that this is
 in the schema, and therefore fixed for the entire file." required="optional" type="i32" />
@@ -366,29 +368,20 @@ and followed by its bitset.">
       <field name="type" field-id="1" doc="the type of the page: indicates which of the *_header fields is set *" required="required" type="id" type-module="parquet" type-id="PageType" />
       <field name="uncompressed_page_size" field-id="2" doc="Uncompressed page size in bytes (not including this header) *" required="required" type="i32" />
       <field name="compressed_page_size" field-id="3" doc="Compressed (and potentially encrypted) page size in bytes, not including this header *" required="required" type="i32" />
-      <field name="crc" field-id="4" doc="The 32bit CRC for the page, to be be calculated as follows:
-- Using the standard CRC32 algorithm
-- On the data only, i.e. this header should not be included. &apos;Data&apos;
-  hereby refers to the concatenation of the repetition levels, the
-  definition levels and the column value, in this exact order.
-- On the encoded versions of the repetition levels, definition levels and
-  column values
-- On the compressed versions of the repetition levels, definition levels
-  and column values where possible;
-  - For v1 data pages, the repetition levels, definition levels and column
-    values are always compressed together. If a compression scheme is
-    specified, the CRC shall be calculated on the compressed version of
-    this concatenation. If no compression scheme is specified, the CRC
-    shall be calculated on the uncompressed version of this concatenation.
-  - For v2 data pages, the repetition levels and definition levels are
-    handled separately from the data and are never compressed (only
-    encoded). If a compression scheme is specified, the CRC shall be
-    calculated on the concatenation of the uncompressed repetition levels,
-    uncompressed definition levels and the compressed column values.
-    If no compression scheme is specified, the CRC shall be calculated on
-    the uncompressed concatenation.
-- In encrypted columns, CRC is calculated after page encryption; the
-  encryption itself is performed after page compression (if compressed)
+      <field name="crc" field-id="4" doc="The 32-bit CRC checksum for the page, to be be calculated as follows:
+
+- The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
+  the same as in e.g. GZip).
+- All page types can have a CRC (v1 and v2 data pages, dictionary pages,
+  etc.).
+- The CRC is computed on the serialization binary representation of the page
+  (as written to disk), excluding the page header. For example, for v1
+  data pages, the CRC is computed on the concatenation of repetition levels,
+  definition levels and column values (optionally compressed, optionally
+  encrypted).
+- The CRC computation therefore takes place after any compression
+  and encryption steps, if any.
+
 If enabled, this allows for disabling checksumming in HDFS if only a few
 pages need to be read." required="optional" type="i32" />
       <field name="data_page_header" field-id="5" required="optional" type="id" type-module="parquet" type-id="DataPageHeader" />
@@ -438,6 +431,11 @@ dictionary encoded for example *" required="optional" type="list">
         <elemType type="id" type-module="parquet" type-id="PageEncodingStats" />
       </field>
       <field name="bloom_filter_offset" field-id="14" doc="Byte offset from beginning of file to Bloom filter data. *" required="optional" type="i64" />
+      <field name="bloom_filter_length" field-id="15" doc="Size of Bloom filter data including the serialized header, in bytes.
+Added in 2.10 so readers may not read this field from old files and
+it can be obtained after the BloomFilterHeader has been deserialized.
+Writers should write this field so readers can read the bloom filter
+in a single I/O." required="optional" type="i32" />
     </struct>
     <struct name="EncryptionWithFooterKey" />
     <struct name="EncryptionWithColumnKey">
@@ -532,7 +530,14 @@ In the absence of logical types, the sort order is determined by the physical ty
     - If the max is a NaN, it should be ignored.
     - If the min is +0, the row group may contain -0 values as well.
     - If the max is -0, the row group may contain +0 values as well.
-    - When looking for NaN values, min and max should be ignored." required="optional" type="id" type-module="parquet" type-id="TypeDefinedOrder" />
+    - When looking for NaN values, min and max should be ignored.
+
+    When writing statistics the following rules should be followed:
+    - NaNs should not be written to min or max statistics fields.
+    - If the computed max value is zero (whether negative or positive),
+      `+0.0` should be written into the max statistics field.
+    - If the computed min value is zero (whether negative or positive),
+      `-0.0` should be written into the min statistics field." required="optional" type="id" type-module="parquet" type-id="TypeDefinedOrder" />
     </union>
     <struct name="PageLocation">
       <field name="offset" field-id="1" doc="Offset of the page in the file *" required="required" type="i64" />
@@ -569,7 +574,7 @@ using them by inspecting null_pages." required="required" type="list">
       <field name="max_values" field-id="3" required="required" type="list">
         <elemType type="binary" />
       </field>
-      <field name="boundary_order" field-id="4" doc="Stores whether both min_values and max_values are orderd and if so, in
+      <field name="boundary_order" field-id="4" doc="Stores whether both min_values and max_values are ordered and if so, in
 which direction. This allows readers to perform binary searches in both
 lists. Readers cannot assume that max_values[i] &lt;= min_values[i+1], even
 if the lists are ordered." required="required" type="id" type-module="parquet" type-id="BoundaryOrder" />

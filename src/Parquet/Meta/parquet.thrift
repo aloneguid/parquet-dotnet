@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,7 +22,6 @@
  */
 namespace cpp parquet
 namespace java org.apache.parquet.format
-namespace netstd Parquet.Thrift
 
 /**
  * Types supported by Parquet.  These types are intended to be used in combination
@@ -246,6 +245,9 @@ struct NullType {}    // allowed for any physical type, only null values stored
 /**
  * Decimal logical type annotation
  *
+ * Scale must be zero or a positive integer less than or equal to the precision.
+ * Precision must be a non-zero positive integer.
+ *
  * To maintain forward-compatibility in v1, implementations using this logical
  * type must also set scale and precision on the annotated SchemaElement.
  *
@@ -355,7 +357,7 @@ struct SchemaElement {
   /** Data type for this field. Not set if the current element is a non-leaf node */
   1: optional Type type;
 
-  /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the vales.
+  /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values.
    * Otherwise, if specified, this is the maximum bit length to store any of the values.
    * (e.g. a low cardinality INT col could have this set to 3).  Note that this is
    * in the schema, and therefore fixed for the entire file.
@@ -640,32 +642,23 @@ struct PageHeader {
   /** Compressed (and potentially encrypted) page size in bytes, not including this header **/
   3: required i32 compressed_page_size
 
-  /** The 32bit CRC for the page, to be be calculated as follows:
-   * - Using the standard CRC32 algorithm
-   * - On the data only, i.e. this header should not be included. 'Data'
-   *   hereby refers to the concatenation of the repetition levels, the
-   *   definition levels and the column value, in this exact order.
-   * - On the encoded versions of the repetition levels, definition levels and
-   *   column values
-   * - On the compressed versions of the repetition levels, definition levels
-   *   and column values where possible;
-   *   - For v1 data pages, the repetition levels, definition levels and column
-   *     values are always compressed together. If a compression scheme is
-   *     specified, the CRC shall be calculated on the compressed version of
-   *     this concatenation. If no compression scheme is specified, the CRC
-   *     shall be calculated on the uncompressed version of this concatenation.
-   *   - For v2 data pages, the repetition levels and definition levels are
-   *     handled separately from the data and are never compressed (only
-   *     encoded). If a compression scheme is specified, the CRC shall be
-   *     calculated on the concatenation of the uncompressed repetition levels,
-   *     uncompressed definition levels and the compressed column values.
-   *     If no compression scheme is specified, the CRC shall be calculated on
-   *     the uncompressed concatenation.
-   * - In encrypted columns, CRC is calculated after page encryption; the
-   *   encryption itself is performed after page compression (if compressed)
+  /** The 32-bit CRC checksum for the page, to be be calculated as follows:
+   *
+   * - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
+   *   the same as in e.g. GZip).
+   * - All page types can have a CRC (v1 and v2 data pages, dictionary pages,
+   *   etc.).
+   * - The CRC is computed on the serialization binary representation of the page
+   *   (as written to disk), excluding the page header. For example, for v1
+   *   data pages, the CRC is computed on the concatenation of repetition levels,
+   *   definition levels and column values (optionally compressed, optionally
+   *   encrypted).
+   * - The CRC computation therefore takes place after any compression
+   *   and encryption steps, if any.
+   *
    * If enabled, this allows for disabling checksumming in HDFS if only a few
    * pages need to be read.
-   **/
+   */
   4: optional i32 crc
 
   // Headers for page specific data.  One only will be set.
@@ -763,6 +756,14 @@ struct ColumnMetaData {
 
   /** Byte offset from beginning of file to Bloom filter data. **/
   14: optional i64 bloom_filter_offset;
+
+  /** Size of Bloom filter data including the serialized header, in bytes.
+   * Added in 2.10 so readers may not read this field from old files and
+   * it can be obtained after the BloomFilterHeader has been deserialized.
+   * Writers should write this field so readers can read the bloom filter
+   * in a single I/O.
+   */
+  15: optional i32 bloom_filter_length;
 }
 
 struct EncryptionWithFooterKey {
@@ -903,6 +904,13 @@ union ColumnOrder {
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
+   * 
+   *     When writing statistics the following rules should be followed:
+   *     - NaNs should not be written to min or max statistics fields.
+   *     - If the computed max value is zero (whether negative or positive),
+   *       `+0.0` should be written into the max statistics field.
+   *     - If the computed min value is zero (whether negative or positive),
+   *       `-0.0` should be written into the min statistics field.
    */
   1: TypeDefinedOrder TYPE_ORDER;
 }
@@ -960,7 +968,7 @@ struct ColumnIndex {
   3: required list<binary> max_values
 
   /**
-   * Stores whether both min_values and max_values are orderd and if so, in
+   * Stores whether both min_values and max_values are ordered and if so, in
    * which direction. This allows readers to perform binary searches in both
    * lists. Readers cannot assume that max_values[i] <= min_values[i+1], even
    * if the lists are ordered.
@@ -1075,3 +1083,4 @@ struct FileCryptoMetaData {
    *  and (possibly) columns **/
   2: optional binary key_metadata
 }
+
