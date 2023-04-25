@@ -330,7 +330,6 @@ namespace Parquet.Encodings {
         public static Thrift.SchemaElement Encode(DataField field) {
             SType st = field.ClrType;
             var tse = new Thrift.SchemaElement(field.Name);
-            tse.LogicalType = new Thrift.LogicalType();
 
             if(st == typeof(bool)) {                                // boolean
                 tse.Type = Thrift.Type.BOOLEAN;
@@ -348,9 +347,11 @@ namespace Parquet.Encodings {
                     bw = 32;
                 bool signed = st == typeof(sbyte) || st == typeof(short) || st == typeof(int);
 
-                tse.LogicalType.INTEGER = new Thrift.IntType {
-                    BitWidth = bw,
-                    IsSigned = signed
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new Thrift.IntType {
+                        BitWidth = bw,
+                        IsSigned = signed
+                    }
                 };
                 tse.Converted_type = bw switch {
                     8 => signed ? Thrift.ConvertedType.INT_8 : Thrift.ConvertedType.UINT_8,
@@ -360,7 +361,12 @@ namespace Parquet.Encodings {
                 };
             } else if(st == typeof(long) || st == typeof(ulong)) {  // 64-bit number
                 tse.Type = Thrift.Type.INT64;
-                tse.LogicalType.INTEGER = new Thrift.IntType { BitWidth = 64, IsSigned = st == typeof(long) };
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new Thrift.IntType {
+                        BitWidth = 64,
+                        IsSigned = st == typeof(long)
+                    }
+                };
                 tse.Converted_type = st == typeof(long) ? Thrift.ConvertedType.INT_64 : Thrift.ConvertedType.UINT_64;
             } else if(st == typeof(float)) {                        // float
                 tse.Type = Thrift.Type.FLOAT;
@@ -370,7 +376,9 @@ namespace Parquet.Encodings {
                 tse.Type = Thrift.Type.INT96;
             } else if(st == typeof(string)) {                       // string
                 tse.Type = Thrift.Type.BYTE_ARRAY;
-                tse.LogicalType.STRING = new Thrift.StringType();
+                tse.LogicalType = new LogicalType {
+                    STRING = new Thrift.StringType()
+                };
                 tse.Converted_type = Thrift.ConvertedType.UTF8;
             } else if(st == typeof(decimal)) {                      // decimal
 
@@ -398,9 +406,11 @@ namespace Parquet.Encodings {
                     tse.Type_length = 16;
                 }
 
-                tse.LogicalType.DECIMAL = new Thrift.DecimalType {
-                    Precision = precision,
-                    Scale = scale
+                tse.LogicalType = new LogicalType {
+                    DECIMAL = new Thrift.DecimalType {
+                        Precision = precision,
+                        Scale = scale
+                    }
                 };
                 tse.Precision = precision;
                 tse.Scale = scale;
@@ -427,7 +437,7 @@ namespace Parquet.Encodings {
 #if NET6_0_OR_GREATER
             } else if(st == typeof(DateOnly)) {         // DateOnly
                 tse.Type = Thrift.Type.INT32;
-                tse.LogicalType.DATE = new Thrift.DateType();
+                tse.LogicalType = new LogicalType { DATE = new Thrift.DateType() };
                 tse.Converted_type = Thrift.ConvertedType.DATE;
 #endif
             } else if(st == typeof(TimeSpan)) {         // TimeSpan
@@ -435,17 +445,21 @@ namespace Parquet.Encodings {
                     switch(dfTime.TimeSpanFormat) {
                         case TimeSpanFormat.MilliSeconds:
                             tse.Type = Thrift.Type.INT32;
-                            tse.LogicalType.TIME = new Thrift.TimeType {
-                                IsAdjustedToUTC = true,
-                                Unit = new Thrift.TimeUnit { MILLIS = new Thrift.MilliSeconds() }
+                            tse.LogicalType = new LogicalType {
+                                TIME = new Thrift.TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new Thrift.TimeUnit { MILLIS = new Thrift.MilliSeconds() }
+                                }
                             };
                             tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
                             break;
                         case TimeSpanFormat.MicroSeconds:
                             tse.Type = Thrift.Type.INT64;
-                            tse.LogicalType.TIME = new Thrift.TimeType {
-                                IsAdjustedToUTC = true,
-                                Unit = new Thrift.TimeUnit { MICROS = new Thrift.MicroSeconds() }
+                            tse.LogicalType = new LogicalType {
+                                TIME = new Thrift.TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new Thrift.TimeUnit { MICROS = new Thrift.MicroSeconds() }
+                                }
                             };
                             tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
                             break;
@@ -454,9 +468,11 @@ namespace Parquet.Encodings {
                     }
                 } else {
                     tse.Type = Thrift.Type.INT32;
-                    tse.LogicalType.TIME = new Thrift.TimeType {
-                        IsAdjustedToUTC = true,
-                        Unit = new Thrift.TimeUnit { MILLIS = new Thrift.MilliSeconds() }
+                    tse.LogicalType = new LogicalType {
+                        TIME = new Thrift.TimeType {
+                            IsAdjustedToUTC = true,
+                            Unit = new Thrift.TimeUnit { MILLIS = new Thrift.MilliSeconds() }
+                        }
                     };
                     tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
                 }
