@@ -33,9 +33,9 @@ namespace Parquet.Test.Integration {
         [Fact]
         public async Task DateTime_Default() {
             var schema = new ParquetSchema(new DataField<DateTime>("qtype"));
-            var dc = new DataColumn(schema.DataFields.First(), new[] { DateTime.UtcNow });
+            var dc = new DataColumn(schema.DataFields.First(), new[] { new DateTime(2023, 04, 25, 1, 2, 3) });
             string json = await ReadWithPQT(schema, dc);
-            Assert.Equal("", json);
+            Assert.Equal("{\"qtype\":\"AK4X1GIDAACciSUA\"}", json);
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace Parquet.Test.Integration {
             var schema = new ParquetSchema(new DataField<TimeSpan>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { TimeSpan.FromHours(7) });
             string json = await ReadWithPQT(schema, dc);
-            Assert.Equal("", json);
+            Assert.Equal("{\"qtype\":25200000}", json);
         }
     }
 }
