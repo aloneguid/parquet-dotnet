@@ -25,9 +25,10 @@ using IntTypeMy = Parquet.Meta.IntType;
 
 using CMThriftGen = Parquet.Thrift.ColumnMetaData;
 using CMMy = Parquet.Meta.ColumnMetaData;
+using Parquet.Meta;
 
 namespace Parquet.Test {
-    public class ThriftTest {
+    public class ThriftTest : TestBase {
 
         private readonly TMemoryBufferTransport _thriftGenTransport;
         private readonly TCompactProtocol _thriftGenProto;
@@ -96,6 +97,31 @@ namespace Parquet.Test {
         }
 
         [Fact]
+        public async Task Read_statistics() {
+            // write with gen
+            var dcGen = new StatisticsThriftGen {
+                Max = RandomGenerator.GetRandomBytes(3, 10),
+                Min = RandomGenerator.GetRandomBytes(3, 10),
+                Null_count = 4,
+                Distinct_count = 400
+            };
+            dcGen.Max_value = dcGen.Max;
+            dcGen.Min_value = dcGen.Min;
+
+            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
+            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+
+            // read with mine
+            StatisticsMy dcMy = StatisticsMy.Read(new ThriftCompactProtocolReader(new MemoryStream(bufferGen)));
+            Assert.Equal(dcGen.Max, dcMy.Max);
+            Assert.Equal(dcGen.Min, dcMy.Min);
+            Assert.Equal(dcGen.Null_count, dcMy.NullCount);
+            Assert.Equal(dcGen.Distinct_count, dcMy.DistinctCount);
+            Assert.Equal(dcGen.Max_value, dcMy.MaxValue);
+            Assert.Equal(dcGen.Min_value, dcMy.MinValue);
+        }
+
+        [Fact]
         public async Task Write_Empty() {
             // write with gen
             var dcGen = new StringTypeThriftGen {
@@ -159,6 +185,29 @@ namespace Parquet.Test {
             byte[] bufferMy = _myMs.ToArray();
 
             Assert.Equal(bufferGen, bufferMy);
+        }
+
+        [Fact]
+        public async Task Read_Lists() {
+            // write with gen
+            var dcGen = new CMThriftGen {
+                Encodings = new List<Thrift.Encoding> { Thrift.Encoding.PLAIN, Thrift.Encoding.PLAIN_DICTIONARY },
+                Path_in_schema = new List<string> { "1", "22" }
+            };
+
+            await dcGen.WriteAsync(_thriftGenProto, CancellationToken.None);
+            byte[] bufferGen = _thriftGenTransport.GetBuffer();
+
+            CMMy dcMy = CMMy.Read(new ThriftCompactProtocolReader(new MemoryStream(bufferGen)));
+
+            Assert.Equal(new List<Parquet.Meta.Encoding> { Parquet.Meta.Encoding.PLAIN, Parquet.Meta.Encoding.PLAIN_DICTIONARY }, dcMy.Encodings);
+            Assert.Equal(new List<string> { "1", "22" }, dcMy.PathInSchema);
+        }
+
+        [Fact]
+        public async Task TestFileRead_Table() {
+            using Stream fs = OpenTestFile("thrift/table.bin");
+            FileMetaData fileMeta = FileMetaData.Read(new ThriftCompactProtocolReader(fs));
         }
     }
 }

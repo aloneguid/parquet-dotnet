@@ -207,28 +207,29 @@ private string GenerateAtomicWriter(string typeId, string getter, out string ele
     }
 }
 
-private string GenerateAtomicReader(string typeId) {
+private string GenerateAtomicReader(string typeId, bool isField = true) {
     switch (typeId) {
         case "bool":
-            return "compactType == Types.BooleanTrue;";
+            return isField ? "compactType == CompactType.BooleanTrue" : "proto.ReadBool()";
         case "i8":
-            return $"proto.ReadByte();";
+            return $"proto.ReadByte()";
         case "i16":
-            return $"proto.ReadI16();";
+            return $"proto.ReadI16()";
         case "i32":
-            return $"proto.ReadI32();";
+            return $"proto.ReadI32()";
         case "i64":
-            return $"proto.ReadI64();";
+            return $"proto.ReadI64()";
         case "binary":
-            return $"proto.ReadBinary();";
+            return $"proto.ReadBinary()";
         case "string":
-            return $"proto.ReadString();";
+            return $"proto.ReadString()";
         default:
             return "atom?";
     }
 }
 
 void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames) {
+    sb.AppendLine();
     sb.AppendLine($"{Spacing}{Spacing}internal void Write(ThriftCompactProtocolWriter proto) {{");
     
     if(fields.Count == 0) {
@@ -314,9 +315,16 @@ void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<s
 }
 
 void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames) {
+
+    bool hasLists = fields.Any(f => f.typeId == "list");
+
+    sb.AppendLine();
     sb.AppendLine($"{Spacing}{Spacing}internal static {enclosingTypeName} Read(ThriftCompactProtocolReader proto) {{");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}var r = new {enclosingTypeName}();");
-    sb.AppendLine($"{Spacing}{Spacing}{Spacing}while(proto.ReadNextField(out short fieldId, out byte compactType)) {{");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}proto.StructBegin();");
+    //if(hasLists)
+        //sb.AppendLine($"{Spacing}{Spacing}{Spacing}int elementCount = 0;");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {{");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}switch(fieldId) {{");
 
     foreach (ThriftField f in fields) {
@@ -324,9 +332,30 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
 
         if (IsAtomic(f.typeId)) {
             string body = GenerateAtomicReader(f.typeId);
-            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {body}");
-        } else if (f.typeId == "id" && f.subTypeId != null && enumTypeNames.Contains(f.subTypeId)) {
-            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = ({f.subTypeId})proto.ReadI32();");
+            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {body};");
+        } else if (f.typeId == "id") {
+            if (f.subTypeId != null && enumTypeNames.Contains(f.subTypeId)) {
+                // enum
+                sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = ({f.subTypeId})proto.ReadI32();");
+            } else {
+                // inline struct
+                sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {f.subTypeId}.Read(proto);");
+            }
+        } else if (f.typeId == "list" && f.subTypeId != null) {
+            // Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => [body]).ToList();
+            string body;
+            if (IsAtomic(f.subTypeId)) {
+                body = GenerateAtomicReader(f.subTypeId, false);
+            } else if (f.subTypeId == "id" && f.subTypeSubTypeId != null && enumTypeNames.Contains(f.subTypeSubTypeId)) {
+                body = $"({f.subTypeSubTypeId})proto.ReadI32()";
+            } else {
+                body = $"{f.subTypeSubTypeId}.Read(proto)";
+            }
+
+            //sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}elementCount = proto.ReadListHeader(out _);");
+            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => {body}).ToList();");
+        } else {
+            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = ?;");
         }
         
         sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}break;");
@@ -338,6 +367,7 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
 
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}}}");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}}}");
+    sb.AppendLine($"{Spacing}{Spacing}{Spacing}proto.StructEnd();");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}return r;");
     sb.AppendLine($"{Spacing}{Spacing}}}");
 }
@@ -395,6 +425,7 @@ void Main() {
     
     var sb = new StringBuilder();
     sb.AppendLine("#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member");
+    sb.AppendLine("using System.Linq;");
     sb.AppendLine("using System.Collections.Generic;");
     sb.AppendLine("using Parquet.Meta.Proto;");
     sb.AppendLine("namespace Parquet.Meta {");

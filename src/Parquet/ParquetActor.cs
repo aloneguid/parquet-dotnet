@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ML.Data;
 using Parquet.Extensions;
 using Parquet.File;
 
@@ -47,7 +48,17 @@ namespace Parquet {
 
         internal async ValueTask<Thrift.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
             int footerLength = await GoBeforeFooterAsync();
-            return await ThriftIO.ReadAsync<Thrift.FileMetaData>(_fileStream, footerLength, cancellationToken);
+            Thrift.FileMetaData meta = await ThriftIO.ReadAsync<Thrift.FileMetaData>(_fileStream, footerLength, cancellationToken);
+
+            await GoBeforeFooterAsync();
+            byte[] footerData = await _fileStream.ReadBytesExactlyAsync(footerLength);
+            var ms = new MemoryStream(footerData);
+            System.IO.File.WriteAllBytes(@"C:\dev\parquet-dotnet\src\Parquet.Test\data\thrift\table.thrift", footerData);
+
+
+            Meta.FileMetaData meta2 = Parquet.Meta.FileMetaData.Read(new Meta.Proto.ThriftCompactProtocolReader(ms));
+
+            return meta;
         }
 
         internal async ValueTask<int> GoBeforeFooterAsync() {

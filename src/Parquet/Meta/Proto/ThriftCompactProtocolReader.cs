@@ -76,6 +76,11 @@ namespace Parquet.Meta.Proto {
             return result;
         }
 
+        public bool ReadBool() {
+            byte b = (byte)_inputStream.ReadByte();
+            return (CompactType)b == CompactType.BooleanTrue;
+        }
+
         public sbyte ReadByte() {
             return (sbyte)_inputStream.ReadByte();
         }
@@ -115,21 +120,21 @@ namespace Parquet.Meta.Proto {
             return System.Text.Encoding.UTF8.GetString(utf8Data, 0, length);
         }
 
-        public bool ReadNextField(out short fieldId, out byte compactType) {
+        public bool ReadNextField(out short fieldId, out CompactType compactType) {
 
             // Read a field header off the wire.
-            byte typeId = (byte)_inputStream.ReadByte();
+            byte header = (byte)_inputStream.ReadByte();
 
             // if it's a stop, then we can return immediately, as the struct is over.
-            if(typeId == Types.Stop) {
+            if((CompactType)header == CompactType.Stop) {
                 fieldId = 0;
                 compactType = 0;
                 return false;
             }
 
             // mask off the 4 MSB of the exType header. it could contain a field id delta.
-            short modifier = (short)((typeId & 0xf0) >> 4);
-            compactType = (byte)(typeId & 0x0f);
+            short modifier = (short)((header & 0xf0) >> 4);
+            compactType = (CompactType)(byte)(header & 0x0f);
 
             if(modifier == 0) {
                 fieldId = ReadI16();
@@ -142,67 +147,63 @@ namespace Parquet.Meta.Proto {
             return true;
         }
 
-        public void SkipField(byte compactType) {
+        public int ReadListHeader(out CompactType elementType) {
+            /*
+            Read a list header off the wire. If the list size is 0-14, the size will
+            be packed into the element exType header. If it's a longer list, the 4 MSB
+            of the element exType header will be 0xF, and a varint will follow with the
+            true size.
+            */
+
+            byte sizeAndType = (byte)_inputStream.ReadByte();
+            int size = (sizeAndType >> 4) & 0x0f;
+            if(size == 15) {
+                size = (int)ReadVarInt32();
+            }
+            elementType = (CompactType)(byte)(sizeAndType & 0x0f);
+            return size;
+        }
+
+        public void SkipField(CompactType compactType) {
             switch(compactType) {
-                case Types.BooleanTrue:
-                case Types.BooleanFalse:
+                case CompactType.BooleanTrue:
+                case CompactType.BooleanFalse:
                     break;
-                /*case TType.Byte:
-                    await protocol.ReadByteAsync(cancellationToken);
+                case CompactType.Byte:
+                    _inputStream.Seek(1, SeekOrigin.Current);
                     break;
-                case TType.I16:
-                    await protocol.ReadI16Async(cancellationToken);
+                case CompactType.I16:
+                    ReadI16();
                     break;
-                case TType.I32:
-                    await protocol.ReadI32Async(cancellationToken);
+                case CompactType.I32:
+                    ReadI32();
                     break;
-                case TType.I64:
-                    await protocol.ReadI64Async(cancellationToken);
+                case CompactType.I64:
+                    ReadI64();
                     break;
-                case TType.Double:
-                    await protocol.ReadDoubleAsync(cancellationToken);
-                    break;
-                case TType.String:
+                //case Types.Double:
+                    //await protocol.ReadDoubleAsync(cancellationToken);
+                    //break;
+                case CompactType.Binary:
                     // Don't try to decode the string, just skip it.
-                    await protocol.ReadBinaryAsync(cancellationToken);
+                    ReadBinary();
                     break;
-                case TType.Uuid:
-                    await protocol.ReadUuidAsync(cancellationToken);
-                    break;
-                case TType.Struct:
-                    await protocol.ReadStructBeginAsync(cancellationToken);
-                    while(true) {
-                        var field = await protocol.ReadFieldBeginAsync(cancellationToken);
-                        if(field.Type == TType.Stop) {
-                            break;
-                        }
-                        await SkipAsync(protocol, field.Type, cancellationToken);
-                        await protocol.ReadFieldEndAsync(cancellationToken);
+                //case TType.Uuid:
+                //    await protocol.ReadUuidAsync(cancellationToken);
+                //    break;
+                case CompactType.Struct:
+                    StructBegin();
+                    while(ReadNextField(out _, out _)) {
+
                     }
-                    await protocol.ReadStructEndAsync(cancellationToken);
+                    StructEnd();
                     break;
-                case TType.Map:
-                    var map = await protocol.ReadMapBeginAsync(cancellationToken);
-                    for(var i = 0; i < map.Count; i++) {
-                        await SkipAsync(protocol, map.KeyType, cancellationToken);
-                        await SkipAsync(protocol, map.ValueType, cancellationToken);
+                case CompactType.List:
+                    int elementCount = ReadListHeader(out CompactType elementType);
+                    for(int i = 0; i < elementCount; i++) {
+                        SkipField(elementType);
                     }
-                    await protocol.ReadMapEndAsync(cancellationToken);
                     break;
-                case TType.Set:
-                    var set = await protocol.ReadSetBeginAsync(cancellationToken);
-                    for(var i = 0; i < set.Count; i++) {
-                        await SkipAsync(protocol, set.ElementType, cancellationToken);
-                    }
-                    await protocol.ReadSetEndAsync(cancellationToken);
-                    break;
-                case TType.List:
-                    var list = await protocol.ReadListBeginAsync(cancellationToken);
-                    for(var i = 0; i < list.Count; i++) {
-                        await SkipAsync(protocol, list.ElementType, cancellationToken);
-                    }
-                    await protocol.ReadListEndAsync(cancellationToken);
-                    break;*/
                 default:
                     throw new InvalidOperationException($"don't know how to skip type {compactType}");
             }

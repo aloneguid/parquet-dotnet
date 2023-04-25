@@ -27,7 +27,7 @@ namespace Parquet.Meta.Proto {
             _lastFieldId = _lastField.Pop();
 
             // write stop field
-            _outputStream.WriteByte(Types.Stop);
+            _outputStream.WriteByte((byte)CompactType.Stop);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Parquet.Meta.Proto {
         /// </summary>
         public void WriteEmptyStruct() {
             // write stop field
-            _outputStream.WriteByte(Types.Stop);
+            _outputStream.WriteByte((byte)CompactType.Stop);
         }
 
         private struct VarInt {
@@ -93,13 +93,13 @@ namespace Parquet.Meta.Proto {
             _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
         }
 
-        private void WriteFieldBegin(short fieldId, byte fieldType) {
+        private void WriteFieldBegin(short fieldId, CompactType fieldType) {
             // check if we can use delta encoding for the field id
             if(fieldId > _lastFieldId) {
                 int delta = fieldId - _lastFieldId;
                 if(delta <= 15) {
                     // Write them together
-                    byte b = (byte)((delta << 4) | fieldType);
+                    byte b = (byte)((delta << 4) | (byte)fieldType);
                     _outputStream.WriteByte(b);
                     _lastFieldId = fieldId;
                     return;
@@ -107,7 +107,7 @@ namespace Parquet.Meta.Proto {
             }
 
             // Write them separate
-            _outputStream.WriteByte(fieldType);
+            _outputStream.WriteByte((byte)fieldType);
 
             WriteI16Async(fieldId);
             _lastFieldId = fieldId;
@@ -116,27 +116,27 @@ namespace Parquet.Meta.Proto {
         #region [ Writers for various field types ]
 
         public void BeginInlineStruct(short fieldId) {
-            WriteFieldBegin(fieldId, Types.Struct);
+            WriteFieldBegin(fieldId, CompactType.Struct);
         }
 
         public void WriteBoolValue(bool value) {
-            _outputStream.WriteByte(value ? Types.BooleanTrue : Types.BooleanFalse);
+            _outputStream.WriteByte((byte)(value ? CompactType.BooleanTrue : CompactType.BooleanFalse));
         }
 
         public void WriteBoolField(short fieldId, bool value) {
             if(value)
-                WriteFieldBegin(fieldId, Types.BooleanTrue);
+                WriteFieldBegin(fieldId, CompactType.BooleanTrue);
             else
-                WriteFieldBegin(fieldId, Types.BooleanFalse);
+                WriteFieldBegin(fieldId, CompactType.BooleanFalse);
         }
 
         public void WriteByteField(short fieldId, sbyte value) {
-            WriteFieldBegin(fieldId, Types.Byte);
+            WriteFieldBegin(fieldId, CompactType.Byte);
             _outputStream.WriteByte((byte)value);
         }
 
         public void WriteI16Field(short fieldId, short value) {
-            WriteFieldBegin(fieldId, Types.I16);
+            WriteFieldBegin(fieldId, CompactType.I16);
 
             Int32ToVarInt(IntToZigzag(value), ref PreAllocatedVarInt);
             _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
@@ -148,7 +148,7 @@ namespace Parquet.Meta.Proto {
         }
 
         public void WriteI32Field(short fieldId, int value) {
-            WriteFieldBegin(fieldId, Types.I32);
+            WriteFieldBegin(fieldId, CompactType.I32);
             WriteI32Value(value);
         }
 
@@ -158,7 +158,7 @@ namespace Parquet.Meta.Proto {
         }
 
         public void WriteI64Field(short fieldId, long value) {
-            WriteFieldBegin(fieldId, Types.I64);
+            WriteFieldBegin(fieldId, CompactType.I64);
             WriteI64Value(value);
         }
 
@@ -169,7 +169,7 @@ namespace Parquet.Meta.Proto {
         }
 
         public void WriteBinaryField(short fieldId, byte[] value) {
-            WriteFieldBegin(fieldId, Types.Binary);
+            WriteFieldBegin(fieldId, CompactType.Binary);
             WriteBinaryValue(value);
         }
 
@@ -186,12 +186,12 @@ namespace Parquet.Meta.Proto {
         }
 
         public void WriteStringField(short fieldId, string value) {
-            WriteFieldBegin(fieldId, Types.Binary);
+            WriteFieldBegin(fieldId, CompactType.Binary);
             WriteStringValue(value);
         }
 
         public void WriteListBegin(short fieldId, byte elementType, int elementCount) {
-            WriteFieldBegin(fieldId, Types.List);
+            WriteFieldBegin(fieldId, CompactType.List);
 
             if(elementCount <= 14) {
                 byte b = (byte)((elementCount << 4) | elementType);
