@@ -1,0 +1,1 @@
+..\tools\thrift-0.16.0.exe --gen xml:no_namespaces,no_default_ns -out ..\src\Parquet\Meta\ ..\src\Parquet\Meta\parquet.thrift

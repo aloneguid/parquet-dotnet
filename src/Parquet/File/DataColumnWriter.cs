@@ -7,13 +7,14 @@ using IronCompress;
 using Microsoft.IO;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Meta;
 using Parquet.Schema;
 
 namespace Parquet.File {
     class DataColumnWriter {
         private readonly Stream _stream;
         private readonly ThriftFooter _footer;
-        private readonly Thrift.SchemaElement _schemaElement;
+        private readonly SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
         private readonly CompressionLevel _compressionLevel;
         private readonly ParquetOptions _options;
@@ -22,7 +23,7 @@ namespace Parquet.File {
         public DataColumnWriter(
            Stream stream,
            ThriftFooter footer,
-           Thrift.SchemaElement schemaElement,
+           SchemaElement schemaElement,
            CompressionMethod compressionMethod,
            ParquetOptions options,
            CompressionLevel compressionLevel) {
@@ -34,22 +35,22 @@ namespace Parquet.File {
             _options = options;
         }
 
-        public async Task<Thrift.ColumnChunk> WriteAsync(
+        public async Task<ColumnChunk> WriteAsync(
             FieldPath fullPath, DataColumn column,
             CancellationToken cancellationToken = default) {
 
             // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
-            Thrift.ColumnChunk chunk = _footer.CreateColumnChunk(
-                _compressionMethod, _stream, _schemaElement.Type, fullPath, column.NumValues);
+            ColumnChunk chunk = _footer.CreateColumnChunk(
+                _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues);
 
             ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
                 cancellationToken);
             //generate stats for column chunk
-            chunk.Meta_data.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
+            chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
             //the following counters must include both data size and header size
-            chunk.Meta_data.Total_compressed_size = columnSizes.CompressedSize;
-            chunk.Meta_data.Total_uncompressed_size = columnSizes.UncompressedSize;
+            chunk.MetaData.TotalCompressedSize = columnSizes.CompressedSize;
+            chunk.MetaData.TotalUncompressedSize = columnSizes.UncompressedSize;
 
             return chunk;
         }
@@ -60,7 +61,7 @@ namespace Parquet.File {
         }
 
         private async Task CompressAndWriteAsync(
-            Thrift.PageHeader ph, MemoryStream data,
+            PageHeader ph, MemoryStream data,
             ColumnSizes cs,
             CancellationToken cancellationToken) {
             
@@ -68,26 +69,33 @@ namespace Parquet.File {
                 ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
                 : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
             
-            ph.Uncompressed_page_size = (int)data.Length;
-            ph.Compressed_page_size = compressedData.AsSpan().Length;
+            ph.UncompressedPageSize = (int)data.Length;
+            ph.CompressedPageSize = compressedData.AsSpan().Length;
 
             //write the header in
-            int headerSize = await ThriftIO.WriteAsync(_stream, ph, cancellationToken);
+            using var headerMs = new MemoryStream();
+            ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
+            int headerSize = (int)headerMs.Length;
+            headerMs.Position = 0;
+            await headerMs.CopyToAsync(_stream);
+
+            // write data
 #if NETSTANDARD2_0
                 byte[] tmp = compressedData.AsSpan().ToArray();
                 _stream.Write(tmp, 0, tmp.Length);
 #else
             _stream.Write(compressedData);
 #endif
+
             cs.CompressedSize += headerSize;
             cs.UncompressedSize += headerSize;
 
-            cs.CompressedSize += ph.Compressed_page_size;
-            cs.UncompressedSize += ph.Uncompressed_page_size;
+            cs.CompressedSize += ph.CompressedPageSize;
+            cs.UncompressedSize += ph.UncompressedPageSize;
         }
 
         private async Task<ColumnSizes> WriteColumnAsync(DataColumn column,
-           Thrift.SchemaElement tse,
+           SchemaElement tse,
            CancellationToken cancellationToken = default) {
 
             column.Field.EnsureAttachedToSchema(nameof(column));
@@ -105,7 +113,7 @@ namespace Parquet.File {
 
             // dictionary page
             if(pc.HasDictionary) {
-                Thrift.PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
+                PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
                 using MemoryStream ms = _rmsMgr.GetStream();
                 ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
                        tse,
@@ -117,7 +125,7 @@ namespace Parquet.File {
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
-                Thrift.PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
+                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
@@ -136,7 +144,7 @@ namespace Parquet.File {
                     ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
                 }
 
-                ph.Data_page_header.Statistics = column.Statistics.ToThriftStatistics(tse);
+                ph.DataPageHeader!.Statistics = column.Statistics.ToThriftStatistics(tse);
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             }
 

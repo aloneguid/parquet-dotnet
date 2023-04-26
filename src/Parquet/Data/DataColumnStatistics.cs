@@ -1,5 +1,6 @@
 ﻿using System;
 using Parquet.Encodings;
+using Parquet.Meta;
 
 namespace Parquet.Data {
     /// <summary>
@@ -43,7 +44,7 @@ namespace Parquet.Data {
         /// </summary>
         public object? MaxValue { get; internal set; }
 
-        internal Thrift.Statistics ToThriftStatistics(Thrift.SchemaElement tse) {
+        internal Statistics ToThriftStatistics(SchemaElement tse) {
 
             if(!ParquetPlainEncoder.TryEncode(MinValue, tse, out byte[]? min)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
@@ -53,17 +54,14 @@ namespace Parquet.Data {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
-            var r = new Thrift.Statistics();
-            if(NullCount != null)
-                r.Null_count = NullCount.Value;
-            if(DistinctCount != null)
-                r.Distinct_count = DistinctCount.Value;
-            if(min != null)
-                r.Min = r.Min_value = min;
-            if(max != null)
-                r.Max = r.Max_value = max;
-
-            return r;
+            return new Statistics {
+                NullCount = NullCount,
+                DistinctCount = DistinctCount,
+                Min = min,
+                MinValue = min,
+                Max = max,
+                MaxValue = max
+            };
         }
     }
 }

@@ -6,7 +6,6 @@ using System.Numerics;
 using Parquet.Schema;
 using Parquet.File.Values.Primitives;
 using SType = System.Type;
-using Type = Parquet.Thrift.Type;
 
 namespace Parquet.Encodings {
     static class SchemaMapper {

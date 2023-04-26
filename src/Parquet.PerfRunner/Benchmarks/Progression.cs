@@ -27,27 +27,19 @@ namespace Parquet.PerfRunner.Benchmarks {
             public NuConfig() {
                 Job baseJob = Job.ShortRun;
 
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.2.3"));
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.0"));
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.2"));
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.4.1"));
+                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.2.3"));
+                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.0"));
+                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.2"));
+                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.4.1"));
                 AddJob(baseJob.WithNuGet("Parquet.Net", "4.5.0"));
+                AddJob(baseJob.WithNuGet("Parquet.Net", "4.9.1"));
             }
         }
 
         private const int DataSize = 1000000;
+        private readonly ParquetSchema _intsSchema = new ParquetSchema(new DataField<int?>("i"));
         private DataColumn? _ints;
         private MemoryStream? _intsMs;
-        private DataColumn? _nullableInts;
-        private MemoryStream? _nullableIntsMs;
-        private DataColumn? _doubles;
-        private MemoryStream? _doublesMs;
-        private DataColumn? _nullableDoubles;
-        private MemoryStream? _nullableDoublesMs;
-        private DataColumn? _randomStrings;
-        private MemoryStream? _randomStringsMs;
-        private DataColumn? _repeatingStrings;
-        private MemoryStream? _repeatedStringsMs;
 
         #region [ Helpers ]
 
@@ -62,10 +54,12 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         [GlobalSetup]
         public async Task Setup() {
-            _ints = new DataColumn(new DataField<int>("c"), Enumerable.Range(0, DataSize).ToArray());
-            _intsMs = await MakeFile(_ints);
+            _ints = new DataColumn(_intsSchema.GetDataFields()[0],
+                Enumerable.Range(0, DataSize).Select(i => i % 4 == 0 ? (int?)null : i).ToArray(),
+                null);
+            _intsMs = await MakeFile(_intsSchema, _ints);
 
-            _nullableInts = new DataColumn(new DataField<int?>("c"),
+            /*_nullableInts = new DataColumn(new DataField<int?>("c"),
                 Enumerable
                     .Range(0, DataSize)
                     .Select(i => i % 4 == 0 ? (int?)null : i)
@@ -94,12 +88,12 @@ namespace Parquet.PerfRunner.Benchmarks {
                 Enumerable.Range(0, DataSize)
                 .Select(i => i < DataSize / 2 ? "first half" : "second half")
                 .ToArray());
-            _repeatedStringsMs = await MakeFile(_repeatingStrings);
+            _repeatedStringsMs = await MakeFile(_repeatingStrings);*/
         }
 
-        private async Task<MemoryStream> MakeFile(DataColumn c) {
+        private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
             var ms = new MemoryStream();
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(c.Field), ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 writer.CompressionMethod = CompressionMethod.None;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
@@ -109,8 +103,8 @@ namespace Parquet.PerfRunner.Benchmarks {
             return ms;
         }
 
-        private async Task Run(DataColumn c) {
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(c.Field), new MemoryStream())) {
+        private async Task Run(ParquetSchema schema, DataColumn c) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
                 writer.CompressionMethod = CompressionMethod.None;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
@@ -128,12 +122,6 @@ namespace Parquet.PerfRunner.Benchmarks {
         }
 
 
-        [Benchmark]
-        public Task WriteInts() {
-            //Console.WriteLine(Parquet.Globals.Version);
-            return Run(_ints!);
-        }
-
         //[Benchmark]
         //public Task ReadInts() {
         //    return Run(_ints, _intsMs);
@@ -141,13 +129,13 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         [Benchmark]
         public Task WriteNullableInts() {
-            return Run(_nullableInts!);
+            return Run(_intsSchema, _ints!);
         }
 
-        //[Benchmark]
-        //public Task ReadNullableInts() {
-        //    return Run(_nullableInts, _nullableIntsMs);
-        //}
+        [Benchmark]
+        public Task ReadNullableInts() {
+            return Run(_ints!, _intsMs!);
+        }
 
         //    [Benchmark]
         //    public Task WriteDoubles() {

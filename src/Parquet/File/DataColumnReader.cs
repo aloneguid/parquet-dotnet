@@ -6,16 +6,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using IronCompress;
 using Parquet.Data;
-using Parquet.Thrift;
 using Parquet.Schema;
 using Parquet.Encodings;
+using Parquet.Meta;
+using Parquet.Meta.Proto;
 
 namespace Parquet.File {
     class DataColumnReader {
         private readonly DataField _dataField;
         private readonly Stream _inputStream;
-        private readonly Thrift.ColumnChunk _thriftColumnChunk;
-        private readonly Thrift.SchemaElement? _thriftSchemaElement;
+        private readonly ColumnChunk _thriftColumnChunk;
+        private readonly SchemaElement? _chemaElement;
         private readonly ThriftFooter _footer;
         private readonly ParquetOptions _options;
         private readonly DataColumnStatistics? _stats;
@@ -23,7 +24,7 @@ namespace Parquet.File {
         public DataColumnReader(
            DataField dataField,
            Stream inputStream,
-           Thrift.ColumnChunk thriftColumnChunk,
+           ColumnChunk thriftColumnChunk,
            ThriftFooter footer,
            ParquetOptions? parquetOptions) {
             _dataField = dataField ?? throw new ArgumentNullException(nameof(dataField));
@@ -34,18 +35,18 @@ namespace Parquet.File {
 
             dataField.EnsureAttachedToSchema(nameof(dataField));
 
-            _thriftSchemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
+            _chemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
 
             // read stats as soon as possible
-            Thrift.Statistics st = _thriftColumnChunk.Meta_data.Statistics;
+            Statistics? st = _thriftColumnChunk.MetaData!.Statistics;
             if(st != null) {
 
-                ParquetPlainEncoder.TryDecode(st.Min_value, _thriftSchemaElement!, _options, out object? min);
-                ParquetPlainEncoder.TryDecode(st.Max_value, _thriftSchemaElement!, _options, out object? max);
+                ParquetPlainEncoder.TryDecode(st.MinValue, _chemaElement!, _options, out object? min);
+                ParquetPlainEncoder.TryDecode(st.MaxValue, _chemaElement!, _options, out object? max);
 
                 _stats = new DataColumnStatistics(
-                    st.__isset.null_count ? st.Null_count : null,
-                    st.__isset.distinct_count ? st.Distinct_count : null,
+                    st.NullCount,
+                    st.DistinctCount,
                     min, max);
             }
         }
@@ -53,7 +54,7 @@ namespace Parquet.File {
         public async Task<DataColumn> ReadAsync(CancellationToken cancellationToken = default) {
 
             // how many values are in column chunk, as there may be multiple data pages
-            int totalValuesInChunk = (int)_thriftColumnChunk.Meta_data.Num_values;
+            int totalValuesInChunk = (int)_thriftColumnChunk.MetaData!.NumValues;
             int definedValuesCount = totalValuesInChunk;
             if(_stats?.NullCount != null)
                 definedValuesCount -= (int)_stats.NullCount.Value;
@@ -62,7 +63,7 @@ namespace Parquet.File {
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
             while(pc.ValuesRead < totalValuesInChunk) {
-                Thrift.PageHeader ph = await ThriftIO.ReadAsync<Thrift.PageHeader>(_inputStream, cancellationToken);
+                PageHeader ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
 
                 switch(ph.Type) {
                     case PageType.DICTIONARY_PAGE:
@@ -85,11 +86,11 @@ namespace Parquet.File {
             return column;
         }
 
-        private async Task<IronCompress.IronCompressResult> ReadPageDataAsync(Thrift.PageHeader ph) {
+        private async Task<IronCompress.IronCompressResult> ReadPageDataAsync(PageHeader ph) {
 
-            byte[] data = ArrayPool<byte>.Shared.Rent(ph.Compressed_page_size);
+            byte[] data = ArrayPool<byte>.Shared.Rent(ph.CompressedPageSize);
 
-            int totalBytesRead = 0, remainingBytes = ph.Compressed_page_size;
+            int totalBytesRead = 0, remainingBytes = ph.CompressedPageSize;
             do {
                 int bytesRead = await _inputStream.ReadAsync(data, totalBytesRead, remainingBytes);
                 totalBytesRead += bytesRead;
@@ -97,18 +98,18 @@ namespace Parquet.File {
             }
             while(remainingBytes != 0);
 
-            if(_thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
-                return new IronCompress.IronCompressResult(data, Codec.Snappy, false, ph.Compressed_page_size, ArrayPool<byte>.Shared);
+            if(_thriftColumnChunk.MetaData!.Codec == CompressionCodec.UNCOMPRESSED) {
+                return new IronCompress.IronCompressResult(data, Codec.Snappy, false, ph.CompressedPageSize, ArrayPool<byte>.Shared);
             }
 
-            return Compressor.Decompress((CompressionMethod)(int)_thriftColumnChunk.Meta_data.Codec,
-                data.AsSpan(0, ph.Compressed_page_size),
-                ph.Uncompressed_page_size);
+            return Compressor.Decompress((CompressionMethod)(int)_thriftColumnChunk.MetaData.Codec,
+                data.AsSpan(0, ph.CompressedPageSize),
+                ph.UncompressedPageSize);
         }
         
-        private async Task<IronCompress.IronCompressResult> ReadPageDataV2Async(Thrift.PageHeader ph) {
+        private async Task<IronCompress.IronCompressResult> ReadPageDataV2Async(PageHeader ph) {
 
-            int pageSize = ph.Compressed_page_size;
+            int pageSize = ph.CompressedPageSize;
             
             byte[] data = ArrayPool<byte>.Shared.Rent(pageSize);
 
@@ -123,7 +124,7 @@ namespace Parquet.File {
             return new IronCompress.IronCompressResult(data, Codec.Snappy, false, pageSize, ArrayPool<byte>.Shared);
         }
 
-        private async ValueTask ReadDictionaryPage(Thrift.PageHeader ph, PackedColumn pc) {
+        private async ValueTask ReadDictionaryPage(PageHeader ph, PackedColumn pc) {
 
             if(pc.HasDictionary)
                 throw new InvalidOperationException("dictionary already read");
@@ -132,34 +133,34 @@ namespace Parquet.File {
             using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
 
             // Dictionary should not contains null values
-            Array dictionary = _dataField.CreateArray(ph.Dictionary_page_header.Num_values);
+            Array dictionary = _dataField.CreateArray(ph.DictionaryPageHeader!.NumValues);
 
-            ParquetPlainEncoder.Decode(dictionary, 0, ph.Dictionary_page_header.Num_values,
-                   _thriftSchemaElement!, bytes.AsSpan(), out int dictionaryOffset);
+            ParquetPlainEncoder.Decode(dictionary, 0, ph.DictionaryPageHeader.NumValues,
+                   _chemaElement!, bytes.AsSpan(), out int dictionaryOffset);
 
             pc.AssignDictionary(dictionary);
         }
 
         private long GetFileOffset() => 
-            // get the minimum offset, we'll just read pages in sequence as Dictionary_page_offset/Data_page_offset are not reliable
+            // get the minimum offset, we'll just read pages in sequence as DictionaryPageOffset/Data_page_offset are not reliable
             new[]
                 {
-                    _thriftColumnChunk.Meta_data.Dictionary_page_offset,
-                    _thriftColumnChunk.Meta_data.Data_page_offset
+                    _thriftColumnChunk.MetaData?.DictionaryPageOffset ?? 0,
+                    _thriftColumnChunk.MetaData!.DataPageOffset
                 }
                 .Where(e => e != 0)
                 .Min();
 
-        private async Task ReadDataPageV1Async(Thrift.PageHeader ph, PackedColumn pc) {
+        private async Task ReadDataPageV1Async(PageHeader ph, PackedColumn pc) {
             using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
 
-            if(ph.Data_page_header == null) {
+            if(ph.DataPageHeader == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             }
 
             int dataUsed = 0;
-            int allValueCount = (int)_thriftColumnChunk.Meta_data.Num_values;
-            int pageValueCount = ph.Data_page_header.Num_values;
+            int allValueCount = (int)_thriftColumnChunk.MetaData!.NumValues;
+            int pageValueCount = ph.DataPageHeader.NumValues;
 
             if(_dataField.MaxRepetitionLevel > 0) {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
@@ -187,13 +188,13 @@ namespace Parquet.File {
 
             ReadColumn(
                 bytes.AsSpan().Slice(dataUsed),
-                ph.Data_page_header.Encoding,
+                ph.DataPageHeader.Encoding,
                 allValueCount, dataElementCount,
                 pc);
         }
 
-        private async Task ReadDataPageV2Async(Thrift.PageHeader ph, PackedColumn pc, long maxValues) {
-            if(ph.Data_page_header_v2 == null) {
+        private async Task ReadDataPageV2Async(PageHeader ph, PackedColumn pc, long maxValues) {
+            if(ph.DataPageHeaderV2 == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             } 
             
@@ -204,7 +205,7 @@ namespace Parquet.File {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
                 int levelsRead = ReadLevels(bytes.AsSpan(),
                     _dataField.MaxRepetitionLevel, pc.GetWriteableRepetitionLevelSpan(),
-                    ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Repetition_levels_byte_length, out int usedLength);
+                    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.RepetitionLevelsByteLength, out int usedLength);
                 dataUsed += usedLength;
                 pc.MarkRepetitionLevels(levelsRead);
             }
@@ -212,31 +213,31 @@ namespace Parquet.File {
             if(_dataField.MaxDefinitionLevel > 0) {
                 int levelsRead = ReadLevels(bytes.AsSpan().Slice(dataUsed),
                     _dataField.MaxDefinitionLevel, pc.GetWriteableDefinitionLevelSpan(),
-                    ph.Data_page_header_v2.Num_values, ph.Data_page_header_v2.Definition_levels_byte_length, out int usedLength);
+                    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.DefinitionLevelsByteLength, out int usedLength);
                 dataUsed += usedLength;
                 pc.MarkDefinitionLevels(levelsRead);
             }
 
-            int maxReadCount = ph.Data_page_header_v2.Num_values - ph.Data_page_header_v2.Num_nulls;
+            int maxReadCount = ph.DataPageHeaderV2.NumValues - ph.DataPageHeaderV2.NumNulls;
 
-            if((!ph.Data_page_header_v2.Is_compressed) || _thriftColumnChunk.Meta_data.Codec == Thrift.CompressionCodec.UNCOMPRESSED) {
-                ReadColumn(bytes.AsSpan().Slice(dataUsed), ph.Data_page_header_v2.Encoding, maxValues, maxReadCount, pc);
+            if((!(ph.DataPageHeaderV2.IsCompressed ?? false)) || _thriftColumnChunk.MetaData!.Codec == CompressionCodec.UNCOMPRESSED) {
+                ReadColumn(bytes.AsSpan().Slice(dataUsed), ph.DataPageHeaderV2.Encoding, maxValues, maxReadCount, pc);
                 return;
             }
 
-            int dataSize = ph.Compressed_page_size - ph.Data_page_header_v2.Repetition_levels_byte_length -
-                           ph.Data_page_header_v2.Definition_levels_byte_length;
+            int dataSize = ph.CompressedPageSize - ph.DataPageHeaderV2.RepetitionLevelsByteLength -
+                           ph.DataPageHeaderV2.DefinitionLevelsByteLength;
 
-            int decompressedSize = ph.Uncompressed_page_size - ph.Data_page_header_v2.Repetition_levels_byte_length -
-                                   ph.Data_page_header_v2.Definition_levels_byte_length;
+            int decompressedSize = ph.UncompressedPageSize - ph.DataPageHeaderV2.RepetitionLevelsByteLength -
+                                   ph.DataPageHeaderV2.DefinitionLevelsByteLength;
             
             IronCompress.IronCompressResult decompressedDataByes = Compressor.Decompress(
-                (CompressionMethod)(int)_thriftColumnChunk.Meta_data.Codec,
+                (CompressionMethod)(int)_thriftColumnChunk.MetaData.Codec,
                 bytes.AsSpan().Slice(dataUsed),
                 decompressedSize);
 
             ReadColumn(decompressedDataByes.AsSpan(),
-                ph.Data_page_header_v2.Encoding,
+                ph.DataPageHeaderV2.Encoding,
                 maxValues, maxReadCount,
                 pc);
         }
@@ -252,24 +253,24 @@ namespace Parquet.File {
         }
 
         private void ReadColumn(Span<byte> src,
-            Thrift.Encoding encoding, long totalValuesInChunk, int totalValuesInPage,
+            Encoding encoding, long totalValuesInChunk, int totalValuesInPage,
             PackedColumn pc) {
 
             //dictionary encoding uses RLE to encode data
 
             switch(encoding) {
-                case Thrift.Encoding.PLAIN: { // 0
+                case Encoding.PLAIN: { // 0
                         Array plainData = pc.GetPlainDataToReadInto(out int offset);
                         ParquetPlainEncoder.Decode(plainData,
                             offset,
                             totalValuesInPage,
-                            _thriftSchemaElement!, src, out int read);
+                            _chemaElement!, src, out int read);
                         pc.MarkUsefulPlainData(read);
                     }
                     break;
 
-                case Thrift.Encoding.PLAIN_DICTIONARY: // 2  // values are still encoded in RLE
-                case Thrift.Encoding.RLE_DICTIONARY: { // 8
+                case Encoding.PLAIN_DICTIONARY: // 2  // values are still encoded in RLE
+                case Encoding.RLE_DICTIONARY: { // 8
                         Span<int> span = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
                         int indexCount = ReadRleDictionary(src, totalValuesInPage, span);
                         pc.MarkUsefulDictionaryIndexes(indexCount);
@@ -277,39 +278,39 @@ namespace Parquet.File {
                     }
                     break;
 
-                case Thrift.Encoding.RLE: { // 3
+                case Encoding.RLE: { // 3
                         Span<int> span = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
                         int indexCount = RleBitpackedHybridEncoder.Decode(src,
-                            _thriftSchemaElement!.Type_length,
+                            _chemaElement!.TypeLength ?? 0,
                             src.Length, out int usedLength, span, totalValuesInPage);
                         pc.MarkUsefulDictionaryIndexes(indexCount);
                         pc.Checkpoint();
                     }
                     break;
 
-                case Thrift.Encoding.DELTA_BINARY_PACKED: {// 5
+                case Encoding.DELTA_BINARY_PACKED: {// 5
                         Array plainData = pc.GetPlainDataToReadInto(out int offset);
                         int read = DeltaBinaryPackedEncoder.Decode(src, plainData, offset, totalValuesInPage, out _);
                         pc.MarkUsefulPlainData(read);
                     }
                     break;
 
-                case Thrift.Encoding.DELTA_LENGTH_BYTE_ARRAY: {  // 6
+                case Encoding.DELTA_LENGTH_BYTE_ARRAY: {  // 6
                         Array plainData = pc.GetPlainDataToReadInto(out int offset);
                         int read = DeltaLengthByteArrayEncoder.Decode(src, plainData, offset, totalValuesInPage);
                         pc.MarkUsefulPlainData(read);
                     }
                     break;
 
-                case Thrift.Encoding.DELTA_BYTE_ARRAY: {         // 7
+                case Encoding.DELTA_BYTE_ARRAY: {         // 7
                         Array plainData = pc.GetPlainDataToReadInto(out int offset);
                         int read = DeltaByteArrayEncoder.Decode(src, plainData, offset, totalValuesInPage);
                         pc.MarkUsefulPlainData(read);
                     }
                     break;
 
-                case Thrift.Encoding.BIT_PACKED:                // 4 (deprecated)
-                case Thrift.Encoding.BYTE_STREAM_SPLIT:         // 9
+                case Encoding.BIT_PACKED:                // 4 (deprecated)
+                case Encoding.BYTE_STREAM_SPLIT:         // 9
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");
             }

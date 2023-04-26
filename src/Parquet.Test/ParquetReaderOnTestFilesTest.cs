@@ -153,5 +153,18 @@ namespace Parquet.Test {
             List<DataColumn> cols = await ReadColumns(s);
             Assert.Equal(2, cols.Count);
         }
+
+        [Fact]
+        public async Task Wide() {
+            using Stream s = OpenTestFile("special/wide.parquet");
+            List<DataColumn> cols = await ReadColumns(s);
+        }
+
+        //[Fact]
+        //public async Task LocalTest() {
+        //    using Stream s = System.IO.File.OpenRead(@"C:\Users\alone\Downloads\MAP_FIELD\MAP_FIELD.parquet");
+        //    List<DataColumn> cols = await ReadColumns(s);
+        //    Assert.Equal(3, cols.Count);
+        //}
     }
 }
