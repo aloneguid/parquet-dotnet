@@ -5,10 +5,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet._3rdparty;
 using Parquet.Schema;
 using Parquet.File;
 using Parquet.Meta;
+using Parquet.Extensions;
 
 namespace Parquet {
     /// <summary>

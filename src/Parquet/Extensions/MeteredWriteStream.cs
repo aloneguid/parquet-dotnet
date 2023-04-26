@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Parquet._3rdparty {
+namespace Parquet.Extensions {
     internal class MeteredWriteStream : Stream {
         private readonly Stream _baseStream;
 
@@ -26,14 +26,14 @@ namespace Parquet._3rdparty {
         public override int Read(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
 #if !NETSTANDARD2_0
-        public override int Read(System.Span<byte> buffer) => throw new NotImplementedException();
+        public override int Read(Span<byte> buffer) => throw new NotImplementedException();
 #endif
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             => throw new NotImplementedException();
 
 #if !NETSTANDARD2_0
-        public override ValueTask<int> ReadAsync(System.Memory<byte> buffer, CancellationToken cancellationToken = default)
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
 #endif
 
@@ -45,7 +45,7 @@ namespace Parquet._3rdparty {
         }
 
 #if !NETSTANDARD2_0
-        public override void Write(System.ReadOnlySpan<byte> buffer) {
+        public override void Write(ReadOnlySpan<byte> buffer) {
             _baseStream.Write(buffer);
             _written += buffer.Length;
         }
@@ -57,7 +57,7 @@ namespace Parquet._3rdparty {
         }
 
 #if !NETSTANDARD2_0
-        public override async ValueTask WriteAsync(System.ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
             await _baseStream.WriteAsync(buffer, cancellationToken);
             _written += buffer.Length;
         }
@@ -104,9 +104,7 @@ namespace Parquet._3rdparty {
 
         protected override void Dispose(bool disposing) {
             base.Dispose(disposing);
-            if(disposing) {
-                _baseStream.Dispose();
-            }
+            if(disposing)                 _baseStream.Dispose();
         }
 
 #if !NETSTANDARD2_0
