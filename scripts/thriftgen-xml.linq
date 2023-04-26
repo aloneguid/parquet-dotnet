@@ -207,23 +207,31 @@ private string GenerateAtomicWriter(string typeId, string getter, out string ele
     }
 }
 
-private string GenerateAtomicReader(string typeId, bool isField = true) {
+private string GenerateAtomicReader(string typeId, bool isField, out string csType) {
     switch (typeId) {
         case "bool":
+            csType = "bool";
             return isField ? "compactType == CompactType.BooleanTrue" : "proto.ReadBool()";
         case "i8":
+            csType = "sbyte";
             return $"proto.ReadByte()";
         case "i16":
+            csType = "short";
             return $"proto.ReadI16()";
         case "i32":
+            csType = "int";
             return $"proto.ReadI32()";
         case "i64":
+            csType = "long";
             return $"proto.ReadI64()";
         case "binary":
+            csType = "byte[]";
             return $"proto.ReadBinary()";
         case "string":
+            csType = "string";
             return $"proto.ReadString()";
         default:
+            csType = "?";
             return "atom?";
     }
 }
@@ -322,38 +330,45 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
     sb.AppendLine($"{Spacing}{Spacing}internal static {enclosingTypeName} Read(ThriftCompactProtocolReader proto) {{");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}var r = new {enclosingTypeName}();");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}proto.StructBegin();");
-    //if(hasLists)
-        //sb.AppendLine($"{Spacing}{Spacing}{Spacing}int elementCount = 0;");
+    if(hasLists)
+        sb.AppendLine($"{Spacing}{Spacing}{Spacing}int elementCount = 0;");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {{");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}switch(fieldId) {{");
 
     foreach (ThriftField f in fields) {
+        string bSpacing = $"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}";
         sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}case {f.id}: // {f.csName}, {f.typeId}");
 
         if (IsAtomic(f.typeId)) {
-            string body = GenerateAtomicReader(f.typeId);
-            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {body};");
+            string body = GenerateAtomicReader(f.typeId, true, out _);
+            sb.AppendLine($"{bSpacing}r.{f.csName} = {body};");
         } else if (f.typeId == "id") {
             if (f.subTypeId != null && enumTypeNames.Contains(f.subTypeId)) {
                 // enum
-                sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = ({f.subTypeId})proto.ReadI32();");
+                sb.AppendLine($"{bSpacing}r.{f.csName} = ({f.subTypeId})proto.ReadI32();");
             } else {
                 // inline struct
-                sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = {f.subTypeId}.Read(proto);");
+                sb.AppendLine($"{bSpacing}r.{f.csName} = {f.subTypeId}.Read(proto);");
             }
         } else if (f.typeId == "list" && f.subTypeId != null) {
             // Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => [body]).ToList();
             string body;
+            string elementType;
             if (IsAtomic(f.subTypeId)) {
-                body = GenerateAtomicReader(f.subTypeId, false);
+                body = GenerateAtomicReader(f.subTypeId, false, out elementType);
             } else if (f.subTypeId == "id" && f.subTypeSubTypeId != null && enumTypeNames.Contains(f.subTypeSubTypeId)) {
+                elementType = f.subTypeSubTypeId;
                 body = $"({f.subTypeSubTypeId})proto.ReadI32()";
             } else {
+                elementType = f.subTypeSubTypeId!;
                 body = $"{f.subTypeSubTypeId}.Read(proto)";
             }
 
-            //sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}elementCount = proto.ReadListHeader(out _);");
-            sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => {body}).ToList();");
+            sb.AppendLine($"{bSpacing}elementCount = proto.ReadListHeader(out _);");
+            sb.AppendLine($"{bSpacing}r.{f.csName} = new List<{elementType}>(elementCount);");
+            sb.AppendLine($"{bSpacing}for(int i = 0; i < elementCount; i++) {{ r.{f.csName}.Add({body}); }}");
+            // the following is shorter but less performant
+            //sb.AppendLine($"{bSpacing}r.{f.csName} = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => {body}).ToList();");
         } else {
             sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}r.{f.csName} = ?;");
         }

@@ -2058,16 +2058,21 @@ namespace Parquet.Meta {
         internal static ColumnMetaData Read(ThriftCompactProtocolReader proto) {
             var r = new ColumnMetaData();
             proto.StructBegin();
+            int elementCount = 0;
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
                     case 1: // Type, id
                         r.Type = (Type)proto.ReadI32();
                         break;
                     case 2: // Encodings, list
-                        r.Encodings = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => (Encoding)proto.ReadI32()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.Encodings = new List<Encoding>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.Encodings.Add((Encoding)proto.ReadI32()); }
                         break;
                     case 3: // PathInSchema, list
-                        r.PathInSchema = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => proto.ReadString()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.PathInSchema = new List<string>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.PathInSchema.Add(proto.ReadString()); }
                         break;
                     case 4: // Codec, id
                         r.Codec = (CompressionCodec)proto.ReadI32();
@@ -2082,7 +2087,9 @@ namespace Parquet.Meta {
                         r.TotalCompressedSize = proto.ReadI64();
                         break;
                     case 8: // KeyValueMetadata, list
-                        r.KeyValueMetadata = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => KeyValue.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.KeyValueMetadata = new List<KeyValue>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.KeyValueMetadata.Add(KeyValue.Read(proto)); }
                         break;
                     case 9: // DataPageOffset, i64
                         r.DataPageOffset = proto.ReadI64();
@@ -2097,7 +2104,9 @@ namespace Parquet.Meta {
                         r.Statistics = Statistics.Read(proto);
                         break;
                     case 13: // EncodingStats, list
-                        r.EncodingStats = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => PageEncodingStats.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.EncodingStats = new List<PageEncodingStats>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.EncodingStats.Add(PageEncodingStats.Read(proto)); }
                         break;
                     case 14: // BloomFilterOffset, i64
                         r.BloomFilterOffset = proto.ReadI64();
@@ -2167,10 +2176,13 @@ namespace Parquet.Meta {
         internal static EncryptionWithColumnKey Read(ThriftCompactProtocolReader proto) {
             var r = new EncryptionWithColumnKey();
             proto.StructBegin();
+            int elementCount = 0;
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
                     case 1: // PathInSchema, list
-                        r.PathInSchema = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => proto.ReadString()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.PathInSchema = new List<string>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.PathInSchema.Add(proto.ReadString()); }
                         break;
                     case 2: // KeyMetadata, binary
                         r.KeyMetadata = proto.ReadBinary();
@@ -2436,10 +2448,13 @@ namespace Parquet.Meta {
         internal static RowGroup Read(ThriftCompactProtocolReader proto) {
             var r = new RowGroup();
             proto.StructBegin();
+            int elementCount = 0;
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
                     case 1: // Columns, list
-                        r.Columns = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => ColumnChunk.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.Columns = new List<ColumnChunk>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.Columns.Add(ColumnChunk.Read(proto)); }
                         break;
                     case 2: // TotalByteSize, i64
                         r.TotalByteSize = proto.ReadI64();
@@ -2448,7 +2463,9 @@ namespace Parquet.Meta {
                         r.NumRows = proto.ReadI64();
                         break;
                     case 4: // SortingColumns, list
-                        r.SortingColumns = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => SortingColumn.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.SortingColumns = new List<SortingColumn>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.SortingColumns.Add(SortingColumn.Read(proto)); }
                         break;
                     case 5: // FileOffset, i64
                         r.FileOffset = proto.ReadI64();
@@ -2609,10 +2626,13 @@ namespace Parquet.Meta {
         internal static OffsetIndex Read(ThriftCompactProtocolReader proto) {
             var r = new OffsetIndex();
             proto.StructBegin();
+            int elementCount = 0;
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
                     case 1: // PageLocations, list
-                        r.PageLocations = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => PageLocation.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.PageLocations = new List<PageLocation>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.PageLocations.Add(PageLocation.Read(proto)); }
                         break;
                     default:
                         proto.SkipField(compactType);
@@ -2685,22 +2705,31 @@ namespace Parquet.Meta {
         internal static ColumnIndex Read(ThriftCompactProtocolReader proto) {
             var r = new ColumnIndex();
             proto.StructBegin();
+            int elementCount = 0;
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
                     case 1: // NullPages, list
-                        r.NullPages = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => proto.ReadBool()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.NullPages = new List<bool>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.NullPages.Add(proto.ReadBool()); }
                         break;
                     case 2: // MinValues, list
-                        r.MinValues = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => proto.ReadBinary()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.MinValues = new List<byte[]>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.MinValues.Add(proto.ReadBinary()); }
                         break;
                     case 3: // MaxValues, list
-                        r.MaxValues = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => proto.ReadBinary()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.MaxValues = new List<byte[]>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.MaxValues.Add(proto.ReadBinary()); }
                         break;
                     case 4: // BoundaryOrder, id
                         r.BoundaryOrder = (BoundaryOrder)proto.ReadI32();
                         break;
                     case 5: // NullCounts, list
-                        r.NullCounts = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => proto.ReadI64()).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.NullCounts = new List<long>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.NullCounts.Add(proto.ReadI64()); }
                         break;
                     default:
                         proto.SkipField(compactType);
@@ -2977,28 +3006,37 @@ namespace Parquet.Meta {
         internal static FileMetaData Read(ThriftCompactProtocolReader proto) {
             var r = new FileMetaData();
             proto.StructBegin();
+            int elementCount = 0;
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
                     case 1: // Version, i32
                         r.Version = proto.ReadI32();
                         break;
                     case 2: // Schema, list
-                        r.Schema = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => SchemaElement.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.Schema = new List<SchemaElement>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.Schema.Add(SchemaElement.Read(proto)); }
                         break;
                     case 3: // NumRows, i64
                         r.NumRows = proto.ReadI64();
                         break;
                     case 4: // RowGroups, list
-                        r.RowGroups = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => RowGroup.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.RowGroups = new List<RowGroup>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.RowGroups.Add(RowGroup.Read(proto)); }
                         break;
                     case 5: // KeyValueMetadata, list
-                        r.KeyValueMetadata = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => KeyValue.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.KeyValueMetadata = new List<KeyValue>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.KeyValueMetadata.Add(KeyValue.Read(proto)); }
                         break;
                     case 6: // CreatedBy, string
                         r.CreatedBy = proto.ReadString();
                         break;
                     case 7: // ColumnOrders, list
-                        r.ColumnOrders = Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => ColumnOrder.Read(proto)).ToList();
+                        elementCount = proto.ReadListHeader(out _);
+                        r.ColumnOrders = new List<ColumnOrder>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.ColumnOrders.Add(ColumnOrder.Read(proto)); }
                         break;
                     case 8: // EncryptionAlgorithm, id
                         r.EncryptionAlgorithm = EncryptionAlgorithm.Read(proto);
