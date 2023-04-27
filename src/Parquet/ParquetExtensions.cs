@@ -94,19 +94,28 @@ namespace Parquet {
         /// </summary>
         /// <param name="reader">Open reader</param>
         /// <param name="progressCallback"></param>
+        /// <param name="rowGroupIndex">When specified, only row group at index will be read.</param>
         /// <returns></returns>
         public static async Task<Table> ReadAsTableAsync(this ParquetReader reader,
-            TableReaderProgressCallback? progressCallback = null) {
+            TableReaderProgressCallback? progressCallback = null,
+            int? rowGroupIndex = null) {
             Table? result = null;
             DataField[] dataFields = reader.Schema!.GetDataFields();
 
-            int stepsTotal = dataFields.Length * reader.RowGroupCount;
+            var rowGroupIndexes = new List<int>();
+            if(rowGroupIndex != null) {
+                rowGroupIndexes.Add(rowGroupIndex.Value);
+            } else {
+                rowGroupIndexes.AddRange(Enumerable.Range(0, reader.RowGroupCount));
+            }
+
+            int stepsTotal = dataFields.Length * rowGroupIndexes.Count;
             int currentStep = 0;
 
             if(reader.RowGroupCount == 0) {
                 result = new Table(reader.Schema, null, 0);
             } else {
-                for(int i = 0; i < reader.RowGroupCount; i++) {
+                foreach(int i in rowGroupIndexes) {
                     using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
                         DataColumn[] allData = new DataColumn[dataFields.Length];
 
