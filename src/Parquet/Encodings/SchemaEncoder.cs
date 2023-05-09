@@ -225,6 +225,9 @@ namespace Parquet.Encodings {
                     ConvertedType.INTERVAL => typeof(Interval),
                     _ => typeof(byte[])
                 },
+
+                Type.FIXED_LEN_BYTE_ARRAY when se.TypeLength == 16 && se.LogicalType?.UUID != null => typeof(Guid),
+
                 Type.FIXED_LEN_BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
 
                 _ => null
