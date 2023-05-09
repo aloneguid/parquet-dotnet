@@ -29,7 +29,8 @@ namespace Parquet.Encodings {
             typeof(TimeSpan),
             typeof(Interval),
             typeof(byte[]),
-            typeof(string)
+            typeof(string),
+            typeof(Guid)
         };
 
         static bool TryBuildList(List<SchemaElement> schema,
@@ -486,6 +487,13 @@ namespace Parquet.Encodings {
                 tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
                 tse.TypeLength = 12;
                 tse.ConvertedType = ConvertedType.INTERVAL;
+            } else if(st == typeof(Guid)) {
+                // fixed_len_byte_array(16) uuid (UUID)
+                tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
+                tse.LogicalType = new LogicalType() {
+                    UUID = new UUIDType()
+                };
+                tse.TypeLength = 16;
             } else {
                 throw new InvalidOperationException($"type {st} is not supported");
             }

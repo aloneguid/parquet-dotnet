@@ -16,6 +16,8 @@ namespace Parquet.Test.Serialisation {
             public DateTime Timestamp { get; set; }
             public string? EventName { get; set; }
             public double MeterValue { get; set; }
+
+            public Guid ExternalId { get; set; }
         }
 
         [Fact]
@@ -24,11 +26,12 @@ namespace Parquet.Test.Serialisation {
             var data = Enumerable.Range(0, 1_000).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
                 EventName = i % 2 == 0 ? "on" : "off",
-                MeterValue = i
+                MeterValue = i,
+                ExternalId = Guid.NewGuid()
             }).ToList();
 
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
+            ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
 
             ms.Position = 0;
             IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms);

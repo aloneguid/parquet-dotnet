@@ -80,7 +80,9 @@ namespace Parquet.Test.Types {
                ["nullable DateTime"] = (new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null),
 
                ["bool"] = (new DataField<bool>("bool"), true),
-               ["nullable bool"] = (new DataField<bool?>("bool?"), new bool?(true))
+               ["nullable bool"] = (new DataField<bool?>("bool?"), new bool?(true)),
+
+               ["guid"] = (new DataField<Guid>("uuid"), Guid.NewGuid())
 
            };
 
@@ -142,6 +144,7 @@ namespace Parquet.Test.Types {
 
         [InlineData("bool")]
         [InlineData("nullable bool")]
+        [InlineData("guid")]
 
         public async Task Type_writes_and_reads_end_to_end(string name) {
             (DataField field, object? expectedValue) input = _nameToData[name];

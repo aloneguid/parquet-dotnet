@@ -122,6 +122,9 @@ namespace Parquet.Encodings {
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
+            } else if(t == typeof(Guid[])) {
+                Span<Guid> span = ((Guid[])data).AsSpan(offset, count);
+                Encode(span, destination);
             } else {
                 throw new NotSupportedException($"no PLAIN encoder exists for {t}");
             }
@@ -192,6 +195,9 @@ namespace Parquet.Encodings {
                 elementsRead = Decode(source, span);
             } else if(t == typeof(string[])) {
                 Span<string> span = ((string[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+            } else if(t == typeof(Guid[])) {
+                Span<Guid> span = ((Guid[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else {
                 elementsRead = 0;
@@ -746,6 +752,14 @@ namespace Parquet.Encodings {
             }
         }
 
+        public static void Encode(ReadOnlySpan<Guid> data, Stream destination) {
+            foreach(Guid element in data) {
+                byte[] b = element.ToByteArray();
+                destination.Write(b, 0, b.Length);
+            }
+        }
+
+
         public static int Decode(Span<byte> source, Span<byte[]> data) {
             int read = 0;
             int sourceOffset = 0;
@@ -995,6 +1009,21 @@ namespace Parquet.Encodings {
                 data[i] = E.GetString(source.Slice(spanIdx, length));
 #endif
                 spanIdx += length;
+            }
+            return i;
+        }
+
+        public static int Decode(Span<byte> source, Span<Guid> data, SchemaElement tse) {
+            if(tse.TypeLength != 16)
+                throw new InvalidOperationException($"'{tse.TypeLength}' is invalid type length for UUID (should be 16)");
+
+            int i = 0;
+            for(int offset = 0; offset + 16 <= source.Length && i < data.Length; offset += 16, i++) {
+#if NETSTANDARD2_0
+                data[i] = new Guid(source.Slice(offset, 16).ToArray());
+#else
+                data[i] = new Guid(source.Slice(offset, 16));
+#endif
             }
             return i;
         }
