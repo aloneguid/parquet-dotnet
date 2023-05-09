@@ -208,7 +208,6 @@ namespace Parquet {
         /// <returns></returns>
         public static async Task WriteAsync(this DataFrame df, Stream outputStream, CancellationToken cancellationToken = default) {
             // create schema
-            // all types in DataFrame are nullable, but .DataType member is not nullable
             var schema = new ParquetSchema(
                 df.Columns.Select(col => new DataField(col.Name, col.DataType.GetNullable())));
 

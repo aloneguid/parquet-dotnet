@@ -52,23 +52,6 @@ namespace Parquet.Schema {
         /// Creates a new instance of <see cref="ListField"/>
         /// </summary>
         /// <param name="name">Field name</param>
-        /// <param name="dataType">Native Parquet type</param>
-        /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
-        /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
-        /// <param name="containerName">Container name</param>
-        /// <param name="elementName">Element name</param>
-        [Obsolete(Globals.DataTypeEnumObsolete)]
-        public ListField(string name, DataType dataType, bool hasNulls = true, string? propertyName = null, string containerName = "list", string? elementName = null) : this(name) {
-            Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
-            _itemAssigned = true;
-            ContainerName = containerName;
-            PathPrefix = null;
-        }
-
-        /// <summary>
-        /// Creates a new instance of <see cref="ListField"/>
-        /// </summary>
-        /// <param name="name">Field name</param>
         /// <param name="itemDataType">Type of the item in the list</param>
         /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
         /// <param name="containerName">Container name</param>

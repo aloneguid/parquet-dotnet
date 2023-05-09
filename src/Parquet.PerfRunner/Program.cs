@@ -12,9 +12,6 @@ if(args.Length == 1) {
         case "progression":
             VersionedBenchmark.Run();
             break;
-        case "classes":
-            BenchmarkRunner.Run<Classes>();
-            break;
     }
 } else {
 
