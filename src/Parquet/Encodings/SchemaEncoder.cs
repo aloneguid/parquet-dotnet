@@ -418,6 +418,7 @@ namespace Parquet.Encodings {
                         Scale = scale
                     }
                 };
+                tse.ConvertedType = ConvertedType.DECIMAL;
                 tse.Precision = precision;
                 tse.Scale = scale;
             } else if(st == typeof(byte[])) {           // byte[]
