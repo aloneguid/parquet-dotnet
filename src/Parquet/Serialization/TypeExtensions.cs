@@ -38,26 +38,6 @@ namespace Parquet.Serialization {
             return schema;
         }
 
-        /// <summary>
-        /// Reflects this type to get <see cref="ParquetSchema"/>
-        /// </summary>
-        /// <param name="t"></param>
-        /// <param name="forWriting">
-        /// Set to true to get schema when deserialising into classes (writing to classes), otherwise false.
-        /// The result will differ if for instance some properties are read-only and some write-only.
-        /// </param>
-        /// <returns></returns>
-        public static ParquetSchema GetParquetLegacySchema(this Type t, bool forWriting) {
-            if(_cachedReflectedSchemas.TryGetValue(t, out ParquetSchema? schema))
-                return schema;
-
-            schema = CreateSchema(t, forWriting, true);
-
-            _cachedReflectedSchemas[t] = schema;
-            return schema;
-        }
-
-
         private static List<PropertyInfo> FindProperties(Type t, bool forWriting) {
             PropertyInfo[] props = t.GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
@@ -91,40 +71,19 @@ namespace Parquet.Serialization {
                 r = new DataField(name, t, propertyName: propertyName);
             }
 
-            // legacy attribute parsing
-            ParquetColumnAttribute? columnAttr = pi?.GetCustomAttribute<ParquetColumnAttribute>();
-            if(columnAttr != null) {
-                if(columnAttr.UseListField) {
-                    Type nt = new DataField(name, t).ClrNullableIfHasNullsType;
-                    return new ListField(r.Name, nt, propertyName, columnAttr.ListContainerName, columnAttr.ListElementName);
-                }
-
-                if(t == typeof(TimeSpan))
-                    r = new TimeSpanDataField(r.Name, columnAttr.TimeSpanFormat, r.IsNullable);
-                else if(t == typeof(DateTime))
-                    r = new DateTimeDataField(r.Name, columnAttr.DateTimeFormat, r.IsNullable);
-                else if(t == typeof(decimal))
-                    r = new DecimalDataField(r.Name, columnAttr.DecimalPrecision, columnAttr.DecimalScale,
-                        columnAttr.DecimalForceByteArrayEncoding, r.IsNullable);
-            }
-
             return r;
         }
 
         private static string GetColumnName(PropertyInfo pi) {
 
             JsonPropertyNameAttribute? stxt = pi.GetCustomAttribute<JsonPropertyNameAttribute>();
-            ParquetColumnAttribute? pc = pi.GetCustomAttribute<ParquetColumnAttribute>();
 
-            return stxt?.Name ?? pc?.Name ?? pi.Name;
+            return stxt?.Name ?? pi.Name;
         }
 
         private static bool ShouldIgnore(PropertyInfo pi) {
-#pragma warning disable CS0618 // Type or member is obsolete
             return 
-                pi.GetCustomAttribute<ParquetIgnoreAttribute>() != null ||
                 pi.GetCustomAttribute<JsonIgnoreAttribute>() != null;
-#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         private static int? GetPropertyOrder(PropertyInfo pi) {

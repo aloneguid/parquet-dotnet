@@ -16,7 +16,7 @@ namespace Parquet.Test.Serialisation {
         class PocoClass {
             public int Id { get; set; }
 
-            [ParquetColumn("AltId")] public int AnnotatedId { get; set; }
+            [JsonPropertyName("AltId")] public int AnnotatedId { get; set; }
             public float? NullableFloat { get; set; }
 
             public int[]? IntArray { get; set; }
@@ -105,7 +105,7 @@ namespace Parquet.Test.Serialisation {
 
         class AliasedPoco {
 
-            [ParquetColumn(Name = "ID1")]
+            [JsonPropertyName("ID1")]
             public int _id1 { get; set; }
 
             [JsonPropertyName("ID2")]
@@ -128,7 +128,7 @@ namespace Parquet.Test.Serialisation {
 
             public int NotIgnored { get; set; }
 
-            [ParquetIgnore]
+            [JsonIgnore]
             public int Ignored1 { get; set; }
 
             [JsonIgnore]

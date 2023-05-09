@@ -15,16 +15,6 @@ namespace Parquet.Test {
             return F.OpenRead("./data/" + name);
         }
 
-        [Obsolete]
-        protected async Task<T[]> ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T : new() {
-            using var ms = new MemoryStream();
-            ParquetSchema s = await ParquetConvert.SerializeAsync<T>(instances, ms);
-
-            ms.Position = 0;
-
-            return await ParquetConvert.DeserializeAsync<T>(ms);
-        }
-
         protected async Task<Table> ReadTestFileAsTableAsync(string name) {
             using Stream s = OpenTestFile(name);
             return await Table.ReadAsync(s);

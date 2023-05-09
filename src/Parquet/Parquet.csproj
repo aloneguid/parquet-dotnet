@@ -83,10 +83,6 @@
           <Generator>TextTemplatingFileGenerator</Generator>
           <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
         </None>
-        <None Update="Encodings\SchemaMapper.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>SchemaMapper.cs</LastGenOutput>
-        </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -108,11 +104,6 @@
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>
         <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Encodings\SchemaMapper.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>SchemaMapper.tt</DependentUpon>
       </Compile>
       <Compile Update="Extensions\UntypedArrayExtensions.cs">
         <DesignTime>True</DesignTime>
