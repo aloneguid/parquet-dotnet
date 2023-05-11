@@ -68,10 +68,10 @@ namespace Parquet.Test.Serialisation {
             public string? City { get; set; }
         }
 
-        class AddressBookEntry { 
+        class AddressBookEntry {
             public string? FirstName { get; set; }
 
-            public string? LastName { get; set; }   
+            public string? LastName { get; set; }
 
             public Address? Address { get; set; }
         }
@@ -327,7 +327,7 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task Map_Simple_Serde() {
-            var data = Enumerable.Range(0, 10).Select(i => new IdWithTags { 
+            var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
                 Id = i,
                 Tags = new Dictionary<string, string> {
                     ["id"] = i.ToString(),
@@ -396,10 +396,32 @@ namespace Parquet.Test.Serialisation {
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = 20 });
 
-            // validate we have 5 row groups in the resuling file
+            // validate we have 5 row groups in the resulting file
             ms.Position = 0;
             using ParquetReader reader = await ParquetReader.CreateAsync(ms);
             Assert.Equal(5, reader.RowGroupCount);
+        }
+
+        [Fact]
+        public async Task Deserialize_per_row_group() {
+            DateTime now = DateTime.UtcNow;
+            int records = 100;
+            int rowGroupSize = 20;
+
+            var data = Enumerable.Range(0, records).Select(i => new Record {
+                Timestamp = now.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = rowGroupSize });
+
+            ms.Position = 0;
+            for(int i = 0; i < records; i += rowGroupSize) {
+                IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms, i / rowGroupSize);
+                Assert.Equivalent(data.Skip(i).Take(rowGroupSize), data2);
+            }
         }
 
         [Fact]

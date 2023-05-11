@@ -4,11 +4,11 @@ Parquet library is generally extremely flexible in terms of supporting internals
 
 Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
 
-Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serialisers and deserialisers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
+Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
 
 ## Quick Start
 
-Both serialiser and deserialiser works with collection of classes. Let's say you have the following class definition:
+Both serializer and deserializer works with collection of classes. Let's say you have the following class definition:
 
 ```csharp
 class Record {
@@ -38,11 +38,19 @@ That's it! Of course the `.SerializeAsync()` method also has overloads and optio
 
 Parquet.Net will automatically figure out file schema by reflecting class structure, types, nullability and other parameters for you.
 
-In order to deserialise this file back to array of classes you would write the following:
+In order to deserialize this file back to array of classes you would write the following:
 
 ```csharp
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
+## Deserialize records by RowGroup
+
+If you have a large file and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.
+
+```csharp
+IList<Record> data = await ParquetSerializer.DeserializeByRowGroupAsync<Record>("/mnt/storage/data.parquet", rowGroupIndex);
+```
+
 ## Customising Serialisation
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
@@ -125,7 +133,7 @@ var data = Enumerable.Range(0, 1_000_000).Select(i => new AddressBookEntry {
         }).ToList();
 ```
 
-You can serialise/deserialise those using the same `ParquetSerializer.SerializeAsync` / `ParquetSerializer.DeserializeAsync` methods. It does understand subclasses and will magically traverse inside them.
+You can serialise/deserialize those using the same `ParquetSerializer.SerializeAsync` / `ParquetSerializer.DeserializeAsync` methods. It does understand subclasses and will magically traverse inside them.
 
 ### Lists
 
@@ -141,7 +149,7 @@ class MovementHistoryCompressed  {
 }
 ```
 
-Is totally fine to serialise/deserialise:
+Is totally fine to serialise/deserialize:
 
 ```csharp
 var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressed {
@@ -364,6 +372,6 @@ Note that small row groups make parquet files very inefficient in general, so yo
 
 ## FAQ
 
-**Q.** Can I specify schema for serialisation/deserialisation.
+**Q.** Can I specify schema for serialisation/deserialization.
 
 **A.** If you're using a class-based approach to define your data model, you don't have to worry about providing a schema separately. The class definition itself is the schema, meaning it specifies the fields and types of your data. This makes it easier to write and maintain your code, since you only have to define your data model once and use it everywhere.
