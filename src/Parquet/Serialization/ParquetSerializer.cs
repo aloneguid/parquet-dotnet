@@ -104,7 +104,7 @@ namespace Parquet.Serialization {
 
 
         /// <summary>
-        /// Deserialize row group
+        /// Deserialise row group
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
@@ -121,7 +121,6 @@ namespace Parquet.Serialization {
 
             Assembler<T> asm = GetAssembler<T>();
 
-
             var result = new List<T>();
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
             await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, cancellationToken);
@@ -130,7 +129,7 @@ namespace Parquet.Serialization {
         }
 
         /// <summary>
-        /// Deserialize
+        /// Deserialise
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
@@ -155,15 +154,13 @@ namespace Parquet.Serialization {
             return result;
         }
 
-        private static Assembler<T> GetAssembler<T>() where T : new()
-        {
+        private static Assembler<T> GetAssembler<T>() where T : new() {
+
             Assembler<T> asm;
-            if (_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler))
-            {
+
+            if(_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler)) {
                 asm = (Assembler<T>)boxedAssembler;
-            }
-            else
-            {
+            } else {
                 asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
                 _typeToAssembler[typeof(T)] = asm;
             }
@@ -172,30 +169,25 @@ namespace Parquet.Serialization {
         }
 
         private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi,
-            Assembler<T> asm, ICollection<T> result, CancellationToken cancellationToken = default) where T : new()
-        {
+            Assembler<T> asm,
+            ICollection<T> result,
+            CancellationToken cancellationToken = default) where T : new() {
+
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
             // add more empty class instances to the result
             int prevRowCount = result.Count;
-            for (int i = 0; i < rg.RowCount; i++)
-            {
+            for(int i = 0; i < rg.RowCount; i++) {
                 var ne = new T();
                 result.Add(ne);
             }
 
-            foreach (FieldAssembler<T> fasm in asm.FieldAssemblers)
-            {
+            foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
                 DataColumn dc = await rg.ReadColumnAsync(fasm.Field, cancellationToken);
-                try
-                {
+                try {
                     fasm.Assemble(result.Skip(prevRowCount), dc);
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException(
-                        $"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']",
-                        ex);
+                } catch(Exception ex) {
+                    throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
                 }
             }
         }
