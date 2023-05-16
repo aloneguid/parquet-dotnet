@@ -9,7 +9,7 @@
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".cs" #>
 <# 
-    var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]" }; 
+    var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]", "Guid?" }; 
 
     string nn(string nt) => nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt;
 #>

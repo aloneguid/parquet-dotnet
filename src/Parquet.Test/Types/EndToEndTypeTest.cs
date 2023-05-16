@@ -82,7 +82,9 @@ namespace Parquet.Test.Types {
                ["bool"] = (new DataField<bool>("bool"), true),
                ["nullable bool"] = (new DataField<bool?>("bool?"), new bool?(true)),
 
-               ["guid"] = (new DataField<Guid>("uuid"), Guid.NewGuid())
+               ["guid"] = (new DataField<Guid>("uuid"), Guid.NewGuid()),
+               ["nullable guid (not null)"] = (new DataField<Guid?>("uuid"), Guid.NewGuid()),
+               ["nullable guid (null)"] = (new DataField<Guid?>("uuid"), null)
 
            };
 
@@ -145,6 +147,8 @@ namespace Parquet.Test.Types {
         [InlineData("bool")]
         [InlineData("nullable bool")]
         [InlineData("guid")]
+        [InlineData("nullable guid (null)")]
+        [InlineData("nullable guid (not null)")]
 
         public async Task Type_writes_and_reads_end_to_end(string name) {
             (DataField field, object? expectedValue) input = _nameToData[name];

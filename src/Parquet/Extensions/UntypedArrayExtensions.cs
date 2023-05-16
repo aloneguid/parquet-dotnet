@@ -70,6 +70,9 @@ namespace Parquet.Extensions {
             if(t == typeof(byte[])) {
                 return CalculateNullCount((byte[][])array, offset, count);
             }
+            if(t == typeof(Guid?)) {
+                return CalculateNullCount((Guid?[])array, offset, count);
+            }
             
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
@@ -236,6 +239,15 @@ namespace Parquet.Extensions {
             }
             return r;
         }
+        private static int CalculateNullCount(Guid?[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
     #endregion
 
     #region [ Null Packing ]
@@ -379,6 +391,13 @@ namespace Parquet.Extensions {
                 PackNullsTypeFast((byte[][])array,
                     offset, count,
                     (byte[][])packedData,
+                    dest, fillerValue);
+                return;
+            }
+            if(t == typeof(Guid?)) {
+                PackNullsTypeFast((Guid?[])array,
+                    offset, count,
+                    (Guid[])packedData,
                     dest, fillerValue);
                 return;
             }
@@ -728,6 +747,25 @@ namespace Parquet.Extensions {
             }
         }
 
+        private static void PackNullsTypeFast(Guid?[] array,
+            int offset, int count,
+            Guid[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                Guid? value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (Guid)value;
+                }
+            }
+        }
+
 
     #endregion
 
@@ -848,6 +886,12 @@ namespace Parquet.Extensions {
             UnpackNullsTypeFast((byte[][])array,
                 flags, fillFlag,
                 (byte[][])result);
+            return;
+        }
+        if(t == typeof(Guid)) {
+            UnpackNullsTypeFast((Guid[])array,
+                flags, fillFlag,
+                (Guid?[])result);
             return;
         }
             
@@ -1107,6 +1151,20 @@ namespace Parquet.Extensions {
         }
     }
 
+    private static void UnpackNullsTypeFast(Guid[] array,
+        Span<int> flags, int fillFlag,
+        Guid?[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
 
     #endregion
 
@@ -1207,6 +1265,11 @@ namespace Parquet.Extensions {
         if(t == typeof(byte[])) {
             ExplodeTypeFast((byte[][])dictionary,
                 indexes, (byte[][])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(Guid)) {
+            ExplodeTypeFast((Guid[])dictionary,
+                indexes, (Guid[])result, resultOffset, resultCount);
             return;
         }
             
@@ -1454,6 +1517,20 @@ namespace Parquet.Extensions {
     private static void ExplodeTypeFast(byte[][] dictionary,
         Span<int> indexes,
         byte[][] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+    private static void ExplodeTypeFast(Guid[] dictionary,
+        Span<int> indexes,
+        Guid[] result, int resultOffset, int resultCount) {
 
         for(int i = 0; i < resultCount; i++) {
             int index = indexes[i];
