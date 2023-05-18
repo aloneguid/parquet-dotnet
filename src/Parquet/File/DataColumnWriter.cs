@@ -77,6 +77,7 @@ namespace Parquet.File {
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
             int headerSize = (int)headerMs.Length;
             headerMs.Position = 0;
+            _stream.Flush();
             await headerMs.CopyToAsync(_stream);
 
             // write data
