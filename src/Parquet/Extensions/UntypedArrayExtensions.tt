@@ -11,6 +11,7 @@
 <# 
     var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]", "Guid?" }; 
 
+    var net6_types = new[] { "DateOnly?" };
     string nn(string nt) => nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt;
 #>
 namespace Parquet.Extensions {
@@ -27,15 +28,28 @@ namespace Parquet.Extensions {
             Type? t = array.GetType().GetElementType();
             if(t != null && !t.IsNullable()) return 0;
 
-<# foreach(string nt in types) { #>
+<#
+    void CallCalculateNullCount(string[] types)
+    {
+         foreach(string nt in types) { #>
             if(t == typeof(<#= nt #>)) {
                 return CalculateNullCount((<#= nt #>[])array, offset, count);
             }
-<# } #>            
+<#       }        
+    }
+    CallCalculateNullCount(types); #>
+#if NET6_0_OR_GREATER
+<#  CallCalculateNullCount(net6_types); #>
+#endif            
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
 
-<# foreach(string nt in types) { #>
+<#
+    void EmitCalculateNullCount(string[] types)
+    {
+        foreach (string nt in types)
+        {
+#>
         private static int CalculateNullCount(<#= nt #>[] array, int offset, int count) {
             int r = 0;
             for(int i = offset; i < count; i++) {
@@ -45,7 +59,15 @@ namespace Parquet.Extensions {
             }
             return r;
         }
-<# } #>
+<#
+        }
+    }
+
+    EmitCalculateNullCount(types);
+#>
+#if NET6_0_OR_GREATER
+<# EmitCalculateNullCount(net6_types);  #>
+#endif
     #endregion
 
     #region [ Null Packing ]
@@ -66,7 +88,12 @@ namespace Parquet.Extensions {
                 return;
             }
 
-<# foreach(string nt in types) { #>
+<#
+   void EmitCallPackNullsTypeFast(string[] types)
+   {
+       foreach (string nt in types)
+       {
+#>
             if(t == typeof(<#= nt #>)) {
                 PackNullsTypeFast((<#= nt #>[])array,
                     offset, count,
@@ -74,11 +101,22 @@ namespace Parquet.Extensions {
                     dest, fillerValue);
                 return;
             }
-<# } #>            
+<#
+       }
+   }
+   EmitCallPackNullsTypeFast(types);
+#> 
+#if NET6_0_OR_GREATER
+<# EmitCallPackNullsTypeFast(net6_types); #>
+#endif
             throw new NotSupportedException($"cannot pack type {t}");
         }
 
-<# foreach(string nt in types) { #>
+<# void PackNullsTypeFast(string[] types)
+   {
+       foreach (string nt in types)
+       {
+#>
         private static void PackNullsTypeFast(<#= nt #>[] array,
             int offset, int count,
             <#= nn(nt) #>[] packedArray,
@@ -98,8 +136,13 @@ namespace Parquet.Extensions {
             }
         }
 
-<# } #>
+<#       }
+   }
 
+   PackNullsTypeFast(types);  #>
+#if NET6_0_OR_GREATER
+<# PackNullsTypeFast(net6_types);#>
+#endif
     #endregion
 
     #region [ Null Unpacking ]
@@ -113,19 +156,36 @@ namespace Parquet.Extensions {
             throw new ArgumentException("cannot detect element type", nameof(array));
 
         
-<# foreach(string nt in types) { #>
+<#
+   void EmitCallUnpackNullsTypeFast(string[] types)
+   {
+       foreach (string nt in types)
+       {
+#>
         if(t == typeof(<#= nn(nt) #>)) {
             UnpackNullsTypeFast((<#= nn(nt) #>[])array,
                 flags, fillFlag,
                 (<#= nt #>[])result);
             return;
         }
-<# } #>            
+<#
+       }
+   }
+   EmitCallUnpackNullsTypeFast(types);
+#>
+#if NET6_0_OR_GREATER
+<# EmitCallUnpackNullsTypeFast(net6_types); #>
+#endif            
         throw new NotSupportedException($"cannot pack type {t}");
 
     }
 
-<# foreach(string nt in types) { #>
+<#
+   void UnpackNullsTypeFast(string[] types)
+   {
+       foreach (string nt in types)
+       {
+#>
     private static void UnpackNullsTypeFast(<#= nn(nt) #>[] array,
         Span<int> flags, int fillFlag,
         <#= nt #>[] result) {
@@ -140,8 +200,15 @@ namespace Parquet.Extensions {
         }
     }
 
-<# } #>
+<#
+       }
+   }
 
+   UnpackNullsTypeFast(types);
+#>
+#if NET6_0_OR_GREATER
+<# UnpackNullsTypeFast(net6_types); #>
+#endif
     #endregion
 
     #region [ Dictionary Explosion ]
@@ -153,17 +220,34 @@ namespace Parquet.Extensions {
         if(t == null)
             throw new ArgumentException("cannot detect element type", nameof(dictionary));
 
-<# foreach(string nt in types) { #>
+<#
+   void EmitCallExplodeTypeFast(string[] types)
+   {
+       foreach (string nt in types)
+       {
+#>
         if(t == typeof(<#= nn(nt) #>)) {
             ExplodeTypeFast((<#= nn(nt) #>[])dictionary,
                 indexes, (<#= nn(nt) #>[])result, resultOffset, resultCount);
             return;
         }
-<# } #>            
+<#
+       }
+   }
+   EmitCallExplodeTypeFast(types);
+#>
+#if NET6_0_OR_GREATER
+<# EmitCallExplodeTypeFast(net6_types); #>
+#endif            
         throw new NotSupportedException($"cannot pack type {t}");
     }
 
-<# foreach(string nt in types) { #>
+<#
+   void EmitExplodeTypeFast(string[] types)
+   {
+       foreach (string nt in types)
+       {
+#>
     private static void ExplodeTypeFast(<#= nn(nt) #>[] dictionary,
         Span<int> indexes,
         <#= nn(nt) #>[] result, int resultOffset, int resultCount) {
@@ -178,8 +262,14 @@ namespace Parquet.Extensions {
         }
     }
 
-<# } #>
-
+<#
+       }
+   }
+   EmitExplodeTypeFast(types);
+#>
+#if NET6_0_OR_GREATER
+<# EmitExplodeTypeFast(net6_types);#>
+#endif
     #endregion
 
     }
