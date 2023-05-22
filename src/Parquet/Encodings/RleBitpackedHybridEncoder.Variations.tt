@@ -1,0 +1,36 @@
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+namespace Parquet.Encodings {
+    using System;
+
+    static partial class RleBitpackedHybridEncoder {
+    <# for(int i = 0; i <= 4; i++) { #>
+        private static void Encode<#= i #>(byte[] s, ref int consumed, Span<int> data) {
+
+            //chunk identical values and write
+            int lastValue = 0;
+            int chunkCount = 0;
+            for(int i = 0; i < data.Length; i++) {
+                int item = data[i];
+
+                if(chunkCount == 0) {
+                    chunkCount = 1;
+                    lastValue = item;
+                } else if(item != lastValue || chunkCount == MaxValueCount) {
+                    WriteRle<#= i #>(s, ref consumed, chunkCount, lastValue);
+
+                    chunkCount = 1;
+                    lastValue = item;
+                } else
+                    chunkCount += 1;
+            }
+
+            if(chunkCount > 0)
+                WriteRle<#= i #>(s, ref consumed, chunkCount, lastValue);
+        }
+
+    <# } #>
+    }
+}

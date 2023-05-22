@@ -33,6 +33,7 @@ namespace Parquet.PerfRunner.Benchmarks {
                 //AddJob(baseJob.WithNuGet("Parquet.Net", "4.4.1"));
                 AddJob(baseJob.WithNuGet("Parquet.Net", "4.5.0"));
                 AddJob(baseJob.WithNuGet("Parquet.Net", "4.9.1"));
+                AddJob(baseJob.WithNuGet("Parquet.Net", "4.11.3"));
             }
         }
 
