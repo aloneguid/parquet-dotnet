@@ -156,18 +156,5 @@ namespace Parquet.File {
             int bitWidth = maxValue.GetBitWidth();
             RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
         }
-
-        private static void WriteRleDictionary(Stream s, Span<int> data, int maxValue) {
-
-            /*
-             * Data page format: https://github.com/apache/parquet-format/blob/master/Encodings.md#dictionary-encoding-plain_dictionary--2-and-rle_dictionary--8
-             * the bit width used to encode the entry ids stored as 1 byte (max bit width = 32), 
-             * followed by the values encoded using RLE/Bit packed described above (with the given bit width).
-             */
-
-            int bitWidth = maxValue.GetBitWidth();
-            RleBitpackedHybridEncoder.Encode(s, data, bitWidth);
-
-        }
     }
 }
