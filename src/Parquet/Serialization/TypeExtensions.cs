@@ -67,6 +67,9 @@ namespace Parquet.Serialization {
                         DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
                         propertyName: propertyName)
                     : new DecimalDataField(name, ps.Precision, ps.Scale, propertyName: propertyName);
+            } else if(t == typeof(string)) {
+                bool? nullable = pi?.IsNullable();
+                r = new DataField(name, t, nullable, propertyName: propertyName);
             } else {
                 r = new DataField(name, t, propertyName: propertyName);
             }
