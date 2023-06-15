@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,24 +7,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
+using Parquet.Meta;
 using Parquet.Schema;
 using Parquet.Serialization.Dremel;
+using Type = System.Type;
 
 namespace Parquet.Serialization {
-
     /// <summary>
     /// High-level object serialisation.
     /// Comes as a rewrite of ParquetConvert/ClrBridge/MSILGenerator and supports nested types as well.
     /// </summary>
     public static class ParquetSerializer {
-
-        private static readonly Dictionary<Type, object> _typeToStriper = new();
-        private static readonly Dictionary<Type, object> _typeToAssembler = new();
+        private static readonly Dictionary<(Type, ParquetCompabilityOptions), object> _typeToStriper = new();
+        private static readonly ConcurrentDictionary<Type, Dictionary<ParquetSchema, object>> _typeToAssembler = new();
 
         private static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, Striper<T> striper,
             IEnumerable<T> objectInstances,
             CancellationToken cancellationToken) {
-
             using ParquetRowGroupWriter rg = writer.CreateRowGroup();
 
             foreach(FieldStriper<T> fs in striper.FieldStripers) {
@@ -51,17 +51,23 @@ namespace Parquet.Serialization {
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
-
             Striper<T> striper;
 
-            if(_typeToStriper.TryGetValue(typeof(T), out object? boxedStriper)) {
+            bool append = options != null && options.Append;
+            ParquetCompabilityOptions compabilityOptions = ParquetCompabilityOptions.Latest;
+
+            if(append && destination.Length != 0) {
+                using ParquetReader reader = await ParquetReader.CreateAsync(destination, leaveStreamOpen: true, cancellationToken: cancellationToken);
+                compabilityOptions = reader.Metadata?.GetCompabilityOptions() ?? ParquetCompabilityOptions.Latest;
+            }
+            
+            if(_typeToStriper.TryGetValue((typeof(T), compabilityOptions), out object? boxedStriper)) {
                 striper = (Striper<T>)boxedStriper;
             } else {
-                striper = new Striper<T>(typeof(T).GetParquetSchema(false));
-                _typeToStriper[typeof(T)] = striper;
+                striper = new Striper<T>(typeof(T).GetParquetSchema(false, compabilityOptions));
+                _typeToStriper[(typeof(T), compabilityOptions)] = striper;
             }
 
-            bool append = options != null && options.Append;
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
                 options?.ParquetOptions,
                 append, cancellationToken)) {
@@ -118,11 +124,12 @@ namespace Parquet.Serialization {
             ParquetOptions? options = null,
             CancellationToken cancellationToken = default)
             where T : new() {
-
-            Assembler<T> asm = GetAssembler<T>();
-
+            
             var result = new List<T>();
+            
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+            Assembler<T> asm = GetAssembler<T>(reader.Metadata);
+            
             await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, cancellationToken);
 
             return result;
@@ -141,12 +148,11 @@ namespace Parquet.Serialization {
             ParquetOptions? options = null,
             CancellationToken cancellationToken = default)
             where T : new() {
-
-            Assembler<T> asm = GetAssembler<T>();
-
             var result = new List<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+            Assembler<T> asm = GetAssembler<T>(reader.Metadata);
+
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
                 await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
             }
@@ -154,15 +160,43 @@ namespace Parquet.Serialization {
             return result;
         }
 
-        private static Assembler<T> GetAssembler<T>() where T : new() {
+        private static Assembler<T> GetAssembler<T>(FileMetaData? metadata) where T : new() {
+            if(metadata is null) {
+                return GetAssembler<T>();
+            }
+            
+            Dictionary<ParquetSchema, object> schemaAssemblersDict = _typeToAssembler.GetOrAdd(
+                typeof(T), 
+                static _ => new Dictionary<ParquetSchema, object>());
+            
+            ParquetSchema typeSchema = typeof(T).GetParquetSchema(true, metadata!.GetCompabilityOptions());
 
             Assembler<T> asm;
 
-            if(_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler)) {
+            if(schemaAssemblersDict.TryGetValue(typeSchema, out object? boxedAssembler)) {
                 asm = (Assembler<T>)boxedAssembler;
             } else {
-                asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
-                _typeToAssembler[typeof(T)] = asm;
+                asm = new Assembler<T>(typeSchema);
+                schemaAssemblersDict[typeSchema] = asm;
+            }
+            
+            return asm;
+        }
+
+        private static Assembler<T> GetAssembler<T>() where T : new() {
+            Assembler<T> asm;
+
+            Dictionary<ParquetSchema, object> schemaAssemblersDict = _typeToAssembler.GetOrAdd(
+                typeof(T), 
+                static _ => new Dictionary<ParquetSchema, object>());
+
+            ParquetSchema typeSchema = typeof(T).GetParquetSchema(true);
+
+            if(schemaAssemblersDict.TryGetValue(typeSchema, out object? boxedAssembler)) {
+                asm = (Assembler<T>)boxedAssembler;
+            } else {
+                asm = new Assembler<T>(typeSchema);
+                schemaAssemblersDict[typeSchema] = asm;
             }
 
             return asm;
@@ -172,7 +206,6 @@ namespace Parquet.Serialization {
             Assembler<T> asm,
             ICollection<T> result,
             CancellationToken cancellationToken = default) where T : new() {
-
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
             // add more empty class instances to the result
@@ -187,7 +220,9 @@ namespace Parquet.Serialization {
                 try {
                     fasm.Assemble(result.Skip(prevRowCount), dc);
                 } catch(Exception ex) {
-                    throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
+                    throw new InvalidOperationException(
+                        $"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']",
+                        ex);
                 }
             }
         }

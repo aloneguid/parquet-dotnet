@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Test.Xunit;
@@ -60,6 +61,48 @@ namespace Parquet.Test.Serialisation {
             IList<NullableRecord> data2 = await ParquetSerializer.DeserializeAsync<NullableRecord>(ms);
 
             Assert.Equivalent(data2, data);
+        }
+
+        [Theory]
+        [InlineData("legacy_primitives_collection_arrays.parquet")]
+        public async Task ParquetSerializer_ReadingLegacyPrimitivesCollectionArray(string parquetFile) {
+            IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(OpenTestFile(parquetFile));
+            
+            Assert.NotNull(data);
+            Assert.Equal(1, data.Count);
+
+            Primitives element = data[0];
+            Assert.Equivalent(element.Booleans, new[] {true, false});
+            Assert.Equivalent(element.Shorts, new short[] {1, 2});
+            Assert.Equivalent(element.UShorts, new ushort[] {1, 2});
+            Assert.Equivalent(element.Integers, new int[] {1, 2});
+            Assert.Equivalent(element.UIntegers, new uint[] {1, 2});
+            Assert.Equivalent(element.Longs, new long[] {1, 2});
+            Assert.Equivalent(element.ULongs, new ulong[] {1, 2});
+            Assert.Equivalent(element.Floats, new float[] {1.2f, 1.3f});
+            Assert.Equivalent(element.Doubles, new double[] {1.2, 1.3});
+            Assert.Equivalent(element.Decimals, new decimal[] {1.2m, 1.3m});
+            Assert.Equivalent(element.DateTimes, new DateTime[] {new DateTime(2023, 01, 01), new DateTime(2023, 02, 01, 16, 30, 05)});
+            Assert.Equivalent(element.TimeSpans, new TimeSpan[] { TimeSpan.Zero, TimeSpan.FromSeconds(5) });
+            Assert.Equivalent(element.Intervals, new[] { new Interval(0, 0, 0), new Interval(0, 1, 1) });
+            Assert.Equivalent(element.Strings, new[] { "Hello", "People" });
+        }
+        
+        class Primitives {
+            public List<bool>? Booleans { get; set; }
+            public List<short>? Shorts { get; set; }
+            public List<ushort>? UShorts { get; set; }
+            public List<int>? Integers { get; set; }
+            public List<uint>? UIntegers { get; set; }
+            public List<long>? Longs { get; set; }
+            public List<ulong>? ULongs { get; set; }
+            public List<float>? Floats { get; set; }
+            public List<double>? Doubles { get; set; }
+            public List<decimal>? Decimals { get; set; }
+            public List<DateTime>? DateTimes { get; set; }
+            public List<TimeSpan>? TimeSpans { get; set; }
+            public List<Interval>? Intervals { get; set; }
+            public List<string>? Strings { get; set; }
         }
 
         class Address {

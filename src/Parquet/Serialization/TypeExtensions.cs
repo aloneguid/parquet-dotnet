@@ -16,25 +16,25 @@ namespace Parquet.Serialization {
     /// Migrated from SchemaReflector to better fit into C# design strategy.
     /// </summary>
     public static class TypeExtensions {
-        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReflectedSchemas = new();
-        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReflectedLegacySchemas = new();
+        private static readonly ConcurrentDictionary<(Type, ParquetCompabilityOptions), ParquetSchema> _cachedReflectedSchemas = new();
 
         /// <summary>
         /// Reflects this type to get <see cref="ParquetSchema"/>
         /// </summary>
         /// <param name="t"></param>
-        /// <param name="forWriting">
+        /// <param name="forWriting"> 
         /// Set to true to get schema when deserialising into classes (writing to classes), otherwise false.
         /// The result will differ if for instance some properties are read-only and some write-only.
         /// </param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public static ParquetSchema GetParquetSchema(this Type t, bool forWriting) {
-            if(_cachedReflectedSchemas.TryGetValue(t, out ParquetSchema? schema))
+        public static ParquetSchema GetParquetSchema(this Type t, bool forWriting, ParquetCompabilityOptions options = default) {
+            if(_cachedReflectedSchemas.TryGetValue((t, options), out ParquetSchema? schema))
                 return schema;
 
-            schema = CreateSchema(t, forWriting, false);
+            schema = CreateSchema(t, forWriting, options);
 
-            _cachedReflectedSchemas[t] = schema;
+            _cachedReflectedSchemas[(t, options)] = schema;
             return schema;
         }
 
@@ -99,13 +99,13 @@ namespace Parquet.Serialization {
         private static MapField ConstructMapField(string name, string propertyName,
             Type tKey, Type tValue,
             bool forWriting,
-            bool makeArrays) {
+            ParquetCompabilityOptions options) {
 
             Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
             PropertyInfo piKey = kvpType.GetProperty("Key")!;
             PropertyInfo piValue = kvpType.GetProperty("Value")!;
 
-            var mf = new MapField(name, MakeField(piKey, forWriting, makeArrays)!, MakeField(piValue, forWriting, makeArrays)!);
+            var mf = new MapField(name, MakeField(piKey, forWriting, options)!, MakeField(piValue, forWriting, options)!);
             mf.ClrPropName = propertyName;
             return mf;
         }
@@ -113,12 +113,12 @@ namespace Parquet.Serialization {
         private static ListField ConstructListField(string name, string propertyName,
             Type elementType,
             bool forWriting,
-            bool makeArrays) {
+            ParquetCompabilityOptions options) {
 
-            return new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting, makeArrays)!);
+            return new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting, options)!);
         }
 
-        private static Field? MakeField(PropertyInfo pi, bool forWriting, bool makeArrays) {
+        private static Field? MakeField(PropertyInfo pi, bool forWriting, ParquetCompabilityOptions options) {
             if(ShouldIgnore(pi))
                 return null;
 
@@ -126,7 +126,7 @@ namespace Parquet.Serialization {
             string name = GetColumnName(pi);
             string propertyName = pi.Name;
 
-            Field r = MakeField(t, name, propertyName, pi, forWriting, makeArrays);
+            Field r = MakeField(t, name, propertyName, pi, forWriting, options);
             r.Order = GetPropertyOrder(pi);
             return r;
         }
@@ -139,30 +139,30 @@ namespace Parquet.Serialization {
         /// <param name="propertyName">Class property name</param>
         /// <param name="pi">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
         /// <param name="forWriting"></param>
-        /// <param name="makeArrays"></param>
+        /// <param name="options"></param>
         /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
         /// <exception cref="NotImplementedException"></exception>
         private static Field MakeField(Type t, string columnName, string propertyName,
             PropertyInfo? pi,
             bool forWriting,
-            bool makeArrays) {
+            ParquetCompabilityOptions options) {
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(makeArrays && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
+            if(options.IsMakeArraysSet() && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
                 bt = bti!;
             }
 
             if(SchemaEncoder.IsSupported(bt)) {
                 return ConstructDataField(columnName, propertyName, t, pi);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting, makeArrays);
+                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting, options);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
-                return ConstructListField(columnName, propertyName, elementType!, forWriting, makeArrays);
+                return ConstructListField(columnName, propertyName, elementType!, forWriting, options);
             } else if(t.IsClass || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
                 List<PropertyInfo> props = FindProperties(t, forWriting);
                 Field[] fields = props
-                    .Select(p => MakeField(p, forWriting, makeArrays))
+                    .Select(p => MakeField(p, forWriting, options))
                     .Where(f => f != null)
                     .Select(f => f!)
                     .OrderBy(f => f.Order)
@@ -177,13 +177,13 @@ namespace Parquet.Serialization {
             throw new NotImplementedException();
         }
 
-        private static ParquetSchema CreateSchema(Type t, bool forWriting, bool makeArrays) {
+        private static ParquetSchema CreateSchema(Type t, bool forWriting, ParquetCompabilityOptions options) {
 
             // get it all, including base class properties (may be a hierarchy)
 
             List<PropertyInfo> props = FindProperties(t, forWriting);
             List<Field> fields = props
-                .Select(p => MakeField(p, forWriting, makeArrays))
+                .Select(p => MakeField(p, forWriting, options))
                 .Where(f => f != null)
                 .Select(f => f!)
                 .OrderBy(f => f.Order)
