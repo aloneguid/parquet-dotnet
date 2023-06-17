@@ -11,7 +11,7 @@
 <# 
     var types = new[] { "bool?", "byte?", "sbyte?", "short?", "ushort?", "int?", "uint?", "long?", "ulong?", "BigInteger?", "float?", "double?", "decimal?", "DateTime?", "TimeSpan?", "Interval?", "string", "byte[]", "Guid?" }; 
 
-    var net6_types = new[] { "DateOnly?" };
+    var net6_types = new[] { "DateOnly?", "TimeOnly?" };
     string nn(string nt) => nt.EndsWith("?") ? nt.Substring(0, nt.Length - 1) : nt;
 #>
 namespace Parquet.Extensions {

@@ -77,6 +77,9 @@ namespace Parquet.Extensions {
             if(t == typeof(DateOnly?)) {
                 return CalculateNullCount((DateOnly?[])array, offset, count);
             }
+            if(t == typeof(TimeOnly?)) {
+                return CalculateNullCount((TimeOnly?[])array, offset, count);
+            }
 #endif            
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
@@ -262,6 +265,15 @@ namespace Parquet.Extensions {
             }
             return r;
         }
+        private static int CalculateNullCount(TimeOnly?[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
 #endif
     #endregion
 
@@ -422,6 +434,13 @@ namespace Parquet.Extensions {
                 PackNullsTypeFast((DateOnly?[])array,
                     offset, count,
                     (DateOnly[])packedData,
+                    dest, fillerValue);
+                return;
+            }
+            if(t == typeof(TimeOnly?)) {
+                PackNullsTypeFast((TimeOnly?[])array,
+                    offset, count,
+                    (TimeOnly[])packedData,
                     dest, fillerValue);
                 return;
             }
@@ -810,6 +829,25 @@ namespace Parquet.Extensions {
             }
         }
 
+        private static void PackNullsTypeFast(TimeOnly?[] array,
+            int offset, int count,
+            TimeOnly[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                TimeOnly? value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (TimeOnly)value;
+                }
+            }
+        }
+
 #endif
     #endregion
 
@@ -943,6 +981,12 @@ namespace Parquet.Extensions {
             UnpackNullsTypeFast((DateOnly[])array,
                 flags, fillFlag,
                 (DateOnly?[])result);
+            return;
+        }
+        if(t == typeof(TimeOnly)) {
+            UnpackNullsTypeFast((TimeOnly[])array,
+                flags, fillFlag,
+                (TimeOnly?[])result);
             return;
         }
 #endif            
@@ -1231,6 +1275,20 @@ namespace Parquet.Extensions {
         }
     }
 
+    private static void UnpackNullsTypeFast(TimeOnly[] array,
+        Span<int> flags, int fillFlag,
+        TimeOnly?[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
 #endif
     #endregion
 
@@ -1342,6 +1400,11 @@ namespace Parquet.Extensions {
         if(t == typeof(DateOnly)) {
             ExplodeTypeFast((DateOnly[])dictionary,
                 indexes, (DateOnly[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(TimeOnly)) {
+            ExplodeTypeFast((TimeOnly[])dictionary,
+                indexes, (TimeOnly[])result, resultOffset, resultCount);
             return;
         }
 #endif            
@@ -1618,6 +1681,20 @@ namespace Parquet.Extensions {
     private static void ExplodeTypeFast(DateOnly[] dictionary,
         Span<int> indexes,
         DateOnly[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+    private static void ExplodeTypeFast(TimeOnly[] dictionary,
+        Span<int> indexes,
+        TimeOnly[] result, int resultOffset, int resultCount) {
 
         for(int i = 0; i < resultCount; i++) {
             int index = indexes[i];

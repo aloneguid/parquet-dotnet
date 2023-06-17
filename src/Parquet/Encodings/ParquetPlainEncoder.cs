@@ -107,6 +107,11 @@ namespace Parquet.Encodings {
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
+            } else if(t == typeof(TimeOnly[])) {
+                Span<TimeOnly> span = ((TimeOnly[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null)
+                    FillStats(span, stats);
 #endif
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
@@ -186,6 +191,9 @@ namespace Parquet.Encodings {
             } else if(t == typeof(DateOnly[])) {
                 Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
+            } else if(t == typeof(TimeOnly[])) {
+                Span<TimeOnly> span = ((TimeOnly[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
 #endif
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
@@ -260,6 +268,8 @@ namespace Parquet.Encodings {
 #if NET6_0_OR_GREATER
             else if(t == typeof(DateOnly))
                 return TryEncode((DateOnly)value, tse, out result);
+            else if(t == typeof(TimeOnly))
+                return TryEncode((TimeOnly)value, tse, out result);
 #endif
             else if(t == typeof(TimeSpan))
                 return TryEncode((TimeSpan)value, tse, out result);
@@ -367,6 +377,21 @@ namespace Parquet.Encodings {
             int days = value.ToUnixDays();
             result = BitConverter.GetBytes(days);
             return true;
+        }
+
+        private static bool TryEncode(TimeOnly value, SchemaElement tse, out byte[] result) {
+            switch(tse.Type) {
+                case TType.INT32:
+                    int ms = (int)(value.Ticks / TimeSpan.TicksPerMillisecond);
+                    result = BitConverter.GetBytes(ms);
+                    return true;
+                case TType.INT64:
+                    long micros = value.Ticks / 10;
+                    result = BitConverter.GetBytes(micros);
+                    return true;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any time types");
+            }
         }
 #endif
 
@@ -813,6 +838,24 @@ namespace Parquet.Encodings {
                 destination.Write(raw, 0, raw.Length);
             }
         }
+        public static void Encode(ReadOnlySpan<TimeOnly> data, Stream destination, SchemaElement tse) {
+            switch(tse.Type) {
+                case TType.INT32:
+                    foreach(TimeOnly element in data) {
+                        int ticks = (int)(element.Ticks / TimeSpan.TicksPerMillisecond);
+                        byte[] raw = BitConverter.GetBytes(ticks);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case TType.INT64:
+                    foreach(TimeOnly element in data) {
+                        long ticks = element.Ticks / 10;
+                        byte[] raw = BitConverter.GetBytes(ticks);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+            }
+        }
 #endif
 
         public static int Decode(Span<byte> source, Span<DateTime> data, SchemaElement tse) {
@@ -875,6 +918,33 @@ namespace Parquet.Encodings {
                 return intsRead;
             } finally {
                 ArrayPool<int>.Shared.Return(ints);
+            }
+        }
+
+        public static int Decode(Span<byte> source, Span<TimeOnly> data, SchemaElement tse) {
+            switch(tse.Type) {
+                case TType.INT32: {
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
+                        int iv = source.ReadInt32(srcPos);
+                        srcPos += sizeof(int);
+                        data[i++] = new TimeOnly(iv * TimeSpan.TicksPerMillisecond);
+                    }
+                    return i;
+                }
+                case TType.INT64: {
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
+                        long lv = source.ReadInt64(srcPos);
+                        srcPos += sizeof(long);
+                        data[i++] = new TimeOnly(lv * 10);
+                    }
+                    return i;
+                }
+                default:
+                    throw new NotSupportedException();
             }
         }
 #endif
@@ -1161,6 +1231,11 @@ namespace Parquet.Encodings {
             stats.MaxValue = max;
         }
 
+        public static void FillStats(ReadOnlySpan<TimeOnly> data, DataColumnStatistics stats) {
+            data.MinMax(out TimeOnly min, out TimeOnly max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
 #endif
 
         public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {

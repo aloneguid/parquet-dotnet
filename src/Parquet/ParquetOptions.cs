@@ -22,6 +22,18 @@ namespace Parquet {
         /// as <see cref="DateTime"/> with missing time part.
         /// </summary>
         public bool UseDateOnlyTypeForDates { get; set; } = false;
+
+        /// <summary>
+        /// When set to true, parquet times with millisecond precision will be deserialized as <see cref="TimeOnly"/>, otherwise
+        /// as <see cref="TimeSpan"/> with missing time part.
+        /// </summary>
+        public bool UseTimeOnlyTypeForTimeMillis { get; set; } = false;
+
+        /// <summary>
+        /// When set to true, parquet times with microsecond precision will be deserialized as <see cref="TimeOnly"/>, otherwise
+        /// as <see cref="TimeSpan"/> with missing time part.
+        /// </summary>
+        public bool UseTimeOnlyTypeForTimeMicros { get; set; } = false;
 #endif
 
         /// <summary>
@@ -35,5 +47,6 @@ namespace Parquet {
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
+
     }
 }

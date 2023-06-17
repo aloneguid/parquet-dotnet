@@ -25,6 +25,7 @@ namespace Parquet.Encodings {
             typeof(DateTime),
 #if NET6_0_OR_GREATER
             typeof(DateOnly),
+            typeof(TimeOnly),
 #endif
             typeof(TimeSpan),
             typeof(Interval),
@@ -191,7 +192,11 @@ namespace Parquet.Encodings {
                     ConvertedType.DATE => typeof(DateTime),
 #endif
                     ConvertedType.DECIMAL => typeof(decimal),
+#if NET6_0_OR_GREATER
+                    ConvertedType.TIME_MILLIS => options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan),
+#else
                     ConvertedType.TIME_MILLIS => typeof(TimeSpan),
+#endif
                     ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
                     _ => typeof(int)
                 },
@@ -200,7 +205,11 @@ namespace Parquet.Encodings {
                 Type.INT64 when se.ConvertedType != null => se.ConvertedType switch {
                     ConvertedType.INT_64 => typeof(long),
                     ConvertedType.UINT_64 => typeof(ulong),
+#if NET6_0_OR_GREATER
+                    ConvertedType.TIME_MICROS => options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan),
+#else
                     ConvertedType.TIME_MICROS => typeof(TimeSpan),
+#endif
                     ConvertedType.TIMESTAMP_MICROS => typeof(DateTime),
                     ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
                     ConvertedType.DECIMAL => typeof(decimal),
@@ -445,10 +454,48 @@ namespace Parquet.Encodings {
                     tse.Type = Type.INT96;
                 }
 #if NET6_0_OR_GREATER
-            } else if(st == typeof(DateOnly)) {         // DateOnly
+            } else if(st == typeof(DateOnly)) {
+                // DateOnly
                 tse.Type = Type.INT32;
                 tse.LogicalType = new LogicalType { DATE = new DateType() };
                 tse.ConvertedType = ConvertedType.DATE;
+            } else if (st == typeof(TimeOnly)) {
+                // TimeOnly
+                if(field is TimeOnlyDataField dfTime) {
+                    switch(dfTime.TimeSpanFormat) {
+                        case TimeSpanFormat.MilliSeconds:
+                            tse.Type = Type.INT32;
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                                }
+                            };
+                            tse.ConvertedType = ConvertedType.TIME_MILLIS;
+                            break;
+                        case TimeSpanFormat.MicroSeconds:
+                            tse.Type = Type.INT64;
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MICROS = new MicroSeconds() }
+                                }
+                            };
+                            tse.ConvertedType = ConvertedType.TIME_MICROS;
+                            break;
+                        default:
+                            throw new NotImplementedException($"{dfTime.TimeSpanFormat} time format is not implemented");
+                    }
+                } else {
+                    tse.Type = Type.INT32;
+                    tse.LogicalType = new LogicalType {
+                        TIME = new TimeType() {
+                            IsAdjustedToUTC = true,
+                            Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                        }
+                    };
+                    tse.ConvertedType = ConvertedType.TIME_MILLIS;
+                }
 #endif
             } else if(st == typeof(TimeSpan)) {         // TimeSpan
                 if(field is TimeSpanDataField dfTime) {

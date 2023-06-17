@@ -217,6 +217,17 @@ namespace System {
                     max = i;
             }
         }
+        
+        public static void MinMax(this ReadOnlySpan<TimeOnly> span, out TimeOnly min, out TimeOnly max) {
+            min = span.IsEmpty ? default(TimeOnly) : span[0];
+            max = min;
+            foreach(TimeOnly i in span) {
+                if(i < min)
+                    min = i;
+                if(i > max)
+                    max = i;
+            }
+        }
 #endif
 
         public static void MinMax(this ReadOnlySpan<TimeSpan> span, out TimeSpan min, out TimeSpan max) {
