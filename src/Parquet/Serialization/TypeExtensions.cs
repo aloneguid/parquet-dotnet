@@ -60,6 +60,14 @@ namespace Parquet.Serialization {
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     propertyName: propertyName);
+#if NET6_0_OR_GREATER
+            } else if(t == typeof(TimeOnly)) {
+                r = new TimeOnlyDataField(name,
+                    pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
+                        ? TimeSpanFormat.MilliSeconds
+                        : TimeSpanFormat.MicroSeconds,
+                    propertyName: propertyName);
+#endif
             } else if(t == typeof(decimal)) {
                 ParquetDecimalAttribute? ps = pi?.GetCustomAttribute<ParquetDecimalAttribute>();
                 r = ps == null
