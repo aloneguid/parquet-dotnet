@@ -1,5 +1,6 @@
 ﻿using System;
 
+#if NET6_0_OR_GREATER
 namespace Parquet.Schema {
     /// <summary>
     /// Schema element for <see cref="TimeOnly"/> which allows to specify precision
@@ -24,3 +25,4 @@ namespace Parquet.Schema {
         }
     }
 }
+#endif
