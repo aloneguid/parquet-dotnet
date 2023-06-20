@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
@@ -17,6 +18,7 @@ namespace Parquet.File {
         private readonly SchemaElement _schemaElement;
         private readonly CompressionMethod _compressionMethod;
         private readonly CompressionLevel _compressionLevel;
+        private readonly Dictionary<string, string>? _keyValueMetadata;
         private readonly ParquetOptions _options;
         private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
 
@@ -26,12 +28,14 @@ namespace Parquet.File {
            SchemaElement schemaElement,
            CompressionMethod compressionMethod,
            ParquetOptions options,
-           CompressionLevel compressionLevel) {
+           CompressionLevel compressionLevel,
+           Dictionary<string, string>? keyValueMetadata) {
             _stream = stream;
             _footer = footer;
             _schemaElement = schemaElement;
             _compressionMethod = compressionMethod;
             _compressionLevel = compressionLevel;
+            _keyValueMetadata = keyValueMetadata;
             _options = options;
         }
 
@@ -41,7 +45,8 @@ namespace Parquet.File {
 
             // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
             ColumnChunk chunk = _footer.CreateColumnChunk(
-                _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues);
+                _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
+                _keyValueMetadata);
 
             ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
                 cancellationToken);

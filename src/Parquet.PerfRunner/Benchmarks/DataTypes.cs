@@ -10,6 +10,10 @@ namespace Parquet.PerfRunner.Benchmarks {
         private readonly ParquetSchema _nullableIntsSchema = new ParquetSchema(new DataField<int?>("i"));
         private readonly Parquet.Data.DataColumn _nullableInts;
 
+        private readonly ParquetSchema _nullableDecimalsSchema = new ParquetSchema(new DataField<decimal?>("i"));
+        private readonly Parquet.Data.DataColumn _nullableDecimals;
+
+
         //private DataColumn _randomStrings;
         //private DataColumn _repeatingStrings;
 
@@ -29,6 +33,13 @@ namespace Parquet.PerfRunner.Benchmarks {
                     .Range(0, DataSize)
                     .Select(i => i % 4 == 0 ? (int?)null : i)
                     .ToArray());
+
+            _nullableDecimals = new DataColumn(_nullableDecimalsSchema.DataFields[0],
+                Enumerable
+                    .Range(0, DataSize)
+                    .Select(i => i % 4 == 0 ? (decimal?)null : (decimal)i)
+                    .ToArray());
+
 
             //_randomStrings = new DataColumn(new DataField<string>("c"),
             //    Enumerable.Range(0, DataSize)
@@ -62,6 +73,10 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         public Task NullableInts() {
             return Run(_nullableInts);
+        }
+
+        public Task NullableDecimals() {
+            return Run(_nullableDecimals);
         }
 
         //public Task RandomStrings() {

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Parquet.Extensions;
 
 namespace Parquet.Encodings {
@@ -122,6 +123,7 @@ namespace Parquet.Encodings {
             s.Add((byte)value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteUnsignedVarInt(byte[] s, ref int consumed, int value) {
             while(value > 127) {
                 byte b = (byte)((value & 0x7F) | 0x80);

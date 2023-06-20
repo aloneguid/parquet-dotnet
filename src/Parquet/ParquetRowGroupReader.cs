@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -39,7 +40,7 @@ namespace Parquet {
         /// <summary>
         /// Exposes raw metadata about this row group
         /// </summary>
-        public RowGroup owGroup => _rowGroup;
+        public RowGroup RowGroup => _rowGroup;
 
         /// <summary>
         /// Gets the number of rows in this row group
@@ -47,22 +48,42 @@ namespace Parquet {
         public long RowCount => _rowGroup.NumRows;
 
         /// <summary>
-        /// Reads a column from this row group.
+        /// Reads a column from this row group. Unlike writing, columns can be read in any order.
         /// </summary>
-        /// <param name="field"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
         public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
+
+            ColumnChunk? columnChunk = GetMetadata(field);
+            if(columnChunk == null) {
+                throw new ParquetException($"'{field.Path}' does not exist in this file");
+            }
+            var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
+
+            return columnReader.ReadAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Gets raw column chunk metadata for this field
+        /// </summary>
+        public ColumnChunk? GetMetadata(DataField field) {
             if(field == null)
                 throw new ArgumentNullException(nameof(field));
 
             if(!_pathToChunk.TryGetValue(field.Path, out ColumnChunk? columnChunk)) {
-                throw new ParquetException($"'{field.Path}' does not exist in this file");
+                return null;
             }
 
-            var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
+            return columnChunk;
+        }
 
-            return columnReader.ReadAsync(cancellationToken);
+        /// <summary>
+        /// Get custom key-value metadata for a data field
+        /// </summary>
+        public Dictionary<string, string> GetCustomMetadata(DataField field) {
+            ColumnChunk? cc = GetMetadata(field);
+            if(cc?.MetaData?.KeyValueMetadata == null)
+                return new();
+
+            return cc.MetaData.KeyValueMetadata.ToDictionary(kv => kv.Key, kv => kv.Value!);
         }
 
         /// <summary>

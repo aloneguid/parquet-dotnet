@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Path = System.IO.Path;
 using System.Threading;
+using Parquet.Schema;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {
@@ -260,6 +261,14 @@ namespace Parquet.Test {
                 Assert.Equal(new DateTime(2021,12,23,12,44,50).AddTicks(11 * 10), col0[1]);
                 Assert.Equal(new DateTime(2020,12,23,13,45,51).AddTicks(12 * 10), col0[2]);
             }
+        }
+
+        [Fact]
+        public async Task Metadata_file() {
+            using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("geoparquet/example.parquet"));
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            Assert.True(reader.CustomMetadata.ContainsKey("geo"));
+            Assert.True(reader.CustomMetadata.ContainsKey("ARROW:schema"));
         }
         
         class ReadableNonSeekableStream : DelegatedStream {
