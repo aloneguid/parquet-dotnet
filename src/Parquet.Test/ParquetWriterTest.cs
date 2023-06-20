@@ -246,7 +246,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task CustomMetadata_can_write_and_read() {
+        public async Task CustomMetadata_file_can_write_and_read() {
             var ms = new MemoryStream();
             var id = new DataField<int>("id");
 
@@ -266,6 +266,33 @@ namespace Parquet.Test {
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
                 Assert.Equal("value1", reader.CustomMetadata["key1"]);
                 Assert.Equal("value2", reader.CustomMetadata["key2"]);
+            }
+        }
+
+        [Fact]
+        public async Task CustomMetadata_column_can_write_and_read() {
+            var ms = new MemoryStream();
+            var id = new DataField<int>("id");
+
+            //write
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }),
+                        new Dictionary<string, string> {
+                            ["key1"] = "value1",
+                            ["key2"] = "value2"
+                        });
+                }
+            }
+
+            //read back
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+                Dictionary<string, string> kv = rgr.GetCustomMetadata(id);
+                Assert.Equal(2, kv.Count);
+                Assert.Equal("value1", kv["key1"]);
+                Assert.Equal("value2", kv["key2"]);
             }
         }
 
