@@ -1,4 +1,4 @@
-﻿name: 'Full Workflow'
+﻿name: 'Release'
 
 on:
   workflow_dispatch:
