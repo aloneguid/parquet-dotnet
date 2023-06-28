@@ -59,7 +59,7 @@ jobs:
       run: |
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
-        "${{ env.VERSION }}" >> artifacts/version.txt
+        echo "${{ env.VERSION }}" >> artifacts/version.txt
         cp docs/release-history.md artifacts/
 
     - uses: actions/upload-artifact@v3
