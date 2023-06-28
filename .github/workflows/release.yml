@@ -20,7 +20,7 @@ jobs:
         run: ls -R
         working-directory: .
 
-      - name: 🔢 set version environment variable
+      - name: 🔢 prep environment
         run: |
           echo "VERSION=$(cat bin/version.txt)" >> "$GITHUB_ENV"
           grep -m 2 -B 1000 '^## ' bin/release-history.md | tail -n +3 | head -n -2 > release-notes.md
@@ -29,23 +29,13 @@ jobs:
       #- name: Do It!
       #  run: dotnet nuget push nuget/* --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
-
       # https://github.com/softprops/action-gh-release
-      #- name: 📦 create release
-      #  uses: softprops/action-gh-release@v1
-      #  if: github.ref == 'refs/heads/master'
-      #  with:
-      #    tag_name: ${{ env.VERSION }}
-      #    name: ${{ env.VERSION }}
-      #    files: |
-      #      bin/*.msi
-      #      bin/*.zip
-      #    body_path: bin/release-notes.txt
-
-      #- name: create gh release
-      #  uses: softprops/action-gh-release@v1
-      #  with:
-      #    tag_name: ${{ env.VERSION }}
-      #    name: ${{ env.VERSION }}
-      #    files: "src/Parquet/bin/Release/*.nupkg"
-      #    generate_release_notes: true
+      - name: 📦 create release
+        uses: softprops/action-gh-release@v1
+        if: github.ref == 'refs/heads/master'
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          files: |
+            bin/*.nupkg
+          body_path: release-notes.md
