@@ -26,8 +26,8 @@ jobs:
           grep -m 2 -B 1000 '^## ' bin/release-history.md | tail -n +3 | head -n -2 > release-notes.md
           cat release-notes.md
 
-      #- name: Do It!
-      #  run: dotnet nuget push nuget/* --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Do It!
+        run: dotnet nuget push bin/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       # https://github.com/softprops/action-gh-release
       - name: 📦 create release
