@@ -122,6 +122,23 @@ namespace Parquet.Test.Serialisation {
                 ), schema);
         }
 
+        class PrimitivesListPoco {
+            public List<int>? IntList { get; set; }
+
+            [ParquetSimpleRepeatable]
+            public List<int>? LegacyIntList { get; set; }
+        }
+
+        [Fact]
+        public void ListsOfPrimitives() {
+            ParquetSchema schema = typeof(PrimitivesListPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new ListField("IntList", new DataField<int>("element")),
+                new DataField<int[]>("LegacyIntList")),
+                schema);
+        }
+
 #pragma warning disable CS0618 // Type or member is obsolete
 
         class IgnoredPoco {

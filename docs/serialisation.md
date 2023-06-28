@@ -92,7 +92,32 @@ By default, `decimal` is serialized with precision (number of digits in a number
 public decimal With_40_20 { get; set; }
 ```
 
+### Legacy Repeatable (Legacy Arrays)
 
+One of the features of Parquet files is that they can contain simple repeatable fields, also known as arrays, that can store multiple values for a single column. However, this feature is not widely supported by most of the systems that process Parquet files, and it may cause errors or compatibility issues. An example of such a file can be found in test data folder, called `legacy_primitives_collection_arrays.parquet`. 
+
+If you want to read an array of primitive values, such as integers or booleans, from a parquet file created by another system, you might think that you can simply use a list property in your class, like this:
+
+```csharp
+class Primitives {
+        public List<bool>? Booleans { get; set; }
+}
+
+IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(input);
+```
+
+However, this will not work, because this library expects a list of complex objects, not a list of primitives. It will throw an exception when it encounters an array in the parquet file.
+
+To fix this problem, you need to use the `ParquetSimpleRepeatable` attribute on your list property. This tells the library that the list contains simple values that can be repeated as an array. For example:
+
+```csharp
+class Primitives {
+        [ParquetSimpleRepeatable]
+        public List<bool>? Booleans { get; set; }
+}
+```
+
+This will successfully deserialize the array of integers from the parquet file into your list property.
 
 ## Nested Types
 
