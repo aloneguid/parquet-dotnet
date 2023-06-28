@@ -451,6 +451,20 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(expected, actual);
         }
 
+        [Fact]
+        public async Task Deserialize_strings_adx() {
+            var expected = new RequiredStringRecord[] {
+                new() { String = "a", Nullable = "" },
+                new() { String = "b", Nullable = "y" },
+                new() { String = "c", Nullable = "z" },
+            };
+
+            await using Stream stream = OpenTestFile("required-strings-adx.parquet");
+            IList<RequiredStringRecord> actual = await ParquetSerializer.DeserializeAsync<RequiredStringRecord>(stream);
+
+            Assert.Equivalent(expected, actual);
+        }
+
         class RequiredStringRecord {
             public string String { get; set; } = string.Empty;
             public string? Nullable { get; set; }
