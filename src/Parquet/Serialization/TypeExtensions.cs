@@ -17,7 +17,6 @@ namespace Parquet.Serialization {
     /// </summary>
     public static class TypeExtensions {
         private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReflectedSchemas = new();
-        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReflectedLegacySchemas = new();
 
         /// <summary>
         /// Reflects this type to get <see cref="ParquetSchema"/>
@@ -32,7 +31,7 @@ namespace Parquet.Serialization {
             if(_cachedReflectedSchemas.TryGetValue(t, out ParquetSchema? schema))
                 return schema;
 
-            schema = CreateSchema(t, forWriting, false);
+            schema = CreateSchema(t, forWriting);
 
             _cachedReflectedSchemas[t] = schema;
             return schema;
@@ -97,6 +96,10 @@ namespace Parquet.Serialization {
                 pi.GetCustomAttribute<JsonIgnoreAttribute>() != null;
         }
 
+        private static bool IsLegacyRepeatable(PropertyInfo pi) {
+            return pi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
+        }
+
         private static int? GetPropertyOrder(PropertyInfo pi) {
 
 #if NETCOREAPP3_1
@@ -109,27 +112,25 @@ namespace Parquet.Serialization {
 
         private static MapField ConstructMapField(string name, string propertyName,
             Type tKey, Type tValue,
-            bool forWriting,
-            bool makeArrays) {
+            bool forWriting) {
 
             Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
             PropertyInfo piKey = kvpType.GetProperty("Key")!;
             PropertyInfo piValue = kvpType.GetProperty("Value")!;
 
-            var mf = new MapField(name, MakeField(piKey, forWriting, makeArrays)!, MakeField(piValue, forWriting, makeArrays)!);
+            var mf = new MapField(name, MakeField(piKey, forWriting)!, MakeField(piValue, forWriting)!);
             mf.ClrPropName = propertyName;
             return mf;
         }
 
         private static ListField ConstructListField(string name, string propertyName,
             Type elementType,
-            bool forWriting,
-            bool makeArrays) {
+            bool forWriting) {
 
-            return new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting, makeArrays)!);
+            return new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting)!);
         }
 
-        private static Field? MakeField(PropertyInfo pi, bool forWriting, bool makeArrays) {
+        private static Field? MakeField(PropertyInfo pi, bool forWriting) {
             if(ShouldIgnore(pi))
                 return null;
 
@@ -137,7 +138,7 @@ namespace Parquet.Serialization {
             string name = GetColumnName(pi);
             string propertyName = pi.Name;
 
-            Field r = MakeField(t, name, propertyName, pi, forWriting, makeArrays);
+            Field r = MakeField(t, name, propertyName, pi, forWriting);
             r.Order = GetPropertyOrder(pi);
             return r;
         }
@@ -150,30 +151,28 @@ namespace Parquet.Serialization {
         /// <param name="propertyName">Class property name</param>
         /// <param name="pi">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
         /// <param name="forWriting"></param>
-        /// <param name="makeArrays"></param>
         /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
         /// <exception cref="NotImplementedException"></exception>
         private static Field MakeField(Type t, string columnName, string propertyName,
             PropertyInfo? pi,
-            bool forWriting,
-            bool makeArrays) {
+            bool forWriting) {
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(makeArrays && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
+            if(pi != null && IsLegacyRepeatable(pi) && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
                 bt = bti!;
             }
 
             if(SchemaEncoder.IsSupported(bt)) {
                 return ConstructDataField(columnName, propertyName, t, pi);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting, makeArrays);
+                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
-                return ConstructListField(columnName, propertyName, elementType!, forWriting, makeArrays);
+                return ConstructListField(columnName, propertyName, elementType!, forWriting);
             } else if(t.IsClass || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
                 List<PropertyInfo> props = FindProperties(t, forWriting);
                 Field[] fields = props
-                    .Select(p => MakeField(p, forWriting, makeArrays))
+                    .Select(p => MakeField(p, forWriting))
                     .Where(f => f != null)
                     .Select(f => f!)
                     .OrderBy(f => f.Order)
@@ -188,13 +187,13 @@ namespace Parquet.Serialization {
             throw new NotImplementedException();
         }
 
-        private static ParquetSchema CreateSchema(Type t, bool forWriting, bool makeArrays) {
+        private static ParquetSchema CreateSchema(Type t, bool forWriting) {
 
             // get it all, including base class properties (may be a hierarchy)
 
             List<PropertyInfo> props = FindProperties(t, forWriting);
             List<Field> fields = props
-                .Select(p => MakeField(p, forWriting, makeArrays))
+                .Select(p => MakeField(p, forWriting))
                 .Where(f => f != null)
                 .Select(f => f!)
                 .OrderBy(f => f.Order)
