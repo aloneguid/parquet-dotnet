@@ -100,33 +100,6 @@ Note that you have to specify that you are opening `ParquetWriter` in **append**
 
 Please keep in mind that row groups are designed to hold a large amount of data (5'0000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
 
-### Custom Metadata
-
-To read and write custom file metadata, you can use `CustomMetadata` property on `ParquetFileReader` and `ParquetFileWriter`, i.e.
-
-```csharp
-var ms = new MemoryStream();
-var schema = new ParquetSchema(new DataField<int>("id"));
-
-//write
-using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-    writer.CustomMetadata = new Dictionary<string, string> {
-        ["key1"] = "value1",
-        ["key2"] = "value2"
-    };
-
-    using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-        await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new[] { 1, 2, 3, 4 }));
-    }
-}
-
-//read back
-using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-    Assert.Equal("value1", reader.CustomMetadata["key1"]);
-    Assert.Equal("value2", reader.CustomMetadata["key2"]);
-}
-```
-
 ### Complex Types
 
 To write complex types (arrays, lists, maps, structs) read [this guide](nested_types.md).

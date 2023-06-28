@@ -55,7 +55,20 @@ namespace Parquet {
         /// </summary>
         /// <param name="column"></param>
         /// <param name="cancellationToken"></param>
-        public async Task WriteColumnAsync(DataColumn column, CancellationToken cancellationToken = default) {
+        public Task WriteColumnAsync(DataColumn column, CancellationToken cancellationToken = default) {
+            return WriteColumnAsync(column, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the
+        /// file schema.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="customMetadata">If specified, adds custom column chunk metadata</param>
+        /// <param name="cancellationToken"></param>
+        public async Task WriteColumnAsync(DataColumn column,
+            Dictionary<string, string>? customMetadata,
+            CancellationToken cancellationToken = default) {
             if(column == null)
                 throw new ArgumentNullException(nameof(column));
 
@@ -75,7 +88,8 @@ namespace Parquet {
             var writer = new DataColumnWriter(_stream, _footer, tse,
                _compressionMethod,
                _formatOptions,
-               _compressionLevel);
+               _compressionLevel,
+               customMetadata);
 
             ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
             _owGroup.Columns.Add(chunk);

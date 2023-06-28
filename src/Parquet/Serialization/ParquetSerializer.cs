@@ -216,6 +216,11 @@ namespace Parquet.Serialization {
             }
 
             foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
+                if(fasm.Field.ClrType == typeof(string) && reader.Schema.DataFields.Any(f => f.Path.Equals(fasm.Field.Path) && f.IsNullable != fasm.Field.IsNullable)) {
+                    fasm.Field.IsNullable = !fasm.Field.IsNullable;
+                    fasm.Field.PropagateLevels(0, 0);
+                }
+
                 DataColumn dc = await rg.ReadColumnAsync(fasm.Field, cancellationToken);
                 try {
                     fasm.Assemble(result.Skip(prevRowCount), dc);

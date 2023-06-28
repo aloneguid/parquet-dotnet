@@ -256,7 +256,7 @@ namespace Parquet.Test.Serialisation {
             XAssert.JsonEquivalent(data, data2);
         }
 
-        class MovementHistoryCompressed  {
+        class MovementHistoryCompressed {
             public int? PersonId { get; set; }
 
             public List<int>? ParentIds { get; set; }
@@ -478,6 +478,39 @@ namespace Parquet.Test.Serialisation {
             using var ms = new MemoryStream();
             await Assert.ThrowsAsync<InvalidOperationException>(
                 () => ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = 0 }));
+        }
+
+        [Fact]
+        public async Task Deserialize_required_strings() {
+            var expected = new RequiredStringRecord[] {
+                new() { String = "a", Nullable = null },
+                new() { String = "b", Nullable = "y" },
+                new() { String = "c", Nullable = "z" },
+            };
+
+            await using Stream stream = OpenTestFile("required-strings.parquet");
+            IList<RequiredStringRecord> actual = await ParquetSerializer.DeserializeAsync<RequiredStringRecord>(stream);
+
+            Assert.Equivalent(expected, actual);
+        }
+
+        [Fact]
+        public async Task Deserialize_strings_adx() {
+            var expected = new RequiredStringRecord[] {
+                new() { String = "a", Nullable = "" },
+                new() { String = "b", Nullable = "y" },
+                new() { String = "c", Nullable = "z" },
+            };
+
+            await using Stream stream = OpenTestFile("required-strings-adx.parquet");
+            IList<RequiredStringRecord> actual = await ParquetSerializer.DeserializeAsync<RequiredStringRecord>(stream);
+
+            Assert.Equivalent(expected, actual);
+        }
+
+        class RequiredStringRecord {
+            public string String { get; set; } = string.Empty;
+            public string? Nullable { get; set; }
         }
     }
 }

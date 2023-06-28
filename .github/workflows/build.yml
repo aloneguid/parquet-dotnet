@@ -1,7 +1,7 @@
-name: 'Full Workflow'
+name: 'Build'
 
 env:
-  VERSION: 4.12.0
+  VERSION: 4.14.0
   ASM_VERSION: 4.0.0
 
 on:
@@ -55,29 +55,15 @@ jobs:
         cat src/Parquet/Globals.cs
         dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
-    - uses: actions/upload-artifact@v3
-      name: save
-      with:
-        name: nuget
-        path: |
-          src/Parquet/bin/Release/*.nupkg
+    - name: collect artifacts
+      run: |
+        mkdir artifacts
+        cp src/Parquet/bin/Release/*.nupkg artifacts/
+        echo "${{ env.VERSION }}" >> artifacts/version.txt
+        cp docs/release-history.md artifacts/
 
-  publish:
-    needs: [build, test]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    environment: nuget
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: nuget
-          path: nuget/
-      - name: Do It!
-        run: dotnet nuget push nuget/* --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-      - name: create gh release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.VERSION }}
-          name: ${{ env.VERSION }}
-          files: "src/Parquet/bin/Release/*.nupkg"
-          generate_release_notes: true
+    - uses: actions/upload-artifact@v3
+      name: upload artifacts
+      with:
+        name: bin
+        path: artifacts/*

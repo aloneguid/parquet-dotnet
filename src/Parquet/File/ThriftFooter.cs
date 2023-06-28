@@ -122,7 +122,8 @@ namespace Parquet.File {
         }
 
         public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
-            Parquet.Meta.Type columnType, FieldPath path, int valuesCount) {
+            Parquet.Meta.Type columnType, FieldPath path, int valuesCount,
+            Dictionary<string, string>? keyValueMetadata) {
             CompressionCodec codec = (CompressionCodec)(int)compression;
 
             var chunk = new ColumnChunk();
@@ -140,6 +141,11 @@ namespace Parquet.File {
             };
             chunk.MetaData!.PathInSchema = path.ToList();
             chunk.MetaData!.Statistics = new Statistics();
+            if(keyValueMetadata != null && keyValueMetadata.Count > 0) {
+                chunk.MetaData.KeyValueMetadata = keyValueMetadata
+                    .Select(kv => new KeyValue { Key = kv.Key, Value = kv.Value })
+                    .ToList();
+            }
 
             return chunk;
         }

@@ -190,8 +190,8 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(new ParquetSchema(
                 new DataField<int?>("Id"),
-                new MapField("Tags", 
-                    new DataField<string>("Key"),
+                new MapField("Tags",
+                    new DataField<string>("Key", false),
                     new DataField<int>("Value"))), schema);
         }
 
@@ -252,6 +252,15 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
+            
+#if NET6_0_OR_GREATER
+            public DateOnly ImpalaDateOnly { get; set; }
+
+            public TimeOnly DefaultTimeOnly { get; set; }
+
+            [ParquetMicroSecondsTime]
+            public TimeOnly MicroTimeOnly { get; set; }
+#endif
         }
 
         [Fact]
@@ -286,7 +295,32 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)s.DataFields[3]).TimeSpanFormat);
         }
 
+#if NET6_0_OR_GREATER
+        [Fact]
+        public void DateOnly_timestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
+            Assert.True(s.DataFields[4].GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, s.DataFields[4].SchemaType);
+            Assert.Equal(typeof(DateOnly), s.DataFields[4].ClrType);
+        }
+        
+        [Fact]
+        public void TimeOnly_default() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[5] is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)s.DataFields[5]).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void TimeOnly_micros() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[6] is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeOnlyDataField)s.DataFields[6]).TimeSpanFormat);
+        }
+#endif
 
         class DecimalPoco {
             public decimal Default { get; set; }

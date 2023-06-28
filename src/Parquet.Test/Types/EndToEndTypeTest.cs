@@ -55,7 +55,11 @@ namespace Parquet.Test.Types {
                // time test(loses precision slightly)
                ["time_micros"] = (new TimeSpanDataField("timeMicros", TimeSpanFormat.MicroSeconds), new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10)),
                ["time_millis"] = (new TimeSpanDataField("timeMillis", TimeSpanFormat.MilliSeconds), new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10000 * 10000)),
-
+#if NET6_0_OR_GREATER
+               ["timeonly_micros"] = (new TimeOnlyDataField("timeMicros", TimeSpanFormat.MicroSeconds), new TimeOnly(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10)),
+               ["timeonly_millis"] = (new TimeOnlyDataField("timeMillis", TimeSpanFormat.MilliSeconds), new TimeOnly(DateTime.UtcNow.TimeOfDay.Ticks / 10000 * 10000)),
+#endif
+               
                ["byte min value"] = (new DataField<byte>("byte"), byte.MinValue),
                ["byte max value"] = (new DataField<byte>("byte"), byte.MaxValue),
                ["signed byte min value"] = (new DataField<sbyte>("sbyte"), sbyte.MinValue),
@@ -121,6 +125,10 @@ namespace Parquet.Test.Types {
         [InlineData("interval")]
         [InlineData("time_micros")]
         [InlineData("time_millis")]
+#if NET6_0_OR_GREATER
+        [InlineData("timeonly_micros")]
+        [InlineData("timeonly_millis")]
+#endif
 
         [InlineData("byte min value")]
         [InlineData("byte max value")]

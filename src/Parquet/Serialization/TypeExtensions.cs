@@ -60,6 +60,14 @@ namespace Parquet.Serialization {
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     propertyName: propertyName);
+#if NET6_0_OR_GREATER
+            } else if(t == typeof(TimeOnly)) {
+                r = new TimeOnlyDataField(name,
+                    pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
+                        ? TimeSpanFormat.MilliSeconds
+                        : TimeSpanFormat.MicroSeconds,
+                    propertyName: propertyName);
+#endif
             } else if(t == typeof(decimal)) {
                 ParquetDecimalAttribute? ps = pi?.GetCustomAttribute<ParquetDecimalAttribute>();
                 r = ps == null
@@ -67,6 +75,9 @@ namespace Parquet.Serialization {
                         DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
                         propertyName: propertyName)
                     : new DecimalDataField(name, ps.Precision, ps.Scale, propertyName: propertyName);
+            } else if(t == typeof(string)) {
+                bool? nullable = pi?.IsNullable();
+                r = new DataField(name, t, nullable, propertyName: propertyName);
             } else {
                 r = new DataField(name, t, propertyName: propertyName);
             }

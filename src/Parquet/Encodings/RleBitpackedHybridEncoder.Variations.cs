@@ -1,10 +1,8 @@
-
 namespace Parquet.Encodings {
     using System;
 
     static partial class RleBitpackedHybridEncoder {
-    
-        private static void Encode0(byte[] s, ref int consumed, Span<int> data) {
+            private static void Encode0(byte[] s, ref int consumed, Span<int> data) {
 
             //chunk identical values and write
             int lastValue = 0;
@@ -28,8 +26,7 @@ namespace Parquet.Encodings {
                 WriteRle0(s, ref consumed, chunkCount, lastValue);
         }
 
-    
-        private static void Encode1(byte[] s, ref int consumed, Span<int> data) {
+            private static void Encode1(byte[] s, ref int consumed, Span<int> data) {
 
             //chunk identical values and write
             int lastValue = 0;
@@ -53,8 +50,7 @@ namespace Parquet.Encodings {
                 WriteRle1(s, ref consumed, chunkCount, lastValue);
         }
 
-    
-        private static void Encode2(byte[] s, ref int consumed, Span<int> data) {
+            private static void Encode2(byte[] s, ref int consumed, Span<int> data) {
 
             //chunk identical values and write
             int lastValue = 0;
@@ -78,8 +74,7 @@ namespace Parquet.Encodings {
                 WriteRle2(s, ref consumed, chunkCount, lastValue);
         }
 
-    
-        private static void Encode3(byte[] s, ref int consumed, Span<int> data) {
+            private static void Encode3(byte[] s, ref int consumed, Span<int> data) {
 
             //chunk identical values and write
             int lastValue = 0;
@@ -103,8 +98,7 @@ namespace Parquet.Encodings {
                 WriteRle3(s, ref consumed, chunkCount, lastValue);
         }
 
-    
-        private static void Encode4(byte[] s, ref int consumed, Span<int> data) {
+            private static void Encode4(byte[] s, ref int consumed, Span<int> data) {
 
             //chunk identical values and write
             int lastValue = 0;
@@ -128,6 +122,5 @@ namespace Parquet.Encodings {
                 WriteRle4(s, ref consumed, chunkCount, lastValue);
         }
 
-    
-    }
+        }
 }
