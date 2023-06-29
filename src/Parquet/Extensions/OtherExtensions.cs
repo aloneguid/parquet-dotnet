@@ -26,8 +26,7 @@ namespace Parquet {
         }
 
         public static long ToUnixMilliseconds(this DateTime dto) {
-            TimeSpan diff = dto - UnixEpoch;
-            return (long)diff.TotalMilliseconds;
+            return new DateTimeOffset(dto).ToUnixTimeMilliseconds();
         }
 
         public static DateTime AsUnixDaysInDateTime(this int unixDays) {
