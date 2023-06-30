@@ -41,6 +41,54 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(data2, data);
         }
 
+        class RecordWithNewField : Record {
+            public DateTime NewTimestamp { get; set; }
+            public string? NewEventName { get; set; }
+            public double NewMeterValue { get; set; } = 123;
+
+            public Guid NewExternalId { get; set; }
+        }
+
+        [Fact]
+        public async Task Atomics_With_New_Field_Fails_Serde_By_Default() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new Record {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i,
+                ExternalId = Guid.NewGuid()
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            await Assert.ThrowsAsync<ParquetException>(() => ParquetSerializer.DeserializeAsync<RecordWithNewField>(ms));
+        }
+
+        [Fact]
+        public async Task Atomics_With_New_Field_Serde_When_Option_Enabled() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new Record {
+                Timestamp = DateTime.UtcNow.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i,
+                ExternalId = Guid.NewGuid()
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<RecordWithNewField> data2 = await ParquetSerializer.DeserializeAsync<RecordWithNewField>(ms, options: new ParquetOptions { SkipDeserializingMissingColumns = true });
+
+            Assert.Equal(data.Count, data2.Count);
+            Assert.Equal(default, data2.First().NewTimestamp);
+            Assert.Null(data2.First().NewEventName);
+            Assert.Equal(123, data2.First().NewMeterValue);
+            Assert.Equal(default, data2.First().NewExternalId);
+        }
+
         class NullableRecord : Record {
             public int? ParentId { get; set; }
         }
