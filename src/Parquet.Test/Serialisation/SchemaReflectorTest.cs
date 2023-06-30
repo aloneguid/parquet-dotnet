@@ -208,7 +208,7 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(new ParquetSchema(
                 new DataField<int?>("Id"),
                 new MapField("Tags",
-                    new DataField<string>("Key", false),
+                    new DataField<string>("Key"),
                     new DataField<int>("Value"))), schema);
         }
 
@@ -364,5 +364,22 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(20, ((DecimalDataField)s.DataFields[1]).Scale);
         }
 
+
+        public class StringPoco {
+            [ParquetRequired]
+            public string Id { get; set; }
+
+            public string Name { get; set; }
+            public string Location { get; set; }
+        }
+
+        [Fact]
+        public void Strings_OptionalAndRequired() {
+            ParquetSchema s = typeof(StringPoco).GetParquetSchema(true);
+
+            Assert.False(s.DataFields[0].IsNullable);
+            Assert.True(s.DataFields[1].IsNullable);
+            Assert.True(s.DataFields[2].IsNullable);
+        }
     }
 }

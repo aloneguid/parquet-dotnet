@@ -183,9 +183,11 @@ namespace Parquet.Serialization {
             }
 
             foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
-                if(fasm.Field.ClrType == typeof(string) && reader.Schema.DataFields.Any(f => f.Path.Equals(fasm.Field.Path) && f.IsNullable != fasm.Field.IsNullable)) {
-                    fasm.Field.IsNullable = !fasm.Field.IsNullable;
-                    fasm.Field.PropagateLevels(0, 0);
+
+                // validate reflected vs actual schema field
+                DataField? actual = reader.Schema.DataFields.FirstOrDefault(f => f.Path.Equals(fasm.Field.Path));
+                if(actual != null && !actual.IsArray && !fasm.Field.Equals(actual)) {
+                    throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actual}'");
                 }
 
                 DataColumn dc = await rg.ReadColumnAsync(fasm.Field, cancellationToken);

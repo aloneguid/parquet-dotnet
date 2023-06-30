@@ -48,7 +48,11 @@ namespace Parquet.Schema {
             _fields = fields;
 
             //set levels now, after schema is constructed
-            foreach(Field field in fields) {
+            PropagateLevels();
+        }
+
+        internal void PropagateLevels() {
+            foreach(Field field in _fields) {
                 field.PropagateLevels(0, 0);
             }
         }

@@ -283,7 +283,7 @@ namespace Parquet.Serialization.Dremel {
                 .Lambda<Func<DataField, IEnumerable<TClass>, ShreddedColumn>>(block, _dfParam, _classesParam)
                 .Compile();
 
-            return new FieldStriper<TClass>(_df, lambda, block, iteration);
+            return new FieldStriper<TClass>(_schema, _df, lambda, block, iteration);
         }
     }
 }

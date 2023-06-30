@@ -47,38 +47,38 @@ namespace Parquet.Serialization {
 
         private static Field ConstructDataField(string name, string propertyName, Type t, PropertyInfo? pi) {
             Field r;
+            bool? isNullable = pi == null
+                ? null
+                : IsRequired(pi) ? false : null;
 
             if(t == typeof(DateTime)) {
                 bool isTimestamp = pi?.GetCustomAttribute<ParquetTimestampAttribute>() != null;
                 r = new DateTimeDataField(name,
                     isTimestamp ? DateTimeFormat.DateAndTime : DateTimeFormat.Impala,
-                    propertyName: propertyName);
+                    isNullable, null, propertyName);
             } else if(t == typeof(TimeSpan)) {
                 r = new TimeSpanDataField(name,
                     pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
-                    propertyName: propertyName);
+                    isNullable, null, propertyName);
 #if NET6_0_OR_GREATER
             } else if(t == typeof(TimeOnly)) {
                 r = new TimeOnlyDataField(name,
                     pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
-                    propertyName: propertyName);
+                    isNullable, null, propertyName);
 #endif
             } else if(t == typeof(decimal)) {
                 ParquetDecimalAttribute? ps = pi?.GetCustomAttribute<ParquetDecimalAttribute>();
                 r = ps == null
                     ? new DecimalDataField(name,
                         DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
-                        propertyName: propertyName)
-                    : new DecimalDataField(name, ps.Precision, ps.Scale, propertyName: propertyName);
-            } else if(t == typeof(string)) {
-                bool? nullable = pi?.IsNullable();
-                r = new DataField(name, t, nullable, propertyName: propertyName);
+                        isNullable: isNullable, propertyName: propertyName)
+                    : new DecimalDataField(name, ps.Precision, ps.Scale, isNullable: isNullable, propertyName: propertyName);
             } else {
-                r = new DataField(name, t, propertyName: propertyName);
+                r = new DataField(name, t, isNullable, null, propertyName);
             }
 
             return r;
@@ -98,6 +98,10 @@ namespace Parquet.Serialization {
 
         private static bool IsLegacyRepeatable(PropertyInfo pi) {
             return pi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
+        }
+
+        private static bool IsRequired(PropertyInfo pi) {
+            return pi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
         }
 
         private static int? GetPropertyOrder(PropertyInfo pi) {

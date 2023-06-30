@@ -2,14 +2,17 @@
 using Parquet.Schema;
 
 namespace Parquet.Serialization.Dremel {
-    class FieldWorker<TClass> {
+    abstract class FieldWorker<TClass> {
+        public ParquetSchema Schema { get; }
+
         public DataField Field { get; }
 
         public Expression Expression { get; }
 
         public Expression IterationExpression { get; }
 
-        public FieldWorker(DataField field, Expression expression, Expression iterationExpression) {
+        protected FieldWorker(ParquetSchema schema, DataField field, Expression expression, Expression iterationExpression) {
+            Schema = schema;
             Field = field;
             Expression = expression;
             IterationExpression = iterationExpression;

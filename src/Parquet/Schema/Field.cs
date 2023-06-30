@@ -86,7 +86,7 @@ namespace Parquet.Schema {
 
         /// <summary>
         /// Called by schema when field hierarchy is constructed, so that fields can calculate levels as this is
-        /// done in reverse order of construction and needs to be done after data is ready
+        /// done in reverse order of construction and needs to be done after schema data is ready
         /// </summary>
         internal abstract void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel);
 

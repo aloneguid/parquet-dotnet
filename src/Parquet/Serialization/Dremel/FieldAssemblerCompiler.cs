@@ -397,7 +397,7 @@ namespace Parquet.Serialization.Dremel {
                 iteration.Loop(classesParam, typeof(TClass), _classElementVar)
                 );
 
-            return new FieldAssembler<TClass>(_df,
+            return new FieldAssembler<TClass>(_schema, _df,
                 Expression.Lambda<Action<IEnumerable<TClass>, DataColumn>>(block, classesParam, _dcParam).Compile(),
                 block, iteration);
                 
