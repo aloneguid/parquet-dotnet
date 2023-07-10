@@ -1,4 +1,6 @@
 ﻿using System;
+using Parquet.Meta;
+using Type = System.Type;
 
 namespace Parquet.Schema {
     /// <summary>
@@ -50,23 +52,6 @@ namespace Parquet.Schema {
         /// Creates a new instance of <see cref="ListField"/>
         /// </summary>
         /// <param name="name">Field name</param>
-        /// <param name="dataType">Native Parquet type</param>
-        /// <param name="hasNulls">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
-        /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
-        /// <param name="containerName">Container name</param>
-        /// <param name="elementName">Element name</param>
-        [Obsolete(Globals.DataTypeEnumObsolete)]
-        public ListField(string name, DataType dataType, bool hasNulls = true, string? propertyName = null, string containerName = "list", string? elementName = null) : this(name) {
-            Item = new DataField(elementName ?? name, dataType, hasNulls, false, propertyName ?? name);
-            _itemAssigned = true;
-            ContainerName = containerName;
-            PathPrefix = null;
-        }
-
-        /// <summary>
-        /// Creates a new instance of <see cref="ListField"/>
-        /// </summary>
-        /// <param name="name">Field name</param>
         /// <param name="itemDataType">Type of the item in the list</param>
         /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
         /// <param name="containerName">Container name</param>
@@ -92,20 +77,31 @@ namespace Parquet.Schema {
 
         internal override Field[] Children => new Field[] { Item };
 
-        internal Thrift.SchemaElement? GroupSchemaElement { get; set; } = null;
+        internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
 
-            // both get
             MaxDefinitionLevel = parentDefinitionLevel;
-            MaxRepetitionLevel = parentRepetitionLevel + 1; // because it's repeated ;)
+            MaxRepetitionLevel = parentRepetitionLevel;
 
-            if(IsNullable) {
-                MaxDefinitionLevel++;
-            }
+            if(SchemaElement != null) {
+                // building from file
+                if(IsNullable)
+                    MaxDefinitionLevel += 1;
 
-            if(GroupSchemaElement == null || GroupSchemaElement.Repetition_type != Thrift.FieldRepetitionType.REQUIRED) {
-                MaxDefinitionLevel++;
+                if(GroupSchemaElement != null) {
+                    if(GroupSchemaElement.RepetitionType != FieldRepetitionType.REQUIRED)
+                        MaxDefinitionLevel += 1;
+
+                    MaxRepetitionLevel += 1;
+                }
+            } else {
+                // probably building manually
+                if(IsNullable)
+                    MaxDefinitionLevel += 1;
+
+                MaxDefinitionLevel += 1;    // assuming optional group
+                MaxRepetitionLevel += 1;    // assuming non-legacy lists, which have repeated group
             }
 
             //push to child item
@@ -123,6 +119,8 @@ namespace Parquet.Schema {
             Item = field ?? throw new ArgumentNullException(nameof(field));
             _itemAssigned = true;
         }
+
+        internal override bool IsAtomic => base.IsAtomic || Item.IsAtomic;
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Parquet.Meta;
 
 namespace Parquet.Schema {
 
@@ -48,12 +49,12 @@ namespace Parquet.Schema {
         /// <summary>
         /// Max repetition level
         /// </summary>
-        public int MaxRepetitionLevel { get; internal set; }
+        public int MaxRepetitionLevel { get; protected set; }
 
         /// <summary>
         /// Max definition level
         /// </summary>
-        public int MaxDefinitionLevel { get; internal set; }
+        public int MaxDefinitionLevel { get; protected set; }
 
         /// <summary>
         /// Used internally for serialisation
@@ -61,12 +62,14 @@ namespace Parquet.Schema {
         internal string? ClrPropName { get; set; }
 
         /// <summary>
-        /// Low-level thrift schema element corresponding to this high-level schema element.
+        /// Low-level schema element corresponding to this high-level schema element.
         /// Only set when reading files.
         /// </summary>
-        public Thrift.SchemaElement? ThriftSchemaElement { get; internal set; }
+        public SchemaElement? SchemaElement { get; internal set; }
 
         internal virtual FieldPath? PathPrefix { set { } }
+
+        internal int? Order { get; set; }
 
         /// <summary>
         /// Constructs a field with only requiremd parameters
@@ -83,24 +86,9 @@ namespace Parquet.Schema {
 
         /// <summary>
         /// Called by schema when field hierarchy is constructed, so that fields can calculate levels as this is
-        /// done in reverse order of construction and needs to be done after data is ready
+        /// done in reverse order of construction and needs to be done after schema data is ready
         /// </summary>
         internal abstract void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel);
-
-        internal int[] GenerateRepetitions(int count) {
-            int[] rl = new int[count];
-
-            if(count > 0) {
-                rl[0] = 0;
-            }
-
-            int mrl = MaxRepetitionLevel;
-            for(int i = 1; i < count; i++) {
-                rl[i] = mrl;
-            }
-
-            return rl;
-        }
 
         internal virtual void Assign(Field field) {
             //only used by some schema fields internally to help construct a field hierarchy
@@ -121,7 +109,9 @@ namespace Parquet.Schema {
             }
         }
 
-        internal bool Equals(Thrift.SchemaElement tse) {
+        internal virtual bool IsAtomic => false;
+
+        internal bool Equals(SchemaElement tse) {
             if(ReferenceEquals(tse, null))
                 return false;
 

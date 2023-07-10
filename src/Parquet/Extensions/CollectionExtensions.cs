@@ -49,7 +49,7 @@ namespace Parquet {
                 if(count != size)
                     continue;
 
-                yield return bucket.Select(x => x);
+                yield return bucket.Select(x => x); 
 
                 bucket = null;
                 count = 0;

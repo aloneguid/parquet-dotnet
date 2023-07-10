@@ -1,4 +1,4 @@
-﻿// This file is generated with T4
+// This file is generated with T4
 // https://learn.microsoft.com/en-us/visualstudio/modeling/text-template-control-blocks?view=vs-2022
 // Because of this, performance is truly great!
 // Hint: prefer Rider to edit .tt as it support syntax highlighting
@@ -70,7 +70,17 @@ namespace Parquet.Extensions {
             if(t == typeof(byte[])) {
                 return CalculateNullCount((byte[][])array, offset, count);
             }
-            
+            if(t == typeof(Guid?)) {
+                return CalculateNullCount((Guid?[])array, offset, count);
+            }
+#if NET6_0_OR_GREATER
+            if(t == typeof(DateOnly?)) {
+                return CalculateNullCount((DateOnly?[])array, offset, count);
+            }
+            if(t == typeof(TimeOnly?)) {
+                return CalculateNullCount((TimeOnly?[])array, offset, count);
+            }
+#endif            
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
 
@@ -236,6 +246,35 @@ namespace Parquet.Extensions {
             }
             return r;
         }
+        private static int CalculateNullCount(Guid?[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
+#if NET6_0_OR_GREATER
+        private static int CalculateNullCount(DateOnly?[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
+        private static int CalculateNullCount(TimeOnly?[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
+#endif
     #endregion
 
     #region [ Null Packing ]
@@ -382,7 +421,30 @@ namespace Parquet.Extensions {
                     dest, fillerValue);
                 return;
             }
-            
+            if(t == typeof(Guid?)) {
+                PackNullsTypeFast((Guid?[])array,
+                    offset, count,
+                    (Guid[])packedData,
+                    dest, fillerValue);
+                return;
+            }
+ 
+#if NET6_0_OR_GREATER
+            if(t == typeof(DateOnly?)) {
+                PackNullsTypeFast((DateOnly?[])array,
+                    offset, count,
+                    (DateOnly[])packedData,
+                    dest, fillerValue);
+                return;
+            }
+            if(t == typeof(TimeOnly?)) {
+                PackNullsTypeFast((TimeOnly?[])array,
+                    offset, count,
+                    (TimeOnly[])packedData,
+                    dest, fillerValue);
+                return;
+            }
+#endif
             throw new NotSupportedException($"cannot pack type {t}");
         }
 
@@ -728,7 +790,65 @@ namespace Parquet.Extensions {
             }
         }
 
+        private static void PackNullsTypeFast(Guid?[] array,
+            int offset, int count,
+            Guid[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
 
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                Guid? value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (Guid)value;
+                }
+            }
+        }
+
+#if NET6_0_OR_GREATER
+        private static void PackNullsTypeFast(DateOnly?[] array,
+            int offset, int count,
+            DateOnly[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                DateOnly? value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (DateOnly)value;
+                }
+            }
+        }
+
+        private static void PackNullsTypeFast(TimeOnly?[] array,
+            int offset, int count,
+            TimeOnly[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                TimeOnly? value = array[i];
+
+                if(value == null) {
+                    dest[y] = 0;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (TimeOnly)value;
+                }
+            }
+        }
+
+#endif
     #endregion
 
     #region [ Null Unpacking ]
@@ -850,7 +970,26 @@ namespace Parquet.Extensions {
                 (byte[][])result);
             return;
         }
-            
+        if(t == typeof(Guid)) {
+            UnpackNullsTypeFast((Guid[])array,
+                flags, fillFlag,
+                (Guid?[])result);
+            return;
+        }
+#if NET6_0_OR_GREATER
+        if(t == typeof(DateOnly)) {
+            UnpackNullsTypeFast((DateOnly[])array,
+                flags, fillFlag,
+                (DateOnly?[])result);
+            return;
+        }
+        if(t == typeof(TimeOnly)) {
+            UnpackNullsTypeFast((TimeOnly[])array,
+                flags, fillFlag,
+                (TimeOnly?[])result);
+            return;
+        }
+#endif            
         throw new NotSupportedException($"cannot pack type {t}");
 
     }
@@ -1107,7 +1246,50 @@ namespace Parquet.Extensions {
         }
     }
 
+    private static void UnpackNullsTypeFast(Guid[] array,
+        Span<int> flags, int fillFlag,
+        Guid?[] result) {
 
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
+#if NET6_0_OR_GREATER
+    private static void UnpackNullsTypeFast(DateOnly[] array,
+        Span<int> flags, int fillFlag,
+        DateOnly?[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
+    private static void UnpackNullsTypeFast(TimeOnly[] array,
+        Span<int> flags, int fillFlag,
+        TimeOnly?[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
+#endif
     #endregion
 
     #region [ Dictionary Explosion ]
@@ -1209,7 +1391,23 @@ namespace Parquet.Extensions {
                 indexes, (byte[][])result, resultOffset, resultCount);
             return;
         }
-            
+        if(t == typeof(Guid)) {
+            ExplodeTypeFast((Guid[])dictionary,
+                indexes, (Guid[])result, resultOffset, resultCount);
+            return;
+        }
+#if NET6_0_OR_GREATER
+        if(t == typeof(DateOnly)) {
+            ExplodeTypeFast((DateOnly[])dictionary,
+                indexes, (DateOnly[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(TimeOnly)) {
+            ExplodeTypeFast((TimeOnly[])dictionary,
+                indexes, (TimeOnly[])result, resultOffset, resultCount);
+            return;
+        }
+#endif            
         throw new NotSupportedException($"cannot pack type {t}");
     }
 
@@ -1465,7 +1663,50 @@ namespace Parquet.Extensions {
         }
     }
 
+    private static void ExplodeTypeFast(Guid[] dictionary,
+        Span<int> indexes,
+        Guid[] result, int resultOffset, int resultCount) {
 
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+#if NET6_0_OR_GREATER
+    private static void ExplodeTypeFast(DateOnly[] dictionary,
+        Span<int> indexes,
+        DateOnly[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+    private static void ExplodeTypeFast(TimeOnly[] dictionary,
+        Span<int> indexes,
+        TimeOnly[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+#endif
     #endregion
 
     }

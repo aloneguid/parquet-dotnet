@@ -24,7 +24,7 @@ namespace Parquet.Schema {
         /// Initializes a new instance of the <see cref="ParquetSchema"/> class from schema elements.
         /// </summary>
         /// <param name="fields">The elements.</param>
-        public ParquetSchema(IReadOnlyCollection<Field> fields) : this(fields.ToList()) {
+        public ParquetSchema(IEnumerable<Field> fields) : this(fields.ToList()) {
             if(fields == null) {
                 throw new ArgumentNullException(nameof(fields));
             }
@@ -48,7 +48,11 @@ namespace Parquet.Schema {
             _fields = fields;
 
             //set levels now, after schema is constructed
-            foreach(Field field in fields) {
+            PropagateLevels();
+        }
+
+        internal void PropagateLevels() {
+            foreach(Field field in _fields) {
                 field.PropagateLevels(0, 0);
             }
         }
@@ -68,7 +72,7 @@ namespace Parquet.Schema {
         }
 
         /// <summary>
-        /// Gets a flat list of all data fields in this schema
+        /// Gets a flat list of all data fields in this schema. Traverses schema tree in order to do that.
         /// </summary>
         /// <returns></returns>
         public DataField[] GetDataFields() {
@@ -104,6 +108,11 @@ namespace Parquet.Schema {
 
             return result.ToArray();
         }
+
+        /// <summary>
+        /// Gets data fields in this schema, including from nested types. Equivalent to <see cref="GetDataFields"/>
+        /// </summary>
+        public DataField[] DataFields => GetDataFields();
 
         /// <summary>
         /// Indicates whether the current object is equal to another object of the same type.

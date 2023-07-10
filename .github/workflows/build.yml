@@ -1,0 +1,69 @@
+name: 'Build'
+
+env:
+  VERSION: 4.15.0
+  ASM_VERSION: 4.0.0
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - docs/**
+
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          3.1.x
+          6.0.x
+          7.0.x
+    - name: 'test on ${{ matrix.os }}'
+      run: dotnet test src/Parquet.sln -c release
+
+
+  build:
+
+    runs-on: 'ubuntu-latest'
+
+    steps:
+    - run: echo ${{ github.head_ref }}
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          3.1.x
+          6.0.x
+          7.0.x
+    - name: Build
+      run: |
+        envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
+        cat src/Parquet/Globals.cs
+        dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+
+    - name: collect artifacts
+      run: |
+        mkdir artifacts
+        cp src/Parquet/bin/Release/*.nupkg artifacts/
+        echo "${{ env.VERSION }}" >> artifacts/version.txt
+        cp docs/release-history.md artifacts/
+
+    - uses: actions/upload-artifact@v3
+      name: upload artifacts
+      with:
+        name: bin
+        path: artifacts/*

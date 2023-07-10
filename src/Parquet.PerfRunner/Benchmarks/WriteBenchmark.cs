@@ -13,13 +13,13 @@ namespace Parquet.PerfRunner.Benchmarks {
     [RPlotExporter]
     public class WriteBenchmark : BenchmarkBase {
 
-        //[Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
-        [Params(typeof(string))]
+        [Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
+        //[Params(typeof(string))]
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public Type DataType;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        private DataField? _f;
+        private ParquetSchema? _schema;
         private DataColumn? _c;
 
         private Column? _psc;
@@ -27,9 +27,9 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         [GlobalSetup]
         public Task SetupAsync() {
-            _f = new DataField("test", DataType!);
+            _schema = new ParquetSchema(new DataField("test", DataType!));
             _ar = CreateTestData(DataType);
-            _c = new DataColumn(_f, _ar);
+            _c = new DataColumn(_schema.DataFields[0], _ar);
 
             _psc = new Column(DataType!, "test");
 
@@ -39,7 +39,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         [Benchmark]
         public async Task ParquetNet() {
             using var ms = new MemoryStream();
-            using ParquetWriter pw = await ParquetWriter.CreateAsync(new ParquetSchema(_f!), ms);
+            using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms);
             using(ParquetRowGroupWriter rgw = pw.CreateRowGroup()) {
                 await rgw.WriteColumnAsync(_c!);
             }

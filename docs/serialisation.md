@@ -1,7 +1,5 @@
 # Class Serialisation
 
-> for legacy serialisation refer to [this doc](legacy_serialisation.md).
-
 Parquet library is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
 
 Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
@@ -45,12 +43,81 @@ In order to deserialise this file back to array of classes you would write the f
 ```csharp
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
+## Deserialize records by RowGroup
+
+If you have a large file and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.
+
+```csharp
+IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet", rowGroupIndex);
+```
+
 ## Customising Serialisation
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
 - [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name.
 - [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
+- [`JsonPropertyOrder`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertyorderattribute?view=net-6.0) - allows to reorder columns when writing to file (by default they are written in class definition order). Only root properties and struct (classes) properties can be ordered (it won't make sense to do the others).
+
+Where built-in JSON attributes are not sufficient, extra attributes are added.
+
+### Dates
+
+By default, dates (`DateTime`) are serialized as `INT96` number, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet, however older systems such as Impala and Hive are still actively using it to represent dates.
+
+Therefore, when this library sees `INT96` type, it will automatically treat it as a date for both serialization and deserialization.
+
+If you need to rather use a normal non-legacy date type, just annotate a property with `[ParquetTimestamp]`:
+
+```csharp
+[ParquetTimestamp]
+public DateTime TimestampDate { get; set; }
+```
+
+### Times
+
+By default, time (`TimeSpan`) is serialised with millisecond precision. but you can increase it by adding `[ParquetMicroSecondsTime]` attribute:
+
+```csharp
+[ParquetMicroSecondsTime]
+public TimeSpan MicroTime { get; set; }
+```
+
+### Decimals Numbers
+
+By default, `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute:
+
+```csharp
+[ParquetDecimal(40, 20)]
+public decimal With_40_20 { get; set; }
+```
+
+### Legacy Repeatable (Legacy Arrays)
+
+One of the features of Parquet files is that they can contain simple repeatable fields, also known as arrays, that can store multiple values for a single column. However, this feature is not widely supported by most of the systems that process Parquet files, and it may cause errors or compatibility issues. An example of such a file can be found in test data folder, called `legacy_primitives_collection_arrays.parquet`. 
+
+If you want to read an array of primitive values, such as integers or booleans, from a parquet file created by another system, you might think that you can simply use a list property in your class, like this:
+
+```csharp
+class Primitives {
+        public List<bool>? Booleans { get; set; }
+}
+
+IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(input);
+```
+
+However, this will not work, because this library expects a list of complex objects, not a list of primitives. It will throw an exception when it encounters an array in the parquet file.
+
+To fix this problem, you need to use the `ParquetSimpleRepeatable` attribute on your list property. This tells the library that the list contains simple values that can be repeated as an array. For example:
+
+```csharp
+class Primitives {
+        [ParquetSimpleRepeatable]
+        public List<bool>? Booleans { get; set; }
+}
+```
+
+This will successfully deserialize the array of integers from the parquet file into your list property.
 
 ## Nested Types
 
@@ -283,7 +350,7 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 
 | Type                                                         | Serialization | Deserialization |
 | ------------------------------------------------------------ | ------------- | --------------- |
-| [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ❌             | ❌               |
+| [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ✔️             | ❌               |
 | [Muti-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
 | [`IList<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ❌`**`           |
 | [`List<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ✔️               |
@@ -317,6 +384,16 @@ await ParquetSerializer.SerializeAsync(dataBatch3, ms, new ParquetSerializerOpti
 ```
 
 By following this pattern, you can easily append data to a Parquet file using `ParquetSerializer`.
+
+## Specifying Row Group Size
+
+Row groups are a logical division of data in a parquet file. They allow efficient filtering and scanning of data based on predicates. By default, all the class instances are serialized into a single row group, which is absolutely fine. If you need to set a custom row group size, you can specify it in `ParquetSerializerOptions` like so:
+
+```csharp
+await ParquetSerializer.SerializeAsync(data, stream, new ParquetSerializerOptions { RowGroupSize = 10_000_000 });
+```
+
+Note that small row groups make parquet files very inefficient in general, so you should use this parameter only when you are absolutely sure what you are doing. For example, if you have a very large dataset that needs to be split into smaller files for distributed processing, you might want to use a smaller row group size to avoid having too many rows in one file. However, this will also increase the file size and the metadata overhead, so you should balance the trade-offs carefully.
 
 ## FAQ
 

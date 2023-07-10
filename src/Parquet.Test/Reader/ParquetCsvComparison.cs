@@ -147,9 +147,14 @@ namespace Parquet.Test.Reader {
                 }
             }
 
+            if(columnNames == null)
+                throw new InvalidOperationException("no columns?");
+
+            var schema = new ParquetSchema(columnNames.Select(n => new DataField<string>(n)).ToList());
+
             //compose result
             return
-               columnNames!.Select((n, i) => new DataColumn(new DataField<string>(n), columns[i].ToArray()))
+               columnNames!.Select((n, i) => new DataColumn(schema.GetDataFields()[i], columns[i].ToArray()))
                .ToArray();
         }
 

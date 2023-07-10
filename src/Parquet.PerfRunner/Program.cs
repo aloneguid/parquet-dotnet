@@ -1,6 +1,7 @@
 ﻿// for performance tests only
 
 using BenchmarkDotNet.Running;
+using Parquet;
 using Parquet.PerfRunner.Benchmarks;
 
 if(args.Length == 1) {
@@ -13,6 +14,5 @@ if(args.Length == 1) {
             break;
     }
 } else {
-    //new VsParquetSharp().Main();
     await new DataTypes().NullableInts();
 }

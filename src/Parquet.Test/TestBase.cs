@@ -15,16 +15,6 @@ namespace Parquet.Test {
             return F.OpenRead("./data/" + name);
         }
 
-        [Obsolete]
-        protected async Task<T[]> ConvertSerialiseDeserialise<T>(IEnumerable<T> instances) where T : new() {
-            using var ms = new MemoryStream();
-            ParquetSchema s = await ParquetConvert.SerializeAsync<T>(instances, ms);
-
-            ms.Position = 0;
-
-            return await ParquetConvert.DeserializeAsync<T>(ms);
-        }
-
         protected async Task<Table> ReadTestFileAsTableAsync(string name) {
             using Stream s = OpenTestFile(name);
             return await Table.ReadAsync(s);
@@ -48,10 +38,10 @@ namespace Parquet.Test {
             }
         }
 
-        protected async Task<DataColumn?> WriteReadSingleColumn(DataField field, DataColumn dataColumn) {
+        protected async Task<DataColumn?> WriteReadSingleColumn(DataColumn dataColumn) {
             using var ms = new MemoryStream();
             // write with built-in extension method
-            await ms.WriteSingleRowGroupParquetFileAsync(new ParquetSchema(field), dataColumn);
+            await ms.WriteSingleRowGroupParquetFileAsync(new ParquetSchema(dataColumn.Field), dataColumn);
             ms.Position = 0;
 
             //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
@@ -62,7 +52,7 @@ namespace Parquet.Test {
                 return null;
             ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
-            return await rgReader.ReadColumnAsync(field);
+            return await rgReader.ReadColumnAsync(dataColumn.Field);
         }
 
         protected async Task<Tuple<DataColumn[], ParquetSchema>> WriteReadSingleRowGroup(
@@ -87,10 +77,16 @@ namespace Parquet.Test {
             //for sanity, use disconnected streams
             byte[] data;
 
+            var options = new ParquetOptions();
+#if !NETCOREAPP3_1
+            if(value is DateOnly)
+                options.UseDateOnlyTypeForDates = true;
+#endif
+
             using(var ms = new MemoryStream()) {
                 // write single value
 
-                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
+                using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms, options)) {
                     writer.CompressionMethod = compressionMethod;
 
                     using ParquetRowGroupWriter rg = writer.CreateRowGroup();
@@ -114,6 +110,17 @@ namespace Parquet.Test {
 
                 return column.Data.GetValue(0)!;
             }
+        }
+
+        protected async Task<List<DataColumn>> ReadColumns(Stream s) {
+            using ParquetReader reader = await ParquetReader.CreateAsync(s);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            var r = new List<DataColumn>();
+            foreach(DataField df in reader.Schema.DataFields) {
+                DataColumn dc = await rgr.ReadColumnAsync(df);
+                r.Add(dc);
+            }
+            return r;
         }
     }
 }

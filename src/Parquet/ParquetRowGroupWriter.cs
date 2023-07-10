@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
+using Parquet.Meta;
 using Parquet.Schema;
 using FieldPath = Parquet.Schema.FieldPath;
 
@@ -20,32 +21,29 @@ namespace Parquet {
     {
         private readonly ParquetSchema _schema;
         private readonly Stream _stream;
-        private readonly ThriftStream _thriftStream;
         private readonly ThriftFooter _footer;
         private readonly CompressionMethod _compressionMethod;
         private readonly CompressionLevel _compressionLevel;
         private readonly ParquetOptions _formatOptions;
-        private readonly Thrift.RowGroup _thriftRowGroup;
-        private readonly Thrift.SchemaElement[] _thschema;
+        private readonly RowGroup _owGroup;
+        private readonly SchemaElement[] _thschema;
         private int _colIdx;
 
         internal ParquetRowGroupWriter(ParquetSchema schema,
            Stream stream,
-           ThriftStream thriftStream,
            ThriftFooter footer,
            CompressionMethod compressionMethod,
            ParquetOptions formatOptions,
            CompressionLevel compressionLevel) {
             _schema = schema ?? throw new ArgumentNullException(nameof(schema));
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _thriftStream = thriftStream ?? throw new ArgumentNullException(nameof(thriftStream));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _compressionMethod = compressionMethod;
             _compressionLevel = compressionLevel;
             _formatOptions = formatOptions;
 
-            _thriftRowGroup = _footer.AddRowGroup();
-            _thriftRowGroup.Columns = new List<Thrift.ColumnChunk>();
+            _owGroup = _footer.AddRowGroup();
+            _owGroup.Columns = new List<ColumnChunk>();
             _thschema = _footer.GetWriteableSchema();
         }
 
@@ -57,16 +55,29 @@ namespace Parquet {
         /// </summary>
         /// <param name="column"></param>
         /// <param name="cancellationToken"></param>
-        public async Task WriteColumnAsync(DataColumn column, CancellationToken cancellationToken = default) {
+        public Task WriteColumnAsync(DataColumn column, CancellationToken cancellationToken = default) {
+            return WriteColumnAsync(column, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the
+        /// file schema.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="customMetadata">If specified, adds custom column chunk metadata</param>
+        /// <param name="cancellationToken"></param>
+        public async Task WriteColumnAsync(DataColumn column,
+            Dictionary<string, string>? customMetadata,
+            CancellationToken cancellationToken = default) {
             if(column == null)
                 throw new ArgumentNullException(nameof(column));
 
             if(RowCount == null) {
-                if(column.Count > 0 || column.Field.MaxRepetitionLevel == 0)
+                if(column.NumValues > 0 || column.Field.MaxRepetitionLevel == 0)
                     RowCount = column.CalculateRowCount();
             }
 
-            Thrift.SchemaElement tse = _thschema[_colIdx];
+            SchemaElement tse = _thschema[_colIdx];
             if(!column.Field.Equals(tse)) {
                 throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{column.Field.Name}'", nameof(column));
             }
@@ -74,13 +85,14 @@ namespace Parquet {
 
             FieldPath path = _footer.GetPath(tse);
 
-            var writer = new DataColumnWriter(_stream, _thriftStream, _footer, tse,
+            var writer = new DataColumnWriter(_stream, _footer, tse,
                _compressionMethod,
                _formatOptions,
-               _compressionLevel);
+               _compressionLevel,
+               customMetadata);
 
-            Thrift.ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
-            _thriftRowGroup.Columns.Add(chunk);
+            ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
+            _owGroup.Columns.Add(chunk);
 
         }
 
@@ -94,11 +106,11 @@ namespace Parquet {
             //todo: check if all columns are present
 
             //row count is know only after at least one column is written
-            _thriftRowGroup.Num_rows = RowCount ?? 0;
+            _owGroup.NumRows = RowCount ?? 0;
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
             //luckily ColumnChunk already contains sizes of page+header in it's meta
-            _thriftRowGroup.Total_byte_size = _thriftRowGroup.Columns.Sum(c => c.Meta_data.Total_compressed_size);
+            _owGroup.TotalByteSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalCompressedSize);
         }
     }
 }

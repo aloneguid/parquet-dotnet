@@ -24,7 +24,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task Write_in_small_row_groups() {
+        public async Task Write_in_small_RowGroups() {
             //write a single file having 3 row groups
             var id = new DataField<int>("id");
             var ms = new MemoryStream();
@@ -71,7 +71,7 @@ namespace Parquet.Test {
 
 #if NET7_0_OR_GREATER
         [Fact]
-        public async Task Write_in_small_row_groups_write_only_stream() {
+        public async Task Write_in_small_RowGroups_write_only_stream() {
             //write to a write-only stream that does not implement the Position property
             var id = new DataField<int>("id");
             var pipe = new System.IO.Pipelines.Pipe();
@@ -165,13 +165,10 @@ namespace Parquet.Test {
             }
         }
 
-        public readonly static IEnumerable<object[]> NullableColumnContentCases = new List<object[]>()
-        {
-         new object[] { new int?[] { 1, 2 } },
-         new object[] { new int?[] { null } },
-         new object[] { new int?[] { 1, null, 2 } },
-         new object[] { new int[] { 1, 2 } },
-      };
+        public readonly static IEnumerable<object[]> NullableColumnContentCases = new List<object[]>(){
+            new object[] { new int?[] { 1, 2 } },
+            new object[] { new int?[] { null } },
+            new object[] { new int?[] { 1, null, 2 } } };
 
         [Theory]
         [MemberData(nameof(NullableColumnContentCases))]
@@ -197,50 +194,6 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task Writes_only_beginning_of_array() {
-            var ms = new MemoryStream();
-            var id = new DataField<int>("id");
-
-            //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
-                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }, 0, 3));
-                }
-            }
-
-            //read back
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(3, reader.ThriftMetadata!.Num_rows);
-
-                using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
-                    Assert.Equal(new int[] { 1, 2, 3 }, (await rg.ReadColumnAsync(id)).Data);
-                }
-            }
-        }
-
-        [Fact]
-        public async Task Writes_only_end_of_array() {
-            var ms = new MemoryStream();
-            var id = new DataField<int>("id");
-
-            //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
-                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }, 1, 3));
-                }
-            }
-
-            //read back
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(3, reader.ThriftMetadata!.Num_rows);
-
-                using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
-                    Assert.Equal(new int[] { 2, 3, 4 }, (await rg.ReadColumnAsync(id)).Data);
-                }
-            }
-        }
-
-        [Fact]
         public async Task FileMetadata_sets_num_rows_on_file_and_row_group() {
             var ms = new MemoryStream();
             var id = new DataField<int>("id");
@@ -254,7 +207,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(4, reader.ThriftMetadata!.Num_rows);
+                Assert.Equal(4, reader.Metadata!.NumRows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(4, rg.RowCount);
@@ -263,7 +216,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task FileMetadata_sets_num_rows_on_file_and_row_group_multiple_row_groups() {
+        public async Task FileMetadata_sets_num_rows_on_file_and_row_group_multiple_RowGroups() {
             var ms = new MemoryStream();
             var id = new DataField<int>("id");
 
@@ -280,7 +233,7 @@ namespace Parquet.Test {
 
             //read back
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                Assert.Equal(6, reader.ThriftMetadata!.Num_rows);
+                Assert.Equal(6, reader.Metadata!.NumRows);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(4, rg.RowCount);
@@ -293,7 +246,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task CustomMetadata_can_write_and_read() {
+        public async Task CustomMetadata_file_can_write_and_read() {
             var ms = new MemoryStream();
             var id = new DataField<int>("id");
 
@@ -313,6 +266,33 @@ namespace Parquet.Test {
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
                 Assert.Equal("value1", reader.CustomMetadata["key1"]);
                 Assert.Equal("value2", reader.CustomMetadata["key2"]);
+            }
+        }
+
+        [Fact]
+        public async Task CustomMetadata_column_can_write_and_read() {
+            var ms = new MemoryStream();
+            var id = new DataField<int>("id");
+
+            //write
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }),
+                        new Dictionary<string, string> {
+                            ["key1"] = "value1",
+                            ["key2"] = "value2"
+                        });
+                }
+            }
+
+            //read back
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+                Dictionary<string, string> kv = rgr.GetCustomMetadata(id);
+                Assert.Equal(2, kv.Count);
+                Assert.Equal("value1", kv["key1"]);
+                Assert.Equal("value2", kv["key2"]);
             }
         }
 

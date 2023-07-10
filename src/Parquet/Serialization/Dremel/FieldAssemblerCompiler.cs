@@ -67,7 +67,7 @@ namespace Parquet.Serialization.Dremel {
         }
 
         private Expression GetDataLength() {
-            return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.Data)), nameof(Array.Length));
+            return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), nameof(Array.Length));
         }
 
 
@@ -93,8 +93,8 @@ namespace Parquet.Serialization.Dremel {
                 ? Expression.Condition(
                     Expression.LessThan(_rlIdxVar, GetRlLength()),
                     GetRLAt(_rlIdxVar),
-                    Expression.Constant(0))
-                : Expression.Constant(0);
+                    Zero)
+                : Zero;
         }
 
         private Expression TakeCurrentValuesAndAdvance() {
@@ -144,6 +144,7 @@ namespace Parquet.Serialization.Dremel {
                 (field.SchemaType == SchemaType.Data && field is DataField rdf && rdf.IsArray);
         }
 
+#if DEBUG
         private static void InjectLevelDebug(string levelPropertyName,
             object value, int dataIdx,
             int dl, int rl,
@@ -151,6 +152,7 @@ namespace Parquet.Serialization.Dremel {
             int[] rsm) {
             Console.WriteLine("debug");
         }
+#endif
 
         /// <summary>
         /// Transitions RSM for current RL iteration
@@ -200,6 +202,16 @@ namespace Parquet.Serialization.Dremel {
             elementType = typeof(ParquetDictionary<,>.ParquetDictionaryElement).MakeGenericType(keyType!, valueType!);
         }
 
+        private static void GetReadLevels(Field f, out int dlDepth, out int rlDepth) {
+            if(f is ListField lf && lf.IsAtomic) {
+                dlDepth = lf.Item.MaxDefinitionLevel;
+                rlDepth = lf.Item.MaxRepetitionLevel;
+            } else {
+                dlDepth = f.MaxDefinitionLevel;
+                rlDepth = f.MaxRepetitionLevel;
+            }
+        }
+
         private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path) {
 
             string currentPathPart = path.First();
@@ -207,11 +219,10 @@ namespace Parquet.Serialization.Dremel {
             if(field == null)
                 throw new NotSupportedException($"field '{currentPathPart}' not found");
 
-            int dlDepth = field.MaxDefinitionLevel;
-            int rlDepth = field.MaxRepetitionLevel;
+            GetReadLevels(field, out int dlDepth, out int rlDepth);
 
             Discover(field, out bool isRepeated);
-            bool isAtomic = path.Count == 1;
+            bool isAtomic = field.IsAtomic;
             string levelPropertyName = field.ClrPropName ?? field.Name;
             Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
             Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
@@ -259,7 +270,7 @@ namespace Parquet.Serialization.Dremel {
             } else {
                 if(isAtomic) {
 
-                    // C#: dlDepth <= _dlVar?
+                    // C#: dlDepth == _dlVar?
                     iteration =
                         Expression.IfThen(
                             Expression.Equal(Expression.Constant(dlDepth), _dlVar),
@@ -281,11 +292,13 @@ namespace Parquet.Serialization.Dremel {
                 }
             }
 
+            // know when to stop
             if(!isAtomic || isRepeated) {
 
                 iteration = Expression.IfThen(
-                    // C#: dlDepth <= _dlVar?
-                    Expression.LessThanOrEqual(Expression.Constant(dlDepth), _dlVar),
+
+                    // C#: _dlVar >= dlDepth?
+                    Expression.GreaterThanOrEqual(_dlVar, Expression.Constant(dlDepth)),
 
                     Expression.Block(
                         Expression.IfThen(
@@ -293,6 +306,17 @@ namespace Parquet.Serialization.Dremel {
                             Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
 
                         iteration));
+
+                if(isRepeated) {
+                    iteration = Expression.IfThen(
+                        Expression.GreaterThanOrEqual(_dlVar, Expression.Constant(dlDepth - 1)),
+                        Expression.Block(
+                            Expression.IfThen(
+                                Expression.Equal(levelProperty, Expression.Constant(null)),
+                                Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
+
+                            iteration));
+                }
             }
 
             return Expression.Block(
@@ -343,7 +367,7 @@ namespace Parquet.Serialization.Dremel {
                     // be careful to check for NEXT RL, not the current one
                     // repeat until RL == 0 (always zero for non-repeated fields so we are OK here in any situation)
                     Expression.IfThen(
-                        Expression.Equal(GetCurrentRLOr0(), Expression.Constant(0)),
+                        Expression.Equal(GetCurrentRLOr0(), Zero),
                         Expression.Break(rlBreakLabel))
 
                     ), rlBreakLabel));
@@ -360,12 +384,12 @@ namespace Parquet.Serialization.Dremel {
 
                 // initialise array vars
                 Expression.Assign(_dataVar,
-                    Expression.Convert(Expression.Property(_dcParam, nameof(DataColumn.Data)), _df.ClrType.MakeArrayType())),
-                Expression.Assign(_dataIdxVar, Expression.Property(_dcParam, nameof(DataColumn.Offset))),
-                Expression.Assign(_rlIdxVar, Expression.Constant(0)),
-                Expression.Assign(_rlVar, Expression.Constant(0)),
-                Expression.Assign(_dlIdxVar, Expression.Constant(0)),
-                Expression.Assign(_dlVar, Expression.Constant(0)),
+                    Expression.Convert(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), _df.ClrType.MakeArrayType())),
+                Expression.Assign(_dataIdxVar, Zero),
+                Expression.Assign(_rlIdxVar, Zero),
+                Expression.Assign(_rlVar, Zero),
+                Expression.Assign(_dlIdxVar, Zero),
+                Expression.Assign(_dlVar, Zero),
 
                 // allocate state machine
                 Expression.Assign(_rsmVar, Expression.NewArrayBounds(typeof(int), Expression.Constant(_df.MaxRepetitionLevel))),
@@ -373,7 +397,7 @@ namespace Parquet.Serialization.Dremel {
                 iteration.Loop(classesParam, typeof(TClass), _classElementVar)
                 );
 
-            return new FieldAssembler<TClass>(_df,
+            return new FieldAssembler<TClass>(_schema, _df,
                 Expression.Lambda<Action<IEnumerable<TClass>, DataColumn>>(block, classesParam, _dcParam).Compile(),
                 block, iteration);
                 

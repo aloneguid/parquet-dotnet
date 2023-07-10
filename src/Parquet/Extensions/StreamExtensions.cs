@@ -27,7 +27,7 @@ namespace Parquet.Extensions {
             return BitConverter.ToInt64(tmp, 0);
         }
 
-        public static byte[] ReadBytesExactly(this Stream s, int count, bool allowLess = false) {
+        public static byte[] ReadBytesExactly(this Stream s, int count) {
             byte[] tmp = new byte[count];
             int read = 0;
             while(read < count) {
@@ -37,9 +37,8 @@ namespace Parquet.Extensions {
                 else
                     read += r;
             }
-            if(read < count && !allowLess)
+            if(read < count)
                 throw new IOException($"only {read} out of {count} bytes are available");
-
             return tmp;
         }
 
@@ -62,7 +61,7 @@ namespace Parquet.Extensions {
 
             return tmp;
         }
-        
+
         public static int ReadUnsignedVarInt(this Stream s) {
             int result = 0;
             int shift = 0;

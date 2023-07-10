@@ -1,15 +1,26 @@
 # Apache Parquet for .NET [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
 
-
-![Icon](img/banner.png)
+![Icon](https://camo.githubusercontent.com/88a2d331de69292268893ec310b8b46216c9c8f7f43c34edd918e42ce74ac51a/68747470733a2f2f7777772e616c6f6e65677569642e756b2f706172717565742f62616e6e65722e706e67)
 
 **Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
 Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.NET has you covered. 
 
+## Index
+
+- [Class Serialisation](serialisation.md)
+- [Writing](writing.md) and [Reading](reading.md) (low-level API)
+- [Row (Table) API](rows.md)
+- Diving Deeper
+  - [Schema](schema.md)
+  - [DataColumn](column.md)
+  - [Nested Types](nested_types.md)
+  - [Metadata](metadata.md)
+- [Integration with Microsoft.Data.Analysis](dataframe.md).
+
 Make sure to check out [Apache Parquet Viewer](https://aloneguid.github.io/parquet-online/) built with this library:
 
-[![](img/pv.png)](https://aloneguid.github.io/parquet-online/)
+[![](https://www.aloneguid.uk/parquet/pv.png)](https://aloneguid.github.io/parquet-online/)
 
 ## Why
 
@@ -119,15 +130,15 @@ Then, data columns need to be prepared for writing. As parquet is column-based f
 
 ```csharp
 var column1 = new DataColumn(
-    (DataField)schema[0],
+    schema.DataFields[0],
     Enumerable.Range(0, 1_000_000).Select(i => DateTime.UtcNow.AddSeconds(i)).ToArray());
 
 var column2 = new DataColumn(
-    (DataField)schema[1],
+    schema.DataFields[1],
     Enumerable.Range(0, 1_000_000).Select(i => i % 2 == 0 ? "on" : "off").ToArray());
 
 var column3 = new DataColumn(
-    (DataField)schema[2],
+    schema.DataFields[2],
     Enumerable.Range(0, 1_000_000).Select(i => (double)i).ToArray());
 ```
 
@@ -171,7 +182,7 @@ IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/stor
 
 This will give us an array with one million class instances similar to this:
 
-![](img/read-classes.png)
+![](https://www.aloneguid.uk/parquet/read-classes.png)
 
 Of course [class serialisation](serialisation.md) has more to it, and you can customise it further than that.
 
@@ -185,7 +196,7 @@ Table tbl = await Table.ReadAsync("/mnt/storage/data.parquet");
 
 This will do the magic behind the scenes, give you table schema and rows, similar to this:
 
-![](img/read-rows.png)
+![](https://www.aloneguid.uk/parquet/read-rows.png)
 
 As always, there's [more to it](rows.md).
 
@@ -235,7 +246,7 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 
 ## Contributing
 
-Any contributions are welcome, in any form. Documentation, code, tests, donations or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md). The first important thing you can do is simply star ⭐ this project.
+Any contributions are welcome, in any form. Documentation, code, tests, or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md). The first important thing you can do is simply star ⭐ this project.
 
 ## Special Thanks
 

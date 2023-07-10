@@ -1,5 +1,6 @@
 ﻿using System;
 using Parquet.Encodings;
+using Parquet.Meta;
 
 namespace Parquet.Data {
     /// <summary>
@@ -16,7 +17,7 @@ namespace Parquet.Data {
         /// <summary>
         /// 
         /// </summary>
-        public DataColumnStatistics(long nullCount, long distinctCount, object? minValue, object? maxValue) {
+        public DataColumnStatistics(long? nullCount, long? distinctCount, object? minValue, object? maxValue) {
             NullCount = nullCount;
             DistinctCount = distinctCount;
             MinValue = minValue;
@@ -26,7 +27,7 @@ namespace Parquet.Data {
         /// <summary>
         /// Number of null values
         /// </summary>
-        public long NullCount { get; internal set; }
+        public long? NullCount { get; internal set; }
 
         /// <summary>
         /// Number of distinct values if set.
@@ -43,7 +44,7 @@ namespace Parquet.Data {
         /// </summary>
         public object? MaxValue { get; internal set; }
 
-        internal Thrift.Statistics ToThriftStatistics(Thrift.SchemaElement tse) {
+        internal Statistics ToThriftStatistics(SchemaElement tse) {
 
             if(!ParquetPlainEncoder.TryEncode(MinValue, tse, out byte[]? min)) {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
@@ -53,19 +54,14 @@ namespace Parquet.Data {
                 throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
             }
 
-            var r = new Thrift.Statistics {
-                Null_count = NullCount,
+            return new Statistics {
+                NullCount = NullCount,
+                DistinctCount = DistinctCount,
                 Min = min,
-                Min_value = min,
+                MinValue = min,
                 Max = max,
-                Max_value = max
+                MaxValue = max
             };
-
-            if(DistinctCount!= null) {
-                r.Distinct_count = DistinctCount.Value;
-            }
-
-            return r;
         }
     }
 }

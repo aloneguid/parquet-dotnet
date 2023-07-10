@@ -16,6 +16,26 @@ namespace Parquet {
         /// </summary>
         public bool TreatBigIntegersAsDates { get; set; } = true;
 
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// When set to true, parquet dates will be deserialized as <see cref="DateOnly"/>, otherwise
+        /// as <see cref="DateTime"/> with missing time part.
+        /// </summary>
+        public bool UseDateOnlyTypeForDates { get; set; } = false;
+
+        /// <summary>
+        /// When set to true, parquet times with millisecond precision will be deserialized as <see cref="TimeOnly"/>, otherwise
+        /// as <see cref="TimeSpan"/> with missing time part.
+        /// </summary>
+        public bool UseTimeOnlyTypeForTimeMillis { get; set; } = false;
+
+        /// <summary>
+        /// When set to true, parquet times with microsecond precision will be deserialized as <see cref="TimeOnly"/>, otherwise
+        /// as <see cref="TimeSpan"/> with missing time part.
+        /// </summary>
+        public bool UseTimeOnlyTypeForTimeMicros { get; set; } = false;
+#endif
+
         /// <summary>
         /// Whether to use dictionary encoding for string columns. Other column types are not supported.
         /// </summary>
@@ -28,9 +48,5 @@ namespace Parquet {
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
 
-        /// <summary>
-        /// When set (default) <see cref="DataColumn"/> contains values with defnition levels applied.
-        /// </summary>
-        internal bool UnpackDefinitions { get; set; } = true;
     }
 }

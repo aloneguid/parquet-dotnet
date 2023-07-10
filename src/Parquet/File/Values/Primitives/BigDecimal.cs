@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using Parquet.Meta;
 
 namespace Parquet.File.Values.Primitives {
     /// <summary>
@@ -24,12 +25,12 @@ namespace Parquet.File.Values.Primitives {
         /// </summary>
         public int Precision { get; set; }
 
-        public BigDecimal(byte[] data, Thrift.SchemaElement schema, bool isReversed = false) {
+        public BigDecimal(byte[] data, SchemaElement schema, bool isReversed = false) {
             if(!isReversed) data = data.Reverse().ToArray();
 
             UnscaledValue = new BigInteger(data);
-            Precision = schema.Precision;
-            Scale = schema.Scale;
+            Precision = schema.Precision!.Value;
+            Scale = schema.Scale!.Value;
 
             BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
             decimal ipScaled = (decimal)BigInteger.DivRem(UnscaledValue, scaleMultiplier, out BigInteger fpUnscaled);

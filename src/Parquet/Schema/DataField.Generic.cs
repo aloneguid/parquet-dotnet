@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Parquet.Schema
+﻿namespace Parquet.Schema
 {
    /// <summary>
    /// Element of dataset's schema. Provides a helper way to construct a schema element with .NET generics.
@@ -12,7 +10,8 @@ namespace Parquet.Schema
       /// Initializes a new instance of the <see cref="Field"/> class.
       /// </summary>
       /// <param name="name">Column name</param>
-      public DataField(string name) : base(name, typeof(T))
+      /// <param name="nullable">Indicates if column can contain null values</param>
+      public DataField(string name, bool? nullable = null) : base(name, typeof(T), nullable)
       {
       }
    }

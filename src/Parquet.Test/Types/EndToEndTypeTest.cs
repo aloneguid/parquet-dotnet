@@ -48,11 +48,18 @@ namespace Parquet.Test.Types {
                ["dateDateAndTime local kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                // don't want any excess info in the offset INT32 doesn't contain or care about this data 
                ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
+#if !NETCOREAPP3_1
+               ["dateOnly"] = (new DataField<DateOnly>("dateOnly"), DateOnly.FromDateTime(DateTime.UtcNow)),
+#endif
                ["interval"] = (new DataField<Interval>("interval"), new Interval(3, 2, 1)),
                // time test(loses precision slightly)
                ["time_micros"] = (new TimeSpanDataField("timeMicros", TimeSpanFormat.MicroSeconds), new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10)),
                ["time_millis"] = (new TimeSpanDataField("timeMillis", TimeSpanFormat.MilliSeconds), new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10000 * 10000)),
-
+#if NET6_0_OR_GREATER
+               ["timeonly_micros"] = (new TimeOnlyDataField("timeMicros", TimeSpanFormat.MicroSeconds), new TimeOnly(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10)),
+               ["timeonly_millis"] = (new TimeOnlyDataField("timeMillis", TimeSpanFormat.MilliSeconds), new TimeOnly(DateTime.UtcNow.TimeOfDay.Ticks / 10000 * 10000)),
+#endif
+               
                ["byte min value"] = (new DataField<byte>("byte"), byte.MinValue),
                ["byte max value"] = (new DataField<byte>("byte"), byte.MaxValue),
                ["signed byte min value"] = (new DataField<sbyte>("sbyte"), sbyte.MinValue),
@@ -77,7 +84,11 @@ namespace Parquet.Test.Types {
                ["nullable DateTime"] = (new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null),
 
                ["bool"] = (new DataField<bool>("bool"), true),
-               ["nullable bool"] = (new DataField<bool?>("bool?"), new bool?(true))
+               ["nullable bool"] = (new DataField<bool?>("bool?"), new bool?(true)),
+
+               ["guid"] = (new DataField<Guid>("uuid"), Guid.NewGuid()),
+               ["nullable guid (not null)"] = (new DataField<Guid?>("uuid"), Guid.NewGuid()),
+               ["nullable guid (null)"] = (new DataField<Guid?>("uuid"), null)
 
            };
 
@@ -108,9 +119,16 @@ namespace Parquet.Test.Types {
         [InlineData("impala date local kind")]
         [InlineData("dateDateAndTime local kind")]
         [InlineData("dateDate")]
+#if !NETCOREAPP3_1
+        [InlineData("dateOnly")]
+#endif
         [InlineData("interval")]
         [InlineData("time_micros")]
         [InlineData("time_millis")]
+#if NET6_0_OR_GREATER
+        [InlineData("timeonly_micros")]
+        [InlineData("timeonly_millis")]
+#endif
 
         [InlineData("byte min value")]
         [InlineData("byte max value")]
@@ -136,6 +154,9 @@ namespace Parquet.Test.Types {
 
         [InlineData("bool")]
         [InlineData("nullable bool")]
+        [InlineData("guid")]
+        [InlineData("nullable guid (null)")]
+        [InlineData("nullable guid (not null)")]
 
         public async Task Type_writes_and_reads_end_to_end(string name) {
             (DataField field, object? expectedValue) input = _nameToData[name];
@@ -143,9 +164,11 @@ namespace Parquet.Test.Types {
             object actual = await WriteReadSingle(input.field, input.expectedValue);
 
             bool equal;
-            if(input.expectedValue == null && actual == null)                 equal = true;
-else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null)                 equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
-else if(actual.GetType() == typeof(DateTime)) {
+            if(input.expectedValue == null && actual == null)
+                equal = true;
+            else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null) {
+                equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
+            } else if(actual.GetType() == typeof(DateTime)) {
                 var dtActual = (DateTime)actual;
                 Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
                 var dtExpected = (DateTime)input.expectedValue!;
@@ -153,7 +176,9 @@ else if(actual.GetType() == typeof(DateTime)) {
                     ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
                     : dtExpected.ToUniversalTime();
                 equal = dtActual.Equals(dtExpected);
-            } else                 equal = actual.Equals(input.expectedValue);
+            } else {
+                equal = actual.Equals(input.expectedValue);
+            }
 
             Assert.True(equal, $"{name}| expected: [{input.expectedValue}], actual: [{actual}], schema element: {input.field}");
         }

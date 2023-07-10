@@ -4,187 +4,62 @@ using System.Linq;
 using System.Numerics;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
+using Parquet.Meta;
 using Parquet.Schema;
-using Parquet.Thrift;
 using SType = System.Type;
-using Type = Parquet.Thrift.Type;
+using Type = Parquet.Meta.Type;
 
 namespace Parquet.Encodings {
     static class SchemaEncoder {
 
-        class LookupItem {
-            public Thrift.Type ThriftType { get; set; }
-
-            public SType? SystemType { get; set; }
-
-            public Dictionary<Thrift.ConvertedType, SType>? ConvertedTypes { get; set; }
-        }
-
-        class LookupTable : List<LookupItem> {
-
-            class SystemTypeInfo {
-                public Thrift.Type tt;
-                public Thrift.ConvertedType? tct;
-                public int priority;
-            }
-
-            // all the cached lookups built during static initialisation
-            private readonly HashSet<SType> _supportedTypes = new();
-            private readonly Dictionary<Thrift.Type, SType> _typeToDefaultType = new();
-            private readonly Dictionary<KeyValuePair<Thrift.Type, Thrift.ConvertedType>, SType> _typeAndConvertedTypeToType = new();
-            private readonly Dictionary<SType, SystemTypeInfo> _systemTypeToTypeTuple = new();
-
-            public void Add(Thrift.Type thriftType, SType t, params object[] options) {
-                Add(thriftType, t, int.MaxValue, options);
-            }
-
-            private void AddSystemTypeInfo(Thrift.Type thriftType, SType t, Thrift.ConvertedType? ct, int priority) {
-                if(_systemTypeToTypeTuple.TryGetValue(t, out SystemTypeInfo? sti)) {
-                    if(priority <= sti.priority) {
-                        sti.tt = thriftType;
-                        sti.tct = ct;
-                        sti.priority = priority;
-                    }
-                } else {
-                    _systemTypeToTypeTuple[t] = new SystemTypeInfo {
-                        tt = thriftType,
-                        tct = ct,
-                        priority = priority
-                    };
-                }
-            }
-
-            public void Add(Thrift.Type thriftType, SType t, int priority, params object[] options) {
-
-                _typeToDefaultType[thriftType] = t;
-
-                AddSystemTypeInfo(thriftType, t, null, priority);
-
-                _supportedTypes.Add(t);
-                for(int i = 0; i < options.Length; i += 2) {
-                    var ct = (Thrift.ConvertedType)options[i];
-                    var clr = (System.Type)options[i + 1];
-                    _typeAndConvertedTypeToType.Add(new KeyValuePair<Thrift.Type, ConvertedType>(thriftType, ct), clr);
-
-                    // more specific version overrides less specific
-                    AddSystemTypeInfo(thriftType, clr, ct, int.MaxValue);
-
-                    _supportedTypes.Add(clr);
-                }
-            }
-
-            public SType? FindSystemType(Thrift.SchemaElement se) {
-                if(!se.__isset.type)
-                    return null;
-
-                if(se.__isset.converted_type &&
-                    _typeAndConvertedTypeToType.TryGetValue(
-                        new KeyValuePair<Thrift.Type, ConvertedType>(se.Type, se.Converted_type),
-                        out SType? match)) {
-                    return match;
-                }
-
-                if(_typeToDefaultType.TryGetValue(se.Type, out match)) {
-                    return match;
-                }
-
-                return null;
-            }
-
-            public bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) {
-
-                if(!_systemTypeToTypeTuple.TryGetValue(type, out SystemTypeInfo? sti)) {
-                    thriftType = default;
-                    convertedType = null;
-                    return false;
-                }
-
-                thriftType = sti.tt;
-                convertedType = sti.tct;
-                return true;
-            }
-
-            public bool IsSupported(SType? t) => t != null && _supportedTypes.Contains(t);
-        }
-
-        [Obsolete]
-        private static readonly Dictionary<SType, DataType> _systemTypeToObsoleteType = new() {
-            { typeof(bool), DataType.Boolean },
-            { typeof(byte), DataType.Byte },
-            { typeof(sbyte), DataType.SignedByte },
-            { typeof(short), DataType.Int16 },
-            { typeof(ushort), DataType.UnsignedInt16 },
-            { typeof(int), DataType.Int32 },
-            { typeof(uint), DataType.UnsignedInt32 },
-            { typeof(long), DataType.Int64 },
-            { typeof(ulong), DataType.UnsignedInt64 },
-            { typeof(BigInteger), DataType.Int96 },
-            { typeof(byte[]), DataType.ByteArray },
-            { typeof(string), DataType.String },
-            { typeof(float), DataType.Float },
-            { typeof(double), DataType.Double },
-            { typeof(decimal), DataType.Decimal },
-            { typeof(DateTime), DataType.DateTimeOffset },
-            { typeof(Interval), DataType.Interval },
-            { typeof(TimeSpan), DataType.TimeSpan }
+        public static readonly SType[] SupportedTypes = new[] {
+            typeof(bool),
+            typeof(byte), typeof(sbyte),
+            typeof(short), typeof(ushort),
+            typeof(int), typeof(uint),
+            typeof(long), typeof(ulong),
+            typeof(float),
+            typeof(double),
+            typeof(decimal),
+            typeof(BigInteger),
+            typeof(DateTime),
+#if NET6_0_OR_GREATER
+            typeof(DateOnly),
+            typeof(TimeOnly),
+#endif
+            typeof(TimeSpan),
+            typeof(Interval),
+            typeof(byte[]),
+            typeof(string),
+            typeof(Guid)
         };
 
-        private static readonly LookupTable _lt = new() {
-            { Thrift.Type.BOOLEAN, typeof(bool) },
-            { Thrift.Type.INT32, typeof(int),
-                Thrift.ConvertedType.UINT_8, typeof(byte),
-                Thrift.ConvertedType.INT_8, typeof(sbyte),
-                Thrift.ConvertedType.UINT_16, typeof(ushort),
-                Thrift.ConvertedType.INT_16, typeof(short),
-                Thrift.ConvertedType.UINT_32, typeof(uint),
-                Thrift.ConvertedType.INT_32, typeof(int),
-                Thrift.ConvertedType.DATE, typeof(DateTime),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal),
-                Thrift.ConvertedType.TIME_MILLIS, typeof(TimeSpan),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime)
-            },
-            { Thrift.Type.INT64 , typeof(long),
-                Thrift.ConvertedType.INT_64, typeof(long),
-                Thrift.ConvertedType.UINT_64, typeof(ulong),
-                Thrift.ConvertedType.TIME_MICROS, typeof(TimeSpan),
-                Thrift.ConvertedType.TIMESTAMP_MICROS, typeof(DateTime),
-                Thrift.ConvertedType.TIMESTAMP_MILLIS, typeof(DateTime),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal)
-            },
-            { Thrift.Type.INT96, typeof(DateTime), 1 },
-            { Thrift.Type.INT96, typeof(BigInteger) },
-            { Thrift.Type.FLOAT, typeof(float) },
-            { Thrift.Type.DOUBLE, typeof(double) },
-            { Thrift.Type.BYTE_ARRAY, typeof(byte[]), 1,
-                Thrift.ConvertedType.UTF8, typeof(string),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal)
-            },
-            { Thrift.Type.FIXED_LEN_BYTE_ARRAY, typeof(byte[]),
-                Thrift.ConvertedType.DECIMAL, typeof(decimal),
-                Thrift.ConvertedType.INTERVAL, typeof(Interval)
-            }
-        };
-
-        static bool TryBuildList(List<Thrift.SchemaElement> schema,
+        static bool TryBuildList(List<SchemaElement> schema,
             ref int index, out int ownedChildren,
             out ListField? field) {
 
-            Thrift.SchemaElement se = schema[index];
+            SchemaElement outerGroup = schema[index];
 
-            if(!(se.__isset.converted_type && se.Converted_type == Thrift.ConvertedType.LIST)) {
+            if(!(outerGroup.ConvertedType != null && outerGroup.ConvertedType == ConvertedType.LIST)) {
                 ownedChildren = 0;
                 field = null;
                 return false;
             }
 
-            Thrift.SchemaElement tseList = schema[index];
-            field = ListField.CreateWithNoItem(tseList.Name, tseList.Repetition_type != FieldRepetitionType.REQUIRED);
+            field = ListField.CreateWithNoItem(outerGroup.Name, outerGroup.RepetitionType != FieldRepetitionType.REQUIRED);
 
             //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
-            Thrift.SchemaElement tseRepeated = schema[index + 1];
+            SchemaElement midGroup = schema[index + 1];
+            bool midIsGroup = midGroup.NumChildren > 0;
 
             // Rule 1. If the repeated field is not a group, then its type is the element type and elements are required.
-            // todo: not implemented
+            if(!midIsGroup) {
+                field.Path = new FieldPath(outerGroup.Name);
+                field.SchemaElement = outerGroup;
+                index += 1; //only skip this element
+                ownedChildren = 1;  // next element is list's item
+                return true;
+            }
 
             // Rule 2. If the repeated field is a group with multiple fields, then its type is the element type and elements are required.
             // todo: not implemented
@@ -194,32 +69,23 @@ namespace Parquet.Encodings {
             // type and elements are required.
             // todo: not implemented fully, only "array"
 
-            // "group with one field and is named either array":
-            if(tseList.Num_children == 1 && tseRepeated.Name == "array") {
-                field.Path = new FieldPath(tseList.Name);
-                index += 1; //only skip this element
-                ownedChildren = 1;
-                return true;
-            }
-
             // Normal "modern" LIST:
-            //as we are skipping elements set path hint
-            Thrift.SchemaElement tseRepeatedGroup = schema[index + 1];
-            field.Path = new FieldPath(tseList.Name, tseRepeatedGroup.Name);
-            field.ThriftSchemaElement = se;
-            field.GroupSchemaElement = tseRepeatedGroup;
+            // as we are skipping elements set path hint
+            field.Path = new FieldPath(outerGroup.Name, midGroup.Name);
+            field.SchemaElement = outerGroup;
+            field.GroupSchemaElement = midGroup;
             index += 2;          //skip this element and child container
             ownedChildren = 1;   //we should get this element assigned back
             return true;
         }
 
-        static bool TryBuildMap(List<Thrift.SchemaElement> schema,
+        static bool TryBuildMap(List<SchemaElement> schema,
             ref int index, out int ownedChildren,
             out MapField? field) {
 
-            Thrift.SchemaElement root = schema[index];
-            bool isMap = root.__isset.converted_type &&
-                (root.Converted_type == Thrift.ConvertedType.MAP || root.Converted_type == Thrift.ConvertedType.MAP_KEY_VALUE);
+            SchemaElement root = schema[index];
+            bool isMap = root.ConvertedType != null &&
+                (root.ConvertedType == ConvertedType.MAP || root.ConvertedType == ConvertedType.MAP_KEY_VALUE);
             if(!isMap) {
                 ownedChildren = 0;
                 field = null;
@@ -227,19 +93,19 @@ namespace Parquet.Encodings {
             }
 
             //next element is a container
-            Thrift.SchemaElement tseContainer = schema[++index];
+            SchemaElement tseContainer = schema[++index];
 
-            if(tseContainer.Num_children != 2) {
-                throw new IndexOutOfRangeException($"dictionary container must have exactly 2 children but {tseContainer.Num_children} found");
+            if(tseContainer.NumChildren != 2) {
+                throw new IndexOutOfRangeException($"dictionary container must have exactly 2 children but {tseContainer.NumChildren} found");
             }
 
             //followed by a key and a value, but we declared them as owned
 
             var map = new MapField(root.Name) {
                 Path = new FieldPath(root.Name, tseContainer.Name),
-                IsNullable = root.Repetition_type != FieldRepetitionType.REQUIRED,
+                IsNullable = root.RepetitionType != FieldRepetitionType.REQUIRED,
                 GroupSchemaElement = tseContainer,
-                ThriftSchemaElement = root
+                SchemaElement = root
             };
 
             index += 1;
@@ -248,11 +114,11 @@ namespace Parquet.Encodings {
             return true;
         }
 
-        static bool TryBuildStruct(List<Thrift.SchemaElement> schema,
+        static bool TryBuildStruct(List<SchemaElement> schema,
             ref int index, out int ownedChildren,
             out StructField? field) {
-            Thrift.SchemaElement container = schema[index];
-            bool isStruct = container.Num_children > 0;
+            SchemaElement container = schema[index];
+            bool isStruct = container.NumChildren > 0;
             if(!isStruct) {
                 ownedChildren = 0;
                 field = null;
@@ -260,56 +126,35 @@ namespace Parquet.Encodings {
             }
 
             index++;
-            ownedChildren = container.Num_children; //make then owned to receive in .Assign()
+            ownedChildren = container.NumChildren ?? 0; //make then owned to receive in .Assign()
             field = StructField.CreateWithNoElements(container.Name);
-            field.IsNullable = container.Repetition_type != FieldRepetitionType.REQUIRED;
-            field.ThriftSchemaElement = container;
+            field.IsNullable = container.RepetitionType != FieldRepetitionType.REQUIRED;
+            field.SchemaElement = container;
             return true;
         }
 
-        public static bool IsSupported(SType? t) => t == typeof(DateTime) || _lt.IsSupported(t);
+        public static bool IsSupported(SType? t) => SupportedTypes.Contains(t);
 
         /// <summary>
-        /// Builds <see cref="Field"/> from thrift schema
+        /// Builds <see cref="Field"/> from schema
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="options"></param>
         /// <param name="index"></param>
         /// <param name="ownedChildCount"></param>
         /// <returns></returns>
-        public static Field? Decode(List<Thrift.SchemaElement> schema,
-            ParquetOptions? options,
+        public static Field? Decode(List<SchemaElement> schema,
+            ParquetOptions options,
             ref int index, out int ownedChildCount) {
 
-            Thrift.SchemaElement se = schema[index];
-            bool isNullable = se.Repetition_type != Thrift.FieldRepetitionType.REQUIRED;
-            bool isArray = se.Repetition_type == Thrift.FieldRepetitionType.REPEATED;
+            SchemaElement se = schema[index];
+            bool isNullable = se.RepetitionType != FieldRepetitionType.REQUIRED;
+            bool isArray = se.RepetitionType == FieldRepetitionType.REPEATED;
             Field? f = null;
             ownedChildCount = 0;
 
-            SType? t = _lt.FindSystemType(se);
-            if(t != null) {
-                // correction taking int account passed options
-                if(options != null && options.TreatBigIntegersAsDates && t == typeof(BigInteger))
-                    t = typeof(DateTime);
-
-                if(options != null && options.TreatByteArrayAsString && t == typeof(byte[]))
-                    t = typeof(string);
-
-                DataField? df;
-                if(t == typeof(DateTime)) {
-                    df = GetDateTimeDataField(se);
-                } 
-                else{
-                    // successful field built
-                    df = new DataField(se.Name, t);
-                }
-
-                df.IsNullable = isNullable;
-                df.IsArray = isArray;
-                df.ThriftSchemaElement = se;
+            if(TryBuildDataField(se, options, out DataField? df)) {
                 f = df;
-
                 index++;
                 return f;
             }
@@ -325,12 +170,99 @@ namespace Parquet.Encodings {
             return f;
         }
 
-        private static DataField GetDateTimeDataField(SchemaElement se)
-        {
-            switch (se.Converted_type)
-            {
+        private static bool TryBuildDataField(SchemaElement se, ParquetOptions options, out DataField? df) {
+            df = null;
+
+            if(se.Type == null)
+                return false;
+
+            SType? st = se.Type switch {
+                Type.BOOLEAN => typeof(bool),
+
+                Type.INT32 when se.ConvertedType != null => se.ConvertedType switch {
+                    ConvertedType.INT_8 => typeof(sbyte),
+                    ConvertedType.UINT_8 => typeof(byte),
+                    ConvertedType.INT_16 => typeof(short),
+                    ConvertedType.UINT_16 => typeof(ushort),
+                    ConvertedType.INT_32 => typeof(int),
+                    ConvertedType.UINT_32 => typeof(uint),
+#if NET6_0_OR_GREATER
+                    ConvertedType.DATE => options.UseDateOnlyTypeForDates ? typeof(DateOnly) : typeof(DateTime),
+#else
+                    ConvertedType.DATE => typeof(DateTime),
+#endif
+                    ConvertedType.DECIMAL => typeof(decimal),
+#if NET6_0_OR_GREATER
+                    ConvertedType.TIME_MILLIS => options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan),
+#else
+                    ConvertedType.TIME_MILLIS => typeof(TimeSpan),
+#endif
+                    ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
+                    _ => typeof(int)
+                },
+                Type.INT32 => typeof(int),
+
+                Type.INT64 when se.ConvertedType != null => se.ConvertedType switch {
+                    ConvertedType.INT_64 => typeof(long),
+                    ConvertedType.UINT_64 => typeof(ulong),
+#if NET6_0_OR_GREATER
+                    ConvertedType.TIME_MICROS => options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan),
+#else
+                    ConvertedType.TIME_MICROS => typeof(TimeSpan),
+#endif
+                    ConvertedType.TIMESTAMP_MICROS => typeof(DateTime),
+                    ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
+                    ConvertedType.DECIMAL => typeof(decimal),
+                    _ => typeof(long)
+                },
+                Type.INT64 => typeof(long),
+
+                Type.INT96 when options.TreatBigIntegersAsDates => typeof(DateTime),
+                Type.INT96 => typeof(BigInteger),
+                Type.FLOAT => typeof(float),
+                Type.DOUBLE => typeof(double),
+
+                Type.BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
+                    ConvertedType.UTF8 => typeof(string),
+                    ConvertedType.DECIMAL => typeof(decimal),
+                    _ => typeof(byte[])
+                },
+                Type.BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
+
+                Type.FIXED_LEN_BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
+                    ConvertedType.DECIMAL => typeof(decimal),
+                    ConvertedType.INTERVAL => typeof(Interval),
+                    _ => typeof(byte[])
+                },
+
+                Type.FIXED_LEN_BYTE_ARRAY when se.TypeLength == 16 && se.LogicalType?.UUID != null => typeof(Guid),
+
+                Type.FIXED_LEN_BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
+
+                _ => null
+            };
+
+            if(st == null)
+                return false;
+
+            if(st == typeof(DateTime)) {
+                df = GetDateTimeDataField(se);
+            } else {
+                // successful field built
+                df = new DataField(se.Name, st);
+            }
+            bool isNullable = se.RepetitionType != FieldRepetitionType.REQUIRED;
+            bool isArray = se.RepetitionType == FieldRepetitionType.REPEATED;
+            df.IsNullable = isNullable;
+            df.IsArray = isArray;
+            df.SchemaElement = se;
+            return true;
+        }
+
+        private static DataField GetDateTimeDataField(SchemaElement se) {
+            switch(se.ConvertedType) {
                 case ConvertedType.TIMESTAMP_MILLIS:
-                    if (se.Type == Type.INT64)
+                    if(se.Type == Type.INT64)
                         return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
                     break;
                 case ConvertedType.DATE:
@@ -341,82 +273,23 @@ namespace Parquet.Encodings {
             return new DateTimeDataField(se.Name, DateTimeFormat.Impala);
         }
 
-        /// <summary>
-        /// Adjust type-specific schema encodings that do not always follow generic use case
-        /// </summary>
-        /// <param name="df"></param>
-        /// <param name="tse"></param>
-        private static void AdjustEncoding(DataField df, Thrift.SchemaElement tse) {
-            if(df.ClrType == typeof(DateTime)) {
-                if(df is DateTimeDataField dfDateTime) {
-                    switch(dfDateTime.DateTimeFormat) {
-                        case DateTimeFormat.DateAndTime:
-                            tse.Type = Thrift.Type.INT64;
-                            tse.Converted_type = Thrift.ConvertedType.TIMESTAMP_MILLIS;
-                            break;
-                        case DateTimeFormat.Date:
-                            tse.Type = Thrift.Type.INT32;
-                            tse.Converted_type = Thrift.ConvertedType.DATE;
-                            break;
-
-                            //other cases are just default
-                    }
-                }
-            } else if(df.ClrType == typeof(decimal)) {
-                if(df is DecimalDataField dfDecimal) {
-                    if(dfDecimal.ForceByteArrayEncoding)
-                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-                    else if(dfDecimal.Precision <= 9)
-                        tse.Type = Thrift.Type.INT32;
-                    else if(dfDecimal.Precision <= 18)
-                        tse.Type = Thrift.Type.INT64;
-                    else
-                        tse.Type = Thrift.Type.FIXED_LEN_BYTE_ARRAY;
-
-                    tse.Precision = dfDecimal.Precision;
-                    tse.Scale = dfDecimal.Scale;
-                    tse.Type_length = BigDecimal.GetBufferSize(dfDecimal.Precision);
-                } else {
-                    //set defaults
-                    tse.Precision = DecimalFormatDefaults.DefaultPrecision;
-                    tse.Scale = DecimalFormatDefaults.DefaultScale;
-                    tse.Type_length = 16;
-                }
-            } else if(df.ClrType == typeof(Interval)) {
-                //set type length to 12
-                tse.Type_length = 12;
-            } else if(df.ClrType == typeof(TimeSpan)) {
-                if(df is TimeSpanDataField dfTime) {
-                    switch(dfTime.TimeSpanFormat) {
-                        case TimeSpanFormat.MicroSeconds:
-                            tse.Type = Thrift.Type.INT64;
-                            tse.Converted_type = Thrift.ConvertedType.TIME_MICROS;
-                            break;
-                        case TimeSpanFormat.MilliSeconds:
-                            tse.Type = Thrift.Type.INT32;
-                            tse.Converted_type = Thrift.ConvertedType.TIME_MILLIS;
-                            break;
-
-                            //other cases are just default
-                    }
-                }
-            }
-        }
-
-        private static void Encode(ListField listField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            parent.Num_children += 1;
+        private static void Encode(ListField listField, SchemaElement parent, IList<SchemaElement> container) {
+            parent.NumChildren = (parent.NumChildren ?? 0) + 1;
 
             //add list container
-            var root = new Thrift.SchemaElement(listField.Name) {
-                Converted_type = Thrift.ConvertedType.LIST,
-                Repetition_type = listField.IsNullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED,
-                Num_children = 1  //field container below
+            var root = new SchemaElement {
+                Name = listField.Name,
+                ConvertedType = ConvertedType.LIST,
+                LogicalType = new LogicalType { LIST = new ListType() },
+                RepetitionType = listField.IsNullable ? FieldRepetitionType.OPTIONAL : FieldRepetitionType.REQUIRED,
+                NumChildren = 1  //field container below
             };
             container.Add(root);
 
             //add field container
-            var list = new Thrift.SchemaElement(listField.ContainerName) {
-                Repetition_type = Thrift.FieldRepetitionType.REPEATED
+            var list = new SchemaElement {
+                Name = listField.ContainerName,
+                RepetitionType = FieldRepetitionType.REPEATED
             };
             container.Add(list);
 
@@ -424,72 +297,271 @@ namespace Parquet.Encodings {
             Encode(listField.Item, list, container);
         }
 
-        private static void Encode(MapField mapField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            parent.Num_children += 1;
+        private static void Encode(MapField mapField, SchemaElement parent, IList<SchemaElement> container) {
+            parent.NumChildren = (parent.NumChildren ?? 0) + 1;
 
             //add the root container where map begins
-            var root = new Thrift.SchemaElement(mapField.Name) {
-                Converted_type = Thrift.ConvertedType.MAP,
-                Num_children = 1,
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL
+            var root = new SchemaElement {
+                Name = mapField.Name,
+                ConvertedType = ConvertedType.MAP,
+                LogicalType = new LogicalType { MAP = new MapType() },
+                NumChildren = 1,
+                RepetitionType = FieldRepetitionType.OPTIONAL
             };
             container.Add(root);
 
             //key-value is a container for column of keys and column of values
-            var keyValue = new Thrift.SchemaElement(MapField.ContainerName) {
-                Num_children = 0, //is assigned by children
-                Repetition_type = Thrift.FieldRepetitionType.REPEATED
+            var keyValue = new SchemaElement {
+                Name = MapField.ContainerName,
+                NumChildren = 0, //is assigned by children
+                RepetitionType = FieldRepetitionType.REPEATED
             };
             container.Add(keyValue);
 
             //now add the key and value separately
             Encode(mapField.Key, keyValue, container);
-            Thrift.SchemaElement tseKey = container[container.Count - 1];
+            SchemaElement tseKey = container[container.Count - 1];
             Encode(mapField.Value, keyValue, container);
-            Thrift.SchemaElement tseValue = container[container.Count - 1];
+            SchemaElement tseValue = container[container.Count - 1];
 
             //fixes for weirdness in RLs
-            if(tseKey.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
-                tseKey.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
-            if(tseValue.Repetition_type == Thrift.FieldRepetitionType.REPEATED)
-                tseValue.Repetition_type = Thrift.FieldRepetitionType.OPTIONAL;
+            if(tseKey.RepetitionType == FieldRepetitionType.REPEATED)
+                tseKey.RepetitionType = FieldRepetitionType.OPTIONAL;
+            if(tseValue.RepetitionType == FieldRepetitionType.REPEATED)
+                tseValue.RepetitionType = FieldRepetitionType.OPTIONAL;
         }
 
-        private static void Encode(StructField structField, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
-            var tseStruct = new Thrift.SchemaElement(structField.Name) {
-                Repetition_type = Thrift.FieldRepetitionType.OPTIONAL,
+        private static void Encode(StructField structField, SchemaElement parent, IList<SchemaElement> container) {
+            var tseStruct = new SchemaElement {
+                Name = structField.Name,
+                RepetitionType = FieldRepetitionType.OPTIONAL
+                // no logical or converted type annotations for structs
             };
             container.Add(tseStruct);
-            parent.Num_children += 1;
+            parent.NumChildren = (parent.NumChildren ?? 0) + 1;
 
             foreach(Field memberField in structField.Fields) {
                 Encode(memberField, tseStruct, container);
             }
         }
 
-        public static void Encode(Field field, Thrift.SchemaElement parent, IList<Thrift.SchemaElement> container) {
+        public static SchemaElement Encode(DataField field) {
+            SType st = field.ClrType;
+            var tse = new SchemaElement { Name = field.Name };
+
+            if(st == typeof(bool)) {                                // boolean
+                tse.Type = Type.BOOLEAN;
+            } else if(st == typeof(byte) || st == typeof(sbyte) ||  // 32-bit numbers
+                st == typeof(short) || st == typeof(ushort) ||
+                st == typeof(int) || st == typeof(uint)) {
+
+                tse.Type = Type.INT32;
+                sbyte bw = 0;
+                if(st == typeof(byte) || st == typeof(sbyte))
+                    bw = 8;
+                else if(st == typeof(short) || st == typeof(ushort))
+                    bw = 16;
+                else if(st == typeof(int) || st == typeof(uint))
+                    bw = 32;
+                bool signed = st == typeof(sbyte) || st == typeof(short) || st == typeof(int);
+
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new IntType {
+                        BitWidth = bw,
+                        IsSigned = signed
+                    }
+                };
+                tse.ConvertedType = bw switch {
+                    8 => signed ? ConvertedType.INT_8 : ConvertedType.UINT_8,
+                    16 => signed ? ConvertedType.INT_16 : ConvertedType.UINT_16,
+                    32 => signed ? ConvertedType.INT_32 : ConvertedType.UINT_32,
+                    _ => ConvertedType.INT_32
+                };
+            } else if(st == typeof(long) || st == typeof(ulong)) {  // 64-bit number
+                tse.Type = Type.INT64;
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new IntType {
+                        BitWidth = 64,
+                        IsSigned = st == typeof(long)
+                    }
+                };
+                tse.ConvertedType = st == typeof(long) ? ConvertedType.INT_64 : ConvertedType.UINT_64;
+            } else if(st == typeof(float)) {                        // float
+                tse.Type = Type.FLOAT;
+            } else if(st == typeof(double)) {                       // double
+                tse.Type = Type.DOUBLE;
+            } else if(st == typeof(BigInteger)) {                   // BigInteger
+                tse.Type = Type.INT96;
+            } else if(st == typeof(string)) {                       // string
+                tse.Type = Type.BYTE_ARRAY;
+                tse.LogicalType = new LogicalType {
+                    STRING = new StringType()
+                };
+                tse.ConvertedType = ConvertedType.UTF8;
+            } else if(st == typeof(decimal)) {                      // decimal
+
+                int precision;
+                int scale;
+
+                if(field is DecimalDataField dfDecimal) {
+                    if(dfDecimal.ForceByteArrayEncoding)
+                        tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
+                    else if(dfDecimal.Precision <= 9)
+                        tse.Type = Type.INT32;
+                    else if(dfDecimal.Precision <= 18)
+                        tse.Type = Type.INT64;
+                    else
+                        tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
+
+                    precision = dfDecimal.Precision;
+                    scale = dfDecimal.Scale;
+                    tse.TypeLength = BigDecimal.GetBufferSize(dfDecimal.Precision);
+                } else {
+                    //set defaults
+                    tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
+                    precision = DecimalFormatDefaults.DefaultPrecision;
+                    scale = DecimalFormatDefaults.DefaultScale;
+                    tse.TypeLength = 16;
+                }
+
+                tse.LogicalType = new LogicalType {
+                    DECIMAL = new DecimalType {
+                        Precision = precision,
+                        Scale = scale
+                    }
+                };
+                tse.ConvertedType = ConvertedType.DECIMAL;
+                tse.Precision = precision;
+                tse.Scale = scale;
+            } else if(st == typeof(byte[])) {           // byte[]
+                tse.Type = Type.BYTE_ARRAY;
+            } else if(st == typeof(DateTime)) {         // DateTime
+                if(field is DateTimeDataField dfDateTime) {
+                    switch(dfDateTime.DateTimeFormat) {
+                        case DateTimeFormat.DateAndTime:
+                            tse.Type = Type.INT64;
+                            tse.ConvertedType = ConvertedType.TIMESTAMP_MILLIS;
+                            break;
+                        case DateTimeFormat.Date:
+                            tse.Type = Type.INT32;
+                            tse.ConvertedType = ConvertedType.DATE;
+                            break;
+                        default:
+                            tse.Type = Type.INT96;
+                            break;
+                    }
+                } else {
+                    tse.Type = Type.INT96;
+                }
+#if NET6_0_OR_GREATER
+            } else if(st == typeof(DateOnly)) {
+                // DateOnly
+                tse.Type = Type.INT32;
+                tse.LogicalType = new LogicalType { DATE = new DateType() };
+                tse.ConvertedType = ConvertedType.DATE;
+            } else if (st == typeof(TimeOnly)) {
+                // TimeOnly
+                if(field is TimeOnlyDataField dfTime) {
+                    switch(dfTime.TimeSpanFormat) {
+                        case TimeSpanFormat.MilliSeconds:
+                            tse.Type = Type.INT32;
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                                }
+                            };
+                            tse.ConvertedType = ConvertedType.TIME_MILLIS;
+                            break;
+                        case TimeSpanFormat.MicroSeconds:
+                            tse.Type = Type.INT64;
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MICROS = new MicroSeconds() }
+                                }
+                            };
+                            tse.ConvertedType = ConvertedType.TIME_MICROS;
+                            break;
+                        default:
+                            throw new NotImplementedException($"{dfTime.TimeSpanFormat} time format is not implemented");
+                    }
+                } else {
+                    tse.Type = Type.INT32;
+                    tse.LogicalType = new LogicalType {
+                        TIME = new TimeType() {
+                            IsAdjustedToUTC = true,
+                            Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                        }
+                    };
+                    tse.ConvertedType = ConvertedType.TIME_MILLIS;
+                }
+#endif
+            } else if(st == typeof(TimeSpan)) {         // TimeSpan
+                if(field is TimeSpanDataField dfTime) {
+                    switch(dfTime.TimeSpanFormat) {
+                        case TimeSpanFormat.MilliSeconds:
+                            tse.Type = Type.INT32;
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                                }
+                            };
+                            tse.ConvertedType = ConvertedType.TIME_MILLIS;
+                            break;
+                        case TimeSpanFormat.MicroSeconds:
+                            tse.Type = Type.INT64;
+                            tse.LogicalType = new LogicalType {
+                                TIME = new TimeType {
+                                    IsAdjustedToUTC = true,
+                                    Unit = new TimeUnit { MICROS = new MicroSeconds() }
+                                }
+                            };
+                            tse.ConvertedType = ConvertedType.TIME_MICROS;
+                            break;
+                        default:
+                            throw new NotImplementedException($"{dfTime.TimeSpanFormat} time format is not implemented");
+                    }
+                } else {
+                    tse.Type = Type.INT32;
+                    tse.LogicalType = new LogicalType {
+                        TIME = new TimeType {
+                            IsAdjustedToUTC = true,
+                            Unit = new TimeUnit { MILLIS = new MilliSeconds() }
+                        }
+                    };
+                    tse.ConvertedType = ConvertedType.TIME_MILLIS;
+                }
+            } else if(st == typeof(Interval)) {         // Interval
+                tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
+                tse.TypeLength = 12;
+                tse.ConvertedType = ConvertedType.INTERVAL;
+            } else if(st == typeof(Guid)) {
+                // fixed_len_byte_array(16) uuid (UUID)
+                tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
+                tse.LogicalType = new LogicalType() {
+                    UUID = new UUIDType()
+                };
+                tse.TypeLength = 16;
+            } else {
+                throw new InvalidOperationException($"type {st} is not supported");
+            }
+
+            return tse;
+        }
+
+        public static void Encode(Field field, SchemaElement parent, IList<SchemaElement> container) {
             if(field.SchemaType == SchemaType.Data && field is DataField dataField) {
-                var tse = new Thrift.SchemaElement(field.Name);
+                SchemaElement tse = Encode(dataField);
 
-                if(!_lt.FindTypeTuple(dataField.ClrType, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType)) {
-                    throw new NotSupportedException($"could not find type tuple for {dataField.ClrType}");
-                }
+                bool isList = container.Count > 1 && container[container.Count - 2].ConvertedType == ConvertedType.LIST;
 
-                tse.Type = thriftType;
-                if(convertedType != null) {
-                    // be careful calling thrift setter as it sets other hidden flags
-                    tse.Converted_type = convertedType.Value;
-                }
-
-                bool isList = container.Count > 1 && container[container.Count - 2].Converted_type == Thrift.ConvertedType.LIST;
-
-                tse.Repetition_type = dataField.IsArray && !isList
-                   ? Thrift.FieldRepetitionType.REPEATED
-                   : (dataField.IsNullable ? Thrift.FieldRepetitionType.OPTIONAL : Thrift.FieldRepetitionType.REQUIRED);
+                tse.RepetitionType = dataField.IsArray && !isList
+                   ? FieldRepetitionType.REPEATED
+                   : (dataField.IsNullable ? FieldRepetitionType.OPTIONAL : FieldRepetitionType.REQUIRED);
                 container.Add(tse);
-                parent.Num_children += 1;
-
-                AdjustEncoding(dataField, tse);
+                parent.NumChildren = (parent.NumChildren ?? 0) + 1;
             } else if(field.SchemaType == SchemaType.List && field is ListField listField) {
                 Encode(listField, parent, container);
             } else if(field.SchemaType == SchemaType.Map && field is MapField mapField) {
@@ -500,18 +572,5 @@ namespace Parquet.Encodings {
                 throw new InvalidOperationException($"unable to encode {field}");
             }
         }
-
-        public static bool FindTypeTuple(SType type, out Thrift.Type thriftType, out Thrift.ConvertedType? convertedType) =>
-            _lt.FindTypeTuple(type, out thriftType, out convertedType);
-
-        /// <summary>
-        /// Finds corresponding .NET type
-        /// </summary>
-        [Obsolete]
-        public static SType? FindSystemType(DataType dataType) =>
-            (from pair in _systemTypeToObsoleteType where pair.Value == dataType select pair.Key).FirstOrDefault();
-
-        [Obsolete]
-        public static DataType? FindDataType(SType type) => _systemTypeToObsoleteType[type];
     }
 }

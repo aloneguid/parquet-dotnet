@@ -6,10 +6,12 @@ using System.IO;
 using System.Threading.Tasks;
 using Parquet.Schema;
 using System.Linq;
-using TT = Parquet.Thrift.Type;
-using CT = Parquet.Thrift.ConvertedType;
+using TT = Parquet.Meta.Type;
+using CT = Parquet.Meta.ConvertedType;
 using System.Numerics;
 using Parquet.Encodings;
+using Parquet.File;
+using Parquet.Meta;
 
 namespace Parquet.Test.Schema {
     public class SchemaTest : TestBase {
@@ -265,15 +267,14 @@ namespace Parquet.Test.Schema {
         [Fact]
         public async Task Column_called_root() {
 
+            var schema = new ParquetSchema(
+                new DataField<string>("root"),
+                new DataField<string>("other"));
             var columns = new List<DataColumn>();
-            columns.Add(new DataColumn(new DataField<string>("root"), new string[] { "AAA" }));
-            columns.Add(new DataColumn(new DataField<string>("other"), new string[] { "BBB" }));
-            var fields = new List<Field>();
-            foreach(DataColumn column in columns)
-                fields.Add(column.Field);
+            columns.Add(new DataColumn(schema.GetDataFields()[0], new string[] { "AAA" }));
+            columns.Add(new DataColumn(schema.GetDataFields()[1], new string[] { "BBB" }));
 
             // the writer used to create structure type under "root" (https://github.com/aloneguid/parquet-dotnet/issues/143)
-            var schema = new ParquetSchema(fields);
             var ms = new MemoryStream();
             using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms))
             using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())
@@ -281,14 +282,13 @@ namespace Parquet.Test.Schema {
                     await groupWriter.WriteColumnAsync(column);
 
             ms.Position = 0;
-            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(ms)) {
-                DataField[] dataFields = parquetReader.Schema.GetDataFields();
-                for(int i = 0; i < parquetReader.RowGroupCount; i++)
-                    using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i))
-                        foreach(DataColumn column in columns) {
-                            DataColumn c = await groupReader.ReadColumnAsync(column.Field);
-                        }
-            }
+            using ParquetReader parquetReader = await ParquetReader.CreateAsync(ms);
+            DataField[] dataFields = parquetReader.Schema.GetDataFields();
+            for(int i = 0; i < parquetReader.RowGroupCount; i++)
+                using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i))
+                    foreach(DataColumn column in columns) {
+                        DataColumn c = await groupReader.ReadColumnAsync(column.Field);
+                    }
         }
 
         [Fact]
@@ -296,47 +296,76 @@ namespace Parquet.Test.Schema {
             var field = new DateTimeDataField("Date", DateTimeFormat.DateAndTime, true);
             var schema = new ParquetSchema(field);
 
-            using(var memoryStream = new MemoryStream()) {
-                using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream))
-                using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
-                    var dataColumn = new DataColumn(field, new List<DateTime>() { DateTime.Now }.ToArray());
-                    await groupWriter.WriteColumnAsync(dataColumn);
-                }
+            using var memoryStream = new MemoryStream();
 
-                using(ParquetReader parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
-                    parquetReader.Schema.Fields.ToString();
+            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream))
+            using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
+                var dataColumn = new DataColumn(field, new List<DateTime?>() { DateTime.Now }.ToArray());
+                await groupWriter.WriteColumnAsync(dataColumn);
+            }
 
-                    Assert.Single(schema.Fields);
-                    Assert.Equal(schema.Fields.Count, parquetReader.Schema.Fields.Count);
-                    Assert.Equal(schema.Fields.First().GetType(), parquetReader.Schema.Fields.First().GetType());
-                }
+            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
+                parquetReader.Schema.Fields.ToString();
+
+                Assert.Single(schema.Fields);
+                Assert.Equal(schema.Fields.Count, parquetReader.Schema.Fields.Count);
+                Assert.Equal(schema.Fields.First().GetType(), parquetReader.Schema.Fields.First().GetType());
             }
         }
 
-        [Theory]
-        [InlineData(typeof(bool), TT.BOOLEAN, null)]
-        [InlineData(typeof(byte), TT.INT32, CT.UINT_8)]
-        [InlineData(typeof(sbyte), TT.INT32, CT.INT_8)]
-        [InlineData(typeof(short), TT.INT32, CT.INT_16)]
-        [InlineData(typeof(ushort), TT.INT32, CT.UINT_16)]
-        [InlineData(typeof(int), TT.INT32, CT.INT_32)]
-        [InlineData(typeof(uint), TT.INT32, CT.UINT_32)]
-        [InlineData(typeof(long), TT.INT64, CT.INT_64)]
-        [InlineData(typeof(ulong), TT.INT64, CT.UINT_64)]
-        [InlineData(typeof(BigInteger), TT.INT96, null)]
-        [InlineData(typeof(float), TT.FLOAT, null)]
-        [InlineData(typeof(double), TT.DOUBLE, null)]
-        [InlineData(typeof(byte[]), TT.BYTE_ARRAY, null)]
-        [InlineData(typeof(string), TT.BYTE_ARRAY, CT.UTF8)]
-        // decimal
-        [InlineData(typeof(DateTime), TT.INT96, null)]
-        // TimeSpan
-        // Interval
-        public void SystemTypeToThriftMapping(Type t, TT expectedTT, CT? expectedCT) {
-            Assert.True(SchemaEncoder.FindTypeTuple(t, out TT foundTT, out CT? foundCT));
+        [Fact]
+        public void Decode_list_normal() {
+            ParquetSchema schema = ThriftFooter.Parse(
+                new SchemaElement {
+                    Name = "my_list",
+                    ConvertedType = CT.LIST,
+                    NumChildren = 1
+                },
+                new SchemaElement {
+                    Name = "list",
+                    RepetitionType = FieldRepetitionType.REPEATED,
+                    NumChildren = 1
+                },
+                new SchemaElement {
+                    Name = "element",
+                    RepetitionType = FieldRepetitionType.REQUIRED,
+                    Type = TT.INT32
+                });
 
-            Assert.Equal(expectedTT, foundTT);
-            Assert.Equal(expectedCT, foundCT);
+            Field f = schema[0];
+            if(f is ListField lf) {
+                Assert.Equal("my_list", lf.Name);
+                Assert.Equal("element", lf.Item.Name);
+            } else {
+                Assert.Fail("list expected");
+            }
+        }
+
+        [Fact]
+        public void Decode_list_legacy_no_mid_group() {
+            ParquetSchema schema = ThriftFooter.Parse(
+                new SchemaElement {
+                    Name = "my_list",
+                    ConvertedType = CT.LIST
+                },
+                new SchemaElement {
+                    Name = "list",
+                    RepetitionType = FieldRepetitionType.REPEATED,
+                    NumChildren = 1
+                },
+                new SchemaElement {
+                    Name = "element",
+                    RepetitionType = FieldRepetitionType.REQUIRED,
+                    Type = TT.INT32
+                });
+
+            Field f = schema[0];
+            if(f is ListField lf) {
+                Assert.Equal("my_list", lf.Name);
+                Assert.Equal("element", lf.Item.Name);
+            } else {
+                Assert.Fail("list expected");
+            }
         }
     }
 }

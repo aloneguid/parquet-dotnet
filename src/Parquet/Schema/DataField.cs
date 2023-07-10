@@ -13,12 +13,6 @@ namespace Parquet.Schema {
         private bool _isArray;
 
         /// <summary>
-        /// Parquet data type of this element
-        /// </summary>
-        [Obsolete(Globals.DataTypeEnumObsolete)]
-        public DataType DataType { get; }
-
-        /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
         /// Changes <see cref="ClrNullableIfHasNullsType"/> property accordingly.
         /// </summary>
@@ -81,31 +75,6 @@ namespace Parquet.Schema {
             IsArray = isArray ?? discIsArray;
             ClrPropName = propertyName ?? name;
             MaxRepetitionLevel = IsArray ? 1 : 0;
-
-#pragma warning disable CS0612 // Type or member is obsolete
-#pragma warning disable CS0618
-            DataType = SchemaEncoder.FindDataType(ClrType) ?? DataType.Unspecified;
-#pragma warning restore CS0618
-#pragma warning restore CS0612 // Type or member is obsolete
-        }
-
-        /// <summary>
-        /// Creates a new instance of <see cref="DataField"/> by specifying all the required attributes.
-        /// </summary>
-        /// <param name="name">Field name.</param>
-        /// <param name="dataType">Native Parquet type</param>
-        /// <param name="isNullable">When true, the field accepts null values. Note that nullable values take slightly more disk space and computing comparing to non-nullable, but are more common.</param>
-        /// <param name="isArray">When true, each value of this field can have multiple values, similar to array in C#.</param>
-        /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
-        [Obsolete("use constructor not referencing DataType")]
-        public DataField(string name, DataType dataType, bool isNullable = true, bool isArray = false, string? propertyName = null) :
-            base(name, SchemaType.Data) {
-
-            DataType = dataType;
-            ClrType = SchemaEncoder.FindSystemType(dataType)!;
-            IsNullable = isNullable;
-            IsArray = isArray;
-            ClrPropName = propertyName ?? name;
         }
 
         internal override FieldPath? PathPrefix {
@@ -113,6 +82,15 @@ namespace Parquet.Schema {
         }
 
         internal bool IsAttachedToSchema { get; set; } = false;
+
+        internal void EnsureAttachedToSchema(string argName) {
+            if(IsAttachedToSchema)
+                return;
+
+            throw new ArgumentException(
+                    $"Field [{this}] is not attached to any schema. You need to construct a schema passing in this field first.",
+                    argName);
+        }
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             MaxRepetitionLevel = parentRepetitionLevel;
@@ -146,6 +124,8 @@ namespace Parquet.Schema {
                 return definedData;
             }
         }
+
+        internal override bool IsAtomic => true;
 
         /// <inheritdoc/>
         public override string ToString() => 

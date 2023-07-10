@@ -36,7 +36,6 @@ namespace Parquet {
                 foreach(Type interfaceType in ti.ImplementedInterfaces) {
                     TypeInfo iti = interfaceType.GetTypeInfo();
                     if(iti.IsGenericType && iti.GetGenericTypeDefinition() == typeof(IEnumerable<>)) {
-
                         baseType = iti.GenericTypeArguments[0];
                         return true;
                     }
@@ -63,7 +62,6 @@ namespace Parquet {
                 return iet!;
 
             throw new ArgumentException($"type {t} is not single-element generic enumerable", nameof(t));
-
         }
 
         public static MethodInfo GetGenericListAddMethod(this Type listType) {
@@ -100,12 +98,18 @@ namespace Parquet {
             return gt == typeof(Nullable<>) || t.GetTypeInfo().IsClass;
         }
 
+        public static bool IsNullable(this PropertyInfo pi) {
+            return pi.GetMethod?.CustomAttributes.Any(x => x.AttributeType.Name == "NullableContextAttribute") == true ||
+                pi.DeclaringType?.CustomAttributes.Any(x => x.AttributeType.Name == "NullableContextAttribute" &&
+                    (byte)x.ConstructorArguments[0].Value! == 2) == true;
+        }
+
         public static bool IsNullable(this Type t) {
             TypeInfo ti = t.GetTypeInfo();
 
             return
-               ti.IsClass ||
-               (ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>));
+                ti.IsClass ||
+                (ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
 
         public static bool IsSystemNullable(this Type t) {
@@ -140,24 +144,23 @@ namespace Parquet {
                 return true;
 
             return
-               t == typeof(bool) ||
-               t == typeof(byte) ||
-               t == typeof(sbyte) ||
-               t == typeof(char) ||
-               t == typeof(decimal) ||
-               t == typeof(double) ||
-               t == typeof(float) ||
-               t == typeof(int) ||
-               t == typeof(uint) ||
-               t == typeof(long) ||
-               t == typeof(ulong) ||
-               t == typeof(short) ||
-               t == typeof(ushort) ||
-               t == typeof(TimeSpan) ||
-               t == typeof(DateTime) ||
-               t == typeof(Guid) ||
-               t == typeof(string);
+                t == typeof(bool) ||
+                t == typeof(byte) ||
+                t == typeof(sbyte) ||
+                t == typeof(char) ||
+                t == typeof(decimal) ||
+                t == typeof(double) ||
+                t == typeof(float) ||
+                t == typeof(int) ||
+                t == typeof(uint) ||
+                t == typeof(long) ||
+                t == typeof(ulong) ||
+                t == typeof(short) ||
+                t == typeof(ushort) ||
+                t == typeof(TimeSpan) ||
+                t == typeof(DateTime) ||
+                t == typeof(Guid) ||
+                t == typeof(string);
         }
-
     }
 }

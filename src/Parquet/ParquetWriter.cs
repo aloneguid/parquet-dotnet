@@ -5,9 +5,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet._3rdparty;
 using Parquet.Schema;
 using Parquet.File;
+using Parquet.Meta;
+using Parquet.Extensions;
 
 namespace Parquet {
     /// <summary>
@@ -72,7 +73,7 @@ namespace Parquet {
         public ParquetRowGroupWriter CreateRowGroup() {
             _dataWritten = true;
 
-            var writer = new ParquetRowGroupWriter(_schema, Stream, ThriftStream, _footer!,
+            var writer = new ParquetRowGroupWriter(_schema, Stream, _footer!,
                CompressionMethod, _formatOptions, CompressionLevel);
 
             _openedWriters.Add(writer);
@@ -98,7 +99,7 @@ namespace Parquet {
 
                 await ValidateFileAsync();
 
-                Thrift.FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
+                FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
                 _footer = new ThriftFooter(fileMeta);
 
                 ValidateSchemasCompatible(_footer, _schema);
@@ -144,9 +145,9 @@ namespace Parquet {
             }
 
             //finalize file
-            //long size = _footer.WriteAsync(ThriftStream).Result;
+            //long size = _footer.WriteAsync(tream).Result;
 
-            var sizeTask = Task.Run(() => _footer!.WriteAsync(ThriftStream));
+            var sizeTask = Task.Run(() => _footer!.WriteAsync(Stream));
             sizeTask.Wait();
             long size = sizeTask.Result;
 

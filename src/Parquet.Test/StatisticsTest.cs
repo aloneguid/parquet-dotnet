@@ -127,9 +127,10 @@ namespace Parquet.Test {
         public async Task Distinct_stat_for_basic_data_types(string name) {
             TestDesc? test = NameToTest[name];
 
-            var id = new DataField("id", test!.Type!);
+            var schema = new ParquetSchema(new DataField("id", test!.Type!));
+            DataField id = schema.GetDataFields()[0];
 
-            DataColumn? rc = await WriteReadSingleColumn(id, new DataColumn(id, test!.Data!));
+            DataColumn? rc = await WriteReadSingleColumn(new DataColumn(id, test!.Data!));
 
             Assert.Equal(test.Data!.Length, rc!.CalculateRowCount());
             //Assert.Equal(test.DistinctCount, rc.Statistics.DistinctCount);

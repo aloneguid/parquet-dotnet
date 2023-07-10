@@ -1,4 +1,5 @@
 ﻿using System;
+using Parquet.Meta;
 
 namespace Parquet.Encodings {
     /// <summary>
@@ -11,7 +12,7 @@ namespace Parquet.Encodings {
     static partial class DeltaBinaryPackedEncoder {
 
         public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount, out int consumedBytes) {
-            Type? elementType = dest.GetType().GetElementType();
+            System.Type? elementType = dest.GetType().GetElementType();
             if(elementType != null) {
                 if(elementType == typeof(long) ) {
                     Span<long> span = ((long[])dest).AsSpan(destOffset);
@@ -21,7 +22,7 @@ namespace Parquet.Encodings {
                     return Decode(s, span, out consumedBytes);
                 }
                 else {
-                    throw new NotSupportedException($"only {Thrift.Type.INT32} and {Thrift.Type.INT64} are supported in {Thrift.Encoding.DELTA_BINARY_PACKED} but element type passed is {elementType}");
+                    throw new NotSupportedException($"only {Parquet.Meta.Type.INT32} and {Parquet.Meta.Type.INT64} are supported in {Encoding.DELTA_BINARY_PACKED} but element type passed is {elementType}");
                 }
             }
 

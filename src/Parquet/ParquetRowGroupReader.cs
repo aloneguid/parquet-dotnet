@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
+using Parquet.Meta;
 using Parquet.Schema;
 
 namespace Parquet {
@@ -12,53 +14,76 @@ namespace Parquet {
     /// Reader for Parquet row groups
     /// </summary>
     public class ParquetRowGroupReader : IDisposable {
-        private readonly Thrift.RowGroup _rowGroup;
+        private readonly RowGroup _rowGroup;
         private readonly ThriftFooter _footer;
         private readonly Stream _stream;
-        private readonly ThriftStream _thriftStream;
         private readonly ParquetOptions? _parquetOptions;
-        private readonly Dictionary<FieldPath, Thrift.ColumnChunk> _pathToChunk = new();
+        private readonly Dictionary<FieldPath, ColumnChunk> _pathToChunk = new();
 
         internal ParquetRowGroupReader(
-           Thrift.RowGroup rowGroup,
+           RowGroup rowGroup,
            ThriftFooter footer,
-           Stream stream, ThriftStream thriftStream,
+           Stream stream,
            ParquetOptions? parquetOptions) {
             _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _thriftStream = thriftStream ?? throw new ArgumentNullException(nameof(thriftStream));
             _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             //cache chunks
-            foreach(Thrift.ColumnChunk thriftChunk in _rowGroup.Columns) {
-                FieldPath path = thriftChunk.GetPath();
-                _pathToChunk[path] = thriftChunk;
+            foreach(ColumnChunk hunk in _rowGroup.Columns) {
+                FieldPath path = hunk.GetPath();
+                _pathToChunk[path] = hunk;
             }
         }
 
         /// <summary>
-        /// Gets the number of rows in this row group
+        /// Exposes raw metadata about this row group
         /// </summary>
-        public long RowCount => _rowGroup.Num_rows;
+        public RowGroup RowGroup => _rowGroup;
 
         /// <summary>
-        /// Reads a column from this row group.
+        /// Gets the number of rows in this row group
         /// </summary>
-        /// <param name="field"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
-            if(field == null)
-                throw new ArgumentNullException(nameof(field));
+        public long RowCount => _rowGroup.NumRows;
 
-            if(!_pathToChunk.TryGetValue(field.Path, out Thrift.ColumnChunk? columnChunk)) {
+        /// <summary>
+        /// Reads a column from this row group. Unlike writing, columns can be read in any order.
+        /// </summary>
+        public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
+
+            ColumnChunk? columnChunk = GetMetadata(field);
+            if(columnChunk == null) {
                 throw new ParquetException($"'{field.Path}' does not exist in this file");
             }
-
             var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
 
             return columnReader.ReadAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Gets raw column chunk metadata for this field
+        /// </summary>
+        public ColumnChunk? GetMetadata(DataField field) {
+            if(field == null)
+                throw new ArgumentNullException(nameof(field));
+
+            if(!_pathToChunk.TryGetValue(field.Path, out ColumnChunk? columnChunk)) {
+                return null;
+            }
+
+            return columnChunk;
+        }
+
+        /// <summary>
+        /// Get custom key-value metadata for a data field
+        /// </summary>
+        public Dictionary<string, string> GetCustomMetadata(DataField field) {
+            ColumnChunk? cc = GetMetadata(field);
+            if(cc?.MetaData?.KeyValueMetadata == null)
+                return new();
+
+            return cc.MetaData.KeyValueMetadata.ToDictionary(kv => kv.Key, kv => kv.Value!);
         }
 
         /// <summary>

@@ -2,125 +2,140 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Collections;
+using System.Runtime.CompilerServices;
 using Parquet.Extensions;
 
 namespace Parquet.Encodings {
-    static class RleBitpackedHybridEncoder {
+    static partial class RleBitpackedHybridEncoder {
 
         private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
+        private const int MaxValueCount = int.MaxValue >> 1;  //max count for an integer with one lost bit
 
         /// <summary>
         /// Writes to target stream without jumping around, therefore can be used in forward-only stream.
         /// Before writing actual data, writes out int32 value indicating total data binary length.
         /// </summary>
         public static void EncodeWithLength(Stream s, int bitWidth, Span<int> data) {
-            //write data to a memory buffer, as we need data length to be written before the data
-            using(var ms = new MemoryStream()) {
-                //write actual data
-                Encode(ms, data, bitWidth);
 
-                //int32 - length of data
-                s.WriteInt32((int)ms.Length);
-
-                //actual data
-                ms.Position = 0;
-                ms.CopyTo(s); //warning! CopyTo performs .Flush internally
+            int length = Encode(data, bitWidth, out byte[]? rentedBuffer);
+            if(rentedBuffer == null)
+                return;
+            try {
+                s.WriteInt32(length);
+                s.Write(rentedBuffer, 0, length);
+            } finally {
+                BytePool.Return(rentedBuffer);
             }
         }
 
-        public static void Encode(Stream s, Span<int> data, int bitWidth) {
-            using(var list = new SpanBackedByteList()) {
-                Encode(list, data, bitWidth);
-                list.Write(s);
+        public static void Encode(Stream dest, Span<int> data, int bitWidth) {
+            int length = Encode(data, bitWidth, out byte[]? rentedBuffer);
+            if(rentedBuffer == null)
+                return;
+            try {
+                dest.Write(rentedBuffer, 0, length);
+            } finally {
+                BytePool.Return(rentedBuffer);
             }
         }
 
-        /// <summary>
-        /// Encodes input data
-        /// </summary>
-        public static void Encode(IList<byte> s, Span<int> data, int bitWidth) {
+        public static int Encode(Span<int> data, int bitWidth, out byte[]? rentedBuffer) {
+
             //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
-            const int maxCount = int.MaxValue >> 1;  //max count for an integer with one lost bit
-
-            //chunk identical values and write
-            int lastValue = 0;
-            int chunkCount = 0;
-            for(int i = 0; i < data.Length; i++) {
-                int item = data[i];
-
-                if(chunkCount == 0) {
-                    chunkCount = 1;
-                    lastValue = item;
-                } else if(item != lastValue || chunkCount == maxCount) {
-                    WriteRle(s, chunkCount, lastValue, bitWidth);
-
-                    chunkCount = 1;
-                    lastValue = item;
-                } else
-                    chunkCount += 1;
-            }
-
-            if(chunkCount > 0)
-                WriteRle(s, chunkCount, lastValue, bitWidth);
-        }
-
-        private static void WriteRle(IList<byte> s, int chunkCount, int value, int bitWidth) {
-            int header = 0x0; // the last bit for RLE is 0
-            header = chunkCount << 1;
             int byteWidth = (bitWidth + 7) / 8; //number of whole bytes for this bit width
+            if(byteWidth > 4)
+                throw new IOException($"encountered bit width ({byteWidth}) that requires more than 4 bytes.");
 
-            WriteUnsignedVarInt(s, header);
-            WriteIntBytes(s, value, byteWidth);
+            // rent necessary buffer of max length
+            rentedBuffer = BytePool.Rent((byteWidth + 4) * data.Length);
+            int consumed = 0;
+
+            try {
+                switch(byteWidth) {
+                    case 0:
+                        Encode0(rentedBuffer, ref consumed, data);
+                        break;
+                    case 1:
+                        Encode1(rentedBuffer, ref consumed, data);
+                        break;
+                    case 2:
+                        Encode2(rentedBuffer, ref consumed, data);
+                        break;
+                    case 3:
+                        Encode3(rentedBuffer, ref consumed, data);
+                        break;
+                    case 4:
+                        Encode4(rentedBuffer, ref consumed, data);
+                        break;
+                }
+            } catch {
+                BytePool.Return(rentedBuffer);
+                rentedBuffer = null;
+                throw;
+            }
+
+            return consumed;
         }
 
-        private static void WriteIntBytes(IList<byte> s, int value, int byteWidth) {
-#if NETSTANDARD2_0
-            byte[] bytes = BitConverter.GetBytes(value);
-#else
-            Span<byte> bytes = stackalloc byte[sizeof(int)];
-            BitConverter.TryWriteBytes(bytes, value);
-#endif
+        private static void WriteRle0(byte[] r, ref int consumed, int chunkCount, int value) {
+            int header = chunkCount << 1;
+            WriteUnsignedVarInt(r, ref consumed, header);
+        }
 
-            switch(byteWidth) {
-                case 0:
-                    break;
-                case 1:
-                    s.Add(bytes[0]);
-                    break;
-                case 2:
-                    s.Add(bytes[0]);
-                    s.Add(bytes[1]);
-                    break;
-                case 3:
-                    s.Add(bytes[0]);
-                    s.Add(bytes[1]);
-                    s.Add(bytes[2]);
-                    break;
-                case 4:
-                    s.Add(bytes[0]);
-                    s.Add(bytes[1]);
-                    s.Add(bytes[2]);
-                    s.Add(bytes[3]);
-                    //s.AddRange(dataBytes, 0, dataBytes.Length);
-                    break;
-                default:
-                    throw new IOException($"encountered bit width ({byteWidth}) that requires more than 4 bytes.");
-            }
+        private static void WriteRle1(byte[] r, ref int consumed, int chunkCount, int value) {
+            int header = chunkCount << 1;
+            WriteUnsignedVarInt(r, ref consumed, header);
+            r[consumed++] = (byte)value;
+        }
+
+        private static void WriteRle2(byte[] r, ref int consumed, int chunkCount, int value) {
+            int header = chunkCount << 1;
+            WriteUnsignedVarInt(r, ref consumed, header);
+            r[consumed++] = (byte)value;
+            r[consumed++] = (byte)((value >> 8) & 0xFF);
+        }
+
+        private static void WriteRle3(byte[] r, ref int consumed, int chunkCount, int value) {
+            int header = chunkCount << 1;
+            WriteUnsignedVarInt(r, ref consumed, header);
+            r[consumed++] = (byte)value;
+            r[consumed++] = (byte)((value >> 8) & 0xFF);
+            r[consumed++] = (byte)((value >> 16) & 0x00FF);
+        }
+
+        private static void WriteRle4(byte[] r, ref int consumed, int chunkCount, int value) {
+            int header = chunkCount << 1;
+            WriteUnsignedVarInt(r, ref consumed, header);
+            r[consumed++] = (byte)value;
+            r[consumed++] = (byte)((value >> 8) & 0xFF);
+            r[consumed++] = (byte)((value >> 16) & 0x00FF);
+            r[consumed++] = (byte)((value >> 32) & 0x0000FF);
         }
 
         private static void WriteUnsignedVarInt(IList<byte> s, int value) {
             while(value > 127) {
                 byte b = (byte)((value & 0x7F) | 0x80);
-
                 s.Add(b);
-
                 value >>= 7;
             }
 
             s.Add((byte)value);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteUnsignedVarInt(byte[] s, ref int consumed, int value) {
+            while(value > 127) {
+                byte b = (byte)((value & 0x7F) | 0x80);
+
+                s[consumed++] = b;
+
+                value >>= 7;
+            }
+
+            s[consumed++] = (byte)value;
+        }
+
 
         public static int Decode(Span<byte> s,
             int bitWidth,
@@ -212,9 +227,6 @@ namespace Parquet.Encodings {
             for(int valueIndex = 0, byteIndex = 0; valueIndex < count; valueIndex += 8, byteIndex += bitWidth) {
                 unpacked += BitPackedEncoder.Decode8ValuesLE(rawSpan.Slice(byteIndex), dest.Slice(valueIndex), bitWidth);
             }
-
-            //if(unpacked > maxItems)
-            //    throw new InvalidOperationException($"{unpacked} > {maxItems}");
 
             return Math.Min(unpacked, maxItems);
         }

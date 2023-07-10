@@ -7,7 +7,8 @@ using System.Runtime.InteropServices;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
-using Parquet.Thrift;
+using Parquet.Meta;
+using TType = Parquet.Meta.Type;
 
 namespace Parquet.Encodings {
 
@@ -21,7 +22,7 @@ namespace Parquet.Encodings {
         private static readonly byte[] ZeroInt32 = BitConverter.GetBytes(0);
         private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
-        public static bool Encode(
+        public static void Encode(
             Array data, int offset, int count,
             SchemaElement tse,
             Stream destination,
@@ -32,112 +33,109 @@ namespace Parquet.Encodings {
                 Span<bool> span = ((bool[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 // no stats for bools
-                return true;
             } else if(t == typeof(byte[])) {
                 Span<byte> span = ((byte[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(sbyte[])) {
                 Span<sbyte> span = ((sbyte[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(short[])) {
                 Span<short> span = ((short[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(ushort[])) {
                 Span<ushort> span = ((ushort[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(int[])) {
                 Span<int> span = ((int[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(uint[])) {
                 Span<uint> span = ((uint[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(long[])) {
                 Span<long> span = ((long[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(ulong[])) {
                 Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(BigInteger[])) {
                 Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(decimal[])) {
                 Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(float[])) {
                 Span<float> span = ((float[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
                 Encode(span, destination);
-                return true;
             } else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
+#if NET6_0_OR_GREATER
+            } else if(t == typeof(DateOnly[])) {
+                Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null)
+                    FillStats(span, stats);
+            } else if(t == typeof(TimeOnly[])) {
+                Span<TimeOnly> span = ((TimeOnly[])data).AsSpan(offset, count);
+                Encode(span, destination, tse);
+                if(stats != null)
+                    FillStats(span, stats);
+#endif
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
                 Encode(span, destination, tse);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
             } else if(t == typeof(Interval[])) {
                 Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 // no stats, maybe todo
-                return true;
             } else if(t == typeof(string[])) {
                 Span<string> span = ((string[])data).AsSpan(offset, count);
                 Encode(span, destination);
                 if(stats != null)
                     FillStats(span, stats);
-                return true;
+            } else if(t == typeof(Guid[])) {
+                Span<Guid> span = ((Guid[])data).AsSpan(offset, count);
+                Encode(span, destination);
+            } else {
+                throw new NotSupportedException($"no PLAIN encoder exists for {t}");
             }
-
-            return false;
         }
 
-        public static bool Decode(
+        public static void Decode(
             Array data, int offset, int count,
             SchemaElement tse,
             Span<byte> source,
@@ -151,77 +149,68 @@ namespace Parquet.Encodings {
 
             if(t == typeof(bool[])) {
                 elementsRead = Decode(source, ((bool[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(byte[])) {
                 elementsRead = Decode(source, ((byte[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(sbyte[])) {
                 elementsRead = Decode(source, ((sbyte[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(short[])) {
                 elementsRead = Decode(source, ((short[])data).AsSpan(offset, count));
-                return true;
-
             } else if(t == typeof(ushort[])) {
                 elementsRead = Decode(source, ((ushort[])data).AsSpan(offset, count));
-                return true;
             } else if(t == typeof(int[])) {
                 Span<int> span = ((int[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(uint[])) {
                 Span<uint> span = ((uint[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(long[])) {
                 Span<long> span = ((long[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(ulong[])) {
                 Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(BigInteger[])) {
                 Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(decimal[])) {
                 Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
             } else if(t == typeof(double[])) {
                 Span<double> span = ((double[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
-
             } else if(t == typeof(float[])) {
                 Span<float> span = ((float[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
+#if NET6_0_OR_GREATER
+            } else if(t == typeof(DateOnly[])) {
+                Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+            } else if(t == typeof(TimeOnly[])) {
+                Span<TimeOnly> span = ((TimeOnly[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+#endif
             } else if(t == typeof(TimeSpan[])) {
                 Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
             } else if(t == typeof(Interval[])) {
                 Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
-                return true;
             } else if(t == typeof(string[])) {
                 Span<string> span = ((string[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
-                return true;
+            } else if(t == typeof(Guid[])) {
+                Span<Guid> span = ((Guid[])data).AsSpan(offset, count);
+                elementsRead = Decode(source, span, tse);
+            } else {
+                elementsRead = 0;
+                throw new NotSupportedException($"no PLAIN decoder exists for {t}");
             }
-
-            elementsRead = 0;
-            return false;
         }
 
         #region [ Single Value Encoding ]
@@ -276,6 +265,12 @@ namespace Parquet.Encodings {
                 return true;
             } else if(t == typeof(DateTime))
                 return TryEncode((DateTime)value, tse, out result);
+#if NET6_0_OR_GREATER
+            else if(t == typeof(DateOnly))
+                return TryEncode((DateOnly)value, tse, out result);
+            else if(t == typeof(TimeOnly))
+                return TryEncode((TimeOnly)value, tse, out result);
+#endif
             else if(t == typeof(TimeSpan))
                 return TryEncode((TimeSpan)value, tse, out result);
             else if(t == typeof(Interval)) {
@@ -297,17 +292,17 @@ namespace Parquet.Encodings {
                 return true;    // we've just successfully encoded null
             }
 
-            if(tse.Type == Thrift.Type.BOOLEAN) {
+            if(tse.Type == TType.BOOLEAN) {
                 result = BitConverter.ToBoolean(value, 0);
                 return true;
             }
-            if(tse.Type == Thrift.Type.INT32) {
+            if(tse.Type == TType.INT32) {
                 result = BitConverter.ToInt32(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.INT64) {
+            } else if(tse.Type == TType.INT64) {
                 result = BitConverter.ToInt64(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.INT96) {
+            } else if(tse.Type == TType.INT96) {
                 if(value.Length == 12)
                     if(options?.TreatBigIntegersAsDates ?? false)
                         result = (DateTime)new NanoTime(value, 0);
@@ -316,17 +311,17 @@ namespace Parquet.Encodings {
                 else
                     result = null;
                 return true;
-            } else if(tse.Converted_type == ConvertedType.DECIMAL) {
+            } else if(tse.ConvertedType == ConvertedType.DECIMAL) {
                 result = TryDecodeDecimal(value, tse);
                 return true;
-            } else if(tse.Type == Thrift.Type.DOUBLE) {
+            } else if(tse.Type == TType.DOUBLE) {
                 result = BitConverter.ToDouble(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.FLOAT) {
+            } else if(tse.Type == TType.FLOAT) {
                 result = BitConverter.ToSingle(value, 0);
                 return true;
-            } else if(tse.Type == Thrift.Type.BYTE_ARRAY)
-                if(tse.__isset.converted_type && tse.Converted_type == ConvertedType.UTF8) {
+            } else if(tse.Type == TType.BYTE_ARRAY)
+                if(tse.ConvertedType != null && tse.ConvertedType == ConvertedType.UTF8) {
                     result = E.GetString(value);
                     return true;
                 } else {
@@ -340,17 +335,17 @@ namespace Parquet.Encodings {
 
         private static decimal TryDecodeDecimal(byte[] value, SchemaElement tse) {
             switch(tse.Type) {
-                case Thrift.Type.INT32:
-                    decimal iscaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                case TType.INT32:
+                    decimal iscaleFactor = (decimal)Math.Pow(10, -tse.Scale!.Value);
                     int iv = BitConverter.ToInt32(value, 0);
                     decimal idv = iv * iscaleFactor;
                     return idv;
-                case Thrift.Type.INT64:
-                    decimal lscaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                case TType.INT64:
+                    decimal lscaleFactor = (decimal)Math.Pow(10, -tse.Scale!.Value);
                     long lv = BitConverter.ToInt64(value, 0);
                     decimal ldv = lv * lscaleFactor;
                     return ldv;
-                case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                case TType.FIXED_LEN_BYTE_ARRAY:
                     return new BigDecimal(value, tse);
                 default:
                     throw new InvalidDataException($"data type '{tse.Type}' does not represent a decimal");
@@ -359,15 +354,15 @@ namespace Parquet.Encodings {
 
         private static bool TryEncode(DateTime value, SchemaElement tse, out byte[] result) {
             switch(tse.Type) {
-                case Thrift.Type.INT32:
+                case TType.INT32:
                     int days = value.ToUnixDays();
                     result = BitConverter.GetBytes(days);
                     return true;
-                case Thrift.Type.INT64:
+                case TType.INT64:
                     long unixTime = value.ToUtc().ToUnixMilliseconds();
                     result = BitConverter.GetBytes(unixTime);
                     return true;
-                case Thrift.Type.INT96:
+                case TType.INT96:
                     var nano = new NanoTime(value.ToUtc());
                     result = nano.GetBytes();
                     return true;
@@ -377,21 +372,44 @@ namespace Parquet.Encodings {
             }
         }
 
+#if NET6_0_OR_GREATER
+        private static bool TryEncode(DateOnly value, SchemaElement tse, out byte[] result) {
+            int days = value.ToUnixDays();
+            result = BitConverter.GetBytes(days);
+            return true;
+        }
+
+        private static bool TryEncode(TimeOnly value, SchemaElement tse, out byte[] result) {
+            switch(tse.Type) {
+                case TType.INT32:
+                    int ms = (int)(value.Ticks / TimeSpan.TicksPerMillisecond);
+                    result = BitConverter.GetBytes(ms);
+                    return true;
+                case TType.INT64:
+                    long micros = value.Ticks / 10;
+                    result = BitConverter.GetBytes(micros);
+                    return true;
+                default:
+                    throw new InvalidDataException($"data type '{tse.Type}' does not represent any time types");
+            }
+        }
+#endif
+
         private static bool TryEncode(decimal value, SchemaElement tse, out byte[] result) {
             try {
                 switch(tse.Type) {
-                    case Thrift.Type.INT32:
-                        double sf32 = Math.Pow(10, tse.Scale);
+                    case TType.INT32:
+                        double sf32 = Math.Pow(10, tse.Scale!.Value);
                         int i = (int)(value * (decimal)sf32);
                         result = BitConverter.GetBytes(i);
                         return true;
-                    case Thrift.Type.INT64:
-                        double sf64 = Math.Pow(10, tse.Scale);
+                    case TType.INT64:
+                        double sf64 = Math.Pow(10, tse.Scale!.Value);
                         long l = (long)(value * (decimal)sf64);
                         result = BitConverter.GetBytes(l);
                         return true;
-                    case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
-                        var bd = new BigDecimal(value, tse.Precision, tse.Scale);
+                    case TType.FIXED_LEN_BYTE_ARRAY:
+                        var bd = new BigDecimal(value, tse.Precision!.Value, tse.Scale!.Value);
                         result = bd.GetBytes();
                         return true;
                     default:
@@ -405,11 +423,11 @@ namespace Parquet.Encodings {
 
         private static bool TryEncode(TimeSpan value, SchemaElement tse, out byte[] result) {
             switch(tse.Type) {
-                case Thrift.Type.INT32:
+                case TType.INT32:
                     int ms = (int)value.TotalMilliseconds;
                     result = BitConverter.GetBytes(ms);
                     return true;
-                case Thrift.Type.INT64:
+                case TType.INT64:
                     long micros = value.Ticks / 10;
                     result = BitConverter.GetBytes(micros);
                     return true;
@@ -627,8 +645,8 @@ namespace Parquet.Encodings {
 
         public static void Encode(ReadOnlySpan<decimal> data, Stream destination, SchemaElement tse) {
             switch(tse.Type) {
-                case Thrift.Type.INT32:
-                    double scaleFactor32 = Math.Pow(10, tse.Scale);
+                case TType.INT32:
+                    double scaleFactor32 = Math.Pow(10, tse.Scale ?? 0);
                     foreach(decimal d in data)
                         try {
                             int i = (int)(d * (decimal)scaleFactor32);
@@ -639,8 +657,8 @@ namespace Parquet.Encodings {
                                $"value '{d}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
                         }
                     break;
-                case Thrift.Type.INT64:
-                    double sf64 = Math.Pow(10, tse.Scale);
+                case TType.INT64:
+                    double sf64 = Math.Pow(10, tse.Scale ?? 0);
                     foreach(decimal d in data)
                         try {
                             long l = (long)(d * (decimal)sf64);
@@ -651,11 +669,11 @@ namespace Parquet.Encodings {
                                $"value '{d}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
                         }
                     break;
-                case Thrift.Type.FIXED_LEN_BYTE_ARRAY:
+                case TType.FIXED_LEN_BYTE_ARRAY:
                     foreach(decimal d in data) {
-                        var bd = new BigDecimal(d, tse.Precision, tse.Scale);
+                        var bd = new BigDecimal(d, tse.Precision ?? 0, tse.Scale ?? 0);
                         byte[] b = bd.GetBytes();
-                        tse.Type_length = b.Length; //always re-set type length as it can differ from default type length
+                        tse.TypeLength = b.Length; //always re-set type length as it can differ from default type length
                         destination.Write(b, 0, b.Length);
                     }
                     break;
@@ -666,8 +684,8 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<decimal> data, SchemaElement tse) {
             switch(tse.Type) {
-                case Thrift.Type.INT32: {
-                        decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                case TType.INT32: {
+                        decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale ?? 0);
                         int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
                         try {
                             Decode(source, ints.AsSpan(0, data.Length));
@@ -678,8 +696,8 @@ namespace Parquet.Encodings {
                             ArrayPool<int>.Shared.Return(ints);
                         }
                     }
-                case Thrift.Type.INT64: {
-                        decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale);
+                case TType.INT64: {
+                        decimal scaleFactor = (decimal)Math.Pow(10, -tse.Scale ?? 0);
                         long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
                         try {
                             Decode(source, longs.AsSpan(0, data.Length));
@@ -690,8 +708,8 @@ namespace Parquet.Encodings {
                             ArrayPool<long>.Shared.Return(longs);
                         }
                     }
-                case Thrift.Type.FIXED_LEN_BYTE_ARRAY: {
-                        int tl = tse.Type_length;
+                case TType.FIXED_LEN_BYTE_ARRAY: {
+                        int tl = tse.TypeLength ?? 0;
                         if(tl == 0)
                             return 0;
 
@@ -703,7 +721,7 @@ namespace Parquet.Encodings {
                         }
                         return i;
                     }
-                case Thrift.Type.BYTE_ARRAY: {
+                case TType.BYTE_ARRAY: {
                         // type_length: 0
                         // precision: 4
                         // scale: 2
@@ -759,6 +777,14 @@ namespace Parquet.Encodings {
             }
         }
 
+        public static void Encode(ReadOnlySpan<Guid> data, Stream destination) {
+            foreach(Guid element in data) {
+                byte[] b = element.ToByteArray();
+                destination.Write(b, 0, b.Length);
+            }
+        }
+
+
         public static int Decode(Span<byte> source, Span<byte[]> data) {
             int read = 0;
             int sourceOffset = 0;
@@ -778,21 +804,21 @@ namespace Parquet.Encodings {
         public static void Encode(ReadOnlySpan<DateTime> data, Stream destination, SchemaElement tse) {
 
             switch(tse.Type) {
-                case Thrift.Type.INT32:
+                case TType.INT32:
                     foreach(DateTime element in data) {
                         int days = element.ToUnixDays();
                         byte[] raw = BitConverter.GetBytes(days);
                         destination.Write(raw, 0, raw.Length);
                     }
                     break;
-                case Thrift.Type.INT64:
+                case TType.INT64:
                     foreach(DateTime element in data) {
                         long unixTime = element.ToUtc().ToUnixMilliseconds();
                         byte[] raw = BitConverter.GetBytes(unixTime);
                         destination.Write(raw, 0, raw.Length);
                     }
                     break;
-                case Thrift.Type.INT96:
+                case TType.INT96:
                     foreach(DateTime element in data) {
                         var nano = new NanoTime(element.ToUtc());
                         nano.Write(destination);
@@ -804,9 +830,37 @@ namespace Parquet.Encodings {
             }
         }
 
+#if NET6_0_OR_GREATER
+        public static void Encode(ReadOnlySpan<DateOnly> data, Stream destination, SchemaElement tse) {
+            foreach(DateOnly element in data) {
+                int days = element.ToUnixDays();
+                byte[] raw = BitConverter.GetBytes(days);
+                destination.Write(raw, 0, raw.Length);
+            }
+        }
+        public static void Encode(ReadOnlySpan<TimeOnly> data, Stream destination, SchemaElement tse) {
+            switch(tse.Type) {
+                case TType.INT32:
+                    foreach(TimeOnly element in data) {
+                        int ticks = (int)(element.Ticks / TimeSpan.TicksPerMillisecond);
+                        byte[] raw = BitConverter.GetBytes(ticks);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+                case TType.INT64:
+                    foreach(TimeOnly element in data) {
+                        long ticks = element.Ticks / 10;
+                        byte[] raw = BitConverter.GetBytes(ticks);
+                        destination.Write(raw, 0, raw.Length);
+                    }
+                    break;
+            }
+        }
+#endif
+
         public static int Decode(Span<byte> source, Span<DateTime> data, SchemaElement tse) {
             switch(tse.Type) {
-                case Thrift.Type.INT32:
+                case TType.INT32:
                     int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
                     try {
                         int intsRead = Decode(source, ints.AsSpan(0, data.Length));
@@ -816,12 +870,12 @@ namespace Parquet.Encodings {
                     } finally {
                         ArrayPool<int>.Shared.Return(ints);
                     }
-                case Thrift.Type.INT64:
+                case TType.INT64:
                     long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
                     try {
                         int longsRead = Decode(source, longs.AsSpan(0, data.Length));
-                        bool isMicros = tse.__isset.converted_type &&
-                                        tse.Converted_type == ConvertedType.TIMESTAMP_MICROS;
+                        bool isMicros = tse.ConvertedType != null &&
+                                        tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS;
                         if(isMicros)
                             for(int i = 0; i < longsRead; i++) {
                                 long lv = longs[i];
@@ -836,7 +890,7 @@ namespace Parquet.Encodings {
                     } finally {
                         ArrayPool<long>.Shared.Return(longs);
                     }
-                case Thrift.Type.INT96:
+                case TType.INT96:
                     byte[] buf = ArrayPool<byte>.Shared.Rent(NanoTime.BinarySize * data.Length);
                     try {
                         int offset = 0;
@@ -854,16 +908,57 @@ namespace Parquet.Encodings {
             }
         }
 
+#if NET6_0_OR_GREATER
+        public static int Decode(Span<byte> source, Span<DateOnly> data, SchemaElement tse) {
+            int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
+            try {
+                int intsRead = Decode(source, ints.AsSpan(0, data.Length));
+                for(int i = 0; i < intsRead; i++)
+                    data[i] = DateOnly.FromDateTime(ints[i].AsUnixDaysInDateTime());
+                return intsRead;
+            } finally {
+                ArrayPool<int>.Shared.Return(ints);
+            }
+        }
+
+        public static int Decode(Span<byte> source, Span<TimeOnly> data, SchemaElement tse) {
+            switch(tse.Type) {
+                case TType.INT32: {
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
+                        int iv = source.ReadInt32(srcPos);
+                        srcPos += sizeof(int);
+                        data[i++] = new TimeOnly(iv * TimeSpan.TicksPerMillisecond);
+                    }
+                    return i;
+                }
+                case TType.INT64: {
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
+                        long lv = source.ReadInt64(srcPos);
+                        srcPos += sizeof(long);
+                        data[i++] = new TimeOnly(lv * 10);
+                    }
+                    return i;
+                }
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+#endif
+
         public static void Encode(ReadOnlySpan<TimeSpan> data, Stream destination, SchemaElement tse) {
             switch(tse.Type) {
-                case Thrift.Type.INT32:
+                case TType.INT32:
                     foreach(TimeSpan ts in data) {
                         int ms = (int)ts.TotalMilliseconds;
                         byte[] raw = BitConverter.GetBytes(ms);
                         destination.Write(raw, 0, raw.Length);
                     }
                     break;
-                case Thrift.Type.INT64:
+                case TType.INT64:
                     foreach(TimeSpan ts in data) {
                         long micros = ts.Ticks / 10;
                         byte[] raw = BitConverter.GetBytes(micros);
@@ -877,7 +972,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<TimeSpan> data, SchemaElement tse) {
             switch(tse.Type) {
-                case Thrift.Type.INT32: {
+                case TType.INT32: {
                         int i = 0;
                         int srcPos = 0;
                         while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
@@ -887,7 +982,7 @@ namespace Parquet.Encodings {
                         }
                         return i;
                     }
-                case Thrift.Type.INT64: {
+                case TType.INT64: {
                         int i = 0;
                         int srcPos = 0;
                         while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
@@ -984,6 +1079,21 @@ namespace Parquet.Encodings {
                 data[i] = E.GetString(source.Slice(spanIdx, length));
 #endif
                 spanIdx += length;
+            }
+            return i;
+        }
+
+        public static int Decode(Span<byte> source, Span<Guid> data, SchemaElement tse) {
+            if(tse.TypeLength != 16)
+                throw new InvalidOperationException($"'{tse.TypeLength}' is invalid type length for UUID (should be 16)");
+
+            int i = 0;
+            for(int offset = 0; offset + 16 <= source.Length && i < data.Length; offset += 16, i++) {
+#if NETSTANDARD2_0
+                data[i] = new Guid(source.Slice(offset, 16).ToArray());
+#else
+                data[i] = new Guid(source.Slice(offset, 16));
+#endif
             }
             return i;
         }
@@ -1113,6 +1223,20 @@ namespace Parquet.Encodings {
             stats.MinValue = min;
             stats.MaxValue = max;
         }
+
+#if NET6_0_OR_GREATER
+        public static void FillStats(ReadOnlySpan<DateOnly> data, DataColumnStatistics stats) {
+            data.MinMax(out DateOnly min, out DateOnly max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+
+        public static void FillStats(ReadOnlySpan<TimeOnly> data, DataColumnStatistics stats) {
+            data.MinMax(out TimeOnly min, out TimeOnly max);
+            stats.MinValue = min;
+            stats.MaxValue = max;
+        }
+#endif
 
         public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {
             data.MinMax(out TimeSpan min, out TimeSpan max);

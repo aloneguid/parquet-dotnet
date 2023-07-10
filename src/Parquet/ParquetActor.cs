@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ML.Data;
 using Parquet.Extensions;
 using Parquet.File;
 
@@ -18,7 +19,6 @@ namespace Parquet {
 
         private readonly Stream _fileStream;
         private BinaryWriter? _binaryWriter;
-        private ThriftStream? _thriftStream;
 
         internal ParquetActor(Stream? fileStream) =>
             _fileStream = fileStream ?? throw new ArgumentNullException(nameof(fileStream));
@@ -29,8 +29,6 @@ namespace Parquet {
         protected Stream Stream => _fileStream;
 
         internal BinaryWriter Writer => _binaryWriter ??= new BinaryWriter(_fileStream);
-
-        internal ThriftStream ThriftStream => _thriftStream ??= new ThriftStream(_fileStream);
 
         /// <summary>
         /// Validates that this file is a valid parquet file by reading head and tail of it
@@ -48,9 +46,11 @@ namespace Parquet {
                 throw new IOException($"not a parquet file, head: {head.ToHexString()}, tail: {tail.ToHexString()}");
         }
 
-        internal async Task<Thrift.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
-            await GoBeforeFooterAsync();
-            return await ThriftStream.ReadAsync<Thrift.FileMetaData>(cancellationToken);
+        internal async ValueTask<Parquet.Meta.FileMetaData> ReadMetadataAsync(CancellationToken cancellationToken = default) {
+            int footerLength = await GoBeforeFooterAsync();
+            byte[] footerData = await _fileStream.ReadBytesExactlyAsync(footerLength);
+            using var ms = new MemoryStream(footerData);
+            return Parquet.Meta.FileMetaData.Read(new Meta.Proto.ThriftCompactProtocolReader(ms));
         }
 
         internal async ValueTask<int> GoBeforeFooterAsync() {
