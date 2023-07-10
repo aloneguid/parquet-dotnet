@@ -59,13 +59,7 @@ namespace Parquet {
         /// If the column is missing, an exception will be thrown.
         /// </summary>
         public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
-
-            ColumnChunk? columnChunk = GetMetadata(field);
-            if(columnChunk == null) {
-                throw new ParquetException($"'{field.Path}' does not exist in this file");
-            }
-            var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
-
+            DataColumnReader columnReader = GetColumnReader(field);
             return columnReader.ReadAsync(cancellationToken);
         }
 
@@ -92,6 +86,24 @@ namespace Parquet {
                 return new();
 
             return cc.MetaData.KeyValueMetadata.ToDictionary(kv => kv.Key, kv => kv.Value!);
+        }
+
+        /// <summary>
+        /// Returns DataColumnReader for given field
+        /// </summary>
+        /// <param name="field">DataField</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ParquetException"></exception>
+        public DataColumnReader GetColumnReader(DataField field) {
+
+            if(field == null)
+                throw new ArgumentNullException(nameof(field));
+
+            ColumnChunk columnChunk = GetMetadata(field)
+                        ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+
+            return new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
         }
 
         /// <summary>
