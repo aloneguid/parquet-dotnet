@@ -43,10 +43,24 @@ namespace Parquet.File {
             FieldPath fullPath, DataColumn column,
             CancellationToken cancellationToken = default) {
 
+            List<Encoding> encoding = new List<Encoding>();
+            if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? evalue)) {
+
+                if(evalue == Encoding.DELTA_BINARY_PACKED.ToString()) {
+                    encoding.Add(Encoding.RLE);
+                    encoding.Add(Encoding.BIT_PACKED);
+                    encoding.Add(Encoding.DELTA_BINARY_PACKED);
+
+                } else {
+                    throw new Exception($"Not Supported encoding {evalue}");
+                }
+            }
+
+
             // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
             ColumnChunk chunk = _footer.CreateColumnChunk(
                 _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
-                _keyValueMetadata);
+                _keyValueMetadata, encoding);
 
             ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
                 cancellationToken);
@@ -69,11 +83,11 @@ namespace Parquet.File {
             PageHeader ph, MemoryStream data,
             ColumnSizes cs,
             CancellationToken cancellationToken) {
-            
+
             using IronCompress.IronCompressResult compressedData = _compressionMethod == CompressionMethod.None
                 ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
                 : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
-            
+
             ph.UncompressedPageSize = (int)data.Length;
             ph.CompressedPageSize = compressedData.AsSpan().Length;
 
@@ -87,8 +101,8 @@ namespace Parquet.File {
 
             // write data
 #if NETSTANDARD2_0
-                byte[] tmp = compressedData.AsSpan().ToArray();
-                _stream.Write(tmp, 0, tmp.Length);
+            byte[] tmp = compressedData.AsSpan().ToArray();
+            _stream.Write(tmp, 0, tmp.Length);
 #else
             _stream.Write(compressedData);
 #endif
@@ -131,7 +145,21 @@ namespace Parquet.File {
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
-                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
+                PageHeader ph = new PageHeader();
+
+                if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? evalue)) {
+                    if(evalue == Encoding.DELTA_BINARY_PACKED.ToString()) {
+                        ph = _footer.CreateDeltaPage(column.NumValues);
+
+                    } else {
+                        throw new Exception($"Not Supported encoding {evalue}");
+                    }
+                } else {
+                    ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
+                }
+
+
+
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
@@ -145,6 +173,20 @@ namespace Parquet.File {
                     int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
+                } else if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? value)) {
+
+                    if(value == Encoding.DELTA_BINARY_PACKED.ToString()) {
+                        if(column.Field.ClrType == typeof(Int32)) {
+                            Array data = pc.GetPlainData(out int offset, out int count);
+                            byte[] encodedBytes = DeltaBinaryPackedEncoder.EncodeINT32(data);
+                            await ms.WriteAsync(encodedBytes, 0, encodedBytes.Length);
+
+                            ParquetPlainEncoder.FillStats((int[])data, column.Statistics);
+                        }
+                    } else {
+                        throw new Exception($"Not Supported encoding {value}");
+                    }
+
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
                     ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);

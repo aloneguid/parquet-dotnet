@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Data;
+using System.Collections.Generic;
 
 namespace Parquet {
     /// <summary>
@@ -47,6 +47,11 @@ namespace Parquet {
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Dictionary<string, string> ColumnEncoding { get; set; } = new Dictionary<string, string>();
 
     }
 }
