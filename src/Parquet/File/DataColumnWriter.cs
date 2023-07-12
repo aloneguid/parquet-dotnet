@@ -178,7 +178,7 @@ namespace Parquet.File {
                     if(value == Encoding.DELTA_BINARY_PACKED.ToString()) {
                         if(column.Field.ClrType == typeof(Int32)) {
                             Array data = pc.GetPlainData(out int offset, out int count);
-                            byte[] encodedBytes = DeltaBinaryPackedEncoder.EncodeINT32(data);
+                            byte[] encodedBytes = DeltaBinaryPackedEncoder.EncodeINT32V2(data);
                             await ms.WriteAsync(encodedBytes, 0, encodedBytes.Length);
 
                             ParquetPlainEncoder.FillStats((int[])data, column.Statistics);

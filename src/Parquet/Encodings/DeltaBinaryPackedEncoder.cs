@@ -107,6 +107,77 @@ namespace Parquet.Encodings {
             return res.ToArray();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static byte[] EncodeINT32V2(Array data) {
+            int[] nums = (int[])data;
+
+            List<byte> res = new List<byte>();
+            int blockSize = 128;
+            int numMiniBlocksInBlock = 4;
+            int numValuesInMiniBlock = 32;
+            int totalNumValues = nums.Length;
+
+            int num = nums[0];
+            int firstValue = ((num >> 31) ^ (num << 1));
+
+            res.AddRange(WriteUnsignedVarInt(blockSize));
+            res.AddRange(WriteUnsignedVarInt(numMiniBlocksInBlock));
+            res.AddRange(WriteUnsignedVarInt(totalNumValues));
+            res.AddRange(WriteUnsignedVarInt(firstValue));
+
+            int i = 1;
+            while(i < nums.Length) {
+                List<int> blockBuf = new List<int>();
+                int minDelta = int.MaxValue;
+
+                while(i < nums.Length && blockBuf.Count < blockSize) {
+                    int delta = nums[i] - nums[i - 1];
+                    blockBuf.Add(delta);
+                    if(delta < minDelta) {
+                        minDelta = delta;
+                    }
+                    i++;
+                }
+
+                while(blockBuf.Count < blockSize) {
+                    blockBuf.Add(minDelta);
+                }
+
+
+                byte[] bitWidths = new byte[numMiniBlocksInBlock];
+
+                for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                    int maxValue = 0;
+                    for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
+                        blockBuf[(int)k] = blockBuf[(int)k] - minDelta;
+                        if(blockBuf[(int)k] > maxValue) {
+                            maxValue = blockBuf[(int)k];
+                        }
+                    }
+                    bitWidths[j] = (byte)(BitOperations.Log2((uint)maxValue) + 1);
+                }
+
+                int minDeltaZigZag = ((minDelta >> 31) ^ (minDelta << 1));
+                res.AddRange(WriteUnsignedVarInt(minDeltaZigZag));
+                res.AddRange(bitWidths);
+
+                for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                    int miniBlockStart = j * numValuesInMiniBlock;
+                    for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
+                        byte[] resu = new byte[bitWidths[j]];
+                        int end = Math.Min(8, blockBuf.Count - k);
+                        BitPackedEncoder.Encode8ValuesLE(blockBuf.GetRange(k,end).ToArray(), resu, bitWidths[j]);
+                        res.AddRange(resu);
+                    }
+                }
+            }
+            return res.ToArray();
+        }
+
 
         //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L216
         private static byte[]? WriteBitPacked(int[] vals, long bitWidth, bool ifHeader) {
