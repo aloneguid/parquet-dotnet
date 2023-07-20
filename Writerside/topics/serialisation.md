@@ -1,12 +1,14 @@
-# Class Serialisation
+# Class serialisation
 
-Parquet library is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
+%product% is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
 
 Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become blazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
 
-Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serialisers and deserialisers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
+<tip>
+Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
+</tip>
 
-## Quick Start
+## Quick start
 
 Both serialiser and deserialiser works with collection of classes. Let's say you have the following class definition:
 
@@ -38,20 +40,20 @@ That's it! Of course the `.SerializeAsync()` method also has overloads and optio
 
 Parquet.Net will automatically figure out file schema by reflecting class structure, types, nullability and other parameters for you.
 
-In order to deserialise this file back to array of classes you would write the following:
+In order to deserialize this file back to array of classes you would write the following:
 
 ```csharp
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
-## Deserialize records by RowGroup
+## Deserialize records by `RowGroup`
 
-If you have a large file and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.
+If you have a large file, and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.
 
 ```csharp
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet", rowGroupIndex);
 ```
 
-## Customising Serialisation
+## Customising serialisation
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
@@ -119,7 +121,7 @@ class Primitives {
 
 This will successfully deserialize the array of integers from the parquet file into your list property.
 
-## Nested Types
+## Nested types
 
 You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format. Sometimes you might want to store more complex data in your parquet files, like lists or maps. These are called *nested types* and they can be useful for organizing your information. However, they also come with a trade-off: they make your code slower and use more CPU resources. That's why you should only use them when you really need them and not just because they look cool. Simple columns are faster and easier to work with, so stick to them whenever you can.
 
@@ -158,7 +160,7 @@ var data = Enumerable.Range(0, 1_000_000).Select(i => new AddressBookEntry {
         }).ToList();
 ```
 
-You can serialise/deserialise those using the same `ParquetSerializer.SerializeAsync` / `ParquetSerializer.DeserializeAsync` methods. It does understand subclasses and will magically traverse inside them.
+You can serialise/deserialize those using the same `ParquetSerializer.SerializeAsync` / `ParquetSerializer.DeserializeAsync` methods. It does understand subclasses and will magically traverse inside them.
 
 ### Lists
 
@@ -344,7 +346,7 @@ And the data:
 
 
 
-### Supported Collection Types
+### Supported collection types
 
 Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-collection-types?pivots=dotnet-7-0), here are collections Parquet.Net currently supports:
 
@@ -360,7 +362,7 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 `*` Technically impossible.
 `**` Technically possible, but not implemented yet.
 
-## Appending to Files
+## Appending to files
 
 `ParquetSerializer` supports appending data to an existing Parquet file. This can be useful when you have multiple batches of data that need to be written to the same file.
 
@@ -385,7 +387,7 @@ await ParquetSerializer.SerializeAsync(dataBatch3, ms, new ParquetSerializerOpti
 
 By following this pattern, you can easily append data to a Parquet file using `ParquetSerializer`.
 
-## Specifying Row Group Size
+## Specifying row group size
 
 Row groups are a logical division of data in a parquet file. They allow efficient filtering and scanning of data based on predicates. By default, all the class instances are serialized into a single row group, which is absolutely fine. If you need to set a custom row group size, you can specify it in `ParquetSerializerOptions` like so:
 
@@ -397,6 +399,6 @@ Note that small row groups make parquet files very inefficient in general, so yo
 
 ## FAQ
 
-**Q.** Can I specify schema for serialisation/deserialisation.
+**Q.** Can I specify schema for serialisation/deserialization.
 
 **A.** If you're using a class-based approach to define your data model, you don't have to worry about providing a schema separately. The class definition itself is the schema, meaning it specifies the fields and types of your data. This makes it easier to write and maintain your code, since you only have to define your data model once and use it everywhere.

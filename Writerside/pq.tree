@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="pq"
+                 name="Parquet.Net"
+                 start-page="starter-topic.md">
+
+    <toc-element topic="starter-topic.md"/>
+    <toc-element topic="serialisation.md"/>
+    <toc-element topic="writing.md"/>
+    <toc-element topic="metadata.md"/>
+    <toc-element topic="reading.md"/>
+    <toc-element topic="nested_types.md"/>
+    <toc-element topic="rows.md"/>
+    <toc-element topic="column.md"/>
+    <toc-element topic="schema.md"/>
+    <toc-element topic="dataframe.md"/>
+    <toc-element topic="parquet-getting-started.md"/>
+</instance-profile>

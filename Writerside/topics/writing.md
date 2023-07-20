@@ -39,9 +39,9 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 
 To read more about DataColumn, see [this page](column.md).
 
-### Specifying Compression Method and Level
+### Specifying compression method and level
 
-After constructing `ParquetWriter` you can optionally set compression method ([`CompressionMethod`](../src/Parquet/CompressionMethod.cs)) and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) which defaults to `Snappy`.  Unless you have specific needs to override compression, the default are very reasonable.
+After constructing `ParquetWriter` you can optionally set compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) which defaults to `Snappy`.  Unless you have specific needs to override compression, the default are very reasonable.
 
 For instance, to set compression to gzip/optimal:
 
@@ -53,7 +53,7 @@ using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, file
 }
 ```
 
-### Appending to Files
+### Appending to files
 
 This lib supports pseudo appending to files, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.
 
@@ -100,6 +100,6 @@ Note that you have to specify that you are opening `ParquetWriter` in **append**
 
 Please keep in mind that row groups are designed to hold a large amount of data (5'0000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
 
-### Complex Types
+### Complex types
 
 To write complex types (arrays, lists, maps, structs) read [this guide](nested_types.md).

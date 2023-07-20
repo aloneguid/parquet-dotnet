@@ -1,4 +1,4 @@
-# Nested Types
+# Nested types
 
 Optionally (but not required) read [getting started with Parquet](parquet-getting-started.md) to better understand Parquet internals.
 
@@ -89,7 +89,7 @@ using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
 
 Note that the only indication that this is a part of struct is `Path` property in the read schema containing struct name:
 
-![](img/struct-path.png)
+![](struct-path.png)
 
 ## Lists and Arrays
 
