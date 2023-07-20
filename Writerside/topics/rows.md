@@ -44,7 +44,7 @@ Representing flat data is the most obvious case, you would simply create a row w
 
 The corresponding code to create a table with rows is:
 
-```csharp
+```C#
 var table = new Table(
    new Schema(
       new DataField<int>("id"),
@@ -67,7 +67,7 @@ Parquet has an option to store an array of values in a single cell, which is som
 
 The corresponding code to populate this table is:
 
-```csharp
+```C#
 var table = new Table(
    new Schema(
       new DataField<IEnumerable<int>>("ids")));
@@ -79,7 +79,7 @@ table.Add(new Row(new[] { 4, 5, 6 }));
 
 ## Dictionaries (Maps)
 
-```csharp
+```C#
 var schema = new Schema(
    new DataField<string>("city"),
    new MapField("population",
@@ -104,7 +104,7 @@ where the last cell is the data for your map. As we're in the row-based world, t
 
 To express this in code:
 
-```csharp
+```C#
 table.Add("London",
    new List<Row>
    {
@@ -117,7 +117,7 @@ table.Add("London",
 
 Structures are represented again as `Row` objects. When you read or write a structure it is embedded into another row's value as a row. To demonstrate, the following schema
 
-```csharp
+```C#
 var table = new Table(
    new Schema(
       new DataField<string>("isbn"),
@@ -135,7 +135,7 @@ represents a table with two columns - *isbn* and *author*, however *author* is a
 
 you would write:
 
-```csharp
+```C#
 table.Add(new Row("12345-6", new Row("Hazel", "Nut")));
 table.Add(new Row("12345-7", new Row("Marsha", "Mellow")));
 ```
@@ -148,7 +148,7 @@ Lists are easy to get confused with repeatable fields, because they essentially 
 
 In simple cases, when a list contains a single data element, it will be mapped to a collection of those elements, for instance in the following schema
 
-```csharp
+```C#
 var table = new Table(
    new Schema(
       new DataField<int>("id"),
@@ -165,7 +165,7 @@ and the following set of data:
 
 can be represented in code as:
 
-```csharp
+```C#
 table.Add(1, new[] { "London", "Derby" });
 table.Add(2, new[] { "Paris", "New York" });
 ```
@@ -176,7 +176,7 @@ As you can see, it's no different to repeatable fields (in this case a repeatabl
 
 A more complicated use case of lists where they actually make some sense is using structures (although lists can contain any subclass of `Field`). Let's say you have the the following schema definition:
 
-```csharp
+```C#
 var t = new Table(
    new DataField<int>("id"),
    new ListField("structs",
@@ -194,7 +194,7 @@ and would like to add the following data:
 
 which essentially creates a list of structures with two fields - id and name in a single table cell. To add the data to the table:
 
-```csharp
+```C#
 t.Add(1, new[] { new Row(1, "Joe"), new Row(2, "Bloggs") });
 t.Add(2, new[] { new Row(3, "Star"), new Row(4, "Wars") });
 ```

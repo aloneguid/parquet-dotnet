@@ -12,7 +12,7 @@ Class serialisation philosophy is based on the idea that we don't need to reinve
 
 Both serialiser and deserialiser works with collection of classes. Let's say you have the following class definition:
 
-```csharp
+```C#
 class Record {
     public DateTime Timestamp { get; set; }
     public string EventName { get; set; }
@@ -22,7 +22,7 @@ class Record {
 
 Let's generate a few instances of those for a test:
 
-```csharp
+```C#
 var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
     Timestamp = DateTime.UtcNow.AddSeconds(i),
     EventName = i % 2 == 0 ? "on" : "off",
@@ -32,7 +32,7 @@ var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
 
 Here is what you can do to write out those classes in a single file:
 
-```csharp
+```C#
 await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 ```
 
@@ -42,14 +42,14 @@ Parquet.Net will automatically figure out file schema by reflecting class struct
 
 In order to deserialize this file back to array of classes you would write the following:
 
-```csharp
+```C#
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
 ## Deserialize records by `RowGroup`
 
 If you have a large file, and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.
 
-```csharp
+```C#
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet", rowGroupIndex);
 ```
 
@@ -71,7 +71,7 @@ Therefore, when this library sees `INT96` type, it will automatically treat it a
 
 If you need to rather use a normal non-legacy date type, just annotate a property with `[ParquetTimestamp]`:
 
-```csharp
+```C#
 [ParquetTimestamp]
 public DateTime TimestampDate { get; set; }
 ```
@@ -80,7 +80,7 @@ public DateTime TimestampDate { get; set; }
 
 By default, time (`TimeSpan`) is serialised with millisecond precision. but you can increase it by adding `[ParquetMicroSecondsTime]` attribute:
 
-```csharp
+```C#
 [ParquetMicroSecondsTime]
 public TimeSpan MicroTime { get; set; }
 ```
@@ -89,7 +89,7 @@ public TimeSpan MicroTime { get; set; }
 
 By default, `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute:
 
-```csharp
+```C#
 [ParquetDecimal(40, 20)]
 public decimal With_40_20 { get; set; }
 ```
@@ -100,7 +100,7 @@ One of the features of Parquet files is that they can contain simple repeatable 
 
 If you want to read an array of primitive values, such as integers or booleans, from a parquet file created by another system, you might think that you can simply use a list property in your class, like this:
 
-```csharp
+```C#
 class Primitives {
         public List<bool>? Booleans { get; set; }
 }
@@ -112,7 +112,7 @@ However, this will not work, because this library expects a list of complex obje
 
 To fix this problem, you need to use the `ParquetSimpleRepeatable` attribute on your list property. This tells the library that the list contains simple values that can be repeated as an array. For example:
 
-```csharp
+```C#
 class Primitives {
         [ParquetSimpleRepeatable]
         public List<bool>? Booleans { get; set; }
@@ -131,7 +131,7 @@ You can also serialize [more complex types](https://github.com/apache/parquet-fo
 
 Structures are just class members of a class and are completely transparent. For instance, `AddressBookEntry` class may contain a structure called `Address`:
 
-```csharp
+```C#
 class Address {
     public string? Country { get; set; }
 
@@ -149,7 +149,7 @@ class AddressBookEntry {
 
 Populated with the following fake data:
 
-```csharp
+```C#
 var data = Enumerable.Range(0, 1_000_000).Select(i => new AddressBookEntry {
             FirstName = "Joe",
             LastName = "Bloggs",
@@ -168,7 +168,7 @@ One of the cool things about lists is that Parquet can handle any kind of data s
 
 For instance, a simple `MovementHistory` class with `Id` and list of `ParentIds` looking like the following:
 
-```csharp
+```C#
 class MovementHistoryCompressed  {
     public int? PersonId { get; set; }
 
@@ -178,7 +178,7 @@ class MovementHistoryCompressed  {
 
 Is totally fine to serialise/deserialise:
 
-```csharp
+```C#
 var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressed {
     PersonId = i,
     ParentIds = Enumerable.Range(i, 4).ToList()
@@ -219,7 +219,7 @@ and data:
 
 Or as a more complicate example, here is a list of structures (classes in C#):
 
-```csharp
+```C#
 class Address {
     public string? Country { get; set; }
 
@@ -291,7 +291,7 @@ In this library, maps are represented as an instance of generic `IDictionary<TKe
 
 To give you a minimal example, let's say we have the following class with two properties: `Id` and `Tags`. The `Id` property is an integer that can be used to identify a row or an item in a collection. The `Tags` property is a dictionary of strings that can store arbitrary key-value pairs. For example, the `Tags` property can be used to store metadata or attributes of the item:
 
-```csharp
+```C#
 class IdWithTags {
     public int Id { get; set; }
 
@@ -303,7 +303,7 @@ class IdWithTags {
 
 You can easily use `ParquetSerializer` to work with this class:
 
-```csharp
+```C#
 var data = Enumerable.Range(0, 10).Select(i => new IdWithTags { 
     Id = i,
     Tags = new Dictionary<string, string> {
@@ -368,13 +368,13 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 
 To use this feature, you need to set the `Append` flag to `true` in the `ParquetSerializerOptions` object that you pass to the `SerializeAsync` method. This will tell the library to append the data batch to the end of the file stream instead of overwriting it. For example:
 
-```csharp
+```C#
 await ParquetSerializer.SerializeAsync(dataBatch, ms, new ParquetSerializerOptions { Append = true });
 ```
 
 However, there is one caveat: you should not set the `Append` flag to `true` for the first batch of data that you write to a new file. This is because a Parquet file has a header and a footer that contain metadata about the schema and statistics of the data. If you try to append data to an empty file stream, you will get an `IOException` because there is no header or footer to read from. Therefore, you should always set the `Append` flag to `false` for the first batch (or not pass any options, which makes it `false` by default) and then switch it to `true` for subsequent batches. For example:
 
-```csharp
+```C#
 // First batch
 await ParquetSerializer.SerializeAsync(dataBatch1, ms, new ParquetSerializerOptions { Append = false });
 
@@ -391,7 +391,7 @@ By following this pattern, you can easily append data to a Parquet file using `P
 
 Row groups are a logical division of data in a parquet file. They allow efficient filtering and scanning of data based on predicates. By default, all the class instances are serialized into a single row group, which is absolutely fine. If you need to set a custom row group size, you can specify it in `ParquetSerializerOptions` like so:
 
-```csharp
+```C#
 await ParquetSerializer.SerializeAsync(data, stream, new ParquetSerializerOptions { RowGroupSize = 10_000_000 });
 ```
 

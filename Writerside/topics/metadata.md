@@ -6,7 +6,7 @@ There are two places in Parquet file you can store custom [metadata](https://par
 
 To read and write custom file metadata, you can use `CustomMetadata` property on `ParquetFileReader` and `ParquetFileWriter`, i.e.
 
-```csharp
+```C#
 var ms = new MemoryStream();
 var schema = new ParquetSchema(new DataField<int>("id"));
 
@@ -35,7 +35,7 @@ The only way to access and manipulate custom metadata is through the low-level A
 
 Column chunk metadata can be read using `ParquetRowGroupReader.GetCustomMetadata(field)` method. This allows to fetch key-value metadata with zero performance overhead as metadata is stored separate from the column data itself:
 
-```csharp
+```C#
 var id = new DataField<int>("id");
 
 using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
@@ -46,7 +46,7 @@ using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
 
 To write, use `ParquetRowGroupWriter.WriteColumnAsync` method overload accepting key-value dictionary:
 
-```csharp
+```C#
 var id = new DataField<int>("id");
 
 using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {

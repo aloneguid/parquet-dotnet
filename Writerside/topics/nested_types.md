@@ -39,7 +39,7 @@ Each table still has 3 physical columns, they are just named differently.
 
 To make schema for this, we'll use `StructField` which accepts other fields as children:
 
-```csharp
+```C#
 var schema = new ParquetSchema(
    new DataField<string>("name"),
    new StructField("address",
@@ -50,7 +50,7 @@ var schema = new ParquetSchema(
 
 To write data, we use plain columns:
 
-```csharp
+```C#
 using var ms = new MemoryStream();
 using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
     ParquetRowGroupWriter rgw = writer.CreateRowGroup();
@@ -69,7 +69,7 @@ using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
 
 To read back, again, the data is in plain columns:
 
-```csharp
+```C#
  ms.Position = 0;
 
 using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
@@ -97,7 +97,7 @@ Arrays *aka repeatable fields* is a basis for understanding how more complex dat
 
 `DataColumn` in Parquet can contain not just a single but multiple values. Sometimes they are called repeated fields (because the data type value repeats) or arrays. In order to create a schema for a repeatable field, let's say of type `int` you could use one of two forms:
 
-```csharp
+```C#
 var field = new DataField<IEnumerable<int>>("items");
 ```
 To check if the field is repeated you can always test `.IsArray` Boolean flag.
@@ -121,7 +121,7 @@ In other words - it is the level at which we have to create a new list for the c
 
 To represent this in C# code:
 
-```csharp
+```C#
 var field = new DataField<IEnumerable<int>>("items");
 var column = new DataColumn(
    field,
@@ -201,7 +201,7 @@ If it feels complicated, it **IS**! Therefore general recommendation would be to
 
 Moving on, let's declare a schema for this:
 
-```csharp
+```C#
 var nameField = new DataField<string>("name");
 var line1Field = new DataField<string>("line1");
 var postcodeField = new DataField<string>("postcode");
@@ -221,7 +221,7 @@ The struct is called `"element"` which is what `ListField.ElementName` constant 
 
 And the final thing is to create data for those 3 columns with their repetition levels:
 
-```csharp
+```C#
 var nameCol = new DataColumn(nameField, new string[] { "Joe", "Bob" });
 var line1Col = new DataColumn(line1Field, new[] { "Amazonland", "Disneyland", "Cryptoland" }, new[] { 0, 1, 0 });
 var postcodeCol = new DataColumn(postcodeField, new[] { "AAABBB", "CCCDDD", "EEEFFF" }, new[] { 0, 1, 0 });
