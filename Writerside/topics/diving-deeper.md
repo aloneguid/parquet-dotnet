@@ -1,3 +1,3 @@
 # Diving deeper
 
-Start typing here...
+These set of pages are for advanced use.
