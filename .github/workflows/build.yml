@@ -15,6 +15,7 @@ on:
     branches: [ master ]
     paths-ignore:
       - docs/**
+      - Writerside/**
 
   pull_request:
     branches: [ master ]
@@ -73,47 +74,3 @@ jobs:
       with:
         name: bin
         path: artifacts/*
-
-  writerside-build:
-    runs-on: ubuntu-latest
-    name: 'docs'
-    env:
-      PRODUCT: Writerside/pq
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Build Writerside docs using Docker
-        uses: JetBrains/writerside-github-action@v3
-      - name: Upload documentation
-        uses: actions/upload-artifact@v3
-        with:
-          name: docs
-          path: artifacts/*.zip
-          retention-days: 7
-
-  writerside-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-#    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    needs: writerside-build
-    name: 'pages'
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: docs
-      - name: Unzip artifact
-        uses: montudor/action-zip@v1
-        with:
-          args: unzip -qq ${{ env.DOC_ARTIFACT }} -d dir
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: dir
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
