@@ -76,7 +76,7 @@ jobs:
 
   writerside-build:
     runs-on: ubuntu-latest
-    name: 'Build Docs'
+    name: 'docs'
     env:
       PRODUCT: Writerside/pq
     steps:
@@ -97,7 +97,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 #    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    name: 'Deploy Docs to GitHub Pages'
+    needs: writerside-build
+    name: 'pages'
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v3
