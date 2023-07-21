@@ -9,12 +9,14 @@
     <toc-element topic="starter-topic.md"/>
     <toc-element topic="serialisation.md"/>
     <toc-element topic="writing.md"/>
-    <toc-element topic="metadata.md"/>
     <toc-element topic="reading.md"/>
-    <toc-element topic="nested_types.md"/>
+    <toc-element topic="diving-deeper.md">
+        <toc-element topic="schema.md"/>
+        <toc-element topic="column.md"/>
+        <toc-element topic="nested_types.md"/>
+        <toc-element topic="metadata.md"/>
+    </toc-element>
     <toc-element topic="rows.md"/>
-    <toc-element topic="column.md"/>
-    <toc-element topic="schema.md"/>
     <toc-element topic="dataframe.md"/>
     <toc-element topic="parquet-getting-started.md"/>
 </instance-profile>

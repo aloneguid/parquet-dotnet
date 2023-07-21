@@ -1,4 +1,4 @@
-# Reading Data
+# Reading data
 
 You can read the data by constructing an instance of [ParquetReader class](%src_base%/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
 

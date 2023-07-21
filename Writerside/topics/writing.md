@@ -1,4 +1,4 @@
-# Writing Data
+# Writing data
 
 You can write data by constructing an instance of [ParquetWriter class](%src_base%/ParquetWriter.cs) with one of its factory methods.
 
