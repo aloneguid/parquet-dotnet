@@ -1,7 +1,7 @@
 name: 'Build Documentation'
 
 env:
-  DOC_ARTIFACT: webHelp-all.zip
+  DOC_ARTIFACT: webHelpPQ2-all.zip
 
 # Gives the workflow permissions to clone the repo and create a page deployment
 permissions:
