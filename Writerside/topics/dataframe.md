@@ -6,7 +6,7 @@ Since v4.8 support for [`Microsoft.Data.Analysis`](https://www.nuget.org/package
 
 Due to `DataFrame` being in general less functional than Parquet, only primitive (atomic) columns are supported at the moment. If `DataFrame` supports more functionality in future (see related links below), this integration can be extended. 
 
-When reading and writing, this integration will ignore any columns that are not atomic.
+When reading and writing, this integration will ignore any columns that are not atomic (primitive).
 
 ## Writing
 
