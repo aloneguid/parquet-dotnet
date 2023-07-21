@@ -1,4 +1,4 @@
-# Declaring Schema
+# Schema
 
 Parquet is a format that stores data in a structured way. It has different types for different kinds of data, like numbers, strings, dates and so on. This means that you have to tell Parquet what type each column of your data is before you can write it to a file. This is called declaring a schema. Declaring a schema helps Parquet to compress and read your data more efficiently.
 
@@ -6,9 +6,9 @@ Schema can be defined by creating an instance of `ParquetSchema` class and passi
 
 There are several types of fields you can specify in your schema, and the most common is `DataField`. `DataField` is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
 
-You can declare a `DataField` by specifying a column name and it's type in the constructor, in one of two forms:
+You can declare a `DataField` by specifying a column name, and it's type in the constructor, in one of two forms:
 
-```csharp
+```C#
 var field = new DataField("id", DataType.Int32);
 
 var field = new Field<int>("id");
@@ -98,7 +98,7 @@ classDiagram
 
 Declaring schema as above will allow you to add elements of type `int`, however null values are not allowed (you will get an exception when trying to add a null value to the `DataSet`). In order to allow nulls you need to declare them in schema explicitly by specifying a nullable type:
 
-```csharp
+```C#
 new DataField<int?>("id");
 // or
 new DataField("id", typeof(int?));
@@ -116,7 +116,7 @@ In the old times Parquet format didn't support dates, therefore people used to s
 
 If you need to override date format storage you can use `DateTimeDataField` instead of `DataField<DateTime>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
 
-```csharp
+```C#
 new DateTimeDataField("date_col", DateTimeFormat.Date);
 ```
 
@@ -130,7 +130,7 @@ Note that AWS Athena, Impala and possibly other systems do not conform to Parque
 
 For instance:
 
-```csharp
+```C#
 new DecimalDataField("decInt32", 4, 1); // uses precision 4 and scale 1
 
 new DecimalDataField("decMinus", 10, 2, true); // uses precision 10 and scale 2, and enforces legacy decimal encoding that Impala understands
@@ -144,7 +144,7 @@ Repeatable fields are fields that contain an array of values instead of just one
 
 To declare a repeatable field in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
 
-```csharp
+```C#
 var se = new DataField<IEnumerable<int>>("ids");
 ```
 
@@ -152,7 +152,7 @@ you can also specify that a field is repeatable by setting `isArray` in `DataFie
 
 When writing to the field you can specify any value which derives from `IEnumerable<int>`, for instance
 
-```csharp
+```C#
 ds.Add(1, new int[] { 1, 2, 3 });
 ```
 

@@ -1,3 +1,9 @@
+## 4.16.0
+
+### New
+
+- Markdown documentation fully migrated to GitHub Pages. It was becoming slightly unmanageable and also recent GitHub updates made markdown files look awful.
+
 ## 4.15.0
 
 ### Bugs Fixed
