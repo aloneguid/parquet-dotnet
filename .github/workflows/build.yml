@@ -45,6 +45,7 @@ jobs:
   build:
 
     runs-on: 'ubuntu-latest'
+    name: 'Build NuGet'
 
     steps:
     - run: echo ${{ github.head_ref }}
@@ -74,3 +75,20 @@ jobs:
       with:
         name: bin
         path: artifacts/*
+
+  writerside-build:
+    runs-on: ubuntu-latest
+    name: 'Build Docs'
+    env:
+      PRODUCT: Writerside/pq
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build Writerside docs using Docker
+        uses: JetBrains/writerside-github-action@v3
+      - name: Upload documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs
+          path: artifacts/*.zip
+          retention-days: 7
