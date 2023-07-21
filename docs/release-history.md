@@ -2,7 +2,11 @@
 
 ### New
 
-- Markdown documentation fully migrated to GitHub Pages. It was becoming slightly unmanageable and also recent GitHub updates made markdown files look awful.
+- Markdown documentation fully migrated to [GitHub Pages](https://aloneguid.github.io/parquet-dotnet/). It was becoming slightly unmanageable and also recent GitHub updates made markdown files look awful. Also I kind of wanted to try [Writerside by JetBrains](https://lp.jetbrains.com/writerside/), and publish docs with pride ;) @aloneguid
+
+### Fixes
+
+- Fix precision issues writing DateTime as milliseconds by @spanglerco in #312.
 
 ## 4.15.0
 
