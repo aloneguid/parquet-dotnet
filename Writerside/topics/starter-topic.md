@@ -168,7 +168,7 @@ IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/stor
 
 This will give us an array with one million class instances similar to this:
 
-![](https://www.aloneguid.uk/parquet/read-classes.png)
+![](read-classes.png)
 
 Of course [class serialisation](serialisation.md) has more to it, and you can customise it further than that.
 
@@ -182,7 +182,7 @@ Table tbl = await Table.ReadAsync("/mnt/storage/data.parquet");
 
 This will do the magic behind the scenes, give you table schema and rows, similar to this:
 
-![](https://www.aloneguid.uk/parquet/read-rows.png)
+![](read-rows.png)
 
 As always, there's [more to it](rows.md).
 
