@@ -11,4 +11,9 @@
         </variables>
     </build-profile>
 
+    <footer>
+        <copyright>Ivan Gavryliuk</copyright>
+        <link href="https://github.com/aloneguid/parquet-dotnet">GitHub</link>
+    </footer>
+
 </buildprofiles>
