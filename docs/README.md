@@ -4,19 +4,18 @@
 
 **Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
 
-For full documentation, follow [this link](https://aloneguid.github.io/parquet-dotnet/starter-topic.html).
+Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.Net has you covered.
+
+## Features at a glance
+
+- 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works.
+- 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
+- 🏠**.NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
+- ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
+
+[![](img/docs.png)](https://aloneguid.github.io/parquet-dotnet/starter-topic.html)
+
 
 ## Contributing
 
-Any contributions are welcome, in any form. Documentation, code, tests, or anything else. I don't like processes so anything goes. If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md). The first important thing you can do is simply star ⭐ this project.
-
-## Special Thanks
-
-Without these tools development would be really painful.
-
-- [Visual Studio Community](https://visualstudio.microsoft.com/vs/community/) - free IDE from Microsoft. The best in class C# and C++ development tool. It's worth using Windows just because Visual Studio exists there.
-- [JetBrains Rider](https://www.jetbrains.com/rider/) - for their cross-platform C# IDE, which has some great features.
-- [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
-- [LINQPad](https://www.linqpad.net/) - extremely powerful C# REPL with unique visualisation features, IL decompiler, expression tree visualiser, benchmarking, charting and so on. Again it's worth having Windows just for this tool. Please support the author and purchase it.
-- [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.
-- **You** starring ⭐ this project!
+See the [contribution page](https://aloneguid.github.io/parquet-dotnet/contributing.html). The first important thing you can do is **simply star ⭐ this project**.
