@@ -19,4 +19,6 @@
     <toc-element topic="rows.md"/>
     <toc-element topic="dataframe.md"/>
     <toc-element topic="parquet-getting-started.md"/>
+    <toc-element topic="contributing.md"/>
+    <toc-element topic="Special-thanks.md"/>
 </instance-profile>

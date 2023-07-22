@@ -77,6 +77,10 @@ table.Add(new Row(new[] { 4, 5, 6 }));
 
 ```
 
+<warning>
+While arrays are supported by Parquet.Net for completeness, their use is <strong>strongly discouraged</strong> due to poor compatibility with other systems. Always prefer using <a anchor="lists">Lists</a> whenever you can!
+</warning>
+
 ## Dictionaries (Maps)
 
 ```C#
@@ -142,7 +146,11 @@ table.Add(new Row("12345-7", new Row("Marsha", "Mellow")));
 
 ## Lists
 
-Lists are easy to get confused with repeatable fields, because they essentially repeat some data in a cell. This is true for a simple data type like a string, int etc., however lists are special in a way that a list item can be anything else, not just a plain data type. In general, *when repeated data can be represented as a plain type, always use repeatable field*. Repeatable fields are lighter and faster than lists which have extra overhead on serialisation and performance.
+Lists are easy to get confused with repeatable fields, because they essentially repeat some data in a cell. This is true for a simple data type like a string, int etc., however lists are special in a way that a list item can be anything else, not just a plain data type.
+
+<note>
+Always prefer lists to repeatable fields, as many external systems will not understand arrays, or will change data type from array to list of primitives.
+</note>
 
 ### Simple Lists
 
@@ -204,13 +212,13 @@ t.Add(2, new[] { new Row(3, "Star"), new Row(4, "Wars") });
 
 `.ToString()` overloads on both `Table` and `Row` format data in *single-line, single-quote JSON* for your convenience. For instance, `table.ToString()` may produce following results:
 
-```json
+```json lines
 {'id': 1, 'strings': ['1', '2', '3']}
 {'id': 2, 'strings': []}
 {'id': 3, 'strings': ['1', '2', '3']}
 {'id': 4, 'strings': []}
 ```
 
-which means that this table contains 4 rows, each row is a single-line JSON document. All the rows are separated by a line break character. This decision was made based on the fact that multiline JSON can be read directly by Apache Spark, and it's much more easier to parse a large document by splitting it by line separator character to get the next row.
+which means that this table contains 4 rows, each row is a single-line JSON document. All the rows are separated by a line break character. This decision was made based on the fact that multiline JSON can be read directly by Apache Spark, and it's much easier to parse a large document by splitting it by line separator character to get the next row.
 
 Single quotes are chosen only based on the fact that in C# language it's hard to encode strings for tests with double quotes as you need to escape them. However, you can produce double quotes by using `ToString` overload and passing `"j"` as a format string, like `.ToString("j")`.
