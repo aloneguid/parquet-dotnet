@@ -10,7 +10,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 - 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works.
 - 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
-- 🏠**.NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
+- 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 
 [![](img/docs.png)](https://aloneguid.github.io/parquet-dotnet/starter-topic.html)
