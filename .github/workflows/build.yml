@@ -13,9 +13,6 @@ permissions:
 on:
   push:
     branches: [ master ]
-    paths-ignore:
-      - docs/**
-      - Writerside/**
 
   pull_request:
     branches: [ master ]
