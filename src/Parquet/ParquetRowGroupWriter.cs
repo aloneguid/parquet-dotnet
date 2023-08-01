@@ -72,6 +72,11 @@ namespace Parquet {
             if(column == null)
                 throw new ArgumentNullException(nameof(column));
 
+            //TODO: Validation
+            // check correct encoding is set, 
+            // if delta encoding is enabled check disctionary is disabled
+            //if delta encoding is enabled check the datatype it should be for int32 and int64
+
             if(RowCount == null) {
                 if(column.NumValues > 0 || column.Field.MaxRepetitionLevel == 0)
                     RowCount = column.CalculateRowCount();

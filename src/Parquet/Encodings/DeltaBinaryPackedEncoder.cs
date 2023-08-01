@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
+using System.IO;
+using Parquet.Data;
 using Parquet.Meta;
 
 namespace Parquet.Encodings {
@@ -39,211 +39,87 @@ namespace Parquet.Encodings {
             throw new NotSupportedException($"element type {elementType} is not supported");
         }
 
-        //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L287
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public static byte[] EncodeINT32(Array data) {
-            int[] nums = (int[])data;
 
-            List<byte> res = new List<byte>();
-            int blockSize = 128;
-            int numMiniBlocksInBlock = 4;
-            int numValuesInMiniBlock = 32;
-            int totalNumValues = nums.Length;
-
-            int num = nums[0];
-            int firstValue = ((num >> 31) ^ (num << 1));
-
-            res.AddRange(WriteUnsignedVarInt(blockSize));
-            res.AddRange(WriteUnsignedVarInt(numMiniBlocksInBlock));
-            res.AddRange(WriteUnsignedVarInt(totalNumValues));
-            res.AddRange(WriteUnsignedVarInt(firstValue));
-
-            int i = 1;
-            while(i < nums.Length) {
-                List<int> blockBuf = new List<int>();
-                int minDelta = int.MaxValue;
-
-                while(i < nums.Length && blockBuf.Count < blockSize) {
-                    int delta = nums[i] - nums[i - 1];
-                    blockBuf.Add(delta);
-                    if(delta < minDelta) {
-                        minDelta = delta;
-                    }
-                    i++;
-                }
-
-                while(blockBuf.Count < blockSize) {
-                    blockBuf.Add(minDelta);
-                }
-
-                byte[] bitWidths = new byte[numMiniBlocksInBlock];
-
-                for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                    int maxValue = 0;
-                    for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
-                        blockBuf[(int)k] = blockBuf[(int)k] - minDelta;
-                        if(blockBuf[(int)k] > maxValue) {
-                            maxValue = blockBuf[(int)k];
-                        }
-                    }
-                    bitWidths[j] = (byte)(BitOperations.Log2((uint)maxValue) + 1);
-                }
-
-                int minDeltaZigZag = ((minDelta >> 31) ^ (minDelta << 1));
-                res.AddRange(WriteUnsignedVarInt(minDeltaZigZag));
-                res.AddRange(bitWidths);
-
-                for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                    byte[]? tempA = WriteBitPacked(blockBuf.GetRange((int)(j * numValuesInMiniBlock), (int)numValuesInMiniBlock).ToArray(), bitWidths[j], false);
-                    if(tempA is not null)
-                        res.AddRange(tempA);
-                }
-            }
-
-            return res.ToArray();
-        }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="data"></param>
-        /// <returns></returns>
-        public static byte[] EncodeINT32V2(Array data) {
-            int[] nums = (int[])data;
+        /// <param name="destination"></param>
 
-            List<byte> res = new List<byte>();
-            int blockSize = 128;
-            int numMiniBlocksInBlock = 4;
-            int numValuesInMiniBlock = 32;
-            int totalNumValues = nums.Length;
-
-            int num = nums[0];
-            int firstValue = ((num >> 31) ^ (num << 1));
-
-            res.AddRange(WriteUnsignedVarInt(blockSize));
-            res.AddRange(WriteUnsignedVarInt(numMiniBlocksInBlock));
-            res.AddRange(WriteUnsignedVarInt(totalNumValues));
-            res.AddRange(WriteUnsignedVarInt(firstValue));
-
-            int i = 1;
-            while(i < nums.Length) {
-                List<int> blockBuf = new List<int>();
-                int minDelta = int.MaxValue;
-
-                while(i < nums.Length && blockBuf.Count < blockSize) {
-                    int delta = nums[i] - nums[i - 1];
-                    blockBuf.Add(delta);
-                    if(delta < minDelta) {
-                        minDelta = delta;
-                    }
-                    i++;
-                }
-
-                while(blockBuf.Count < blockSize) {
-                    blockBuf.Add(minDelta);
-                }
-
-
-                byte[] bitWidths = new byte[numMiniBlocksInBlock];
-
-                for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                    int maxValue = 0;
-                    for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
-                        blockBuf[(int)k] = blockBuf[(int)k] - minDelta;
-                        if(blockBuf[(int)k] > maxValue) {
-                            maxValue = blockBuf[(int)k];
-                        }
-                    }
-                    bitWidths[j] = (byte)(BitOperations.Log2((uint)maxValue) + 1);
-                }
-
-                int minDeltaZigZag = ((minDelta >> 31) ^ (minDelta << 1));
-                res.AddRange(WriteUnsignedVarInt(minDeltaZigZag));
-                res.AddRange(bitWidths);
-
-                for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                    int miniBlockStart = j * numValuesInMiniBlock;
-                    for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
-                        byte[] resu = new byte[bitWidths[j]];
-                        int end = Math.Min(8, blockBuf.Count - k);
-                        BitPackedEncoder.Encode8ValuesLE(blockBuf.GetRange(k,end).ToArray(), resu, bitWidths[j]);
-                        res.AddRange(resu);
-                    }
-                }
+        /// <param name="stats"></param>
+        public static void Encode(Array data, Stream destination, DataColumnStatistics? stats = null) {
+            System.Type t = data.GetType();
+            if(t == typeof(int[])) {
+                Span<int> span = ((int[])data);
+                Encode(span, destination);
+            } else if(t == typeof(long[])) {
+                Span<long> span = ((long[])data);
+                Encode(span, destination);
+            } else {
+                throw new NotSupportedException($"only {Parquet.Meta.Type.INT32} and {Parquet.Meta.Type.INT64} are supported in {Encoding.DELTA_BINARY_PACKED} but type passed is {t}");
             }
-            return res.ToArray();
         }
 
-
-        //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L216
-        private static byte[]? WriteBitPacked(int[] vals, long bitWidth, bool ifHeader) {
-            int ln = vals.Length;
-            if(ln <= 0) {
-                return null;
-            }
-
-            byte header = (byte)(((ln / 8) << 1) | 1);
-            byte[] headerBuf = WriteUnsignedVarInt(header);
-
-            List<byte> valBuf = new List<byte>();
-
-            int i = 0;
-            long resCur = 0;
-            long resCurNeedBits = 8;
-            long used = 0;
-            long left = bitWidth - used;
-            long val = vals[i];
-
-            while(i < ln) {
-                if(left >= resCurNeedBits) {
-                    resCur |= ((val >> (int)used) & ((1L << (int)resCurNeedBits) - 1)) << (int)(8 - resCurNeedBits);
-                    valBuf.Add((byte)resCur);
-                    left -= resCurNeedBits;
-                    used += resCurNeedBits;
-
-                    resCurNeedBits = 8;
-                    resCur = 0;
-
-                    if(left <= 0 && (i + 1) < ln) {
-                        i += 1;
-                        val = vals[i];
-                        left = bitWidth;
-                        used = 0;
-                    }
-                } else {
-                    resCur |= (val >> (int)used) << (int)(8 - resCurNeedBits);
-                    i += 1;
-
-                    if(i < ln) {
-                        val = vals[i];
-                    }
-                    resCurNeedBits -= left;
-
-                    left = bitWidth;
-                    used = 0;
-                }
-            }
-
-            List<byte> res = new List<byte>();
-            if(ifHeader) {
-                res.AddRange(headerBuf);
-            }
-            res.AddRange(valBuf.ToArray());
-            return res.ToArray();
+        private static ulong ZigZagEncode(long num) {
+            return (ulong)((num >> 63) ^ (num << 1));
         }
 
-        private static byte[] WriteUnsignedVarInt(int value) {
-            List<byte> result = new List<byte>();
-            while(value >= 0x80) {
-                result.Add((byte)(value | 0x80));
+        private static uint ZigZagEncode(int num) {
+            return (uint)((num >> 31) ^ (num << 1));
+        }
+
+        private static void WriteUnsignedVarInt(Stream destination, ulong value) {
+            byte[] rentedBuffer = BytePool.Rent(8);
+            int consumed = 0;
+            try {
+                WriteUnsignedVarInt(rentedBuffer, ref consumed, value);
+                destination.Write(rentedBuffer, 0, consumed);
+            } finally {
+                BytePool.Return(rentedBuffer);
+            }
+        }
+
+        private static byte[] WriteUnsignedVarInt(byte[] s, ref int consumed, ulong value) {
+            consumed = 1;
+            ulong numTmp = value;
+
+            while(numTmp >= 128) {
+                consumed++;
+                numTmp >>= 7;
+            }
+
+            numTmp = value;
+            for(int i = 0; i < consumed; i++) {
+                s[i] = (byte)(numTmp | 0x80);
+                numTmp >>= 7;
+            }
+
+            s[consumed - 1] &= 0x7F;
+            return s;
+        }
+
+        private static void WriteUnsignedVarInt(Stream destination, int value) {
+            byte[] rentedBuffer = BytePool.Rent(4);
+            int consumed = 0;
+            try {
+                WriteUnsignedVarInt(rentedBuffer, ref consumed, value);
+                destination.Write(rentedBuffer, 0, consumed);
+            } finally {
+                BytePool.Return(rentedBuffer);
+            }
+        }
+
+        private static void WriteUnsignedVarInt(byte[] s, ref int consumed, int value) {
+            while(value > 127) {
+                byte b = (byte)((value & 0x7F) | 0x80);
+
+                s[consumed++] = b;
+
                 value >>= 7;
             }
-            result.Add((byte)value);
-            return result.ToArray();
+
+            s[consumed++] = (byte)value;
         }
     }
 }

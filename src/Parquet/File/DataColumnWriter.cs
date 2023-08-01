@@ -51,11 +51,8 @@ namespace Parquet.File {
                     encoding.Add(Encoding.BIT_PACKED);
                     encoding.Add(Encoding.DELTA_BINARY_PACKED);
 
-                } else {
-                    throw new Exception($"Not Supported encoding {evalue}");
                 }
             }
-
 
             // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
             ColumnChunk chunk = _footer.CreateColumnChunk(
@@ -176,13 +173,11 @@ namespace Parquet.File {
                 } else if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? value)) {
 
                     if(value == Encoding.DELTA_BINARY_PACKED.ToString()) {
-                        if(column.Field.ClrType == typeof(Int32)) {
-                            Array data = pc.GetPlainData(out int offset, out int count);
-                            byte[] encodedBytes = DeltaBinaryPackedEncoder.EncodeINT32V2(data);
-                            await ms.WriteAsync(encodedBytes, 0, encodedBytes.Length);
 
-                            ParquetPlainEncoder.FillStats((int[])data, column.Statistics);
-                        }
+                        Array data = pc.GetPlainData(out int offset, out int count);
+                        DeltaBinaryPackedEncoder.Encode(data, ms, column.Statistics);
+                        ParquetPlainEncoder.FillStats((int[])data, column.Statistics);
+
                     } else {
                         throw new Exception($"Not Supported encoding {value}");
                     }

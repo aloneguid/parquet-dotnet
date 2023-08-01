@@ -1,0 +1,106 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<# var types = new[] { "int", "long" }; #>
+namespace Parquet.Encodings {
+    using System;
+    using System.Buffers;
+    using System.IO;
+    using System.Numerics;
+
+    //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L287
+
+    static partial class DeltaBinaryPackedEncoder {
+        private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
+        private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
+        private static readonly ArrayPool<long> LongPool = ArrayPool<long>.Shared;
+
+<# foreach(string nt in types) { 
+ string pool = ConvertToTitleCase(nt);
+#>
+        private static void Encode(ReadOnlySpan<<#= nt#>> data, Stream destination) {
+
+            int blockSize = 128;
+            int numMiniBlocksInBlock = 4;
+            int numValuesInMiniBlock = 32;
+            int totalNumValues = data.Length;
+
+            WriteUnsignedVarInt(destination, blockSize);
+            WriteUnsignedVarInt(destination, numMiniBlocksInBlock);
+            WriteUnsignedVarInt(destination, totalNumValues);
+
+            <#= nt#> num = data[0];
+            ulong firstValue = ZigZagEncode(num);
+            WriteUnsignedVarInt(destination, firstValue);
+
+            int i = 1;
+            while(i < totalNumValues) {
+
+                <#= nt#>[] rentedBlockBuf = <#= pool #>Pool.Rent(blockSize);
+                try {
+                    <#= nt#> minDelta = <#= nt#>.MaxValue;
+                    int blockBufCounter = 0;
+
+                    while(i < totalNumValues && blockBufCounter < blockSize) {
+                        <#= nt#> delta = data[i] - data[i - 1];
+                        rentedBlockBuf[blockBufCounter++] = delta;
+                        if(delta < minDelta) {
+                            minDelta = delta;
+                        }
+                        i++;
+                    }
+
+                    while(blockBufCounter < blockSize) {
+                        rentedBlockBuf[blockBufCounter++] = minDelta;
+                    }
+                    byte[] rentedBitWidths = BytePool.Rent(numMiniBlocksInBlock);
+
+                    try {
+                        for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                            <#= nt#> maxValue = 0;
+                            for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
+                                rentedBlockBuf[(int)k] = rentedBlockBuf[(int)k] - minDelta;
+                                if(rentedBlockBuf[(int)k] > maxValue) {
+                                    maxValue = rentedBlockBuf[(int)k];
+                                }
+                            }
+                            rentedBitWidths[j] = (byte)(BitOperations.Log2((u<#= nt#>)maxValue) + 1);
+                        }
+
+                        u<#= nt#> minDeltaZigZag = ZigZagEncode(minDelta);
+                        WriteUnsignedVarInt(destination, minDeltaZigZag);
+                        destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
+
+                        for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                            int miniBlockStart = j * numValuesInMiniBlock;
+                            for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
+                                byte[] rentedMiniBlock = BytePool.Rent(rentedBitWidths[j]);
+                                try {
+                                    int end = Math.Min(8, blockSize - k);
+                                    BitPackedEncoder.Encode8ValuesLE(rentedBlockBuf.AsSpan(k, end), rentedMiniBlock, rentedBitWidths[j]);
+                                    destination.Write(rentedMiniBlock, 0, rentedBitWidths[j]);
+                                } finally {
+                                    BytePool.Return(rentedMiniBlock);
+                                }
+                            }
+                        }
+                    } finally {
+                        BytePool.Return(rentedBitWidths);
+                    }
+                } finally {
+                    <#= pool #>Pool.Return(rentedBlockBuf);
+                }
+            }
+        }
+<# } #>
+    }
+}
+
+<#+
+    static string ConvertToTitleCase(string input)
+    {
+        System.Globalization.TextInfo textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+        return textInfo.ToTitleCase(input);
+    }
+#>
