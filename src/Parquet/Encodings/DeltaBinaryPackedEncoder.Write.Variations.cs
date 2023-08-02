@@ -1,24 +1,16 @@
-﻿
-
-
-
-
-namespace Parquet.Encodings {
+﻿namespace Parquet.Encodings {
     using System;
     using System.Buffers;
     using System.IO;
-    using System.Numerics;
 
+    //https://parquet.apache.org/docs/file-format/data-pages/encodings/#a-namedeltaencadelta-encoding-delta_binary_packed--5
     //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L287
 
     static partial class DeltaBinaryPackedEncoder {
-        private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
-        private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
-        private static readonly ArrayPool<long> LongPool = ArrayPool<long>.Shared;
-
 
         private static void Encode(ReadOnlySpan<int> data, Stream destination) {
-
+            
+            ArrayPool<int> intPool = ArrayPool<int>.Shared;
             int blockSize = 128;
             int numMiniBlocksInBlock = 4;
             int numValuesInMiniBlock = 32;
@@ -35,7 +27,7 @@ namespace Parquet.Encodings {
             int i = 1;
             while(i < totalNumValues) {
 
-                int[] rentedBlockBuf = IntPool.Rent(blockSize);
+                int[] rentedBlockBuf = intPool.Rent(blockSize);
                 try {
                     int minDelta = int.MaxValue;
                     int blockBufCounter = 0;
@@ -63,7 +55,7 @@ namespace Parquet.Encodings {
                                     maxValue = rentedBlockBuf[(int)k];
                                 }
                             }
-                            rentedBitWidths[j] = (byte)(BitOperations.Log2((uint)maxValue) + 1);
+                            rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                         }
 
                         uint minDeltaZigZag = ZigZagEncode(minDelta);
@@ -87,13 +79,14 @@ namespace Parquet.Encodings {
                         BytePool.Return(rentedBitWidths);
                     }
                 } finally {
-                    IntPool.Return(rentedBlockBuf);
+                    intPool.Return(rentedBlockBuf);
                 }
             }
         }
 
         private static void Encode(ReadOnlySpan<long> data, Stream destination) {
-
+            
+            ArrayPool<long> longPool = ArrayPool<long>.Shared;
             int blockSize = 128;
             int numMiniBlocksInBlock = 4;
             int numValuesInMiniBlock = 32;
@@ -110,7 +103,7 @@ namespace Parquet.Encodings {
             int i = 1;
             while(i < totalNumValues) {
 
-                long[] rentedBlockBuf = LongPool.Rent(blockSize);
+                long[] rentedBlockBuf = longPool.Rent(blockSize);
                 try {
                     long minDelta = long.MaxValue;
                     int blockBufCounter = 0;
@@ -138,7 +131,7 @@ namespace Parquet.Encodings {
                                     maxValue = rentedBlockBuf[(int)k];
                                 }
                             }
-                            rentedBitWidths[j] = (byte)(BitOperations.Log2((ulong)maxValue) + 1);
+                            rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                         }
 
                         ulong minDeltaZigZag = ZigZagEncode(minDelta);
@@ -162,11 +155,10 @@ namespace Parquet.Encodings {
                         BytePool.Return(rentedBitWidths);
                     }
                 } finally {
-                    LongPool.Return(rentedBlockBuf);
+                    longPool.Return(rentedBlockBuf);
                 }
             }
         }
 
     }
 }
-

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using Parquet.Data;
 using Parquet.Meta;
@@ -12,6 +13,9 @@ namespace Parquet.Encodings {
     /// Supported Types: INT32, INT64
     /// </summary>
     public static partial class DeltaBinaryPackedEncoder {
+
+        private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
+
         /// <summary>
         /// 
         /// </summary>
@@ -42,20 +46,23 @@ namespace Parquet.Encodings {
 
 
         /// <summary>
-        /// 
+        /// Encodes the provided data using a delta encoding scheme and writes it to the given destination stream.
+        /// Optionally, collects statistics about the encoded data if the 'stats' parameter is provided.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="destination"></param>
-
-        /// <param name="stats"></param>
+        /// <param name="data">The input array to be encoded.</param>
+        /// <param name="destination">The stream where the encoded data will be written.</param>
+        /// <param name="stats">Optional parameter to collect statistics about the encoded data (can be null).</param>
+        /// <exception cref="NotSupportedException"></exception>
         public static void Encode(Array data, Stream destination, DataColumnStatistics? stats = null) {
             System.Type t = data.GetType();
             if(t == typeof(int[])) {
-                Span<int> span = ((int[])data);
-                Encode(span, destination);
+                Encode((int[])data, destination);
+                if(stats != null)
+                    ParquetPlainEncoder.FillStats((int[])data, stats);
             } else if(t == typeof(long[])) {
-                Span<long> span = ((long[])data);
-                Encode(span, destination);
+                Encode((long[])data, destination);
+                if(stats != null)
+                    ParquetPlainEncoder.FillStats((long[])data, stats);
             } else {
                 throw new NotSupportedException($"only {Parquet.Meta.Type.INT32} and {Parquet.Meta.Type.INT64} are supported in {Encoding.DELTA_BINARY_PACKED} but type passed is {t}");
             }
@@ -69,8 +76,8 @@ namespace Parquet.Encodings {
             return (uint)((num >> 31) ^ (num << 1));
         }
 
-        private static void WriteUnsignedVarInt(Stream destination, ulong value) {
-            byte[] rentedBuffer = BytePool.Rent(8);
+        private static void WriteUnsignedVarInt(Stream destination, int value) {
+            byte[] rentedBuffer = BytePool.Rent(4);
             int consumed = 0;
             try {
                 WriteUnsignedVarInt(rentedBuffer, ref consumed, value);
@@ -79,28 +86,8 @@ namespace Parquet.Encodings {
                 BytePool.Return(rentedBuffer);
             }
         }
-
-        private static byte[] WriteUnsignedVarInt(byte[] s, ref int consumed, ulong value) {
-            consumed = 1;
-            ulong numTmp = value;
-
-            while(numTmp >= 128) {
-                consumed++;
-                numTmp >>= 7;
-            }
-
-            numTmp = value;
-            for(int i = 0; i < consumed; i++) {
-                s[i] = (byte)(numTmp | 0x80);
-                numTmp >>= 7;
-            }
-
-            s[consumed - 1] &= 0x7F;
-            return s;
-        }
-
-        private static void WriteUnsignedVarInt(Stream destination, int value) {
-            byte[] rentedBuffer = BytePool.Rent(4);
+        private static void WriteUnsignedVarInt(Stream destination, ulong value) {
+            byte[] rentedBuffer = BytePool.Rent(8);
             int consumed = 0;
             try {
                 WriteUnsignedVarInt(rentedBuffer, ref consumed, value);
@@ -120,6 +107,25 @@ namespace Parquet.Encodings {
             }
 
             s[consumed++] = (byte)value;
+        }
+
+        private static byte[] WriteUnsignedVarInt(byte[] s, ref int consumed, ulong value) {
+            consumed = 1;
+            ulong numTmp = value;
+
+            while(numTmp >= 128) {
+                consumed++;
+                numTmp >>= 7;
+            }
+
+            numTmp = value;
+            for(int i = 0; i < consumed; i++) {
+                s[i] = (byte)(numTmp | 0x80);
+                numTmp >>= 7;
+            }
+
+            s[consumed - 1] &= 0x7F;
+            return s;
         }
     }
 }

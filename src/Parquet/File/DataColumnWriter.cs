@@ -175,8 +175,7 @@ namespace Parquet.File {
                     if(value == Encoding.DELTA_BINARY_PACKED.ToString()) {
 
                         Array data = pc.GetPlainData(out int offset, out int count);
-                        DeltaBinaryPackedEncoder.Encode(data, ms, column.Statistics);
-                        ParquetPlainEncoder.FillStats((int[])data, column.Statistics);
+                        DeltaBinaryPackedEncoder.Encode(data, ms, column.Statistics);                        
 
                     } else {
                         throw new Exception($"Not Supported encoding {value}");
