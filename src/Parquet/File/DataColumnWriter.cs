@@ -78,7 +78,7 @@ namespace Parquet.File {
             ph.CompressedPageSize = compressedData.AsSpan().Length;
 
             //write the header in
-            using var headerMs = new MemoryStream();
+            using var headerMs = _rmsMgr.GetStream();
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
             int headerSize = (int)headerMs.Length;
             headerMs.Position = 0;
