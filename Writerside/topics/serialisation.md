@@ -45,6 +45,11 @@ In order to deserialize this file back to array of classes you would write the f
 ```C#
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
+
+<note>
+Target `Record` class can have more properties than the source file, and they will be gracefully skipped when deserializing.
+</note>
+
 ## Deserialize records by `RowGroup`
 
 If you have a large file, and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.

@@ -48,6 +48,13 @@ namespace Parquet {
         public long RowCount => _rowGroup.NumRows;
 
         /// <summary>
+        /// Checks if this field exists in source schema
+        /// </summary>
+        public bool ColumnExists(DataField field) {
+            return GetMetadata(field) != null;
+        }
+
+        /// <summary>
         /// Reads a column from this row group. Unlike writing, columns can be read in any order.
         /// If the column is missing, an exception will be thrown.
         /// </summary>
@@ -60,21 +67,6 @@ namespace Parquet {
             var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
 
             return columnReader.ReadAsync(cancellationToken);
-        }
-
-        /// <summary>
-        /// Reads a column from this row group. Unlike writing, columns can be read in any order.
-        /// If the column is missing, null will be returned.
-        /// </summary>
-        public async Task<DataColumn?> ReadPotentiallyMissingColumnAsync(DataField field, CancellationToken cancellationToken = default) {
-
-            ColumnChunk? columnChunk = GetMetadata(field);
-            if(columnChunk == null) {
-                return null;
-            }
-            var columnReader = new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
-
-            return await columnReader.ReadAsync(cancellationToken);
         }
 
         /// <summary>

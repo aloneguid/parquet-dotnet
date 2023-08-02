@@ -123,7 +123,7 @@ namespace Parquet.Serialization {
 
             var result = new List<T>();
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
-            await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken);
+            await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, cancellationToken);
 
             return result;
         }
@@ -142,8 +142,6 @@ namespace Parquet.Serialization {
             CancellationToken cancellationToken = default)
             where T : new() {
 
-            options ??= new ParquetOptions();
-
             Assembler<T> asm = GetAssembler<T>();
 
             var result = new List<T>();
@@ -151,7 +149,7 @@ namespace Parquet.Serialization {
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
 
-                await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
+                await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
             }
 
             return result;
@@ -174,10 +172,7 @@ namespace Parquet.Serialization {
         private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi,
             Assembler<T> asm,
             ICollection<T> result,
-            ParquetOptions? options,
             CancellationToken cancellationToken = default) where T : new() {
-
-            options ??= new ParquetOptions();
 
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
@@ -196,13 +191,12 @@ namespace Parquet.Serialization {
                     throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actual}'");
                 }
 
-                DataColumn? dc = options.SkipDeserializingMissingColumns ?
-                    await rg.ReadPotentiallyMissingColumnAsync(fasm.Field, cancellationToken) :
-                    await rg.ReadColumnAsync(fasm.Field, cancellationToken);
-
-                if(dc == null) {
+                // skips column deserialisation if it doesn't exist in file's schema
+                if(!rg.ColumnExists(fasm.Field)) {
                     continue;
                 }
+
+                DataColumn dc = await rg.ReadColumnAsync(fasm.Field, cancellationToken);
 
                 try {
                     fasm.Assemble(result.Skip(prevRowCount), dc);

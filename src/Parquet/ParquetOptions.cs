@@ -47,12 +47,5 @@ namespace Parquet {
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
-
-        /// <summary>
-        /// When set to true, columns missing from a file will be skipped when deserializing.
-        /// Otherwise, an exception will be thrown if a column is missing.
-        /// </summary>
-        public bool SkipDeserializingMissingColumns { get; set; } = false;
-
     }
 }

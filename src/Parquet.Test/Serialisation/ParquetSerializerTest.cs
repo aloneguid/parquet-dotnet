@@ -50,7 +50,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task Atomics_With_New_Field_Fails_Serde_By_Default() {
+        public async Task Atomics_With_New_Field_Skipped() {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
@@ -63,24 +63,8 @@ namespace Parquet.Test.Serialisation {
             ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
 
             ms.Position = 0;
-            await Assert.ThrowsAsync<ParquetException>(() => ParquetSerializer.DeserializeAsync<RecordWithNewField>(ms));
-        }
-
-        [Fact]
-        public async Task Atomics_With_New_Field_Serde_When_Option_Enabled() {
-
-            var data = Enumerable.Range(0, 1_000).Select(i => new Record {
-                Timestamp = DateTime.UtcNow.AddSeconds(i),
-                EventName = i % 2 == 0 ? "on" : "off",
-                MeterValue = i,
-                ExternalId = Guid.NewGuid()
-            }).ToList();
-
-            using var ms = new MemoryStream();
-            ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
-
-            ms.Position = 0;
-            IList<RecordWithNewField> data2 = await ParquetSerializer.DeserializeAsync<RecordWithNewField>(ms, options: new ParquetOptions { SkipDeserializingMissingColumns = true });
+            IList<RecordWithNewField> data2 = await ParquetSerializer.DeserializeAsync<RecordWithNewField>(
+                ms);
 
             Assert.Equal(data.Count, data2.Count);
             Assert.Equal(default, data2.First().NewTimestamp);
