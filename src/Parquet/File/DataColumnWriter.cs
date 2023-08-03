@@ -44,13 +44,11 @@ namespace Parquet.File {
             CancellationToken cancellationToken = default) {
 
             List<Encoding> encoding = new List<Encoding>();
-            if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? evalue)) {
-
-                if(evalue == Encoding.DELTA_BINARY_PACKED.ToString()) {
+            if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out Encoding columnEncoding)) {
+                if(columnEncoding == Encoding.DELTA_BINARY_PACKED) {
                     encoding.Add(Encoding.RLE);
                     encoding.Add(Encoding.BIT_PACKED);
                     encoding.Add(Encoding.DELTA_BINARY_PACKED);
-
                 }
             }
 
@@ -126,8 +124,11 @@ namespace Parquet.File {
              */
 
             using var pc = new PackedColumn(column);
-            pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
 
+            bool isCloumnEncodingSet = _options.ColumnEncoding.TryGetValue(column.Field.Name, out Meta.Encoding columnEncoding);
+            if(!isCloumnEncodingSet) {
+                pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
+            }
             // dictionary page
             if(pc.HasDictionary) {
                 PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
@@ -143,19 +144,14 @@ namespace Parquet.File {
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
                 PageHeader ph = new PageHeader();
+                bool isDelta = (columnEncoding == Encoding.DELTA_BINARY_PACKED);
 
-                if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? evalue)) {
-                    if(evalue == Encoding.DELTA_BINARY_PACKED.ToString()) {
-                        ph = _footer.CreateDeltaPage(column.NumValues);
-
-                    } else {
-                        throw new Exception($"Not Supported encoding {evalue}");
-                    }
-                } else {
-                    ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
+                if(isCloumnEncodingSet && !isDelta) {
+                    // Log the error or handle unsupported encoding in a more efficient way.
+                    throw new Exception($"Not Supported column encoding {columnEncoding}");
                 }
 
-
+                ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, isDelta);
 
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
@@ -170,17 +166,13 @@ namespace Parquet.File {
                     int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-                } else if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out string? value)) {
-
-                    if(value == Encoding.DELTA_BINARY_PACKED.ToString()) {
-
+                } else if(isCloumnEncodingSet) {
+                    if(isDelta) {
                         Array data = pc.GetPlainData(out int offset, out int count);
-                        DeltaBinaryPackedEncoder.Encode(data, ms, column.Statistics);                        
-
+                        DeltaBinaryPackedEncoder.Encode(data, ms, column.Statistics);
                     } else {
-                        throw new Exception($"Not Supported encoding {value}");
+                        throw new Exception($"Not Supported Column encoding {columnEncoding}");
                     }
-
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
                     ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);

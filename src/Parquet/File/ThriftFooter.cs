@@ -152,11 +152,11 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public PageHeader CreateDataPage(int valueCount, bool isDictionary) =>
+        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDelta) =>
             new PageHeader {
                 Type = PageType.DATA_PAGE,
                 DataPageHeader = new DataPageHeader {
-                    Encoding = isDictionary ? Encoding.PLAIN_DICTIONARY : Encoding.PLAIN,
+                    Encoding = isDictionary ? Encoding.PLAIN_DICTIONARY : (isDelta ? Encoding.DELTA_BINARY_PACKED : Encoding.PLAIN),
                     DefinitionLevelEncoding = Encoding.RLE,
                     RepetitionLevelEncoding = Encoding.RLE,
                     NumValues = valueCount,
@@ -170,20 +170,6 @@ namespace Parquet.File {
                 DictionaryPageHeader = new DictionaryPageHeader {
                     Encoding = Encoding.PLAIN_DICTIONARY,
                     NumValues = numValues
-                }
-            };
-            return ph;
-        }
-
-        public PageHeader CreateDeltaPage(int numValues) {
-            var ph = new PageHeader {
-                Type = PageType.DATA_PAGE,
-                DataPageHeader = new DataPageHeader {
-                    Encoding = Encoding.DELTA_BINARY_PACKED,
-                    DefinitionLevelEncoding = Encoding.RLE,
-                    RepetitionLevelEncoding = Encoding.RLE,
-                    NumValues = numValues,
-                    Statistics = new Statistics()
                 }
             };
             return ph;

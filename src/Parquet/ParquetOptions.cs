@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Parquet.Meta;
 
 namespace Parquet {
     /// <summary>
@@ -51,7 +52,7 @@ namespace Parquet {
         /// <summary>
         /// 
         /// </summary>
-        public Dictionary<string, string> ColumnEncoding { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, Encoding> ColumnEncoding { get; set; } = new Dictionary<string, Encoding>();
 
     }
 }
