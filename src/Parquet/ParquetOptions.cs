@@ -50,9 +50,12 @@ namespace Parquet {
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
 
         /// <summary>
-        /// 
+        /// Gets or sets the dictionary that stores column encodings for different data fields.
         /// </summary>
+        /// <remarks>
+        /// The dictionary maps column names (as strings) to their corresponding encodings.
+        /// Each column can be encoded using a specific compression method defined by the 'Encoding' enum.
+        /// </remarks>
         public Dictionary<string, Encoding> ColumnEncoding { get; set; } = new Dictionary<string, Encoding>();
-
     }
 }

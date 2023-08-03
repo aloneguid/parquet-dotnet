@@ -43,22 +43,16 @@ namespace Parquet.File {
             FieldPath fullPath, DataColumn column,
             CancellationToken cancellationToken = default) {
 
-            List<Encoding> encoding = new List<Encoding>();
-            if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out Encoding columnEncoding)) {
-                if(columnEncoding == Encoding.DELTA_BINARY_PACKED) {
-                    encoding.Add(Encoding.RLE);
-                    encoding.Add(Encoding.BIT_PACKED);
-                    encoding.Add(Encoding.DELTA_BINARY_PACKED);
-                }
-            }
-
             // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
             ColumnChunk chunk = _footer.CreateColumnChunk(
                 _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
-                _keyValueMetadata, encoding);
+                _keyValueMetadata);
 
-            ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
-                cancellationToken);
+            if(_options.ColumnEncoding.TryGetValue(column.Field.Name, out Encoding columnEncoding)) {
+                SetEncodingsForColumnEncoding(chunk, columnEncoding);
+            }
+
+            ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement, cancellationToken);
             //generate stats for column chunk
             chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
@@ -68,7 +62,6 @@ namespace Parquet.File {
 
             return chunk;
         }
-
         class ColumnSizes {
             public int CompressedSize;
             public int UncompressedSize;
@@ -124,9 +117,8 @@ namespace Parquet.File {
              */
 
             using var pc = new PackedColumn(column);
-
-            bool isCloumnEncodingSet = _options.ColumnEncoding.TryGetValue(column.Field.Name, out Meta.Encoding columnEncoding);
-            if(!isCloumnEncodingSet) {
+            bool isColumnEncodingExists = _options.ColumnEncoding.TryGetValue(column.Field.Name, out Meta.Encoding columnEncoding);
+            if(!isColumnEncodingExists) {
                 pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
             }
             // dictionary page
@@ -144,14 +136,12 @@ namespace Parquet.File {
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
                 PageHeader ph = new PageHeader();
-                bool isDelta = (columnEncoding == Encoding.DELTA_BINARY_PACKED);
-
-                if(isCloumnEncodingSet && !isDelta) {
-                    // Log the error or handle unsupported encoding in a more efficient way.
-                    throw new Exception($"Not Supported column encoding {columnEncoding}");
+       
+                if(isColumnEncodingExists) {
+                    ph = _footer.CreateDataPage(column.NumValues, columnEncoding);
+                } else {
+                    ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
                 }
-
-                ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, isDelta);
 
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
@@ -166,12 +156,10 @@ namespace Parquet.File {
                     int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-                } else if(isCloumnEncodingSet) {
-                    if(isDelta) {
+                } else if(isColumnEncodingExists) {
+                    if(columnEncoding == Encoding.DELTA_BINARY_PACKED) {
                         Array data = pc.GetPlainData(out int offset, out int count);
                         DeltaBinaryPackedEncoder.Encode(data, ms, column.Statistics);
-                    } else {
-                        throw new Exception($"Not Supported Column encoding {columnEncoding}");
                     }
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
@@ -188,6 +176,27 @@ namespace Parquet.File {
         private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
             int bitWidth = maxValue.GetBitWidth();
             RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
+        }
+
+        private static bool EnsureColumnEncodingIsSupported(Encoding columnEncoding) {
+            switch(columnEncoding) {
+                case Encoding.DELTA_BINARY_PACKED:
+                    return true;
+                default:
+                    throw new ArgumentException($"Not supported column encoding {columnEncoding}");
+            }
+        }
+
+        private void SetEncodingsForColumnEncoding(ColumnChunk chunk, Encoding columnEncoding) {
+            EnsureColumnEncodingIsSupported(columnEncoding);
+
+            if(columnEncoding == Encoding.DELTA_BINARY_PACKED) {
+                chunk.MetaData!.Encodings = new List<Encoding> {
+                        Encoding.RLE,
+                        Encoding.BIT_PACKED,
+                        Encoding.DELTA_BINARY_PACKED
+                    };
+            }
         }
     }
 }

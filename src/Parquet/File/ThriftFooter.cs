@@ -123,7 +123,7 @@ namespace Parquet.File {
 
         public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
             Parquet.Meta.Type columnType, FieldPath path, int valuesCount,
-            Dictionary<string, string>? keyValueMetadata, List<Encoding> encodings) {
+            Dictionary<string, string>? keyValueMetadata) {
             CompressionCodec codec = (CompressionCodec)(int)compression;
 
             var chunk = new ColumnChunk();
@@ -134,9 +134,7 @@ namespace Parquet.File {
             chunk.MetaData.Type = columnType;
             chunk.MetaData.Codec = codec;
             chunk.MetaData.DataPageOffset = startPos;
-
-
-            chunk.MetaData.Encodings = encodings.Any() ? encodings : new List<Encoding> {
+            chunk.MetaData.Encodings = new List<Encoding> {
                 Encoding.RLE,
                 Encoding.BIT_PACKED,
                 Encoding.PLAIN
@@ -152,17 +150,28 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDelta) =>
+        public PageHeader CreateDataPage(int valueCount, bool isDictionary) =>
             new PageHeader {
                 Type = PageType.DATA_PAGE,
                 DataPageHeader = new DataPageHeader {
-                    Encoding = isDictionary ? Encoding.PLAIN_DICTIONARY : (isDelta ? Encoding.DELTA_BINARY_PACKED : Encoding.PLAIN),
+                    Encoding = isDictionary ? Encoding.PLAIN_DICTIONARY : Encoding.PLAIN,
                     DefinitionLevelEncoding = Encoding.RLE,
                     RepetitionLevelEncoding = Encoding.RLE,
                     NumValues = valueCount,
                     Statistics = new Statistics()
                 }
             };
+
+        public PageHeader CreateDataPage(int valueCount, Encoding encoding) => new PageHeader {
+            Type = PageType.DATA_PAGE,
+            DataPageHeader = new DataPageHeader {
+                Encoding = encoding,
+                DefinitionLevelEncoding = Encoding.RLE,
+                RepetitionLevelEncoding = Encoding.RLE,
+                NumValues = valueCount,
+                Statistics = new Statistics()
+            }
+        };
 
         public PageHeader CreateDictionaryPage(int numValues) {
             var ph = new PageHeader {
@@ -194,10 +203,8 @@ namespace Parquet.File {
                     throw new InvalidOperationException($"cannot decode schema for field {_fileMeta.Schema[si]}");
 
                 List<string> npath = path?.ToList() ?? new List<string>();
-                if(se.Path != null)
-                    npath.AddRange(se.Path.ToList());
-                else
-                    npath.Add(se.Name);
+                if(se.Path != null) npath.AddRange(se.Path.ToList());
+                else npath.Add(se.Name);
                 se.Path = new FieldPath(npath);
 
                 if(ownedChildCount > 0) {
@@ -291,8 +298,7 @@ namespace Parquet.File {
             }
 
             public Node? Find(FieldPath path) {
-                if(path.Length == 0)
-                    return null;
+                if(path.Length == 0) return null;
                 return Find(root, path);
             }
 
