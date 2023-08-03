@@ -50,7 +50,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IronCompress" Version="1.5.0" />
+        <PackageReference Include="IronCompress" Version="1.5.1" />
         <PackageReference Include="Microsoft.Data.Analysis" Version="0.20.1" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
     </ItemGroup>
