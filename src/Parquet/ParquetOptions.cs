@@ -54,7 +54,7 @@ namespace Parquet {
         /// </summary>
         /// <remarks>
         /// The dictionary maps column names (as strings) to their corresponding encodings.
-        /// Each column can be encoded using a specific compression method defined by the 'Encoding' enum.
+        /// Each column can be encoded using a specific encoding method defined by the 'Encoding' enum.
         /// </remarks>
         public Dictionary<string, Encoding> ColumnEncoding { get; set; } = new Dictionary<string, Encoding>();
     }
