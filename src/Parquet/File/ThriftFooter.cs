@@ -179,8 +179,7 @@ namespace Parquet.File {
                 DictionaryPageHeader = new DictionaryPageHeader {
                     Encoding = Encoding.PLAIN_DICTIONARY,
                     NumValues = numValues
-                }
-            };
+                }};
             return ph;
         }
 
