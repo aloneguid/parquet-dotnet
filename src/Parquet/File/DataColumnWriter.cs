@@ -52,7 +52,8 @@ namespace Parquet.File {
                 SetEncodingsForColumnEncoding(chunk, columnEncoding);
             }
 
-            ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement, cancellationToken);
+            ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
+                cancellationToken);
             //generate stats for column chunk
             chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
