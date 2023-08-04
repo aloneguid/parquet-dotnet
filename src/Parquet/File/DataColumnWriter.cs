@@ -62,6 +62,7 @@ namespace Parquet.File {
 
             return chunk;
         }
+
         class ColumnSizes {
             public int CompressedSize;
             public int UncompressedSize;
