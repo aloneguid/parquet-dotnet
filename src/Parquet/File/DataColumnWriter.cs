@@ -137,8 +137,7 @@ namespace Parquet.File {
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
-                PageHeader ph = new PageHeader();
-       
+                PageHeader ph;
                 if(isColumnEncodingExists) {
                     ph = _footer.CreateDataPage(column.NumValues, columnEncoding);
                 } else {
