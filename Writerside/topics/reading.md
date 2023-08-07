@@ -1,8 +1,8 @@
-# Reading Data
+# Reading data
 
-You can read the data by constructing an instance of [ParquetReader class](../src/Parquet/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
+You can read the data by constructing an instance of [ParquetReader class](%src_base%/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
 
-Reading files is a multi stage process, giving you the full flexibility on what exactly to read from it:
+Reading files is a multi-stage process, giving you the full flexibility on what exactly to read from it:
 
 1. Create `ParquetReader` from a source stream or open it with any utility method. Once the reader is open you can immediately access file schema and other global file options like key-value metadata and number of row groups.
 2. Open `RowGroupReader` by calling to `reader.OpenRowGroupReader(groupIndex)`. This class also exposes general row group properties like row count.
@@ -13,11 +13,11 @@ It's worth noting that *repetition levels* are only used for complex data types 
 
 ## Using format options
 
-When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](../src/Parquet/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
+When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](%src_base%/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
 
 For example, to force the reader to treat byte arrays as strings use the following code:
 
-```csharp
+```C#
 var options = new ParquetOptions { TreatByteArrayAsString = true };
 var reader = await ParquetReader.CreateAsync(stream, options);
 ```
@@ -26,7 +26,7 @@ var reader = await ParquetReader.CreateAsync(stream, options);
 
 To read custom metadata you can access the `CustomMetadata` property on `ParquetReader`:
 
-```csharp
+```C#
 using (var reader = await ParquetReader.CreateAsync(ms))
 {
    Assert.Equal("value1", reader.CustomMetadata["key1"]);
