@@ -18,6 +18,16 @@ namespace Parquet {
             return 1;
         }
 
+        public static int GetBitWidth(this long value) {
+            for(int i = 0; i < 64; i++) {
+                if(value == 0)
+                    return i;
+                value >>= 1;
+            }
+
+            return 1;
+        }
+
         public static DateTimeOffset FromUnixMilliseconds(this long unixMilliseconds) {
             return UnixEpoch.AddMilliseconds(unixMilliseconds);
         }

@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Data;
+using System.Collections.Generic;
+using Parquet.Meta;
 
 namespace Parquet {
     /// <summary>
@@ -47,5 +48,14 @@ namespace Parquet {
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
+
+        /// <summary>
+        /// Gets or sets the dictionary that stores column encodings for different data fields.
+        /// </summary>
+        /// <remarks>
+        /// The dictionary maps column names (as strings) to their corresponding encodings.
+        /// Each column can be encoded using a specific encoding method defined by the 'Encoding' enum.
+        /// </remarks>
+        public Dictionary<string, Encoding> ColumnEncoding { get; set; } = new Dictionary<string, Encoding>();
     }
 }

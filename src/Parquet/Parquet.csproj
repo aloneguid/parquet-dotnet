@@ -83,6 +83,10 @@
           <Generator>TextTemplatingFileGenerator</Generator>
           <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
         </None>
+        <None Update="Encodings\DeltaBinaryPackedEncoder.Encode.Variations.tt">
+          <Generator>TextTemplatingFileGenerator</Generator>
+          <LastGenOutput>DeltaBinaryPackedEncoder.Encode.Variations.cs</LastGenOutput>
+        </None>
         <None Update="Encodings\RleBitpackedHybridEncoder.Variations.tt">
           <Generator>TextTemplatingFileGenerator</Generator>
           <LastGenOutput>RleBitpackedHybridEncoder.Variations.cs</LastGenOutput>
@@ -112,6 +116,11 @@
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>
         <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Encodings\DeltaBinaryPackedEncoder.Encode.Variations.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>DeltaBinaryPackedEncoder.Encode.Variations.tt</DependentUpon>
       </Compile>
       <Compile Update="Encodings\RleBitpackedHybridEncoder.Variations.cs">
         <DesignTime>True</DesignTime>
