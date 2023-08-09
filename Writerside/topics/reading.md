@@ -27,9 +27,12 @@ var reader = await ParquetReader.CreateAsync(stream, options);
 To read custom metadata you can access the `CustomMetadata` property on `ParquetReader`:
 
 ```C#
-using (var reader = await ParquetReader.CreateAsync(ms))
-{
+using (var reader = await ParquetReader.CreateAsync(ms)) {
    Assert.Equal("value1", reader.CustomMetadata["key1"]);
    Assert.Equal("value2", reader.CustomMetadata["key2"]);
 }
 ```
+
+## Statistics
+
+You can read column statistics of a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
