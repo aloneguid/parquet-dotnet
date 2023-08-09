@@ -16,7 +16,7 @@ namespace Parquet.File {
     /// <summary>
     /// Reader for Parquet data column
     /// </summary>
-    public class DataColumnReader {
+    class DataColumnReader {
         private readonly DataField _dataField;
         private readonly Stream _inputStream;
         private readonly ColumnChunk _thriftColumnChunk;
@@ -29,33 +29,19 @@ namespace Parquet.File {
            DataField dataField,
            Stream inputStream,
            ColumnChunk thriftColumnChunk,
+           DataColumnStatistics? stats,
            ThriftFooter footer,
            ParquetOptions? parquetOptions) {
             _dataField = dataField ?? throw new ArgumentNullException(nameof(dataField));
             _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
             _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
+            _stats = stats;
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             dataField.EnsureAttachedToSchema(nameof(dataField));
 
             _schemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
-
-            // read stats as soon as possible
-            _stats = ReadColumnStatistics();
-        }
-
-        private DataColumnStatistics? ReadColumnStatistics() {
-
-            Statistics? st = _thriftColumnChunk.MetaData!.Statistics;
-            if(st != null) {
-
-                ParquetPlainEncoder.TryDecode(st.MinValue, _schemaElement!, _options, out object? min);
-                ParquetPlainEncoder.TryDecode(st.MaxValue, _schemaElement!, _options, out object? max);
-
-                return new DataColumnStatistics(st.NullCount, st.DistinctCount, min, max);
-            }
-            return null;
         }
 
         /// <summary>
