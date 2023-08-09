@@ -31,7 +31,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{F28C5308-5410-4066-9DA8-4DDC8ACB0B5B}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
-		..\.github\workflows\release.yml = ..\.github\workflows\release.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet.PerfRunner", "Parquet.PerfRunner\Parquet.PerfRunner.csproj", "{6325A9B7-32B4-464C-84F4-9B62BE630E90}"
