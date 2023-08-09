@@ -19,8 +19,7 @@ namespace Parquet.Test {
                     using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0)) {
 
                         foreach(DataField df in reader.Schema.DataFields) {
-                            DataColumnReader columnReader = rowGroupReader.GetColumnReader(df);
-                            DataColumnStatistics? stats = columnReader.GetColumnStatistics();
+                            DataColumnStatistics? stats = rowGroupReader.GetStatistics(df);
 
                             Assert.NotNull(stats);
                         }
@@ -37,9 +36,9 @@ namespace Parquet.Test {
             using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
                 using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0)) {
 
-                    Assert.Throws<ArgumentNullException>(() => rowGroupReader.GetColumnReader(null!));
+                    Assert.Throws<ArgumentNullException>(() => rowGroupReader.GetStatistics(null!));
                     DataField nonExistingField = new DataField("non_existing_field7862425", typeof(int));
-                    Assert.Throws<ParquetException>(() => rowGroupReader.GetColumnReader(nonExistingField));
+                    Assert.Throws<ParquetException>(() => rowGroupReader.GetStatistics(nonExistingField));
                 }
             }
         }

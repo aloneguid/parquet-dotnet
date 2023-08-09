@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Encodings;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -17,7 +18,7 @@ namespace Parquet {
         private readonly RowGroup _rowGroup;
         private readonly ThriftFooter _footer;
         private readonly Stream _stream;
-        private readonly ParquetOptions? _parquetOptions;
+        private readonly ParquetOptions? _options;
         private readonly Dictionary<FieldPath, ColumnChunk> _pathToChunk = new();
 
         internal ParquetRowGroupReader(
@@ -28,7 +29,7 @@ namespace Parquet {
             _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _parquetOptions = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
+            _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             //cache chunks
             foreach(ColumnChunk hunk in _rowGroup.Columns) {
@@ -59,7 +60,10 @@ namespace Parquet {
         /// If the column is missing, an exception will be thrown.
         /// </summary>
         public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
-            DataColumnReader columnReader = GetColumnReader(field);
+            ColumnChunk columnChunk = GetMetadata(field)
+                ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+            var columnReader = new DataColumnReader(field, _stream,
+                columnChunk, ReadColumnStatistics(columnChunk), _footer, _options);
             return columnReader.ReadAsync(cancellationToken);
         }
 
@@ -88,22 +92,29 @@ namespace Parquet {
             return cc.MetaData.KeyValueMetadata.ToDictionary(kv => kv.Key, kv => kv.Value!);
         }
 
+        private DataColumnStatistics? ReadColumnStatistics(ColumnChunk cc) {
+
+            Statistics? st = cc.MetaData!.Statistics;
+            if(st == null) return null;
+
+            SchemaElement? se = _footer.GetSchemaElement(cc) ?? throw new ArgumentException("can't find schema element", nameof(cc));
+
+            ParquetPlainEncoder.TryDecode(st.MinValue, se, _options, out object? min);
+            ParquetPlainEncoder.TryDecode(st.MaxValue, se, _options, out object? max);
+
+            return new DataColumnStatistics(st.NullCount, st.DistinctCount, min, max);
+        }
+
+
         /// <summary>
-        /// Returns DataColumnReader for given field
+        /// Returns data column statistics for a particular data field
         /// </summary>
-        /// <param name="field">DataField</param>
+        /// <param name="field"></param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ParquetException"></exception>
-        public DataColumnReader GetColumnReader(DataField field) {
-
-            if(field == null)
-                throw new ArgumentNullException(nameof(field));
-
-            ColumnChunk columnChunk = GetMetadata(field)
-                        ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
-
-            return new DataColumnReader(field, _stream, columnChunk, _footer, _parquetOptions);
+        public DataColumnStatistics? GetStatistics(DataField field) {
+            ColumnChunk cc = GetMetadata(field) ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+            return ReadColumnStatistics(cc);
         }
 
         /// <summary>
