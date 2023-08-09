@@ -48,7 +48,15 @@ namespace Parquet {
         public long RowCount => _rowGroup.NumRows;
 
         /// <summary>
+        /// Checks if this field exists in source schema
+        /// </summary>
+        public bool ColumnExists(DataField field) {
+            return GetMetadata(field) != null;
+        }
+
+        /// <summary>
         /// Reads a column from this row group. Unlike writing, columns can be read in any order.
+        /// If the column is missing, an exception will be thrown.
         /// </summary>
         public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
             DataColumnReader columnReader = GetColumnReader(field);

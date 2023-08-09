@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+<svg
+   width="900pt"
+   height="900pt"
+   viewBox="0 0 900 900"
+   version="1.1"
+   id="svg159"
+   sodipodi:docname="squared.svg"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   inkscape:export-filename="C:\dev\parquet-dotnet\src\icon.png"
+   inkscape:export-xdpi="20.48"
+   inkscape:export-ydpi="20.48"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs163" />
+  <sodipodi:namedview
+     id="namedview161"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="pt"
+     showgrid="false"
+     width="1001pt"
+     inkscape:zoom="0.5325"
+     inkscape:cx="571.83099"
+     inkscape:cy="619.71831"
+     inkscape:window-width="1500"
+     inkscape:window-height="938"
+     inkscape:window-x="-6"
+     inkscape:window-y="-6"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg159" />
+  <g
+     id="surface1"
+     transform="translate(-45.070423,-4.2253568)">
+    <path
+       style="fill:#54abee;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       d="m 375.00781,498.86328 -122.39453,87.71484 58.44531,59.69532 123.55078,-96.40235 -59.60156,-51.00781 M 697.5625,267.69141 397.35547,482.84375 l 59.71875,49.5 298.82422,-233.09766 -58.33594,-31.55468 m -163.85938,20.78906 -350.87109,226.88281 51.50391,52.58594 353.0664,-246.35938 -53.69922,-33.10937 m 92.13282,-59.57031 -75.86328,49.05859 53.63671,32.3125 75.39844,-52.61328 -53.17187,-28.75781 m -44.88282,238.38671 -249.10156,200.19922 66.92578,68.30078 249.2461,-220.43359 -67.07032,-48.06641 m 195.34375,-157.01562 -176.53125,141.89453 66.91407,46.6875 173.91015,-153.8125 -64.29297,-34.76953 m -414.4375,0 -240.92187,141.89453 45.75391,46.71094 243.6875,-153.83594 -48.51954,-34.76953 m 501.25,46.96484 L 422.68359,760.23047 500,839.16406 934.32031,395.76172 863.10937,357.24609 M 560.24219,193.42187 380.59766,299.24609 429.21094,333.16406 608.90625,219.74219 560.24219,193.42187 M 500,160.83594 544.70312,185.03125 106.55469,437.48828 65.679688,395.76172 Z m 0,0"
+       id="path156" />
+  </g>
+</svg>

@@ -1,3 +1,19 @@
+## 4.16.0
+
+### New
+
+- Markdown documentation fully migrated to [GitHub Pages](https://aloneguid.github.io/parquet-dotnet/). It was becoming slightly unmanageable and also recent GitHub updates made markdown files look awful. Also I kind of wanted to try [Writerside by JetBrains](https://lp.jetbrains.com/writerside/), and publish docs with pride ;) @aloneguid
+- Class deserializer will now skip class properties and not throw an exception if they are missing in the source parquet file. Thanks to @greenlynx in #361.
+
+### Improvements
+
+- IronCompress was updated to v1.5.1 by @aloneguid.
+
+### Fixes
+
+- Fix precision issues writing `DateTime` as milliseconds by @spanglerco in #312.
+- In `DataColumnWriter`, `RecycableMemoryStream` wasn't used in a particular case, and instead `MemoryStream` was initialized directly. Thanks to @itayfisz in #373.
+
 ## 4.15.0
 
 ### Bugs Fixed

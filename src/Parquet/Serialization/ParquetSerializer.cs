@@ -148,6 +148,7 @@ namespace Parquet.Serialization {
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
+
                 await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
             }
 
@@ -190,7 +191,13 @@ namespace Parquet.Serialization {
                     throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actual}'");
                 }
 
+                // skips column deserialisation if it doesn't exist in file's schema
+                if(!rg.ColumnExists(fasm.Field)) {
+                    continue;
+                }
+
                 DataColumn dc = await rg.ReadColumnAsync(fasm.Field, cancellationToken);
+
                 try {
                     fasm.Assemble(result.Skip(prevRowCount), dc);
                 } catch(Exception ex) {

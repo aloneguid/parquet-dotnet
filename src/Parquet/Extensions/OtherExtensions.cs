@@ -6,6 +6,7 @@ using Parquet.Schema;
 namespace Parquet {
     static class OtherExtensions {
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private const long UnixEpochMilliseconds = 62_135_596_800_000L;
 
         public static int GetBitWidth(this int value) {
             for(int i = 0; i < 64; i++) {
@@ -26,8 +27,8 @@ namespace Parquet {
         }
 
         public static long ToUnixMilliseconds(this DateTime dto) {
-            TimeSpan diff = dto - UnixEpoch;
-            return (long)diff.TotalMilliseconds;
+            long milliseconds = dto.Ticks / TimeSpan.TicksPerMillisecond;
+            return milliseconds - UnixEpochMilliseconds;
         }
 
         public static DateTime AsUnixDaysInDateTime(this int unixDays) {
