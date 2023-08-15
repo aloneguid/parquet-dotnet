@@ -7,8 +7,6 @@
     //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L287
 
     static partial class DeltaBinaryPackedEncoder {
-         private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
-
         private static void Encode(ReadOnlySpan<int> data, Stream destination) {
                     
             ArrayPool<int> intPool = ArrayPool<int>.Shared;
@@ -44,39 +42,32 @@
                     while(blockBufCounter < blockSize) {
                         rentedBlockBuf[blockBufCounter++] = minDelta;
                     }
-                    byte[] rentedBitWidths = BytePool.Rent(numMiniBlocksInBlock);
 
-                    try {
-                        for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                            int maxValue = 0;
-                            for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
-                                rentedBlockBuf[(int)k] = rentedBlockBuf[(int)k] - minDelta;
-                                if(rentedBlockBuf[(int)k] > maxValue) {
-                                    maxValue = rentedBlockBuf[(int)k];
-                                }
-                            }
-                            rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
-                        }
-
-                        WriteZigZagVarLong(destination, minDelta);
-                        destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
-
-                        for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                            int miniBlockStart = j * numValuesInMiniBlock;
-                            for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
-                                byte[] rentedMiniBlock = BytePool.Rent(rentedBitWidths[j]);
-                                try {
-                                    int end = Math.Min(8, blockSize - k);
-                                    BitPackedEncoder.Encode8ValuesLE(rentedBlockBuf.AsSpan(k, end), rentedMiniBlock, rentedBitWidths[j]);
-                                    destination.Write(rentedMiniBlock, 0, rentedBitWidths[j]);
-                                } finally {
-                                    BytePool.Return(rentedMiniBlock);
-                                }
+                    byte[] rentedBitWidths = new byte[numMiniBlocksInBlock];
+                    for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                        int maxValue = 0;
+                        for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
+                            rentedBlockBuf[(int)k] = rentedBlockBuf[(int)k] - minDelta;
+                            if(rentedBlockBuf[(int)k] > maxValue) {
+                                maxValue = rentedBlockBuf[(int)k];
                             }
                         }
-                    } finally {
-                        BytePool.Return(rentedBitWidths);
+                        rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                     }
+
+                    WriteZigZagVarLong(destination, minDelta);
+                    destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
+
+                    for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                        int miniBlockStart = j * numValuesInMiniBlock;
+                        for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
+                            byte[] rentedMiniBlock = new byte[rentedBitWidths[j]];
+                            int end = Math.Min(8, blockSize - k);
+                            BitPackedEncoder.Encode8ValuesLE(rentedBlockBuf.AsSpan(k, end), rentedMiniBlock, rentedBitWidths[j]);
+                            destination.Write(rentedMiniBlock, 0, rentedBitWidths[j]);
+                        }
+                    }
+                   
                 } finally {
                     intPool.Return(rentedBlockBuf);
                 }
@@ -117,39 +108,32 @@
                     while(blockBufCounter < blockSize) {
                         rentedBlockBuf[blockBufCounter++] = minDelta;
                     }
-                    byte[] rentedBitWidths = BytePool.Rent(numMiniBlocksInBlock);
 
-                    try {
-                        for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                            long maxValue = 0;
-                            for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
-                                rentedBlockBuf[(int)k] = rentedBlockBuf[(int)k] - minDelta;
-                                if(rentedBlockBuf[(int)k] > maxValue) {
-                                    maxValue = rentedBlockBuf[(int)k];
-                                }
-                            }
-                            rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
-                        }
-
-                        WriteZigZagVarLong(destination, minDelta);
-                        destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
-
-                        for(int j = 0; j < numMiniBlocksInBlock; j++) {
-                            int miniBlockStart = j * numValuesInMiniBlock;
-                            for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
-                                byte[] rentedMiniBlock = BytePool.Rent(rentedBitWidths[j]);
-                                try {
-                                    int end = Math.Min(8, blockSize - k);
-                                    BitPackedEncoder.Encode8ValuesLE(rentedBlockBuf.AsSpan(k, end), rentedMiniBlock, rentedBitWidths[j]);
-                                    destination.Write(rentedMiniBlock, 0, rentedBitWidths[j]);
-                                } finally {
-                                    BytePool.Return(rentedMiniBlock);
-                                }
+                    byte[] rentedBitWidths = new byte[numMiniBlocksInBlock];
+                    for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                        long maxValue = 0;
+                        for(int k = j * numValuesInMiniBlock; k < (j + 1) * numValuesInMiniBlock; k++) {
+                            rentedBlockBuf[(int)k] = rentedBlockBuf[(int)k] - minDelta;
+                            if(rentedBlockBuf[(int)k] > maxValue) {
+                                maxValue = rentedBlockBuf[(int)k];
                             }
                         }
-                    } finally {
-                        BytePool.Return(rentedBitWidths);
+                        rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                     }
+
+                    WriteZigZagVarLong(destination, minDelta);
+                    destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
+
+                    for(int j = 0; j < numMiniBlocksInBlock; j++) {
+                        int miniBlockStart = j * numValuesInMiniBlock;
+                        for(int k = miniBlockStart; k < (j + 1) * numValuesInMiniBlock; k += 8) {
+                            byte[] rentedMiniBlock = new byte[rentedBitWidths[j]];
+                            int end = Math.Min(8, blockSize - k);
+                            BitPackedEncoder.Encode8ValuesLE(rentedBlockBuf.AsSpan(k, end), rentedMiniBlock, rentedBitWidths[j]);
+                            destination.Write(rentedMiniBlock, 0, rentedBitWidths[j]);
+                        }
+                    }
+                   
                 } finally {
                     longPool.Return(rentedBlockBuf);
                 }

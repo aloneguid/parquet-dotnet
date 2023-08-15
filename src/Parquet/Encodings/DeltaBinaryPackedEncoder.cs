@@ -67,7 +67,7 @@ namespace Parquet.Encodings {
         }
 
         private static void WriteUnsignedVarInt(Stream destination, int value) {
-            WriteUnsignedVarInt(destination, (uint)value);
+            WriteUnsignedVarLong(destination, (uint)value);
         }
 
         private static void WriteZigZagVarLong(Stream destination, long value) {
@@ -76,19 +76,6 @@ namespace Parquet.Encodings {
         }
         private static void WriteUnsignedVarLong(Stream stream, ulong value) {
             byte[] buffer = new byte[10];
-            int index = 0;
-
-            while(value >= 0x80) {
-                buffer[index++] = (byte)(value | 0x80);
-                value >>= 7;
-            }
-
-            buffer[index++] = (byte)value;
-            stream.Write(buffer, 0, index);
-        }
-
-        private static void WriteUnsignedVarInt(Stream stream, uint value) {
-            byte[] buffer = new byte[5];
             int index = 0;
 
             while(value >= 0x80) {
