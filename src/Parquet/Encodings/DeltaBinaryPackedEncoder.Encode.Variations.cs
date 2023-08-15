@@ -7,9 +7,10 @@
     //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L287
 
     static partial class DeltaBinaryPackedEncoder {
+         private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
         private static void Encode(ReadOnlySpan<int> data, Stream destination) {
-            
+                    
             ArrayPool<int> intPool = ArrayPool<int>.Shared;
             int blockSize = 128;
             int numMiniBlocksInBlock = 4;
@@ -20,9 +21,8 @@
             WriteUnsignedVarInt(destination, numMiniBlocksInBlock);
             WriteUnsignedVarInt(destination, totalNumValues);
 
-            int num = data[0];
-            ulong firstValue = ZigZagEncode(num);
-            WriteUnsignedVarInt(destination, firstValue);
+            int firstValue = data[0];
+            WriteZigZagVarLong(destination, firstValue);
 
             int i = 1;
             while(i < totalNumValues) {
@@ -58,8 +58,7 @@
                             rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                         }
 
-                        uint minDeltaZigZag = ZigZagEncode(minDelta);
-                        WriteUnsignedVarInt(destination, minDeltaZigZag);
+                        WriteZigZagVarLong(destination, minDelta);
                         destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
 
                         for(int j = 0; j < numMiniBlocksInBlock; j++) {
@@ -83,9 +82,8 @@
                 }
             }
         }
-
         private static void Encode(ReadOnlySpan<long> data, Stream destination) {
-            
+                    
             ArrayPool<long> longPool = ArrayPool<long>.Shared;
             int blockSize = 128;
             int numMiniBlocksInBlock = 4;
@@ -96,9 +94,8 @@
             WriteUnsignedVarInt(destination, numMiniBlocksInBlock);
             WriteUnsignedVarInt(destination, totalNumValues);
 
-            long num = data[0];
-            ulong firstValue = ZigZagEncode(num);
-            WriteUnsignedVarInt(destination, firstValue);
+            long firstValue = data[0];
+            WriteZigZagVarLong(destination, firstValue);
 
             int i = 1;
             while(i < totalNumValues) {
@@ -134,8 +131,7 @@
                             rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                         }
 
-                        ulong minDeltaZigZag = ZigZagEncode(minDelta);
-                        WriteUnsignedVarInt(destination, minDeltaZigZag);
+                        WriteZigZagVarLong(destination, minDelta);
                         destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
 
                         for(int j = 0; j < numMiniBlocksInBlock; j++) {
@@ -159,6 +155,5 @@
                 }
             }
         }
-
     }
 }

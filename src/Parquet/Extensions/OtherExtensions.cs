@@ -95,5 +95,9 @@ namespace Parquet {
         public static Exception NotImplemented(string reason) {
             return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, or implemented it and raise a PR.");
         }
+
+        public static ulong GetZigZagEncoded(this long value) {
+            return (ulong)((value >> 63) ^ (value << 1));
+        }
     }
 }

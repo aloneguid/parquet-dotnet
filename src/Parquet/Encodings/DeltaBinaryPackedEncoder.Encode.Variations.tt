@@ -1,4 +1,4 @@
-﻿<#@ template debug="false" hostspecific="false" language="C#" 
+﻿﻿<#@ template debug="false" hostspecific="false" language="C#" 
 #><#@ assembly name="System.Core" 
 #><#@ import namespace="System.Collections.Generic" 
 #><#@ output extension=".cs" 
@@ -12,9 +12,11 @@
     //https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingwrite.go#L287
 
     static partial class DeltaBinaryPackedEncoder {
+         private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
+
 <# foreach(string nt in types) { #>
         private static void Encode(ReadOnlySpan<<#= nt#>> data, Stream destination) {
-            
+                    
             ArrayPool<<#= nt#>> <#= nt#>Pool = ArrayPool<<#= nt#>>.Shared;
             int blockSize = 128;
             int numMiniBlocksInBlock = 4;
@@ -25,9 +27,8 @@
             WriteUnsignedVarInt(destination, numMiniBlocksInBlock);
             WriteUnsignedVarInt(destination, totalNumValues);
 
-            <#= nt#> num = data[0];
-            ulong firstValue = ZigZagEncode(num);
-            WriteUnsignedVarInt(destination, firstValue);
+            <#= nt#> firstValue = data[0];
+            WriteZigZagVarLong(destination, firstValue);
 
             int i = 1;
             while(i < totalNumValues) {
@@ -63,8 +64,7 @@
                             rentedBitWidths[j] = (byte)(maxValue.GetBitWidth());
                         }
 
-                        u<#= nt#> minDeltaZigZag = ZigZagEncode(minDelta);
-                        WriteUnsignedVarInt(destination, minDeltaZigZag);
+                        WriteZigZagVarLong(destination, minDelta);
                         destination.Write(rentedBitWidths, 0, numMiniBlocksInBlock);
 
                         for(int j = 0; j < numMiniBlocksInBlock; j++) {

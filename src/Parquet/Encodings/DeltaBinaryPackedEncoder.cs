@@ -12,9 +12,7 @@ namespace Parquet.Encodings {
     /// 
     /// Supported Types: INT32, INT64
     /// </summary>
-    public static partial class DeltaBinaryPackedEncoder {
-
-        private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
+    static partial class DeltaBinaryPackedEncoder {
 
         /// <summary>
         /// 
@@ -68,64 +66,38 @@ namespace Parquet.Encodings {
             }
         }
 
-        private static ulong ZigZagEncode(long num) {
-            return (ulong)((num >> 63) ^ (num << 1));
-        }
-
-        private static uint ZigZagEncode(int num) {
-            return (uint)((num >> 31) ^ (num << 1));
-        }
-
         private static void WriteUnsignedVarInt(Stream destination, int value) {
-            byte[] rentedBuffer = BytePool.Rent(4);
-            int consumed = 0;
-            try {
-                WriteUnsignedVarInt(rentedBuffer, ref consumed, value);
-                destination.Write(rentedBuffer, 0, consumed);
-            } finally {
-                BytePool.Return(rentedBuffer);
-            }
-        }
-        private static void WriteUnsignedVarInt(Stream destination, ulong value) {
-            byte[] rentedBuffer = BytePool.Rent(8);
-            int consumed = 0;
-            try {
-                WriteUnsignedVarInt(rentedBuffer, ref consumed, value);
-                destination.Write(rentedBuffer, 0, consumed);
-            } finally {
-                BytePool.Return(rentedBuffer);
-            }
+            WriteUnsignedVarInt(destination, (uint)value);
         }
 
-        private static void WriteUnsignedVarInt(byte[] s, ref int consumed, int value) {
-            while(value > 127) {
-                byte b = (byte)((value & 0x7F) | 0x80);
+        private static void WriteZigZagVarLong(Stream destination, long value) {
+            ulong zigZagEncoded = value.GetZigZagEncoded();
+            WriteUnsignedVarLong(destination, zigZagEncoded);
+        }
+        private static void WriteUnsignedVarLong(Stream stream, ulong value) {
+            byte[] buffer = new byte[10];
+            int index = 0;
 
-                s[consumed++] = b;
-
+            while(value >= 0x80) {
+                buffer[index++] = (byte)(value | 0x80);
                 value >>= 7;
             }
 
-            s[consumed++] = (byte)value;
+            buffer[index++] = (byte)value;
+            stream.Write(buffer, 0, index);
         }
 
-        private static byte[] WriteUnsignedVarInt(byte[] s, ref int consumed, ulong value) {
-            consumed = 1;
-            ulong numTmp = value;
+        private static void WriteUnsignedVarInt(Stream stream, uint value) {
+            byte[] buffer = new byte[5];
+            int index = 0;
 
-            while(numTmp >= 128) {
-                consumed++;
-                numTmp >>= 7;
+            while(value >= 0x80) {
+                buffer[index++] = (byte)(value | 0x80);
+                value >>= 7;
             }
 
-            numTmp = value;
-            for(int i = 0; i < consumed; i++) {
-                s[i] = (byte)(numTmp | 0x80);
-                numTmp >>= 7;
-            }
-
-            s[consumed - 1] &= 0x7F;
-            return s;
+            buffer[index++] = (byte)value;
+            stream.Write(buffer, 0, index);
         }
     }
 }
