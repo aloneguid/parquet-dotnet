@@ -118,6 +118,15 @@ namespace System {
             }
         }
 
+        public static int Max(this Span<int> span) {
+            int max = 0;
+            for(int i = 0; i < span.Length; i++) {
+                if(i == 0 || span[i] > max)
+                    max = span[i];
+            }
+            return max;
+        }
+
         public static void MinMax(this ReadOnlySpan<uint> span, out uint min, out uint max) {
             min = span.IsEmpty ? default(uint) : span[0];
             max = min;
@@ -138,6 +147,15 @@ namespace System {
                 if(i > max)
                     max = i;
             }
+        }
+
+        public static long Max(this Span<long> span) {
+            long max = 0;
+            for(int i = 0; i < span.Length; i++) {
+                if(i == 0 || span[i] > max)
+                    max = span[i];
+            }
+            return max;
         }
 
         public static void MinMax(this ReadOnlySpan<ulong> span, out ulong min, out ulong max) {

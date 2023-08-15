@@ -83,6 +83,10 @@
           <Generator>TextTemplatingFileGenerator</Generator>
           <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
         </None>
+        <None Update="Encodings\DeltaBinaryPackedEncoder.Variations.tt">
+          <Generator>TextTemplatingFileGenerator</Generator>
+          <LastGenOutput>DeltaBinaryPackedEncoder.Variations.cs</LastGenOutput>
+        </None>
         <None Update="Encodings\RleBitpackedHybridEncoder.Variations.tt">
           <Generator>TextTemplatingFileGenerator</Generator>
           <LastGenOutput>RleBitpackedHybridEncoder.Variations.cs</LastGenOutput>

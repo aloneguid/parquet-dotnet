@@ -1,11 +1,12 @@
-﻿
-
-namespace Parquet.Encodings {
+﻿namespace Parquet.Encodings {
     using System;
+    using System.IO;
+    using Parquet.Extensions;
 
     static partial class DeltaBinaryPackedEncoder {
 
-        private static int Decode(Span<byte> s, Span<int> dest, out int consumedBytes) {
+
+        private static int DecodeInternal(Span<byte> s, Span<int> dest, out int consumedBytes) {
 
             int spos = 0;
 
@@ -14,7 +15,7 @@ namespace Parquet.Encodings {
 
             int blockSizeInValues = s.ReadUnsignedVarInt(ref spos);
             int miniblocksInABlock = s.ReadUnsignedVarInt(ref spos);
-            int totalValueCount = s.ReadUnsignedVarInt(ref spos);       // theoretically equal to "valueCount" param
+            int totalValueCount = s.ReadUnsignedVarInt(ref spos);           // theoretically equal to "valueCount" param
             int firstValue = (int)s.ReadZigZagVarLong(ref spos);            // the actual first value
 
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
@@ -47,7 +48,7 @@ namespace Parquet.Encodings {
                     } else {
 
                         // mini block has a size of 8*n, unpack 8 values each time
-                        for(int j = 0; j < valuesPerMiniblock; j += 8) {
+                        for(int j = 0; j < valuesPerMiniblock && spos < s.Length; j += 8) {
                             BitPackedEncoder.Unpack8ValuesLE(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
                             spos += bitWidth;
                         }
@@ -56,7 +57,6 @@ namespace Parquet.Encodings {
                             dest[destOffset++] = currentValue;
                             currentValue += minDelta + vbuf[i];
                         }
-
                     }
                 }
             }
@@ -65,7 +65,8 @@ namespace Parquet.Encodings {
             return read;
         }
 
-        private static int Decode(Span<byte> s, Span<long> dest, out int consumedBytes) {
+
+        private static int DecodeInternal(Span<byte> s, Span<long> dest, out int consumedBytes) {
 
             int spos = 0;
 
@@ -74,7 +75,7 @@ namespace Parquet.Encodings {
 
             int blockSizeInValues = s.ReadUnsignedVarInt(ref spos);
             int miniblocksInABlock = s.ReadUnsignedVarInt(ref spos);
-            int totalValueCount = s.ReadUnsignedVarInt(ref spos);       // theoretically equal to "valueCount" param
+            int totalValueCount = s.ReadUnsignedVarInt(ref spos);           // theoretically equal to "valueCount" param
             long firstValue = (long)s.ReadZigZagVarLong(ref spos);            // the actual first value
 
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
@@ -107,7 +108,7 @@ namespace Parquet.Encodings {
                     } else {
 
                         // mini block has a size of 8*n, unpack 8 values each time
-                        for(int j = 0; j < valuesPerMiniblock; j += 8) {
+                        for(int j = 0; j < valuesPerMiniblock && spos < s.Length; j += 8) {
                             BitPackedEncoder.Unpack8ValuesLE(s.Slice(Math.Min(spos, s.Length)), vbuf.AsSpan(j), bitWidth);
                             spos += bitWidth;
                         }
@@ -124,6 +125,5 @@ namespace Parquet.Encodings {
             consumedBytes = spos;
             return read;
         }
-
     }
 }

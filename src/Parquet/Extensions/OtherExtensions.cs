@@ -1,22 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Parquet.Schema;
 
 namespace Parquet {
     static class OtherExtensions {
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         private const long UnixEpochMilliseconds = 62_135_596_800_000L;
-
-        public static int GetBitWidth(this int value) {
-            for(int i = 0; i < 64; i++) {
-                if(value == 0)
-                    return i;
-                value >>= 1;
-            }
-
-            return 1;
-        }
 
         public static DateTimeOffset FromUnixMilliseconds(this long unixMilliseconds) {
             return UnixEpoch.AddMilliseconds(unixMilliseconds);

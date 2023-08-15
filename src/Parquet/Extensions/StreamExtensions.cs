@@ -1,9 +1,20 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Parquet.Extensions {
     static class StreamExtensions {
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteSpan(this Stream s, Span<byte> span) {
+#if NETSTANDARD2_0
+            s.Write(span.ToArray(), 0, span.Length);
+#else
+            s.Write(span);
+#endif
+        }
+
         public static int ReadInt32(this Stream s) {
             byte[] tmp = new byte[sizeof(int)];
             s.Read(tmp, 0, sizeof(int));
@@ -76,6 +87,7 @@ namespace Parquet.Extensions {
             return result;
         }
 
+
         public static long ReadUnsignedVarLong(this Stream s) {
             long value = 0;
             int i = 0;
@@ -87,10 +99,5 @@ namespace Parquet.Extensions {
             return value | (b << i);
         }
 
-        public static long ReadZigZagVarLong(this Stream s) {
-            long raw = s.ReadUnsignedVarLong();
-            long temp = (((raw << 63) >> 63) ^ raw) >> 1;
-            return temp ^ (raw & (1L << 63));
-        }
     }
 }
