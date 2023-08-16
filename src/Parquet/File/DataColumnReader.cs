@@ -10,6 +10,7 @@ using Parquet.Schema;
 using Parquet.Encodings;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
+using Parquet.Extensions;
 
 namespace Parquet.File {
 
@@ -343,7 +344,5 @@ namespace Parquet.File {
 
             return destOffset - start;
         }
-
-        private static int GetRemainingLength(Stream s) => (int)(s.Length - s.Position);
     }
 }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Parquet.Encodings;
+using Parquet.Extensions;
 using Xunit;
 
 namespace Parquet.Test.Encodings {
