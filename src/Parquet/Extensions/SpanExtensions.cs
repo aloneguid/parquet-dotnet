@@ -25,42 +25,6 @@ namespace System {
 #endif
         }
 
-        /// <summary>
-        /// Read a value using the unsigned, variable int encoding.
-        /// </summary>
-        public static int ReadUnsignedVarInt(this Span<byte> data, ref int offset) {
-            int result = 0;
-            int shift = 0;
-
-            while(true) {
-                byte b = data[offset++];
-                result |= ((b & 0x7F) << shift);
-                if((b & 0x80) == 0)
-                    break;
-                shift += 7;
-            }
-
-            return result;
-        }
-
-        public static long ReadUnsignedVarLong(this Span<byte> data, ref int offset) {
-            long value = 0;
-            int i = 0;
-            long b;
-            while(((b = data[offset++]) & 0x80) != 0) {
-                value |= (b & 0x7F) << i;
-                i += 7;
-            }
-            return value | (b << i);
-        }
-
-
-        public static long ReadZigZagVarLong(this Span<byte> data, ref int offset) {
-            long raw = data.ReadUnsignedVarLong(ref offset);
-            long temp = (((raw << 63) >> 63) ^ raw) >> 1;
-            return temp ^ (raw & (1L << 63));
-        }
-
         // All of these could be replaced with generic math, but we don't have access to it due to supporting older than .NET 6
 
         public static void MinMax(this ReadOnlySpan<byte> span, out byte min, out byte max) {

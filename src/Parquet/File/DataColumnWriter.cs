@@ -8,6 +8,7 @@ using IronCompress;
 using Microsoft.IO;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
 
@@ -78,7 +79,7 @@ namespace Parquet.File {
             ph.CompressedPageSize = compressedData.AsSpan().Length;
 
             //write the header in
-            using var headerMs = _rmsMgr.GetStream();
+            using MemoryStream headerMs = _rmsMgr.GetStream();
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
             int headerSize = (int)headerMs.Length;
             headerMs.Position = 0;

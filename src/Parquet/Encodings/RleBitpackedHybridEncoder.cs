@@ -80,25 +80,25 @@ namespace Parquet.Encodings {
 
         private static void WriteRle0(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            WriteUnsignedVarInt(r, ref consumed, header);
+            consumed += ((ulong)header).ULEB128Encode(r);
         }
 
         private static void WriteRle1(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            WriteUnsignedVarInt(r, ref consumed, header);
+            consumed += ((ulong)header).ULEB128Encode(r);
             r[consumed++] = (byte)value;
         }
 
         private static void WriteRle2(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            WriteUnsignedVarInt(r, ref consumed, header);
+            consumed += ((ulong)header).ULEB128Encode(r);
             r[consumed++] = (byte)value;
             r[consumed++] = (byte)((value >> 8) & 0xFF);
         }
 
         private static void WriteRle3(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            WriteUnsignedVarInt(r, ref consumed, header);
+            consumed += ((ulong)header).ULEB128Encode(r);
             r[consumed++] = (byte)value;
             r[consumed++] = (byte)((value >> 8) & 0xFF);
             r[consumed++] = (byte)((value >> 16) & 0x00FF);
@@ -106,36 +106,12 @@ namespace Parquet.Encodings {
 
         private static void WriteRle4(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            WriteUnsignedVarInt(r, ref consumed, header);
+            consumed += ((ulong)header).ULEB128Encode(r);
             r[consumed++] = (byte)value;
             r[consumed++] = (byte)((value >> 8) & 0xFF);
             r[consumed++] = (byte)((value >> 16) & 0x00FF);
             r[consumed++] = (byte)((value >> 32) & 0x0000FF);
         }
-
-        private static void WriteUnsignedVarInt(IList<byte> s, int value) {
-            while(value > 127) {
-                byte b = (byte)((value & 0x7F) | 0x80);
-                s.Add(b);
-                value >>= 7;
-            }
-
-            s.Add((byte)value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteUnsignedVarInt(byte[] s, ref int consumed, int value) {
-            while(value > 127) {
-                byte b = (byte)((value & 0x7F) | 0x80);
-
-                s[consumed++] = b;
-
-                value >>= 7;
-            }
-
-            s[consumed++] = (byte)value;
-        }
-
 
         public static int Decode(Span<byte> s,
             int bitWidth,
@@ -246,10 +222,6 @@ namespace Parquet.Encodings {
                 default:
                     throw new IOException($"encountered byte width ({data.Length}) that requires more than 4 bytes.");
             }
-        }
-
-        private static int MaskForBits(int width) {
-            return (1 << width) - 1;
         }
     }
 }
