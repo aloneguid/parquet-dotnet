@@ -5,6 +5,7 @@
 - Markdown documentation fully migrated to [GitHub Pages](https://aloneguid.github.io/parquet-dotnet/). It was becoming slightly unmanageable and also recent GitHub updates made markdown files look awful. Also I kind of wanted to try [Writerside by JetBrains](https://lp.jetbrains.com/writerside/), and publish docs with pride ;) @aloneguid
 - Class deserializer will now skip class properties and not throw an exception if they are missing in the source parquet file. Thanks to @greenlynx in #361.
 - Column statistics can be read with zero cost without reading the data. Thanks to @mirosuav in #252, #368. 
+- Support for `DELTA_BINARY_PACKED` encoding on write. Most of the work done by @ee-naveen.
 
 ### Improvements
 
@@ -14,6 +15,7 @@
 
 - Fix precision issues writing `DateTime` as milliseconds by @spanglerco in #312.
 - In `DataColumnWriter`, `RecycableMemoryStream` wasn't used in a particular case, and instead `MemoryStream` was initialized directly. Thanks to @itayfisz in #373.
+- Bitpacked Hybrid decoder was failing on columns containing exactly one value.
 
 ## 4.15.0
 

@@ -111,6 +111,15 @@ namespace Parquet.Encodings {
             int totalValueCount = (int)s.ULEB128Decode(ref spos);           // theoretically equal to "valueCount" param
             <#= nt#> firstValue = (<#= nt#>)s.ReadZigZagVarLong(ref spos);            // the actual first value
 
+            if(totalValueCount == 0) {
+                consumedBytes = spos;
+                return 0;
+            } else if(totalValueCount == 1) {
+                dest[0] = firstValue;
+                consumedBytes = spos;
+                return 1;
+            }
+
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
             <#= nt#>[] vbuf = new <#= nt#>[valuesPerMiniblock];
 
