@@ -103,6 +103,15 @@
             int totalValueCount = (int)s.ULEB128Decode(ref spos);           // theoretically equal to "valueCount" param
             int firstValue = (int)s.ReadZigZagVarLong(ref spos);            // the actual first value
 
+            if(totalValueCount == 0) {
+                consumedBytes = spos;
+                return 0;
+            } else if(totalValueCount == 1) {
+                dest[0] = firstValue;
+                consumedBytes = spos;
+                return 1;
+            }
+
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
             int[] vbuf = new int[valuesPerMiniblock];
 
@@ -248,6 +257,15 @@
             int miniblocksInABlock = (int)s.ULEB128Decode(ref spos);
             int totalValueCount = (int)s.ULEB128Decode(ref spos);           // theoretically equal to "valueCount" param
             long firstValue = (long)s.ReadZigZagVarLong(ref spos);            // the actual first value
+
+            if(totalValueCount == 0) {
+                consumedBytes = spos;
+                return 0;
+            } else if(totalValueCount == 1) {
+                dest[0] = firstValue;
+                consumedBytes = spos;
+                return 1;
+            }
 
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
             long[] vbuf = new long[valuesPerMiniblock];

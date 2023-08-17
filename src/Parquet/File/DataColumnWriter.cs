@@ -49,7 +49,8 @@ namespace Parquet.File {
                 _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
                 _keyValueMetadata);
 
-            ColumnSizes columnSizes = await WriteColumnAsync(column, _schemaElement,
+            ColumnSizes columnSizes = await WriteColumnAsync(
+                chunk, column, _schemaElement,
                 cancellationToken);
             //generate stats for column chunk
             chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
@@ -87,12 +88,7 @@ namespace Parquet.File {
             await headerMs.CopyToAsync(_stream);
 
             // write data
-#if NETSTANDARD2_0
-                byte[] tmp = compressedData.AsSpan().ToArray();
-                _stream.Write(tmp, 0, tmp.Length);
-#else
-            _stream.Write(compressedData);
-#endif
+            _stream.WriteSpan(compressedData);
 
             cs.CompressedSize += headerSize;
             cs.UncompressedSize += headerSize;
@@ -101,7 +97,7 @@ namespace Parquet.File {
             cs.UncompressedSize += ph.UncompressedPageSize;
         }
 
-        private async Task<ColumnSizes> WriteColumnAsync(DataColumn column,
+        private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
            SchemaElement tse,
            CancellationToken cancellationToken = default) {
 
@@ -132,7 +128,7 @@ namespace Parquet.File {
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
-                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary);
+                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, column.Field.IsDeltaEncodable);
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
@@ -148,7 +144,12 @@ namespace Parquet.File {
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
-                    ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
+                    if(column.Field.IsDeltaEncodable) {
+                        DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
+                        chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
+                    } else {
+                        ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
+                    }
                 }
 
                 ph.DataPageHeader!.Statistics = column.Statistics.ToThriftStatistics(tse);
