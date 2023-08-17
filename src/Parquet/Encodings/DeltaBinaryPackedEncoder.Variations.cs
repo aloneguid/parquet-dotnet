@@ -5,7 +5,6 @@
 
     static partial class DeltaBinaryPackedEncoder {
 
-
         private static void FlushIntBlock(Span<int> block, int minDelta,
             Stream destination,
             int miniblockCount, int miniblockSize) {
@@ -159,7 +158,6 @@
             consumedBytes = spos;
             return read;
         }
-
 
         private static void FlushLongBlock(Span<long> block, long minDelta,
             Stream destination,
