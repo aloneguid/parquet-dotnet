@@ -98,9 +98,9 @@
             // The header is defined as follows:
             // <block size in values> <number of miniblocks in a block> <total value count> <first value>
 
-            int blockSizeInValues = s.ReadUnsignedVarInt(ref spos);
-            int miniblocksInABlock = s.ReadUnsignedVarInt(ref spos);
-            int totalValueCount = s.ReadUnsignedVarInt(ref spos);           // theoretically equal to "valueCount" param
+            int blockSizeInValues = (int)s.ULEB128Decode(ref spos);
+            int miniblocksInABlock = (int)s.ULEB128Decode(ref spos);
+            int totalValueCount = (int)s.ULEB128Decode(ref spos);           // theoretically equal to "valueCount" param
             int firstValue = (int)s.ReadZigZagVarLong(ref spos);            // the actual first value
 
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
@@ -244,9 +244,9 @@
             // The header is defined as follows:
             // <block size in values> <number of miniblocks in a block> <total value count> <first value>
 
-            int blockSizeInValues = s.ReadUnsignedVarInt(ref spos);
-            int miniblocksInABlock = s.ReadUnsignedVarInt(ref spos);
-            int totalValueCount = s.ReadUnsignedVarInt(ref spos);           // theoretically equal to "valueCount" param
+            int blockSizeInValues = (int)s.ULEB128Decode(ref spos);
+            int miniblocksInABlock = (int)s.ULEB128Decode(ref spos);
+            int totalValueCount = (int)s.ULEB128Decode(ref spos);           // theoretically equal to "valueCount" param
             long firstValue = (long)s.ReadZigZagVarLong(ref spos);            // the actual first value
 
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;

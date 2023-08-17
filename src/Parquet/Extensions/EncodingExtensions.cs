@@ -43,7 +43,7 @@ namespace Parquet.Extensions {
         }
 
         public static long ReadZigZagVarLong(this Span<byte> data, ref int offset) {
-            long raw = data.ReadUnsignedVarLong(ref offset);
+            long raw = (long)data.ULEB128Decode(ref offset);
             return ZigZagDecode(raw);
         }
 
@@ -56,51 +56,43 @@ namespace Parquet.Extensions {
         /// https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ULEB128Encode(this ulong value, Span<byte> dest) {
-            int i = 0;
+        public static void ULEB128Encode(this ulong value, Span<byte> dest, ref int offset) {
             while(value > 127) {
                 byte b = (byte)((value & 0x7F) | 0x80);
-                dest[i++] = b;
+                dest[offset++] = b;
                 value >>= 7;
             }
-            dest[i++] = (byte)value;
-            return i;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteULEB128(this Stream destination, ulong value) {
-            Span<byte> buf = stackalloc byte[10];   // max 10 bytes
-            int size = value.ULEB128Encode(buf);
-            destination.WriteSpan(buf.Slice(0, size));
+            dest[offset++] = (byte)value;
         }
 
         /// <summary>
-        /// Read a value using the unsigned, variable int encoding.
+        /// Decodes to unsigned long from span of bytes using ULEB128 encoding.
         /// </summary>
-        public static int ReadUnsignedVarInt(this Span<byte> data, ref int offset) {
-            int result = 0;
+        /// <param name="data">Span to read from</param>
+        /// <param name="offset">Reference to start offset in the span. It is updated as the value is read.</param>
+        /// <returns></returns>
+        public static ulong ULEB128Decode(this Span<byte> data, ref int offset) {
+            long result = 0;
+            long b;
             int shift = 0;
 
             while(true) {
-                byte b = data[offset++];
+                b = data[offset++];
                 result |= ((b & 0x7F) << shift);
                 if((b & 0x80) == 0)
                     break;
                 shift += 7;
             }
 
-            return result;
+            return (ulong)result;
         }
 
-        public static long ReadUnsignedVarLong(this Span<byte> data, ref int offset) {
-            long value = 0;
-            int i = 0;
-            long b;
-            while(((b = data[offset++]) & 0x80) != 0) {
-                value |= (b & 0x7F) << i;
-                i += 7;
-            }
-            return value | (b << i);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteULEB128(this Stream destination, ulong value) {
+            Span<byte> buf = stackalloc byte[10];   // max 10 bytes
+            int offset = 0;
+            value.ULEB128Encode(buf, ref offset);
+            destination.WriteSpan(buf.Slice(0, offset));
         }
 
         #endregion

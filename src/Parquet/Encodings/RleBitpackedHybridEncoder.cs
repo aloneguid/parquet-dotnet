@@ -80,25 +80,25 @@ namespace Parquet.Encodings {
 
         private static void WriteRle0(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            consumed += ((ulong)header).ULEB128Encode(r);
+            ((ulong)header).ULEB128Encode(r, ref consumed);
         }
 
         private static void WriteRle1(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            consumed += ((ulong)header).ULEB128Encode(r);
+            ((ulong)header).ULEB128Encode(r, ref consumed);
             r[consumed++] = (byte)value;
         }
 
         private static void WriteRle2(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            consumed += ((ulong)header).ULEB128Encode(r);
+            ((ulong)header).ULEB128Encode(r, ref consumed);
             r[consumed++] = (byte)value;
             r[consumed++] = (byte)((value >> 8) & 0xFF);
         }
 
         private static void WriteRle3(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            consumed += ((ulong)header).ULEB128Encode(r);
+            ((ulong)header).ULEB128Encode(r, ref consumed);
             r[consumed++] = (byte)value;
             r[consumed++] = (byte)((value >> 8) & 0xFF);
             r[consumed++] = (byte)((value >> 16) & 0x00FF);
@@ -106,7 +106,7 @@ namespace Parquet.Encodings {
 
         private static void WriteRle4(byte[] r, ref int consumed, int chunkCount, int value) {
             int header = chunkCount << 1;
-            consumed += ((ulong)header).ULEB128Encode(r);
+            ((ulong)header).ULEB128Encode(r, ref consumed);
             r[consumed++] = (byte)value;
             r[consumed++] = (byte)((value >> 8) & 0xFF);
             r[consumed++] = (byte)((value >> 16) & 0x00FF);
@@ -154,7 +154,8 @@ namespace Parquet.Encodings {
             int byteWidth = (bitWidth + 7) / 8; //round up to next byte
             int destOffset = 0;
             while(dataOffset < data.Length) {
-                int header = data.ReadUnsignedVarInt(ref dataOffset);
+                int header = (int)data.ULEB128Decode(ref dataOffset);
+                //int header = (int)data.ULEB128Decode(ref dataOffset);
                 bool isRle = (header & 1) == 0;
 
                 if(isRle)
