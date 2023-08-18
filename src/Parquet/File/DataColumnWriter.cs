@@ -128,7 +128,7 @@ namespace Parquet.File {
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 // data page Num_values also does include NULLs
-                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, column.Field.IsDeltaEncodable);
+                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, column.IsDeltaEncodable);
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
@@ -144,7 +144,7 @@ namespace Parquet.File {
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
-                    if(column.Field.IsDeltaEncodable) {
+                    if(column.IsDeltaEncodable) {
                         DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
                         chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
                     } else {
