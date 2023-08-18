@@ -168,6 +168,8 @@ namespace Parquet.Data {
             return span;
         }
 
+        internal bool IsDeltaEncodable => DefinedData.Length > 0 && Field.IsDeltaEncodable;
+
         internal long CalculateRowCount() =>
             Field.MaxRepetitionLevel > 0
                 ? RepetitionLevels?.Count(rl => rl == 0) ?? 0
