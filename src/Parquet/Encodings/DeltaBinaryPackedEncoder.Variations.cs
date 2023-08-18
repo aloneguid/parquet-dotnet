@@ -86,6 +86,9 @@
             }
 
             if(blockCount > 0) {
+                while(blockCount < blockSize) {
+                    block[blockCount++] = minDelta;
+                }
                 FlushIntBlock(block.Slice(0, blockCount), minDelta, destination, miniblockCount, miniblockSize);
             }
         }
@@ -240,6 +243,9 @@
             }
 
             if(blockCount > 0) {
+                while(blockCount < blockSize) {
+                    block[blockCount++] = minDelta;
+                }
                 FlushLongBlock(block.Slice(0, blockCount), minDelta, destination, miniblockCount, miniblockSize);
             }
         }

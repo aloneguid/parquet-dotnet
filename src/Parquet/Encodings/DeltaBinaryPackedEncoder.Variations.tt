@@ -95,6 +95,9 @@ namespace Parquet.Encodings {
             }
 
             if(blockCount > 0) {
+                while(blockCount < blockSize) {
+                    block[blockCount++] = minDelta;
+                }
                 Flush<#=ntCap#>Block(block.Slice(0, blockCount), minDelta, destination, miniblockCount, miniblockSize);
             }
         }
