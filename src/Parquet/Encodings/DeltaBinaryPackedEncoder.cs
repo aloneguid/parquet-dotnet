@@ -63,5 +63,24 @@ namespace Parquet.Encodings {
 
             throw new NotSupportedException($"element type {elementType} is not supported");
         }
+
+
+        //this extension method calculates the position of the most significant bit that is set to 1 
+        static int CalculateBitWidth(this Span<int> span) {
+            int mask = 0;
+            for(int i = 0; i < span.Length; i++) {
+                mask |= span[i];
+            }
+            return 32 - mask.NumberOfLeadingZerosInt();
+        }
+
+        //this extension method calculates the position of the most significant bit that is set to 1 
+        static int CalculateBitWidth(this Span<long> span) {
+            long mask = 0;
+            for(int i = 0; i < span.Length; i++) {
+                mask |= span[i];
+            }
+            return 64 - mask.NumberOfLeadingZerosLong();
+        }
     }
 }

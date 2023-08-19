@@ -97,5 +97,24 @@ namespace Parquet.Extensions {
 
         #endregion
 
+        #region Leading Zeros
+        public static int NumberOfLeadingZerosInt(this int num) {
+            if(num <= 0)
+                return num == 0 ? 32 : 0;
+            int n = 31;
+            if(num >= 1 << 16) { n -= 16; num >>>= 16; }
+            if(num >= 1 << 8) { n -= 8; num >>>= 8; }
+            if(num >= 1 << 4) { n -= 4; num >>>= 4; }
+            if(num >= 1 << 2) { n -= 2; num >>>= 2; }
+            return n - (num >>> 1);
+        }
+
+        public static int NumberOfLeadingZerosLong(this long num) {
+            int x = (int)(num >>> 32);
+            return x == 0 ? 32 + ((int)num).NumberOfLeadingZerosInt()
+                    : x.NumberOfLeadingZerosInt();
+        }
+        #endregion
+
     }
 }

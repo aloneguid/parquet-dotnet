@@ -25,8 +25,8 @@
                 if(count < 0)
                     break;
 
-                int max = block.Slice(offset, count).Max();
-                bitWidths[bwi] = (byte)max.GetBitWidth();
+                int bitwidth = block.Slice(offset, count).CalculateBitWidth();
+                bitWidths[bwi] = (byte)bitwidth;
             }
 
             // write bit widths
@@ -182,8 +182,8 @@
                 if(count < 0)
                     break;
 
-                long max = block.Slice(offset, count).Max();
-                bitWidths[bwi] = (byte)max.GetBitWidth();
+                int bitwidth = block.Slice(offset, count).CalculateBitWidth();
+                bitWidths[bwi] = (byte)bitwidth;
             }
 
             // write bit widths

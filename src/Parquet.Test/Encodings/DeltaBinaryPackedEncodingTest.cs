@@ -118,5 +118,40 @@ namespace Parquet.Test.Encodings {
 
             Assert.Equal(input, des);
         }
+
+        [Fact]
+        public void EncodeAndDecodeInt32_Random_Overflow() {
+            var r = new Random(0);
+            int total = 1000;
+            int[] input = Enumerable.Range(0, total).Select(i => r.Next(int.MinValue, int.MaxValue)).ToArray();
+
+            using var ms = new MemoryStream();
+            DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+
+            int[] des = new int[input.Length];
+            int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+            Assert.Equal(input, des);
+        }
+
+        [Fact]
+        public void EncodeAndDecodeInt64_Random_Overflow() {
+            var r = new Random(0);
+            int total = 1000;
+            long[] input = Enumerable.Range(0, total).Select(i => {
+                byte[] buffer = new byte[8];
+                r.NextBytes(buffer);
+                long randomInt64 = BitConverter.ToInt64(buffer, 0);
+                return randomInt64;
+            }).ToArray();
+
+            using var ms = new MemoryStream();
+            DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+
+            long[] des = new long[input.Length];
+            long i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+            Assert.Equal(input, des);
+        }
     }
 }

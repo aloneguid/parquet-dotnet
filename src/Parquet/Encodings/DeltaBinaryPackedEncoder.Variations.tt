@@ -34,8 +34,8 @@ namespace Parquet.Encodings {
                 if(count < 0)
                     break;
 
-                <#=nt#> max = block.Slice(offset, count).Max();
-                bitWidths[bwi] = (byte)max.GetBitWidth();
+                int bitwidth = block.Slice(offset, count).CalculateBitWidth();
+                bitWidths[bwi] = (byte)bitwidth;
             }
 
             // write bit widths
