@@ -1,3 +1,7 @@
+## 4.16.1
+
+Thanks to @ee-naveen for critical bug fix #387, #389. You are my hero!
+
 ## 4.16.0
 
 ### New
