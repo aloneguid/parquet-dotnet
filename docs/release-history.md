@@ -1,6 +1,9 @@
 ## 4.16.1
 
-Thanks to @ee-naveen for critical bug fix #387, #389. You are my hero!
+### Critical Bug Fixes
+
+- Ensuring delta encoding footer blocks are complete And Handle Overflow by @ee-naveen in #387.
+- Use PLAIN encoding for columns without defined data by @spanglerco in #388.
 
 ## 4.16.0
 
