@@ -121,8 +121,9 @@
             // <min delta> <list of bitwidths of miniblocks> <miniblocks>
 
             int currentValue = firstValue;
-            int read = 0;
+            int read = 1;
             int destOffset = 0;
+            dest[destOffset++] = firstValue;
             while(read < totalValueCount && spos < s.Length) {
                 int minDelta = (int)s.ReadZigZagVarLong(ref spos);
 
@@ -138,8 +139,8 @@
                     if(bitWidth == 0) {
                         // there's not data for bitwidth 0
                         for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
-                            dest[destOffset++] = currentValue;
                             currentValue += minDelta;
+                            dest[destOffset++] = currentValue;
                         }
                     } else {
 
@@ -150,8 +151,8 @@
                         }
 
                         for(int i = 0; i < vbuf.Length && destOffset < dest.Length; i++, read++) {
-                            dest[destOffset++] = currentValue;
                             currentValue += minDelta + vbuf[i];
+                            dest[destOffset++] = currentValue;
                         }
 
                     }
@@ -278,8 +279,9 @@
             // <min delta> <list of bitwidths of miniblocks> <miniblocks>
 
             long currentValue = firstValue;
-            int read = 0;
+            int read = 1;
             int destOffset = 0;
+            dest[destOffset++] = firstValue;
             while(read < totalValueCount && spos < s.Length) {
                 long minDelta = (long)s.ReadZigZagVarLong(ref spos);
 
@@ -295,8 +297,8 @@
                     if(bitWidth == 0) {
                         // there's not data for bitwidth 0
                         for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
-                            dest[destOffset++] = currentValue;
                             currentValue += minDelta;
+                            dest[destOffset++] = currentValue;
                         }
                     } else {
 
@@ -307,8 +309,8 @@
                         }
 
                         for(int i = 0; i < vbuf.Length && destOffset < dest.Length; i++, read++) {
-                            dest[destOffset++] = currentValue;
                             currentValue += minDelta + vbuf[i];
+                            dest[destOffset++] = currentValue;
                         }
 
                     }

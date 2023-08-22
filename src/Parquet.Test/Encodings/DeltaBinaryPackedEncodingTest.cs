@@ -119,10 +119,25 @@ namespace Parquet.Test.Encodings {
             Assert.Equal(input, des);
         }
 
-        [Fact]
-        public void EncodeAndDecodeInt32_Random_Overflow() {
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(128)]
+        [InlineData(129)]
+        [InlineData(1023)]
+        [InlineData(1024)]
+        [InlineData(1025)]
+        [InlineData(4095)]
+        [InlineData(4096)]
+        [InlineData(4097)]
+        [InlineData((1024 * 9) - 1)]
+        [InlineData(1024 * 9)]
+        [InlineData((1024 * 9) + 1)]
+        [InlineData(10000)]
+        [InlineData(102541)]
+        [InlineData(3402541)]
+        public void EncodeAndDecodeInt32_Random_Overflow(int total) {
             var r = new Random(0);
-            int total = 1000;
             int[] input = Enumerable.Range(0, total).Select(i => r.Next(int.MinValue, int.MaxValue)).ToArray();
 
             using var ms = new MemoryStream();
@@ -134,10 +149,26 @@ namespace Parquet.Test.Encodings {
             Assert.Equal(input, des);
         }
 
-        [Fact]
-        public void EncodeAndDecodeInt64_Random_Overflow() {
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(128)]
+        [InlineData(129)]
+        [InlineData(1023)]
+        [InlineData(1024)]
+        [InlineData(1025)]
+        [InlineData(4095)]
+        [InlineData(4096)]
+        [InlineData(4097)]
+        [InlineData((1024 * 9) - 1)]
+        [InlineData(1024 * 9)]
+        [InlineData((1024 * 9) + 1)]
+        [InlineData(10000)]
+        [InlineData(102541)]
+        [InlineData(3402541)]
+        public void EncodeAndDecodeInt64_Random_Overflow(int total) {
             var r = new Random(0);
-            int total = 1000;
+
             long[] input = Enumerable.Range(0, total).Select(i => {
                 byte[] buffer = new byte[8];
                 r.NextBytes(buffer);
