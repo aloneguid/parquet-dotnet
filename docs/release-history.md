@@ -1,3 +1,7 @@
+## 4.16.2
+
+**Critical Bug Fix in DELTA_BINARY_PACKED Decoding**: Adding first value to destination array before reading the block, by @ee-naveen in #391.
+
 ## 4.16.1
 
 ### Critical Bug Fixes
