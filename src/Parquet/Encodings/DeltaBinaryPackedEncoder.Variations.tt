@@ -130,8 +130,9 @@ namespace Parquet.Encodings {
             // <min delta> <list of bitwidths of miniblocks> <miniblocks>
 
             <#= nt#> currentValue = firstValue;
-            int read = 0;
+            int read = 1;
             int destOffset = 0;
+            dest[destOffset++] = firstValue;
             while(read < totalValueCount && spos < s.Length) {
                 <#= nt#> minDelta = (<#= nt#>)s.ReadZigZagVarLong(ref spos);
 
@@ -147,8 +148,8 @@ namespace Parquet.Encodings {
                     if(bitWidth == 0) {
                         // there's not data for bitwidth 0
                         for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
-                            dest[destOffset++] = currentValue;
                             currentValue += minDelta;
+                            dest[destOffset++] = currentValue;
                         }
                     } else {
 
@@ -159,8 +160,8 @@ namespace Parquet.Encodings {
                         }
 
                         for(int i = 0; i < vbuf.Length && destOffset < dest.Length; i++, read++) {
-                            dest[destOffset++] = currentValue;
                             currentValue += minDelta + vbuf[i];
+                            dest[destOffset++] = currentValue;
                         }
 
                     }
