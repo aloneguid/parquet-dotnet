@@ -16,6 +16,7 @@
         <toc-element topic="nested_types.md"/>
         <toc-element topic="metadata.md"/>
     </toc-element>
+    <toc-element topic="encodings.md"/>
     <toc-element topic="rows.md"/>
     <toc-element topic="dataframe.md"/>
     <toc-element topic="parquet-getting-started.md"/>

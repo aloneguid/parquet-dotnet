@@ -1,3 +1,7 @@
+## 4.16.3
+
+Delta encoding can be optionally turned off (thanks to @itayfisz for suggestion in #392).
+
 ## 4.16.2
 
 **Critical Bug Fix in DELTA_BINARY_PACKED Decoding**: Adding first value to destination array before reading the block, by @ee-naveen in #391.

@@ -341,5 +341,50 @@ namespace Parquet.Test {
             Assert.True(ms.Length > 200000, $"output size is {ms.Length}");
 
         }
+
+        [Fact]
+        public async Task Default_int32_is_delta_binary_packed() {
+            var ms = new MemoryStream();
+            var id = new DataField<int>("id");
+
+            //write
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                }
+            }
+
+            //read back
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+                Meta.ColumnChunk? cc = rgr.GetMetadata(id);
+                Assert.NotNull(cc);
+                Assert.Equal(Parquet.Meta.Encoding.DELTA_BINARY_PACKED, cc.MetaData!.Encodings[2]);
+            }
+        }
+
+        [Fact]
+        public async Task Override_int32_encoding_to_plain() {
+            var ms = new MemoryStream();
+            var id = new DataField<int>("id");
+
+            //write
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms,
+                new ParquetOptions { UseDeltaBinaryPackedEncoding = false })) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                }
+            }
+
+            //read back
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+                Meta.ColumnChunk? cc = rgr.GetMetadata(id);
+                Assert.NotNull(cc);
+                Assert.Equal(Parquet.Meta.Encoding.PLAIN, cc.MetaData!.Encodings[2]);
+            }
+        }
     }
 }
