@@ -617,6 +617,9 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<long> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
+            if(source.Length > bytes.Length) {
+                source = source.Slice(0, bytes.Length);
+            }
             source.CopyTo(bytes);
             return source.Length / sizeof(long);
         }
