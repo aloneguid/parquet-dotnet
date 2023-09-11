@@ -57,7 +57,7 @@ namespace Parquet.Test.Integration {
 
             string fileName = await WriteToTempFile(data);
 
-            F.Copy(fileName, "c:\\tmp\\pyarrow.parquet", true);
+            //F.Copy(fileName, "c:\\tmp\\pyarrow.parquet", true);
 
             // read with Java
             string? arrowCat = ExecPyArrowToJson(fileName);

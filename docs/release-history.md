@@ -1,8 +1,8 @@
 ## 4.16.4
 
-### Bugs Fixed
+Class serializer was writing map key as optional (#396). Schema reflector for class serializer now emits non-nullable keys.
 
-- Class serializer writes map key as optional (#396).
+Validation for maps keys in schema was also added.
 
 ## 4.16.3
 
