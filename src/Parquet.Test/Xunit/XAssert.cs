@@ -1,4 +1,8 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using Xunit;
 
 namespace Parquet.Test.Xunit {
@@ -8,6 +12,12 @@ namespace Parquet.Test.Xunit {
             string actualJson = JsonSerializer.Serialize(actual);
 
             Assert.Equal(expectedJson, actualJson);
+        }
+
+        public static void JsonEquivalent<T>(string? jsonLinesExpected, IEnumerable<T> actual) {
+            string actualLines = string.Join(Environment.NewLine, actual.Select(d => JsonSerializer.Serialize(d)));
+
+            Assert.Equal(jsonLinesExpected, actualLines);
         }
     }
 }

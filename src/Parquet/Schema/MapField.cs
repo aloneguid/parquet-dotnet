@@ -29,6 +29,13 @@ namespace Parquet.Schema {
         /// </summary>
         public MapField(string name, Field keyField, Field valueField)
            : base(name, SchemaType.Map) {
+
+            if(keyField is DataField keyDataField) {
+                if(keyDataField.IsNullable) {
+                    throw new ArgumentException($"map's key cannot be nullable", nameof(keyField));
+                }
+            }
+
             Key = keyField;
             Value = valueField;
             _keyAssigned = _valueAssigned = true;

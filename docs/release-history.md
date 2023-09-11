@@ -1,3 +1,9 @@
+## 4.16.4
+
+Class serializer was writing map key as optional (#396). Schema reflector for class serializer now emits non-nullable keys.
+
+Validation for maps keys in schema was also added.
+
 ## 4.16.3
 
 Delta encoding can be optionally turned off (thanks to @itayfisz for suggestion in #392).

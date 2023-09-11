@@ -13,7 +13,22 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 
-[![](img/docs.png)](https://aloneguid.github.io/parquet-dotnet/starter-topic.html)
+## Links
+
+- [Quick Start](https://aloneguid.github.io/parquet-dotnet/starter-topic.html#quick-start).
+- [Full Documentation](https://aloneguid.github.io/parquet-dotnet/starter-topic.html).
+
+## Used by
+
+- [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool).
+- [Parquet Viewer (web assembly app)](https://github.com/aloneguid/parquet-online).
+- [Komodo Search](https://github.com/jchristn/komodo).
+- [RavenDB - An ACID NoSQL Document Database](https://github.com/ravendb/ravendb).
+- [Cinchoo ETL: An ETL framework for .NET](https://github.com/Cinchoo/ChoETL).
+- [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
+- [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
+
+*...raise a PR to appear here...*
 
 
 ## Contributing
