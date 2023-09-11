@@ -1,11 +1,15 @@
 ﻿import sys
+import pyarrow as pa
 import pyarrow.parquet as pq
-import json
+import pandas as pd
 
 if __name__ == "__main__":
 
-    tbl = pq.read_table(sys.argv[1])
+    tbl: pa.Table = pq.read_table(sys.argv[1])
 
-    pd = tbl.to_pydict()
+    # tbl has .to_pydict() method, but it fails on complex datatypes
+    # convert Arrow table to Pandas DataFrame, which can handle JSON conversion
+    df: pd.DataFrame = tbl.to_pandas()
 
-    print(json.dumps(pd))
+    j: str = df.to_json()
+    print(j)
