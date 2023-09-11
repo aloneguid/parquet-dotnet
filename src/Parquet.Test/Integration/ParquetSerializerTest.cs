@@ -44,5 +44,24 @@ namespace Parquet.Test.Integration {
             Assert.Contains("id", javaCat);
             Assert.Contains("gen", javaCat);
         }
+
+        [Fact]
+        public async Task SimpleMapReadsWithPyArrow() {
+            var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
+                Id = i,
+                Tags = new Dictionary<string, string> {
+                    ["id"] = i.ToString(),
+                    ["gen"] = DateTime.UtcNow.ToString()
+                }
+            }).ToList();
+
+            string fileName = await WriteToTempFile(data);
+
+            // read with Java
+            string? arrowCat = ExecPyArrowToJson(fileName);
+            Assert.NotNull(arrowCat);
+            Assert.Contains("id", arrowCat);
+            Assert.Contains("gen", arrowCat);
+        }
     }
 }

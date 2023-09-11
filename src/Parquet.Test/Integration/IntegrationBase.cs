@@ -9,6 +9,7 @@ namespace Parquet.Test.Integration {
         private readonly string _toolsPath;
         private readonly string _toolsJarPath;
         private readonly string _javaExecName;
+        private readonly string _pythonExecName;
 
         public IntegrationBase() {
             _toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
@@ -17,11 +18,15 @@ namespace Parquet.Test.Integration {
             _javaExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
                ? "java.exe"
                : "java";
+
+            _pythonExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
+                ? "python3.exe"
+                : "python3";
         }
 
-        private string? ExecJavaAndGetOutput(string arguments) {
+        private string? ExecAndGetOutput(string execPath, string arguments) {
             var psi = new ProcessStartInfo {
-                FileName = _javaExecName,
+                FileName = execPath,
                 Arguments = arguments,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -60,8 +65,20 @@ namespace Parquet.Test.Integration {
             return so.ToString().Trim();
         }
 
+        private string? ExecJavaAndGetOutput(string arguments) {
+            return ExecAndGetOutput(_javaExecName, arguments);
+        }
+
+        private string? ExecPythonAndGetOutout(string arguments) {
+            return ExecAndGetOutput(_pythonExecName, arguments);
+        }
+
         protected string? ExecMrCat(string testFileName) {
             return ExecJavaAndGetOutput($"-jar \"{_toolsJarPath}\" cat -j \"{testFileName}\"");
+        }
+
+        protected string? ExecPyArrowToJson(string testFileName) {
+            return ExecPythonAndGetOutout($"Integration/pyarrow_to_json.py \"{testFileName}\"");
         }
     }
 }
