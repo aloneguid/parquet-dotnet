@@ -18,7 +18,7 @@ namespace Parquet.Test.Integration {
     public class TablesTest : IntegrationBase {
 
         private async Task CompareWithMr(Table t, Func<string, string>? jsonPreprocessor = null) {
-            string testFileName = Path.GetFullPath("temp.parquet");
+            string testFileName = Path.GetFullPath("tablesTest.parquet");
 
             if(F.Exists(testFileName))
                 F.Delete(testFileName);

@@ -142,11 +142,11 @@ namespace Parquet.Test.Serialisation {
 
         [Theory]
         [InlineData("legacy_primitives_collection_arrays.parquet")]
-        public async Task ParquetSerializer_ReadingLegacyPrimitivesCollectionArray(string parquetFile) {
+        public async Task ParquetSerializer_ReadingLegacyPrimitivesCollectionArrayAsync(string parquetFile) {
             IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(OpenTestFile(parquetFile));
 
             Assert.NotNull(data);
-            Assert.Equal(1, data.Count);
+            Assert.Single(data);
 
             Primitives element = data[0];
             Assert.Equivalent(element.Booleans, new[] { true, false });
@@ -209,7 +209,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task Struct_WithNullProps_Serde() {
+        public async Task Struct_WithNullProps_SerdeAsync() {
 
             var data = Enumerable.Range(0, 10).Select(i => new AddressBookEntry {
                 FirstName = "Joe",
@@ -229,7 +229,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task Struct_With_NestedNulls_Serde() {
+        public async Task Struct_With_NestedNulls_SerdeAsync() {
 
             var data = new List<AddressBookEntry> {
                 new AddressBookEntry {
@@ -252,7 +252,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task List_Structs_Serde() {
+        public async Task List_Structs_SerdeAsync() {
             var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
                 PersonId = i,
                 Comments = i % 2 == 0 ? "none" : null,
@@ -436,8 +436,6 @@ namespace Parquet.Test.Serialisation {
                     ["id"] = i.ToString(),
                     ["gen"] = DateTime.UtcNow.ToString()
                 }}).ToList();
-
-            var t = new Dictionary<string, string>();
 
             // serialise
             using var ms = new MemoryStream();

@@ -212,6 +212,15 @@ namespace Parquet.Test.Serialisation {
                     new DataField<int>("Value"))), schema);
         }
 
+        [Fact]
+        public void MapKeyMetadataIsSetToRequired() {
+            ParquetSchema schema = typeof(SimpleMapPoco).GetParquetSchema(true);
+
+            Assert.Equal("Key", schema.DataFields[1].Name);
+            Assert.False(schema.DataFields[1].IsNullable);
+        }
+
+
         class StructMemberPoco {
             public string? FirstName { get; set; }
 

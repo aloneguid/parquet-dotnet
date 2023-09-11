@@ -167,7 +167,7 @@ namespace Parquet {
         }
 
         /// <summary>
-        /// Disposes 
+        /// <inheritdoc/>
         /// </summary>
         public void Dispose() {
             if(!_leaveStreamOpen) {

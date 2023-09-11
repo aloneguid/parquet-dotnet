@@ -1,3 +1,9 @@
+## 4.16.4
+
+### Bugs Fixed
+
+- Writing Parquet from protobuf object results in Nullable strings that shouldn't be (#396).
+
 ## 4.16.3
 
 Delta encoding can be optionally turned off (thanks to @itayfisz for suggestion in #392).
