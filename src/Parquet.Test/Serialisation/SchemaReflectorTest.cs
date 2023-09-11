@@ -208,7 +208,7 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(new ParquetSchema(
                 new DataField<int?>("Id"),
                 new MapField("Tags",
-                    new DataField<string>("Key"),
+                    new DataField<string>("Key", false),
                     new DataField<int>("Value"))), schema);
         }
 

@@ -122,10 +122,12 @@ namespace Parquet.Serialization {
             PropertyInfo piKey = kvpType.GetProperty("Key")!;
             PropertyInfo piValue = kvpType.GetProperty("Value")!;
 
-            var mf = new MapField(name, MakeField(piKey, forWriting)!, MakeField(piValue, forWriting)!);
-            if(mf.Key is DataField keyDataField) {
-                keyDataField.IsNullable = false;
+            Field keyField = MakeField(piKey, forWriting)!;
+            if(keyField is DataField keyDataField && keyDataField.IsNullable) {
+                keyField.IsNullable = false;
             }
+            Field valueField = MakeField(piValue, forWriting)!;
+            var mf = new MapField(name, keyField, valueField);
             mf.ClrPropName = propertyName;
             return mf;
         }

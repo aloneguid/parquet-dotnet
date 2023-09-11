@@ -110,7 +110,7 @@ namespace Parquet.Test.Schema {
         public void Map_fields_with_different_types_are_unequal() {
 
             var map1 = new MapField("dictionary",
-                    new DataField<string>("key"),
+                    new DataField<string>("key", false),
                    new DataField<string>("value"));
 
 

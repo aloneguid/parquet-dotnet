@@ -136,7 +136,7 @@ namespace Parquet.Test.Rows {
         [Fact]
         public void Map_validate_succeeds() {
             var table = new Table(new ParquetSchema(
-               new MapField("map", new DataField<string>("key"), new DataField<string>("value"))
+               new MapField("map", new DataField<string>("key", false), new DataField<string>("value"))
                ));
 
             table.Add(Row.SingleCell(
@@ -150,7 +150,7 @@ namespace Parquet.Test.Rows {
         [Fact]
         public void Map_validate_fails() {
             var table = new Table(new ParquetSchema(
-               new MapField("map", new DataField<string>("key"), new DataField<string>("value"))
+               new MapField("map", new DataField<string>("key", false), new DataField<string>("value"))
                ));
 
             Assert.Throws<ArgumentException>(() => table.Add(new Row(1)));
