@@ -39,3 +39,4 @@ jobs:
           files: |
             bin/*.nupkg
           body_path: release-notes.md
+          discussion_category_name: announcements
