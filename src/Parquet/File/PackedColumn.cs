@@ -198,7 +198,11 @@ namespace Parquet.File {
             Array dcData;
             if(_definedDataCount != _definedData.Length) {
                 dcData = _field.CreateArray(_definedDataCount);
-                Array.Copy(_definedData, dcData, _definedDataCount);
+
+                //If the arrays aren't the exact size lets copy what fits
+                int copyAmount = _definedDataCount > _definedData.Length 
+                    ? _definedData.Length : _definedDataCount;
+                Array.Copy(_definedData, dcData, copyAmount);
             } else {
                 dcData = _definedData;
             }

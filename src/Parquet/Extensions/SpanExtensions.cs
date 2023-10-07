@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace System {
     internal static class SpanExtensions {
@@ -239,9 +237,15 @@ namespace System {
 
         /// <summary>
         /// Copies the source span to the target one. If the source span is larger than
-        /// the target span, it will fill the target and discard the rest.
+        /// the target span, it will fill the target and discard the rest. If the source 
+        /// is smaller, only the bytes available will be copied to the target.
         /// </summary>
-        public static void CopyWithLimitTo<T>(this Span<T> source, Span<T> target)
-            => source[..target.Length].CopyTo(target);
+        public static void CopyWithLimitTo<T>(this Span<T> source, Span<T> target) {
+                int copyLength = target.Length;
+                if (target.Length > source.Length) {
+                    copyLength = source.Length;
+                }
+                source.Slice(0, copyLength).CopyTo(target);
+        }
     }
 }
