@@ -236,5 +236,12 @@ namespace System {
                     max = s;
             }
         }
+
+        /// <summary>
+        /// Copies the source span to the target one. If the source span is larger than
+        /// the target span, it will fill the target and discard the rest.
+        /// </summary>
+        public static void CopyWithLimitTo<T>(this Span<T> source, Span<T> target)
+            => source[..target.Length].CopyTo(target);
     }
 }

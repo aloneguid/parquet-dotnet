@@ -595,7 +595,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<int> data) {
             Span<byte> dataBytes = MemoryMarshal.AsBytes(data);
-            source.CopyTo(dataBytes);
+            source.CopyWithLimitTo(dataBytes);
             return data.Length;
         }
 
@@ -606,7 +606,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<uint> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyTo(bytes);
+            source.CopyWithLimitTo(bytes);
             return source.Length / sizeof(uint);
         }
 
@@ -617,10 +617,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<long> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            if(source.Length > bytes.Length) {
-                source = source.Slice(0, bytes.Length);
-            }
-            source.CopyTo(bytes);
+            source.CopyWithLimitTo(bytes);
             return source.Length / sizeof(long);
         }
 
@@ -631,7 +628,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<ulong> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyTo(bytes);
+            source.CopyWithLimitTo(bytes);
             return source.Length / sizeof(ulong);
         }
 
@@ -642,7 +639,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<BigInteger> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyTo(bytes);
+            source.CopyWithLimitTo(bytes);
             return source.Length / 12;
         }
 
@@ -757,7 +754,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<double> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyTo(bytes);
+            source.CopyWithLimitTo(bytes);
             return source.Length / sizeof(double);
         }
 
@@ -768,7 +765,7 @@ namespace Parquet.Encodings {
 
         public static int Decode(Span<byte> source, Span<float> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyTo(bytes);
+            source.CopyWithLimitTo(bytes);
             return source.Length / sizeof(float);
         }
 
