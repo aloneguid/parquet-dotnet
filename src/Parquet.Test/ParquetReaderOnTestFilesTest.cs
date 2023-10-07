@@ -162,7 +162,7 @@ namespace Parquet.Test {
 
         [Fact]
         public async Task Oracle_Int64_Field_With_Extra_Byte() {
-            using Stream s = OpenTestFile("oracle_uint64_extra_byte_at_end.parquet");
+            using Stream s = OpenTestFile("oracle_int64_extra_byte_at_end.parquet");
             List<DataColumn> cols = await ReadColumns(s);
             Assert.Equal(2, cols.Count);
             Assert.Equal(126, cols[0].NumValues);
