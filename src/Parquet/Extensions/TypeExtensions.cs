@@ -125,7 +125,13 @@ namespace Parquet {
                 return t;
             }
 
-            return ti.GenericTypeArguments[0];
+            Type baseType = ti.GenericTypeArguments[0];
+
+            if(baseType.IsEnum) {
+                baseType = Enum.GetUnderlyingType(baseType);
+            }
+
+            return baseType;
         }
 
         public static Type GetNullable(this Type t) {

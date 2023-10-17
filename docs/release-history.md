@@ -1,3 +1,9 @@
+## 4.17.0
+
+### New
+
+- by @aloneguid in #302
+
 ## 4.16.4
 
 Class serializer was writing map key as optional (#396). Schema reflector for class serializer now emits non-nullable keys.

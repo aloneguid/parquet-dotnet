@@ -390,5 +390,47 @@ namespace Parquet.Test.Serialisation {
             Assert.True(s.DataFields[1].IsNullable);
             Assert.True(s.DataFields[2].IsNullable);
         }
+
+        public enum StageInt {
+            Pending,
+            Running,
+            Finished
+        }
+
+        public enum StageUInt : uint {
+            Pending,
+            Running,
+            Finished
+        }
+
+        public enum StageLong : long {
+            Pending,
+            Running,
+            Finished
+        }
+
+
+        public class EnumPoco {
+            public string? Id { get; set; }
+
+            public StageInt? StageInt { get; set; }
+
+            public StageUInt? StageUInt { get; set; }
+
+            public StageLong? StageLong { get; set; }
+        }
+
+        [Fact]
+        public void Enums_Default() {
+            ParquetSchema s = typeof(EnumPoco).GetParquetSchema(true);
+
+            Assert.Equal(
+                new ParquetSchema(
+                    new DataField<string>("Id"),
+                    new DataField<int?>("StageInt"),
+                    new DataField<uint?>("StageUInt"),
+                    new DataField<long?>("StageLong")),
+                s);
+        }
     }
 }
