@@ -17,6 +17,8 @@ namespace Parquet.Serialization {
     /// </summary>
     public static class ParquetSerializer {
 
+        private static readonly object _striperLock = new();
+        private static readonly object _assemblerLock = new();
         private static readonly Dictionary<Type, object> _typeToStriper = new();
         private static readonly Dictionary<Type, object> _typeToAssembler = new();
 
@@ -54,11 +56,13 @@ namespace Parquet.Serialization {
 
             Striper<T> striper;
 
-            if(_typeToStriper.TryGetValue(typeof(T), out object? boxedStriper)) {
-                striper = (Striper<T>)boxedStriper;
-            } else {
-                striper = new Striper<T>(typeof(T).GetParquetSchema(false));
-                _typeToStriper[typeof(T)] = striper;
+            lock(_striperLock) {
+                if(_typeToStriper.TryGetValue(typeof(T), out object? boxedStriper)) {
+                    striper = (Striper<T>)boxedStriper;
+                } else {
+                    striper = new Striper<T>(typeof(T).GetParquetSchema(false));
+                    _typeToStriper[typeof(T)] = striper;
+                }
             }
 
             bool append = options != null && options.Append;
@@ -159,11 +163,13 @@ namespace Parquet.Serialization {
 
             Assembler<T> asm;
 
-            if(_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler)) {
-                asm = (Assembler<T>)boxedAssembler;
-            } else {
-                asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
-                _typeToAssembler[typeof(T)] = asm;
+            lock(_assemblerLock) {
+                if(_typeToAssembler.TryGetValue(typeof(T), out object? boxedAssembler)) {
+                    asm = (Assembler<T>)boxedAssembler;
+                } else {
+                    asm = new Assembler<T>(typeof(T).GetParquetSchema(true));
+                    _typeToAssembler[typeof(T)] = asm;
+                }
             }
 
             return asm;
