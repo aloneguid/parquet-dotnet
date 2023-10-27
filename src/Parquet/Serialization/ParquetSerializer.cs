@@ -149,6 +149,30 @@ namespace Parquet.Serialization {
             return result;
         }
 
+        /// <summary>
+        /// Deserialise
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="rowGroupReader"></param>
+        /// <param name="schema"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="InvalidDataException"></exception>
+        public static async Task<IList<T>> DeserializeAsync<T>(ParquetRowGroupReader rowGroupReader,
+            ParquetSchema schema,
+            CancellationToken cancellationToken = default)
+            where T : new() {
+
+            Assembler<T> asm = GetAssembler<T>();
+
+            var result = new List<T>();
+
+            await DeserializeRowGroupAsync(rowGroupReader, schema, asm, result, cancellationToken);
+
+            return result;
+        }
+
         private static Assembler<T> GetAssembler<T>() where T : new() {
 
             object boxedAssemblyer = _typeToAssembler.GetOrAdd(typeof(T), _ => new Assembler<T>(typeof(T).GetParquetSchema(true)));
@@ -165,6 +189,16 @@ namespace Parquet.Serialization {
 
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
+            await DeserializeRowGroupAsync(rg, reader.Schema, asm, result, cancellationToken);
+        }
+
+
+        private static async Task DeserializeRowGroupAsync<T>(ParquetRowGroupReader rg,
+            ParquetSchema schema,
+            Assembler<T> asm,
+            ICollection<T> result,
+            CancellationToken cancellationToken = default) where T : new() {
+
             // add more empty class instances to the result
             int prevRowCount = result.Count;
             for(int i = 0; i < rg.RowCount; i++) {
@@ -175,7 +209,7 @@ namespace Parquet.Serialization {
             foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
 
                 // validate reflected vs actual schema field
-                DataField? actual = reader.Schema.DataFields.FirstOrDefault(f => f.Path.Equals(fasm.Field.Path));
+                DataField? actual = schema.DataFields.FirstOrDefault(f => f.Path.Equals(fasm.Field.Path));
                 if(actual != null && !actual.IsArray && !fasm.Field.Equals(actual)) {
                     throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actual}'");
                 }
