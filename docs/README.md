@@ -35,6 +35,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - [Cinchoo ETL: An ETL framework for .NET](https://github.com/Cinchoo/ChoETL).
 - [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
 - [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
+- [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
 
 *...raise a PR to appear here...*
 
