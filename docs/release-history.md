@@ -3,6 +3,7 @@
 ### Bugs fixed
 
 - Gracefully handle malformed fields with trailing bytes in the data by @mukunku in #413
+- `ParquetSerializer` doesn't support different `JsonPropertyName` and `ClrPropertyName` on struct fields by @mrinal-thomas in #410
 
 ## 4.16.4
 
