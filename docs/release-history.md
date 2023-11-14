@@ -1,3 +1,9 @@
+## 4.17.0
+
+### Bugs fixed
+
+- Gracefully handle malformed fields with trailing bytes in the data by @mukunku in #413
+
 ## 4.16.4
 
 Class serializer was writing map key as optional (#396). Schema reflector for class serializer now emits non-nullable keys.
