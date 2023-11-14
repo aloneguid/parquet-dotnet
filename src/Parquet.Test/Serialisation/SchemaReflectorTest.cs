@@ -421,7 +421,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public void Enums_Default() {
+        public void Enums_DifferentBaseTypes() {
             ParquetSchema s = typeof(EnumPoco).GetParquetSchema(true);
 
             Assert.Equal(

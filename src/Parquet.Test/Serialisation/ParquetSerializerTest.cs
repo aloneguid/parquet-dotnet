@@ -420,6 +420,37 @@ namespace Parquet.Test.Serialisation {
             XAssert.JsonEquivalent(data, data2);
         }
 
+        enum Stage {
+            Begin,
+            End
+        }
+
+        class IdWithStage {
+            public int Id { get; set; }
+
+            public Stage stage { get; set; }
+        }
+
+        [Fact]
+        public async Task Enum_Serde() {
+
+            var data = new List<IdWithStage> { 
+                new IdWithStage { Id = 1, stage = Stage.Begin },
+                new IdWithStage { Id = 2, stage = Stage.End }
+            };
+
+            // serialise
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            // deserialise
+            ms.Position = 0;
+            IList<IdWithStage> data2 = await ParquetSerializer.DeserializeAsync<IdWithStage>(ms);
+
+            // assert
+            XAssert.JsonEquivalent(data, data2);
+        }
+
 
         class IdWithTags {
             public int Id { get; set; }

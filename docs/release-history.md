@@ -2,7 +2,7 @@
 
 ### New
 
-- by @aloneguid in #302
+- Enum serialization support by @aloneguid in #417.
 
 ## 4.16.4
 

@@ -155,31 +155,34 @@ namespace Parquet.Serialization {
         /// <summary>
         /// Makes field from property. 
         /// </summary>
-        /// <param name="t">Type of property</param>
+        /// <param name="type">Type of property</param>
         /// <param name="columnName">Parquet file column name</param>
         /// <param name="propertyName">Class property name</param>
         /// <param name="pi">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
         /// <param name="forWriting"></param>
         /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
         /// <exception cref="NotImplementedException"></exception>
-        private static Field MakeField(Type t, string columnName, string propertyName,
+        private static Field MakeField(Type type, string columnName, string propertyName,
             PropertyInfo? pi,
             bool forWriting) {
 
-            Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(pi != null && IsLegacyRepeatable(pi) && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
-                bt = bti!;
+            Type baseType = type.IsNullable() ? type.GetNonNullable() : type;
+
+            // todo: check if this type has a custom handler
+
+            if(pi != null && IsLegacyRepeatable(pi) && !baseType.IsGenericIDictionary() && baseType.TryExtractIEnumerableType(out Type? bti)) {
+                baseType = bti!;
             }
 
-            if(SchemaEncoder.IsSupported(bt)) {
-                return ConstructDataField(columnName, propertyName, t, pi);
-            } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
+            if(SchemaEncoder.IsSupported(baseType)) {
+                return ConstructDataField(columnName, propertyName, type, pi);
+            } else if(type.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
-            } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
+            } else if(type.TryExtractIEnumerableType(out Type? elementType)) {
                 return ConstructListField(columnName, propertyName, elementType!, forWriting);
-            } else if(t.IsClass || t.IsValueType) {
+            } else if(type.IsClass || type.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
-                List<PropertyInfo> props = FindProperties(t, forWriting);
+                List<PropertyInfo> props = FindProperties(type, forWriting);
                 Field[] fields = props
                     .Select(p => MakeField(p, forWriting))
                     .Where(f => f != null)

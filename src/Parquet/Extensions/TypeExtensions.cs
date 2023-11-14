@@ -118,6 +118,13 @@ namespace Parquet {
             return ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
 
+        public static Type Unwrap(this Type t) {
+            if(t.IsEnum) {
+                t = Enum.GetUnderlyingType(t);
+            }
+            return t;
+        }
+
         public static Type GetNonNullable(this Type t) {
             TypeInfo ti = t.GetTypeInfo();
 
@@ -125,13 +132,7 @@ namespace Parquet {
                 return t;
             }
 
-            Type baseType = ti.GenericTypeArguments[0];
-
-            if(baseType.IsEnum) {
-                baseType = Enum.GetUnderlyingType(baseType);
-            }
-
-            return baseType;
+            return ti.GenericTypeArguments[0];
         }
 
         public static Type GetNullable(this Type t) {
