@@ -27,5 +27,21 @@ namespace Parquet.Test {
             Assert.Equal(new TimeOnly(0, 0, 30), decodedAsTimeOnly[1]);
 #endif
         }
+
+        [Fact]
+        public void DecodeOversizedSpan() {
+            var source = new MemoryStream(new byte[] { 
+                1, 0, 0, 0, 
+                2, 0, 0, 0, 
+                0 //<- bad byte of trailing data in source
+            });
+
+            //We should still be able to read the data and ignore the extra byte
+            int[] decoded = new int[2];
+            ParquetPlainEncoder.Decode(source.ToArray().AsSpan(), decoded.AsSpan());
+
+            Assert.Equal(1, decoded[0]);
+            Assert.Equal(2, decoded[1]);
+        }
     }
 }

@@ -160,6 +160,19 @@ namespace Parquet.Test {
             List<DataColumn> cols = await ReadColumns(s);
         }
 
+        [Fact]
+        public async Task Oracle_Int64_Field_With_Extra_Byte() {
+            using Stream s = OpenTestFile("oracle_int64_extra_byte_at_end.parquet");
+            List<DataColumn> cols = await ReadColumns(s);
+            Assert.Equal(2, cols.Count);
+            Assert.Equal(126, cols[0].NumValues);
+            Assert.Equal(126, cols[1].NumValues);
+            Assert.Equal("DEPOSIT", cols[0].Data.GetValue(0));
+            Assert.Equal("DEPOSIT", cols[0].Data.GetValue(125));
+            Assert.Equal((long)1, cols[1].Data.GetValue(0));
+            Assert.Equal((long)1, cols[1].Data.GetValue(125));
+        }
+
         //[Fact]
         //public async Task LocalTest() {
         //    using Stream s = System.IO.File.OpenRead(@"C:\Users\alone\Downloads\MAP_FIELD\MAP_FIELD.parquet");
