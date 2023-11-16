@@ -1,3 +1,9 @@
+## 4.18.0
+
+### Improvements
+
+- Added explicit target for `.NET 8`. 
+
 ## 4.17.0
 
 This is a community bugfix release. As a maintainer I have only approved PRs raised by this wonderful community. Thanks everyone, and keep doing what you do.
