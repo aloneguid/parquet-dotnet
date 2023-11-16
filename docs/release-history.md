@@ -2,7 +2,11 @@
 
 ### Improvements
 
-- Added explicit target for `.NET 8`. 
+- Added explicit target for `.NET 8` by @aloneguid.
+
+### Bug fixes
+
+- `DataFrameMapper` returns incompatible `DataFrameColumn` by @aloneguid (#343).
 
 ## 4.17.0
 
