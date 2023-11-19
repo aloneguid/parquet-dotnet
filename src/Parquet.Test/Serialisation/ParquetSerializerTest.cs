@@ -528,6 +528,27 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public async Task Deserialize_as_async_enumerable() {
+            DateTime now = DateTime.UtcNow;
+            int records = 100;
+            int rowGroupSize = 20;
+
+            var data = Enumerable.Range(0, records).Select(i => new Record {
+                Timestamp = now.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = rowGroupSize });
+
+            ms.Position = 0;
+            IList<Record> data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
+
+            Assert.Equivalent(data, data2);
+        }
+
+        [Fact]
         public async Task Specify_row_group_size_too_small() {
             var data = Enumerable.Range(0, 100).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
