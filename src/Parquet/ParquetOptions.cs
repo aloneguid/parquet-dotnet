@@ -6,6 +6,12 @@ namespace Parquet {
     /// Parquet options
     /// </summary>
     public class ParquetOptions {
+
+        /// <summary>
+        /// Reduce flushing of stream during write, to increase performance of for instance Azure blob
+        /// </summary>
+        public bool ReduceStreamFlushing { get; set; }
+
         /// <summary>
         /// When true byte arrays will be treated as UTF-8 strings on read
         /// </summary>
