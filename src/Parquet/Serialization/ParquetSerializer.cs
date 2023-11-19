@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -147,6 +148,35 @@ namespace Parquet.Serialization {
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Deserialize as async enumerable
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async IAsyncEnumerable<T> DeserializeAllAsync<T>(Stream source,
+            ParquetOptions? options = null,
+            [EnumeratorCancellation]CancellationToken cancellationToken = default)
+            where T : new() {
+
+            Assembler<T> asm = GetAssembler<T>();
+
+            var result = new List<T>();
+
+            using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+            for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
+
+                await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
+                foreach (T? item in result) {
+                    yield return item;
+                }
+
+                result.Clear();
+            }
         }
 
         /// <summary>
