@@ -2,6 +2,7 @@
 
 ### Improvements
 
+- Explicitly use invariant culture when encoding number types, eliminating the potential for generating invalid JSON by @rachied in #438.
 - Added explicit target for `.NET 8` by @aloneguid.
 
 ### Bug fixes
