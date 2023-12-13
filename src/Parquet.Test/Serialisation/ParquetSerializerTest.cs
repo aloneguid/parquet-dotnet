@@ -42,6 +42,25 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(data2, data);
         }
 
+        [Fact]
+        public async Task Atomics_Simplest_As_Dictionary_Serde() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+                ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
+                ["EventName"] = i % 2 == 0 ? "on" : "off",
+                ["MeterValue"] = (double)i,
+                ["ExternalId"] = Guid.NewGuid()
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(typeof(Record).GetParquetSchema(true), data, ms);
+
+            ms.Position = 0;
+            IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms);
+
+            Assert.Equivalent(data2, data);
+        }
+
         class RecordWithNewField : Record {
             public DateTime NewTimestamp { get; set; }
             public string? NewEventName { get; set; }

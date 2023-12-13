@@ -19,6 +19,7 @@ namespace Parquet.Serialization {
     /// </summary>
     public static class ParquetSerializer {
         private static readonly ConcurrentDictionary<Type, object> _typeToStriper = new();
+        private static readonly ConcurrentDictionary<ParquetSchema,  object> _schemaToStriper = new();
         private static readonly ConcurrentDictionary<Type, object> _typeToAssembler = new();
 
         private static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, Striper<T> striper,
@@ -31,6 +32,26 @@ namespace Parquet.Serialization {
                 DataColumn dc;
                 try {
                     ShreddedColumn sc = fs.Stripe(fs.Field, objectInstances);
+                    dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels?.ToArray(), sc.RepetitionLevels?.ToArray());
+                    await rg.WriteColumnAsync(dc, cancellationToken);
+                } catch(Exception ex) {
+                    throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
+                }
+            }
+        }
+
+        private static async Task SerializeRowGroupAsync(ParquetWriter writer,
+            Striper<IDictionary<string, object>> striper,
+            ParquetSchema schema,
+            IReadOnlyCollection<IDictionary<string, object>> data,
+            CancellationToken cancellationToken) {
+
+            using ParquetRowGroupWriter rg = writer.CreateRowGroup();
+
+            foreach(FieldStriper<IDictionary<string, object>> fs in striper.FieldStripers) {
+                DataColumn dc;
+                try {
+                    ShreddedColumn sc = fs.Stripe(fs.Field, data);
                     dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels?.ToArray(), sc.RepetitionLevels?.ToArray());
                     await rg.WriteColumnAsync(dc, cancellationToken);
                 } catch(Exception ex) {
@@ -79,6 +100,42 @@ namespace Parquet.Serialization {
             }
 
             return striper.Schema;
+        }
+
+        /// <summary>
+        /// Experimental object serialisation
+        /// </summary>
+        public static async Task SerializeAsync(ParquetSchema schema,
+            IReadOnlyCollection<IDictionary<string, object>> data,
+            Stream destination,
+            ParquetSerializerOptions? options = null,
+            CancellationToken cancellationToken = default) {
+
+
+            object boxedStriper = _schemaToStriper.GetOrAdd(schema, _ => new Striper<IDictionary<string, object>>(schema));
+            var striper = (Striper<IDictionary<string, object>>)boxedStriper;
+
+            bool append = options != null && options.Append;
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination,
+                options?.ParquetOptions,
+                append, cancellationToken)) {
+
+                if(options != null) {
+                    writer.CompressionMethod = options.CompressionMethod;
+                    writer.CompressionLevel = options.CompressionLevel;
+                }
+
+                if(options?.RowGroupSize != null) {
+                    int rgs = options.RowGroupSize.Value;
+                    if(rgs < 1)
+                        throw new InvalidOperationException($"row group size must be a positive number, but passed {rgs}");
+                    foreach(IDictionary<string, object>[] chunk in data.Chunk(rgs)) {
+                        await SerializeRowGroupAsync(writer, striper, schema, chunk, cancellationToken);
+                    }
+                } else {
+                    await SerializeRowGroupAsync(writer, striper, schema, data, cancellationToken);
+                }
+            }
         }
 
         /// <summary>

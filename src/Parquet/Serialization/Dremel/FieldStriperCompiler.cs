@@ -12,6 +12,7 @@ namespace Parquet.Serialization.Dremel {
 
         private static readonly MethodInfo LevelsAddMethod = typeof(List<int>).GetMethod(nameof(IList.Add))!;
         private readonly MethodInfo _valuesListAddMethod;
+        private readonly bool _isUntypedClass = typeof(TClass) == typeof(IDictionary<string, object>);
 
         private readonly ParquetSchema _schema;
         private readonly DataField _df;
@@ -187,6 +188,16 @@ namespace Parquet.Serialization.Dremel {
             return f.MaxDefinitionLevel;
         }
 
+        private Expression GetClassPropertyAccessorAndType(Type rootType, Expression rootVar, Field field, string name, out Type type) {
+            if(_isUntypedClass) {
+                type = ((DataField)field).ClrNullableIfHasNullsType;
+                return Expression.Convert(Expression.Property(rootVar, "Item", Expression.Constant(name)), type);
+            }
+
+            type = rootType.GetProperty(name)!.PropertyType;
+            return Expression.Property(rootVar, name);
+        }
+
         private Expression DissectRecord(
             Expression rootVar,
             Field[] levelFields,
@@ -212,8 +223,7 @@ namespace Parquet.Serialization.Dremel {
             // while "decoder"
 
             string levelPropertyName = field.ClrPropName ?? field.Name;
-            Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
-            Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
+            Expression levelProperty = GetClassPropertyAccessorAndType(rootType, rootVar, field, levelPropertyName, out Type levelPropertyType);
             ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
             ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
 
