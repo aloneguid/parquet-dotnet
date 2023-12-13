@@ -237,7 +237,8 @@ namespace Parquet.Serialization.Dremel {
             bool isAtomic = field.IsAtomic;
             string levelPropertyName = field.ClrPropName ?? field.Name;
 
-            Expression levelProperty = GetClassPropertyAssignerAndType(rootType, rootVar, field,
+            Expression levelProperty = GetClassPropertyAssignerAndType(
+                rootType, rootVar, field,
                 levelPropertyName, out Type levelPropertyType);
 
             Expression iteration = Expression.Empty();

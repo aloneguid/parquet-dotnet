@@ -10,7 +10,10 @@ using Parquet.Schema;
 namespace Parquet.Serialization.Dremel {
     class FieldStriperCompiler<TClass> {
 
-        private static readonly MethodInfo LevelsAddMethod = typeof(List<int>).GetMethod(nameof(IList.Add))!;
+        private static readonly MethodInfo LevelsAddMethod =
+            typeof(List<int>).GetMethod(nameof(IList.Add))!;
+        private static readonly MethodInfo IDictionaryTryGetValueMethod = 
+            typeof(IDictionary<string, object>).GetMethod("TryGetValue")!;
         private readonly MethodInfo _valuesListAddMethod;
         private readonly bool _isUntypedClass = typeof(TClass) == typeof(IDictionary<string, object>);
 
@@ -191,7 +194,23 @@ namespace Parquet.Serialization.Dremel {
         private Expression GetClassPropertyAccessorAndType(Type rootType, Expression rootVar, Field field, string name, out Type type) {
             if(_isUntypedClass) {
                 type = ((DataField)field).ClrNullableIfHasNullsType;
-                return Expression.Convert(Expression.Property(rootVar, "Item", Expression.Constant(name)), type);
+
+                /*
+                 * Take into account that key may not be present in the dictionary.
+                 * In this case, code would look like:
+                 * 
+                 * object value;
+                 * return dict.TryGetValue(name, out value) ? (T)value : default(T);
+                 */
+
+                ParameterExpression retVal = Expression.Variable(typeof(object), "value");
+                return Expression.Block(
+                    new[] { retVal },
+                    
+                    Expression.Condition(
+                        Expression.Call(rootVar, IDictionaryTryGetValueMethod, Expression.Constant(name), retVal),
+                        Expression.Convert(retVal, type),
+                        Expression.Default(type)));
             }
 
             type = rootType.GetProperty(name)!.PropertyType;

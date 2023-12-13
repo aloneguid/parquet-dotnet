@@ -43,7 +43,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task Atomics_Simplest_As_Dictionary_Serde() {
+        public async Task Atomics_Simplest_Serde_Dict() {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
                 ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
@@ -112,6 +112,26 @@ namespace Parquet.Test.Serialisation {
 
             ms.Position = 0;
             IList<NullableRecord> data2 = await ParquetSerializer.DeserializeAsync<NullableRecord>(ms);
+
+            Assert.Equivalent(data2, data);
+        }
+
+        [Fact]
+        public async Task Atomics_Nullable_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+                ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
+                ["EventName"] = i % 2 == 0 ? "on" : "off",
+                ["MeterValue"] = (double)i,
+                ["ParentId"] = (i % 4 == 0) ? null : i,
+                ["ExternalId"] = Guid.NewGuid()
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(typeof(NullableRecord).GetParquetSchema(true), data, ms);
+
+            ms.Position = 0;
+            IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
 
             Assert.Equivalent(data2, data);
         }
