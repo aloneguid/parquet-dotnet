@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Text;
 using Parquet.Rows;
 using Parquet.Schema;
@@ -120,6 +121,15 @@ namespace Parquet.Extensions {
                 sb.Append(quote);
                 sb.Append(Convert.ToBase64String((byte[])value));
                 sb.Append(quote);
+            } 
+            else if(t == typeof(decimal)) {
+                sb.Append(((decimal)value).ToString(CultureInfo.InvariantCulture));
+            }
+            else if(t == typeof(float)) {
+                sb.Append(((float)value).ToString(CultureInfo.InvariantCulture));
+            }
+            else if(t == typeof(double)) {
+                sb.Append(((double)value).ToString(CultureInfo.InvariantCulture));
             }
             else {
                 sb.Append(value.ToString());
