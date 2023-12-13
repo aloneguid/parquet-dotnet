@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -11,8 +11,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.6" />
-        <PackageReference Include="ParquetSharp" Version="12.0.1" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.11" />
+        <PackageReference Include="ParquetSharp" Version="13.0.0" />
     </ItemGroup>
 
     <ItemGroup>

@@ -10,58 +10,93 @@ namespace Parquet.Data.Analysis {
 
             if(dc.Field.ClrType == typeof(bool)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<bool>(colName, (bool[])dc.Data);
+                    return new BooleanDataFrameColumn(colName, (bool[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<bool>(colName, (bool?[])dc.Data);
+                    return new BooleanDataFrameColumn(colName, (bool?[])dc.Data);
                 }
             }
             if(dc.Field.ClrType == typeof(int)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<int>(colName, (int[])dc.Data);
+                    return new Int32DataFrameColumn(colName, (int[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<int>(colName, (int?[])dc.Data);
+                    return new Int32DataFrameColumn(colName, (int?[])dc.Data);
                 }
             }
             if(dc.Field.ClrType == typeof(uint)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<uint>(colName, (uint[])dc.Data);
+                    return new UInt32DataFrameColumn(colName, (uint[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<uint>(colName, (uint?[])dc.Data);
+                    return new UInt32DataFrameColumn(colName, (uint?[])dc.Data);
                 }
             }
-            if(dc.Field.ClrType == typeof(long)) {
+            if(dc.Field.ClrType == typeof(double)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<long>(colName, (long[])dc.Data);
+                    return new DoubleDataFrameColumn(colName, (double[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<long>(colName, (long?[])dc.Data);
+                    return new DoubleDataFrameColumn(colName, (double?[])dc.Data);
                 }
             }
-            if(dc.Field.ClrType == typeof(ulong)) {
+            if(dc.Field.ClrType == typeof(float)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<ulong>(colName, (ulong[])dc.Data);
+                    return new SingleDataFrameColumn(colName, (float[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<ulong>(colName, (ulong?[])dc.Data);
+                    return new SingleDataFrameColumn(colName, (float?[])dc.Data);
                 }
             }
             if(dc.Field.ClrType == typeof(byte)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<byte>(colName, (byte[])dc.Data);
+                    return new ByteDataFrameColumn(colName, (byte[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<byte>(colName, (byte?[])dc.Data);
+                    return new ByteDataFrameColumn(colName, (byte?[])dc.Data);
                 }
             }
             if(dc.Field.ClrType == typeof(sbyte)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<sbyte>(colName, (sbyte[])dc.Data);
+                    return new SByteDataFrameColumn(colName, (sbyte[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<sbyte>(colName, (sbyte?[])dc.Data);
+                    return new SByteDataFrameColumn(colName, (sbyte?[])dc.Data);
+                }
+            }
+            if(dc.Field.ClrType == typeof(short)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new Int16DataFrameColumn(colName, (short[])dc.Data);
+                } else {
+                    return new Int16DataFrameColumn(colName, (short?[])dc.Data);
+                }
+            }
+            if(dc.Field.ClrType == typeof(ushort)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new UInt16DataFrameColumn(colName, (ushort[])dc.Data);
+                } else {
+                    return new UInt16DataFrameColumn(colName, (ushort?[])dc.Data);
+                }
+            }
+            if(dc.Field.ClrType == typeof(long)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new Int64DataFrameColumn(colName, (long[])dc.Data);
+                } else {
+                    return new Int64DataFrameColumn(colName, (long?[])dc.Data);
+                }
+            }
+            if(dc.Field.ClrType == typeof(ulong)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new UInt64DataFrameColumn(colName, (ulong[])dc.Data);
+                } else {
+                    return new UInt64DataFrameColumn(colName, (ulong?[])dc.Data);
+                }
+            }
+            if(dc.Field.ClrType == typeof(string)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new StringDataFrameColumn(colName, (string[])dc.Data);
+                } else {
+                    return new StringDataFrameColumn(colName, (string?[])dc.Data);
                 }
             }
             if(dc.Field.ClrType == typeof(DateTime)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<DateTime>(colName, (DateTime[])dc.Data);
+                    return new DateTimeDataFrameColumn(colName, (DateTime[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<DateTime>(colName, (DateTime?[])dc.Data);
+                    return new DateTimeDataFrameColumn(colName, (DateTime?[])dc.Data);
                 }
             }
             if(dc.Field.ClrType == typeof(TimeSpan)) {
@@ -73,23 +108,9 @@ namespace Parquet.Data.Analysis {
             }
             if(dc.Field.ClrType == typeof(decimal)) {
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<decimal>(colName, (decimal[])dc.Data);
+                    return new DecimalDataFrameColumn(colName, (decimal[])dc.Data);
                 } else {
-                    return new PrimitiveDataFrameColumn<decimal>(colName, (decimal?[])dc.Data);
-                }
-            }
-            if(dc.Field.ClrType == typeof(float)) {
-                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<float>(colName, (float[])dc.Data);
-                } else {
-                    return new PrimitiveDataFrameColumn<float>(colName, (float?[])dc.Data);
-                }
-            }
-            if(dc.Field.ClrType == typeof(double)) {
-                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
-                    return new PrimitiveDataFrameColumn<double>(colName, (double[])dc.Data);
-                } else {
-                    return new PrimitiveDataFrameColumn<double>(colName, (double?[])dc.Data);
+                    return new DecimalDataFrameColumn(colName, (decimal?[])dc.Data);
                 }
             }
                         // special case
@@ -271,55 +292,42 @@ namespace Parquet.Data.Analysis {
         }
 
         public static Array GetTypedDataFast(DataFrameColumn col) {
-            
             if(col.DataType == typeof(bool)) {
                 return ((PrimitiveDataFrameColumn<bool>)col).ToArray();
             }
-            
             if(col.DataType == typeof(int)) {
                 return ((PrimitiveDataFrameColumn<int>)col).ToArray();
             }
-            
             if(col.DataType == typeof(uint)) {
                 return ((PrimitiveDataFrameColumn<uint>)col).ToArray();
             }
-            
             if(col.DataType == typeof(long)) {
                 return ((PrimitiveDataFrameColumn<long>)col).ToArray();
             }
-            
             if(col.DataType == typeof(ulong)) {
                 return ((PrimitiveDataFrameColumn<ulong>)col).ToArray();
             }
-            
             if(col.DataType == typeof(byte)) {
                 return ((PrimitiveDataFrameColumn<byte>)col).ToArray();
             }
-            
             if(col.DataType == typeof(sbyte)) {
                 return ((PrimitiveDataFrameColumn<sbyte>)col).ToArray();
             }
-            
             if(col.DataType == typeof(DateTime)) {
                 return ((PrimitiveDataFrameColumn<DateTime>)col).ToArray();
             }
-            
             if(col.DataType == typeof(TimeSpan)) {
                 return ((PrimitiveDataFrameColumn<TimeSpan>)col).ToArray();
             }
-            
             if(col.DataType == typeof(decimal)) {
                 return ((PrimitiveDataFrameColumn<decimal>)col).ToArray();
             }
-            
             if(col.DataType == typeof(float)) {
                 return ((PrimitiveDataFrameColumn<float>)col).ToArray();
             }
-            
             if(col.DataType == typeof(double)) {
                 return ((PrimitiveDataFrameColumn<double>)col).ToArray();
             }
-            
             // special case
             if(col.DataType == typeof(string)) {
                 return ((StringDataFrameColumn)col).ToArray();

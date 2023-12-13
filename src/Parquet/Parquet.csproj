@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0;net8.0</TargetFrameworks>
         <Company></Company>
         <PackageId>Parquet.Net</PackageId>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -51,14 +51,14 @@
 
     <ItemGroup>
         <PackageReference Include="IronCompress" Version="1.5.1" />
-        <PackageReference Include="Microsoft.Data.Analysis" Version="0.20.1" />
-        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
+        <PackageReference Include="Microsoft.Data.Analysis" Version="0.21.0" />
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
         <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-        <PackageReference Include="System.Text.Json" Version="7.0.3" />
+        <PackageReference Include="System.Text.Json" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">

@@ -136,7 +136,9 @@ namespace Parquet.Serialization {
             Type elementType,
             bool forWriting) {
 
-            return new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting)!);
+            ListField lf = new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting)!);
+            lf.ClrPropName = propertyName;
+            return lf;
         }
 
         private static Field? MakeField(PropertyInfo pi, bool forWriting) {
@@ -193,7 +195,9 @@ namespace Parquet.Serialization {
                 if(fields.Length == 0)
                     throw new InvalidOperationException($"property '{propertyName}' has no fields");
 
-                return new StructField(columnName, fields);
+                StructField sf = new StructField(columnName, fields);
+                sf.ClrPropName = propertyName;
+                return sf;
             }
 
             throw new NotImplementedException();

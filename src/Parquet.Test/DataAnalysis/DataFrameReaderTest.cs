@@ -16,6 +16,10 @@ namespace Parquet.Test.DataAnalysis {
         [InlineData(typeof(int?), null, 2)]
         [InlineData(typeof(bool), true, false)]
         [InlineData(typeof(bool?), true, null)]
+        [InlineData(typeof(long), 1L, 2L)]
+        [InlineData(typeof(long?), 1L, 2L)]
+        [InlineData(typeof(ulong), 1UL, 2UL)]
+        [InlineData(typeof(ulong?), 1UL, 2UL)]
         [InlineData(typeof(string), "1", "2")]
         [InlineData(typeof(string), null, "2")]
         public async Task Roundtrip_all_types(Type t, object el1, object el2) {
@@ -52,6 +56,14 @@ namespace Parquet.Test.DataAnalysis {
             // validate both are the same
             ms1.Position = 0;
             DataFrame df1 = await ms1.ReadParquetAsDataFrameAsync();
+
+            if(t == typeof(long)) {
+                // Int64 is a special case in DataFrame
+                // see https://github.com/aloneguid/parquet-dotnet/issues/343 for more info
+                df1.Columns.GetInt64Column(t.Name);
+            } else if (t == typeof(ulong)) {
+                df1.Columns.GetUInt64Column(t.Name);
+            }
 
             Assert.Equal(df.Columns.Count, df1.Columns.Count);
             for(int i = 0; i < df.Columns.Count; i++) {

@@ -1,8 +1,28 @@
+## 4.18.0
+
+### Improvements
+
+- Explicitly use invariant culture when encoding number types, eliminating the potential for generating invalid JSON by @rachied in #438.
+- Added DeserializeAllAsync in #433 by @Arithmomaniac.
+- Added explicit target for `.NET 8` by @aloneguid.
+
+### Bug fixes
+
+- `DataFrameMapper` returns incompatible `DataFrameColumn` by @aloneguid (#343).
+
 ## 4.17.0
 
-### New
+This is a community bugfix release. As a maintainer I have only approved PRs raised by this wonderful community. Thanks everyone, and keep doing what you do.
 
-- Enum serialization support by @aloneguid in #417.
+### Improvements
+
+- Allow deserialization from open `RowGroupReader`s by @ddrinka in #423/#422.
+
+### Bugs fixed
+
+- Gracefully handle malformed fields with trailing bytes in the data by @mukunku in #413.
+- `ParquetSerializer` doesn't support different `JsonPropertyName` and `ClrPropertyName` on struct fields by @mrinal-thomas in #410.
+- `ParquetSerializer` can sometimes fail when populating `_typeToAssembler` cache in parallel by @scottfavre in #420/#411.
 
 ## 4.16.4
 

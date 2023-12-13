@@ -8,13 +8,13 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 ## Features at a glance
 
-- 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works.
+- 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e. desktops, servers, phones, watches and so on.
 - 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 - 🦄**Unique Features**:
-  - The only library that supports dynamic schemas.
-  - Supports all parquet types, encodings and compressions.
+  - The only library that supports [dynamic](https://aloneguid.github.io/parquet-dotnet/writing.html) schemas.
+  - Supports all parquet [types](https://aloneguid.github.io/parquet-dotnet/nested-types.html), encodings and compressions.
   - Fully supports [C# class serialization](https://aloneguid.github.io/parquet-dotnet/serialisation.html), for all simple and **complex** Parquet types.
   - Provides **low-level**, [high-level](https://aloneguid.github.io/parquet-dotnet/serialisation.html), and [row-based](https://aloneguid.github.io/parquet-dotnet/rows.html) API.
   - Access to [file and column metadata](https://aloneguid.github.io/parquet-dotnet/metadata.html).
@@ -35,6 +35,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - [Cinchoo ETL: An ETL framework for .NET](https://github.com/Cinchoo/ChoETL).
 - [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
 - [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
+- [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
 
 *...raise a PR to appear here...*
 

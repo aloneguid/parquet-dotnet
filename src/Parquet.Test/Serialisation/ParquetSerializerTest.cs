@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
@@ -172,6 +173,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         class AddressBookEntry {
+            
             public string? FirstName { get; set; }
 
             public string? LastName { get; set; }
@@ -557,6 +559,27 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public async Task Deserialize_as_async_enumerable() {
+            DateTime now = DateTime.UtcNow;
+            int records = 100;
+            int rowGroupSize = 20;
+
+            var data = Enumerable.Range(0, records).Select(i => new Record {
+                Timestamp = now.AddSeconds(i),
+                EventName = i % 2 == 0 ? "on" : "off",
+                MeterValue = i
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = rowGroupSize });
+
+            ms.Position = 0;
+            IList<Record> data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
+
+            Assert.Equivalent(data, data2);
+        }
+
+        [Fact]
         public async Task Specify_row_group_size_too_small() {
             var data = Enumerable.Range(0, 100).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
@@ -587,6 +610,41 @@ namespace Parquet.Test.Serialisation {
             IList<StringRequiredAndNot> actual = await ParquetSerializer.DeserializeAsync<StringRequiredAndNot>(stream);
 
             Assert.Equivalent(expected, actual);
+        }
+
+        class AddressBookEntryAlias {
+
+            public string? Name { get; set; }
+
+            [JsonPropertyName("Address")]
+            public Address? _address { get; set; }
+
+            [JsonPropertyName("PhoneNumbers")]
+            public List<string>? _phoneNumbers { get; set; }
+        }
+
+        [Fact]
+        public async Task List_Struct_WithAlias_Serde() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new AddressBookEntryAlias {
+                Name = "Joe",
+                _address = new Address() {
+                    Country = "UK",
+                    City = "Unknown",
+                },
+                _phoneNumbers = new List<string>() {
+                    "123-456-7890",
+                    "111-222-3333"
+                }
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<AddressBookEntryAlias> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntryAlias>(ms);
+
+            Assert.Equivalent(data2, data);
         }
     }
 }

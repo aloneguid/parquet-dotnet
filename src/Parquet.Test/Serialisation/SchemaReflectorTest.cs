@@ -103,13 +103,24 @@ namespace Parquet.Test.Serialisation {
             Assert.False(extraProp.IsArray);
         }
 
-        class AliasedPoco {
+        class AliasedPocoChild
+        {
+            [JsonPropertyName("ChildID")]
+            public int _id { get; set; }
+        }
 
+        class AliasedPoco {
             [JsonPropertyName("ID1")]
             public int _id1 { get; set; }
 
             [JsonPropertyName("ID2")]
             public int _id2 { get; set; }
+
+            [JsonPropertyName("Child")]
+            public AliasedPocoChild? _child { get; set; }
+
+            [JsonPropertyName("Numbers")]
+            public List<int>? _numberList { get; set; }
         }
 
         [Fact]
@@ -118,7 +129,9 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(new ParquetSchema(
                 new DataField<int>("ID1"),
-                new DataField<int>("ID2")
+                new DataField<int>("ID2"),
+                new StructField("Child", new DataField<int>("ChildID")),
+                new ListField("Numbers", new DataField<int>("element"))
                 ), schema);
         }
 

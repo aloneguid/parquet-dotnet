@@ -6,3 +6,4 @@ obj/
 BenchmarkDotNet.Artifacts/
 *.swp
 Parquet.sln.DotSettings.user
+.DS_Store
