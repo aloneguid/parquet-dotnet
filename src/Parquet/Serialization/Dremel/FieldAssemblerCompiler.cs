@@ -17,6 +17,8 @@ namespace Parquet.Serialization.Dremel {
         private readonly ParquetSchema _schema;
         private readonly DataField _df;
 
+        private readonly bool _isUntypedClass = typeof(TClass) == typeof(Dictionary<string, object>);
+
         private readonly ParameterExpression _dcParam = Expression.Parameter(typeof(DataColumn), "dc");
 
         private readonly ParameterExpression _classElementVar = Expression.Variable(typeof(TClass), "curr");
@@ -69,7 +71,6 @@ namespace Parquet.Serialization.Dremel {
         private Expression GetDataLength() {
             return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), nameof(Array.Length));
         }
-
 
         private Expression GetRlLength() {
             return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.RepetitionLevels)), nameof(Array.Length));
@@ -212,6 +213,17 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
+        private Expression GetClassPropertyAssignerAndType(Type rootType, Expression rootVar, Field field, string name, out Type type) {
+            if(_isUntypedClass) {
+                type = ((DataField)field).ClrNullableIfHasNullsType;
+                return Expression.Property(rootVar, "Item", Expression.Constant(name));
+            }
+
+            type = rootType.GetProperty(name)!.PropertyType;
+            return Expression.Property(rootVar, name);
+        }
+
+
         private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path) {
 
             string currentPathPart = path.First();
@@ -224,8 +236,9 @@ namespace Parquet.Serialization.Dremel {
             Discover(field, out bool isRepeated);
             bool isAtomic = field.IsAtomic;
             string levelPropertyName = field.ClrPropName ?? field.Name;
-            Expression levelProperty = Expression.Property(rootVar, levelPropertyName);
-            Type levelPropertyType = rootType.GetProperty(levelPropertyName)!.PropertyType;
+
+            Expression levelProperty = GetClassPropertyAssignerAndType(rootType, rootVar, field,
+                levelPropertyName, out Type levelPropertyType);
 
             Expression iteration = Expression.Empty();
 
@@ -270,13 +283,17 @@ namespace Parquet.Serialization.Dremel {
             } else {
                 if(isAtomic) {
 
+                    // conversion compensates for nullable types and maybe implicit conversions
+                    UnaryExpression x = _isUntypedClass
+                        ? Expression.Convert(_dataElementVar, typeof(object))
+                        : Expression.Convert(_dataElementVar, levelPropertyType);
+
                     // C#: dlDepth == _dlVar?
                     iteration =
                         Expression.IfThen(
                             Expression.Equal(Expression.Constant(dlDepth), _dlVar),
                             // levelProperty = (levelPropertyType)_dataElementVar
-                            // conversion compensates for nullable types and maybe implicit conversions
-                            Expression.Assign(levelProperty, Expression.Convert(_dataElementVar, levelPropertyType))
+                            Expression.Assign(levelProperty, x)
                         );
                 } else {
                     ParameterExpression deepVar = Expression.Variable(levelPropertyType);

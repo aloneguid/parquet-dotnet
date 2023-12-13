@@ -56,7 +56,7 @@ namespace Parquet.Test.Serialisation {
             await ParquetSerializer.SerializeAsync(typeof(Record).GetParquetSchema(true), data, ms);
 
             ms.Position = 0;
-            IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms);
+            IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
 
             Assert.Equivalent(data2, data);
         }
