@@ -13,7 +13,42 @@ using Parquet.Test.Xunit;
 using Xunit;
 
 namespace Parquet.Test.Serialisation {
+
+    /// <summary>
+    /// When writing tests for this class, please note that you must write the test
+    /// for strong typed entities, and for untyped dictionaries. This is because
+    /// assembler and shredder has slightly different code paths for untyped dictionaries,
+    /// despite majority of the code being shared.
+    /// </summary>
     public class ParquetSerializerTest : TestBase {
+
+        private async Task Compare<T>(List<T> data) where T : new() {
+
+            // serialize to parquet
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            // deserialize from parquet
+            ms.Position = 0;
+            IList<T> data2 = await ParquetSerializer.DeserializeAsync<T>(ms);
+
+            // compare
+            Assert.Equivalent(data2, data);
+        }
+
+        private async Task DictCompare<T>(List<Dictionary<string, object>> data) {
+
+            // serialize to parquet
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(typeof(T).GetParquetSchema(true), data, ms);
+
+            // deserialize from parquet
+            ms.Position = 0;
+            IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
+
+            // compare
+            Assert.Equivalent(data2, data);
+        }
 
         class Record {
             public DateTime Timestamp { get; set; }
@@ -33,13 +68,7 @@ namespace Parquet.Test.Serialisation {
                 ExternalId = Guid.NewGuid()
             }).ToList();
 
-            using var ms = new MemoryStream();
-            ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
-
-            ms.Position = 0;
-            IList<Record> data2 = await ParquetSerializer.DeserializeAsync<Record>(ms);
-
-            Assert.Equivalent(data2, data);
+            await Compare(data);
         }
 
         [Fact]
@@ -52,13 +81,7 @@ namespace Parquet.Test.Serialisation {
                 ["ExternalId"] = Guid.NewGuid()
             }).ToList();
 
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(typeof(Record).GetParquetSchema(true), data, ms);
-
-            ms.Position = 0;
-            IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
-
-            Assert.Equivalent(data2, data);
+            await DictCompare<Record>(data);
         }
 
         class RecordWithNewField : Record {
@@ -107,13 +130,7 @@ namespace Parquet.Test.Serialisation {
                 ParentId = (i % 4 == 0) ? null : i
             }).ToList();
 
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            ms.Position = 0;
-            IList<NullableRecord> data2 = await ParquetSerializer.DeserializeAsync<NullableRecord>(ms);
-
-            Assert.Equivalent(data2, data);
+            await Compare(data);
         }
 
         [Fact]
@@ -127,13 +144,7 @@ namespace Parquet.Test.Serialisation {
                 ["ExternalId"] = Guid.NewGuid()
             }).ToList();
 
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(typeof(NullableRecord).GetParquetSchema(true), data, ms);
-
-            ms.Position = 0;
-            IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
-
-            Assert.Equivalent(data2, data);
+            await DictCompare<NullableRecord>(data);
         }
 
         class Primitives {
@@ -232,13 +243,7 @@ namespace Parquet.Test.Serialisation {
                 }
             }).ToList();
 
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            ms.Position = 0;
-            IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
-
-            Assert.Equivalent(data2, data);
+            await Compare(data);
         }
 
         class MovementHistory {
@@ -282,14 +287,8 @@ namespace Parquet.Test.Serialisation {
                     }
                 }
             };
-
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            ms.Position = 0;
-            IList<AddressBookEntry> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntry>(ms);
-
-            XAssert.JsonEquivalent(data, data2);
+            
+            await Compare(data);
         }
 
         [Fact]
@@ -303,17 +302,7 @@ namespace Parquet.Test.Serialisation {
                 }).ToList()
             }).ToList();
 
-            // serialise
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            // deserialise
-            ms.Position = 0;
-            IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
-
-            // assert
-            XAssert.JsonEquivalent(data, data2);
-
+            await Compare(data);
         }
 
         [Fact]
@@ -324,16 +313,7 @@ namespace Parquet.Test.Serialisation {
                 Addresses = null
             }).ToList();
 
-            // serialise
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            // deserialise
-            ms.Position = 0;
-            IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
-
-            // assert
-            XAssert.JsonEquivalent(data, data2);
+            await Compare(data);
         }
 
         [Fact]
@@ -344,17 +324,7 @@ namespace Parquet.Test.Serialisation {
                 Addresses = new()
             }).ToList();
 
-            // serialise
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-            //await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
-
-            // deserialise
-            ms.Position = 0;
-            IList<MovementHistory> data2 = await ParquetSerializer.DeserializeAsync<MovementHistory>(ms);
-
-            // assert
-            XAssert.JsonEquivalent(data, data2);
+            await Compare(data);
         }
 
         class MovementHistoryCompressed {
@@ -371,16 +341,7 @@ namespace Parquet.Test.Serialisation {
                 ParentIds = Enumerable.Range(i, 4).ToList()
             }).ToList();
 
-            // serialise
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            // deserialise
-            ms.Position = 0;
-            IList<MovementHistoryCompressed> data2 = await ParquetSerializer.DeserializeAsync<MovementHistoryCompressed>(ms);
-
-            // assert
-            Assert.Equivalent(data, data2);
+            await Compare(data);
         }
 
         [Fact]
@@ -488,7 +449,6 @@ namespace Parquet.Test.Serialisation {
 
             // assert
             XAssert.JsonEquivalent(data, data2);
-
         }
 
         [Fact]
@@ -646,13 +606,7 @@ namespace Parquet.Test.Serialisation {
                 }
             }).ToList();
 
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
-
-            ms.Position = 0;
-            IList<AddressBookEntryAlias> data2 = await ParquetSerializer.DeserializeAsync<AddressBookEntryAlias>(ms);
-
-            Assert.Equivalent(data2, data);
+            await Compare(data);
         }
     }
 }
