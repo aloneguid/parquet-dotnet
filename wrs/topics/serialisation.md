@@ -68,6 +68,27 @@ Serialisation tries to fit into C# ecosystem like a ninja 🥷, including custom
 
 Where built-in JSON attributes are not sufficient, extra attributes are added.
 
+### Strings
+
+In .NET, [`string`](https://learn.microsoft.com/en-us/dotnet/api/system.string?view=net-8.0) class is a reference type, which means it can be `null`. However, Parquet specification allows types to be declared _required or optional_. 
+
+To fit into .NET ecosystem as closely as possible, this library will serialize .NET strings as _optional_ by default. If you want to change this behaviour, you can use `[ParquetRequired]` attribute:
+
+```C#
+public string OptionalString { get; set; }
+
+[ParquetRequired]
+public string RequiredString { get; set; }
+```
+
+In this example of three properties, `OptionalString`will be serialized as optional, but `RequiredString` will be serialized as required.
+
+<note>
+%product% will also expect string to be optional when deserializing from a file. If you have a required string in your file, you will get an exception until you add <code>[ParquetRequired]</code> attribute to the relevant class property.  
+</note>
+
+
+
 ### Dates
 
 By default, dates (`DateTime`) are serialized as `INT96` number, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet, however older systems such as Impala and Hive are still actively using it to represent dates.
