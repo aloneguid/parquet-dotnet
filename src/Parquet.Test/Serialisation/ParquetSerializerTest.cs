@@ -19,10 +19,12 @@ namespace Parquet.Test.Serialisation {
     /// for strong typed entities, and for untyped dictionaries. This is because
     /// assembler and shredder has slightly different code paths for untyped dictionaries,
     /// despite majority of the code being shared.
+    /// Make the tests small and focused, and use the same test data for both. It helps to debug
+    /// expression trees easier.
     /// </summary>
     public class ParquetSerializerTest : TestBase {
 
-        private async Task Compare<T>(List<T> data) where T : new() {
+        private async Task Compare<T>(List<T> data, bool asJson = false) where T : new() {
 
             // serialize to parquet
             using var ms = new MemoryStream();
@@ -33,21 +35,35 @@ namespace Parquet.Test.Serialisation {
             IList<T> data2 = await ParquetSerializer.DeserializeAsync<T>(ms);
 
             // compare
-            Assert.Equivalent(data2, data);
+            if(asJson) {
+                XAssert.JsonEquivalent(data, data2);
+            } else {
+                Assert.Equivalent(data2, data);
+            }
         }
 
-        private async Task DictCompare<T>(List<Dictionary<string, object>> data) {
+        private async Task DictCompare<TSchema>(List<Dictionary<string, object>> data, bool asJson = false,
+            string? writeTestFile = null) {
 
             // serialize to parquet
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(typeof(T).GetParquetSchema(true), data, ms);
+            await ParquetSerializer.SerializeAsync(typeof(TSchema).GetParquetSchema(true), data, ms);
+
+            if(writeTestFile != null) {
+                System.IO.File.WriteAllBytes(writeTestFile, ms.ToArray());
+            }
 
             // deserialize from parquet
             ms.Position = 0;
             IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
 
             // compare
-            Assert.Equivalent(data2, data);
+            if(asJson) {
+                XAssert.JsonEquivalent(data, data2);
+            }
+            else {
+                Assert.Equivalent(data2, data);
+            }
         }
 
         class Record {
@@ -92,6 +108,9 @@ namespace Parquet.Test.Serialisation {
             public Guid NewExternalId { get; set; }
         }
 
+        /// <summary>
+        /// Class specific, no case for untyped dictionaries
+        /// </summary>
         [Fact]
         public async Task Atomics_With_New_Field_Skipped() {
 
@@ -439,16 +458,20 @@ namespace Parquet.Test.Serialisation {
                     ["gen"] = DateTime.UtcNow.ToString()
                 }}).ToList();
 
-            // serialise
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
+            await Compare(data, true);
+        }
 
-            // deserialise
-            ms.Position = 0;
-            IList<IdWithTags> data2 = await ParquetSerializer.DeserializeAsync<IdWithTags>(ms);
+        [Fact]
+        public async Task Map_Simple_Serde_Dict() {
+            var data = Enumerable.Range(0, 10).Select(i => new Dictionary<string, object> {
+                ["Id"] = i,
+                ["Tags"] = new Dictionary<string, string> {
+                    ["id"] = i.ToString(),
+                    ["gen"] = DateTime.UtcNow.ToString()
+                }
+            }).ToList();
 
-            // assert
-            XAssert.JsonEquivalent(data, data2);
+            await DictCompare<IdWithTags>(data);
         }
 
         [Fact]

@@ -168,7 +168,7 @@ namespace Parquet.Serialization.Dremel {
                     WriteValue(valueVar, dl, chRepetitionLevelVar, isLeafVar, isAtomic),
                     isAtomic
                         ? Expression.Empty()
-                        : DissectRecord(valueVar, field.NaturalChildren, field.GetNaturalChildPath(path), elementType, rlDepth, chRepetitionLevelVar)
+                        : DissectRecord(valueVar, field, field.NaturalChildren, field.GetNaturalChildPath(path), elementType, rlDepth, chRepetitionLevelVar)
                 )
 
             );
@@ -191,9 +191,33 @@ namespace Parquet.Serialization.Dremel {
             return f.MaxDefinitionLevel;
         }
 
-        private Expression GetClassPropertyAccessorAndType(Type rootType, Expression rootVar, Field field, string name, out Type type) {
+        private static Type GetIdealUntypedType(Field f) {
+            switch(f.SchemaType) {
+                case SchemaType.Data:
+                    return ((DataField)f).ClrNullableIfHasNullsType;
+                case SchemaType.Map:
+                    var fmap = (MapField)f;
+                    return typeof(IDictionary<,>).MakeGenericType(GetIdealUntypedType(fmap.Key), GetIdealUntypedType(fmap.Value));
+                default:
+                    throw new NotSupportedException($"schema type {f.SchemaType} is not supported");
+            }
+        }
+
+        private Expression GetClassPropertyAccessorAndType(
+            Type rootType,
+            Expression rootVar,
+            Field? parentField,
+            Field field,
+            string name,
+            out Type type) {
             if(_isUntypedClass) {
-                type = ((DataField)field).ClrNullableIfHasNullsType;
+
+                if(parentField != null && parentField.SchemaType == SchemaType.Map && field.SchemaType == SchemaType.Data) {
+                    type = GetIdealUntypedType(field);
+                    return Expression.Property(rootVar, name);
+                }
+
+                type = GetIdealUntypedType(field);
 
                 /*
                  * Take into account that key may not be present in the dictionary.
@@ -219,6 +243,7 @@ namespace Parquet.Serialization.Dremel {
 
         private Expression DissectRecord(
             Expression rootVar,
+            Field? parentField,
             Field[] levelFields,
             List<string> path,
             Type rootType,
@@ -242,7 +267,7 @@ namespace Parquet.Serialization.Dremel {
             // while "decoder"
 
             string levelPropertyName = field.ClrPropName ?? field.Name;
-            Expression levelProperty = GetClassPropertyAccessorAndType(rootType, rootVar, field, levelPropertyName, out Type levelPropertyType);
+            Expression levelProperty = GetClassPropertyAccessorAndType(rootType, rootVar, parentField, field, levelPropertyName, out Type levelPropertyType);
             ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
             ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
 
@@ -285,7 +310,7 @@ namespace Parquet.Serialization.Dremel {
 
             ParameterExpression currentRl = Expression.Variable(typeof(int), "currentRl");
 
-            Expression iteration = DissectRecord(_classElementVar, _schema.Fields.ToArray(), _df.Path.ToList(), typeof(TClass), 0, currentRl);
+            Expression iteration = DissectRecord(_classElementVar, null, _schema.Fields.ToArray(), _df.Path.ToList(), typeof(TClass), 0, currentRl);
             Expression iterationLoop = iteration.Loop(_classesParam, typeof(TClass), _classElementVar);
 
             BlockExpression block = Expression.Block(
