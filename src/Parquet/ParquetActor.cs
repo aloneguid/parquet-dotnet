@@ -39,7 +39,7 @@ namespace Parquet {
             _fileStream.Seek(0, SeekOrigin.Begin);
             byte[] head = await _fileStream.ReadBytesExactlyAsync(4);
 
-            _fileStream.Seek(-4, SeekOrigin.End);
+            _fileStream.Seek((_fileStream.Position - 4), SeekOrigin.Begin);
             byte[] tail = await _fileStream.ReadBytesExactlyAsync(4);
 
             if(!MagicBytes.SequenceEqual(head) || !MagicBytes.SequenceEqual(tail))
