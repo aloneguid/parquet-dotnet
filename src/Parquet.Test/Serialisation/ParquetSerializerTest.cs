@@ -471,7 +471,7 @@ namespace Parquet.Test.Serialisation {
                 }
             }).ToList();
 
-            await DictCompare<IdWithTags>(data);
+            await DictCompare<IdWithTags>(data, true, writeTestFile: "c:\\tmp\\ds_dict.parquet");
         }
 
         [Fact]

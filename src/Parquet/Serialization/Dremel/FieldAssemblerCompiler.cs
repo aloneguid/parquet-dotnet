@@ -225,18 +225,50 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
-        private Expression GetClassPropertyAssignerAndType(Type rootType, Expression rootVar, Field field, string name, out Type type) {
-            if(_isUntypedClass) {
-                type = GetIdealUntypedType(field);
-                return Expression.Property(rootVar, "Item", Expression.Constant(name));
-            }
+        record ClassProperty(Expression Accessor, Expression IsNull, Type Type, bool IsGenericDictionary);
 
-            type = rootType.GetProperty(name)!.PropertyType;
-            return Expression.Property(rootVar, name);
+        private ClassProperty GetClassProperty(Type rootType, Expression rootVar,
+            Field? parentField, Field field,
+            string name) {
+            if(_isUntypedClass) {
+                Type type = GetIdealUntypedType(field);
+                bool isGenericDictionary = field.SchemaType == SchemaType.Map;
+                Expression accessor;
+                Expression isNull;
+
+                // is this a key or a value?
+                if(parentField != null && parentField.SchemaType == SchemaType.Map && field.SchemaType == SchemaType.Data) {
+                    accessor = Expression.Property(rootVar, field.Name);
+                    isNull = Expression.Equal(accessor, Expression.Constant(null));
+
+                } else {
+                    accessor = Expression.Property(rootVar, "Item", Expression.Constant(name));
+                    MethodInfo ckm = rootType.GetMethod("ContainsKey")!;
+                    isNull = Expression.Not(Expression.Call(rootVar, ckm, Expression.Constant(name)));
+                }
+
+                return new ClassProperty(accessor,
+                    isNull,
+                    type,
+                    isGenericDictionary);
+
+            } else {
+
+                // Dictionary is a special case, because it cannot be constructed independently in one go, so the client needs to know it a dictionary
+                Type type = rootType.GetProperty(name)!.PropertyType;
+                bool isGenericDictionary = type.IsGenericIDictionary();
+                MemberExpression accessor = Expression.Property(rootVar, name);
+                return new ClassProperty(accessor,
+                    type.IsValueType
+                        ? Expression.Constant(false)
+                        : Expression.Equal(accessor, Expression.Constant(null)),
+                    rootType.GetProperty(name)!.PropertyType,
+                    isGenericDictionary);
+            }
         }
 
 
-        private Expression InjectLevel(Expression rootVar, Type rootType, Field[] levelFields, List<string> path) {
+        private Expression InjectLevel(Expression rootVar, Type rootType, Field? parentField, Field[] levelFields, List<string> path) {
 
             string currentPathPart = path.First();
             Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
@@ -249,9 +281,7 @@ namespace Parquet.Serialization.Dremel {
             bool isAtomic = field.IsAtomic;
             string levelPropertyName = field.ClrPropName ?? field.Name;
 
-            Expression levelProperty = GetClassPropertyAssignerAndType(
-                rootType, rootVar, field,
-                levelPropertyName, out Type levelPropertyType);
+            ClassProperty classProperty = GetClassProperty(rootType, rootVar, parentField, field, levelPropertyName);   
 
             Expression iteration = Expression.Empty();
 
@@ -259,18 +289,19 @@ namespace Parquet.Serialization.Dremel {
                 Expression rsmAccess = Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1));
 
                 Type levelPropertyElementType;
-                if(levelPropertyType.IsGenericIDictionary()) {
-                    ReplaceIDictionaryTypes(levelPropertyType, out levelPropertyType, out levelPropertyElementType);
+                if(classProperty.IsGenericDictionary) {
+                    ReplaceIDictionaryTypes(classProperty.Type, out Type newType, out levelPropertyElementType);
+                    classProperty = classProperty with { Type = newType };
                 } else {
-                    levelPropertyElementType = levelPropertyType.ExtractElementTypeFromEnumerableType();
+                    levelPropertyElementType = classProperty.Type.ExtractElementTypeFromEnumerableType();
                 }
 
                 Expression leafExpr;
 
                 if(isAtomic) {
                     // add element to collection - end here
-                    leafExpr = Expression.Call(levelProperty,
-                        levelPropertyType.GetMethod(nameof(IList.Add))!,
+                    leafExpr = Expression.Call(classProperty.Accessor,
+                        classProperty.Type.GetMethod(nameof(IList.Add))!,
                         Expression.Convert(_dataElementVar, levelPropertyElementType));
 
                 } else {
@@ -282,11 +313,11 @@ namespace Parquet.Serialization.Dremel {
                         new[] { collectionElementVar },
 
                         Expression.Assign(collectionElementVar,
-                            GetCollectionElement(levelProperty, rlDepth, levelPropertyType, levelPropertyElementType)),
+                            GetCollectionElement(classProperty.Accessor, rlDepth, classProperty.Type, levelPropertyElementType)),
 
                         // keep traversing the tree
                         InjectLevel(collectionElementVar, levelPropertyElementType,
-                            field.NaturalChildren, field.GetNaturalChildPath(path))
+                            field, field.NaturalChildren, field.GetNaturalChildPath(path))
 
                         );
                 }
@@ -297,26 +328,27 @@ namespace Parquet.Serialization.Dremel {
                 if(isAtomic) {
 
                     // conversion compensates for nullable types and maybe implicit conversions
-                    UnaryExpression x = _isUntypedClass
+                    UnaryExpression x = _isUntypedClass && parentField?.SchemaType != SchemaType.Map
                         ? Expression.Convert(_dataElementVar, typeof(object))
-                        : Expression.Convert(_dataElementVar, levelPropertyType);
+                        : Expression.Convert(_dataElementVar, classProperty.Type);
 
                     // C#: dlDepth == _dlVar?
                     iteration =
                         Expression.IfThen(
                             Expression.Equal(Expression.Constant(dlDepth), _dlVar),
                             // levelProperty = (levelPropertyType)_dataElementVar
-                            Expression.Assign(levelProperty, x)
+                            Expression.Assign(classProperty.Accessor, x)
                         );
                 } else {
-                    ParameterExpression deepVar = Expression.Variable(levelPropertyType);
+                    ParameterExpression deepVar = Expression.Variable(classProperty.Type);
 
                     iteration = Expression.Block(
                         new[] { deepVar },
 
-                        Expression.Assign(deepVar, levelProperty),
+                        Expression.Assign(deepVar, classProperty.Accessor),
 
-                        InjectLevel(deepVar, levelPropertyType,
+                        InjectLevel(deepVar, classProperty.Type,
+                            field,
                             field.NaturalChildren,
                             field.GetNaturalChildPath(path)));
                 }
@@ -332,8 +364,8 @@ namespace Parquet.Serialization.Dremel {
 
                     Expression.Block(
                         Expression.IfThen(
-                            Expression.Equal(levelProperty, Expression.Constant(null)),
-                            Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
+                            classProperty.IsNull,
+                            Expression.Assign(classProperty.Accessor, Expression.New(classProperty.Type))),
 
                         iteration));
 
@@ -342,8 +374,8 @@ namespace Parquet.Serialization.Dremel {
                         Expression.GreaterThanOrEqual(_dlVar, Expression.Constant(dlDepth - 1)),
                         Expression.Block(
                             Expression.IfThen(
-                                Expression.Equal(levelProperty, Expression.Constant(null)),
-                                Expression.Assign(levelProperty, Expression.New(levelPropertyType))),
+                                classProperty.IsNull,
+                                Expression.Assign(classProperty.Accessor, Expression.New(classProperty.Type))),
 
                             iteration));
                 }
@@ -373,7 +405,7 @@ namespace Parquet.Serialization.Dremel {
 
             // process current value tuple (_dataVar, _dlVar, _rlVar)
             Expression body = 
-                InjectLevel(_classElementVar, typeof(TClass), _schema.Fields.ToArray(), _df.Path.ToList());
+                InjectLevel(_classElementVar, typeof(TClass), null, _schema.Fields.ToArray(), _df.Path.ToList());
 
             return Expression.Block(
 
