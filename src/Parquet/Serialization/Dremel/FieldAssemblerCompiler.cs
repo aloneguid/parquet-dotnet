@@ -213,9 +213,21 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
+        private static Type GetIdealUntypedType(Field f) {
+            switch(f.SchemaType) {
+                case SchemaType.Data:
+                    return ((DataField)f).ClrNullableIfHasNullsType;
+                case SchemaType.Map:
+                    var fmap = (MapField)f;
+                    return typeof(IDictionary<,>).MakeGenericType(GetIdealUntypedType(fmap.Key), GetIdealUntypedType(fmap.Value));
+                default:
+                    throw new NotSupportedException($"schema type {f.SchemaType} is not supported");
+            }
+        }
+
         private Expression GetClassPropertyAssignerAndType(Type rootType, Expression rootVar, Field field, string name, out Type type) {
             if(_isUntypedClass) {
-                type = ((DataField)field).ClrNullableIfHasNullsType;
+                type = GetIdealUntypedType(field);
                 return Expression.Property(rootVar, "Item", Expression.Constant(name));
             }
 
