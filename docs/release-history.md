@@ -1,9 +1,14 @@
 ## 4.18.0
 
+This is the next stability improvements release, and a big thanks to everyone who contributed! Without you this project would not be possible.
+
+Please don't forget to star this project on GitHub if you like it, this helps the project grow and motivates the fellow contributors to keep contributing!
+
 ### Improvements
 
 - Explicitly use invariant culture when encoding number types, eliminating the potential for generating invalid JSON by @rachied in #438.
 - Added DeserializeAllAsync in #433 by @Arithmomaniac.
+- Added option to reduce flushing of streams during write operation in #432 by @dxdjgl. 
 - Added explicit target for `.NET 8` by @aloneguid.
 
 ### Bug fixes
