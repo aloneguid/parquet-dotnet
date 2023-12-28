@@ -116,8 +116,9 @@ namespace Parquet.Serialization {
 
             Assembler<T> asm = GetAssembler<T>();
 
-            var result = new List<T>();
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+
+            List<T> result = GetList<T>(reader.Metadata?.RowGroups[rowGroupIndex].NumRows);
             await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, cancellationToken);
 
             return result;
@@ -139,9 +140,11 @@ namespace Parquet.Serialization {
 
             Assembler<T> asm = GetAssembler<T>();
 
-            var result = new List<T>();
-
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+
+            long? requestedCapacity = reader.Metadata?.RowGroups.Sum(x => x.NumRows);
+            List<T> result = GetList<T>(requestedCapacity);
+
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
 
                 await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
@@ -165,9 +168,11 @@ namespace Parquet.Serialization {
 
             Assembler<T> asm = GetAssembler<T>();
 
-            var result = new List<T>();
-
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+
+            long? requestedCapacity = reader.Metadata?.RowGroups.Max(x => x.NumRows);
+            List<T> result = GetList<T>(requestedCapacity);
+
             for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
 
                 await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
@@ -196,7 +201,7 @@ namespace Parquet.Serialization {
 
             Assembler<T> asm = GetAssembler<T>();
 
-            var result = new List<T>();
+            List<T> result = GetList<T>(rowGroupReader.RowGroup.NumRows);
 
             await DeserializeRowGroupAsync(rowGroupReader, schema, asm, result, cancellationToken);
 
@@ -257,6 +262,16 @@ namespace Parquet.Serialization {
                     throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
                 }
             }
+        }
+
+        private static List<T> GetList<T>(long? requestedCapacity) {
+            if(requestedCapacity == null)
+                return new List<T>();
+            
+            if(requestedCapacity >= int.MaxValue)
+                return new List<T>(int.MaxValue);
+            
+            return new List<T>((int)requestedCapacity);
         }
     }
 }
