@@ -1,3 +1,7 @@
+## 4.18.1
+
+Critical bug fix: reverting #423 as it introducing some side effects that prevent from generating correct files.
+
 ## 4.18.0
 
 This is the next stability improvements release, and a big thanks to everyone who contributed! Without you this project would not be possible.

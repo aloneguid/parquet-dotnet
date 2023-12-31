@@ -84,7 +84,7 @@ namespace Parquet.File {
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
             int headerSize = (int)headerMs.Length;
             headerMs.Position = 0;
-            // there used to be a flush here, but removed in #432 due to excessive flushing on expensive streams
+            _stream.Flush();
 
             await headerMs.CopyToAsync(_stream);
 
