@@ -214,7 +214,12 @@ namespace Parquet.Serialization {
         /// <summary>
         /// Highly experimental
         /// </summary>
-        public static async Task<IList<Dictionary<string, object>>> DeserializeAsync(Stream source,
+        public record UntypedResult(IList<Dictionary<string, object>> Data, ParquetSchema Schema);
+
+        /// <summary>
+        /// Highly experimental
+        /// </summary>
+        public static async Task<UntypedResult> DeserializeAsync(Stream source,
             ParquetOptions? options = null,
             CancellationToken cancellationToken = default) {
 
@@ -229,7 +234,7 @@ namespace Parquet.Serialization {
                 await DeserializeRowGroupAsync(reader, rgi, asm, result, cancellationToken);
             }
 
-            return result;
+            return new UntypedResult(result, schema);
         }
 
 

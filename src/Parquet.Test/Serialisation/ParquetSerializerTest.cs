@@ -55,14 +55,14 @@ namespace Parquet.Test.Serialisation {
 
             // deserialize from parquet
             ms.Position = 0;
-            IList<Dictionary<string, object>> data2 = await ParquetSerializer.DeserializeAsync(ms);
+            ParquetSerializer.UntypedResult data2 = await ParquetSerializer.DeserializeAsync(ms);
 
             // compare
             if(asJson) {
-                XAssert.JsonEquivalent(data, data2);
+                XAssert.JsonEquivalent(data, data2.Data);
             }
             else {
-                Assert.Equivalent(data2, data);
+                Assert.Equivalent(data2.Data, data);
             }
         }
 

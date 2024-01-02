@@ -21,6 +21,8 @@ public partial class MainViewModel : ViewModelBase {
 
     public SchemaViewModel Schema { get; } = new SchemaViewModel();
 
+    public DataViewModel Data { get; } = new DataViewModel();
+
     public MainViewModel() {
         string[] args = Environment.GetCommandLineArgs();
 
@@ -38,17 +40,22 @@ public partial class MainViewModel : ViewModelBase {
         Path = "design.parquet";
     }
 
-    private void Load(string path) {
+    public void Load(string path) {
         Task.Run(() => LoadAsync(path));
     }
 
     private async Task LoadAsync(string path) {
+        if(!System.IO.File.Exists(path))
+            return;
+
+        await LoadAsync(System.IO.File.OpenRead(path));
+    }
+
+    public async Task LoadAsync(Stream fileStream) {
         try {
-            if(!System.IO.File.Exists(path))
-                return;
-            using FileStream fs = System.IO.File.OpenRead(path);
-            using ParquetReader reader = await ParquetReader.CreateAsync(fs);
+            using ParquetReader reader = await ParquetReader.CreateAsync(fileStream);
             Schema.InitSchema(reader.Schema);
+            Data.InitReader(fileStream);
 
             // dispatch to UI thread
             Dispatcher.UIThread.Invoke(() => {
@@ -57,7 +64,10 @@ public partial class MainViewModel : ViewModelBase {
 
         } catch(Exception ex) {
             Console.WriteLine(ex);
+        } finally {
+            // fileStream.Close();
         }
+
     }
 
 }

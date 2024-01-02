@@ -13,16 +13,26 @@
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <TabControl SelectedIndex="1">
-        <TabItem Header="Data">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        </TabItem>
-        <TabItem Header="Schema">
+        <StackPanel Classes="toolbar" Grid.Row="0">
+            <Button Click="OpenFile_Click">
+                <Image Source="/Assets/icons/open.png"/>
+            </Button>
+        </StackPanel>
+        
+        <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
+
+        <Expander VerticalAlignment="Bottom" Grid.Row="1" HorizontalAlignment="Stretch">
+            <Expander.Header>Schema</Expander.Header>
             <views:SchemaView DataContext="{Binding Schema}"/>
-        </TabItem>
-        <TabItem Header="Metadata">
+        </Expander>
 
-        </TabItem>
-    </TabControl>
+    </Grid>
+
 
 </UserControl>
