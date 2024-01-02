@@ -327,7 +327,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public async Task List_Structs_SerdeAsync() {
+        public async Task List_Structs_Serde() {
             var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
                 PersonId = i,
                 Comments = i % 2 == 0 ? "none" : null,
@@ -339,6 +339,21 @@ namespace Parquet.Test.Serialisation {
 
             await Compare(data);
         }
+
+        [Fact]
+        public async Task List_Structs_Serde_Dict() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+                ["PersonId"] = i,
+                ["Comments"] = i % 2 == 0 ? "none" : null,
+                ["Addresses"] = Enumerable.Range(0, 4).Select(a => new Dictionary<string, object> {
+                    ["City"] = "Birmingham",
+                    ["Country"] = "United Kingdom"
+                }).ToList()
+            }).ToList();
+
+            await DictCompare<MovementHistory>(data);
+        }
+
 
         [Fact]
         public async Task List_Null_Structs_Serde() {
