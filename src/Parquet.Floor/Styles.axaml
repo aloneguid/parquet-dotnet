@@ -1,21 +1,58 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:system="clr-namespace:System">
     <Design.PreviewWith>
+        
         <StackPanel>
+
+            <StackPanel Classes="toolbar">
+                <Button>
+                    <Image Source="/Assets/icons/open.png"/>
+                </Button>
+                <Button>
+                    <Image Source="/Assets/icons/map.png"/>
+                </Button>
+            </StackPanel>
+
 
             <TextBlock Classes="data-cell">
                 hello!
             </TextBlock>
 
+            <TextBlock Classes="data-cell data-cell-null">
+                null
+            </TextBlock>
+
+            <TextBlock Classes="data-cell data-cell-key">
+                key
+            </TextBlock>
+
+
             <Expander Header="fatty">
                 
             </Expander>
+
+            <Grid Classes="error">
+                <StackPanel>
+                    <Image Source="/Assets/icons/bat_dead.png"/>
+                    <TextBlock Text="design time error message" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Classes="hyperlink" Text="more..."/>
 
         </StackPanel>
 
     </Design.PreviewWith>
 
-    <!-- Add Styles Here -->
+    <!-- general -->
+
+    <Style Selector="TextBlock.hyperlink">
+        <Setter Property="Foreground" Value="Blue"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Toolbar -->
     
     <Style Selector="StackPanel.toolbar">
         <Setter Property="Orientation" Value="Horizontal"/>
@@ -23,14 +60,16 @@
     </Style>
 
     <Style Selector="StackPanel.toolbar Button">
-        <Setter Property="Padding" Value="5"/>
+        <Setter Property="Padding" Value="6"/>
         <Setter Property="Margin" Value="0,0,5,0"/>
         <Setter Property="Background" Value="Transparent"/>
     </Style>
 
     <Style Selector="StackPanel.toolbar Button Image">
-        <Setter Property="Width" Value="20"/>
+        <Setter Property="Width" Value="26"/>
     </Style>
+
+    <!-- DataGrid -->
 
     <Style Selector="TextBlock.data-cell">
         <Setter Property="FontSize" Value="12"/>
@@ -42,9 +81,30 @@
         <Setter Property="Foreground" Value="Gray"/>
     </Style>
 
-    <Style Selector="Expander">
-        <Setter Property="Padding" Value="0"/>
+    <Style Selector="TextBlock.data-cell-key">
+        <Setter Property="Foreground" Value="Green"/>
+        <Setter Property="FontWeight" Value="Bold"/>
     </Style>
+
+    <!-- error message -->
+
+    <Style Selector="Grid.error">
+        <Setter Property="Background" Value="Black"/>
+    </Style>
+    
+    <Style Selector="Grid.error Image">
+        <Setter Property="Width" Value="40"/>
+    </Style>
+
+    <Style Selector="Grid.error TextBlock.error">
+        <Setter Property="Foreground" Value="Red"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+
+    <!-- Thinner expander -->
+
+    <!-- todo -->
+
 
 
 </Styles>

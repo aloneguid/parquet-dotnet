@@ -25,16 +25,16 @@
                 <Image Source="/Assets/icons/open.png"/>
             </Button>
         </StackPanel>
-        
+
         <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
+        <views:ErrorView DataContext="{Binding}" Grid.Row="1" IsVisible="{Binding HasError}"/>
 
         <Expander VerticalAlignment="Bottom" Grid.Row="2" HorizontalAlignment="Stretch"
-                  MaxHeight="300">
+                  MaxHeight="300" IsVisible="{Binding !HasError}">
             <Expander.Header>Schema</Expander.Header>
             <views:SchemaView DataContext="{Binding Schema}"/>
         </Expander>
 
     </Grid>
-
 
 </UserControl>

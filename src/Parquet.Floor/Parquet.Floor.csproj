@@ -13,6 +13,12 @@
 
 
     <ItemGroup>
+      <None Remove="Assets\icons\bat_dead.png" />
+      <None Remove="Assets\icons\map.png" />
+    </ItemGroup>
+
+
+    <ItemGroup>
         <Compile Include="..\NetBox.cs" Link="NetBox.cs" />
     </ItemGroup>
 
@@ -31,10 +37,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Assets\icons\" />
     </ItemGroup>
 
     <ItemGroup>

@@ -14,10 +14,23 @@ using Parquet.Schema;
 namespace Parquet.Floor.ViewModels;
 
 public partial class MainViewModel : ViewModelBase {
-    public string Greeting => "Welcome to Avalonia!";
+
+    private Stream? _fileStream;
 
     [ObservableProperty]
     private string? _path = "test.parquet";
+
+    [ObservableProperty]
+    private bool _hasError;
+
+    [ObservableProperty]
+    private bool _showErrorDetails;
+
+    [ObservableProperty]
+    private string _errorMessage;
+
+    [ObservableProperty]
+    private string _errorDetails;
 
     public SchemaViewModel Schema { get; } = new SchemaViewModel();
 
@@ -38,6 +51,8 @@ public partial class MainViewModel : ViewModelBase {
 
     private void LoadDesignData() {
         Path = "design.parquet";
+        ErrorMessage = "This is a design-time error message.";
+        ErrorDetails = "This is a design-time error details message.\nLine 2";
     }
 
     public void Load(string path) {
@@ -52,10 +67,24 @@ public partial class MainViewModel : ViewModelBase {
     }
 
     public async Task LoadAsync(Stream fileStream) {
+
+        if(_fileStream != null) {
+            _fileStream.Close();
+            _fileStream.Dispose();
+            _fileStream = null;
+        }
+
+        _fileStream = fileStream;
+
+        HasError = false;
+        ErrorMessage = "";
+        ErrorDetails = "";
+        ShowErrorDetails = false;
+
         try {
-            using ParquetReader reader = await ParquetReader.CreateAsync(fileStream);
+            using ParquetReader reader = await ParquetReader.CreateAsync(_fileStream);
             Schema.InitSchema(reader.Schema);
-            Data.InitReader(fileStream);
+            Data.InitReader(_fileStream);
 
             // dispatch to UI thread
             Dispatcher.UIThread.Invoke(() => {
@@ -63,11 +92,10 @@ public partial class MainViewModel : ViewModelBase {
             });
 
         } catch(Exception ex) {
-            Console.WriteLine(ex);
-        } finally {
-            // fileStream.Close();
+            HasError = true;
+            ErrorMessage = ex.Message;
+            ErrorDetails = ex.ToString();
         }
-
     }
 
 }
