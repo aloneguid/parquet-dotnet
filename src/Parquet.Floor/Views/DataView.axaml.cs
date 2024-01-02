@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;

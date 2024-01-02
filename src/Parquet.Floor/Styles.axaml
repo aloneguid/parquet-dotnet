@@ -47,6 +47,10 @@
 
     <!-- general -->
 
+    <Style Selector="FlyoutPresenter.wider">
+        <Setter Property="MaxWidth" Value="850"/>
+    </Style>
+
     <Style Selector="TextBlock.hyperlink">
         <Setter Property="Foreground" Value="Blue"/>
         <Setter Property="Cursor" Value="Hand"/>

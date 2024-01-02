@@ -15,6 +15,7 @@
     <ItemGroup>
       <None Remove="Assets\icons\bat_dead.png" />
       <None Remove="Assets\icons\map.png" />
+      <None Remove="Assets\icons\trophy.png" />
     </ItemGroup>
 
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Platform.Storage;
 using Parquet.Floor.ViewModels;
 
@@ -16,6 +17,9 @@ public partial class MainView : UserControl {
     public MainViewModel ViewModel => (MainViewModel)DataContext!;
 
     private async void OpenFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+
+        FlyoutBase.ShowAttachedFlyout(this);
+
         // see https://docs.avaloniaui.net/docs/basics/user-interface/file-dialogs
 
         // Get top level from the current control. Alternatively, you can use Window reference instead.

@@ -7,6 +7,7 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
+    
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
@@ -17,24 +18,24 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <StackPanel Classes="toolbar" Grid.Row="0">
             <Button Click="OpenFile_Click">
                 <Image Source="/Assets/icons/open.png"/>
             </Button>
+            <Button>
+                <Button.Flyout>
+                    <Flyout Placement="RightEdgeAlignedTop" Flyout.FlyoutPresenterClasses="wider">
+                        <views:SchemaView DataContext="{Binding Schema}"/>
+                    </Flyout>
+                </Button.Flyout>
+                <Image Source="/Assets/icons/trophy.png"/>
+            </Button>
         </StackPanel>
 
         <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
         <views:ErrorView DataContext="{Binding}" Grid.Row="1" IsVisible="{Binding HasError}"/>
-
-        <Expander VerticalAlignment="Bottom" Grid.Row="2" HorizontalAlignment="Stretch"
-                  MaxHeight="300" IsVisible="{Binding !HasError}">
-            <Expander.Header>Schema</Expander.Header>
-            <views:SchemaView DataContext="{Binding Schema}"/>
-        </Expander>
-
     </Grid>
 
 </UserControl>

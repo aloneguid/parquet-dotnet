@@ -14,7 +14,8 @@
     <DataGrid AutoGenerateColumns="False" x:Name="grid"
               CanUserSortColumns="True"
               CanUserResizeColumns="True"
-              CanUserReorderColumns="True">
+              CanUserReorderColumns="True"
+              IsReadOnly="True">
     </DataGrid>
 
 </UserControl>
