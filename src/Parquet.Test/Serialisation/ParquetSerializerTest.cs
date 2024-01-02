@@ -265,6 +265,22 @@ namespace Parquet.Test.Serialisation {
             await Compare(data);
         }
 
+        [Fact]
+        public async Task Struct_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+                ["FirstName"] = "Joe",
+                ["LastName"] = "Bloggs",
+                ["Address"] = new Dictionary<string, object> {
+                    ["Country"] = "UK",
+                    ["City"] = "Unknown"
+                }
+            }).ToList();
+
+            await DictCompare<AddressBookEntry>(data);
+        }
+
+
         class MovementHistory {
             public int? PersonId { get; set; }
 
@@ -471,7 +487,7 @@ namespace Parquet.Test.Serialisation {
                 }
             }).ToList();
 
-            await DictCompare<IdWithTags>(data, true, writeTestFile: "c:\\tmp\\ds_dict.parquet");
+            await DictCompare<IdWithTags>(data, true);
         }
 
         [Fact]

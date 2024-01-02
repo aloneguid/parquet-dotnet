@@ -198,6 +198,8 @@ namespace Parquet.Serialization.Dremel {
                 case SchemaType.Map:
                     var fmap = (MapField)f;
                     return typeof(IDictionary<,>).MakeGenericType(GetIdealUntypedType(fmap.Key), GetIdealUntypedType(fmap.Value));
+                case SchemaType.Struct:
+                    return typeof(IDictionary<string, object>);
                 default:
                     throw new NotSupportedException($"schema type {f.SchemaType} is not supported");
             }
