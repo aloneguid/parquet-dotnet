@@ -1,19 +1,17 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Design.PreviewWith>
-        <Grid>
-            <StackPanel Classes="toolbar">
-                <Button>
-                    <Image Source="/Assets/icons/open.png"/>
-                </Button>
-                <Button>
-                    <Image Source="/Assets/icons/open.png"/>
-                </Button>
-                <Button>
-                    <Image Source="/Assets/icons/open.png"/>
-                </Button>
-            </StackPanel>
-        </Grid>
+        <StackPanel>
+
+            <TextBlock Classes="data-cell">
+                hello!
+            </TextBlock>
+
+            <Expander Header="fatty">
+                
+            </Expander>
+
+        </StackPanel>
 
     </Design.PreviewWith>
 
@@ -21,7 +19,7 @@
     
     <Style Selector="StackPanel.toolbar">
         <Setter Property="Orientation" Value="Horizontal"/>
-        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="Margin" Value="0,0,0,0"/>
     </Style>
 
     <Style Selector="StackPanel.toolbar Button">
@@ -36,22 +34,17 @@
 
     <Style Selector="TextBlock.data-cell">
         <Setter Property="FontSize" Value="12"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="2"/>
     </Style>
 
-    <Style Selector="TextBlock.data-null">
-        <Setter Property="FontSize" Value="12"/>
+    <Style Selector="TextBlock.data-cell-null">
+        <Setter Property="Foreground" Value="Gray"/>
+    </Style>
+
+    <Style Selector="Expander">
+        <Setter Property="Padding" Value="0"/>
     </Style>
 
 
-
-    <Style Selector="StackPanel.entry TextBlock">
-        <Setter Property="FontFamily" Value="SegoeUI"/>
-        <Setter Property="FontSize" Value="12"/>
-        <Setter Property="Margin" Value="0,0,10,0"/>
-    </Style>
-
-    <Style Selector="TextBlock.link:pointerover">
-        <Setter Property="TextDecorations" Value="Underline"/>
-        <Setter Property="Cursor" Value="Hand"/>
-    </Style>
 </Styles>

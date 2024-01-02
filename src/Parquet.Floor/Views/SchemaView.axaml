@@ -11,5 +11,7 @@
         <vm:SchemaViewModel />
     </Design.DataContext>
 
-    <TreeDataGrid Source="{Binding FieldsTreeSource}"/>
+    <TreeDataGrid
+        Source="{Binding FieldsTreeSource}"
+        FontFamily="Inter" FontSize="12"/>
 </UserControl>

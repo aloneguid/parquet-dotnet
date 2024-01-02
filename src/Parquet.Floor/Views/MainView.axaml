@@ -17,6 +17,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <StackPanel Classes="toolbar" Grid.Row="0">
@@ -27,7 +28,8 @@
         
         <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
 
-        <Expander VerticalAlignment="Bottom" Grid.Row="1" HorizontalAlignment="Stretch">
+        <Expander VerticalAlignment="Bottom" Grid.Row="2" HorizontalAlignment="Stretch"
+                  MaxHeight="300">
             <Expander.Header>Schema</Expander.Header>
             <views:SchemaView DataContext="{Binding Schema}"/>
         </Expander>
