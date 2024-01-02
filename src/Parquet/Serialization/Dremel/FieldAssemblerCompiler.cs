@@ -222,6 +222,8 @@ namespace Parquet.Serialization.Dremel {
                     return typeof(IDictionary<,>).MakeGenericType(GetIdealUntypedType(fmap.Key), GetIdealUntypedType(fmap.Value));
                 case SchemaType.Struct:
                     return typeof(Dictionary<string, object>);
+                case SchemaType.List:
+                    return typeof(List<>).MakeGenericType(GetIdealUntypedType(((ListField)f).Item));
                 default:
                     throw new NotSupportedException($"schema type {f.SchemaType} is not supported");
             }
@@ -302,7 +304,7 @@ namespace Parquet.Serialization.Dremel {
 
                 if(isAtomic) {
                     // add element to collection - end here
-                    leafExpr = Expression.Call(classProperty.Accessor,
+                    leafExpr = Expression.Call(Expression.Convert(classProperty.Accessor, classProperty.Type),
                         classProperty.Type.GetMethod(nameof(IList.Add))!,
                         Expression.Convert(_dataElementVar, levelPropertyElementType));
 

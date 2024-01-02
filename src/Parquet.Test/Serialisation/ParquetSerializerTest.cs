@@ -380,6 +380,17 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public async Task List_Atomics_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+                ["PersonId"] = i,
+                ["ParentIds"] = Enumerable.Range(i, 4).ToList()
+            }).ToList();
+
+            await DictCompare<MovementHistoryCompressed>(data);
+        }
+
+        [Fact]
         public async Task List_Atomics_Empty_Serde() {
 
             var data = new List<MovementHistoryCompressed> {
