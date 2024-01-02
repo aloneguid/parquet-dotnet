@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Parquet.Floor.Desktop": {
+      "commandName": "Project",
+      "commandLineArgs": "c:\\tmp\\pweb.parquet"
+    }
+  }
+}
