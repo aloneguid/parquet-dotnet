@@ -41,9 +41,33 @@
 
             <TextBlock Classes="hyperlink" Text="more..."/>
 
+            <StackPanel Orientation="Horizontal" Classes="status-bar">
+                <TextBlock Text="12121" Classes="data"/>
+                <TextBlock Text="|" Classes="sep"/>
+                <TextBlock Text="7" Classes="data"/>
+            </StackPanel>
+            
         </StackPanel>
 
     </Design.PreviewWith>
+
+    <!-- status bar -->
+
+    <Style Selector="StackPanel.status-bar">
+        <Setter Property="Margin" Value="3"/>
+    </Style>
+
+    <Style Selector="StackPanel.status-bar TextBlock.data">
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="15"/>
+    </Style>
+
+    <Style Selector="StackPanel.status-bar TextBlock.sep">
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Opacity" Value="0.8"/>
+        <Setter Property="Padding" Value="9,4,9,0"/>
+    </Style>
+
 
     <!-- general -->
 
@@ -54,6 +78,7 @@
     <Style Selector="TextBlock.hyperlink">
         <Setter Property="Foreground" Value="Blue"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontStyle" Value="Italic"/>
     </Style>
 
     <!-- Toolbar -->

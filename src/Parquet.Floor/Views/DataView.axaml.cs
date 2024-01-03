@@ -40,14 +40,14 @@ namespace Parquet.Floor.Views {
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
             Dispatcher.UIThread.Invoke(() => {
 
-                if(ViewModel == null || ViewModel.Schema == null)
+                if(ViewModel == null || ViewModel.File?.Schema == null)
                     return;
 
-                if(e.PropertyName == nameof(DataViewModel.Schema)) {
+                if(e.PropertyName == nameof(DataViewModel.File)) {
                     // copy the columns over, as DataGrid.Columns does not support binding
 
                     grid.Columns.Clear();
-                    IEnumerable<DataGridColumn>? columns = BuildColumns(ViewModel.Schema);
+                    IEnumerable<DataGridColumn>? columns = BuildColumns(ViewModel.File.Schema);
 
                     if(columns != null) {
                         foreach(DataGridColumn c in columns) {

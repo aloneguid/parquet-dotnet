@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Parquet.Floor.Views;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Parquet.Meta;
 
 namespace Parquet.Floor.ViewModels;
 
@@ -21,7 +22,7 @@ public class CellModel {
 public partial class DataViewModel : ViewModelBase {
 
     [ObservableProperty]
-    private ParquetSchema? _schema;
+    private FileViewModel? _file;
 
     [ObservableProperty]
     private IList<Dictionary<string, object>>? _data;
@@ -29,15 +30,17 @@ public partial class DataViewModel : ViewModelBase {
     public DataViewModel() {
 #if DEBUG
         if(Design.IsDesignMode) {
-            Schema = DesignData.Schema;
             Data = DesignData.Data;
+            File = new FileViewModel {
+                RowCount = 1012,
+                RowGroupCount = 3
+            };
         }
 #endif
     }
 
     public async Task InitReaderAsync(Stream fileStream) {
         ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(fileStream);
-        Schema = fd.Schema;
         Data = fd.Data;
     }
 }

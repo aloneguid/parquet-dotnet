@@ -11,13 +11,26 @@
         <vm:DataViewModel />
     </Design.DataContext>
 
-    <DataGrid AutoGenerateColumns="False" x:Name="grid"
-              CanUserSortColumns="True"
-              CanUserResizeColumns="True"
-              CanUserReorderColumns="True"
-              GridLinesVisibility="Horizontal"
-              IsReadOnly="True"
-              ItemsSource="{Binding Data}">
-    </DataGrid>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <DataGrid AutoGenerateColumns="False" x:Name="grid"
+                  CanUserSortColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserReorderColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding Data}">
+        </DataGrid>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Classes="status-bar">
+            <TextBlock Text="{Binding File.RowCount}" Classes="data" ToolTip.Tip="Total row count"/>
+            <TextBlock Text="|" Classes="sep"/>
+            <TextBlock Text="{Binding File.RowGroupCount}" Classes="data" ToolTip.Tip="Row group count"/>
+        </StackPanel>
+    </Grid>
 
 </UserControl>

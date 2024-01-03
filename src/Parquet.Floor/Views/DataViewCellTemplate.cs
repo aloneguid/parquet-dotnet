@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
@@ -24,7 +25,7 @@ namespace Parquet.Floor.Views {
         }
 
         public Control? Build(object? param) {
-            return Build(param, _field);
+            return Build(param, _field, 0);
         }
 
         /// <summary>
@@ -52,13 +53,36 @@ namespace Parquet.Floor.Views {
             return r;
         }
 
-        public static Control BuildValue(object? value, Field f, string? extraClassName = null) {
+        public static Control BuildValue(object? value, Field f, int depth, string? extraClassName = null, bool forceData = false) {
             if(value == null) {
                 return CreateNullTextBlock();
             }
 
-            if(f.SchemaType == SchemaType.Data) {
+            if(forceData || f.SchemaType == SchemaType.Data) {
                 return CreateTextBlock(value.ToString()!, extraClassName);
+            } else if(f.SchemaType == SchemaType.Struct) {
+                var sp = new StackPanel {
+                    Orientation = Orientation.Vertical
+                };
+
+                var structField = (StructField)f;
+                if(value is IDictionary<string, object> valueDictionary) {
+                    foreach(Field field in structField.Fields) {
+
+                        var vsp = new StackPanel {
+                            Orientation = Orientation.Horizontal
+                        };
+                        sp.Children.Add(vsp);
+
+                        vsp.Children.Add(BuildValue(field.Name, field, depth, DataCellKeyClassName, forceData = true));
+                        //vsp.Children.Add(CreateTextBlock(": "));
+
+                        valueDictionary.TryGetValue(field.Name, out object? fieldValue);
+                        vsp.Children.Add(BuildValue(fieldValue, field, depth + 1));
+                    }
+                }
+
+                return sp;
             } else if(f.SchemaType == SchemaType.Map) {
                 var sp = new StackPanel {
                     Orientation = Orientation.Vertical
@@ -74,9 +98,9 @@ namespace Parquet.Floor.Views {
                         };
                         sp.Children.Add(vsp);
 
-                        vsp.Children.Add(BuildValue(entry.Key, mapField.Key, DataCellKeyClassName));
-                        vsp.Children.Add(CreateTextBlock(": "));
-                        vsp.Children.Add(BuildValue(entry.Value, mapField.Value));
+                        vsp.Children.Add(BuildValue(entry.Key, mapField.Key, depth, DataCellKeyClassName));
+                        //vsp.Children.Add(CreateTextBlock(": "));
+                        vsp.Children.Add(BuildValue(entry.Value, mapField.Value, depth + 1));
                     }
                 }
 
@@ -86,7 +110,7 @@ namespace Parquet.Floor.Views {
             return new Control();
         }
 
-        public static Control Build(object? param, Field f) {
+        public static Control Build(object? param, Field f, int depth) {
 
             object? value = null;
 
@@ -98,39 +122,7 @@ namespace Parquet.Floor.Views {
                 }
             }
 
-            return BuildValue(value, f);
-
-
-            /*if(f.SchemaType == SchemaType.Map) {
-                var sp = new StackPanel {
-                    Orientation = Orientation.Vertical
-                };
-
-                var mapField = (MapField)f;
-
-                if(param is Dictionary<string, object> row) {
-                    if(row.TryGetValue(f.Name, out object? value)) {
-
-                        if(value is IDictionary valueDictionary) {
-                            foreach(DictionaryEntry entry in valueDictionary) {
-
-                                var vsp = new StackPanel {
-                                    Orientation = Orientation.Horizontal
-                                };
-                                sp.Children.Add(vsp);
-
-                                vsp.Children.Add(Build(entry.Key, mapField.Key));
-                                vsp.Children.Add(new TextBlock { Text = " -> "});
-                            }
-                        }
-
-
-                    }
-                }
-
-
-                return sp;
-            }*/
+            return BuildValue(value, f, depth);
         }
 
         public bool Match(object? data) => true;

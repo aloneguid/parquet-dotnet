@@ -19,7 +19,7 @@ public partial class MainViewModel : ViewModelBase {
     private Stream? _fileStream;
 
     [ObservableProperty]
-    private string? _path = "test.parquet";
+    private FileViewModel? _file;
 
     [ObservableProperty]
     private bool _hasError;
@@ -28,10 +28,10 @@ public partial class MainViewModel : ViewModelBase {
     private bool _showErrorDetails;
 
     [ObservableProperty]
-    private string _errorMessage;
+    private string? _errorMessage;
 
     [ObservableProperty]
-    private string _errorDetails;
+    private string? _errorDetails;
 
     public SchemaViewModel Schema { get; } = new SchemaViewModel();
 
@@ -44,14 +44,15 @@ public partial class MainViewModel : ViewModelBase {
             LoadDesignData();
         } else {
             if(args.Length > 1) {
-                Path = args[1];
-                LoadFromFile(Path);
+                LoadFromFile(args[1]);
             }
         }
     }
 
     private void LoadDesignData() {
-        Path = "design.parquet";
+        File = new FileViewModel {
+            Path = "design.parquet"
+        };
         ErrorMessage = "This is a design-time error message.";
         ErrorDetails = "This is a design-time error details message.\nLine 2";
     }
@@ -78,19 +79,23 @@ public partial class MainViewModel : ViewModelBase {
         _fileStream = fileStream;
 
         HasError = false;
-        ErrorMessage = "";
-        ErrorDetails = "";
+        ErrorMessage = null;
+        ErrorDetails = null;
         ShowErrorDetails = false;
 
         try {
-            using ParquetReader reader = await ParquetReader.CreateAsync(_fileStream);
-            Schema.InitSchema(reader.Schema);
+            using(ParquetReader reader = await ParquetReader.CreateAsync(_fileStream)) {
+                File = new FileViewModel {
+                    Schema = reader.Schema,
+                    CustomMetadata = reader.CustomMetadata,
+                    RowGroupCount = reader.RowGroupCount,
+                    Metadata = reader.Metadata,
+                    RowCount = reader.Metadata?.NumRows ?? 0
+                };
+            }
+            Schema.InitSchema(File.Schema);
+            Data.File = File;
             await Data.InitReaderAsync(_fileStream);
-
-            // dispatch to UI thread
-            Dispatcher.UIThread.Invoke(() => {
-                // todo
-            });
 
         } catch(Exception ex) {
             HasError = true;
