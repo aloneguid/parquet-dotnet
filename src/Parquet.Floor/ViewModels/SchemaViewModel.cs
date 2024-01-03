@@ -21,19 +21,11 @@ public partial class SchemaViewModel : ViewModelBase {
     private HierarchicalTreeDataGridSource<FieldModel>? _fieldsTreeSource;
 
     public SchemaViewModel() {
+#if DEBUG
         if(Design.IsDesignMode) {
-            InitSchema(new ParquetSchema(
-            new DataField<int>("id"),
-                new DataField<string>("name"),
-                new StructField("address",
-            new DataField<string>("street"),
-                    new DataField<string>("city"),
-                    new DataField<string>("state"),
-                    new DataField<string>("zip"),
-                    new DataField<string>("phone"),
-                    new DataField<string>("email"),
-                    new DataField<string>("web"))));
+            InitSchema(DesignData.Schema);
         }
+#endif
     }
 
     public void InitSchema(ParquetSchema? schema) {

@@ -15,7 +15,9 @@
               CanUserSortColumns="True"
               CanUserResizeColumns="True"
               CanUserReorderColumns="True"
-              IsReadOnly="True">
+              GridLinesVisibility="Horizontal"
+              IsReadOnly="True"
+              ItemsSource="{Binding Data}">
     </DataGrid>
 
 </UserControl>

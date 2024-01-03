@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
@@ -44,7 +45,7 @@ public partial class MainViewModel : ViewModelBase {
         } else {
             if(args.Length > 1) {
                 Path = args[1];
-                Load(Path);
+                LoadFromFile(Path);
             }
         }
     }
@@ -55,18 +56,18 @@ public partial class MainViewModel : ViewModelBase {
         ErrorDetails = "This is a design-time error details message.\nLine 2";
     }
 
-    public void Load(string path) {
-        Task.Run(() => LoadAsync(path));
+    public void LoadFromFile(string path) {
+        Task.Run(() => LoadFromFileAsync(path));
     }
 
-    private async Task LoadAsync(string path) {
+    private async Task LoadFromFileAsync(string path) {
         if(!System.IO.File.Exists(path))
             return;
 
         await LoadAsync(System.IO.File.OpenRead(path));
     }
 
-    public async Task LoadAsync(Stream fileStream) {
+    private async Task LoadAsync(Stream fileStream) {
 
         if(_fileStream != null) {
             _fileStream.Close();
@@ -84,7 +85,7 @@ public partial class MainViewModel : ViewModelBase {
         try {
             using ParquetReader reader = await ParquetReader.CreateAsync(_fileStream);
             Schema.InitSchema(reader.Schema);
-            Data.InitReader(_fileStream);
+            await Data.InitReaderAsync(_fileStream);
 
             // dispatch to UI thread
             Dispatcher.UIThread.Invoke(() => {

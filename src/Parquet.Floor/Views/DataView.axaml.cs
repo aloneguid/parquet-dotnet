@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Controls.Templates;
 using Avalonia.Data;
-using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Threading;
 using Parquet.Floor.ViewModels;
 using Parquet.Schema;
@@ -14,14 +12,29 @@ namespace Parquet.Floor.Views {
     public partial class DataView : UserControl {
         public DataView() {
             InitializeComponent();
-
-
         }
 
-        protected override void OnDataContextChanged(EventArgs e) {
-            base.OnDataContextChanged(e);
+        public DataViewModel? ViewModel => DataContext as DataViewModel;
 
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+
+        protected override void OnDataContextChanged(EventArgs e) {
+
+            if(ViewModel != null) { 
+                ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            }
+
+            base.OnDataContextChanged(e);
+        }
+
+        private IEnumerable<DataGridColumn>? BuildColumns(ParquetSchema schema) {
+            // build columns
+
+            return schema == null
+                ? null
+                : schema.Fields.Select(f => new DataGridTemplateColumn {
+                    Header = f.Name,
+                    CellTemplate = new DataViewCellTemplate(f)
+                }).Cast<DataGridColumn>().ToList();
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
@@ -31,24 +44,19 @@ namespace Parquet.Floor.Views {
                     return;
 
                 if(e.PropertyName == nameof(DataViewModel.Schema)) {
-                    // build columns
+                    // copy the columns over, as DataGrid.Columns does not support binding
 
                     grid.Columns.Clear();
+                    IEnumerable<DataGridColumn>? columns = BuildColumns(ViewModel.Schema);
 
-                    foreach(Field f in ViewModel.Schema.Fields) {
-                        grid.Columns.Add(new DataGridTemplateColumn {
-                            Header = f.Name,
-                            CellTemplate = new DataViewCellTemplate(f)
-                        });
+                    if(columns != null) {
+                        foreach(DataGridColumn c in columns) {
+                            grid.Columns.Add(c);
+                        }
                     }
-                } else if(e.PropertyName == nameof(DataViewModel.Data)) {
-                    // build rows
-
-                    grid.ItemsSource = ViewModel.Data;
-                }
+                } 
             });
         }
 
-        public DataViewModel ViewModel => (DataViewModel)DataContext!;
     }
 }

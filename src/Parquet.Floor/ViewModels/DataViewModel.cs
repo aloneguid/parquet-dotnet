@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Parquet.Serialization;
 using Parquet.Schema;
+using Avalonia.Controls;
+using Parquet.Floor.Views;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Parquet.Floor.ViewModels;
 
@@ -20,19 +24,20 @@ public partial class DataViewModel : ViewModelBase {
     private ParquetSchema? _schema;
 
     [ObservableProperty]
-    private IList<Dictionary<string, object>> _data;
+    private IList<Dictionary<string, object>>? _data;
 
-    public void InitReader(Stream fileStream) {
-        Task.Run(async () => {
-            try {
-                ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(fileStream);
-                Schema = fd.Schema;
-                Data = fd.Data;
+    public DataViewModel() {
+#if DEBUG
+        if(Design.IsDesignMode) {
+            Schema = DesignData.Schema;
+            Data = DesignData.Data;
+        }
+#endif
+    }
 
-            } catch(Exception ex) {
-                Console.WriteLine(ex);
-            }
-
-        });
+    public async Task InitReaderAsync(Stream fileStream) {
+        ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(fileStream);
+        Schema = fd.Schema;
+        Data = fd.Data;
     }
 }

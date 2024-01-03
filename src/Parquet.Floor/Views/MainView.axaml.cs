@@ -33,7 +33,7 @@ public partial class MainView : UserControl {
         });
 
         if(files.Count >= 1) {
-            ViewModel.LoadAsync(fileStream: await files[0].OpenReadAsync()).Forget();
+            ViewModel.LoadFromFile(files[0].Path.LocalPath);
         }
     }
 }
