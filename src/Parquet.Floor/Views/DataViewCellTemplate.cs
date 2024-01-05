@@ -59,7 +59,9 @@ namespace Parquet.Floor.Views {
             }
 
             if(forceData || f.SchemaType == SchemaType.Data) {
-                return CreateTextBlock(value.ToString()!, extraClassName);
+                TextBlock tb = CreateTextBlock(value.ToString()!, extraClassName);
+                tb.HorizontalAlignment = f is DataField df && df.ClrType == typeof(string) ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+                return tb;
             } else if(f.SchemaType == SchemaType.Struct) {
                 var sp = new StackPanel {
                     Orientation = Orientation.Vertical
@@ -104,6 +106,17 @@ namespace Parquet.Floor.Views {
                     }
                 }
 
+                return sp;
+            } else if(f.SchemaType == SchemaType.List) {
+                var sp = new StackPanel {
+                    Orientation = Orientation.Vertical
+                };
+                var listField = (ListField)f;
+                if(value is IEnumerable valueList) {
+                    foreach(object? entry in valueList) {
+                        sp.Children.Add(BuildValue(entry, listField.Item, depth + 1));
+                    }
+                }
                 return sp;
             }
 

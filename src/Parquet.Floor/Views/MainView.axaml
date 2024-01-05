@@ -20,13 +20,15 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- for icons see https://www.iconfinder.com/iconsets/bitsies -->
         <StackPanel Classes="toolbar" Grid.Row="0">
             <Button Click="OpenFile_Click" ToolTip.Tip="Open file from disk...">
                 <Image Source="/Assets/icons/open.png"/>
             </Button>
             <Button ToolTip.Tip="Show detailed schema...">
                 <Button.Flyout>
-                    <Flyout Placement="RightEdgeAlignedTop" Flyout.FlyoutPresenterClasses="wider">
+                    <Flyout Placement="RightEdgeAlignedTop"
+                            Flyout.FlyoutPresenterClasses="wider">
                         <views:SchemaView DataContext="{Binding Schema}"/>
                     </Flyout>
                 </Button.Flyout>

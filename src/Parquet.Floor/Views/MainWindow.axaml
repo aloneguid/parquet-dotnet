@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:Parquet.Floor.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Parquet.Floor.Views.MainWindow"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/icon.ico"
         Title="Floor">
         <views:MainView />
 </Window>
