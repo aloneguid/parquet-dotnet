@@ -1,3 +1,16 @@
+## 4.19.0
+
+### Improvements
+
+- Pre-allocate result list capacity when serializing by @Arithmomaniac in #444.
+
+### Experimental features
+
+1. This release has [experimental API for a new "dictionary serializer"](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) (name might change) to get you a taste of the future before row API will be deprecated in a very far future.
+2. Codebase also includes an experimental cross-platform desktop application written in Avalonia to view parquet files. It's in very early stages but works for basic use cases. Avalonia app was included in the solution because it does not require any IDE add-ons, SDKs and so on and just builds with stock .NET 8 SDK. In the future the app will be pre-built for Linux, Windows (and possibly Mac with community help) and included in the build artifacts.
+
+Looking forward to your thoughts!
+
 ## 4.18.1
 
 Critical bug fix: reverting #423 as it introducing some side effects that prevent from generating correct files.
