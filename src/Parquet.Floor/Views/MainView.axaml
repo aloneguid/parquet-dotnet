@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
+             xmlns:views="clr-namespace:Parquet.Floor.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Parquet.Floor.Views.MainView"
+             x:DataType="vm:MainViewModel">
+    
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- for icons see https://www.iconfinder.com/iconsets/bitsies -->
+        <StackPanel Classes="toolbar" Grid.Row="0">
+            <Button Click="OpenFile_Click" ToolTip.Tip="Open file from disk...">
+                <Image Source="/Assets/icons/open.png"/>
+            </Button>
+            <Button ToolTip.Tip="Show detailed schema...">
+                <Button.Flyout>
+                    <Flyout Placement="RightEdgeAlignedTop"
+                            Flyout.FlyoutPresenterClasses="wider">
+                        <views:SchemaView DataContext="{Binding Schema}"/>
+                    </Flyout>
+                </Button.Flyout>
+                <Image Source="/Assets/icons/trophy.png"/>
+            </Button>
+        </StackPanel>
+
+        <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
+        <views:ErrorView DataContext="{Binding}" Grid.Row="1" IsVisible="{Binding HasError}"/>
+    </Grid>
+
+</UserControl>

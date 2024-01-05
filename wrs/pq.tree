@@ -18,6 +18,7 @@
     </toc-element>
     <toc-element topic="encodings.md"/>
     <toc-element topic="rows.md"/>
+    <toc-element topic="untyped-serializer.md"/>
     <toc-element topic="dataframe.md"/>
     <toc-element topic="parquet-getting-started.md"/>
     <toc-element topic="contributing.md"/>

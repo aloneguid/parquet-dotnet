@@ -3,7 +3,9 @@ name: 'Build'
 env:
   VERSION: 4.18.1
   ASM_VERSION: 4.0.0
+  DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelp-all.zip
+  DOC_DOCKER_VERSION: 232.10275
 
 # Gives the workflow permissions to clone the repo and create a page deployment
 permissions:
@@ -82,16 +84,18 @@ jobs:
         name: bin
         path: artifacts/*
 
-  writerside-build:
+  wrs-build:
     runs-on: ubuntu-latest
-    name: 'Build Docs'
-    env:
-      PRODUCT: Writerside/pq
+    name: 'Build Writerside Docs'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Build Writerside docs using Docker
-        uses: JetBrains/writerside-github-action@v3
+      - name: Build Writerside docs
+        uses: JetBrains/writerside-github-action@v4
+        with:
+          instance: ${{ env.DOC_INSTANCE }}
+          artifact: ${{ env.DOC_INSTANCE }}
+          docker-version: ${{ env.DOC_DOCKER_VERSION }}
       - name: Upload documentation
         uses: actions/upload-artifact@v3
         with:

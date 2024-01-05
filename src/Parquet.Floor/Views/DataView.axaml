@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
+             xmlns:pqs="clr-namespace:Parquet.Schema;assembly=Parquet"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Parquet.Floor.Views.DataView"
+             x:DataType="vm:DataViewModel">
+    <Design.DataContext>
+        <vm:DataViewModel />
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <DataGrid AutoGenerateColumns="False" x:Name="grid"
+                  CanUserSortColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserReorderColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding Data}">
+        </DataGrid>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Classes="status-bar">
+            <TextBlock Text="{Binding File.RowCount}" Classes="data" ToolTip.Tip="Total row count"/>
+            <TextBlock Text="|" Classes="sep"/>
+            <TextBlock Text="{Binding File.RowGroupCount}" Classes="data" ToolTip.Tip="Row group count"/>
+        </StackPanel>
+    </Grid>
+
+</UserControl>

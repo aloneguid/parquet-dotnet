@@ -1,6 +1,12 @@
 ﻿using System.Collections.Generic;
 
 namespace Parquet.Serialization.Dremel {
+    
+    /// <summary>
+    /// This is a dictionary that allows for the values and keys to be set independently.
+    /// It is used by the record assembler, because internally keys and values collections are stored separately inside
+    /// the parquet file, therefore there is no other way to re-assemble them into a native data structure.
+    /// </summary>
     class ParquetDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IList<ParquetDictionary<TKey, TValue>.ParquetDictionaryElement>
         where TKey : notnull {
 

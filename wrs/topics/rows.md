@@ -1,5 +1,10 @@
 # Row Based Access
 
+<warning>
+Row based access is a legacy API that is not recommended for use in new projects. It is kept for backwards compatibility with older projects.
+If you would like a sneak peek into the future, please consider using <a href="untyped-serializer.md">Untyped Serializer</a> instead. Otherwise, resort to class serializer or low-level API if you can.
+</warning>
+
 Parquet, of course, is columnar format, and doesn't store data in rows. However, sometimes accessing data in a row-wise fashion is essential in processing algorithms and to display to a user. We as humans better understand rows rather than columns.
 
 Parquet.Net provides out-of-the-box helpers to represent data in row format, however before using it consider the following:
@@ -29,7 +34,7 @@ classDiagram
 
 ## Row
 
-Row is a central structure to hold data during row-based access. Essentially a row is an array of untyped objects. The fact that the row holds untyped objects *adds a performance penalty on working with rows and tables* throught parquet, because all of the data cells needs to be boxed/unboxed for reading and writing. If you can work with *column-based data* please don't use row-based access at all. However, if you absolutely need row-based access, these helper classes are still better than writing your own helper classes.
+Row is a central structure to hold data during row-based access. Essentially a row is an array of untyped objects. The fact that the row holds untyped objects *adds a performance penalty on working with rows and tables* through parquet, because all the data cells needs to be boxed/unboxed for reading and writing. If you can work with *column-based data* please don't use row-based access at all. However, if you absolutely need row-based access, these helper classes are still better than writing your own helper classes.
 
 **Everything in parquet file can be represented as a set of Rows** including plain flat data, arrays, maps, lists and structures.
 

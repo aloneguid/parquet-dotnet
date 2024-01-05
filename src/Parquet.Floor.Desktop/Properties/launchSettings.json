@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "all_var": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\all_var1.parquet"
+    },
+    "customer": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\dev\\parquet-dotnet\\src\\Parquet.Test\\data\\customer.impala.parquet"
+    }
+  }
+}
