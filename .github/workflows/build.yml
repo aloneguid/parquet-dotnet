@@ -116,7 +116,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         name: upload binary
         with:
-          name: floor-${{ matrix.rid }}-${{ env.v }}
+          name: floor-${{ matrix.rid }}-${{ env.VERSION }}
           path: |
             floor/${{ matrix.rid }}/*
             !floor/${{ matrix.rid }}/*.pdb
