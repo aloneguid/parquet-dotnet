@@ -28,8 +28,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ secrets.GH_PAT }}
-          workflow: build.yml
-          workflow_conclusion: success
+          run_id: ${{ github.event.workflow_run.id }}
 
       - name: 🔍 view artifacts to be used
         run: ls -R
