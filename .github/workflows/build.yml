@@ -103,11 +103,10 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-
-      - name: Buil
+      - name: Build
         run: |
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
-          dotnet publish src/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.v }} /p:FileVersion=${{ env.v }} /p:AssemblyVersion=${{ env.av }} /p:PublishTrimmed=true
+          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.v }} /p:FileVersion=${{ env.v }} /p:AssemblyVersion=${{ env.av }} /p:PublishTrimmed=true
 
       - uses: actions/upload-artifact@v4
         name: upload binary
@@ -130,7 +129,7 @@ jobs:
           artifact: ${{ env.DOC_INSTANCE }}
           docker-version: ${{ env.DOC_DOCKER_VERSION }}
       - name: Upload documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docs
           path: artifacts/*.zip
