@@ -14,7 +14,7 @@ permissions:
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, viewer-take-2 ]
 
   pull_request:
     branches: [ master ]
@@ -23,13 +23,14 @@ on:
 
 jobs:
   test:
+    name: Unit Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
       fail-fast: false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -55,7 +56,9 @@ jobs:
     name: 'Build NuGet'
 
     steps:
-    - run: echo ${{ github.head_ref }}
+    - run: |
+        echo head_ref: ${{ github.head_ref }}
+        echo run id: ${{ github.run_id }}
     - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -65,7 +68,8 @@ jobs:
           6.0.x
           7.0.x
           8.0.x
-    - name: Build
+
+    - name: Build Library
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
@@ -84,12 +88,51 @@ jobs:
         name: bin
         path: artifacts/*
 
+  floor-build:
+    runs-on: ubuntu-latest
+    name: 'Build Floor'
+    strategy:
+      matrix:
+        rid:
+          - linux-x64
+          - win-x64
+          - osx-x64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: Build
+        env:
+          LATEST_NET_ONLY: true
+        run: |
+          envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
+          dotnet restore src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj
+          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
+          mkdir -p floor-dist
+          zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
+
+
+      - uses: actions/upload-artifact@v4
+        name: upload binary
+        with:
+          name: floor-${{ matrix.rid }}
+          path: floor-dist/*.zip
+          if-no-files-found: error
+          compression-level: 9
+
   wrs-build:
     runs-on: ubuntu-latest
-    name: 'Build Writerside Docs'
+    name: Documentation
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build Writerside docs
         uses: JetBrains/writerside-github-action@v4
         with:
@@ -97,7 +140,7 @@ jobs:
           artifact: ${{ env.DOC_INSTANCE }}
           docker-version: ${{ env.DOC_DOCKER_VERSION }}
       - name: Upload documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docs
           path: artifacts/*.zip

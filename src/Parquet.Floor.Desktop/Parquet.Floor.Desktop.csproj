@@ -6,6 +6,10 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AssemblyName>floor</AssemblyName>
+        <PublishTrimmed>true</PublishTrimmed>
+        <PublishSingleFile>true</PublishSingleFile>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <ApplicationIcon>../Parquet.Floor/Assets/icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
