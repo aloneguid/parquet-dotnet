@@ -23,6 +23,7 @@ on:
 
 jobs:
   test:
+    name: Unit Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -101,7 +102,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            3.1.x
+            8.0.x
 
       - name: Build
         run: |
@@ -118,7 +121,7 @@ jobs:
 
   wrs-build:
     runs-on: ubuntu-latest
-    name: 'Build Writerside Docs'
+    name: Documentation
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
