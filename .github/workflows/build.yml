@@ -112,16 +112,18 @@ jobs:
         run: |
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
           dotnet restore src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj
-          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
+          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
           mkdir -p floor-dist
-          zip -9 floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor/${{ matrix.rid }}/* -x floor/${{ matrix.rid }}/*.pdb
+          zip -9 floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x floor-pub/${{ matrix.rid }}/*.pdb
 
 
       - uses: actions/upload-artifact@v4
         name: upload binary
         with:
-          name: floor
+          name: floor-${{ matrix.rid }}
           path: floor-dist/*.zip
+          if-no-files-found: error
+          compression-level: 9
 
   wrs-build:
     runs-on: ubuntu-latest
