@@ -35,7 +35,7 @@ jobs:
         with:
           name: docs
           github-token: ${{ secrets.GH_PAT }}
-          run-id: echo ${{ steps.runid.outputs.run-id }}
+          run-id: ${{ steps.runid.outputs.run-id }}
 
       - name: 🔍 view artifacts to be used
         run: ls -R
