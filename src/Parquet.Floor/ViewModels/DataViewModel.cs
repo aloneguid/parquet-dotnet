@@ -33,7 +33,8 @@ public partial class DataViewModel : ViewModelBase {
             Data = DesignData.Data;
             File = new FileViewModel {
                 RowCount = 1012,
-                RowGroupCount = 3
+                RowGroupCount = 3,
+                CreatedBy = "Parquet.Floor",
             };
         }
 #endif

@@ -30,6 +30,11 @@
             <TextBlock Text="{Binding File.RowCount}" Classes="data" ToolTip.Tip="Total row count"/>
             <TextBlock Text="|" Classes="sep"/>
             <TextBlock Text="{Binding File.RowGroupCount}" Classes="data" ToolTip.Tip="Row group count"/>
+            <TextBlock Text="|" Classes="sep"/>
+            <TextBlock Text="{Binding File.CreatedBy}" Classes="data"
+                       FontSize="10" Padding="0,4,0,0"
+                       FontStyle="Italic"
+                       ToolTip.Tip="Creator of this file"/>
         </StackPanel>
     </Grid>
 

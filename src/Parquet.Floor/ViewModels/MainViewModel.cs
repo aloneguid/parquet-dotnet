@@ -51,7 +51,8 @@ public partial class MainViewModel : ViewModelBase {
 
     private void LoadDesignData() {
         File = new FileViewModel {
-            Path = "design.parquet"
+            Path = "design.parquet",
+            CreatedBy = "Parquet.Floor",
         };
         ErrorMessage = "This is a design-time error message.";
         ErrorDetails = "This is a design-time error details message.\nLine 2";
@@ -89,8 +90,9 @@ public partial class MainViewModel : ViewModelBase {
                     Schema = reader.Schema,
                     CustomMetadata = reader.CustomMetadata,
                     RowGroupCount = reader.RowGroupCount,
-                    Metadata = reader.Metadata,
-                    RowCount = reader.Metadata?.NumRows ?? 0
+                    Metadata = new FileMetaDataViewModel(reader.Metadata),
+                    RowCount = reader.Metadata?.NumRows ?? 0,
+                    CreatedBy = reader.Metadata?.CreatedBy
                 };
             }
             Schema.InitSchema(File.Schema);

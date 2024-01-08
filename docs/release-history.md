@@ -1,3 +1,13 @@
+## 4.21.0
+
+### New features
+
+- **Parquet Floor** can display low-level metadata.
+
+### Fixes
+
+- 
+
 ## 4.20.0
 
 ### New features

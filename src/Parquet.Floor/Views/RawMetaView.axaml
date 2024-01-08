@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="450"
+             xmlns:pqm="clr-namespace:Parquet.Meta;assembly=Parquet"
+             xmlns:views="clr-namespace:Parquet.Floor.Views"
+             xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
+             x:Class="Parquet.Floor.Views.RawMetaView"
+             x:DataType="vm:FileMetaDataViewModel">
+
+    <Design.DataContext>
+        <vm:FileMetaDataViewModel />
+    </Design.DataContext>
+
+    <TreeDataGrid
+        Source="{Binding MetaTreeSource}"
+        FontFamily="Inter" FontSize="12"/>
+    
+</UserControl>

@@ -26,6 +26,9 @@ namespace Parquet.Floor.ViewModels {
         private long _rowCount;
 
         [ObservableProperty]
-        private FileMetaData? _metadata;
+        private string? _createdBy;
+
+        [ObservableProperty]
+        private FileMetaDataViewModel? _metadata;
     }
 }

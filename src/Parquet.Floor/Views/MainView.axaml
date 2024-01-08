@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
              xmlns:views="clr-namespace:Parquet.Floor.Views"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="100"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
     
@@ -32,7 +32,20 @@
                         <views:SchemaView DataContext="{Binding Schema}"/>
                     </Flyout>
                 </Button.Flyout>
-                <Image Source="/Assets/icons/trophy.png"/>
+                <Image Source="/Assets/icons/diagram.png"/>
+            </Button>
+            <Button ToolTip.Tip="Raw file metadata">
+                <Button.Flyout>
+                    <Flyout Placement="RightEdgeAlignedTop"
+                            Flyout.FlyoutPresenterClasses="wider">
+                        <views:RawMetaView DataContext="{Binding File.Metadata}"/>
+                    </Flyout>
+                </Button.Flyout>
+
+                <Image Source="/Assets/icons/raw-extension.png"/>
+            </Button>
+            <Button>
+                <Image Source="/Assets/icons/information.png"/>
             </Button>
         </StackPanel>
 

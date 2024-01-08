@@ -46,10 +46,18 @@
                 <TextBlock Text="|" Classes="sep"/>
                 <TextBlock Text="7" Classes="data"/>
             </StackPanel>
-            
+
+            <StackPanel Classes="meta-property">
+                <TextBlock Text="CreatedBy:"/>
+                <TextBlock Text="parquet-mr fffff"/>
+            </StackPanel>
+
         </StackPanel>
 
+
     </Design.PreviewWith>
+
+    <!-- for reference, see https://docs.avaloniaui.net/docs/reference/styles/style-selector-syntax -->
 
     <!-- status bar -->
 
@@ -134,6 +142,37 @@
 
     <!-- todo -->
 
+    <!-- raw meta -->
+    <Style Selector="StackPanel.raw-meta-section StackPanel">
+        <Setter Property="Margin" Value="4"/>
+
+        <Style Selector="^ TextBlock">
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="^ TextBlock:nth-child(1)">
+            <Setter Property="Foreground" Value="Green"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="0,0,5,0"/>
+        </Style>
+
+    </Style>
+
+    <Style Selector="StackPanel.meta-property">
+        <Setter Property="Orientation" Value="Horizontal"/>
+
+        <Style Selector="^ TextBlock">
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="^ TextBlock:nth-child(1)">
+            <Setter Property="Foreground" Value="Green"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="0,0,5,0"/>
+        </Style>
+    </Style>
 
 
 </Styles>
