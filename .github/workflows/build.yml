@@ -56,7 +56,9 @@ jobs:
     name: 'Build NuGet'
 
     steps:
-    - run: echo ${{ github.head_ref }}
+    - run: |
+        echo head_ref: ${{ github.head_ref }}
+        echo run id: ${{ github.run_id }}
     - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
