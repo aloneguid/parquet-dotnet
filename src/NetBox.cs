@@ -3,7 +3,7 @@
 | \ | | ___| |_| __ )  _____  __
 |  \| |/ _ \ __|  _ \ / _ \ \/ /
 | |\  |  __/ |_| |_) | (_) >  <
-|_| \_|\___|\__|____/ \___/_/\_\   v4.2.2 by @aloneguid
+|_| \_|\___|\__|____/ \___/_/\_\   v4.3.0 by @aloneguid
 
 https://github.com/aloneguid/netbox
 */
@@ -720,7 +720,7 @@ namespace NetBox.Generator {
     /// <summary>
     /// Generates random data using <see cref="RandomNumberGenerator"/> for increased security
     /// </summary>
-    public static class RandomGenerator {
+    static class RandomGenerator {
         private static readonly RandomNumberGenerator Rnd = RandomNumberGenerator.Create();
 
         //get a cryptographically strong double between 0 and 1
@@ -1833,17 +1833,14 @@ namespace System {
 // FILE: src/NetBox/System/StreamExtensions.cs
 
 namespace System {
-    using System.Threading.Tasks;
-    using System.Threading;
     using global::System.Collections.Generic;
     using global::System.IO;
     using global::System.Text;
-    using System.Diagnostics;
 
     /// <summary>
     /// <see cref="Stream"/> extension
     /// </summary>
-    public static class StreamExtensions {
+    static class StreamExtensions {
         #region [ General ]
 
         /// <summary>

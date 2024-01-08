@@ -6,7 +6,7 @@
 
 ### Fixes
 
-- 
+- `NetBox` was exposing some internal types (#451)
 
 ## 4.20.0
 
