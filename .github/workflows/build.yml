@@ -94,6 +94,7 @@ jobs:
         rid:
           - linux-x64
           - win-x64
+          - osx-x64
 
     steps:
       - name: Checkout code

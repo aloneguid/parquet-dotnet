@@ -4,6 +4,6 @@
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup>
-    <ActiveDebugProfile>customer</ActiveDebugProfile>
+    <ActiveDebugProfile>all_var</ActiveDebugProfile>
   </PropertyGroup>
 </Project>
