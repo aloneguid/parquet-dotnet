@@ -87,8 +87,6 @@ In this example of three properties, `OptionalString`will be serialized as optio
 %product% will also expect string to be optional when deserializing from a file. If you have a required string in your file, you will get an exception until you add <code>[ParquetRequired]</code> attribute to the relevant class property.  
 </note>
 
-
-
 ### Dates
 
 By default, dates (`DateTime`) are serialized as `INT96` number, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet, however older systems such as Impala and Hive are still actively using it to represent dates.
@@ -101,6 +99,17 @@ If you need to rather use a normal non-legacy date type, just annotate a propert
 [ParquetTimestamp]
 public DateTime TimestampDate { get; set; }
 ```
+
+which by default serialises date with millisecond precision. If you need to increase precision, you can use `[ParquetTimestamp]` attribute with an appropriate precision:
+
+```C#
+[ParquetTimestamp(ParquetTimestampResolution.Microseconds)]
+public DateTime TimestampDate { get; set; }
+```
+
+<warning>
+Storing dates with microseconds precision relies on .NET <code>DateTime</code> type, which can only store microseconds starting from .NET 7. 
+</warning>
 
 ### Times
 
