@@ -9,6 +9,7 @@
         <PublishTrimmed>true</PublishTrimmed>
         <PublishSingleFile>true</PublishSingleFile>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <ApplicationIcon>../Parquet.Floor/Assets/icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
