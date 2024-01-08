@@ -30,14 +30,12 @@ jobs:
             | jq '.workflow_runs[0].id')
           echo "::set-output name=run-id::$run_id"
 
-      - run: echo ${{ steps.runid.outputs.run-id }}
-
       - name: ⬇️ Download last artifacts from build.yml
         uses: actions/download-artifact@v4
         with:
           name: docs
           github-token: ${{ secrets.GH_PAT }}
-          run-id: todo
+          run-id: echo ${{ steps.runid.outputs.run-id }}
 
       - name: 🔍 view artifacts to be used
         run: ls -R
