@@ -287,11 +287,6 @@ namespace Parquet.Test.Serialisation {
             [ParquetTimestamp]
             public DateTime TimestampDate { get; set; }
 
-#if NET7_0_OR_GREATER
-            [ParquetTimestamp(ParquetTimestampResolution.Microseconds)]
-            public DateTime TimestampMicrosDate { get; set; }
-#endif
-
             public TimeSpan DefaultTime { get; set; }
 
             [ParquetMicroSecondsTime]
@@ -304,6 +299,11 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeOnly MicroTimeOnly { get; set; }
+#endif
+
+#if NET7_0_OR_GREATER
+            [ParquetTimestamp(ParquetTimestampResolution.Microseconds)]
+            public DateTime TimestampMicrosDate { get; set; }
 #endif
         }
 
