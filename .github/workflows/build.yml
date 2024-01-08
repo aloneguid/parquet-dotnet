@@ -106,9 +106,11 @@ jobs:
             8.0.x
 
       - name: Build
+        env:
+          LATEST_NET_ONLY: true
         run: |
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
-          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.v }} /p:FileVersion=${{ env.v }} /p:AssemblyVersion=${{ env.av }} /p:PublishTrimmed=false
+          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }} /p:PublishTrimmed=true
 
       - uses: actions/upload-artifact@v4
         name: upload binary
