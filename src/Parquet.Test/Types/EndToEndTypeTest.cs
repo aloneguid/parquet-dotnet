@@ -39,7 +39,10 @@ namespace Parquet.Test.Types {
                //Actual:   2017-07-12T10:58:44.3770000+00:00
                ["dateTime"] = (new DataField<DateTime>("dateTime"), DateTime.UtcNow.RoundToSecond()),
                ["impala date"] = (new DateTimeDataField("dateImpala", DateTimeFormat.Impala), DateTime.UtcNow.RoundToSecond()),
-               ["dateDateAndTime"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTime), DateTime.UtcNow.RoundToSecond()),
+               ["dateDateAndTimeMillis"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTime), DateTime.UtcNow.RoundToMillisecond()),
+#if NET7_0_OR_GREATER
+               ["dateDateAndTimeMicros"] = (new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTimeMicros), DateTime.UtcNow.RoundToMicrosecond()),
+#endif
                ["dateTime unknown kind"] = (new DataField<DateTime>("dateTime unknown kind"), new DateTime(2020, 06, 10, 11, 12, 13)),
                ["impala date unknown kind"] = (new DateTimeDataField("dateImpala unknown kind", DateTimeFormat.Impala), new DateTime(2020, 06, 10, 11, 12, 13)),
                ["dateDateAndTime unknown kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13)),
@@ -111,7 +114,10 @@ namespace Parquet.Test.Types {
 
         [InlineData("dateTime")]
         [InlineData("impala date")]
-        [InlineData("dateDateAndTime")]
+        [InlineData("dateDateAndTimeMillis")]
+#if NET7_0_OR_GREATER
+        [InlineData("dateDateAndTimeMicros")]
+#endif
         [InlineData("dateTime unknown kind")]
         [InlineData("impala date unknown kind")]
         [InlineData("dateDateAndTime unknown kind")]

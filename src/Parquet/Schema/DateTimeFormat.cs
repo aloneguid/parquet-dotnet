@@ -15,6 +15,13 @@
         /// </summary>
         DateAndTime,
 
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Stores date and time up to microsecond precision as INT64.
+        /// </summary>
+        DateAndTimeMicros,
+#endif
+
         /// <summary>
         /// Only stores a date. Time portion is truncated. Internally stored as INT32
         /// </summary>

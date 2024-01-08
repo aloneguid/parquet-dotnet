@@ -100,6 +100,8 @@ namespace Parquet.Test {
                 data = ms.ToArray();
             }
 
+            System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", data);
+
             using(var ms = new MemoryStream(data)) {
                 // read back single value
 
