@@ -103,15 +103,12 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            3.1.x
-            6.0.x
-            7.0.x
             8.0.x
 
       - name: Build
         run: |
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
-          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.v }} /p:FileVersion=${{ env.v }} /p:AssemblyVersion=${{ env.av }} /p:PublishTrimmed=true
+          dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.v }} /p:FileVersion=${{ env.v }} /p:AssemblyVersion=${{ env.av }} /p:PublishTrimmed=false
 
       - uses: actions/upload-artifact@v4
         name: upload binary
