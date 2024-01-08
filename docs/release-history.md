@@ -1,3 +1,9 @@
+## 4.20.0
+
+### New features
+
+Support Writing Int64 timestamp MICROS unit (#362).
+
 ## 4.19.0
 
 ### Improvements
