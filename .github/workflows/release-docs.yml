@@ -22,28 +22,27 @@ jobs:
     steps:
 
       # download artifacts from build.yml
-
-      
       - name: ⬇️ Download artifacts from latest workflow
         uses: actions/download-artifact@v4
         with:
+          name: docs
           github-token: ${{ secrets.GH_PAT }}
-          run_id: ${{ github.event.workflow_run.id }}
+          run_id: todo
 
       - name: 🔍 view artifacts to be used
         run: ls -R
         working-directory: .
 
-      - name: Unzip artifact
-        uses: montudor/action-zip@v1
-        with:
-          args: unzip -qq docs/${{ env.DOC_ARTIFACT }} -d dir
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: dir
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
+      # - name: Unzip artifact
+      #   uses: montudor/action-zip@v1
+      #   with:
+      #     args: unzip -qq docs/${{ env.DOC_ARTIFACT }} -d dir
+      # - name: Setup Pages
+      #   uses: actions/configure-pages@v2
+      # - name: Upload artifact
+      #   uses: actions/upload-pages-artifact@v1
+      #   with:
+      #     path: dir
+      # - name: Deploy to GitHub Pages
+      #   id: deployment
+      #   uses: actions/deploy-pages@v1

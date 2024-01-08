@@ -116,7 +116,7 @@ jobs:
           dotnet restore src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj
           dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
           mkdir -p floor-dist
-          zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x floor-pub/${{ matrix.rid }}/*.pdb -x floor-pub/${{ matrix.rid }}/*.xml
+          zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
 
 
       - uses: actions/upload-artifact@v4
