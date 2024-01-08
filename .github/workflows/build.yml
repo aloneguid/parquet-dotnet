@@ -14,7 +14,7 @@ permissions:
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, viewer-take-2 ]
 
   pull_request:
     branches: [ master ]
@@ -29,7 +29,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
       fail-fast: false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -65,7 +65,8 @@ jobs:
           6.0.x
           7.0.x
           8.0.x
-    - name: Build
+
+    - name: Build Library
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
@@ -84,12 +85,44 @@ jobs:
         name: bin
         path: artifacts/*
 
+  floor-build:
+    runs-on: ubuntu-latest
+    name: 'Build Floor'
+    strategy:
+      matrix:
+        rid:
+          - linux-x64
+          - win-x64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+
+      - name: Buil
+        run: |
+          envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
+          dotnet publish src/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.v }} /p:FileVersion=${{ env.v }} /p:AssemblyVersion=${{ env.av }} /p:PublishTrimmed=true
+
+      - uses: actions/upload-artifact@v4
+        name: upload binary
+        with:
+          name: floor-${{ matrix.rid }}-${{ env.v }}
+          path: |
+            floor/${{ matrix.rid }}/*
+            !floor/${{ matrix.rid }}/*.pdb
+
   wrs-build:
     runs-on: ubuntu-latest
     name: 'Build Writerside Docs'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build Writerside docs
         uses: JetBrains/writerside-github-action@v4
         with:
