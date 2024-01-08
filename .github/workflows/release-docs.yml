@@ -34,7 +34,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          github-token: ${{ secrets.GH_PAT }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ steps.runid.outputs.run-id }}
 
       - name: 🔍 view artifacts to be used
