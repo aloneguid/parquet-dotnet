@@ -21,13 +21,23 @@ jobs:
 
     steps:
 
-      # download artifacts from build.yml
-      - name: ⬇️ Download artifacts from latest workflow
+      - name: Get latest run ID
+        id: runid
+        run: |
+          run_id=$(curl --request GET \
+            --url https://api.github.com/repos/${{ github.repository }}/actions/workflows/build.yml/runs \
+            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            | jq '.workflow_runs[0].id')
+          echo "::set-output name=run-id::$run_id"
+
+      - run: echo ${{ steps.runid.outputs.run-id }}
+
+      - name: ⬇️ Download last artifacts from build.yml
         uses: actions/download-artifact@v4
         with:
           name: docs
           github-token: ${{ secrets.GH_PAT }}
-          run_id: todo
+          run-id: todo
 
       - name: 🔍 view artifacts to be used
         run: ls -R
