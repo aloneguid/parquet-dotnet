@@ -112,14 +112,15 @@ jobs:
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
           dotnet restore src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj
           dotnet publish src/Parquet.Floor.Desktop/Parquet.Floor.Desktop.csproj -c release -r ${{ matrix.rid }} -o floor/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
+          mkdir -p floor-dist
+          zip -9 floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor/${{ matrix.rid }}/* -x floor/${{ matrix.rid }}/*.pdb
+
 
       - uses: actions/upload-artifact@v4
         name: upload binary
         with:
-          name: floor-${{ matrix.rid }}-${{ env.VERSION }}
-          path: |
-            floor/${{ matrix.rid }}/*
-            !floor/${{ matrix.rid }}/*.pdb
+          name: floor
+          path: floor-dist/*.zip
 
   wrs-build:
     runs-on: ubuntu-latest
