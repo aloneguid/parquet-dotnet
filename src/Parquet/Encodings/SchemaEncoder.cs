@@ -265,6 +265,12 @@ namespace Parquet.Encodings {
                     if(se.Type == Type.INT64)
                         return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
                     break;
+#if NET7_0_OR_GREATER
+                case ConvertedType.TIMESTAMP_MICROS:
+                    if(se.Type == Type.INT64)
+                        return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTimeMicros);
+                    break;
+#endif
                 case ConvertedType.DATE:
                     if(se.Type == Type.INT32)
                         return new DateTimeDataField(se.Name, DateTimeFormat.Date);
@@ -442,6 +448,12 @@ namespace Parquet.Encodings {
                             tse.Type = Type.INT64;
                             tse.ConvertedType = ConvertedType.TIMESTAMP_MILLIS;
                             break;
+#if NET7_0_OR_GREATER
+                        case DateTimeFormat.DateAndTimeMicros:
+                            tse.Type = Type.INT64;
+                            tse.ConvertedType = ConvertedType.TIMESTAMP_MICROS;
+                            break;
+#endif
                         case DateTimeFormat.Date:
                             tse.Type = Type.INT32;
                             tse.ConvertedType = ConvertedType.DATE;

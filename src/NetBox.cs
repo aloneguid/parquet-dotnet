@@ -3,12 +3,63 @@
 | \ | | ___| |_| __ )  _____  __
 |  \| |/ _ \ __|  _ \ / _ \ \/ /
 | |\  |  __/ |_| |_) | (_) >  <
-|_| \_|\___|\__|____/ \___/_/\_\   v4.1.11 by @aloneguid
+|_| \_|\___|\__|____/ \___/_/\_\   v4.2.2 by @aloneguid
 
 https://github.com/aloneguid/netbox
 */
 
 
+
+// FILE: src/NetBox/TempFile.cs
+
+namespace NetBox {
+    using global::System;
+    using global::System.IO;
+
+    /// <summary>
+    /// Represents a temporary file that is deleted on dispose. The files are created in user's temp directory.
+    /// </summary>
+    class TempFile : IDisposable {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ext">Optional extension, defaults to .tmp</param>
+        public TempFile(string? ext = null) {
+            if(ext == null)
+                ext = ".tmp";
+
+            if(!ext.StartsWith("."))
+                ext = "." + ext;
+
+            string name = Guid.NewGuid().ToString() + ext;
+
+            FullPath = Path.Combine(Path.GetTempPath(), name);
+        }
+
+        /// <summary>
+        /// Full path to the temp file. It's not created by this class.
+        /// </summary>
+        public string FullPath { get; }
+
+        /// <summary>
+        /// Implicit conversion to string (full path).
+        /// </summary>
+        /// <param name="tf"></param>
+        public static implicit operator string(TempFile tf) => tf.FullPath;
+
+        /// <summary>
+        /// Returns full path value
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() => FullPath;
+
+        public void Dispose() {
+            if(File.Exists(FullPath)) {
+                File.Delete(FullPath);
+            }
+        }
+    }
+}
 
 // FILE: src/NetBox/WebUtility.cs
 
@@ -245,148 +296,6 @@ namespace NetBox {
     }
 }
 
-// FILE: src/NetBox/ByteFormat.cs
-
-namespace NetBox {
-    using global::System;
-
-    static class ByteFormat {
-        //http://en.wikipedia.org/wiki/Kibibyte
-
-        private const long Kb = 1000;         //kilobyte
-        private const long KiB = 1024;        //kikibyte
-        private const long Mb = Kb * 1000;      //megabyte
-        private const long MiB = KiB * 1024;    //memibyte
-        private const long Gb = Mb * 1000;      //gigabyte
-        private const long GiB = MiB * 1024;    //gigibyte
-        private const long Tb = Gb * 1000;      //terabyte
-        private const long TiB = GiB * 1024;    //tebibyte
-        private const long Pb = Tb * 1024;      //petabyte
-        private const long PiB = TiB * 1024;    //pepibyte
-
-        public enum Standard {
-            /// <summary>
-            ///  International System of Units
-            /// </summary>
-            Si,
-
-            /// <summary>
-            /// International Electrotechnical Commission
-            /// </summary>
-            Iec
-        }
-
-        /// <summary>
-        /// Returns the best formatted string representation of a byte value
-        /// </summary>
-        /// <param name="bytes">number of bytes</param>
-        /// <param name="st"></param>
-        /// <returns>formatted string</returns>
-        private static string ToString(long bytes, Standard st = Standard.Iec) {
-            return ToString(bytes, st, null);
-        }
-
-        /// <summary>
-        /// Returns the best formatted string representation of a byte value
-        /// </summary>
-        /// <param name="bytes">number of bytes</param>
-        /// <param name="st"></param>
-        /// <param name="customFormat">Defines a custom numerical format for the conversion.
-        /// If this parameters is null or empty the default format will be used 0.00</param>
-        /// <returns>formatted string</returns>
-        public static string ToString(long bytes, Standard st, string? customFormat) {
-            if(bytes == 0)
-                return "0";
-
-            if(string.IsNullOrEmpty(customFormat))
-                customFormat = "0.00";
-
-            string result;
-            bool isNegative = bytes < 0;
-            bytes = Math.Abs(bytes);
-
-            if(st == Standard.Si) {
-                if(bytes < Mb)
-                    result = BytesToKb(bytes, customFormat);
-
-                else if(bytes < Gb)
-                    result = BytesToMb(bytes, customFormat);
-
-                else if(bytes < Tb)
-                    result = BytesToGb(bytes, customFormat);
-
-                else if(bytes < Pb)
-                    result = BytesToTb(bytes, customFormat);
-
-                else
-                    result = BytesToPb(bytes, customFormat);
-            } else {
-                if(bytes < MiB)
-                    result = BytesToKib(bytes, customFormat);
-
-                else if(bytes < GiB)
-                    result = BytesToMib(bytes, customFormat);
-
-                else if(bytes < TiB)
-                    result = BytesToGib(bytes, customFormat);
-
-                else if(bytes < PiB)
-                    result = BytesToTib(bytes, customFormat);
-
-                else
-                    result = BytesToPib(bytes, customFormat);
-            }
-
-            return isNegative ? ("-" + result) : (result);
-        }
-
-        private static string BytesToPb(long bytes, string? customFormat) {
-            double tb = bytes / ((double)Pb);
-            return tb.ToString(customFormat) + " PB";
-        }
-        private static string BytesToPib(long bytes, string? customFormat) {
-            double tb = bytes / ((double)PiB);
-            return tb.ToString(customFormat) + " PiB";
-        }
-
-        private static string BytesToTb(long bytes, string? customFormat) {
-            double tb = bytes / ((double)Tb);
-            return tb.ToString(customFormat) + " TB";
-        }
-        private static string BytesToTib(long bytes, string? customFormat) {
-            double tb = bytes / ((double)TiB);
-            return tb.ToString(customFormat) + " TiB";
-        }
-
-        private static string BytesToGb(long bytes, string? customFormat) {
-            double gb = bytes / ((double)Gb);
-            return gb.ToString(customFormat) + " GB";
-        }
-        private static string BytesToGib(long bytes, string? customFormat) {
-            double gb = bytes / ((double)GiB);
-            return gb.ToString(customFormat) + " GiB";
-        }
-
-        private static string BytesToMb(long bytes, string? customFormat) {
-            double mb = bytes / ((double)Mb);
-            return mb.ToString(customFormat) + " MB";
-        }
-        private static string BytesToMib(long bytes, string? customFormat) {
-            double mb = bytes / ((double)MiB);
-            return mb.ToString(customFormat) + " MiB";
-        }
-
-        private static string BytesToKb(long bytes, string? customFormat) {
-            double kb = bytes / ((double)Kb);
-            return kb.ToString(customFormat) + " KB";
-        }
-        private static string BytesToKib(long bytes, string? customFormat) {
-            double kb = bytes / ((double)KiB);
-            return kb.ToString(customFormat) + " KiB";
-        }
-    }
-}
-
 // FILE: src/NetBox/Ascii85.cs
 
 namespace NetBox {
@@ -604,547 +513,511 @@ namespace NetBox {
     }
 }
 
-// FILE: src/NetBox/TempFile.cs
+// FILE: src/NetBox/ByteFormat.cs
 
 namespace NetBox {
     using global::System;
-    using global::System.IO;
 
-    /// <summary>
-    /// Represents a temporary file that is deleted on dispose. The files are created in user's temp directory.
-    /// </summary>
-    class TempFile : IDisposable {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="ext">Optional extension, defaults to .tmp</param>
-        public TempFile(string? ext = null) {
-            if(ext == null)
-                ext = ".tmp";
+    static class ByteFormat {
+        //http://en.wikipedia.org/wiki/Kibibyte
 
-            if(!ext.StartsWith("."))
-                ext = "." + ext;
+        private const long Kb = 1000;         //kilobyte
+        private const long KiB = 1024;        //kikibyte
+        private const long Mb = Kb * 1000;      //megabyte
+        private const long MiB = KiB * 1024;    //memibyte
+        private const long Gb = Mb * 1000;      //gigabyte
+        private const long GiB = MiB * 1024;    //gigibyte
+        private const long Tb = Gb * 1000;      //terabyte
+        private const long TiB = GiB * 1024;    //tebibyte
+        private const long Pb = Tb * 1024;      //petabyte
+        private const long PiB = TiB * 1024;    //pepibyte
 
-            string name = Guid.NewGuid().ToString() + ext;
+        public enum Standard {
+            /// <summary>
+            ///  International System of Units
+            /// </summary>
+            Si,
 
-            FullPath = Path.Combine(Path.GetTempPath(), name);
+            /// <summary>
+            /// International Electrotechnical Commission
+            /// </summary>
+            Iec
         }
 
         /// <summary>
-        /// Full path to the temp file. It's not created by this class.
+        /// Returns the best formatted string representation of a byte value
         /// </summary>
-        public string FullPath { get; }
+        /// <param name="bytes">number of bytes</param>
+        /// <param name="st"></param>
+        /// <returns>formatted string</returns>
+        private static string ToString(long bytes, Standard st = Standard.Iec) {
+            return ToString(bytes, st, null);
+        }
 
         /// <summary>
-        /// Implicit conversion to string (full path).
+        /// Returns the best formatted string representation of a byte value
         /// </summary>
-        /// <param name="tf"></param>
-        public static implicit operator string(TempFile tf) => tf.FullPath;
+        /// <param name="bytes">number of bytes</param>
+        /// <param name="st"></param>
+        /// <param name="customFormat">Defines a custom numerical format for the conversion.
+        /// If this parameters is null or empty the default format will be used 0.00</param>
+        /// <returns>formatted string</returns>
+        public static string ToString(long bytes, Standard st, string? customFormat) {
+            if(bytes == 0)
+                return "0";
 
-        /// <summary>
-        /// Returns full path value
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString() => FullPath;
+            if(string.IsNullOrEmpty(customFormat))
+                customFormat = "0.00";
 
-        public void Dispose() {
-            if(File.Exists(FullPath)) {
-                File.Delete(FullPath);
+            string result;
+            bool isNegative = bytes < 0;
+            bytes = Math.Abs(bytes);
+
+            if(st == Standard.Si) {
+                if(bytes < Mb)
+                    result = BytesToKb(bytes, customFormat);
+
+                else if(bytes < Gb)
+                    result = BytesToMb(bytes, customFormat);
+
+                else if(bytes < Tb)
+                    result = BytesToGb(bytes, customFormat);
+
+                else if(bytes < Pb)
+                    result = BytesToTb(bytes, customFormat);
+
+                else
+                    result = BytesToPb(bytes, customFormat);
+            } else {
+                if(bytes < MiB)
+                    result = BytesToKib(bytes, customFormat);
+
+                else if(bytes < GiB)
+                    result = BytesToMib(bytes, customFormat);
+
+                else if(bytes < TiB)
+                    result = BytesToGib(bytes, customFormat);
+
+                else if(bytes < PiB)
+                    result = BytesToTib(bytes, customFormat);
+
+                else
+                    result = BytesToPib(bytes, customFormat);
             }
+
+            return isNegative ? ("-" + result) : (result);
+        }
+
+        private static string BytesToPb(long bytes, string? customFormat) {
+            double tb = bytes / ((double)Pb);
+            return tb.ToString(customFormat) + " PB";
+        }
+        private static string BytesToPib(long bytes, string? customFormat) {
+            double tb = bytes / ((double)PiB);
+            return tb.ToString(customFormat) + " PiB";
+        }
+
+        private static string BytesToTb(long bytes, string? customFormat) {
+            double tb = bytes / ((double)Tb);
+            return tb.ToString(customFormat) + " TB";
+        }
+        private static string BytesToTib(long bytes, string? customFormat) {
+            double tb = bytes / ((double)TiB);
+            return tb.ToString(customFormat) + " TiB";
+        }
+
+        private static string BytesToGb(long bytes, string? customFormat) {
+            double gb = bytes / ((double)Gb);
+            return gb.ToString(customFormat) + " GB";
+        }
+        private static string BytesToGib(long bytes, string? customFormat) {
+            double gb = bytes / ((double)GiB);
+            return gb.ToString(customFormat) + " GiB";
+        }
+
+        private static string BytesToMb(long bytes, string? customFormat) {
+            double mb = bytes / ((double)Mb);
+            return mb.ToString(customFormat) + " MB";
+        }
+        private static string BytesToMib(long bytes, string? customFormat) {
+            double mb = bytes / ((double)MiB);
+            return mb.ToString(customFormat) + " MiB";
+        }
+
+        private static string BytesToKb(long bytes, string? customFormat) {
+            double kb = bytes / ((double)Kb);
+            return kb.ToString(customFormat) + " KB";
+        }
+        private static string BytesToKib(long bytes, string? customFormat) {
+            double kb = bytes / ((double)KiB);
+            return kb.ToString(customFormat) + " KiB";
         }
     }
 }
 
-// FILE: src/NetBox/IO/NonCloseableStream.cs
+// FILE: src/NetBox/Performance/TimeMeasure.cs
 
-namespace NetBox.IO
+namespace NetBox.Performance
 {
    using global::System;
-   using global::System.IO;
+   using global::System.Diagnostics;
 
    /// <summary>
-   /// Represents a stream that ignores <see cref="IDisposable"/> operations i.e. cannot be closed by the client
+   /// Measures a time slice as precisely as possible
    /// </summary>
-   class NonCloseableStream : DelegatedStream
+   class TimeMeasure : IDisposable
    {
-      /// <summary>
-      /// Creates an instance of this class
-      /// </summary>
-      /// <param name="master">Master stream to delegate operations to</param>
-      public NonCloseableStream(Stream master) : base(master)
-      {
+      private readonly Stopwatch _sw = new Stopwatch();
 
+      /// <summary>
+      /// Creates the measure object
+      /// </summary>
+      public TimeMeasure()
+      {
+         _sw.Start();
       }
 
       /// <summary>
-      /// Overrides this call to do nothing
+      /// Returns number of elapsed ticks since the start of measure.
+      /// The measuring process will continue running.
       /// </summary>
-      /// <param name="disposing"></param>
-      protected override void Dispose(bool disposing)
+      public long ElapsedTicks => _sw.ElapsedTicks;
+
+      /// <summary>
+      /// Returns number of elapsed milliseconds since the start of measure.
+      /// The measuring process will continue running.
+      /// </summary>
+      public long ElapsedMilliseconds => _sw.ElapsedMilliseconds;
+
+
+      /// <summary>
+      /// Gets time elapsed from the time this measure was created
+      /// </summary>
+      public TimeSpan Elapsed => _sw.Elapsed;
+
+      /// <summary>
+      /// Stops measure object if still running
+      /// </summary>
+      public void Dispose()
       {
-         //does nothing on purpose
+         if (_sw.IsRunning)
+         {
+            _sw.Stop();
+         }
       }
    }
 }
 
 
-// FILE: src/NetBox/IO/DelegatedStream.cs
+// FILE: src/NetBox/Generator/RandomGenerator.cs
 
-namespace NetBox.IO
-{
-   using global::System;
-   using global::System.IO;
-
-   /// <summary>
-   /// Makes stream members virtual instead of abstract, allowing to override only specific behaviors.
-   /// </summary>
-   class DelegatedStream : Stream
-   {
-      private readonly Stream _master;
-
-      /// <summary>
-      /// Creates an instance of non-closeable stream
-      /// </summary>
-      /// <param name="master"></param>
-      public DelegatedStream(Stream master)
-      {
-         _master = master ?? throw new ArgumentNullException(nameof(master));
-      }
-
-      /// <summary>
-      /// Calls <see cref="GetCanRead"/>
-      /// </summary>
-      public override bool CanRead => GetCanRead();
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      protected virtual bool GetCanRead()
-      {
-         return _master.CanRead;
-      }
-
-      /// <summary>
-      /// Calls <see cref="GetCanSeek"/>
-      /// </summary>
-      public override bool CanSeek => GetCanSeek();
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      protected virtual bool GetCanSeek()
-      {
-         return _master.CanSeek;
-      }
-
-      /// <summary>
-      /// Calls <see cref="GetCanWrite"/>
-      /// </summary>
-      public override bool CanWrite => GetCanWrite();
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      protected virtual bool GetCanWrite()
-      {
-         return _master.CanWrite;
-      }
-
-      /// <summary>
-      /// Calls <see cref="GetLength"/>
-      /// </summary>
-      public override long Length => _master.Length;
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      protected virtual long GetLength()
-      {
-         return _master.Length;
-      }
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      public override long Position { get => _master.Position; set => _master.Position = value; }
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      public override void Flush()
-      {
-         _master.Flush();
-      }
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      public override int Read(byte[] buffer, int offset, int count)
-      {
-         return _master.Read(buffer, offset, count);
-      }
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      public override long Seek(long offset, SeekOrigin origin)
-      {
-         return _master.Seek(offset, origin);
-      }
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      public override void SetLength(long value)
-      {
-         _master.SetLength(value);
-      }
-
-      /// <summary>
-      /// Delegates to master by default
-      /// </summary>
-      /// <returns></returns>
-      public override void Write(byte[] buffer, int offset, int count)
-      {
-         _master.Write(buffer, offset, count);
-      }
-   }
-}
-
-
-// FILE: src/NetBox/System/StreamExtensions.cs
-
-namespace System {
-    using System.Threading.Tasks;
-    using System.Threading;
-    using global::System.Collections.Generic;
+namespace NetBox.Generator {
+    using global::System;
     using global::System.IO;
+    using global::System.Security.Cryptography;
     using global::System.Text;
-    using System.Diagnostics;
 
     /// <summary>
-    /// <see cref="Stream"/> extension
+    /// Generates random data using <see cref="RandomNumberGenerator"/> for increased security
     /// </summary>
-    public static class StreamExtensions {
-        #region [ General ]
+    public static class RandomGenerator {
+        private static readonly RandomNumberGenerator Rnd = RandomNumberGenerator.Create();
 
-        /// <summary>
-        /// Attemps to get the size of this stream by reading the Length property, otherwise returns 0.
-        /// </summary>
-        public static bool TryGetSize(this Stream s, out long size) {
-            try {
-                size = s.Length;
-                return true;
-            } catch(NotSupportedException) {
+        //get a cryptographically strong double between 0 and 1
+        private static double NextCryptoDouble() {
+            //fill-in array with 8 random  bytes
+            byte[] b = new byte[sizeof(double)];
+            Rnd.GetBytes(b);
 
-            } catch(ObjectDisposedException) {
+            //i don't understand this
+            ulong ul = BitConverter.ToUInt64(b, 0) / (1 << 11);
+            double d = ul / (double)(1UL << 53);
+            return d;
+        }
 
-            }
-
-            size = 0;
-            return false;
+        private static int NextCryptoInt() {
+            byte[] b = new byte[sizeof(int)];
+            Rnd.GetBytes(b);
+            return BitConverter.ToInt32(b, 0);
         }
 
         /// <summary>
-        /// Attemps to get the size of this stream by reading the Length property, otherwise returns 0.
+        /// Generates a random boolean
         /// </summary>
-        public static long? TryGetSize(this Stream s) {
-            long size;
-            if(TryGetSize(s, out size)) {
-                return size;
+        public static bool RandomBool {
+            get {
+                return NextCryptoDouble() >= 0.5d;
             }
-
-            return null;
         }
 
-        #endregion
-
-        #region [ Seek and Read ]
+        /// <summary>
+        /// Generates a random long number between 0 and max
+        /// </summary>
+        public static long RandomLong => GetRandomLong(0, long.MaxValue);
 
         /// <summary>
-        /// Reads the stream until a specified sequence of bytes is reached.
+        /// Generates a random integer between 0 and max
         /// </summary>
-        /// <returns>Bytes before the stop sequence</returns>
-        public static byte[] ReadUntil(this Stream s, byte[] stopSequence) {
-            byte[] buf = new byte[1];
-            var result = new List<byte>(50);
-            int charsMatched = 0;
-
-            while(s.Read(buf, 0, 1) == 1) {
-                byte b = buf[0];
-                result.Add(b);
-
-                if(b == stopSequence[charsMatched]) {
-                    if(++charsMatched == stopSequence.Length) {
-                        break;
-                    }
-                } else {
-                    charsMatched = 0;
-                }
-
+        public static int RandomInt {
+            get {
+                return NextCryptoInt();
             }
-            return result.ToArray();
         }
 
-        #endregion
-
-        #region [ Stream Conversion ]
+        /// <summary>
+        /// Returns random double
+        /// </summary>
+        public static double RandomDouble {
+            get {
+                return NextCryptoDouble();
+            }
+        }
 
         /// <summary>
-        /// Reads all stream in memory and returns as byte array
+        /// Generates a random integer until max parameter
         /// </summary>
-        public static byte[]? ToByteArray(this Stream? stream) {
-            if(stream == null)
+        /// <param name="max">Maximum integer value, excluding</param>
+        /// <returns></returns>
+        public static int GetRandomInt(int max) {
+            return GetRandomInt(0, max);
+        }
+
+        /// <summary>
+        /// Generates a random integer number in range
+        /// </summary>
+        /// <param name="min">Minimum value, including</param>
+        /// <param name="max">Maximum value, excluding</param>
+        public static int GetRandomInt(int min, int max) {
+            return (int)Math.Round(NextCryptoDouble() * (max - min - 1)) + min;
+        }
+
+        /// <summary>
+        /// Generates a random long number in range
+        /// </summary>
+        /// <param name="min">Minimum value, including</param>
+        /// <param name="max">Maximum value, excluding</param>
+        public static long GetRandomLong(long min, long max) {
+            double d = NextCryptoDouble();
+            return (long)Math.Round(d * (max - min - 1)) + min;
+        }
+
+        /// <summary>
+        /// Generates a random enum value by type
+        /// </summary>
+        public static Enum? RandomEnum(Type t) {
+            Array values = Enum.GetValues(t);
+
+            object? value = values.GetValue(GetRandomInt(values.Length));
+
+            return value == null ? default : (Enum)value;
+        }
+
+#if !NETSTANDARD16
+        /// <summary>
+        /// Generates a random enum value
+        /// </summary>
+        /// <typeparam name="T">Enumeration type</typeparam>
+        public static T? GetRandomEnum<T>() where T : struct {
+            //can't limit generics to enum http://connect.microsoft.com/VisualStudio/feedback/details/386194/allow-enum-as-generic-constraint-in-c
+
+            if(!typeof(T).IsEnum)
+                throw new ArgumentException("T must be an enum");
+
+            return (T?)(object?)RandomEnum(typeof(T));
+        }
+#endif
+
+        /// <summary>
+        /// Generates a random date in range
+        /// </summary>
+        /// <param name="minValue">Minimum date, including</param>
+        /// <param name="maxValue">Maximum date, excluding</param>
+        public static DateTime GetRandomDate(DateTime minValue, DateTime maxValue) {
+            long randomTicks = GetRandomLong(minValue.Ticks, maxValue.Ticks);
+
+            return new DateTime(randomTicks);
+        }
+
+        /// <summary>
+        /// Generates a random date value
+        /// </summary>
+        public static DateTime RandomDate {
+            get { return GetRandomDate(DateTime.MinValue, DateTime.MaxValue); }
+        }
+
+        /// <summary>
+        /// Generates a random string. Never returns null.
+        /// </summary>
+        public static string RandomString {
+            get {
+                string path = Path.GetRandomFileName();
+                path = path.Replace(".", "");
+                return path;
+            }
+        }
+
+        /// <summary>
+        /// Generates a random string
+        /// </summary>
+        /// <param name="length">string length</param>
+        /// <param name="allowNulls">Whether to allow to return null values</param>
+        public static string? GetRandomString(int length, bool allowNulls) {
+            if(allowNulls && RandomLong % 2 == 0)
                 return null;
-            using(var ms = new MemoryStream()) {
-                stream.CopyTo(ms);
-                return ms.ToArray();
+
+            var builder = new StringBuilder();
+            char ch;
+            for(int i = 0; i < length; i++) {
+                ch = Convert.ToChar(Convert.ToInt32(Math.Floor((26 * RandomDouble) + 65)));
+                builder.Append(ch);
             }
+
+            return builder.ToString();
         }
 
         /// <summary>
-        /// Converts the stream to string using specified encoding. This is done by reading the stream into
-        /// byte array first, then applying specified encoding on top.
+        /// Generates a random URL in format "http://random.com/random.random
         /// </summary>
-        public static string? ToString(this Stream? stream, Encoding encoding) {
-            if(stream == null)
+        /// <param name="allowNulls">Whether to allow to return nulls</param>
+        public static Uri? GetRandomUri(bool allowNulls) {
+            if(allowNulls && RandomLong % 2 == 0)
                 return null;
-            if(encoding == null)
-                throw new ArgumentNullException(nameof(encoding));
 
-            using(StreamReader reader = new StreamReader(stream, encoding)) {
-                return reader.ReadToEnd();
-            }
+            return new Uri($"http://{RandomString}.com/{RandomString}.{GetRandomString(3, false)}");
         }
 
-        #endregion
+        /// <summary>
+        /// Generates a random URL in format "http://random.com/random.random. Never returns null values.
+        /// </summary>
+        public static Uri? RandomUri => GetRandomUri(false);
+
+        /// <summary>
+        /// Generates a random sequence of bytes of a specified size
+        /// </summary>
+        public static byte[] GetRandomBytes(int minSize, int maxSize) {
+            int size = minSize == maxSize ? minSize : GetRandomInt(minSize, maxSize);
+            byte[] data = new byte[size];
+            Rnd.GetBytes(data);
+            return data;
+        }
 
     }
 }
 
 // FILE: src/NetBox/System/DateTimeExtensions.cs
 
-namespace System
-{
-   /// <summary>
-   /// <see cref="DateTime"/> extension methods
-   /// </summary>
-   static class DateTimeExtensions
-   {
-      /// <summary>
-      /// Strips time from the date structure
-      /// </summary>
-      public static DateTime RoundToDay(this DateTime time)
-      {
-         return new DateTime(time.Year, time.Month, time.Day);
-      }
-
-      /// <summary>
-      /// Changes to the end of day time, i.e. hours, minutes and seconds are changed to 23:59:59
-      /// </summary>
-      /// <param name="time"></param>
-      /// <returns></returns>
-      public static DateTime EndOfDay(this DateTime time)
-      {
-         return new DateTime(time.Year, time.Month, time.Day, 23, 59, 59);
-      }
-
-      /// <summary>
-      /// Rounds to the closest minute
-      /// </summary>
-      /// <param name="time">Input date</param>
-      /// <param name="round">Closest minute i.e. 15, 30, 45 etc.</param>
-      /// <param name="roundLeft">Whether to use minimum or maximum value. For example
-      /// when time is 13:14 and rounding is to every 15 minutes, when this parameter is true
-      /// the result it 13:00, otherwise 13:15</param>
-      /// <returns></returns>
-      public static DateTime RoundToMinute(this DateTime time, int round, bool roundLeft)
-      {
-         int minute = time.Minute;
-         int leftover = minute % round;
-         if (leftover == 0) return time;
-         int addHours = 0;
-         minute -= leftover;
-
-         if (!roundLeft) minute += round;
-         if (minute > 59)
-         {
-            minute = minute % 60;
-            addHours = 1;
-         }
-
-         return new DateTime(time.Year, time.Month, time.Day, time.Hour + addHours, minute, 0);
-      }
-
-      /// <summary>
-      /// Strips off details after seconds
-      /// </summary>
-      /// <param name="time"></param>
-      /// <returns></returns>
-      public static DateTime RoundToSecond(this DateTime time)
-      {
-         return new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, time.Kind);
-      }
-
-      /// <summary>
-      /// Returns true if the date is today's date.
-      /// </summary>
-      public static bool IsToday(this DateTime time)
-      {
-         DateTime now = DateTime.UtcNow;
-
-         return now.Year == time.Year &&
-            now.Month == time.Month &&
-            now.Day == time.Day;
-      }
-
-      /// <summary>
-      /// Returns true if the date is tomorrow's date.
-      /// </summary>
-      public static bool IsTomorrow(this DateTime time)
-      {
-         TimeSpan diff = DateTime.UtcNow - time;
-
-         return diff.TotalDays >= 1 && diff.TotalDays < 2;
-      }
-
-      /// <summary>
-      /// Returns date in "HH:mm" format
-      /// </summary>
-      public static string ToHourMinuteString(this DateTime time)
-      {
-         return time.ToString("HH:mm");
-      }
-
-      /// <summary>
-      /// Formats date in ISO 8601 format
-      /// </summary>
-      public static string ToIso8601DateString(this DateTime time)
-      {
-         return time.ToString("o");
-      }
-   }
-}
-
-
-// FILE: src/NetBox/System/ByteArrayExtensions.cs
-
 namespace System {
-    using Crypto = System.Security.Cryptography;
-
     /// <summary>
-    /// Byte array extensions methods
+    /// <see cref="DateTime"/> extension methods
     /// </summary>
-    static class ByteArrayExtensions {
-        private static readonly char[] LowerCaseHexAlphabet = "0123456789abcdef".ToCharArray();
-        private static readonly char[] UpperCaseHexAlphabet = "0123456789ABCDEF".ToCharArray();
-        private static readonly Crypto.MD5 _md5 = Crypto.MD5.Create();
-        private static readonly Crypto.SHA256 _sha256 = Crypto.SHA256.Create();
-
+    static class DateTimeExtensions {
+        /// <summary>
+        /// Strips time from the date structure
+        /// </summary>
+        public static DateTime RoundToDay(this DateTime time) {
+            return new DateTime(time.Year, time.Month, time.Day);
+        }
 
         /// <summary>
-        /// Converts byte array to hexadecimal string
+        /// Changes to the end of day time, i.e. hours, minutes and seconds are changed to 23:59:59
         /// </summary>
-        public static string? ToHexString(this byte[]? bytes) {
-            return ToHexString(bytes, true);
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public static DateTime EndOfDay(this DateTime time) {
+            return new DateTime(time.Year, time.Month, time.Day, 23, 59, 59);
         }
 
-        private static string? ToHexString(this byte[]? bytes, bool lowerCase) {
-            if(bytes == null)
-                return null;
+        /// <summary>
+        /// Rounds to the closest minute
+        /// </summary>
+        /// <param name="time">Input date</param>
+        /// <param name="round">Closest minute i.e. 15, 30, 45 etc.</param>
+        /// <param name="roundLeft">Whether to use minimum or maximum value. For example
+        /// when time is 13:14 and rounding is to every 15 minutes, when this parameter is true
+        /// the result it 13:00, otherwise 13:15</param>
+        /// <returns></returns>
+        public static DateTime RoundToMinute(this DateTime time, int round, bool roundLeft) {
+            int minute = time.Minute;
+            int leftover = minute % round;
+            if(leftover == 0)
+                return time;
+            int addHours = 0;
+            minute -= leftover;
 
-            char[] alphabet = lowerCase ? LowerCaseHexAlphabet : UpperCaseHexAlphabet;
-
-            int len = bytes.Length;
-            char[] result = new char[len * 2];
-
-            int i = 0;
-            int j = 0;
-
-            while(i < len) {
-                byte b = bytes[i++];
-                result[j++] = alphabet[b >> 4];
-                result[j++] = alphabet[b & 0xF];
+            if(!roundLeft)
+                minute += round;
+            if(minute > 59) {
+                minute = minute % 60;
+                addHours = 1;
             }
 
-            return new string(result);
+            return new DateTime(time.Year, time.Month, time.Day, time.Hour + addHours, minute, 0);
         }
 
-        public static byte[]? MD5(this byte[]? bytes) {
-            if(bytes == null)
-                return null;
-
-            return _md5.ComputeHash(bytes);
+        /// <summary>
+        /// Strips off details after seconds
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public static DateTime RoundToSecond(this DateTime time) {
+            return new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, time.Kind);
         }
 
-        public static byte[]? SHA256(this byte[]? bytes) {
-            if(bytes == null)
-                return null;
-
-            return _sha256.ComputeHash(bytes);
+        /// <summary>
+        /// Strips off details after milliseconds
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public static DateTime RoundToMillisecond(this DateTime time) {
+            return new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, time.Millisecond, time.Kind);
         }
 
-        public static byte[]? HMACSHA256(this byte[]? data, byte[] key) {
-            if(data == null)
-                return null;
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Strips off details after microseconds
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public static DateTime RoundToMicrosecond(this DateTime time) {
+            return new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, time.Millisecond, time.Microsecond, time.Kind);
+        }
+#endif
 
-#pragma warning disable SYSLIB0045 // Type or member is obsolete
-            var alg = Crypto.KeyedHashAlgorithm.Create("HmacSHA256");
-#pragma warning restore SYSLIB0045 // Type or member is obsolete
-            if(alg == null)
-                throw new InvalidOperationException("could not create crypto algorithm!");
-            alg.Key = key;
-            return alg.ComputeHash(data);
+        /// <summary>
+        /// Returns true if the date is today's date.
+        /// </summary>
+        public static bool IsToday(this DateTime time) {
+            DateTime now = DateTime.UtcNow;
+
+            return now.Year == time.Year &&
+               now.Month == time.Month &&
+               now.Day == time.Day;
+        }
+
+        /// <summary>
+        /// Returns true if the date is tomorrow's date.
+        /// </summary>
+        public static bool IsTomorrow(this DateTime time) {
+            TimeSpan diff = DateTime.UtcNow - time;
+
+            return diff.TotalDays >= 1 && diff.TotalDays < 2;
+        }
+
+        /// <summary>
+        /// Returns date in "HH:mm" format
+        /// </summary>
+        public static string ToHourMinuteString(this DateTime time) {
+            return time.ToString("HH:mm");
+        }
+
+        /// <summary>
+        /// Formats date in ISO 8601 format
+        /// </summary>
+        public static string ToIso8601DateString(this DateTime time) {
+            return time.ToString("o");
         }
     }
 }
-
-// FILE: src/NetBox/System/GuidExtensions.cs
-
-
-namespace System {
-    using NetBox;
-
-    static class GuidExtensions {
-        public static string ToShortest(this Guid g) {
-            return Ascii85.Instance.Encode(g.ToByteArray(), true);
-        }
-    }
-}
-
-
-// FILE: src/NetBox/System/TaskExtensions.cs
-
-namespace System
-{
-   using global::System.Threading.Tasks;
-   using System.Diagnostics.CodeAnalysis;
-
-   /// <summary>
-   /// Task utility methods
-   /// </summary>
-   static class TaskExtensions
-   {
-      /// <summary>
-      /// Fire-and-forget without compiler warnings
-      /// </summary>
-      /// <param name="task"></param>
-      [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "task")]
-      public static void Forget(this Task task)
-      {
-      }
-   }
-}
-
 
 // FILE: src/NetBox/System/NumericExtensions.cs
 
@@ -1214,161 +1087,108 @@ namespace System {
     }
 }
 
-// FILE: src/NetBox/System/EnumerableExtensions.cs
+// FILE: src/NetBox/System/TaskExtensions.cs
+
+namespace System
+{
+   using global::System.Threading.Tasks;
+   using System.Diagnostics.CodeAnalysis;
+
+   /// <summary>
+   /// Task utility methods
+   /// </summary>
+   static class TaskExtensions
+   {
+      /// <summary>
+      /// Fire-and-forget without compiler warnings
+      /// </summary>
+      /// <param name="task"></param>
+      [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "task")]
+      public static void Forget(this Task task)
+      {
+      }
+   }
+}
+
+
+// FILE: src/NetBox/System/GuidExtensions.cs
+
 
 namespace System {
-    using System.Collections;
-    using System.Diagnostics;
-    using global::System.Collections.Generic;
-    using global::System.Linq;
+    using NetBox;
+
+    static class GuidExtensions {
+        public static string ToShortest(this Guid g) {
+            return Ascii85.Instance.Encode(g.ToByteArray(), true);
+        }
+    }
+}
+
+
+// FILE: src/NetBox/System/ByteArrayExtensions.cs
+
+namespace System {
+    using System.Security.Cryptography;
+    using Crypto = System.Security.Cryptography;
 
     /// <summary>
-    /// <see cref="System.IEquatable{T}"/> extension methods
+    /// Byte array extensions methods
     /// </summary>
-    static class EnumerableExtensions {
+    static class ByteArrayExtensions {
+        private static readonly char[] LowerCaseHexAlphabet = "0123456789abcdef".ToCharArray();
+        private static readonly char[] UpperCaseHexAlphabet = "0123456789ABCDEF".ToCharArray();
+        private static readonly Crypto.MD5 _md5 = Crypto.MD5.Create();
+        private static readonly Crypto.SHA256 _sha256 = Crypto.SHA256.Create();
 
-#if NET6_0_OR_GREATER
-#else
-        // .Chunk<> polyfill available from .net 6 and higher
-
-        /// <summary>
-        /// Split the elements of a sequence into chunks of size at most <paramref name="size"/>.
-        /// </summary>
-        /// <remarks>
-        /// Every chunk except the last will be of size <paramref name="size"/>.
-        /// The last chunk will contain the remaining elements and may be of a smaller size.
-        /// </remarks>
-        /// <param name="source">
-        /// An <see cref="IEnumerable{T}"/> whose elements to chunk.
-        /// </param>
-        /// <param name="size">
-        /// Maximum size of each chunk.
-        /// </param>
-        /// <typeparam name="TSource">
-        /// The type of the elements of source.
-        /// </typeparam>
-        /// <returns>
-        /// An <see cref="IEnumerable{T}"/> that contains the elements the input sequence split into chunks of size <paramref name="size"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// <paramref name="source"/> is null.
-        /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        /// <paramref name="size"/> is below 1.
-        /// </exception>
-        public static IEnumerable<TSource[]> Chunk<TSource>(this IEnumerable<TSource> source, int size) {
-            if(source is null)
-                throw new ArgumentNullException(nameof(source));
-
-            if(size < 1)
-                throw new ArgumentOutOfRangeException(nameof(size), "must be >= 1");
-
-            return ChunkIterator(source, size);
-        }
-
-        private static IEnumerable<TSource[]> ChunkIterator<TSource>(IEnumerable<TSource> source, int size) {
-            using IEnumerator<TSource> e = source.GetEnumerator();
-
-            // Before allocating anything, make sure there's at least one element.
-            if(e.MoveNext()) {
-                // Now that we know we have at least one item, allocate an initial storage array. This is not
-                // the array we'll yield.  It starts out small in order to avoid significantly overallocating
-                // when the source has many fewer elements than the chunk size.
-                int arraySize = Math.Min(size, 4);
-                int i;
-                do {
-                    var array = new TSource[arraySize];
-
-                    // Store the first item.
-                    array[0] = e.Current;
-                    i = 1;
-
-                    if(size != array.Length) {
-                        // This is the first chunk. As we fill the array, grow it as needed.
-                        for(; i < size && e.MoveNext(); i++) {
-                            if(i >= array.Length) {
-                                arraySize = (int)Math.Min((uint)size, 2 * (uint)array.Length);
-                                Array.Resize(ref array, arraySize);
-                            }
-
-                            array[i] = e.Current;
-                        }
-                    } else {
-                        // For all but the first chunk, the array will already be correctly sized.
-                        // We can just store into it until either it's full or MoveNext returns false.
-                        TSource[] local = array; // avoid bounds checks by using cached local (`array` is lifted to iterator object as a field)
-                        Debug.Assert(local.Length == size);
-                        for(; (uint)i < (uint)local.Length && e.MoveNext(); i++) {
-                            local[i] = e.Current;
-                        }
-                    }
-
-                    if(i != array.Length) {
-                        Array.Resize(ref array, i);
-                    }
-
-                    yield return array;
-                }
-                while(i >= size && e.MoveNext());
-            }
-        }
-
-        // TryGetNonEnumeratedCount polyfill from .NET 6 and higher
 
         /// <summary>
-        ///   Attempts to determine the number of elements in a sequence without forcing an enumeration.
+        /// Converts byte array to hexadecimal string
         /// </summary>
-        /// <typeparam name="TSource">The type of the elements of <paramref name="source" />.</typeparam>
-        /// <param name="source">A sequence that contains elements to be counted.</param>
-        /// <param name="count">
-        ///     When this method returns, contains the count of <paramref name="source" /> if successful,
-        ///     or zero if the method failed to determine the count.</param>
-        /// <returns>
-        ///   <see langword="true" /> if the count of <paramref name="source"/> can be determined without enumeration;
-        ///   otherwise, <see langword="false" />.
-        /// </returns>
-        /// <remarks>
-        ///   The method performs a series of type tests, identifying common subtypes whose
-        ///   count can be determined without enumerating; this includes <see cref="ICollection{T}"/>,
-        ///   <see cref="ICollection"/> as well as internal types used in the LINQ implementation.
-        ///
-        ///   The method is typically a constant-time operation, but ultimately this depends on the complexity
-        ///   characteristics of the underlying collection implementation.
-        /// </remarks>
-        public static bool TryGetNonEnumeratedCount<TSource>(this IEnumerable<TSource> source, out int count) {
-            if(source is null)
-                throw new ArgumentNullException(nameof(source));
-
-            if(source is ICollection<TSource> collectionoft) {
-                count = collectionoft.Count;
-                return true;
-            }
-
-            if(source is ICollection collection) {
-                count = collection.Count;
-                return true;
-            }
-
-            count = 0;
-            return false;
+        public static string? ToHexString(this byte[]? bytes) {
+            return ToHexString(bytes, true);
         }
 
-#endif
+        private static string? ToHexString(this byte[]? bytes, bool lowerCase) {
+            if(bytes == null)
+                return null;
 
-        /// <summary>
-        /// Performs a specific action on each element of the sequence
-        /// </summary>
-        public static IEnumerable<T> ForEach<T>(this IEnumerable<T> source, Action<T> action) {
-            if(source == null)
-                throw new ArgumentNullException(nameof(source));
-            if(action == null)
-                throw new ArgumentNullException(nameof(action));
+            char[] alphabet = lowerCase ? LowerCaseHexAlphabet : UpperCaseHexAlphabet;
 
-            foreach(T element in source) {
-                action(element);
+            int len = bytes.Length;
+            char[] result = new char[len * 2];
 
-                yield return element;
+            int i = 0;
+            int j = 0;
+
+            while(i < len) {
+                byte b = bytes[i++];
+                result[j++] = alphabet[b >> 4];
+                result[j++] = alphabet[b & 0xF];
             }
+
+            return new string(result);
+        }
+
+        public static byte[]? MD5(this byte[]? bytes) {
+            if(bytes == null)
+                return null;
+
+            return _md5.ComputeHash(bytes);
+        }
+
+        public static byte[]? SHA256(this byte[]? bytes) {
+            if(bytes == null)
+                return null;
+
+            return _sha256.ComputeHash(bytes);
+        }
+
+        public static byte[]? HMACSHA256(this byte[]? data, byte[] key) {
+            if(data == null)
+                return null;
+
+            var alg = new Crypto.HMACSHA256(key);
+            return alg.ComputeHash(data);
         }
     }
 }
@@ -1716,7 +1536,7 @@ namespace System {
         /// delimiters, and splits by the first left-most one.</param>
         /// <returns>A tuple of two values where the first one is the key and second is the value. If none of the delimiters
         /// are found the second value of the tuple is null and the first value is the input string</returns>
-        public static Tuple<string, string?>? SplitByDelimiter(this string? s, params string[] delimiter) {
+        public static Tuple<string, string?>? SplitByDelimiter(this string? s, params string?[]? delimiter) {
             if(s == null)
                 return null;
 
@@ -1728,7 +1548,7 @@ namespace System {
                 value = null;
             } else {
 
-                List<int> indexes = delimiter.Where(d => d != null).Select(d => s.IndexOf(d)).Where(d => d != -1).ToList();
+                List<int> indexes = delimiter.Where(d => d != null).Select(d => s.IndexOf(d!)).Where(d => d != -1).ToList();
 
                 if(indexes.Count == 0) {
                     key = s.Trim();
@@ -1851,305 +1671,440 @@ namespace System {
     }
 }
 
-// FILE: src/NetBox/Generator/RandomGenerator.cs
+// FILE: src/NetBox/System/EnumerableExtensions.cs
 
-namespace NetBox.Generator {
-    using global::System;
-    using global::System.IO;
-    using global::System.Security.Cryptography;
-    using global::System.Text;
+namespace System {
+    using System.Collections;
+    using System.Diagnostics;
+    using global::System.Collections.Generic;
+    using global::System.Linq;
 
     /// <summary>
-    /// Generates random data using <see cref="RandomNumberGenerator"/> for increased security
+    /// <see cref="System.IEquatable{T}"/> extension methods
     /// </summary>
-    public static class RandomGenerator {
-        private static readonly RandomNumberGenerator Rnd = RandomNumberGenerator.Create();
+    static class EnumerableExtensions {
 
-        //get a cryptographically strong double between 0 and 1
-        private static double NextCryptoDouble() {
-            //fill-in array with 8 random  bytes
-            byte[] b = new byte[sizeof(double)];
-            Rnd.GetBytes(b);
-
-            //i don't understand this
-            ulong ul = BitConverter.ToUInt64(b, 0) / (1 << 11);
-            double d = ul / (double)(1UL << 53);
-            return d;
-        }
-
-        private static int NextCryptoInt() {
-            byte[] b = new byte[sizeof(int)];
-            Rnd.GetBytes(b);
-            return BitConverter.ToInt32(b, 0);
-        }
+#if NET6_0_OR_GREATER
+#else
+        // .Chunk<> polyfill available from .net 6 and higher
 
         /// <summary>
-        /// Generates a random boolean
+        /// Split the elements of a sequence into chunks of size at most <paramref name="size"/>.
         /// </summary>
-        public static bool RandomBool {
-            get {
-                return NextCryptoDouble() >= 0.5d;
+        /// <remarks>
+        /// Every chunk except the last will be of size <paramref name="size"/>.
+        /// The last chunk will contain the remaining elements and may be of a smaller size.
+        /// </remarks>
+        /// <param name="source">
+        /// An <see cref="IEnumerable{T}"/> whose elements to chunk.
+        /// </param>
+        /// <param name="size">
+        /// Maximum size of each chunk.
+        /// </param>
+        /// <typeparam name="TSource">
+        /// The type of the elements of source.
+        /// </typeparam>
+        /// <returns>
+        /// An <see cref="IEnumerable{T}"/> that contains the elements the input sequence split into chunks of size <paramref name="size"/>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="source"/> is null.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// <paramref name="size"/> is below 1.
+        /// </exception>
+        public static IEnumerable<TSource[]> Chunk<TSource>(this IEnumerable<TSource> source, int size) {
+            if(source is null)
+                throw new ArgumentNullException(nameof(source));
+
+            if(size < 1)
+                throw new ArgumentOutOfRangeException(nameof(size), "must be >= 1");
+
+            return ChunkIterator(source, size);
+        }
+
+        private static IEnumerable<TSource[]> ChunkIterator<TSource>(IEnumerable<TSource> source, int size) {
+            using IEnumerator<TSource> e = source.GetEnumerator();
+
+            // Before allocating anything, make sure there's at least one element.
+            if(e.MoveNext()) {
+                // Now that we know we have at least one item, allocate an initial storage array. This is not
+                // the array we'll yield.  It starts out small in order to avoid significantly overallocating
+                // when the source has many fewer elements than the chunk size.
+                int arraySize = Math.Min(size, 4);
+                int i;
+                do {
+                    var array = new TSource[arraySize];
+
+                    // Store the first item.
+                    array[0] = e.Current;
+                    i = 1;
+
+                    if(size != array.Length) {
+                        // This is the first chunk. As we fill the array, grow it as needed.
+                        for(; i < size && e.MoveNext(); i++) {
+                            if(i >= array.Length) {
+                                arraySize = (int)Math.Min((uint)size, 2 * (uint)array.Length);
+                                Array.Resize(ref array, arraySize);
+                            }
+
+                            array[i] = e.Current;
+                        }
+                    } else {
+                        // For all but the first chunk, the array will already be correctly sized.
+                        // We can just store into it until either it's full or MoveNext returns false.
+                        TSource[] local = array; // avoid bounds checks by using cached local (`array` is lifted to iterator object as a field)
+                        Debug.Assert(local.Length == size);
+                        for(; (uint)i < (uint)local.Length && e.MoveNext(); i++) {
+                            local[i] = e.Current;
+                        }
+                    }
+
+                    if(i != array.Length) {
+                        Array.Resize(ref array, i);
+                    }
+
+                    yield return array;
+                }
+                while(i >= size && e.MoveNext());
             }
         }
 
-        /// <summary>
-        /// Generates a random long number between 0 and max
-        /// </summary>
-        public static long RandomLong => GetRandomLong(0, long.MaxValue);
+        // TryGetNonEnumeratedCount polyfill from .NET 6 and higher
 
         /// <summary>
-        /// Generates a random integer between 0 and max
+        ///   Attempts to determine the number of elements in a sequence without forcing an enumeration.
         /// </summary>
-        public static int RandomInt {
-            get {
-                return NextCryptoInt();
+        /// <typeparam name="TSource">The type of the elements of <paramref name="source" />.</typeparam>
+        /// <param name="source">A sequence that contains elements to be counted.</param>
+        /// <param name="count">
+        ///     When this method returns, contains the count of <paramref name="source" /> if successful,
+        ///     or zero if the method failed to determine the count.</param>
+        /// <returns>
+        ///   <see langword="true" /> if the count of <paramref name="source"/> can be determined without enumeration;
+        ///   otherwise, <see langword="false" />.
+        /// </returns>
+        /// <remarks>
+        ///   The method performs a series of type tests, identifying common subtypes whose
+        ///   count can be determined without enumerating; this includes <see cref="ICollection{T}"/>,
+        ///   <see cref="ICollection"/> as well as internal types used in the LINQ implementation.
+        ///
+        ///   The method is typically a constant-time operation, but ultimately this depends on the complexity
+        ///   characteristics of the underlying collection implementation.
+        /// </remarks>
+        public static bool TryGetNonEnumeratedCount<TSource>(this IEnumerable<TSource> source, out int count) {
+            if(source is null)
+                throw new ArgumentNullException(nameof(source));
+
+            if(source is ICollection<TSource> collectionoft) {
+                count = collectionoft.Count;
+                return true;
             }
-        }
 
-        /// <summary>
-        /// Returns random double
-        /// </summary>
-        public static double RandomDouble {
-            get {
-                return NextCryptoDouble();
+            if(source is ICollection collection) {
+                count = collection.Count;
+                return true;
             }
+
+            count = 0;
+            return false;
         }
 
-        /// <summary>
-        /// Generates a random integer until max parameter
-        /// </summary>
-        /// <param name="max">Maximum integer value, excluding</param>
-        /// <returns></returns>
-        public static int GetRandomInt(int max) {
-            return GetRandomInt(0, max);
-        }
-
-        /// <summary>
-        /// Generates a random integer number in range
-        /// </summary>
-        /// <param name="min">Minimum value, including</param>
-        /// <param name="max">Maximum value, excluding</param>
-        public static int GetRandomInt(int min, int max) {
-            return (int)Math.Round(NextCryptoDouble() * (max - min - 1)) + min;
-        }
-
-        /// <summary>
-        /// Generates a random long number in range
-        /// </summary>
-        /// <param name="min">Minimum value, including</param>
-        /// <param name="max">Maximum value, excluding</param>
-        public static long GetRandomLong(long min, long max) {
-            double d = NextCryptoDouble();
-            return (long)Math.Round(d * (max - min - 1)) + min;
-        }
-
-        /// <summary>
-        /// Generates a random enum value by type
-        /// </summary>
-        public static Enum? RandomEnum(Type t) {
-            Array values = Enum.GetValues(t);
-
-            object? value = values.GetValue(GetRandomInt(values.Length));
-
-            return value == null ? default : (Enum)value;
-        }
-
-#if !NETSTANDARD16
-        /// <summary>
-        /// Generates a random enum value
-        /// </summary>
-        /// <typeparam name="T">Enumeration type</typeparam>
-        public static T? GetRandomEnum<T>() where T : struct {
-            //can't limit generics to enum http://connect.microsoft.com/VisualStudio/feedback/details/386194/allow-enum-as-generic-constraint-in-c
-
-            if(!typeof(T).IsEnum)
-                throw new ArgumentException("T must be an enum");
-
-            return (T?)(object?)RandomEnum(typeof(T));
-        }
 #endif
 
         /// <summary>
-        /// Generates a random date in range
+        /// Performs a specific action on each element of the sequence
         /// </summary>
-        /// <param name="minValue">Minimum date, including</param>
-        /// <param name="maxValue">Maximum date, excluding</param>
-        public static DateTime GetRandomDate(DateTime minValue, DateTime maxValue) {
-            long randomTicks = GetRandomLong(minValue.Ticks, maxValue.Ticks);
+        public static IEnumerable<T> ForEach<T>(this IEnumerable<T> source, Action<T> action) {
+            if(source == null)
+                throw new ArgumentNullException(nameof(source));
+            if(action == null)
+                throw new ArgumentNullException(nameof(action));
 
-            return new DateTime(randomTicks);
+            foreach(T element in source) {
+                action(element);
+
+                yield return element;
+            }
+        }
+    }
+}
+
+// FILE: src/NetBox/System/StreamExtensions.cs
+
+namespace System {
+    using System.Threading.Tasks;
+    using System.Threading;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Text;
+    using System.Diagnostics;
+
+    /// <summary>
+    /// <see cref="Stream"/> extension
+    /// </summary>
+    public static class StreamExtensions {
+        #region [ General ]
+
+        /// <summary>
+        /// Attemps to get the size of this stream by reading the Length property, otherwise returns 0.
+        /// </summary>
+        public static bool TryGetSize(this Stream s, out long size) {
+            try {
+                size = s.Length;
+                return true;
+            } catch(NotSupportedException) {
+
+            } catch(ObjectDisposedException) {
+
+            }
+
+            size = 0;
+            return false;
         }
 
         /// <summary>
-        /// Generates a random date value
+        /// Attemps to get the size of this stream by reading the Length property, otherwise returns 0.
         /// </summary>
-        public static DateTime RandomDate {
-            get { return GetRandomDate(DateTime.MinValue, DateTime.MaxValue); }
+        public static long? TryGetSize(this Stream s) {
+            long size;
+            if(TryGetSize(s, out size)) {
+                return size;
+            }
+
+            return null;
         }
 
+        #endregion
+
+        #region [ Seek and Read ]
+
         /// <summary>
-        /// Generates a random string. Never returns null.
+        /// Reads the stream until a specified sequence of bytes is reached.
         /// </summary>
-        public static string RandomString {
-            get {
-                string path = Path.GetRandomFileName();
-                path = path.Replace(".", "");
-                return path;
+        /// <returns>Bytes before the stop sequence</returns>
+        public static byte[] ReadUntil(this Stream s, byte[] stopSequence) {
+            byte[] buf = new byte[1];
+            var result = new List<byte>(50);
+            int charsMatched = 0;
+
+            while(s.Read(buf, 0, 1) == 1) {
+                byte b = buf[0];
+                result.Add(b);
+
+                if(b == stopSequence[charsMatched]) {
+                    if(++charsMatched == stopSequence.Length) {
+                        break;
+                    }
+                } else {
+                    charsMatched = 0;
+                }
+
+            }
+            return result.ToArray();
+        }
+
+        #endregion
+
+        #region [ Stream Conversion ]
+
+        /// <summary>
+        /// Reads all stream in memory and returns as byte array
+        /// </summary>
+        public static byte[]? ToByteArray(this Stream? stream) {
+            if(stream == null)
+                return null;
+            using(var ms = new MemoryStream()) {
+                stream.CopyTo(ms);
+                return ms.ToArray();
             }
         }
 
         /// <summary>
-        /// Generates a random string
+        /// Converts the stream to string using specified encoding. This is done by reading the stream into
+        /// byte array first, then applying specified encoding on top.
         /// </summary>
-        /// <param name="length">string length</param>
-        /// <param name="allowNulls">Whether to allow to return null values</param>
-        public static string? GetRandomString(int length, bool allowNulls) {
-            if(allowNulls && RandomLong % 2 == 0)
+        public static string? ToString(this Stream? stream, Encoding encoding) {
+            if(stream == null)
                 return null;
+            if(encoding == null)
+                throw new ArgumentNullException(nameof(encoding));
 
-            var builder = new StringBuilder();
-            char ch;
-            for(int i = 0; i < length; i++) {
-                ch = Convert.ToChar(Convert.ToInt32(Math.Floor((26 * RandomDouble) + 65)));
-                builder.Append(ch);
+            using(StreamReader reader = new StreamReader(stream, encoding)) {
+                return reader.ReadToEnd();
             }
-
-            return builder.ToString();
         }
 
-        /// <summary>
-        /// Generates a random URL in format "http://random.com/random.random
-        /// </summary>
-        /// <param name="allowNulls">Whether to allow to return nulls</param>
-        public static Uri? GetRandomUri(bool allowNulls) {
-            if(allowNulls && RandomLong % 2 == 0)
-                return null;
-
-            return new Uri($"http://{RandomString}.com/{RandomString}.{GetRandomString(3, false)}");
-        }
-
-        /// <summary>
-        /// Generates a random URL in format "http://random.com/random.random. Never returns null values.
-        /// </summary>
-        public static Uri? RandomUri => GetRandomUri(false);
-
-        /// <summary>
-        /// Generates a random sequence of bytes of a specified size
-        /// </summary>
-        public static byte[] GetRandomBytes(int minSize, int maxSize) {
-            int size = minSize == maxSize ? minSize : GetRandomInt(minSize, maxSize);
-            byte[] data = new byte[size];
-            Rnd.GetBytes(data);
-            return data;
-        }
+        #endregion
 
     }
 }
 
-// FILE: src/NetBox/Performance/TimeMeasure.cs
+// FILE: src/NetBox/IO/NonCloseableStream.cs
 
-namespace NetBox.Performance
+namespace NetBox.IO
 {
    using global::System;
-   using global::System.Diagnostics;
+   using global::System.IO;
 
    /// <summary>
-   /// Measures a time slice as precisely as possible
+   /// Represents a stream that ignores <see cref="IDisposable"/> operations i.e. cannot be closed by the client
    /// </summary>
-   class TimeMeasure : IDisposable
+   class NonCloseableStream : DelegatedStream
    {
-      private readonly Stopwatch _sw = new Stopwatch();
-
       /// <summary>
-      /// Creates the measure object
+      /// Creates an instance of this class
       /// </summary>
-      public TimeMeasure()
+      /// <param name="master">Master stream to delegate operations to</param>
+      public NonCloseableStream(Stream master) : base(master)
       {
-         _sw.Start();
+
       }
 
       /// <summary>
-      /// Returns number of elapsed ticks since the start of measure.
-      /// The measuring process will continue running.
+      /// Overrides this call to do nothing
       /// </summary>
-      public long ElapsedTicks => _sw.ElapsedTicks;
-
-      /// <summary>
-      /// Returns number of elapsed milliseconds since the start of measure.
-      /// The measuring process will continue running.
-      /// </summary>
-      public long ElapsedMilliseconds => _sw.ElapsedMilliseconds;
-
-
-      /// <summary>
-      /// Gets time elapsed from the time this measure was created
-      /// </summary>
-      public TimeSpan Elapsed => _sw.Elapsed;
-
-      /// <summary>
-      /// Stops measure object if still running
-      /// </summary>
-      public void Dispose()
+      /// <param name="disposing"></param>
+      protected override void Dispose(bool disposing)
       {
-         if (_sw.IsRunning)
-         {
-            _sw.Stop();
-         }
+         //does nothing on purpose
       }
    }
 }
 
 
-// FILE: src/NetBox/FileFormats/Csv/CsvFormat.cs
+// FILE: src/NetBox/IO/DelegatedStream.cs
 
-namespace NetBox.FileFormats.Csv {
-    static class CsvFormat {
-        public const char ValueSeparator = ',';
-        public const char ValueQuote = '"';
-        public static readonly string ValueQuoteStr = "\"";
-        public static readonly string ValueQuoteStrStr = "\"\"";
-        private static readonly char[] QuoteMark = new[] { ValueSeparator, ValueQuote, '\r', '\n' };
+namespace NetBox.IO
+{
+   using global::System;
+   using global::System.IO;
 
-        public static readonly char[] NewLine = { '\r', '\n' };
+   /// <summary>
+   /// Makes stream members virtual instead of abstract, allowing to override only specific behaviors.
+   /// </summary>
+   class DelegatedStream : Stream
+   {
+      private readonly Stream _master;
 
-        private const string ValueLeftBracket = "\"";
-        private const string ValueRightBracket = "\"";
+      /// <summary>
+      /// Creates an instance of non-closeable stream
+      /// </summary>
+      /// <param name="master"></param>
+      public DelegatedStream(Stream master)
+      {
+         _master = master ?? throw new ArgumentNullException(nameof(master));
+      }
 
-        private const string ValueEscapeFind = "\"";
-        private const string ValueEscapeValue = "\"\"";
+      /// <summary>
+      /// Calls <see cref="GetCanRead"/>
+      /// </summary>
+      public override bool CanRead => GetCanRead();
 
-        /// <summary>
-        /// Implemented according to RFC4180 http://tools.ietf.org/html/rfc4180
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static string EscapeValue(string value) {
-            if(string.IsNullOrEmpty(value)) {
-                return string.Empty;
-            }
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      protected virtual bool GetCanRead()
+      {
+         return _master.CanRead;
+      }
 
-            //the values have to be quoted if they contain either quotes themselves,
-            //value separators, or newline characters
-            if(value.IndexOfAny(QuoteMark) == -1) {
-                return value;
-            }
+      /// <summary>
+      /// Calls <see cref="GetCanSeek"/>
+      /// </summary>
+      public override bool CanSeek => GetCanSeek();
 
-            return ValueQuoteStr +
-               value
-                  .Replace(ValueQuoteStr, ValueQuoteStrStr)
-                  .Replace("\r\n", "\r")
-                  .Replace("\n", "\r") +
-               ValueQuoteStr;
-        }
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      protected virtual bool GetCanSeek()
+      {
+         return _master.CanSeek;
+      }
 
-        public static string? UnescapeValue(string value) {
-            if(value == null)
-                return null;
+      /// <summary>
+      /// Calls <see cref="GetCanWrite"/>
+      /// </summary>
+      public override bool CanWrite => GetCanWrite();
 
-            return value;
-        }
-    }
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      protected virtual bool GetCanWrite()
+      {
+         return _master.CanWrite;
+      }
+
+      /// <summary>
+      /// Calls <see cref="GetLength"/>
+      /// </summary>
+      public override long Length => _master.Length;
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      protected virtual long GetLength()
+      {
+         return _master.Length;
+      }
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      public override long Position { get => _master.Position; set => _master.Position = value; }
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      public override void Flush()
+      {
+         _master.Flush();
+      }
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      public override int Read(byte[] buffer, int offset, int count)
+      {
+         return _master.Read(buffer, offset, count);
+      }
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      public override long Seek(long offset, SeekOrigin origin)
+      {
+         return _master.Seek(offset, origin);
+      }
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      public override void SetLength(long value)
+      {
+         _master.SetLength(value);
+      }
+
+      /// <summary>
+      /// Delegates to master by default
+      /// </summary>
+      /// <returns></returns>
+      public override void Write(byte[] buffer, int offset, int count)
+      {
+         _master.Write(buffer, offset, count);
+      }
+   }
 }
+
 
 // FILE: src/NetBox/FileFormats/Csv/CsvReader.cs
 
@@ -2386,6 +2341,57 @@ namespace NetBox.FileFormats.Csv {
     }
 }
 
+// FILE: src/NetBox/FileFormats/Csv/CsvFormat.cs
+
+namespace NetBox.FileFormats.Csv {
+    static class CsvFormat {
+        public const char ValueSeparator = ',';
+        public const char ValueQuote = '"';
+        public static readonly string ValueQuoteStr = "\"";
+        public static readonly string ValueQuoteStrStr = "\"\"";
+        private static readonly char[] QuoteMark = new[] { ValueSeparator, ValueQuote, '\r', '\n' };
+
+        public static readonly char[] NewLine = { '\r', '\n' };
+
+        private const string ValueLeftBracket = "\"";
+        private const string ValueRightBracket = "\"";
+
+        private const string ValueEscapeFind = "\"";
+        private const string ValueEscapeValue = "\"\"";
+
+        /// <summary>
+        /// Implemented according to RFC4180 http://tools.ietf.org/html/rfc4180
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static string EscapeValue(string value) {
+            if(string.IsNullOrEmpty(value)) {
+                return string.Empty;
+            }
+
+            //the values have to be quoted if they contain either quotes themselves,
+            //value separators, or newline characters
+            if(value.IndexOfAny(QuoteMark) == -1) {
+                return value;
+            }
+
+            return ValueQuoteStr +
+               value
+                  .Replace(ValueQuoteStr, ValueQuoteStrStr)
+                  .Replace("\r\n", "\r")
+                  .Replace("\n", "\r") +
+               ValueQuoteStr;
+        }
+
+        public static string? UnescapeValue(string value) {
+            if(value == null)
+                return null;
+
+            return value;
+        }
+    }
+}
+
 // FILE: src/NetBox/FileFormats/Csv/CsvWriter.cs
 
 namespace NetBox.FileFormats.Csv
@@ -2479,6 +2485,16 @@ namespace NetBox.FileFormats.Csv
 }
 
 
+// FILE: src/NetBox/FileFormats/Ini/IniEntity.cs
+
+namespace NetBox.FileFormats.Ini
+{
+   abstract class IniEntity
+   {
+   }
+}
+
+
 // FILE: src/NetBox/FileFormats/Ini/IniComment.cs
 
 namespace NetBox.FileFormats.Ini
@@ -2499,140 +2515,10 @@ namespace NetBox.FileFormats.Ini
 }
 
 
-// FILE: src/NetBox/FileFormats/Ini/StructuredIniFile.cs
-
-namespace NetBox.FileFormats.Ini {
-    using global::System;
-    using global::System.Collections.Generic;
-    using global::System.IO;
-    using global::System.Linq;
-    using global::System.Text;
-
-    class StructuredIniFile {
-        private const string _sectionBegin = "[";
-        private const string _sectionEnd = "]";
-        private static readonly char[] _sectionTrims = { '[', ']' };
-
-        private readonly IniSection _globalSection;
-        private readonly List<IniSection> _sections = new List<IniSection>();
-        private readonly Dictionary<string, IniKeyValue> _fullKeyNameToValue = new Dictionary<string, IniKeyValue>(StringComparer.InvariantCultureIgnoreCase);
-
-        public StructuredIniFile() {
-            _globalSection = new IniSection(null);
-            _sections.Add(_globalSection);
-        }
-
-        public string? this[string key] {
-            get {
-                if(key == null)
-                    return null;
-
-                return !_fullKeyNameToValue.TryGetValue(key, out IniKeyValue? value) ? null : value.Value;
-            }
-            set {
-                if(key == null)
-                    return;
-
-                IniSection.SplitKey(key, out string? sectionName, out string keyName);
-                IniSection? section = sectionName == null
-                   ? _globalSection
-                   : _sections.FirstOrDefault(s => s.Name == sectionName);
-                if(section == null) {
-                    section = new IniSection(sectionName);
-                    _sections.Add(section);
-                }
-                IniKeyValue? ikv = section.Set(keyName, value);
-
-                //update the local cache
-                if(ikv != null) {
-                    if(value == null) {
-                        _fullKeyNameToValue.Remove(key);
-                    } else {
-                        _fullKeyNameToValue[key] = ikv;
-                    }
-                }
-            }
-        }
-
-        public static StructuredIniFile FromString(string content, bool parseInlineComments = true) {
-            using(Stream input = new MemoryStream(Encoding.UTF8.GetBytes(content))) {
-                return FromStream(input, parseInlineComments);
-            }
-        }
-
-        public static StructuredIniFile FromStream(Stream inputStream, bool parseInlineComments = true) {
-            if(inputStream == null)
-                throw new ArgumentNullException(nameof(inputStream));
-
-            var file = new StructuredIniFile();
-
-            using(var reader = new StreamReader(inputStream)) {
-                IniSection section = file._globalSection;
-
-                string? line;
-                while((line = reader.ReadLine()) != null) {
-                    line = line.Trim();
-
-                    if(line.StartsWith(_sectionBegin)) {
-                        //start new section
-                        line = line.Trim();
-                        section = new IniSection(line);
-                        file._sections.Add(section);
-                    } else if(line.StartsWith(IniComment.CommentSeparator)) {
-                        //whole line is a comment
-                        string comment = line.Substring(1).Trim();
-                        section.Add(new IniComment(comment));
-                    } else {
-                        IniKeyValue? ikv = IniKeyValue.FromLine(line, parseInlineComments);
-                        if(ikv == null)
-                            continue;
-
-                        section.Add(ikv);
-                        string fullKey = section.Name == null
-                           ? ikv.Key
-                           : $"{section.Name}{IniSection.SectionKeySeparator}{ikv.Key}";
-                        file._fullKeyNameToValue[fullKey] = ikv;
-
-                    }
-                }
-            }
-
-            return file;
-        }
-
-        public void WriteTo(Stream outputStream) {
-            if(outputStream == null)
-                throw new ArgumentNullException(nameof(outputStream));
-
-            using(var writer = new StreamWriter(outputStream)) {
-                foreach(IniSection section in _sections) {
-                    if(section.Name != null) {
-                        writer.WriteLine();
-                        writer.WriteLine($"{_sectionBegin}{section.Name}{_sectionEnd}");
-                    }
-
-                    section.WriteTo(writer);
-                }
-            }
-        }
-
-        //private static 
-    }
-}
-
-// FILE: src/NetBox/FileFormats/Ini/IniEntity.cs
-
-namespace NetBox.FileFormats.Ini
-{
-   abstract class IniEntity
-   {
-   }
-}
-
-
 // FILE: src/NetBox/FileFormats/Ini/IniSection.cs
 
 namespace NetBox.FileFormats.Ini {
+    using global::System.Linq;
     using global::System;
     using global::System.Collections.Generic;
     using global::System.IO;
@@ -2644,7 +2530,7 @@ namespace NetBox.FileFormats.Ini {
         private readonly Dictionary<string, IniKeyValue> _keyToValue = new Dictionary<string, IniKeyValue>();
 
         /// <summary>
-        /// Section name
+        /// Section name. Null name indicates global section (or no section, depending on the context)
         /// </summary>
         public string? Name { get; set; }
 
@@ -2671,6 +2557,11 @@ namespace NetBox.FileFormats.Ini {
                 _keyToValue[ikv.Key] = ikv;
             }
         }
+
+        /// <summary>
+        /// Get key names in this section
+        /// </summary>
+        public string[] Keys => _keyToValue.Select(p => p.Key).ToArray();
 
         public IniKeyValue? Set(string key, string? value) {
             if(value == null) {
@@ -2776,5 +2667,136 @@ namespace NetBox.FileFormats.Ini {
         public override string ToString() {
             return $"{Value}";
         }
+    }
+}
+
+// FILE: src/NetBox/FileFormats/Ini/StructuredIniFile.cs
+
+namespace NetBox.FileFormats.Ini {
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Text;
+
+    class StructuredIniFile {
+        private const string _sectionBegin = "[";
+        private const string _sectionEnd = "]";
+        private static readonly char[] _sectionTrims = { '[', ']' };
+
+        private readonly IniSection _globalSection;
+        private readonly List<IniSection> _sections = new List<IniSection>();
+        private readonly Dictionary<string, IniKeyValue> _fullKeyNameToValue = new Dictionary<string, IniKeyValue>(StringComparer.InvariantCultureIgnoreCase);
+
+        public StructuredIniFile() {
+            _globalSection = new IniSection(null);
+            _sections.Add(_globalSection);
+        }
+
+        public string[] SectionNames => _sections.Where(s => s.Name != null).Select(s => s.Name!).ToArray();
+
+        public string[]? GetSectionKeys(string sectionName) {
+            IniSection? section = _sections.FirstOrDefault(s => s.Name == sectionName);
+            if(section == null)
+                return null;
+
+            return section.Keys;
+        }
+
+        public string? this[string key] {
+            get {
+                if(key == null)
+                    return null;
+
+                return !_fullKeyNameToValue.TryGetValue(key, out IniKeyValue? value) ? null : value.Value;
+            }
+            set {
+                if(key == null)
+                    return;
+
+                IniSection.SplitKey(key, out string? sectionName, out string keyName);
+                IniSection? section = sectionName == null
+                   ? _globalSection
+                   : _sections.FirstOrDefault(s => s.Name == sectionName);
+                if(section == null) {
+                    section = new IniSection(sectionName);
+                    _sections.Add(section);
+                }
+                IniKeyValue? ikv = section.Set(keyName, value);
+
+                //update the local cache
+                if(ikv != null) {
+                    if(value == null) {
+                        _fullKeyNameToValue.Remove(key);
+                    } else {
+                        _fullKeyNameToValue[key] = ikv;
+                    }
+                }
+            }
+        }
+
+        public static StructuredIniFile FromString(string content, bool parseInlineComments = true) {
+            using(Stream input = new MemoryStream(Encoding.UTF8.GetBytes(content))) {
+                return FromStream(input, parseInlineComments);
+            }
+        }
+
+        public static StructuredIniFile FromStream(Stream inputStream, bool parseInlineComments = true) {
+            if(inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+
+            var file = new StructuredIniFile();
+
+            using(var reader = new StreamReader(inputStream)) {
+                IniSection section = file._globalSection;
+
+                string? line;
+                while((line = reader.ReadLine()) != null) {
+                    line = line.Trim();
+
+                    if(line.StartsWith(_sectionBegin)) {
+                        //start new section
+                        line = line.Trim();
+                        section = new IniSection(line);
+                        file._sections.Add(section);
+                    } else if(line.StartsWith(IniComment.CommentSeparator)) {
+                        //whole line is a comment
+                        string comment = line.Substring(1).Trim();
+                        section.Add(new IniComment(comment));
+                    } else {
+                        IniKeyValue? ikv = IniKeyValue.FromLine(line, parseInlineComments);
+                        if(ikv == null)
+                            continue;
+
+                        section.Add(ikv);
+                        string fullKey = section.Name == null
+                           ? ikv.Key
+                           : $"{section.Name}{IniSection.SectionKeySeparator}{ikv.Key}";
+                        file._fullKeyNameToValue[fullKey] = ikv;
+
+                    }
+                }
+            }
+
+            return file;
+        }
+
+        public void WriteTo(Stream outputStream) {
+            if(outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
+
+            using(var writer = new StreamWriter(outputStream)) {
+                foreach(IniSection section in _sections) {
+                    if(section.Name != null) {
+                        writer.WriteLine();
+                        writer.WriteLine($"{_sectionBegin}{section.Name}{_sectionEnd}");
+                    }
+
+                    section.WriteTo(writer);
+                }
+            }
+        }
+
+        //private static 
     }
 }

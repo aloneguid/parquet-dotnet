@@ -812,10 +812,22 @@ namespace Parquet.Encodings {
                     }
                     break;
                 case TType.INT64:
-                    foreach(DateTime element in data) {
-                        long unixTime = element.ToUtc().ToUnixMilliseconds();
-                        byte[] raw = BitConverter.GetBytes(unixTime);
-                        destination.Write(raw, 0, raw.Length);
+                    if(tse.ConvertedType == ConvertedType.TIMESTAMP_MILLIS) {
+                        foreach(DateTime element in data) {
+                            long unixTime = element.ToUtc().ToUnixMilliseconds();
+                            byte[] raw = BitConverter.GetBytes(unixTime);
+                            destination.Write(raw, 0, raw.Length);
+                        }
+#if NET7_0_OR_GREATER
+                    } else if(tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
+                        foreach(DateTime element in data) {
+                            long unixTime = element.ToUtc().ToUnixMicroseconds();
+                            byte[] raw = BitConverter.GetBytes(unixTime);
+                            destination.Write(raw, 0, raw.Length);
+                        }
+#endif
+                    } else {
+                        throw new ArgumentException($"invalid converted type: {tse.ConvertedType}");
                     }
                     break;
                 case TType.INT96:
@@ -874,18 +886,17 @@ namespace Parquet.Encodings {
                     long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
                     try {
                         int longsRead = Decode(source, longs.AsSpan(0, data.Length));
-                        bool isMicros = tse.ConvertedType != null &&
-                                        tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS;
-                        if(isMicros)
+                        if(tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
                             for(int i = 0; i < longsRead; i++) {
                                 long lv = longs[i];
                                 long microseconds = lv % 1000;
                                 lv /= 1000;
                                 data[i] = lv.AsUnixMillisecondsInDateTime().AddTicks(microseconds * 10);
                             }
-                        else
+                        } else {
                             for(int i = 0; i < longsRead; i++)
                                 data[i] = longs[i].AsUnixMillisecondsInDateTime();
+                        }
                         return longsRead;
                     } finally {
                         ArrayPool<long>.Shared.Return(longs);

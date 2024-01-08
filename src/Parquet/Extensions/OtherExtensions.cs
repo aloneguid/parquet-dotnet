@@ -8,6 +8,7 @@ namespace Parquet {
     static class OtherExtensions {
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         private const long UnixEpochMilliseconds = 62_135_596_800_000L;
+        private const long UnixEpochMicroseconds = 62_135_596_800_000_000L;
 
         public static DateTimeOffset FromUnixMilliseconds(this long unixMilliseconds) {
             return UnixEpoch.AddMilliseconds(unixMilliseconds);
@@ -21,6 +22,13 @@ namespace Parquet {
             long milliseconds = dto.Ticks / TimeSpan.TicksPerMillisecond;
             return milliseconds - UnixEpochMilliseconds;
         }
+
+#if NET7_0_OR_GREATER
+        public static long ToUnixMicroseconds(this DateTime dto) {
+            long microseconds = dto.Ticks / TimeSpan.TicksPerMicrosecond;
+            return microseconds - UnixEpochMicroseconds;
+        }
+#endif
 
         public static DateTime AsUnixDaysInDateTime(this int unixDays) {
             return UnixEpoch.AddDays(unixDays);

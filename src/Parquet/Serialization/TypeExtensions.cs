@@ -52,9 +52,9 @@ namespace Parquet.Serialization {
                 : IsRequired(pi) ? false : null;
 
             if(t == typeof(DateTime)) {
-                bool isTimestamp = pi?.GetCustomAttribute<ParquetTimestampAttribute>() != null;
+                ParquetTimestampAttribute? tsa = pi?.GetCustomAttribute<ParquetTimestampAttribute>();
                 r = new DateTimeDataField(name,
-                    isTimestamp ? DateTimeFormat.DateAndTime : DateTimeFormat.Impala,
+                    tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
                     isNullable, null, propertyName);
             } else if(t == typeof(TimeSpan)) {
                 r = new TimeSpanDataField(name,
