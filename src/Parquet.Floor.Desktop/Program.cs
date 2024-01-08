@@ -14,6 +14,17 @@ class Program {
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp() {
 
+#if DEBUG
+        Tracker.Instance = new Tracker("floor", "0.0.0.0");
+#else
+        Tracker.Instance = new Tracker("floor", Globals.Version);
+#endif
+        try {
+            Tracker.Instance.Track("start");
+        }catch(Exception ex) {
+            Console.WriteLine(ex);
+        }
+
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()

@@ -4,6 +4,10 @@
 
 Support Writing Int64 timestamp MICROS unit (#362).
 
+### Experimental features
+
+Cross-platform desktop app called **Floor** is published as a part of this release.
+
 ## 4.19.0
 
 ### Improvements
