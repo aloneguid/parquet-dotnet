@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
              xmlns:views="clr-namespace:Parquet.Floor.Views"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="100"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
     
@@ -16,41 +17,63 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- for icons see https://www.iconfinder.com/iconsets/bitsies -->
-        <StackPanel Classes="toolbar" Grid.Row="0">
-            <Button Click="OpenFile_Click" ToolTip.Tip="Open file from disk...">
-                <Image Source="/Assets/icons/open.png"/>
-            </Button>
-            <Button ToolTip.Tip="Show detailed schema...">
-                <Button.Flyout>
-                    <Flyout Placement="RightEdgeAlignedTop"
-                            Flyout.FlyoutPresenterClasses="wider">
-                        <views:SchemaView DataContext="{Binding Schema}"/>
-                    </Flyout>
-                </Button.Flyout>
-                <Image Source="/Assets/icons/diagram.png"/>
-            </Button>
-            <Button ToolTip.Tip="Raw file metadata">
-                <Button.Flyout>
-                    <Flyout Placement="RightEdgeAlignedTop"
-                            Flyout.FlyoutPresenterClasses="wider">
-                        <views:RawMetaView DataContext="{Binding File.Metadata}"/>
-                    </Flyout>
-                </Button.Flyout>
 
-                <Image Source="/Assets/icons/raw-extension.png"/>
-            </Button>
-            <Button>
-                <Image Source="/Assets/icons/information.png"/>
-            </Button>
-        </StackPanel>
+        <SplitView IsPaneOpen="True" DisplayMode="CompactInline"
+                   OpenPaneLength="54">
+            <SplitView.Pane>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Classes="toolbar" Margin="3"
+                                DockPanel.Dock="Top">
+                        <Button Click="OpenFile_Click"
+                                ToolTip.Tip="Open file from disk..."
+                                i:Attached.Icon="fa-solid fa-folder-open"/>
+                        <Button ToolTip.Tip="Data"
+                            i:Attached.Icon="fa-solid fa-table"/>
+                        <Button ToolTip.Tip="Show detailed schema..."
+                                i:Attached.Icon="fa-solid fa-magnifying-glass-chart">
+                            <Button.Flyout>
+                                <Flyout Placement="RightEdgeAlignedTop"
+                                        Flyout.FlyoutPresenterClasses="wider">
+                                    <views:SchemaView DataContext="{Binding Schema}"/>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                        <Button ToolTip.Tip="Raw file metadata"
+                                i:Attached.Icon="fa-solid fa-bore-hole">
+                            <Button.Flyout>
+                                <Flyout Placement="RightEdgeAlignedTop"
+                                        Flyout.FlyoutPresenterClasses="wider">
+                                    <views:RawMetaView DataContext="{Binding File.Metadata}"/>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                        
+                    </StackPanel>
 
-        <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
-        <views:ErrorView DataContext="{Binding}" Grid.Row="1" IsVisible="{Binding HasError}"/>
+                    <StackPanel Classes="toolbar" Margin="3"
+                                Grid.Row="1">
+                        <Button ToolTip.Tip="About..."
+                            i:Attached.Icon="fa-solid fa-info"/>
+                    </StackPanel>
+                </Grid>
+            </SplitView.Pane>
+            <SplitView.Content>
+                <Grid>
+                    <views:DataView DataContext="{Binding Data}"/>
+                    <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
+                </Grid>
+            </SplitView.Content>
+        </SplitView>
+
     </Grid>
 
 </UserControl>

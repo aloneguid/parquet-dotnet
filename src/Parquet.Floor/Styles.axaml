@@ -1,17 +1,15 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:system="clr-namespace:System">
+        xmlns:system="clr-namespace:System"
+        xmlns:i="https://github.com/projektanker/icons.avalonia">
     <Design.PreviewWith>
         
         <StackPanel>
 
             <StackPanel Classes="toolbar">
-                <Button>
-                    <Image Source="/Assets/icons/open.png"/>
-                </Button>
-                <Button>
-                    <Image Source="/Assets/icons/map.png"/>
-                </Button>
+                <Button i:Attached.Icon="fa-solid fa-folder-open"/>
+                <Button i:Attached.Icon="fa-solid fa-folder-open"/>
+                <Button i:Attached.Icon="fa-solid fa-folder-open"/>
             </StackPanel>
 
 
@@ -92,18 +90,24 @@
     <!-- Toolbar -->
     
     <Style Selector="StackPanel.toolbar">
-        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Orientation" Value="Vertical"/>
         <Setter Property="Margin" Value="0,0,0,0"/>
-    </Style>
 
-    <Style Selector="StackPanel.toolbar Button">
-        <Setter Property="Padding" Value="6"/>
-        <Setter Property="Margin" Value="0,0,5,0"/>
-        <Setter Property="Background" Value="Transparent"/>
-    </Style>
+        <Style Selector="^ Button">
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="FontSize" Value="25"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Opacity" Value="0.8"/>
+        </Style>
 
-    <Style Selector="StackPanel.toolbar Button Image">
-        <Setter Property="Width" Value="26"/>
+        <Style Selector="^ Button:pointerover">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="^ Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
     </Style>
 
     <!-- DataGrid -->
