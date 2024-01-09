@@ -36,6 +36,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
 - [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
 - [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
+- [Omni Loader: Self-tuning Database Migration Accelerator](https://www.omniloader.com).
 
 *...raise a PR to appear here...*
 
