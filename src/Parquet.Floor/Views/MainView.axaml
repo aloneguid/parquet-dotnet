@@ -4,7 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
              xmlns:views="clr-namespace:Parquet.Floor.Views"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:i="https://github.com/projektanker/icons.avalonia"
+             xmlns:actiproImages="using:ActiproSoftware.UI.Avalonia.Images"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -15,65 +17,108 @@
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <DockPanel>
+        <!-- see https://github.com/Actipro/Avalonia-Controls/blob/4c1d0b69c2fd810b19e02ba92ed5c0078fafce52/Samples/SampleBrowser/SampleBrowser.Common/SampleBrowser/Views/RootView.axaml#L12 -->
+        <actipro:ChromedTitleBar DockPanel.Dock="Top">
+            <actipro:ChromedTitleBar.Resources>
+                <actipro:ComparisonConverter x:Key="RightContentMarginConverter">
+                    <actipro:ComparisonConverter.TrueResult>
+                        <Thickness>0,0,20,0</Thickness>
+                    </actipro:ComparisonConverter.TrueResult>
+                    <actipro:ComparisonConverter.FalseResult>
+                        <Thickness>0,0,0,0</Thickness>
+                    </actipro:ComparisonConverter.FalseResult>
+                </actipro:ComparisonConverter>
+            </actipro:ChromedTitleBar.Resources>
 
+            <actipro:ChromedTitleBar.LeftContent>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="applicationButton" Margin="0,0,20,0"
+							ContentTemplate="{actipro:GlyphTemplate Menu16}"
+							Theme="{actipro:ControlTheme TitleBarButton}"
+							ToolTip.Tip="Toggle Sidebar" />
 
-        <SplitView IsPaneOpen="True" DisplayMode="CompactInline"
-                   OpenPaneLength="54">
-            <SplitView.Pane>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    
-                    <StackPanel Classes="toolbar" Margin="3"
-                                DockPanel.Dock="Top">
-                        <Button Click="OpenFile_Click"
-                                ToolTip.Tip="Open file from disk..."
-                                i:Attached.Icon="fa-solid fa-folder-open"/>
-                        <Button ToolTip.Tip="Data"
-                            i:Attached.Icon="fa-solid fa-table"/>
-                        <Button ToolTip.Tip="Show detailed schema..."
-                                i:Attached.Icon="fa-solid fa-magnifying-glass-chart">
-                            <Button.Flyout>
-                                <Flyout Placement="RightEdgeAlignedTop"
-                                        Flyout.FlyoutPresenterClasses="wider">
-                                    <views:SchemaView DataContext="{Binding Schema}"/>
-                                </Flyout>
-                            </Button.Flyout>
-                        </Button>
-                        <Button ToolTip.Tip="Raw file metadata"
-                                i:Attached.Icon="fa-solid fa-bore-hole">
-                            <Button.Flyout>
-                                <Flyout Placement="RightEdgeAlignedTop"
-                                        Flyout.FlyoutPresenterClasses="wider">
-                                    <views:RawMetaView DataContext="{Binding File.Metadata}"/>
-                                </Flyout>
-                            </Button.Flyout>
-                        </Button>
-                        
+                    <Image DockPanel.Dock="Left" Width="24" Height="24"
+                           Source="avares://floor/Assets/icon.ico"
+                           VerticalAlignment="Center" IsHitTestVisible="False">
+                        <Image.Effect>
+                            <DropShadowEffect OffsetX="0" OffsetY="1" BlurRadius="3" Opacity="{DynamicResource {actipro:ThemeResourceKey ShadowOpacity}}" />
+                        </Image.Effect>
+                    </Image>
+
+                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <TextBlock Text="{Binding SubTitle}" FontSize="12" TextTrimming="CharacterEllipsis" Opacity="0.85" />
+                        <TextBlock Margin="0,-2,0,0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
+                </StackPanel>
+            </actipro:ChromedTitleBar.LeftContent>
 
-                    <StackPanel Classes="toolbar" Margin="3"
-                                Grid.Row="1">
-                        <Button ToolTip.Tip="About..."
-                            i:Attached.Icon="fa-solid fa-info"/>
-                    </StackPanel>
-                </Grid>
-            </SplitView.Pane>
-            <SplitView.Content>
-                <Grid>
-                    <views:DataView DataContext="{Binding Data}"/>
-                    <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
-                </Grid>
-            </SplitView.Content>
-        </SplitView>
+            <actipro:ChromedTitleBar.RightContent>
+                <StackPanel Margin="{Binding $parent[actipro:ChromedTitleBar].HasCaptionButtons, Converter={StaticResource RightContentMarginConverter}}" Orientation="Horizontal">
+                    <actipro:ToggleThemeButton
+							Theme="{actipro:ControlTheme TitleBarToggleThemeButton}"
+							ToolTip.Tip="Toggle Theme" />
+                </StackPanel>
+            </actipro:ChromedTitleBar.RightContent>
+            
+        </actipro:ChromedTitleBar>
 
-    </Grid>
+
+        <!-- Client Area -->
+        <Border Background="Transparent" BorderBrush="{actipro:ThemeResource Container2BorderBrush}" BorderThickness="0,1,0,0">
+            <SplitView IsPaneOpen="True" DisplayMode="CompactInline"
+                       OpenPaneLength="54">
+                <SplitView.Pane>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Classes="toolbar" Margin="3"
+                                    DockPanel.Dock="Top">
+                            <Button Click="OpenFile_Click"
+                                    ToolTip.Tip="Open file from disk..."
+                                    i:Attached.Icon="fa-solid fa-folder-open"/>
+                            <Button ToolTip.Tip="Data"
+                                i:Attached.Icon="fa-solid fa-table"/>
+                            <Button ToolTip.Tip="Show detailed schema..."
+                                    i:Attached.Icon="fa-solid fa-magnifying-glass-chart">
+                                <Button.Flyout>
+                                    <Flyout Placement="RightEdgeAlignedTop"
+                                            Flyout.FlyoutPresenterClasses="wider">
+                                        <views:SchemaView DataContext="{Binding Schema}"/>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Button ToolTip.Tip="Raw file metadata"
+                                    i:Attached.Icon="fa-solid fa-bore-hole">
+                                <Button.Flyout>
+                                    <Flyout Placement="RightEdgeAlignedTop"
+                                            Flyout.FlyoutPresenterClasses="wider">
+                                        <views:RawMetaView DataContext="{Binding File.Metadata}"/>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+
+                        </StackPanel>
+
+                        <StackPanel Classes="toolbar" Margin="3"
+                                    Grid.Row="1">
+                            <Button ToolTip.Tip="About..."
+                                i:Attached.Icon="fa-solid fa-info"/>
+                        </StackPanel>
+                    </Grid>
+                </SplitView.Pane>
+                <SplitView.Content>
+                    <Grid>
+                        <views:DataView DataContext="{Binding Data}"/>
+                        <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
+                    </Grid>
+                </SplitView.Content>
+            </SplitView>
+        </Border>
+        
+    </DockPanel>
 
 </UserControl>

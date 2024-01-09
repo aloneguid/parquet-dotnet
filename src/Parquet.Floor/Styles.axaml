@@ -82,7 +82,7 @@
     </Style>
 
     <Style Selector="TextBlock.hyperlink">
-        <Setter Property="Foreground" Value="Blue"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlHyperlinkTextBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontStyle" Value="Italic"/>
     </Style>
@@ -123,14 +123,14 @@
     </Style>
 
     <Style Selector="TextBlock.data-cell-key">
-        <Setter Property="Foreground" Value="Green"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlHyperlinkTextBrush}"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
 
     <!-- error message -->
 
     <Style Selector="Grid.error">
-        <Setter Property="Background" Value="Black"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
     </Style>
     
     <Style Selector="Grid.error Image">

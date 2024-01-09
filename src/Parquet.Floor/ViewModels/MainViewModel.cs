@@ -19,6 +19,12 @@ public partial class MainViewModel : ViewModelBase {
     private Stream? _fileStream;
 
     [ObservableProperty]
+    private string? _title;
+
+    [ObservableProperty]
+    private string? _subTitle;
+
+    [ObservableProperty]
     private FileViewModel? _file;
 
     [ObservableProperty]
@@ -38,6 +44,10 @@ public partial class MainViewModel : ViewModelBase {
     public DataViewModel Data { get; } = new DataViewModel();
 
     public MainViewModel() {
+
+        Title = "Parquet Floor";
+        SubTitle = Parquet.Globals.Version;
+
         string[] args = Environment.GetCommandLineArgs();
 
         if(Design.IsDesignMode) {

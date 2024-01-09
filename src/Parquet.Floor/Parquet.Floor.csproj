@@ -31,12 +31,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="ActiproSoftware.Controls.Avalonia" Version="23.1.2" />
+        <PackageReference Include="ActiproSoftware.Controls.Avalonia.Themes.DataGrid" Version="23.1.2" />
         <PackageReference Include="Avalonia.Desktop" Version="11.0.6" />
         <PackageReference Include="Avalonia" Version="11.0.6" />
         <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.0.6" />
         <PackageReference Include="Avalonia.Controls.TreeDataGrid" Version="11.0.2" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.6" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.6" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
