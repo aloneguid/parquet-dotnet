@@ -106,8 +106,7 @@ public partial class MainViewModel : ViewModelBase {
                 };
             }
             Schema.InitSchema(File.Schema);
-            Data.File = File;
-            await Data.InitReaderAsync(_fileStream);
+            await Data.InitReaderAsync(File, _fileStream);
 
         } catch(Exception ex) {
             HasError = true;

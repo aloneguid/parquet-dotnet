@@ -7,12 +7,12 @@ using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Parquet.Schema;
 
-namespace Parquet.Floor.Views {
+namespace Parquet.Floor.Views.Templates {
 
     /// <summary>
     /// Implements pretty much all of the logic for rendering a parquet data cell, including complex types.
     /// </summary>
-    internal class DataViewCellTemplate : IDataTemplate {
+    class DataViewCellTemplate : IDataTemplate {
 
         private const string DataCellClassName = "data-cell";
         private const string DataCellNullClassName = "data-cell-null";
@@ -47,16 +47,12 @@ namespace Parquet.Floor.Views {
                 Text = value
             };
             r.Classes.Add(DataCellClassName);
-            if(extraClassName != null) {
-                r.Classes.Add(extraClassName);
-            }
+            if(extraClassName != null)                 r.Classes.Add(extraClassName);
             return r;
         }
 
         public static Control BuildValue(object? value, Field f, int depth, string? extraClassName = null, bool forceData = false) {
-            if(value == null) {
-                return CreateNullTextBlock();
-            }
+            if(value == null)                 return CreateNullTextBlock();
 
             if(forceData || f.SchemaType == SchemaType.Data) {
                 TextBlock tb = CreateTextBlock(value.ToString()!, extraClassName);
@@ -68,8 +64,7 @@ namespace Parquet.Floor.Views {
                 };
 
                 var structField = (StructField)f;
-                if(value is IDictionary<string, object> valueDictionary) {
-                    foreach(Field field in structField.Fields) {
+                if(value is IDictionary<string, object> valueDictionary)                     foreach(Field field in structField.Fields) {
 
                         var vsp = new StackPanel {
                             Orientation = Orientation.Horizontal
@@ -82,7 +77,6 @@ namespace Parquet.Floor.Views {
                         valueDictionary.TryGetValue(field.Name, out object? fieldValue);
                         vsp.Children.Add(BuildValue(fieldValue, field, depth + 1));
                     }
-                }
 
                 return sp;
             } else if(f.SchemaType == SchemaType.Map) {
@@ -92,8 +86,7 @@ namespace Parquet.Floor.Views {
 
                 var mapField = (MapField)f;
 
-                if(value is IDictionary valueDictionary) {
-                    foreach(DictionaryEntry entry in valueDictionary) {
+                if(value is IDictionary valueDictionary)                     foreach(DictionaryEntry entry in valueDictionary) {
 
                         var vsp = new StackPanel {
                             Orientation = Orientation.Horizontal
@@ -104,7 +97,6 @@ namespace Parquet.Floor.Views {
                         //vsp.Children.Add(CreateTextBlock(": "));
                         vsp.Children.Add(BuildValue(entry.Value, mapField.Value, depth + 1));
                     }
-                }
 
                 return sp;
             } else if(f.SchemaType == SchemaType.List) {
@@ -112,11 +104,7 @@ namespace Parquet.Floor.Views {
                     Orientation = Orientation.Vertical
                 };
                 var listField = (ListField)f;
-                if(value is IEnumerable valueList) {
-                    foreach(object? entry in valueList) {
-                        sp.Children.Add(BuildValue(entry, listField.Item, depth + 1));
-                    }
-                }
+                if(value is IEnumerable valueList)                     foreach(object? entry in valueList)                         sp.Children.Add(BuildValue(entry, listField.Item, depth + 1));
                 return sp;
             }
 
@@ -127,13 +115,7 @@ namespace Parquet.Floor.Views {
 
             object? value = null;
 
-            if(param is Dictionary<string, object> row) {
-                if(row.TryGetValue(f.Name, out object? mapValue)) {
-                    if(mapValue != null) {
-                        value = mapValue;
-                    }
-                }
-            }
+            if(param is Dictionary<string, object> row)                 if(row.TryGetValue(f.Name, out object? mapValue))                     if(mapValue != null)                         value = mapValue;
 
             return BuildValue(value, f, depth);
         }

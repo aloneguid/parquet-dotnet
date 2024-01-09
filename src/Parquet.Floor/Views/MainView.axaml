@@ -10,7 +10,7 @@
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
-    
+
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
@@ -32,12 +32,7 @@
             </actipro:ChromedTitleBar.Resources>
 
             <actipro:ChromedTitleBar.LeftContent>
-                <StackPanel Orientation="Horizontal">
-                    <Button x:Name="applicationButton" Margin="0,0,20,0"
-							ContentTemplate="{actipro:GlyphTemplate Menu16}"
-							Theme="{actipro:ControlTheme TitleBarButton}"
-							ToolTip.Tip="Toggle Sidebar" />
-
+                <StackPanel Orientation="Horizontal" Margin="14,0,0,0">
                     <Image DockPanel.Dock="Left" Width="24" Height="24"
                            Source="avares://floor/Assets/icon.ico"
                            VerticalAlignment="Center" IsHitTestVisible="False">
@@ -60,64 +55,31 @@
 							ToolTip.Tip="Toggle Theme" />
                 </StackPanel>
             </actipro:ChromedTitleBar.RightContent>
-            
+
         </actipro:ChromedTitleBar>
 
-
         <!-- Client Area -->
-        <Border Background="Transparent" BorderBrush="{actipro:ThemeResource Container2BorderBrush}" BorderThickness="0,1,0,0">
-            <SplitView IsPaneOpen="True" DisplayMode="CompactInline"
-                       OpenPaneLength="54">
-                <SplitView.Pane>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+        <Grid>
+            <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
+                        BorderThickness="0,0,0,1"
+                        Padding="0">
+                <TabControl.Resources>
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey TabItemBorderBrushOutline}" Color="Transparent" />
+                    <Thickness x:Key="{actipro:ThemeResourceKey TabControlHeaderPaddingOutline}">3,0,3,3</Thickness>
+                </TabControl.Resources>
 
-                        <StackPanel Classes="toolbar" Margin="3"
-                                    DockPanel.Dock="Top">
-                            <Button Click="OpenFile_Click"
-                                    ToolTip.Tip="Open file from disk..."
-                                    i:Attached.Icon="fa-solid fa-folder-open"/>
-                            <Button ToolTip.Tip="Data"
-                                i:Attached.Icon="fa-solid fa-table"/>
-                            <Button ToolTip.Tip="Show detailed schema..."
-                                    i:Attached.Icon="fa-solid fa-magnifying-glass-chart">
-                                <Button.Flyout>
-                                    <Flyout Placement="RightEdgeAlignedTop"
-                                            Flyout.FlyoutPresenterClasses="wider">
-                                        <views:SchemaView DataContext="{Binding Schema}"/>
-                                    </Flyout>
-                                </Button.Flyout>
-                            </Button>
-                            <Button ToolTip.Tip="Raw file metadata"
-                                    i:Attached.Icon="fa-solid fa-bore-hole">
-                                <Button.Flyout>
-                                    <Flyout Placement="RightEdgeAlignedTop"
-                                            Flyout.FlyoutPresenterClasses="wider">
-                                        <views:RawMetaView DataContext="{Binding File.Metadata}"/>
-                                    </Flyout>
-                                </Button.Flyout>
-                            </Button>
-
-                        </StackPanel>
-
-                        <StackPanel Classes="toolbar" Margin="3"
-                                    Grid.Row="1">
-                            <Button ToolTip.Tip="About..."
-                                i:Attached.Icon="fa-solid fa-info"/>
-                        </StackPanel>
-                    </Grid>
-                </SplitView.Pane>
-                <SplitView.Content>
-                    <Grid>
-                        <views:DataView DataContext="{Binding Data}"/>
-                        <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
-                    </Grid>
-                </SplitView.Content>
-            </SplitView>
-        </Border>
+                <TabItem Header="Data">
+                    <views:DataView DataContext="{Binding Data}"/>
+                </TabItem>
+                <TabItem Header="Schema">
+                    <views:SchemaView DataContext="{Binding Schema}"/>
+                </TabItem>
+                <TabItem Header="Metadata">
+                    <views:RawMetaView DataContext="{Binding File.Metadata}"/>
+                </TabItem>
+            </TabControl>
+            <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
+        </Grid>
         
     </DockPanel>
 

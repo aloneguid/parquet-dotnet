@@ -12,7 +12,7 @@
         Source="avares://Avalonia.Controls.TreeDataGrid/Themes/Fluent.axaml"/>
         <actipro:ModernTheme>
             <actipro:ModernTheme.Definition>
-                <generation:ThemeDefinition UserInterfaceDensity="Spacious" />
+                <generation:ThemeDefinition UserInterfaceDensity="Normal" />
             </actipro:ModernTheme.Definition>
         </actipro:ModernTheme>
         <actipro:ModernTheme Includes="NativeDataGrid"/>

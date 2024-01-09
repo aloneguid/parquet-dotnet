@@ -60,18 +60,19 @@
     <!-- status bar -->
 
     <Style Selector="StackPanel.status-bar">
-        <Setter Property="Margin" Value="3"/>
-    </Style>
+        <Setter Property="Margin" Value="3,0,0,0"/>
 
-    <Style Selector="StackPanel.status-bar TextBlock.data">
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="FontSize" Value="15"/>
-    </Style>
+        <Style Selector="^ TextBlock.data">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
 
-    <Style Selector="StackPanel.status-bar TextBlock.sep">
-        <Setter Property="FontSize" Value="10"/>
-        <Setter Property="Opacity" Value="0.8"/>
-        <Setter Property="Padding" Value="9,4,9,0"/>
+        <Style Selector="^ TextBlock.sep">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="Padding" Value="9,4,9,0"/>
+        </Style>
+
     </Style>
 
 
@@ -99,6 +100,7 @@
             <Setter Property="FontSize" Value="25"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style Selector="^ Button:pointerover">
@@ -115,7 +117,7 @@
     <Style Selector="TextBlock.data-cell">
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Padding" Value="5,0,5,0"/>
     </Style>
 
     <Style Selector="TextBlock.data-cell-null">
@@ -142,10 +144,6 @@
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
 
-    <!-- Thinner expander -->
-
-    <!-- todo -->
-
     <!-- raw meta -->
     <Style Selector="StackPanel.raw-meta-section StackPanel">
         <Setter Property="Margin" Value="4"/>
@@ -168,6 +166,7 @@
 
         <Style Selector="^ TextBlock">
             <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
 

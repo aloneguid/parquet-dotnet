@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Threading;
 using Parquet.Floor.ViewModels;
+using Parquet.Floor.Views.Templates;
 using Parquet.Schema;
 
 namespace Parquet.Floor.Views {
@@ -19,7 +20,7 @@ namespace Parquet.Floor.Views {
 
         protected override void OnDataContextChanged(EventArgs e) {
 
-            if(ViewModel != null) { 
+            if(ViewModel != null) {
                 ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             }
 
@@ -33,6 +34,7 @@ namespace Parquet.Floor.Views {
                 ? null
                 : schema.Fields.Select(f => new DataGridTemplateColumn {
                     Header = f.Name,
+                    HeaderTemplate = new DataViewHeaderTemplate(f),
                     CellTemplate = new DataViewCellTemplate(f)
                 }).Cast<DataGridColumn>().ToList();
         }
@@ -54,9 +56,12 @@ namespace Parquet.Floor.Views {
                             grid.Columns.Add(c);
                         }
                     }
-                } 
+                }
             });
         }
 
+        private void DataGrid_CellPointerPressed(object? sender, Avalonia.Controls.DataGridCellPointerPressedEventArgs e) {
+            grid.SelectedItem = null;
+        }
     }
 }
