@@ -9,6 +9,8 @@ using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia;
 using Parquet.Floor.ViewModels;
+using Avalonia.Platform;
+using Avalonia.Media.Imaging;
 
 namespace Parquet.Floor.Views.Templates {
     class DataViewHeaderTemplate : IDataTemplate {
@@ -19,40 +21,25 @@ namespace Parquet.Floor.Views.Templates {
         }
 
         private Control CreateIcon() {
-            string? v = null;
-            switch(_field.SchemaType) {
-                case SchemaType.Data:
-                    if(_field is DataField df) {
-                        if(df.ClrType == typeof(short) || df.ClrType == typeof(int) || df.ClrType == typeof(long) || df.ClrType == typeof(decimal)) {
-                            v = "list-ol";
-                        } else if(df.ClrType == typeof(string)) {
-                            v = "s";
-                        }
-                    }
-                    break;
-            }
-            if(v == null) {
-                v = "fa-solid fa-database";
-            } else {
-                v = "fa-solid fa-" + v;
-            }
 
-            return new Projektanker.Icons.Avalonia.Icon {
-                Value = v,
-                Margin = new Thickness(5, 0, 0, 0),
-                FontSize = 12
+            // Assuming you have a resource named 'myImage.png' in your resources
+            var image = new Image {
+                Source = new Bitmap(AssetLoader.Open(new Uri("avares://floor/Assets/icons/col/string.png")))
             };
+            image.Classes.Add("dt-icon");
+            return image;
         }
 
         public Control? Build(object? param) {
 
             var r = new StackPanel {
-                Orientation = Orientation.Horizontal
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Stretch
             };
             r.Children.Add(new TextBlock {
                 Text = _field.Name
             });
-            //r.Children.Add(CreateIcon());
+            r.Children.Add(CreateIcon());
 
             //r.SetValue(ToolTip.TipProperty, "...");
             return r;

@@ -28,6 +28,9 @@ public partial class MainViewModel : ViewModelBase {
     private FileViewModel? _file;
 
     [ObservableProperty]
+    private bool _hasFile;
+
+    [ObservableProperty]
     private bool _hasError;
 
     [ObservableProperty]
@@ -66,6 +69,7 @@ public partial class MainViewModel : ViewModelBase {
         };
         ErrorMessage = "This is a design-time error message.";
         ErrorDetails = "This is a design-time error details message.\nLine 2";
+        HasFile = true;
     }
 
     public void LoadFromFile(string path) {
@@ -105,9 +109,9 @@ public partial class MainViewModel : ViewModelBase {
                     CreatedBy = reader.Metadata?.CreatedBy
                 };
             }
+            HasFile = true;
             Schema.InitSchema(File.Schema);
             await Data.InitReaderAsync(File, _fileStream);
-
         } catch(Exception ex) {
             HasError = true;
             ErrorMessage = ex.Message;

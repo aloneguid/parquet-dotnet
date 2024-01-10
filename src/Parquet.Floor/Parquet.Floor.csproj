@@ -56,4 +56,8 @@
         <DependentUpon>DataView.axaml</DependentUpon>
       </Compile>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Assets\icons\col\" />
+    </ItemGroup>
 </Project>

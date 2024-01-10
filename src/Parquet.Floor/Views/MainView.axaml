@@ -7,7 +7,7 @@
              xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:actiproImages="using:ActiproSoftware.UI.Avalonia.Images"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
 
@@ -45,11 +45,20 @@
                         <TextBlock Text="{Binding SubTitle}" FontSize="12" TextTrimming="CharacterEllipsis" Opacity="0.85" />
                         <TextBlock Margin="0,-2,0,0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
+
+                    <Button ContentTemplate="{actipro:GlyphTemplate ExternalLink16}"
+                            Click="OpenFile_Click"
+                            Theme="{actipro:ControlTheme TitleBarButton}"
+                            ToolTip.Tip="Open parquet file" />
+
                 </StackPanel>
             </actipro:ChromedTitleBar.LeftContent>
 
             <actipro:ChromedTitleBar.RightContent>
                 <StackPanel Margin="{Binding $parent[actipro:ChromedTitleBar].HasCaptionButtons, Converter={StaticResource RightContentMarginConverter}}" Orientation="Horizontal">
+                    <Button ContentTemplate="{actipro:GlyphTemplate Help16}"
+                            Theme="{actipro:ControlTheme TitleBarButton}"
+                            ToolTip.Tip="Home" />
                     <actipro:ToggleThemeButton
 							Theme="{actipro:ControlTheme TitleBarToggleThemeButton}"
 							ToolTip.Tip="Toggle Theme" />
@@ -62,7 +71,8 @@
         <Grid>
             <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
                         BorderThickness="0,0,0,1"
-                        Padding="0">
+                        Padding="0"
+                        IsVisible="{Binding HasFile}">
                 <TabControl.Resources>
                     <SolidColorBrush x:Key="{actipro:ThemeResourceKey TabItemBorderBrushOutline}" Color="Transparent" />
                     <Thickness x:Key="{actipro:ThemeResourceKey TabControlHeaderPaddingOutline}">3,0,3,3</Thickness>
@@ -79,6 +89,13 @@
                 </TabItem>
             </TabControl>
             <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
+            <StackPanel Orientation="Horizontal" IsVisible="{Binding !HasFile}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                <Button Classes="theme-solid" Click="OpenFile_Click">
+                    Open...
+                </Button>
+            </StackPanel>
         </Grid>
         
     </DockPanel>
