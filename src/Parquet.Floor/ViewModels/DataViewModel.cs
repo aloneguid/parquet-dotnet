@@ -43,7 +43,11 @@ public partial class DataViewModel : ViewModelBase {
     }
 
     public async Task InitReaderAsync(FileViewModel? file, Stream fileStream) {
-        ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(fileStream);
+        ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(
+            fileStream,
+            new ParquetOptions {
+                TreatByteArrayAsString = true
+            });
 
         Dispatcher.UIThread.Invoke(() => {
             File = file;
