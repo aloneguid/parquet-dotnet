@@ -12,6 +12,8 @@
 
 **Parquet Floor** (reference implementation of desktop viewer) user interface improvements.
 
+![](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/floor.png?raw=true)
+
 ## 4.20.0
 
 ### New features
