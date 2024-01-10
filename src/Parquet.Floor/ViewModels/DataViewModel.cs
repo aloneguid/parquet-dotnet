@@ -10,6 +10,7 @@ using Parquet.Floor.Views;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Parquet.Meta;
+using Avalonia.Threading;
 
 namespace Parquet.Floor.ViewModels;
 
@@ -30,18 +31,23 @@ public partial class DataViewModel : ViewModelBase {
     public DataViewModel() {
 #if DEBUG
         if(Design.IsDesignMode) {
-            Data = DesignData.Data;
             File = new FileViewModel {
+                Schema = DesignData.Schema,
                 RowCount = 1012,
                 RowGroupCount = 3,
                 CreatedBy = "Parquet.Floor",
             };
+            Data = DesignData.Data;
         }
 #endif
     }
 
-    public async Task InitReaderAsync(Stream fileStream) {
+    public async Task InitReaderAsync(FileViewModel? file, Stream fileStream) {
         ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(fileStream);
-        Data = fd.Data;
+
+        Dispatcher.UIThread.Invoke(() => {
+            File = file;
+            Data = fd.Data;
+        });
     }
 }

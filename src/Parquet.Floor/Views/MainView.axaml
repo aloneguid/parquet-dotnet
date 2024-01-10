@@ -4,53 +4,101 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
              xmlns:views="clr-namespace:Parquet.Floor.Views"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="100"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             xmlns:actiproImages="using:ActiproSoftware.UI.Avalonia.Images"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
-    
+
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <DockPanel>
+        <!-- see https://github.com/Actipro/Avalonia-Controls/blob/4c1d0b69c2fd810b19e02ba92ed5c0078fafce52/Samples/SampleBrowser/SampleBrowser.Common/SampleBrowser/Views/RootView.axaml#L12 -->
+        <actipro:ChromedTitleBar DockPanel.Dock="Top">
+            <actipro:ChromedTitleBar.Resources>
+                <actipro:ComparisonConverter x:Key="RightContentMarginConverter">
+                    <actipro:ComparisonConverter.TrueResult>
+                        <Thickness>0,0,20,0</Thickness>
+                    </actipro:ComparisonConverter.TrueResult>
+                    <actipro:ComparisonConverter.FalseResult>
+                        <Thickness>0,0,0,0</Thickness>
+                    </actipro:ComparisonConverter.FalseResult>
+                </actipro:ComparisonConverter>
+            </actipro:ChromedTitleBar.Resources>
 
-        <!-- for icons see https://www.iconfinder.com/iconsets/bitsies -->
-        <StackPanel Classes="toolbar" Grid.Row="0">
-            <Button Click="OpenFile_Click" ToolTip.Tip="Open file from disk...">
-                <Image Source="/Assets/icons/open.png"/>
-            </Button>
-            <Button ToolTip.Tip="Show detailed schema...">
-                <Button.Flyout>
-                    <Flyout Placement="RightEdgeAlignedTop"
-                            Flyout.FlyoutPresenterClasses="wider">
-                        <views:SchemaView DataContext="{Binding Schema}"/>
-                    </Flyout>
-                </Button.Flyout>
-                <Image Source="/Assets/icons/diagram.png"/>
-            </Button>
-            <Button ToolTip.Tip="Raw file metadata">
-                <Button.Flyout>
-                    <Flyout Placement="RightEdgeAlignedTop"
-                            Flyout.FlyoutPresenterClasses="wider">
-                        <views:RawMetaView DataContext="{Binding File.Metadata}"/>
-                    </Flyout>
-                </Button.Flyout>
+            <actipro:ChromedTitleBar.LeftContent>
+                <StackPanel Orientation="Horizontal" Margin="14,0,0,0">
+                    <Image DockPanel.Dock="Left" Width="24" Height="24"
+                           Source="avares://floor/Assets/icon.ico"
+                           VerticalAlignment="Center" IsHitTestVisible="False">
+                        <Image.Effect>
+                            <DropShadowEffect OffsetX="0" OffsetY="1" BlurRadius="3" Opacity="{DynamicResource {actipro:ThemeResourceKey ShadowOpacity}}" />
+                        </Image.Effect>
+                    </Image>
 
-                <Image Source="/Assets/icons/raw-extension.png"/>
-            </Button>
-            <Button>
-                <Image Source="/Assets/icons/information.png"/>
-            </Button>
-        </StackPanel>
+                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <TextBlock Text="{Binding SubTitle}" FontSize="12" TextTrimming="CharacterEllipsis" Opacity="0.85" />
+                        <TextBlock Margin="0,-2,0,0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
 
-        <views:DataView DataContext="{Binding Data}" Grid.Row="1"/>
-        <views:ErrorView DataContext="{Binding}" Grid.Row="1" IsVisible="{Binding HasError}"/>
-    </Grid>
+                    <Button ContentTemplate="{actipro:GlyphTemplate ExternalLink16}"
+                            Click="OpenFile_Click"
+                            Theme="{actipro:ControlTheme TitleBarButton}"
+                            ToolTip.Tip="Open parquet file" />
+
+                </StackPanel>
+            </actipro:ChromedTitleBar.LeftContent>
+
+            <actipro:ChromedTitleBar.RightContent>
+                <StackPanel Margin="{Binding $parent[actipro:ChromedTitleBar].HasCaptionButtons, Converter={StaticResource RightContentMarginConverter}}" Orientation="Horizontal">
+                    <Button ContentTemplate="{actipro:GlyphTemplate Help16}"
+                            Theme="{actipro:ControlTheme TitleBarButton}"
+                            Command="{Binding OpenHomePage}"
+                            ToolTip.Tip="Home" />
+                    <actipro:ToggleThemeButton
+							Theme="{actipro:ControlTheme TitleBarToggleThemeButton}"
+							ToolTip.Tip="Toggle Theme" />
+                </StackPanel>
+            </actipro:ChromedTitleBar.RightContent>
+
+        </actipro:ChromedTitleBar>
+
+        <!-- Client Area -->
+        <Grid>
+            <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
+                        BorderThickness="0,0,0,1"
+                        Padding="0"
+                        IsVisible="{Binding HasFile}">
+                <TabControl.Resources>
+                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey TabItemBorderBrushOutline}" Color="Transparent" />
+                    <Thickness x:Key="{actipro:ThemeResourceKey TabControlHeaderPaddingOutline}">3,0,3,3</Thickness>
+                </TabControl.Resources>
+
+                <TabItem Header="Data">
+                    <views:DataView DataContext="{Binding Data}"/>
+                </TabItem>
+                <TabItem Header="Schema">
+                    <views:SchemaView DataContext="{Binding Schema}"/>
+                </TabItem>
+                <TabItem Header="Metadata">
+                    <views:RawMetaView DataContext="{Binding File.Metadata}"/>
+                </TabItem>
+            </TabControl>
+            <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
+            <StackPanel Orientation="Horizontal" IsVisible="{Binding !HasFile}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                <Button Classes="theme-solid" Click="OpenFile_Click">
+                    Open...
+                </Button>
+            </StackPanel>
+        </Grid>
+        
+    </DockPanel>
 
 </UserControl>

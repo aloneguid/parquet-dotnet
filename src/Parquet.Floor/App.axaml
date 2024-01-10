@@ -1,8 +1,8 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Parquet.Floor.App"
-             RequestedThemeVariant="Dark">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+             xmlns:generation="using:ActiproSoftware.UI.Avalonia.Themes.Generation">
 
     <Application.Styles>
         <FluentTheme DensityStyle="Compact" />
@@ -10,5 +10,11 @@
 		<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
         <StyleInclude
         Source="avares://Avalonia.Controls.TreeDataGrid/Themes/Fluent.axaml"/>
+        <actipro:ModernTheme>
+            <actipro:ModernTheme.Definition>
+                <generation:ThemeDefinition UserInterfaceDensity="Normal" />
+            </actipro:ModernTheme.Definition>
+        </actipro:ModernTheme>
+        <actipro:ModernTheme Includes="NativeDataGrid"/>
     </Application.Styles>
 </Application>

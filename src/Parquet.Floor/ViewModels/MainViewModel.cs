@@ -19,7 +19,16 @@ public partial class MainViewModel : ViewModelBase {
     private Stream? _fileStream;
 
     [ObservableProperty]
+    private string? _title;
+
+    [ObservableProperty]
+    private string? _subTitle;
+
+    [ObservableProperty]
     private FileViewModel? _file;
+
+    [ObservableProperty]
+    private bool _hasFile;
 
     [ObservableProperty]
     private bool _hasError;
@@ -38,6 +47,10 @@ public partial class MainViewModel : ViewModelBase {
     public DataViewModel Data { get; } = new DataViewModel();
 
     public MainViewModel() {
+
+        Title = "Parquet Floor";
+        SubTitle = Parquet.Globals.Version;
+
         string[] args = Environment.GetCommandLineArgs();
 
         if(Design.IsDesignMode) {
@@ -49,6 +62,11 @@ public partial class MainViewModel : ViewModelBase {
         }
     }
 
+    public bool OpenHomePage() {
+        "https://github.com/aloneguid/parquet-dotnet".OpenInBrowser();
+        return true;
+    }
+
     private void LoadDesignData() {
         File = new FileViewModel {
             Path = "design.parquet",
@@ -56,6 +74,7 @@ public partial class MainViewModel : ViewModelBase {
         };
         ErrorMessage = "This is a design-time error message.";
         ErrorDetails = "This is a design-time error details message.\nLine 2";
+        HasFile = true;
     }
 
     public void LoadFromFile(string path) {
@@ -95,10 +114,9 @@ public partial class MainViewModel : ViewModelBase {
                     CreatedBy = reader.Metadata?.CreatedBy
                 };
             }
+            HasFile = true;
             Schema.InitSchema(File.Schema);
-            Data.File = File;
-            await Data.InitReaderAsync(_fileStream);
-
+            await Data.InitReaderAsync(File, _fileStream);
         } catch(Exception ex) {
             HasError = true;
             ErrorMessage = ex.Message;

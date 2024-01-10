@@ -30,11 +30,13 @@ public class FieldModel {
 
     public string? FieldId => Field.SchemaElement?.FieldId?.ToString();
 
-    public string? LogicalType => FormatLogicalType();
+    public string? LogicalType => Field.SchemaElement?.LogicalType?.ToSimpleString();
 
     public string DefinitionLevel => Field.MaxDefinitionLevel.ToString();
 
     public string RepetitionLevel => Field.MaxRepetitionLevel.ToString();
+
+    public bool IsExpanded { get; set; } = true;
 
     public List<FieldModel> Children => Field switch {
         StructField sf => sf.Fields.Select(f => new FieldModel(f)).ToList(),
@@ -62,63 +64,4 @@ public class FieldModel {
             return "unknown";
         }
     }
-
-    private string FormatLogicalType() {
-
-        LogicalType? lt = Field.SchemaElement?.LogicalType;
-
-        if(lt == null)
-            return string.Empty;
-
-        if(lt.UUID != null)
-            return "UUID";
-
-        if(lt.STRING != null)
-            return "STRING";
-
-        if(lt.MAP != null)
-            return "MAP";
-
-        if(lt.LIST != null)
-            return "LIST";
-
-        if(lt.ENUM != null)
-            return "ENUM";
-
-        if(lt.DECIMAL != null)
-            return $"DECIMAL (precision: {lt.DECIMAL.Precision}, scale: {lt.DECIMAL.Scale})";
-
-        if(lt.DATE != null)
-            return $"DATE";
-
-        if(lt.TIME != null) {
-            string unit = lt.TIME.Unit.MICROS != null
-                ? "MICROS"
-                : lt.TIME.Unit.MILLIS != null
-                    ? "MILLIS"
-                    : "NANOS";
-            return $"TIME (unit: {unit}, isAdjustedToUTC: {lt.TIME.IsAdjustedToUTC})";
-        }
-
-        if(lt.TIMESTAMP != null)
-            return "TIMESTAMP";
-
-        if(lt.INTEGER != null)
-            return $"INTEGER (bitWidth: {lt.INTEGER.BitWidth}, isSigned: {lt.INTEGER.IsSigned})";
-
-        if(lt.UNKNOWN != null)
-            return "UNKNOWN";
-
-        if(lt.JSON != null)
-            return "JSON";
-
-        if(lt.BSON != null)
-            return "BSON";
-
-        if(lt.UUID != null)
-            return "UUID";
-
-        return "?";
-    }
-
 }

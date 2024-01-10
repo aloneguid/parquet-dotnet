@@ -1,7 +1,9 @@
 ﻿using System;
 using Avalonia;
+using Projektanker.Icons.Avalonia.FontAwesome;
+using Projektanker.Icons.Avalonia;
 
-namespace Parquet.Floor.Desktop;
+namespace Parquet.Floor;
 
 class Program {
     // Initialization code. Don't use any Avalonia, third-party APIs or any
@@ -25,9 +27,12 @@ class Program {
             Console.WriteLine(ex);
         }
 
+        IconProvider.Current
+            .Register<FontAwesomeIconProvider>();
+
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .WithInterFont()
+            //.WithInterFont()
             .LogToTrace();
     }
 

@@ -1,17 +1,15 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:system="clr-namespace:System">
+        xmlns:system="clr-namespace:System"
+        xmlns:i="https://github.com/projektanker/icons.avalonia">
     <Design.PreviewWith>
         
         <StackPanel>
 
             <StackPanel Classes="toolbar">
-                <Button>
-                    <Image Source="/Assets/icons/open.png"/>
-                </Button>
-                <Button>
-                    <Image Source="/Assets/icons/map.png"/>
-                </Button>
+                <Button i:Attached.Icon="fa-solid fa-folder-open"/>
+                <Button i:Attached.Icon="fa-solid fa-folder-open"/>
+                <Button i:Attached.Icon="fa-solid fa-folder-open"/>
             </StackPanel>
 
 
@@ -39,6 +37,8 @@
                 </StackPanel>
             </Grid>
 
+            <Image Source="/Assets/icons/col/string.png" Classes="dt-icon"/>
+
             <TextBlock Classes="hyperlink" Text="more..."/>
 
             <StackPanel Orientation="Horizontal" Classes="status-bar">
@@ -62,18 +62,19 @@
     <!-- status bar -->
 
     <Style Selector="StackPanel.status-bar">
-        <Setter Property="Margin" Value="3"/>
-    </Style>
+        <Setter Property="Margin" Value="3,0,0,0"/>
 
-    <Style Selector="StackPanel.status-bar TextBlock.data">
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="FontSize" Value="15"/>
-    </Style>
+        <Style Selector="^ TextBlock.data">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
 
-    <Style Selector="StackPanel.status-bar TextBlock.sep">
-        <Setter Property="FontSize" Value="10"/>
-        <Setter Property="Opacity" Value="0.8"/>
-        <Setter Property="Padding" Value="9,4,9,0"/>
+        <Style Selector="^ TextBlock.sep">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="Padding" Value="9,4,9,0"/>
+        </Style>
+
     </Style>
 
 
@@ -84,7 +85,7 @@
     </Style>
 
     <Style Selector="TextBlock.hyperlink">
-        <Setter Property="Foreground" Value="Blue"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlHyperlinkTextBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontStyle" Value="Italic"/>
     </Style>
@@ -92,18 +93,25 @@
     <!-- Toolbar -->
     
     <Style Selector="StackPanel.toolbar">
-        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Orientation" Value="Vertical"/>
         <Setter Property="Margin" Value="0,0,0,0"/>
-    </Style>
 
-    <Style Selector="StackPanel.toolbar Button">
-        <Setter Property="Padding" Value="6"/>
-        <Setter Property="Margin" Value="0,0,5,0"/>
-        <Setter Property="Background" Value="Transparent"/>
-    </Style>
+        <Style Selector="^ Button">
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="FontSize" Value="25"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
 
-    <Style Selector="StackPanel.toolbar Button Image">
-        <Setter Property="Width" Value="26"/>
+        <Style Selector="^ Button:pointerover">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="^ Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
     </Style>
 
     <!-- DataGrid -->
@@ -111,7 +119,7 @@
     <Style Selector="TextBlock.data-cell">
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Padding" Value="5,0,5,0"/>
     </Style>
 
     <Style Selector="TextBlock.data-cell-null">
@@ -119,14 +127,14 @@
     </Style>
 
     <Style Selector="TextBlock.data-cell-key">
-        <Setter Property="Foreground" Value="Green"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlHyperlinkTextBrush}"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
 
     <!-- error message -->
 
     <Style Selector="Grid.error">
-        <Setter Property="Background" Value="Black"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
     </Style>
     
     <Style Selector="Grid.error Image">
@@ -137,10 +145,6 @@
         <Setter Property="Foreground" Value="Red"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
-
-    <!-- Thinner expander -->
-
-    <!-- todo -->
 
     <!-- raw meta -->
     <Style Selector="StackPanel.raw-meta-section StackPanel">
@@ -164,6 +168,7 @@
 
         <Style Selector="^ TextBlock">
             <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
 
@@ -172,7 +177,13 @@
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Padding" Value="0,0,5,0"/>
         </Style>
+
     </Style>
 
+    <Style Selector="Image.dt-icon">
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="Margin" Value="5,0,0,0"/>
+    </Style>
 
 </Styles>

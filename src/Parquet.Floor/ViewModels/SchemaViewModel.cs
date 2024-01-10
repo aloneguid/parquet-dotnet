@@ -41,7 +41,7 @@ public partial class SchemaViewModel : ViewModelBase {
             Columns = {
                 new HierarchicalExpanderColumn<FieldModel>(
                     new TextColumn<FieldModel, string>("Name", x => x.Name),
-                    x => x.Children),
+                    x => x.Children, isExpandedSelector: x => x.IsExpanded),
                 //new TextColumn<FieldModel, string>("Num children", x => x.NumChildren),
                 new TextColumn<FieldModel, string>("Type", x => x.Type),
                 new TextColumn<FieldModel, string>("Converted type", x => x.ConvertedType),
