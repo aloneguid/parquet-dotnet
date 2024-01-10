@@ -8,6 +8,10 @@
 
 - `NetBox` was exposing some internal types (#451)
 
+### Experimental
+
+**Parquet Floor** (reference implementation of desktop viewer) user interface improvements.
+
 ## 4.20.0
 
 ### New features
