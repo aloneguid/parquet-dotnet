@@ -8,5 +8,5 @@
         x:Class="Parquet.Floor.Views.MainWindow"
         Icon="/Assets/icon.ico"
         Title="Floor">
-        <views:MainView />
+        <views:MainView/>
 </Window>

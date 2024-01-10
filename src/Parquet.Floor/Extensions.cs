@@ -1,4 +1,5 @@
-﻿using Parquet.Meta;
+﻿using System.Diagnostics;
+using Parquet.Meta;
 
 namespace Parquet.Floor {
     static class Extensions {
@@ -61,6 +62,13 @@ namespace Parquet.Floor {
                 return "UUID";
 
             return "?";
+        }
+
+        public static void OpenInBrowser(this string url) {
+            var p = new Process();
+            p.StartInfo.UseShellExecute = true;
+            p.StartInfo.FileName = url;
+            p.Start();
         }
     }
 }

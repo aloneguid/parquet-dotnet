@@ -11,20 +11,17 @@ using Parquet.Schema;
 
 namespace Parquet.Floor.Views {
     public partial class DataView : UserControl {
+
         public DataView() {
             InitializeComponent();
         }
 
-        public DataViewModel? ViewModel => DataContext as DataViewModel;
-
+        private DataViewModel? Model => DataContext as DataViewModel;
 
         protected override void OnDataContextChanged(EventArgs e) {
-
-            if(ViewModel != null) {
-                ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            if(Model != null) {
+                Model.PropertyChanged += ViewModel_PropertyChanged;
             }
-
-            base.OnDataContextChanged(e);
         }
 
         private IEnumerable<DataGridColumn>? BuildColumns(ParquetSchema schema) {
@@ -42,14 +39,14 @@ namespace Parquet.Floor.Views {
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
             Dispatcher.UIThread.Invoke(() => {
 
-                if(ViewModel == null || ViewModel.File?.Schema == null)
+                if(Model?.File?.Schema == null)
                     return;
 
                 if(e.PropertyName == nameof(DataViewModel.File)) {
                     // copy the columns over, as DataGrid.Columns does not support binding
 
                     grid.Columns.Clear();
-                    IEnumerable<DataGridColumn>? columns = BuildColumns(ViewModel.File.Schema);
+                    IEnumerable<DataGridColumn>? columns = BuildColumns(Model.File.Schema);
 
                     if(columns != null) {
                         foreach(DataGridColumn c in columns) {

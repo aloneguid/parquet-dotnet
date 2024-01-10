@@ -22,10 +22,12 @@
               ItemsSource="{Binding Data}"
               CellPointerPressed="DataGrid_CellPointerPressed">
         <DataGrid.Columns>
+            <!--
             <DataGridTextColumn Header="First Name" Width="*"
                     Binding="{Binding [id]}"/>
             <DataGridTextColumn Header="Last Name" Width="*"
                     Binding="{Binding [name]}" />
+            -->
         </DataGrid.Columns>
     </DataGrid>
 

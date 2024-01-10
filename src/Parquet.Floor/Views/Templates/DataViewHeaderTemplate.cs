@@ -20,14 +20,51 @@ namespace Parquet.Floor.Views.Templates {
             _field = field;
         }
 
+        private static bool IsNumeric(Type t) =>
+            t == typeof(short) || t == typeof(int) || t == typeof(long) || t == typeof(decimal);
+
+        private static bool IsByteArray(Type t) =>
+            t == typeof(byte[]);
+
+        private static bool IsString(Type t) => t == typeof(string);
+
         private Control CreateIcon() {
 
-            // Assuming you have a resource named 'myImage.png' in your resources
+            string? name = null;
+
+            switch(_field.SchemaType) {
+                case SchemaType.Data:
+                    if(_field is DataField df) {
+                        if(IsNumeric(df.ClrType)) {
+                            name = "number";
+                        } else if(IsString(df.ClrType)) {
+                            name = "string";
+                        } else if(IsByteArray(df.ClrType)) {
+                            name = "bytearray";
+                        }
+                    }
+                    break;
+                case SchemaType.Struct:
+                    name = "struct";
+                    break;
+                case SchemaType.Map:
+                    name = "map";
+                    break;
+                case SchemaType.List:
+                    name = "list";
+                    break;
+            }
+
+
+            if(name == null)
+                return new Control();
+
             var image = new Image {
-                Source = new Bitmap(AssetLoader.Open(new Uri("avares://floor/Assets/icons/col/string.png")))
+                Source = new Bitmap(AssetLoader.Open(new Uri($"avares://floor/Assets/icons/col/{name}.png")))
             };
             image.Classes.Add("dt-icon");
             return image;
+
         }
 
         public Control? Build(object? param) {

@@ -62,6 +62,11 @@ public partial class MainViewModel : ViewModelBase {
         }
     }
 
+    public bool OpenHomePage() {
+        "https://github.com/aloneguid/parquet-dotnet".OpenInBrowser();
+        return true;
+    }
+
     private void LoadDesignData() {
         File = new FileViewModel {
             Path = "design.parquet",

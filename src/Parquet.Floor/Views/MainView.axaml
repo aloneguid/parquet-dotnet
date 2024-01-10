@@ -58,6 +58,7 @@
                 <StackPanel Margin="{Binding $parent[actipro:ChromedTitleBar].HasCaptionButtons, Converter={StaticResource RightContentMarginConverter}}" Orientation="Horizontal">
                     <Button ContentTemplate="{actipro:GlyphTemplate Help16}"
                             Theme="{actipro:ControlTheme TitleBarButton}"
+                            Command="{Binding OpenHomePage}"
                             ToolTip.Tip="Home" />
                     <actipro:ToggleThemeButton
 							Theme="{actipro:ControlTheme TitleBarToggleThemeButton}"

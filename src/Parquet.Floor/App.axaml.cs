@@ -18,14 +18,12 @@ public partial class App : Application {
         // Without this line you will get duplicate validations from both Avalonia and CT
         BindingPlugins.DataValidators.RemoveAt(0);
 
+        var model = new MainViewModel();
+
         if(ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
-            desktop.MainWindow = new MainWindow {
-                DataContext = new MainViewModel()
-            };
+            desktop.MainWindow = new MainWindow() { DataContext = model };
         } else if(ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform) {
-            singleViewPlatform.MainView = new MainView {
-                DataContext = new MainViewModel()
-            };
+            singleViewPlatform.MainView = new MainView() { DataContext = model };
         }
 
         base.OnFrameworkInitializationCompleted();
