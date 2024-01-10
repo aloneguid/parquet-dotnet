@@ -28,7 +28,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 ## UI
 
-This repository now includes an implementation of parquet desktop viewer application called **Floor** (parquet floor, get it?). It's cross-platform, self-contained executable made with Avalonia, and is compiled for Linux, Windows and MacOS. You can download it from the releases section. 
+This repository now includes an implementation of parquet desktop viewer application called **Floor** (parquet floor, get it?). It's cross-platform, self-contained executable made with Avalonia, and is compiled for Linux, Windows and MacOS. You can download it from the [releases section](https://github.com/aloneguid/parquet-dotnet/releases). 
 
 **Floor** is not meant to be the best parquet viewer on the planet, but just a reference implementation. There are probably better, more feature-rich applications out there.
 

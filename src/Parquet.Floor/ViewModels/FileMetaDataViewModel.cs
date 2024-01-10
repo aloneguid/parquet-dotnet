@@ -269,50 +269,55 @@ namespace Parquet.Floor.ViewModels {
             for(int i = 0; i < rg.Columns.Count; i++) {
                 ColumnChunk cc = rg.Columns[i];
 
-                r.Add(new PropertyModel($"[{i}]", "") {
-                    Children = Shrink(new ObservableCollection<PropertyModel> {
-                        new PropertyModel(nameof(cc.FilePath), cc.FilePath),
-                        new PropertyModel(nameof(cc.FileOffset), cc.FileOffset.ToString()),
-                        new PropertyModel(nameof(cc.OffsetIndexOffset), cc.OffsetIndexOffset?.ToString()),
-                        new PropertyModel(nameof(cc.OffsetIndexLength), cc.OffsetIndexLength?.ToString()),
-                        new PropertyModel(nameof(cc.ColumnIndexOffset), cc.ColumnIndexOffset?.ToString()),
-                        new PropertyModel(nameof(cc.ColumnIndexLength), cc.ColumnIndexLength?.ToString()),
-                        new PropertyModel(nameof(cc.MetaData), "") {
-                            Children = cc.MetaData == null
-                            ? null
-                            : Shrink(new ObservableCollection<PropertyModel> {
-                                new PropertyModel(nameof(cc.MetaData.Type), cc.MetaData.Type.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.Encodings), string.Join(';', cc.MetaData.Encodings.Select(e => e.ToString()))),
-                                new PropertyModel(nameof(cc.MetaData.PathInSchema), string.Join('.', cc.MetaData.PathInSchema)),
-                                new PropertyModel(nameof(cc.MetaData.Codec), cc.MetaData.Codec.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.NumValues), cc.MetaData.NumValues.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.TotalUncompressedSize), cc.MetaData.TotalUncompressedSize.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.TotalCompressedSize), cc.MetaData.TotalCompressedSize.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.KeyValueMetadata), cc.MetaData.KeyValueMetadata?.Count.ToString()) {
-                                    Children = cc.MetaData.KeyValueMetadata == null
-                                    ? null
-                                    : new ObservableCollection<PropertyModel>(cc.MetaData.KeyValueMetadata.Select(kv => new PropertyModel(kv.Key, kv.Value)))
-                                },
-                                new PropertyModel(nameof(cc.MetaData.DataPageOffset), cc.MetaData.DataPageOffset.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.IndexPageOffset), cc.MetaData.IndexPageOffset?.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.DictionaryPageOffset), cc.MetaData.DictionaryPageOffset?.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.Statistics), cc.MetaData.Statistics == null ? null : "") {
-                                    Children = Shrink(new ObservableCollection<PropertyModel> {
-                                        new PropertyModel(nameof(cc.MetaData.Statistics.NullCount), cc.MetaData.Statistics!.NullCount?.ToString()),
-                                        new PropertyModel(nameof(cc.MetaData.Statistics.DistinctCount), cc.MetaData.Statistics.DistinctCount?.ToString()),
-                                        new PropertyModel(nameof(cc.MetaData.Statistics.Min), cc.MetaData.Statistics.Min?.ToString()),
-                                        new PropertyModel(nameof(cc.MetaData.Statistics.Max), cc.MetaData.Statistics.Max?.ToString()),
-                                    })
-                                },
-                                new PropertyModel(nameof(cc.MetaData.EncodingStats), cc.MetaData.EncodingStats == null ? null : "") {
-                                    Children = MakeEncodingStats(cc.MetaData.EncodingStats)
-                                },
-                                new PropertyModel(nameof(cc.MetaData.BloomFilterOffset), cc.MetaData.BloomFilterOffset?.ToString()),
-                                new PropertyModel(nameof(cc.MetaData.BloomFilterLength), cc.MetaData.BloomFilterLength?.ToString())
-                            })
-                        }
-                    })
-                });
+                var root = new PropertyModel($"[{i}]", "");
+                root.Children = new ObservableCollection<PropertyModel>();
+                root.Children.Add(new PropertyModel(nameof(cc.FilePath), cc.FilePath));
+                root.Children.Add(new PropertyModel(nameof(cc.FileOffset), cc.FileOffset.ToString()));
+                root.Children.Add(new PropertyModel(nameof(cc.OffsetIndexOffset), cc.OffsetIndexOffset?.ToString()));
+                root.Children.Add(new PropertyModel(nameof(cc.OffsetIndexLength), cc.OffsetIndexLength?.ToString()));
+                root.Children.Add(new PropertyModel(nameof(cc.ColumnIndexOffset), cc.ColumnIndexOffset?.ToString()));
+                root.Children.Add(new PropertyModel(nameof(cc.ColumnIndexLength), cc.ColumnIndexLength?.ToString()));
+
+                if(cc.MetaData != null) {
+                    var metadata = new PropertyModel(nameof(cc.MetaData), "");
+                    metadata.Children = new ObservableCollection<PropertyModel>();
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.Type), cc.MetaData.Type.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.Encodings), string.Join(';', cc.MetaData.Encodings.Select(e => e.ToString()))));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.PathInSchema), string.Join('.', cc.MetaData.PathInSchema)));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.Codec), cc.MetaData.Codec.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.NumValues), cc.MetaData.NumValues.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.TotalUncompressedSize), cc.MetaData.TotalUncompressedSize.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.TotalCompressedSize), cc.MetaData.TotalCompressedSize.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.KeyValueMetadata), cc.MetaData.KeyValueMetadata?.Count.ToString()) {
+                        Children = cc.MetaData.KeyValueMetadata == null
+                        ? null
+                        : new ObservableCollection<PropertyModel>(cc.MetaData.KeyValueMetadata.Select(kv => new PropertyModel(kv.Key, kv.Value)))
+                    });
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.DataPageOffset), cc.MetaData.DataPageOffset.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.IndexPageOffset), cc.MetaData.IndexPageOffset?.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.DictionaryPageOffset), cc.MetaData.DictionaryPageOffset?.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.Statistics), cc.MetaData.Statistics == null ? null : "") {
+                        Children = cc.MetaData.Statistics == null
+                        ? null
+                        : Shrink(new ObservableCollection<PropertyModel> {
+                            new PropertyModel(nameof(cc.MetaData.Statistics.NullCount), cc.MetaData.Statistics!.NullCount?.ToString()),
+                            new PropertyModel(nameof(cc.MetaData.Statistics.DistinctCount), cc.MetaData.Statistics.DistinctCount?.ToString()),
+                            new PropertyModel(nameof(cc.MetaData.Statistics.Min), cc.MetaData.Statistics.Min?.ToString()),
+                            new PropertyModel(nameof(cc.MetaData.Statistics.Max), cc.MetaData.Statistics.Max?.ToString()),
+                        })
+                    });
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.EncodingStats), cc.MetaData.EncodingStats == null ? null : "") {
+                        Children = MakeEncodingStats(cc.MetaData.EncodingStats)
+                    });
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.BloomFilterOffset), cc.MetaData.BloomFilterOffset?.ToString()));
+                    metadata.Children.Add(new PropertyModel(nameof(cc.MetaData.BloomFilterLength), cc.MetaData.BloomFilterLength?.ToString()));
+                    metadata.Children = Shrink(metadata.Children);
+                    root.Children.Add(metadata);
+                }
+
+                root.Children = Shrink(root.Children);
+
+                r.Add(root);
             }
 
             return r;
