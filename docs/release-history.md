@@ -1,3 +1,11 @@
+## 4.22.0
+
+### Parquet Floor
+
+- Reduced binary size after enabling partial trimming.
+- `byte[]` columns are left-aligned.
+- Increased data cell top and bottom padding by 2.
+
 ## 4.21.0
 
 ### New features

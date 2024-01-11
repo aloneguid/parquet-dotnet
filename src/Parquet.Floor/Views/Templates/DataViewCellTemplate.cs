@@ -47,16 +47,23 @@ namespace Parquet.Floor.Views.Templates {
                 Text = value
             };
             r.Classes.Add(DataCellClassName);
-            if(extraClassName != null)                 r.Classes.Add(extraClassName);
+            if(extraClassName != null)
+                r.Classes.Add(extraClassName);
             return r;
         }
 
+        private static HorizontalAlignment GetAlignment(Field f) => 
+            f is DataField df && (df.ClrType == typeof(string) || df.ClrType == typeof(byte[]))
+                ? HorizontalAlignment.Left
+                : HorizontalAlignment.Right;
+
         public static Control BuildValue(object? value, Field f, int depth, string? extraClassName = null, bool forceData = false) {
-            if(value == null)                 return CreateNullTextBlock();
+            if(value == null)
+                return CreateNullTextBlock();
 
             if(forceData || f.SchemaType == SchemaType.Data) {
                 TextBlock tb = CreateTextBlock(value.ToString()!, extraClassName);
-                tb.HorizontalAlignment = f is DataField df && df.ClrType == typeof(string) ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+                tb.HorizontalAlignment = GetAlignment(f);
                 return tb;
             } else if(f.SchemaType == SchemaType.Struct) {
                 var sp = new StackPanel {
@@ -64,7 +71,8 @@ namespace Parquet.Floor.Views.Templates {
                 };
 
                 var structField = (StructField)f;
-                if(value is IDictionary<string, object> valueDictionary)                     foreach(Field field in structField.Fields) {
+                if(value is IDictionary<string, object> valueDictionary)
+                    foreach(Field field in structField.Fields) {
 
                         var vsp = new StackPanel {
                             Orientation = Orientation.Horizontal
@@ -86,7 +94,8 @@ namespace Parquet.Floor.Views.Templates {
 
                 var mapField = (MapField)f;
 
-                if(value is IDictionary valueDictionary)                     foreach(DictionaryEntry entry in valueDictionary) {
+                if(value is IDictionary valueDictionary)
+                    foreach(DictionaryEntry entry in valueDictionary) {
 
                         var vsp = new StackPanel {
                             Orientation = Orientation.Horizontal
@@ -104,7 +113,9 @@ namespace Parquet.Floor.Views.Templates {
                     Orientation = Orientation.Vertical
                 };
                 var listField = (ListField)f;
-                if(value is IEnumerable valueList)                     foreach(object? entry in valueList)                         sp.Children.Add(BuildValue(entry, listField.Item, depth + 1));
+                if(value is IEnumerable valueList)
+                    foreach(object? entry in valueList)
+                        sp.Children.Add(BuildValue(entry, listField.Item, depth + 1));
                 return sp;
             }
 
@@ -115,7 +126,10 @@ namespace Parquet.Floor.Views.Templates {
 
             object? value = null;
 
-            if(param is Dictionary<string, object> row)                 if(row.TryGetValue(f.Name, out object? mapValue))                     if(mapValue != null)                         value = mapValue;
+            if(param is Dictionary<string, object> row)
+                if(row.TryGetValue(f.Name, out object? mapValue))
+                    if(mapValue != null)
+                        value = mapValue;
 
             return BuildValue(value, f, depth);
         }

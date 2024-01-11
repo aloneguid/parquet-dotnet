@@ -35,12 +35,12 @@ namespace Parquet.Floor {
                 // duration in ms
                 _extras["dms"] = _tm.ElapsedMilliseconds.ToString();
 
-                await _parent.Track(_eventName, _extras);
+                await _parent.TrackAsync(_eventName, _extras);
             }
         }
 
 
-        public static Tracker Instance { get; set; }
+        public static Tracker? Instance { get; set; }
 
         public Dictionary<string, string> Constants => _constants;
 
@@ -51,7 +51,13 @@ namespace Parquet.Floor {
             _constants["version"] = version;
         }
 
-        public async ValueTask Track(string eventName, Dictionary<string, string>? extras = null) {
+        public void Track(string eventName, Dictionary<string, string>? extras = null) {
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            TrackAsync(eventName, extras);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        }
+
+        private async ValueTask TrackAsync(string eventName, Dictionary<string, string>? extras = null) {
 
             var payload = new Dictionary<string, string>(_constants);
 

@@ -49,7 +49,11 @@ public partial class MainViewModel : ViewModelBase {
     public MainViewModel() {
 
         Title = "Parquet Floor";
+#if DEBUG
+        SubTitle = "vNext";
+#else
         SubTitle = Parquet.Globals.Version;
+#endif
 
         string[] args = Environment.GetCommandLineArgs();
 
@@ -117,6 +121,16 @@ public partial class MainViewModel : ViewModelBase {
             HasFile = true;
             Schema.InitSchema(File.Schema);
             await Data.InitReaderAsync(File, _fileStream);
+
+            Tracker.Instance.Track("fileOpen", new Dictionary<string, string> {
+                { "rowCount", File.RowCount.ToString() },
+                { "rowGroupCount", File.RowGroupCount.ToString() },
+                { "columnCount", File.Schema.Fields.Count.ToString() },
+                { "createdBy", File.CreatedBy ?? "unknown" },
+                { "size", _fileStream.Length.ToString() },
+            });
+
+
         } catch(Exception ex) {
             HasError = true;
             ErrorMessage = ex.Message;
