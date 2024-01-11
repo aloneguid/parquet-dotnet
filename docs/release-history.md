@@ -4,6 +4,10 @@
 
 - Added `ParquetSerializer` `DeserializeAsync` overloads accepting local file path (#379)
 
+### Bug fixes
+
+- `DataFrameReader` did not handle files with multiple row groups (#365)
+
 ### Parquet Floor
 
 - Reduced binary size after enabling partial trimming.

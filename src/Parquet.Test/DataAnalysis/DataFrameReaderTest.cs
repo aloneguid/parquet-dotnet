@@ -22,7 +22,7 @@ namespace Parquet.Test.DataAnalysis {
         [InlineData(typeof(ulong?), 1UL, 2UL)]
         [InlineData(typeof(string), "1", "2")]
         [InlineData(typeof(string), null, "2")]
-        public async Task Roundtrip_all_types(Type t, object el1, object el2) {
+        public async Task Roundtrip_all_types(Type t, object? el1, object? el2) {
 
             // arrange
             using var ms = new MemoryStream();
@@ -81,6 +81,34 @@ namespace Parquet.Test.DataAnalysis {
         public async Task Read_nested_file() {
             using Stream fs = OpenTestFile("simplenested.parquet");
             DataFrame df = await fs.ReadParquetAsDataFrameAsync();
+        }
+
+        [Fact]
+        public async Task Read_multiple_row_groups() {
+            // generate file with multiple row groups
+
+            var ms = new MemoryStream();
+            var id = new DataField<int>("id");
+
+            //write
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                }
+
+                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                    await rg.WriteColumnAsync(new DataColumn(id, new[] { 5, 6 }));
+                }
+            }
+
+            // read as DataFrame
+            ms.Position = 0;
+            DataFrame df = await ms.ReadParquetAsDataFrameAsync();
+
+            // check that all the values are present
+            Assert.Equal(6, df.Rows.Count);
+            Assert.Equal(1, df.Rows[0][0]);
+            Assert.Equal(2, df.Rows[1][0]);
         }
     }
 }

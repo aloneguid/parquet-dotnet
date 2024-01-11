@@ -182,16 +182,16 @@ namespace Parquet {
                 .ToList();
             var columns = new List<DataFrameColumn>();
 
-            for(int i = 0; i < reader.RowGroupCount; i++) {
-                using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(i);
+            for(int rowGroupIndex = 0; rowGroupIndex < reader.RowGroupCount; rowGroupIndex++) {
+                using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(rowGroupIndex);
 
-                for(int idf = 0; idf < readableFields.Count; idf++) {
-                    DataColumn dc = await rgr.ReadColumnAsync(readableFields[idf], cancellationToken);
+                for(int dataFieldIndex = 0; dataFieldIndex < readableFields.Count; dataFieldIndex++) {
+                    DataColumn dc = await rgr.ReadColumnAsync(readableFields[dataFieldIndex], cancellationToken);
 
-                    if(idf >= columns.Count) {
+                    if(rowGroupIndex == 0) {
                         dfcs.Add(DataFrameMapper.ToDataFrameColumn(dc));
                     } else {
-                        DataFrameMapper.AppendValues(dfcs[idf], dc);
+                        DataFrameMapper.AppendValues(dfcs[dataFieldIndex], dc);
                     }
                 }
             }
