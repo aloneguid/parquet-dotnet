@@ -1,5 +1,9 @@
 ## 4.22.0
 
+### Improvements
+
+- Added `ParquetSerializer` `DeserializeAsync` overloads accepting local file path (#379)
+
 ### Parquet Floor
 
 - Reduced binary size after enabling partial trimming.

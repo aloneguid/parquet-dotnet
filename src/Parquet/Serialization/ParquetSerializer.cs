@@ -186,6 +186,24 @@ namespace Parquet.Serialization {
         }
 
         /// <summary>
+        /// Deserialize a specific row group from a local file.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filePath">Local file path</param>
+        /// <param name="rowGroupIndex">Zero-based row group index</param>
+        /// <param name="options">Parquet options</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns></returns>
+        public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
+            int rowGroupIndex,
+            ParquetOptions? options = null,
+            CancellationToken cancellationToken = default)
+            where T : new() {
+            using FileStream fs = System.IO.File.OpenRead(filePath);
+            return await DeserializeAsync<T>(fs, rowGroupIndex, options, cancellationToken);
+        }
+
+        /// <summary>
         /// Deserialise
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -215,6 +233,22 @@ namespace Parquet.Serialization {
         }
 
         /// <summary>
+        /// Deserialise from local file.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filePath">File path</param>
+        /// <param name="options">Options</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns></returns>
+        public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
+            ParquetOptions? options = null,
+            CancellationToken cancellationToken = default)
+            where T : new() {
+            using FileStream fs = System.IO.File.OpenRead(filePath);
+            return await DeserializeAsync<T>(fs, options, cancellationToken);
+        }
+
+        /// <summary>
         /// Highly experimental
         /// </summary>
         public record UntypedResult(IList<Dictionary<string, object>> Data, ParquetSchema Schema);
@@ -239,7 +273,6 @@ namespace Parquet.Serialization {
 
             return new UntypedResult(result, schema);
         }
-
 
         /// <summary>
         /// Deserialize as async enumerable
