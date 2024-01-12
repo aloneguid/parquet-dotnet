@@ -4,6 +4,8 @@
 
     <variables>
         <header-logo>logo.svg</header-logo>
+        <custom-favicons>logo.svg</custom-favicons>
+        <product-web-url>https://github.com/aloneguid/parquet-dotnet</product-web-url>
     </variables>
     <build-profile instance="pq">
         <variables>
@@ -13,8 +15,9 @@
     </build-profile>
 
     <footer>
-        <copyright>Ivan Gavryliuk</copyright>
+        <copyright>aloneguid</copyright>
         <link href="https://github.com/aloneguid/parquet-dotnet">GitHub</link>
+        <link href="https://github.com/aloneguid/parquet-dotnet/releases">Releases</link>
     </footer>
 
 </buildprofiles>

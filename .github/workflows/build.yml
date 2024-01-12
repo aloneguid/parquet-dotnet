@@ -152,7 +152,7 @@ jobs:
 
   wrs-deploy:
     runs-on: ubuntu-latest
-    needs: wrs-build
+    needs: [wrs-build, test, build]
     name: Deploy Documentation
     steps:
       - name: ⬇️ Download artifacts
