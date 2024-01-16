@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
              x:Class="Parquet.Floor.Views.ErrorView"
              x:DataType="vm:MainViewModel">
     <Design.DataContext>
@@ -12,14 +13,14 @@
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <Grid Classes="error">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Image Source="/Assets/icons/bat_dead.png"/>
-            <TextBlock Text="{Binding ErrorMessage}" HorizontalAlignment="Center" Classes="error" />
-            <TextBlock Text="details..." Classes="hyperlink" HorizontalAlignment="Center" IsVisible="{Binding !ShowErrorDetails}" PointerPressed="TextBlock_PointerPressed"/>
-            <ScrollViewer IsVisible="{Binding ShowErrorDetails}">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <i:Icon Value="fa-solid fa-bomb" FontSize="30" />
+        <TextBlock Text="{Binding ErrorMessage}" HorizontalAlignment="Center"/>
+        <Expander Header="Details">
+            <ScrollViewer>
                 <TextBox AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding ErrorDetails}" />
             </ScrollViewer>
-        </StackPanel>
-    </Grid>
+        </Expander>
+    </StackPanel>
+
 </UserControl>

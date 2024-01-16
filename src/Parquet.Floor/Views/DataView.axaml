@@ -12,23 +12,36 @@
         <vm:DataViewModel />
     </Design.DataContext>
 
-    <DataGrid x:Name="grid"
-              AutoGenerateColumns="False"
-              CanUserSortColumns="True"
-              CanUserResizeColumns="True"
-              CanUserReorderColumns="True"
-              GridLinesVisibility="Horizontal"
-              IsReadOnly="True"
-              ItemsSource="{Binding Data}"
-              CellPointerPressed="DataGrid_CellPointerPressed">
-        <DataGrid.Columns>
-            <!--
+    <Grid>
+        <DataGrid x:Name="grid"
+                  AutoGenerateColumns="False"
+                  CanUserSortColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserReorderColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding Data}"
+                  CellPointerPressed="DataGrid_CellPointerPressed">
+            <DataGrid.Columns>
+                <!--
             <DataGridTextColumn Header="First Name" Width="*"
                     Binding="{Binding [id]}"/>
             <DataGridTextColumn Header="Last Name" Width="*"
                     Binding="{Binding [name]}" />
             -->
-        </DataGrid.Columns>
-    </DataGrid>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasError}">
+            <i:Icon Value="fa-solid fa-bomb" FontSize="30" />            
+            <TextBlock Text="{Binding ErrorMessage}" HorizontalAlignment="Center"/>
+            <Expander Header="Details">
+                <ScrollViewer>
+                    <TextBox AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding ErrorDetails}" />
+                </ScrollViewer>
+            </Expander>
+        </StackPanel>
+
+    </Grid>
 
 </UserControl>
