@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Attributes;
@@ -141,6 +143,7 @@ namespace Parquet.Test.Serialisation {
             [ParquetSimpleRepeatable]
             public List<int>? LegacyIntList { get; set; }
         }
+
 
         [Fact]
         public void ListsOfPrimitives() {

@@ -24,11 +24,15 @@ namespace Parquet.Test.Serialisation {
     /// </summary>
     public class ParquetSerializerTest : TestBase {
 
-        private async Task Compare<T>(List<T> data, bool asJson = false) where T : new() {
+        private async Task Compare<T>(List<T> data, bool asJson = false, string? saveAsFile = null) where T : new() {
 
             // serialize to parquet
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
+
+            if(saveAsFile != null) {
+                await System.IO.File.WriteAllBytesAsync(saveAsFile, ms.ToArray());
+            }
 
             // deserialize from parquet
             ms.Position = 0;
@@ -383,6 +387,13 @@ namespace Parquet.Test.Serialisation {
             public List<int>? ParentIds { get; set; }
         }
 
+        class MovementHistoryCompressedWithArrays {
+            public int? PersonId { get; set; }
+
+            public int[]? ParentIds { get; set; }
+        }
+
+
         [Fact]
         public async Task List_Atomics_Serde() {
 
@@ -395,6 +406,17 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public async Task Arrays_Atomics_Serde() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressedWithArrays {
+                PersonId = i,
+                ParentIds = Enumerable.Range(i, 4).ToArray()
+            }).ToList();
+
+            await Compare(data, saveAsFile: "c:\\tmp\\ser_ar.parquet");
+        }
+
+        [Fact]
         public async Task List_Atomics_Serde_Dict() {
 
             var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
@@ -403,6 +425,17 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistoryCompressed>(data);
+        }
+
+        [Fact]
+        public async Task Array_Atomics_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+                ["PersonId"] = i,
+                ["ParentIds"] = Enumerable.Range(i, 4).ToList()
+            }).ToList();
+
+            await DictCompare<MovementHistoryCompressedWithArrays>(data);
         }
 
         [Fact]
