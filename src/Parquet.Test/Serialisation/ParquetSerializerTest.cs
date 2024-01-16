@@ -387,6 +387,12 @@ namespace Parquet.Test.Serialisation {
             public List<int>? ParentIds { get; set; }
         }
 
+        class MovementHistoryNullableCompressed {
+            public int? PersonId { get; set; }
+
+            public List<int?>? ParentIds { get; set; }
+        }
+
         class MovementHistoryCompressedWithArrays {
             public int? PersonId { get; set; }
 
@@ -406,6 +412,17 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public async Task List_NullableAtomics_Serde() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryNullableCompressed {
+                PersonId = i,
+                ParentIds = Enumerable.Range(i, 4).Select(i => (int?)i).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
+        [Fact]
         public async Task Arrays_Atomics_Serde() {
 
             var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressedWithArrays {
@@ -413,7 +430,7 @@ namespace Parquet.Test.Serialisation {
                 ParentIds = Enumerable.Range(i, 4).ToArray()
             }).ToList();
 
-            await Compare(data, saveAsFile: "c:\\tmp\\ser_ar.parquet");
+            await Compare(data);
         }
 
         [Fact]
@@ -425,6 +442,17 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistoryCompressed>(data);
+        }
+
+        [Fact]
+        public async Task List_NullableAtomics_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+                ["PersonId"] = i,
+                ["ParentIds"] = Enumerable.Range(i, 4).Select(i => (int?)i).ToList()
+            }).ToList();
+
+            await DictCompare<MovementHistoryNullableCompressed>(data);
         }
 
         [Fact]
