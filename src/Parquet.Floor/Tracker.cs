@@ -59,6 +59,10 @@ namespace Parquet.Floor {
 
         private async ValueTask TrackAsync(string eventName, Dictionary<string, string>? extras = null) {
 
+            if(!Settings.Instance.BasicTelemetryEnabled) {
+                return;
+            }
+
             var payload = new Dictionary<string, string>(_constants);
 
             var request = new HttpRequestMessage(HttpMethod.Post, _url);

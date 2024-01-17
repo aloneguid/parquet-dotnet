@@ -3,6 +3,7 @@
 ### Floor
 
 - Remembers theme variant - "light" or "dark".
+- Ask for permission to send anonymous telemetry data on start.
 
 ## 4.22.1
 

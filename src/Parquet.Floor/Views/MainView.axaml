@@ -7,7 +7,7 @@
              xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:actiproImages="using:ActiproSoftware.UI.Avalonia.Images"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
              x:Class="Parquet.Floor.Views.MainView"
              x:DataType="vm:MainViewModel">
 
@@ -97,6 +97,7 @@
                     Open...
                 </Button>
             </StackPanel>
+            <views:TelemetryAgreement Width="400" Height="200"/>
         </Grid>
         
     </DockPanel>

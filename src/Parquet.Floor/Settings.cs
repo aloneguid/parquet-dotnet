@@ -9,6 +9,8 @@ namespace Parquet.Floor {
 
         bool BasicTelemetryEnabled { get; set; }
 
+        bool TelemetryDecisionMade { get; set; }
+
         string? ThemeVariant { get; set; }
     }
 
