@@ -1,3 +1,9 @@
+## 4.22.2
+
+### Floor
+
+- Remembers theme variant - "light" or "dark".
+
 ## 4.22.1
 
 ### Improvements

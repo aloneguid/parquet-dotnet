@@ -42,6 +42,7 @@
         <PackageReference Include="Avalonia.Controls.TreeDataGrid" Version="11.0.2" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.6" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+        <PackageReference Include="Config.Net" Version="5.1.5" />
         <PackageReference Include="Projektanker.Icons.Avalonia" Version="9.0.1" />
         <PackageReference Include="Projektanker.Icons.Avalonia.FontAwesome" Version="9.0.1" />
 

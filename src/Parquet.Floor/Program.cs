@@ -21,6 +21,8 @@ class Program {
 #else
         Tracker.Instance = new Tracker("floor", Globals.Version);
 #endif
+        Tracker.Instance.Constants.Add("iid", Settings.Instance.InstanceId.ToString());
+
         try {
             Tracker.Instance.Track("start");
         }catch(Exception ex) {
