@@ -22,6 +22,8 @@ namespace Parquet.Test.Serialisation {
             public float? NullableFloat { get; set; }
 
             public int[]? IntArray { get; set; }
+
+            public bool MarkerField;
         }
 
         [Fact]
@@ -29,7 +31,7 @@ namespace Parquet.Test.Serialisation {
             ParquetSchema schema = typeof(PocoClass).GetParquetSchema(true);
 
             Assert.NotNull(schema);
-            Assert.Equal(4, schema.Fields.Count);
+            Assert.Equal(5, schema.Fields.Count);
 
             // verify
 
@@ -59,6 +61,12 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(typeof(int), intArrayData.ClrType);
             Assert.False(intArrayData.IsNullable);
             Assert.False(intArrayData.IsArray);
+
+            DataField markerField = (DataField)schema[4];
+            Assert.Equal("MarkerField", markerField.Name);
+            Assert.Equal(typeof(bool), markerField.ClrType);
+            Assert.False(markerField.IsNullable);
+            Assert.False(markerField.IsArray);
         }
 
 
@@ -69,7 +77,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void I_can_recognize_inherited_properties() {
             ParquetSchema schema = typeof(PocoSubClass).GetParquetSchema(true);
-            Assert.Equal(5, schema.Fields.Count);
+            Assert.Equal(6, schema.Fields.Count);
             DataField extraProperty = (DataField)schema[0];
             Assert.Equal("ExtraProperty", extraProperty.Name);
             Assert.Equal(typeof(int), extraProperty.ClrType);
