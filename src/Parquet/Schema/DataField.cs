@@ -133,6 +133,20 @@ namespace Parquet.Schema {
         public override string ToString() => 
             $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";
 
+        private Type BaseClrType {
+            get {
+#if NET6_0_OR_GREATER
+                if(ClrType == typeof(DateOnly))
+                    return typeof(DateTime);
+
+                if(ClrType == typeof(TimeOnly))
+                    return typeof(TimeSpan);
+#endif
+
+                return ClrType;
+            }
+        }
+
         /// <summary>
         /// Basic equality check
         /// </summary>
@@ -143,7 +157,7 @@ namespace Parquet.Schema {
                 return false;
 
             return base.Equals(obj) &&
-                ClrType == other.ClrType &&
+                BaseClrType == other.BaseClrType &&
                 IsNullable == other.IsNullable &&
                 IsArray == other.IsArray;
         }

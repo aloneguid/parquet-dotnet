@@ -760,5 +760,35 @@ namespace Parquet.Test.Serialisation {
 
             await Compare(data);
         }
+
+#if NET6_0_OR_GREATER
+
+        record RecordContainingDateAndtimeOnly {
+            public DateOnly? NullableDate { get; set; }
+            public TimeOnly? NullableTime { get; set; }
+            public DateOnly Date { get; set; }
+            public TimeOnly Time { get; set; }
+        }
+
+        [Fact]
+        public async Task DateOnlyTimeOnly_Nullable_Serde() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new RecordContainingDateAndtimeOnly {
+                NullableDate = i==0? null : DateOnly.MinValue.AddDays(i),
+                NullableTime = i==0? null: TimeOnly.MinValue.AddMinutes(i),
+                Date =  DateOnly.MinValue.AddDays(i+1),
+                Time = TimeOnly.MinValue.AddMinutes(i+1),
+            }).ToList();
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<RecordContainingDateAndtimeOnly> data2 = await ParquetSerializer.DeserializeAsync<RecordContainingDateAndtimeOnly>(ms);
+
+            Assert.Equivalent(data2, data);
+        }
+
+#endif
     }
 }

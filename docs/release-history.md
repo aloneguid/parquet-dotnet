@@ -4,6 +4,10 @@
 
 - Class serializer now supports fields, in addition to properties (#405).
 
+### Bugs fixed
+
+- .NET >= 6 specific types `DateOnly` and `TimeOnly` deserialization was failing due to schema validation errors (#395).
+
 ### Floor
 
 - Remembers theme variant - "light" or "dark".

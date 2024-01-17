@@ -310,6 +310,10 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeOnly MicroTimeOnly { get; set; }
+
+            public DateOnly? NullableDateOnly { get; set; }
+
+            public TimeOnly? NullableTimeOnly { get; set; }
 #endif
 
 #if NET7_0_OR_GREATER
@@ -358,6 +362,7 @@ namespace Parquet.Test.Serialisation {
             Assert.True(s.DataFields[4].GetType() == typeof(DataField));
             Assert.Equal(SchemaType.Data, s.DataFields[4].SchemaType);
             Assert.Equal(typeof(DateOnly), s.DataFields[4].ClrType);
+            Assert.False(s.DataFields[4].IsNullable);
         }
         
         [Fact]
@@ -375,6 +380,17 @@ namespace Parquet.Test.Serialisation {
             Assert.True(s.DataFields[6] is TimeOnlyDataField);
             Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeOnlyDataField)s.DataFields[6]).TimeSpanFormat);
         }
+
+        [Fact]
+        public void DateOnly_nullable_timestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            Assert.True(s.DataFields[7].GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, s.DataFields[7].SchemaType);
+            Assert.Equal(typeof(DateOnly), s.DataFields[7].ClrType);
+            Assert.True(s.DataFields[7].IsNullable);
+        }
+
 #endif
 
         class DecimalPoco {
