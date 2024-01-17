@@ -62,6 +62,26 @@ namespace Parquet.Floor.Views.Templates {
                 return CreateNullTextBlock();
 
             if(forceData || f.SchemaType == SchemaType.Data) {
+                if(f is DataField df && df.IsArray) {
+                    var sp = new StackPanel {
+                        Orientation = Orientation.Horizontal
+                    };
+                    foreach(object? entry in (IEnumerable)value) {
+                        TextBlock ctrl = entry == null
+                            ? CreateNullTextBlock()
+                            : CreateTextBlock(entry.ToString()!, extraClassName);
+                        var border = new Border {
+                            BorderThickness = new Thickness(1),
+                            BorderBrush = Avalonia.Media.Brushes.Black,
+                            Margin = new Thickness(2),
+                            CornerRadius = new CornerRadius(2)
+                        };
+                        border.Child = ctrl;
+                        sp.Children.Add(border);
+                    }
+                    return sp;
+                }
+
                 TextBlock tb = CreateTextBlock(value.ToString()!, extraClassName);
                 tb.HorizontalAlignment = GetAlignment(f);
                 return tb;

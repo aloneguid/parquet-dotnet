@@ -214,10 +214,10 @@ namespace Parquet.Test.Serialisation {
             public List<string>? Strings { get; set; }
         }
 
-        [Theory]
-        [InlineData("legacy_primitives_collection_arrays.parquet")]
-        public async Task ParquetSerializer_ReadingLegacyPrimitivesCollectionArrayAsync(string parquetFile) {
-            IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(OpenTestFile(parquetFile));
+        [Fact]
+        public async Task TestData_LegacyPrimitivesCollectionArrays() {
+            IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(
+                OpenTestFile("legacy_primitives_collection_arrays.parquet"));
 
             Assert.NotNull(data);
             Assert.Single(data);
@@ -237,6 +237,15 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(element.TimeSpans, new TimeSpan[] { TimeSpan.Zero, TimeSpan.FromSeconds(5) });
             Assert.Equivalent(element.Intervals, new[] { new Interval(0, 0, 0), new Interval(0, 1, 1) });
             Assert.Equivalent(element.Strings, new[] { "Hello", "People" });
+        }
+
+
+        [Fact]
+        public async Task TestData_LegacyPrimitivesCollectionArrays_Dict() {
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(
+                OpenTestFile("legacy_primitives_collection_arrays.parquet"));
+
+            Assert.NotNull(r);
         }
 
         class Address {

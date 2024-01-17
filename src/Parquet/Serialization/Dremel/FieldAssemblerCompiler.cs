@@ -216,7 +216,11 @@ namespace Parquet.Serialization.Dremel {
         private static Type GetIdealUntypedType(Field f) {
             switch(f.SchemaType) {
                 case SchemaType.Data:
-                    return ((DataField)f).ClrNullableIfHasNullsType;
+                    var df = (DataField)f;
+                    if(df.IsArray) {
+                        return typeof(List<>).MakeGenericType(df.ClrNullableIfHasNullsType);
+                    }
+                    return df.ClrNullableIfHasNullsType;
                 case SchemaType.Map:
                     var fmap = (MapField)f;
                     return typeof(IDictionary<,>).MakeGenericType(GetIdealUntypedType(fmap.Key), GetIdealUntypedType(fmap.Value));
