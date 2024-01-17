@@ -18,6 +18,76 @@ namespace Parquet.Serialization {
     public static class TypeExtensions {
         private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReflectedSchemas = new();
 
+        abstract class ClassMember {
+
+            private readonly MemberInfo _mi;
+
+            protected ClassMember(MemberInfo mi) {
+                _mi = mi;
+            }
+
+            public string Name => _mi.Name;
+
+            public string ColumnName {
+                get {
+                    JsonPropertyNameAttribute? stxt = _mi.GetCustomAttribute<JsonPropertyNameAttribute>();
+
+                    return stxt?.Name ?? _mi.Name;
+                }
+            }
+
+            public abstract Type MemberType { get; }
+
+            public int? Order { 
+                get{
+#if NETCOREAPP3_1
+                    return null;
+#else
+                    JsonPropertyOrderAttribute? po = _mi.GetCustomAttribute<JsonPropertyOrderAttribute>();
+                    return po?.Order;
+#endif
+                }
+            }
+
+            public bool ShouldIgnore {
+                get {
+                    return _mi.GetCustomAttribute<JsonIgnoreAttribute>() != null;
+                }
+            }
+
+            public bool IsLegacyRepeatable => _mi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
+
+            public bool IsRequired => _mi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
+
+            public ParquetTimestampAttribute? TimestampAttribute => _mi.GetCustomAttribute<ParquetTimestampAttribute>();
+
+            public ParquetMicroSecondsTimeAttribute? MicroSecondsTimeAttribute => _mi.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>();
+
+            public ParquetDecimalAttribute? DecimalAttribute => _mi.GetCustomAttribute<ParquetDecimalAttribute>();
+
+        }
+
+        class ClassPropertyMember : ClassMember {
+            private readonly PropertyInfo _pi;
+
+            public ClassPropertyMember(PropertyInfo propertyInfo) : base(propertyInfo) {
+                _pi = propertyInfo;
+            }
+
+            public override Type MemberType => _pi.PropertyType;
+
+        }
+
+        class ClassFieldMember : ClassMember {
+            private readonly FieldInfo _fi;
+
+            public ClassFieldMember(FieldInfo fi) :base(fi) {
+                _fi = fi;
+            }
+
+            public override Type MemberType => _fi.FieldType;
+        }
+
         /// <summary>
         /// Reflects this type to get <see cref="ParquetSchema"/>
         /// </summary>
@@ -37,41 +107,49 @@ namespace Parquet.Serialization {
             return schema;
         }
 
-        private static List<PropertyInfo> FindProperties(Type t, bool forWriting) {
-            PropertyInfo[] props = t.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+        private static List<ClassMember> FindMembers(Type t, bool forWriting) {
 
-            return forWriting
-                ? props.Where(p => p.CanWrite).ToList()
-                : props.Where(p => p.CanRead).ToList();
+            var members = new List<ClassMember>();
+
+            PropertyInfo[] allProps = t.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            members.AddRange((forWriting
+                ? allProps.Where(p => p.CanWrite)
+                : allProps.Where(p => p.CanRead)).Select(p => new ClassPropertyMember(p)));
+
+            // fields are always read/write
+            members.AddRange(t.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                .Select(f => new ClassFieldMember(f)));
+
+            return members;
         }
 
-        private static Field ConstructDataField(string name, string propertyName, Type t, PropertyInfo? pi) {
+        private static Field ConstructDataField(string name, string propertyName, Type t, ClassMember? member) {
             Field r;
-            bool? isNullable = pi == null
+            bool? isNullable = member == null
                 ? null
-                : IsRequired(pi) ? false : null;
+                : member.IsRequired ? false : null;
 
             if(t == typeof(DateTime)) {
-                ParquetTimestampAttribute? tsa = pi?.GetCustomAttribute<ParquetTimestampAttribute>();
+                ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
                 r = new DateTimeDataField(name,
                     tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
                     isNullable, null, propertyName);
             } else if(t == typeof(TimeSpan)) {
                 r = new TimeSpanDataField(name,
-                    pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
+                    member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     isNullable, null, propertyName);
 #if NET6_0_OR_GREATER
             } else if(t == typeof(TimeOnly)) {
                 r = new TimeOnlyDataField(name,
-                    pi?.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>() == null
+                    member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     isNullable, null, propertyName);
 #endif
             } else if(t == typeof(decimal)) {
-                ParquetDecimalAttribute? ps = pi?.GetCustomAttribute<ParquetDecimalAttribute>();
+                ParquetDecimalAttribute? ps = member?.DecimalAttribute;
                 r = ps == null
                     ? new DecimalDataField(name,
                         DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
@@ -84,36 +162,6 @@ namespace Parquet.Serialization {
             return r;
         }
 
-        private static string GetColumnName(PropertyInfo pi) {
-
-            JsonPropertyNameAttribute? stxt = pi.GetCustomAttribute<JsonPropertyNameAttribute>();
-
-            return stxt?.Name ?? pi.Name;
-        }
-
-        private static bool ShouldIgnore(PropertyInfo pi) {
-            return 
-                pi.GetCustomAttribute<JsonIgnoreAttribute>() != null;
-        }
-
-        private static bool IsLegacyRepeatable(PropertyInfo pi) {
-            return pi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
-        }
-
-        private static bool IsRequired(PropertyInfo pi) {
-            return pi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
-        }
-
-        private static int? GetPropertyOrder(PropertyInfo pi) {
-
-#if NETCOREAPP3_1
-            return null;
-#else
-            JsonPropertyOrderAttribute? po = pi.GetCustomAttribute<JsonPropertyOrderAttribute>();
-            return po?.Order;
-#endif
-        }
-
         private static MapField ConstructMapField(string name, string propertyName,
             Type tKey, Type tValue,
             bool forWriting) {
@@ -122,11 +170,11 @@ namespace Parquet.Serialization {
             PropertyInfo piKey = kvpType.GetProperty("Key")!;
             PropertyInfo piValue = kvpType.GetProperty("Value")!;
 
-            Field keyField = MakeField(piKey, forWriting)!;
+            Field keyField = MakeField(new ClassPropertyMember(piKey), forWriting)!;
             if(keyField is DataField keyDataField && keyDataField.IsNullable) {
                 keyField.IsNullable = false;
             }
-            Field valueField = MakeField(piValue, forWriting)!;
+            Field valueField = MakeField(new ClassPropertyMember(piValue), forWriting)!;
             var mf = new MapField(name, keyField, valueField);
             mf.ClrPropName = propertyName;
             return mf;
@@ -141,16 +189,12 @@ namespace Parquet.Serialization {
             return lf;
         }
 
-        private static Field? MakeField(PropertyInfo pi, bool forWriting) {
-            if(ShouldIgnore(pi))
+        private static Field? MakeField(ClassMember member, bool forWriting) {
+            if(member.ShouldIgnore)
                 return null;
 
-            Type t = pi.PropertyType;
-            string name = GetColumnName(pi);
-            string propertyName = pi.Name;
-
-            Field r = MakeField(t, name, propertyName, pi, forWriting);
-            r.Order = GetPropertyOrder(pi);
+            Field r = MakeField(member.MemberType, member.ColumnName, member.Name, member, forWriting);
+            r.Order = member.Order;
             return r;
         }
 
@@ -160,28 +204,28 @@ namespace Parquet.Serialization {
         /// <param name="t">Type of property</param>
         /// <param name="columnName">Parquet file column name</param>
         /// <param name="propertyName">Class property name</param>
-        /// <param name="pi">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
+        /// <param name="member">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
         /// <param name="forWriting"></param>
         /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
         /// <exception cref="NotImplementedException"></exception>
         private static Field MakeField(Type t, string columnName, string propertyName,
-            PropertyInfo? pi,
+            ClassMember? member,
             bool forWriting) {
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(pi != null && IsLegacyRepeatable(pi) && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
+            if(member != null && member.IsLegacyRepeatable && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
                 bt = bti!;
             }
 
             if(SchemaEncoder.IsSupported(bt)) {
-                return ConstructDataField(columnName, propertyName, t, pi);
+                return ConstructDataField(columnName, propertyName, t, member);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
                 return ConstructListField(columnName, propertyName, elementType!, forWriting);
             } else if(t.IsClass || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
-                List<PropertyInfo> props = FindProperties(t, forWriting);
+                List<ClassMember> props = FindMembers(t, forWriting);
                 Field[] fields = props
                     .Select(p => MakeField(p, forWriting))
                     .Where(f => f != null)
@@ -204,7 +248,7 @@ namespace Parquet.Serialization {
 
             // get it all, including base class properties (may be a hierarchy)
 
-            List<PropertyInfo> props = FindProperties(t, forWriting);
+            List<ClassMember> props = FindMembers(t, forWriting);
             List<Field> fields = props
                 .Select(p => MakeField(p, forWriting))
                 .Where(f => f != null)
