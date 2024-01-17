@@ -129,26 +129,26 @@ namespace Parquet.Serialization {
                 ? null
                 : member.IsRequired ? false : null;
 
-            if(t == typeof(DateTime)) {
+            if(t == typeof(DateTime) || t == typeof(DateTime?)) {
                 ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
                 r = new DateTimeDataField(name,
                     tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
                     isNullable, null, propertyName);
-            } else if(t == typeof(TimeSpan)) {
+            } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
                 r = new TimeSpanDataField(name,
                     member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     isNullable, null, propertyName);
 #if NET6_0_OR_GREATER
-            } else if(t == typeof(TimeOnly)) {
+            } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
                 r = new TimeOnlyDataField(name,
                     member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     isNullable, null, propertyName);
 #endif
-            } else if(t == typeof(decimal)) {
+            } else if(t == typeof(decimal) || t == typeof(decimal?)) {
                 ParquetDecimalAttribute? ps = member?.DecimalAttribute;
                 r = ps == null
                     ? new DecimalDataField(name,

@@ -7,6 +7,7 @@
 ### Bugs fixed
 
 - .NET >= 6 specific types `DateOnly` and `TimeOnly` deserialization was failing due to schema validation errors (#395).
+- Custom attributes like `[ParquetTimestamp]`, `[ParquetMicroSecondsTime]` or `[ParquetDecimal]` were ignored for nullable class properties (408).
 
 ### Floor
 

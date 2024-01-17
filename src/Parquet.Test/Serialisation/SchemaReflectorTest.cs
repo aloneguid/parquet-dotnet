@@ -298,6 +298,9 @@ namespace Parquet.Test.Serialisation {
             [ParquetTimestamp]
             public DateTime TimestampDate { get; set; }
 
+            [ParquetTimestamp]
+            public DateTime? NullableTimestampDate { get; set; }
+
             public TimeSpan DefaultTime { get; set; }
 
             [ParquetMicroSecondsTime]
@@ -334,24 +337,36 @@ namespace Parquet.Test.Serialisation {
         public void Date_timestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            Assert.True(s.DataFields[1] is DateTimeDataField);
-            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[1]).DateTimeFormat);
+            int no = 1;
+            Assert.True(s.DataFields[no] is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[no]).DateTimeFormat);
+        }
+
+        [Fact]
+        public void Date_timestamp_nullable() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            int no = 2;
+            Assert.True(s.DataFields[no] is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[no]).DateTimeFormat);
         }
 
         [Fact]
         public void Time_default() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            Assert.True(s.DataFields[2] is TimeSpanDataField);
-            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)s.DataFields[2]).TimeSpanFormat);
+            int no = 3;
+            Assert.True(s.DataFields[no] is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)s.DataFields[no]).TimeSpanFormat);
         }
 
         [Fact]
         public void Time_micros() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            Assert.True(s.DataFields[3] is TimeSpanDataField);
-            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)s.DataFields[3]).TimeSpanFormat);
+            int no = 4;
+            Assert.True(s.DataFields[no] is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)s.DataFields[no]).TimeSpanFormat);
         }
 
 #if NET6_0_OR_GREATER
@@ -359,36 +374,39 @@ namespace Parquet.Test.Serialisation {
         public void DateOnly_timestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            Assert.True(s.DataFields[4].GetType() == typeof(DataField));
-            Assert.Equal(SchemaType.Data, s.DataFields[4].SchemaType);
-            Assert.Equal(typeof(DateOnly), s.DataFields[4].ClrType);
-            Assert.False(s.DataFields[4].IsNullable);
+            int no = 5;
+            Assert.True(s.DataFields[no].GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, s.DataFields[no].SchemaType);
+            Assert.Equal(typeof(DateOnly), s.DataFields[no].ClrType);
+            Assert.False(s.DataFields[no].IsNullable);
         }
         
         [Fact]
         public void TimeOnly_default() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            Assert.True(s.DataFields[5] is TimeOnlyDataField);
-            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)s.DataFields[5]).TimeSpanFormat);
+            int no = 6;
+            Assert.True(s.DataFields[6] is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)s.DataFields[6]).TimeSpanFormat);
         }
 
         [Fact]
         public void TimeOnly_micros() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            Assert.True(s.DataFields[6] is TimeOnlyDataField);
-            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeOnlyDataField)s.DataFields[6]).TimeSpanFormat);
+            int no = 7;
+            Assert.True(s.DataFields[no] is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeOnlyDataField)s.DataFields[no]).TimeSpanFormat);
         }
 
         [Fact]
         public void DateOnly_nullable_timestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
-
-            Assert.True(s.DataFields[7].GetType() == typeof(DataField));
-            Assert.Equal(SchemaType.Data, s.DataFields[7].SchemaType);
-            Assert.Equal(typeof(DateOnly), s.DataFields[7].ClrType);
-            Assert.True(s.DataFields[7].IsNullable);
+            int no = 8;
+            Assert.True(s.DataFields[no].GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, s.DataFields[no].SchemaType);
+            Assert.Equal(typeof(DateOnly), s.DataFields[no].ClrType);
+            Assert.True(s.DataFields[no].IsNullable);
         }
 
 #endif
