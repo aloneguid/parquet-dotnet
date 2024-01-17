@@ -58,6 +58,14 @@ If you have a large file, and you want to deserialize it in chunks, you can also
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet", rowGroupIndex);
 ```
 
+## Class member requirements
+
+%product% can serialize and deserialize into class properties and class fields (class fields support was introduced in _v4.23.0_).
+
+Apparently, in order to serialize a class, a property must be readable, and in order to deserialize a class, a property must be writable. This is a standard requirement for any serialisation library.
+
+In case of fields, they are by default both readable and writable, so you don't need to do anything special to make them work. 
+
 ## Customising serialisation
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
