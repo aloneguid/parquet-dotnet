@@ -1,7 +1,7 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 4.22.0
+  VERSION: 4.22.1
   ASM_VERSION: 4.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
