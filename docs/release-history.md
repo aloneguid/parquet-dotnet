@@ -1,4 +1,8 @@
-## 4.22.2
+## 4.23.0
+
+### New features
+
+- Class serializer now supports fields, in addition to properties (#405).
 
 ### Floor
 
