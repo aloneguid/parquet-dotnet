@@ -104,6 +104,23 @@ namespace Parquet.Test.Serialisation {
             await DictCompare<Record>(data);
         }
 
+        class RecordWithFields {
+            public int IdProp { get; set; }
+
+            public int IdField;
+        }
+
+        [Fact]
+        public async Task Atomics_SimplestWithFields_Serde() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new RecordWithFields {
+                IdProp = i,
+                IdField = i
+            }).ToList();
+
+            await Compare(data);
+        }
+
         class RecordWithNewField : Record {
             public DateTime NewTimestamp { get; set; }
             public string? NewEventName { get; set; }

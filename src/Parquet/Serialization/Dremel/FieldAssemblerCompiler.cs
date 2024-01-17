@@ -233,7 +233,7 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
-        record ClassProperty(Expression Accessor,
+        record ClassMember(Expression Accessor,
             Expression IsNull,
             Type Type,
             bool IsGenericDictionary,
@@ -274,7 +274,7 @@ namespace Parquet.Serialization.Dremel {
                 na);
         }
 
-        private ClassProperty GetClassProperty(Type rootType, Expression rootVar,
+        private ClassMember GetClassMember(Type rootType, Expression rootVar,
             Field? parentField, Field field,
             string name) {
             if(_isUntypedClass) {
@@ -294,7 +294,7 @@ namespace Parquet.Serialization.Dremel {
                     isNull = Expression.Not(Expression.Call(rootVar, ckm, Expression.Constant(name)));
                 }
 
-                return new ClassProperty(accessor,
+                return new ClassMember(accessor,
                     isNull,
                     type,
                     isGenericDictionary,
@@ -303,10 +303,30 @@ namespace Parquet.Serialization.Dremel {
             } else {
 
                 // Dictionary is a special case, because it cannot be constructed independently in one go, so the client needs to know it a dictionary
-                Type type = rootType.GetProperty(name)!.PropertyType;
+
+                Type? type = null;
+                MemberExpression? accessor = null;
+
+                PropertyInfo? pi = rootType.GetProperty(name);
+                if(pi != null) {
+                    type = pi.PropertyType;
+                    accessor = Expression.Property(rootVar, name);
+                }
+
+                if(pi == null) {
+                    FieldInfo? fi = rootType.GetField(name);
+                    if(fi != null) {
+                        type = fi.FieldType;
+                        accessor = Expression.Field(rootVar, name);
+                    }
+                }
+
+                if(type == null || accessor == null) {
+                    throw new NotSupportedException($"There is no property of field called '{name}'.");
+                }
+
                 bool isGenericDictionary = type.IsGenericIDictionary();
-                MemberExpression accessor = Expression.Property(rootVar, name);
-                return new ClassProperty(accessor,
+                return new ClassMember(accessor,
                     type.IsValueType
                         ? Expression.Constant(false)
                         : Expression.Equal(accessor, Expression.Constant(null)),
@@ -330,7 +350,7 @@ namespace Parquet.Serialization.Dremel {
             bool isAtomic = field.IsAtomic;
             string levelPropertyName = field.ClrPropName ?? field.Name;
 
-            ClassProperty classProperty = GetClassProperty(rootType, rootVar, parentField, field, levelPropertyName);   
+            ClassMember classProperty = GetClassMember(rootType, rootVar, parentField, field, levelPropertyName);   
 
             Expression iteration = Expression.Empty();
 

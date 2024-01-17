@@ -207,7 +207,7 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
-        private Expression GetClassPropertyAccessorAndType(
+        private Expression GetClassMemberAccessorAndType(
             Type rootType,
             Expression rootVar,
             Field? parentField,
@@ -241,8 +241,19 @@ namespace Parquet.Serialization.Dremel {
                         Expression.Default(type)));
             }
 
-            type = rootType.GetProperty(name)!.PropertyType;
-            return Expression.Property(rootVar, name);
+            PropertyInfo? pi = rootType.GetProperty(name);
+            if(pi != null) {
+                type = pi.PropertyType;
+                return Expression.Property(rootVar, name);
+            }
+
+            FieldInfo? fi = rootType.GetField(name);
+            if(fi != null) {
+                type = fi.FieldType;
+                return Expression.Field(rootVar, name);
+            }
+
+            throw new NotSupportedException($"There is no class property of field called '{name}'.");
         }
 
         private Expression DissectRecord(
@@ -271,7 +282,7 @@ namespace Parquet.Serialization.Dremel {
             // while "decoder"
 
             string levelPropertyName = field.ClrPropName ?? field.Name;
-            Expression levelProperty = GetClassPropertyAccessorAndType(rootType, rootVar, parentField, field, levelPropertyName, out Type levelPropertyType);
+            Expression levelProperty = GetClassMemberAccessorAndType(rootType, rootVar, parentField, field, levelPropertyName, out Type levelPropertyType);
             ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
             ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
 
