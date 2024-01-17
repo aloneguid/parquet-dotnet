@@ -1,3 +1,15 @@
+## 4.22.1
+
+### Improvements
+
+- Deserialization into array of primitives is now supported on root class level in #456.
+- Untyped deserialiser supports legacy arrays.
+
+### Parquet Floor
+
+- Schema will still be loaded even if a file has failed to load.
+- Legacy arrays can be viewed.
+
 ## 4.22.0
 
 ### Improvements

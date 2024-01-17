@@ -216,7 +216,11 @@ namespace Parquet.Serialization.Dremel {
         private static Type GetIdealUntypedType(Field f) {
             switch(f.SchemaType) {
                 case SchemaType.Data:
-                    return ((DataField)f).ClrNullableIfHasNullsType;
+                    var df = (DataField)f;
+                    if(df.IsArray) {
+                        return typeof(List<>).MakeGenericType(df.ClrNullableIfHasNullsType);
+                    }
+                    return df.ClrNullableIfHasNullsType;
                 case SchemaType.Map:
                     var fmap = (MapField)f;
                     return typeof(IDictionary<,>).MakeGenericType(GetIdealUntypedType(fmap.Key), GetIdealUntypedType(fmap.Value));
@@ -229,7 +233,46 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
-        record ClassProperty(Expression Accessor, Expression IsNull, Type Type, bool IsGenericDictionary);
+        record ClassProperty(Expression Accessor,
+            Expression IsNull,
+            Type Type,
+            bool IsGenericDictionary,
+            Expression CreateNew);
+
+        private static Expression CreateInstance(Type t) {
+            if(t.IsArray) {
+                // create an empty array
+                return Expression.NewArrayBounds(t.GetElementType()!, Zero);
+            }
+
+            return Expression.New(t);
+        }
+
+        private static Expression RebuildArray(Expression arrayAccessor, Type arrayType, Expression newElement) {
+
+            ParameterExpression na = Expression.Variable(arrayType, "newArray");
+
+            // get array length
+            Expression arrayLength = Expression.ArrayLength(arrayAccessor);
+
+            return Expression.Block(
+                new[] { na },
+
+                // create new array
+                Expression.Assign(na, Expression.NewArrayBounds(arrayType.GetElementType()!, Expression.Add(arrayLength, One))),
+
+                // copy old array to new array
+                Expression.Call(
+                    typeof(Array).GetMethod(nameof(Array.Copy), new[] { typeof(Array), typeof(Array), typeof(int) })!,
+                    arrayAccessor,
+                    na,
+                    arrayLength),
+
+                // add new element to the end
+                Expression.Assign(Expression.ArrayAccess(na, arrayLength), newElement),
+
+                na);
+        }
 
         private ClassProperty GetClassProperty(Type rootType, Expression rootVar,
             Field? parentField, Field field,
@@ -254,7 +297,8 @@ namespace Parquet.Serialization.Dremel {
                 return new ClassProperty(accessor,
                     isNull,
                     type,
-                    isGenericDictionary);
+                    isGenericDictionary,
+                    Expression.Empty());
 
             } else {
 
@@ -266,8 +310,9 @@ namespace Parquet.Serialization.Dremel {
                     type.IsValueType
                         ? Expression.Constant(false)
                         : Expression.Equal(accessor, Expression.Constant(null)),
-                    rootType.GetProperty(name)!.PropertyType,
-                    isGenericDictionary);
+                    type,
+                    isGenericDictionary,
+                    Expression.Empty());
             }
         }
 
@@ -303,10 +348,20 @@ namespace Parquet.Serialization.Dremel {
                 Expression leafExpr;
 
                 if(isAtomic) {
-                    // add element to collection - end here
-                    leafExpr = Expression.Call(Expression.Convert(classProperty.Accessor, classProperty.Type),
-                        classProperty.Type.GetMethod(nameof(IList.Add))!,
-                        Expression.Convert(_dataElementVar, levelPropertyElementType));
+
+                    if(classProperty.Type.IsArray) {
+
+                        // add element to array
+                        leafExpr = Expression.Assign(
+                            classProperty.Accessor,
+                            RebuildArray(classProperty.Accessor, classProperty.Type, Expression.Convert(_dataElementVar, levelPropertyElementType)));
+                    } else {
+
+                        // add element to collection - end here
+                        leafExpr = Expression.Call(Expression.Convert(classProperty.Accessor, classProperty.Type),
+                            classProperty.Type.GetMethod(nameof(IList.Add))!,
+                            Expression.Convert(_dataElementVar, levelPropertyElementType));
+                    }
 
                 } else {
 
@@ -369,7 +424,7 @@ namespace Parquet.Serialization.Dremel {
                     Expression.Block(
                         Expression.IfThen(
                             classProperty.IsNull,
-                            Expression.Assign(classProperty.Accessor, Expression.New(classProperty.Type))),
+                            Expression.Assign(classProperty.Accessor, CreateInstance(classProperty.Type))),
 
                         iteration));
 
@@ -379,7 +434,7 @@ namespace Parquet.Serialization.Dremel {
                         Expression.Block(
                             Expression.IfThen(
                                 classProperty.IsNull,
-                                Expression.Assign(classProperty.Accessor, Expression.New(classProperty.Type))),
+                                Expression.Assign(classProperty.Accessor, CreateInstance(classProperty.Type))),
 
                             iteration));
                 }

@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Parquet.Schema;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia;
-using Parquet.Floor.ViewModels;
-using Avalonia.Platform;
-using Avalonia.Media.Imaging;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.Floor.Views.Templates {
     class DataViewHeaderTemplate : IDataTemplate {
@@ -21,7 +15,12 @@ namespace Parquet.Floor.Views.Templates {
         }
 
         private static bool IsNumeric(Type t) =>
-            t == typeof(short) || t == typeof(int) || t == typeof(long) || t == typeof(decimal);
+            t == typeof(short) || t == typeof(ushort) ||
+            t == typeof(int) || t == typeof(uint) || 
+            t == typeof(long) || t == typeof(ulong) ||
+            t == typeof(float) ||
+            t == typeof(decimal) ||
+            t == typeof(double);
 
         private static bool IsByteArray(Type t) =>
             t == typeof(byte[]);
@@ -36,16 +35,24 @@ namespace Parquet.Floor.Views.Templates {
                 case SchemaType.Data:
                     if(_field is DataField df) {
                         if(IsNumeric(df.ClrType)) {
-                            name = "number";
+                            name = "hashtag";
                         } else if(IsString(df.ClrType)) {
-                            name = "string";
+                            name = "comment";
                         } else if(IsByteArray(df.ClrType)) {
-                            name = "bytearray";
+                            name = "chart-simple";
+                        } else if(df.ClrType == typeof(bool)) {
+                            name = "square-check";
+                        } else if(df.ClrType == typeof(DateTime)) {
+                            name = "calendar";
+                        } else if(df.ClrType == typeof(TimeSpan)) {
+                            name = "clock";
+                        } else if(df.ClrType == typeof(Interval)) {
+                            name = "hourglass";
                         }
                     }
                     break;
                 case SchemaType.Struct:
-                    name = "struct";
+                    name = "folder-tree";
                     break;
                 case SchemaType.Map:
                     name = "map";
@@ -59,11 +66,11 @@ namespace Parquet.Floor.Views.Templates {
             if(name == null)
                 return new Control();
 
-            var image = new Image {
-                Source = new Bitmap(AssetLoader.Open(new Uri($"avares://floor/Assets/icons/col/{name}.png")))
+            return new Projektanker.Icons.Avalonia.Icon {
+                Value = $"fa-solid fa-{name}",
+                FontSize = 12,
+                Margin = new Thickness(6, 0, 0, 6)
             };
-            image.Classes.Add("dt-icon");
-            return image;
 
         }
 

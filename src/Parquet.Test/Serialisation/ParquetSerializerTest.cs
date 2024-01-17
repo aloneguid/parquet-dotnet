@@ -24,11 +24,15 @@ namespace Parquet.Test.Serialisation {
     /// </summary>
     public class ParquetSerializerTest : TestBase {
 
-        private async Task Compare<T>(List<T> data, bool asJson = false) where T : new() {
+        private async Task Compare<T>(List<T> data, bool asJson = false, string? saveAsFile = null) where T : new() {
 
             // serialize to parquet
             using var ms = new MemoryStream();
             await ParquetSerializer.SerializeAsync(data, ms);
+
+            if(saveAsFile != null) {
+                await System.IO.File.WriteAllBytesAsync(saveAsFile, ms.ToArray());
+            }
 
             // deserialize from parquet
             ms.Position = 0;
@@ -210,10 +214,10 @@ namespace Parquet.Test.Serialisation {
             public List<string>? Strings { get; set; }
         }
 
-        [Theory]
-        [InlineData("legacy_primitives_collection_arrays.parquet")]
-        public async Task ParquetSerializer_ReadingLegacyPrimitivesCollectionArrayAsync(string parquetFile) {
-            IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(OpenTestFile(parquetFile));
+        [Fact]
+        public async Task TestData_LegacyPrimitivesCollectionArrays() {
+            IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(
+                OpenTestFile("legacy_primitives_collection_arrays.parquet"));
 
             Assert.NotNull(data);
             Assert.Single(data);
@@ -233,6 +237,15 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(element.TimeSpans, new TimeSpan[] { TimeSpan.Zero, TimeSpan.FromSeconds(5) });
             Assert.Equivalent(element.Intervals, new[] { new Interval(0, 0, 0), new Interval(0, 1, 1) });
             Assert.Equivalent(element.Strings, new[] { "Hello", "People" });
+        }
+
+
+        [Fact]
+        public async Task TestData_LegacyPrimitivesCollectionArrays_Dict() {
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(
+                OpenTestFile("legacy_primitives_collection_arrays.parquet"));
+
+            Assert.NotNull(r);
         }
 
         class Address {
@@ -383,12 +396,47 @@ namespace Parquet.Test.Serialisation {
             public List<int>? ParentIds { get; set; }
         }
 
+        class MovementHistoryNullableCompressed {
+            public int? PersonId { get; set; }
+
+            public List<int?>? ParentIds { get; set; }
+        }
+
+        class MovementHistoryCompressedWithArrays {
+            public int? PersonId { get; set; }
+
+            public int[]? ParentIds { get; set; }
+        }
+
+
         [Fact]
         public async Task List_Atomics_Serde() {
 
             var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressed {
                 PersonId = i,
                 ParentIds = Enumerable.Range(i, 4).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
+        [Fact]
+        public async Task List_NullableAtomics_Serde() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryNullableCompressed {
+                PersonId = i,
+                ParentIds = Enumerable.Range(i, 4).Select(i => (int?)i).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
+        [Fact]
+        public async Task Arrays_Atomics_Serde() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressedWithArrays {
+                PersonId = i,
+                ParentIds = Enumerable.Range(i, 4).ToArray()
             }).ToList();
 
             await Compare(data);
@@ -403,6 +451,28 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistoryCompressed>(data);
+        }
+
+        [Fact]
+        public async Task List_NullableAtomics_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+                ["PersonId"] = i,
+                ["ParentIds"] = Enumerable.Range(i, 4).Select(i => (int?)i).ToList()
+            }).ToList();
+
+            await DictCompare<MovementHistoryNullableCompressed>(data);
+        }
+
+        [Fact]
+        public async Task Array_Atomics_Serde_Dict() {
+
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+                ["PersonId"] = i,
+                ["ParentIds"] = Enumerable.Range(i, 4).ToList()
+            }).ToList();
+
+            await DictCompare<MovementHistoryCompressedWithArrays>(data);
         }
 
         [Fact]

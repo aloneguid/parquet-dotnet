@@ -30,12 +30,6 @@
                 
             </Expander>
 
-            <Grid Classes="error">
-                <StackPanel>
-                    <Image Source="/Assets/icons/bat_dead.png"/>
-                    <TextBlock Text="design time error message" />
-                </StackPanel>
-            </Grid>
 
             <Image Source="/Assets/icons/col/string.png" Classes="dt-icon"/>
 
@@ -128,21 +122,6 @@
 
     <Style Selector="TextBlock.data-cell-key">
         <Setter Property="Foreground" Value="{DynamicResource SystemControlHyperlinkTextBrush}"/>
-        <Setter Property="FontWeight" Value="Bold"/>
-    </Style>
-
-    <!-- error message -->
-
-    <Style Selector="Grid.error">
-        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-    </Style>
-    
-    <Style Selector="Grid.error Image">
-        <Setter Property="Width" Value="40"/>
-    </Style>
-
-    <Style Selector="Grid.error TextBlock.error">
-        <Setter Property="Foreground" Value="Red"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
 

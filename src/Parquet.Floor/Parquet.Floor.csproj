@@ -23,7 +23,6 @@
 
     <ItemGroup>
       <None Remove="Assets\icon.ico" />
-      <None Remove="Assets\icons\bat_dead.png" />
     </ItemGroup>
 
 

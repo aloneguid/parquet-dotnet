@@ -28,6 +28,18 @@ public partial class DataViewModel : ViewModelBase {
     [ObservableProperty]
     private IList<Dictionary<string, object>>? _data;
 
+    [ObservableProperty]
+    private bool _hasError;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    [ObservableProperty]
+    private string? _errorDetails;
+
+    [ObservableProperty]
+    private bool _showErrorDetails;
+
     public DataViewModel() {
 #if DEBUG
         if(Design.IsDesignMode) {
@@ -43,15 +55,28 @@ public partial class DataViewModel : ViewModelBase {
     }
 
     public async Task InitReaderAsync(FileViewModel? file, Stream fileStream) {
-        ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(
-            fileStream,
-            new ParquetOptions {
-                TreatByteArrayAsString = true
-            });
+
+        IList<Dictionary<string, object>>? data = null;
+        HasError = false;
+        ErrorMessage = null;
+        ErrorDetails = null;
+
+        try {
+            ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(
+                fileStream,
+                new ParquetOptions {
+                    TreatByteArrayAsString = true
+                });
+            data = fd.Data;
+        } catch(Exception ex) {
+            HasError = true;
+            ErrorMessage = ex.Message;
+            ErrorDetails = ex.ToString();
+        }
 
         Dispatcher.UIThread.Invoke(() => {
             File = file;
-            Data = fd.Data;
+            Data = data;
         });
     }
 }
