@@ -25,12 +25,14 @@ namespace Parquet.Floor.ViewModels {
         }
 
         public bool Agree() {
+            DecisionMade = true;
             Settings.Instance.TelemetryDecisionMade = true;
             Settings.Instance.BasicTelemetryEnabled = true;
             return true;
         }
 
         public bool OptOut() {
+            DecisionMade = true;
             Settings.Instance.TelemetryDecisionMade = true;
             Settings.Instance.BasicTelemetryEnabled = false;
             return true;
