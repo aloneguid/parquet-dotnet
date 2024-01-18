@@ -17,6 +17,7 @@
 - Ask for permission to send anonymous telemetry data on start.
 - New button - reload file from disk.
 - Simple conversion to CSV.
+- Implemented version check on start.
 
 ## 4.22.1
 

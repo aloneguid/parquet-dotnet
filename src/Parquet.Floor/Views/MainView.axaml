@@ -47,10 +47,10 @@
                         <TextBlock Margin="0,-2,0,0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
-                    <Button ContentTemplate="{actipro:GlyphTemplate ExternalLink16}"
-                            Click="OpenFile_Click"
+                    <Button Click="OpenFile_Click"
+                            i:Attached.Icon="fa-solid fa-folder-open"
                             Theme="{actipro:ControlTheme TitleBarButton}"
-                            ToolTip.Tip="Open parquet file" />
+                            ToolTip.Tip="Open parquet file"/>
                     <Button Theme="{actipro:ControlTheme TitleBarButton}"
                             ToolTip.Tip="Reload file"
                             ContentTemplate="{actipro:GlyphTemplate Refresh16}"
@@ -58,7 +58,7 @@
                             IsEnabled="{Binding HasFile}"/>
                     <Button Theme="{actipro:ControlTheme TitleBarButton}"
                         ToolTip.Tip="Convert to.."
-                        ContentTemplate="{actipro:GlyphTemplate ToggleSwitchKnob16}"
+                        i:Attached.Icon="fa-solid fa-person-running"
                         IsEnabled="{Binding HasFile}">
                         <Button.Flyout>
                             <MenuFlyout>
@@ -80,6 +80,12 @@
 
             <actipro:ChromedTitleBar.RightContent>
                 <StackPanel Margin="{Binding $parent[actipro:ChromedTitleBar].HasCaptionButtons, Converter={StaticResource RightContentMarginConverter}}" Orientation="Horizontal">
+                    <Button Theme="{actipro:ControlTheme TitleBarButton}"
+                            ToolTip.Tip="New version available!"
+                            i:Attached.Icon="fa-solid fa-rss"
+                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
+                            IsVisible="{Binding NewerVersionNumber, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    </Button>
                     <Button ContentTemplate="{actipro:GlyphTemplate Help16}"
                             Theme="{actipro:ControlTheme TitleBarButton}"
                             Command="{Binding OpenHomePage}"

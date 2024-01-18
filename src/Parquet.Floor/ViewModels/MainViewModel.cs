@@ -46,6 +46,9 @@ public partial class MainViewModel : ViewModelBase {
     [ObservableProperty]
     private string? _errorDetails;
 
+    [ObservableProperty]
+    private string? _newerVersionNumber;
+
     public string? LatestParquetPath;
 
     public SchemaViewModel Schema { get; } = new SchemaViewModel();
@@ -71,11 +74,27 @@ public partial class MainViewModel : ViewModelBase {
                 LoadFromFile(args[1]);
             }
         }
+
+        CheckForUpdates().Forget();
     }
 
-    public bool OpenHomePage() {
+    private async Task CheckForUpdates() {
+        var gh = new GitHub();
+        try {
+            GitHub.Release latestRelease = await gh.GetLatestRelease("aloneguid", "parquet-dotnet");
+            if(latestRelease.Name != Globals.Version) {
+                NewerVersionNumber = latestRelease.Name;
+            }
+        }
+        catch(Exception ex) {
+            Tracker.Instance.Track("updateCheckFailed", new Dictionary<string, string> {
+                { "message", ex.Message }
+            });
+        }
+    }
+
+    public void OpenHomePage() {
         "https://github.com/aloneguid/parquet-dotnet".OpenInBrowser();
-        return true;
     }
 
     private void LoadDesignData() {
