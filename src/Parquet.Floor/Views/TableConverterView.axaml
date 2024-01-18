@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="180"
+             x:Class="Parquet.Floor.TableConverterView"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+             xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
+             x:DataType="vm:TableConverterViewModel"
+             Height="180">
+    <Design.DataContext>
+        <vm:TableConverterViewModel />
+    </Design.DataContext>
+    <Grid>
+        <Border BorderThickness="1"
+            Padding="3"
+            Background="{actipro:ThemeResource Container1BackgroundBrush}"
+            BorderBrush="{actipro:ThemeResource Container1BorderBrush}"
+            CornerRadius="10">
+            <StackPanel Orientation="Vertical" Margin="5">
+                <TextBlock Classes="theme-text-heading">
+                    Data conversion
+                </TextBlock>
+                <TextBlock Classes="theme-text" TextWrapping="Wrap" Margin="10" Text="{Binding ProgressText}"/>
+                <ProgressBar ShowProgressText="True" Margin="10"
+                             Minimum="0" Maximum="100"
+                             IsIndeterminate="{Binding IsIndeterminate}"
+                             Value="{Binding ProgressPercentage}"/>
+                <StackPanel Orientation="Horizontal" Margin="10">
+                    <Button Content="Close" Margin="5" Classes="success" IsEnabled="{Binding IsFinished}"
+                            Command="{Binding CloseThis}"/>
+                    <Button Content="Error detail" Margin="5" Classes="warning"
+                            IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                </StackPanel>
+            </StackPanel>
+
+        </Border>
+    </Grid>
+</UserControl>

@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Parquet.Floor.Controllers;
 using Parquet.Meta;
 using Parquet.Schema;
 
@@ -23,6 +24,9 @@ public partial class MainViewModel : ViewModelBase {
 
     [ObservableProperty]
     private string? _subTitle;
+
+    [ObservableProperty]
+    private string? _subTitleTooltip;
 
     [ObservableProperty]
     private FileViewModel? _file;
@@ -42,18 +46,21 @@ public partial class MainViewModel : ViewModelBase {
     [ObservableProperty]
     private string? _errorDetails;
 
+    public string? LatestParquetPath;
+
     public SchemaViewModel Schema { get; } = new SchemaViewModel();
 
     public DataViewModel Data { get; } = new DataViewModel();
 
     public MainViewModel() {
 
-        Title = "Parquet Floor";
+        string version = Parquet.Globals.Version;
 #if DEBUG
-        SubTitle = "vNext";
-#else
-        SubTitle = Parquet.Globals.Version;
+        version = "Next";
 #endif
+
+        Title = $"Parquet Floor v{version}";
+        SubTitle = "no file loaded";
 
         string[] args = Environment.GetCommandLineArgs();
 
@@ -82,6 +89,16 @@ public partial class MainViewModel : ViewModelBase {
     }
 
     public void LoadFromFile(string path) {
+        LatestParquetPath = path;
+
+        string fileName = new FileInfo(path).Name;
+        const int maxLength = 30;
+        bool isTooLong = fileName.Length > maxLength;
+        SubTitle = isTooLong
+            ? $"{fileName.Substring(0, maxLength)}..."
+            : fileName;
+        SubTitleTooltip = fileName;
+
         Task.Run(() => LoadFromFileAsync(path));
     }
 
@@ -91,6 +108,26 @@ public partial class MainViewModel : ViewModelBase {
 
         await LoadAsync(System.IO.File.OpenRead(path));
     }
+
+    #region [ Command bindings ]
+
+    public void ReloadFile() {
+        if(LatestParquetPath != null) {
+            LoadFromFile(LatestParquetPath);
+        }
+    }
+
+    public bool CanReloadFile() => LatestParquetPath != null;
+
+    public void ConvertToCsv(object? toClipboard) {
+        if(LatestParquetPath == null)
+            return;
+
+        bool useClipboard = toClipboard is bool b && b;
+        
+    }
+
+    #endregion
 
     private async Task LoadAsync(Stream fileStream) {
 

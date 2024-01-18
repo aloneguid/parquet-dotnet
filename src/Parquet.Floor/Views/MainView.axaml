@@ -41,8 +41,9 @@
                         </Image.Effect>
                     </Image>
 
-                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center" IsHitTestVisible="False">
-                        <TextBlock Text="{Binding SubTitle}" FontSize="12" TextTrimming="CharacterEllipsis" Opacity="0.85" />
+                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center" IsHitTestVisible="False"
+                                ToolTip.Tip="{Binding SubTitleTooltip}">
+                        <TextBlock Text="{Binding SubTitle}" FontSize="12" TextTrimming="CharacterEllipsis" Opacity="0.85"/>
                         <TextBlock Margin="0,-2,0,0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
@@ -50,8 +51,31 @@
                             Click="OpenFile_Click"
                             Theme="{actipro:ControlTheme TitleBarButton}"
                             ToolTip.Tip="Open parquet file" />
-
-                </StackPanel>
+                    <Button Theme="{actipro:ControlTheme TitleBarButton}"
+                            ToolTip.Tip="Reload file"
+                            ContentTemplate="{actipro:GlyphTemplate Refresh16}"
+                            Command="{Binding ReloadFile}"
+                            IsEnabled="{Binding HasFile}"/>
+                    <Button Theme="{actipro:ControlTheme TitleBarButton}"
+                        ToolTip.Tip="Convert to.."
+                        ContentTemplate="{actipro:GlyphTemplate ToggleSwitchKnob16}"
+                        IsEnabled="{Binding HasFile}">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="CSV" Click="ConvertToCsv_Click">
+                                    <MenuItem.Icon>
+                                        <i:Icon Value="fa-solid fa-file-csv"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <!--
+                                <Separator/>
+                                <MenuItem Header="JSON file..."/>
+                                <MenuItem Header="JSON to clipboard..."/>
+                                -->
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                    </StackPanel>
             </actipro:ChromedTitleBar.LeftContent>
 
             <actipro:ChromedTitleBar.RightContent>
@@ -69,7 +93,7 @@
         </actipro:ChromedTitleBar>
 
         <!-- Client Area -->
-        <Grid>
+        <Grid x:Name="ClientArea">
             <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
                         BorderThickness="0,0,0,1"
                         Padding="0"
