@@ -409,6 +409,18 @@ namespace Parquet.Test.Serialisation {
             Assert.True(s.DataFields[no].IsNullable);
         }
 
+        [Fact]
+        public void TimeOnly_nullable_timestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+            DataField? df = s.DataFields[9] as DataField;
+
+            Assert.NotNull(df);
+            Assert.Equal(nameof(DatesPoco.NullableTimeOnly), df.Name);
+            Assert.Equal(typeof(TimeOnly?), df.ClrNullableIfHasNullsType);
+            Assert.True(df.IsNullable);
+        }
+
+
 #endif
 
         class DecimalPoco {

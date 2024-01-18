@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using ActiproSoftware.Logging;
 using ActiproSoftware.UI.Avalonia.Themes;
 using Avalonia;
 using Avalonia.Controls;
@@ -36,6 +37,36 @@ public partial class MainView : UserControl {
 
         if(files.Count >= 1) {
             ViewModel.LoadFromFile(files[0].Path.LocalPath);
+        }
+    }
+
+    private async void ConvertToCsv_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if(topLevel == null)
+            return;
+
+        IStorageFile? file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions {
+            Title = "CSV File name",
+            DefaultExtension = "csv",
+        });
+
+        if(file != null) {
+
+            var dc = new TableConverterViewModel(ViewModel.LatestParquetPath!, file.Path.LocalPath);
+
+            var tcControl = new TableConverterView {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Width = 800,
+                DataContext = dc
+            };
+
+            dc.OnCloseRequested += () => {
+                ClientArea.Children.Remove(tcControl);
+            };
+
+            ClientArea.Children.Add(tcControl);
         }
     }
 }

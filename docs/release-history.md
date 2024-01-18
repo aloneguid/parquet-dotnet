@@ -3,16 +3,20 @@
 ### New features
 
 - Class serializer now supports fields, in addition to properties (#405).
+- New helper class `ParquetToFlatTableConverter` to simplify conversion of parquet files to flat data destinations.
 
 ### Bugs fixed
 
 - .NET >= 6 specific types `DateOnly` and `TimeOnly` deserialization was failing due to schema validation errors (#395).
+- `TimeOnly` nullability wasn't respected.
 - Custom attributes like `[ParquetTimestamp]`, `[ParquetMicroSecondsTime]` or `[ParquetDecimal]` were ignored for nullable class properties (408).
 
 ### Floor
 
 - Remembers theme variant - "light" or "dark".
 - Ask for permission to send anonymous telemetry data on start.
+- New button - reload file from disk.
+- Simple conversion to CSV.
 
 ## 4.22.1
 

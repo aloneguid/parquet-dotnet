@@ -146,7 +146,8 @@ namespace Parquet.Serialization {
                     member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
-                    isNullable, null, propertyName);
+                    t == typeof(TimeOnly?),
+                    null, propertyName);
 #endif
             } else if(t == typeof(decimal) || t == typeof(decimal?)) {
                 ParquetDecimalAttribute? ps = member?.DecimalAttribute;

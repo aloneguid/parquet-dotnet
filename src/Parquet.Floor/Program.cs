@@ -22,6 +22,7 @@ class Program {
         Tracker.Instance = new Tracker("floor", Globals.Version);
 #endif
         Tracker.Instance.Constants.Add("iid", Settings.Instance.InstanceId.ToString());
+        Tracker.Instance.Constants.Add("os", Environment.OSVersion.Platform.ToString());
 
         try {
             Tracker.Instance.Track("start");
