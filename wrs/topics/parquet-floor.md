@@ -12,6 +12,7 @@ It is not a competitor to any other parquet viewers out there, quite possibly ou
 - View parquet files in a table-like view, with full support for nested structures, lists and maps.
 - Explore parquet schema in a tree view.
 - Explore parquet low-level metadata.
+- Convert files to CSV format.
 
 ## Installing
 

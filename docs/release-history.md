@@ -1,3 +1,9 @@
+## 4.23.1
+
+### Improvement
+
+- Flat file converter understands simple arrays and lists.
+
 ## 4.23.0
 
 ### New features

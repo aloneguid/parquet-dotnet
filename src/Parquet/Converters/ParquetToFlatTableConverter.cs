@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -15,6 +16,11 @@ namespace Parquet.Converters {
     public abstract class ParquetToFlatTableConverter : IDisposable {
         private readonly Stream _parquetInputStream;
         private readonly ParquetOptions? _options;
+
+        /// <summary>
+        /// When writing list values, this character is used to separate the values.
+        /// </summary>
+        public string ListSeparator { get; set; } = ";";
 
         /// <summary>
         /// Invoked when a file is fully loaded. First argument is the number of rows in the file.
@@ -69,13 +75,31 @@ namespace Parquet.Converters {
                     if(f.SchemaType == SchemaType.Data) {
                         DataField df = (DataField)f;
                         row.TryGetValue(df.Name, out object? value);
+                        if(df.IsArray) {
+                            value = ConvertArray(value);
+                        }
                         await WriteCellAsync(df, value, cancellationToken);
+                    } else if(f.SchemaType == SchemaType.List) {
+                        row.TryGetValue(f.Name, out object? value);
+                        value = ConvertArray(value);
+                        await WriteCellAsync(f, value, cancellationToken);
                     }
                 }
 
                 ConvertedRows++;
                 OnRowConverted?.Invoke(ConvertedRows, TotalRows);
             }
+        }
+
+        private object? ConvertArray(object? value) {
+            if(value is IEnumerable ie) {
+                var strings = new List<string>();
+                foreach(object? element in ie) {
+                    strings.Add(element?.ToString() ?? "");
+                }
+                return string.Join(ListSeparator.ToString(), strings);
+            }
+            return value;
         }
 
         /// <summary>
@@ -99,7 +123,7 @@ namespace Parquet.Converters {
         /// <param name="value"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        protected abstract Task WriteCellAsync(DataField df, object? value, CancellationToken cancellationToken = default);
+        protected abstract Task WriteCellAsync(Field df, object? value, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 

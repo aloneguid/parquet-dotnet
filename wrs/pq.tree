@@ -20,6 +20,7 @@
     <toc-element topic="rows.md"/>
     <toc-element topic="untyped-serializer.md"/>
     <toc-element topic="dataframe.md"/>
+    <toc-element topic="utilities.md"/>
     <toc-element topic="parquet-floor.md">
         <toc-element topic="parquet-floor-basics.md"/>
     </toc-element>
