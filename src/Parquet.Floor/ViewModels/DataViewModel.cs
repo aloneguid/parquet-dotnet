@@ -72,6 +72,10 @@ public partial class DataViewModel : ViewModelBase {
             HasError = true;
             ErrorMessage = ex.Message;
             ErrorDetails = ex.ToString();
+            Tracker.Instance.Track("openFileError", new Dictionary<string, string> {
+                { "message", ex.Message },
+                { "details", ex.ToString() }
+            });
         }
 
         Dispatcher.UIThread.Invoke(() => {

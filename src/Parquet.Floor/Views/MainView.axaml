@@ -84,7 +84,8 @@
                             ToolTip.Tip="New version available!"
                             i:Attached.Icon="fa-solid fa-rss"
                             Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
-                            IsVisible="{Binding NewerVersionNumber, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            IsVisible="{Binding NewerVersionNumber, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Command="{Binding OpenLatestReleasePage}">
                     </Button>
                     <Button ContentTemplate="{actipro:GlyphTemplate Help16}"
                             Theme="{actipro:ControlTheme TitleBarButton}"

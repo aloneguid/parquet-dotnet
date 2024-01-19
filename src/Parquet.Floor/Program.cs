@@ -16,16 +16,12 @@ class Program {
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp() {
 
-#if DEBUG
-        Tracker.Instance = new Tracker("floor", "0.0.0.0");
-#else
-        Tracker.Instance = new Tracker("floor", Globals.Version);
-#endif
         Tracker.Instance.Constants.Add("iid", Settings.Instance.InstanceId.ToString());
         Tracker.Instance.Constants.Add("os", Environment.OSVersion.Platform.ToString());
+        Tracker.Instance.Constants.Add(Settings.TelemetryConstant, Settings.Instance.BasicTelemetryEnabled.ToString());
 
         try {
-            Tracker.Instance.Track("start");
+            Tracker.Instance.Track("start", force: true);
         }catch(Exception ex) {
             Console.WriteLine(ex);
         }

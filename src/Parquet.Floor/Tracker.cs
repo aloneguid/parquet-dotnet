@@ -40,7 +40,15 @@ namespace Parquet.Floor {
         }
 
 
-        public static Tracker? Instance { get; set; }
+        public static Tracker Instance { get; private set; }
+
+        static Tracker() {
+#if DEBUG
+            Instance = new Tracker("floor", "vNext");
+#else
+            Instance = new Tracker("floor", Globals.Version);
+#endif
+        }
 
         public Dictionary<string, string> Constants => _constants;
 
@@ -51,15 +59,15 @@ namespace Parquet.Floor {
             _constants["version"] = version;
         }
 
-        public void Track(string eventName, Dictionary<string, string>? extras = null) {
+        public void Track(string eventName, Dictionary<string, string>? extras = null, bool force = false) {
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            TrackAsync(eventName, extras);
+            TrackAsync(eventName, extras, force);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
-        private async ValueTask TrackAsync(string eventName, Dictionary<string, string>? extras = null) {
+        private async ValueTask TrackAsync(string eventName, Dictionary<string, string>? extras = null, bool force = false) {
 
-            if(!Settings.Instance.BasicTelemetryEnabled) {
+            if(!force && !Settings.Instance.BasicTelemetryEnabled) {
                 return;
             }
 
@@ -81,7 +89,7 @@ namespace Parquet.Floor {
                 if(sb.Length > 1) {
                     sb.Append(",");
                 }
-                sb.Append($"\"{item.Key}\": \"{item.Value}\"");
+                sb.Append($"\"{item.Key}\": \"{item.Value.ToEscapedJsonValueString()}\"");
             }
             sb.Append("}");
 

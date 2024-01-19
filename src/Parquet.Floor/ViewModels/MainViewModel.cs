@@ -95,8 +95,13 @@ public partial class MainViewModel : ViewModelBase {
 
     public void OpenHomePage() {
         "https://github.com/aloneguid/parquet-dotnet".OpenInBrowser();
+        Tracker.Instance.Track("openHomePage");
     }
 
+    public void OpenLatestReleasePage() {
+        "https://github.com/aloneguid/parquet-dotnet/releases".OpenInBrowser();
+        Tracker.Instance.Track("openLatestReleasePage");
+    }
     private void LoadDesignData() {
         File = new FileViewModel {
             Path = "design.parquet",
@@ -191,6 +196,10 @@ public partial class MainViewModel : ViewModelBase {
             HasError = true;
             ErrorMessage = ex.Message;
             ErrorDetails = ex.ToString();
+            Tracker.Instance.Track("openFileFatal", new Dictionary<string, string> {
+                { "message", ex.Message },
+                { "details", ex.ToString() }
+            });
         }
     }
 

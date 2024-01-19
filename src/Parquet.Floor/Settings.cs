@@ -15,6 +15,8 @@ namespace Parquet.Floor {
     }
 
     static class Settings {
+
+        public const string TelemetryConstant = "tel";
         public static ISettings Instance { get; private set; }
 
         static Settings() {
