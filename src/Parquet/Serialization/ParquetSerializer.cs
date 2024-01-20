@@ -154,7 +154,9 @@ namespace Parquet.Serialization {
         public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
-            using FileStream fs = System.IO.File.Create(filePath);
+            using FileStream fs = (options?.Append ?? false) 
+                ? System.IO.File.Open(filePath, FileMode.Open, FileAccess.ReadWrite) 
+                : System.IO.File.Create(filePath);
             return await SerializeAsync(objectInstances, fs, options, cancellationToken);
         }
 
