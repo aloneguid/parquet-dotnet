@@ -685,11 +685,8 @@ namespace Parquet.Test.Serialisation {
                 }
             }
             finally 
-            {
-                if (tempPath != null)
-                {
-                    System.IO.File.Delete(tempPath);
-                }
+            {            
+                System.IO.File.Delete(tempPath);            
             }
         }
 
