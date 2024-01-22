@@ -183,7 +183,7 @@ namespace Parquet.Encodings {
                 elementsRead = Decode(source, span);
             } else if(t == typeof(byte[][])) {
                 Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
-                elementsRead = Decode(source, span);
+                elementsRead = Decode(source, span, tse);
             } else if(t == typeof(DateTime[])) {
                 Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
@@ -785,17 +785,28 @@ namespace Parquet.Encodings {
         }
 
 
-        public static int Decode(Span<byte> source, Span<byte[]> data) {
+        public static int Decode(Span<byte> source, Span<byte[]> data, SchemaElement tse) {
             int read = 0;
             int sourceOffset = 0;
 
-            while(read < data.Length) {
-                int length = source.ReadInt32(sourceOffset);
-                sourceOffset += sizeof(int);
-                if(length > 0) {
+            if(tse.Type == TType.FIXED_LEN_BYTE_ARRAY) {
+                if(tse.TypeLength == null)
+                    throw new InvalidDataException($"type length must be set for {nameof(TType.FIXED_LEN_BYTE_ARRAY)}");
+                int length = tse.TypeLength.Value;
+                while(read < data.Length) {
                     byte[] el = source.Slice(sourceOffset, length).ToArray();
                     sourceOffset += length;
                     data[read++] = el;
+                }
+            } else {
+                while(read < data.Length) {
+                    int length = source.ReadInt32(sourceOffset);
+                    sourceOffset += sizeof(int);
+                    if(length > 0) {
+                        byte[] el = source.Slice(sourceOffset, length).ToArray();
+                        sourceOffset += length;
+                        data[read++] = el;
+                    }
                 }
             }
             return read;
@@ -1081,15 +1092,33 @@ namespace Parquet.Encodings {
                 return 0;
 
             int i = 0;
-            for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
-                int length = source.ReadInt32(spanIdx);
-                spanIdx += sizeof(int);
+
+            if(tse.Type == TType.FIXED_LEN_BYTE_ARRAY) {
+                if(tse.TypeLength == null)
+                    throw new InvalidDataException($"type length must be set for {nameof(TType.FIXED_LEN_BYTE_ARRAY)}");
+                int length = tse.TypeLength.Value;
+
+                for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
+#if NETSTANDARD2_0
+                    data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
+#else
+                    data[i] = E.GetString(source.Slice(spanIdx, length));
+#endif
+                    spanIdx += length;
+                }
+
+            } else {
+
+                for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
+                    int length = source.ReadInt32(spanIdx);
+                    spanIdx += sizeof(int);
 #if NETSTANDARD2_0
                 data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
 #else
-                data[i] = E.GetString(source.Slice(spanIdx, length));
+                    data[i] = E.GetString(source.Slice(spanIdx, length));
 #endif
-                spanIdx += length;
+                    spanIdx += length;
+                }
             }
             return i;
         }

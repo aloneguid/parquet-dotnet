@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using System.Text;
 
 namespace Parquet.Test {
     /// <summary>
@@ -173,11 +174,24 @@ namespace Parquet.Test {
             Assert.Equal((long)1, cols[1].Data.GetValue(125));
         }
 
-        //[Fact]
-        //public async Task LocalTest() {
-        //    using Stream s = System.IO.File.OpenRead(@"C:\Users\alone\Downloads\MAP_FIELD\MAP_FIELD.parquet");
-        //    List<DataColumn> cols = await ReadColumns(s);
-        //    Assert.Equal(3, cols.Count);
-        //}
+        [Fact]
+        public async Task TestTest() {
+            using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Equal(10, cols.Length);
+
+            // last column is a dictionary-encoded FIXED_LEN_BYTE_ARRAY.
+            DataColumn lastCol = cols[9];
+            Assert.Equal(6, lastCol.Data.Length);
+            byte[][] data = (byte[][])lastCol.Data;
+            Assert.Equal(Encoding.ASCII.GetBytes("abc"), data[0]);
+            Assert.Equal(Encoding.ASCII.GetBytes("def"), data[1]);
+            Assert.Equal(Encoding.ASCII.GetBytes("ghi"), data[2]);
+            Assert.Equal(Encoding.ASCII.GetBytes("jkl"), data[3]);
+            Assert.Equal(Encoding.ASCII.GetBytes("mno"), data[4]);
+            Assert.Equal(Encoding.ASCII.GetBytes("qrs"), data[5]);
+        }
     }
 }
