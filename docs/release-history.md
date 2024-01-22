@@ -1,3 +1,8 @@
+## 4.23.2
+
+### Bug fixes
+- Avoid file truncation when serializing with Append = true by @danielearwicker in #462. 
+
 ## 4.23.1
 
 ### Improvement

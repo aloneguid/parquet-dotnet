@@ -641,52 +641,43 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task Append_to_existing_file_using_path_succeeds() {
-            
+
             string tempPath = Path.GetTempFileName();
 
-            try
-            {
+            try {
                 await ParquetSerializer.SerializeAsync(
-                    new[]
-                    {
-                        new Record 
-                        {
+                    new[] {
+                        new Record {
                             Timestamp = DateTime.UtcNow,
                             EventName = "first",
                             MeterValue = 1
                         }
-                    }, 
-                    tempPath, 
+                    },
+                    tempPath,
                     new ParquetSerializerOptions { Append = false });
 
                 await ParquetSerializer.SerializeAsync(
-                    new[]
-                    {
-                        new Record 
-                        {
+                    new[] {
+                        new Record {
                             Timestamp = DateTime.UtcNow,
                             EventName = "second",
                             MeterValue = 2
                         }
-                    }, 
+                    },
                     tempPath,
                     new ParquetSerializerOptions { Append = true });
 
                 using ParquetReader reader = await ParquetReader.CreateAsync(tempPath);
 
-                using (ParquetRowGroupReader reader0 = reader.OpenRowGroupReader(0))
-                {
+                using(ParquetRowGroupReader reader0 = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(1, reader0.RowCount);
                 }
 
-                using (ParquetRowGroupReader reader1 = reader.OpenRowGroupReader(1))
-                {
+                using(ParquetRowGroupReader reader1 = reader.OpenRowGroupReader(1)) {
                     Assert.Equal(1, reader1.RowCount);
                 }
-            }
-            finally 
-            {            
-                System.IO.File.Delete(tempPath);            
+            } finally {
+                System.IO.File.Delete(tempPath);
             }
         }
 
