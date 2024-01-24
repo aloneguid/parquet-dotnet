@@ -37,6 +37,10 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 }
 ```
 
+<tip>
+After constructing a <code>DataColumn</code>, you should not modify the data passed until it's written out into the Parquet file. <code>DataColumn</code> performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
+</tip>
+
 To read more about DataColumn, see [this page](column.md).
 
 ### Specifying compression method and level
