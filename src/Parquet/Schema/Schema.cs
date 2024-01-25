@@ -115,6 +115,29 @@ namespace Parquet.Schema {
         public DataField[] DataFields => GetDataFields();
 
         /// <summary>
+        /// Finds a data field by its path. If not found, throws <see cref="ArgumentException"/> exception.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public DataField FindDataField(FieldPath path) {
+            DataField? df = DataFields.FirstOrDefault(f => f.Path.Equals(path));
+            if(df == null) {
+                throw new ArgumentException($"data field '{path}' not found", nameof(path));
+            }
+            return df;
+        }
+
+        /// <summary>
+        /// Finds a data field by its path. If not found, throws <see cref="ArgumentException"/> exception.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public DataField FindDataField(string path) {
+            return FindDataField(new FieldPath(path));
+        }
+
+        /// <summary>
         /// Indicates whether the current object is equal to another object of the same type.
         /// </summary>
         /// <param name="other">An object to compare with this object.</param>

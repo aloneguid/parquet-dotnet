@@ -70,6 +70,26 @@ namespace Parquet.Test.Serialisation {
         }
 
 
+        class DoubleOnlyPoco : PocoClass {
+            public double Double { get; set; }
+
+            public double? NullableDouble { get; set; }
+        }
+
+        [Fact]
+        public void Type_Double() {
+            ParquetSchema schema = typeof(DoubleOnlyPoco).GetParquetSchema(true);
+            DataField df = schema.FindDataField("Double");
+            Assert.False(df.IsNullable);
+        }
+
+        [Fact]
+        public void Type_Double_Nullable() {
+            ParquetSchema schema = typeof(DoubleOnlyPoco).GetParquetSchema(true);
+            DataField df = schema.FindDataField("NullableDouble");
+            Assert.True(df.IsNullable);
+        }
+
         class PocoSubClass : PocoClass {
             public int ExtraProperty { get; set; }
         }
@@ -428,24 +448,35 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetDecimal(40, 20)]
             public decimal With_40_20 { get; set; }
+
+            public decimal? NullableDecimal { get; set; }
         }
 
         [Fact]
-        public void Decimal_default() {
+        public void Type_Decimal() {
             ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
 
             Assert.True(s.DataFields[0] is DecimalDataField);
             Assert.Equal(38, ((DecimalDataField)s.DataFields[0]).Precision);
             Assert.Equal(18, ((DecimalDataField)s.DataFields[0]).Scale);
+            Assert.False(s.DataFields[0].IsNullable);
         }
 
         [Fact]
-        public void Decimal_override() {
+        public void Type_Decimal_override() {
             ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
 
             Assert.True(s.DataFields[1] is DecimalDataField);
             Assert.Equal(40, ((DecimalDataField)s.DataFields[1]).Precision);
             Assert.Equal(20, ((DecimalDataField)s.DataFields[1]).Scale);
+        }
+
+
+        [Fact]
+        public void Type_Decimal_Nullable() {
+            ParquetSchema schema = typeof(DecimalPoco).GetParquetSchema(true);
+            DataField df = schema.FindDataField("NullableDecimal");
+            Assert.True(df.IsNullable);
         }
 
 

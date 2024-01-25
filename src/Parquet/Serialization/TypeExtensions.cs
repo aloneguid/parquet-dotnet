@@ -151,11 +151,13 @@ namespace Parquet.Serialization {
 #endif
             } else if(t == typeof(decimal) || t == typeof(decimal?)) {
                 ParquetDecimalAttribute? ps = member?.DecimalAttribute;
+                bool isTypeNullable = t == typeof(decimal?);
                 r = ps == null
                     ? new DecimalDataField(name,
                         DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
-                        isNullable: isNullable, propertyName: propertyName)
-                    : new DecimalDataField(name, ps.Precision, ps.Scale, isNullable: isNullable, propertyName: propertyName);
+                            isNullable: isTypeNullable, propertyName: propertyName)
+                    : new DecimalDataField(name, ps.Precision, ps.Scale,
+                        isNullable: isTypeNullable, propertyName: propertyName);
             } else {
                 r = new DataField(name, t, isNullable, null, propertyName);
             }

@@ -158,6 +158,10 @@ namespace Parquet.Test.Serialisation {
 
         class NullableRecord : Record {
             public int? ParentId { get; set; }
+
+            public double? ParentMeterValue { get; set; }
+
+            public decimal? ParentResolution { get; set; }
         }
 
         [Fact]
@@ -167,7 +171,9 @@ namespace Parquet.Test.Serialisation {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
                 EventName = i % 2 == 0 ? "on" : "off",
                 MeterValue = i,
-                ParentId = (i % 4 == 0) ? null : i
+                ParentId = (i % 4 == 0) ? null : i,
+                ParentMeterValue = (i % 5 == 0) ? null : (double?)i,
+                ParentResolution = (i % 6 == 0) ? null : (decimal?)i
             }).ToList();
 
             await Compare(data);
