@@ -162,6 +162,13 @@ namespace Parquet.Test.Serialisation {
             public double? ParentMeterValue { get; set; }
 
             public decimal? ParentResolution { get; set; }
+
+            public DateTime? ParentTime { get; set; }
+
+            public Interval? ParentInterval { get; set; }
+
+            public TimeSpan? ParentTimeSpan { get; set; }
+
         }
 
         [Fact]
@@ -172,8 +179,12 @@ namespace Parquet.Test.Serialisation {
                 EventName = i % 2 == 0 ? "on" : "off",
                 MeterValue = i,
                 ParentId = (i % 4 == 0) ? null : i,
+                ExternalId = Guid.NewGuid(),
                 ParentMeterValue = (i % 5 == 0) ? null : (double?)i,
-                ParentResolution = (i % 6 == 0) ? null : (decimal?)i
+                ParentResolution = (i % 6 == 0) ? null : (decimal?)i,
+                ParentTime = (i % 5 == 0) ? null : DateTime.UtcNow.AddSeconds(i),
+                ParentInterval = (i % 5 == 0) ? null : new Interval(i, i, i),
+                ParentTimeSpan = (i % 5 == 0) ? null : TimeSpan.FromSeconds(i)
             }).ToList();
 
             await Compare(data);
@@ -187,7 +198,12 @@ namespace Parquet.Test.Serialisation {
                 ["EventName"] = i % 2 == 0 ? "on" : "off",
                 ["MeterValue"] = (double)i,
                 ["ParentId"] = (i % 4 == 0) ? null : i,
-                ["ExternalId"] = Guid.NewGuid()
+                ["ExternalId"] = Guid.NewGuid(),
+                ["ParentMeterValue"] = (i % 5 == 0) ? null : (double?)i,
+                ["ParentResolution"] = (i % 6 == 0) ? null : (decimal?)i,
+                ["ParentTime"] = (i % 5 == 0) ? null : DateTime.UtcNow.AddSeconds(i),
+                ["ParentInterval"] = (i % 5 == 0) ? null : new Interval(i, i, i),
+                ["ParentTimeSpan"] = (i % 5 == 0) ? null : TimeSpan.FromSeconds(i)
             }).ToList();
 
             await DictCompare<NullableRecord>(data);

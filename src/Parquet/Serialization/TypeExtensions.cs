@@ -127,7 +127,7 @@ namespace Parquet.Serialization {
             Field r;
             bool? isNullable = member == null
                 ? null
-                : member.IsRequired ? false : null;
+                : member.IsRequired ? false : IsNullable(t);
 
             if(t == typeof(DateTime) || t == typeof(DateTime?)) {
                 ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
@@ -163,6 +163,14 @@ namespace Parquet.Serialization {
             }
 
             return r;
+        }
+
+        static bool IsNullable(Type type) {
+            if(!type.IsValueType)
+                return true; // ref-type
+            if(Nullable.GetUnderlyingType(type) != null)
+                return true; // Nullable<T>
+            return false; // value-type
         }
 
         private static MapField ConstructMapField(string name, string propertyName,
