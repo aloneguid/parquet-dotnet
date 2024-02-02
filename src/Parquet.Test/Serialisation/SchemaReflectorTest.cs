@@ -333,6 +333,8 @@ namespace Parquet.Test.Serialisation {
 
             public TimeOnly DefaultTimeOnly { get; set; }
 
+            public TimeOnly? DefaultNullableTimeOnly { get; set; }
+
             [ParquetMicroSecondsTime]
             public TimeOnly MicroTimeOnly { get; set; }
 
@@ -422,6 +424,17 @@ namespace Parquet.Test.Serialisation {
             DataField df = s.FindDataField(nameof(DatesPoco.DefaultTimeOnly));
             Assert.True(df is TimeOnlyDataField);
             Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)df).TimeSpanFormat);
+            Assert.False(df.IsNullable);
+        }
+
+        [Fact]
+        public void Type_TimeOnly_Nullable() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.DefaultNullableTimeOnly));
+            Assert.True(df is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)df).TimeSpanFormat);
+            Assert.True(df.IsNullable);
         }
 
         [Fact]
