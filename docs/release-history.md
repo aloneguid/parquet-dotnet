@@ -1,4 +1,8 @@
+## 4.23.4
 
+### Bug fixes
+
+Fixed regression in schema discovery of nullables.
 
 ## 4.23.3
 
