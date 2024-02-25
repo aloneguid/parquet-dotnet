@@ -133,8 +133,7 @@ namespace Parquet.Test.Serialisation {
             Assert.False(extraProp.IsArray);
         }
 
-        class AliasedPocoChild
-        {
+        class AliasedPocoChild {
             [JsonPropertyName("ChildID")]
             public int _id { get; set; }
         }
@@ -325,7 +324,7 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
-            
+
 #if NET6_0_OR_GREATER
             public DateOnly ImpalaDateOnly { get; set; }
 
