@@ -133,7 +133,7 @@ namespace Parquet.Serialization {
                 ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
                 r = new DateTimeDataField(name,
                     tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
-                    t == typeof(DateTime?), null, propertyName);
+                    isNullable, null, propertyName);
             } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
                 r = new TimeSpanDataField(name,
                     member?.MicroSecondsTimeAttribute == null

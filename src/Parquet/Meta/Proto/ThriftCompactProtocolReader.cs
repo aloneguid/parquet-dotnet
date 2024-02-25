@@ -103,6 +103,22 @@ namespace Parquet.Meta.Proto {
             return _inputStream.ReadBytesExactly(length);
         }
 
+        public byte[] ReadBytesExactly(int length) {
+            return _inputStream.ReadBytesExactly(length);
+        }
+
+        public Guid ReadUuid() {
+            byte[] uuidBytes = _inputStream.ReadBytesExactly(16);
+            Guid result = new Guid(uuidBytes);
+            return result;
+        }
+
+        public double ReadDouble() {
+            byte[] doubleBytes = _inputStream.ReadBytesExactly(8);
+            double result = BitConverter.ToDouble(doubleBytes, 0);
+            return result;
+        }
+
         public string ReadString() {
             // read length
             int length = (int)ReadVarInt32();
@@ -176,16 +192,16 @@ namespace Parquet.Meta.Proto {
                 case CompactType.I64:
                     ReadI64();
                     break;
-                //case Types.Double:
-                    //await protocol.ReadDoubleAsync(cancellationToken);
-                    //break;
+                case CompactType.Double:
+                    ReadDouble();
+                    break;
                 case CompactType.Binary:
                     // Don't try to decode the string, just skip it.
                     ReadBinary();
                     break;
-                //case TType.Uuid:
-                //    await protocol.ReadUuidAsync(cancellationToken);
-                //    break;
+                case CompactType.Uuid:
+                    ReadUuid();
+                    break;
                 case CompactType.Struct:
                     StructBegin();
                     while(ReadNextField(out _, out _)) {

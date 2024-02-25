@@ -175,6 +175,22 @@ namespace Parquet.Test {
         }
 
         [Fact]
+        public async Task DecryptFile_UTF8_AesGcmV1_192bit() {
+            using Stream stream = OpenTestFile("encrypted_utf8_aes_gcm_v1_192bit.parquet");
+
+            var parquetOptions = new ParquetOptions {
+                EncryptionKey = "QFwuIKG8yb845rEufVJAgcOo",
+                AADPrefix = null //this file doesn't use an aad prefix
+            };
+
+            using ParquetReader reader = await ParquetReader.CreateAsync(stream, parquetOptions);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            foreach(DataField df in reader.Schema.DataFields) {
+                DataColumn dc = await rgr.ReadColumnAsync(df);
+            }
+        }
+
+        [Fact]
         public async Task TestTest() {
             using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
             using ParquetReader r = await ParquetReader.CreateAsync(s);

@@ -99,7 +99,7 @@ namespace Parquet {
 
                 await ValidateFileAsync();
 
-                FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
+                FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken: cancellationToken);
                 _footer = new ThriftFooter(fileMeta);
 
                 ValidateSchemasCompatible(_footer, _schema);
