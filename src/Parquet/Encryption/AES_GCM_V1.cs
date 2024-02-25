@@ -106,6 +106,11 @@ namespace Parquet.Encryption {
 
 #if NETSTANDARD2_0
             throw new NotSupportedException("Cannot process AES GCM V1 encrypted parquet files in .net standard 2.0. Maybe try AES GCM CTR V1 instead?");
+#elif NET8_0_OR_GREATER
+            using var cipher = new AesGcm(DecryptionKey!, tag.Length);
+            byte[] plainText = new byte[cipherTextLength];
+            cipher.Decrypt(nonce, cipherText, tag, plainText, AadPrefix!.Concat(aadSuffix).ToArray());
+            return plainText;
 #else
             using var cipher = new AesGcm(DecryptionKey!);
             byte[] plainText = new byte[cipherTextLength];
