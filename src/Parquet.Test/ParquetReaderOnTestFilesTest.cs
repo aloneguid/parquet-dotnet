@@ -187,6 +187,7 @@ namespace Parquet.Test {
             using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
             foreach(DataField df in reader.Schema.DataFields) {
                 DataColumn dc = await rgr.ReadColumnAsync(df);
+                //TODO: Moar testing
             }
         }
 
