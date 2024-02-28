@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -10,9 +8,7 @@ namespace Parquet.Test.Reader {
     [UseCulture("en-US")]
     // [UseCulture("da-DK")] // FAILS
     public class TestDataTest : ParquetCsvComparison {
-        public TestDataTest() {
-        }
-
+        
         /// <summary>
         /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
         /// |id |bool_col|tinyint_col|smallint_col|int_col|bigint_col|float_col|double_col|date_string_col          |string_col|timestamp_col        |
@@ -42,7 +38,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(string),
                typeof(string),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -78,7 +74,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(string),
                typeof(string),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -96,7 +92,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(byte[]),
                typeof(byte[]),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -114,7 +110,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(byte[]),
                typeof(byte[]),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -132,7 +128,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(byte[]),
                typeof(byte[]),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         /// <summary>
@@ -158,7 +154,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(string),
                typeof(string),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -176,7 +172,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(string),
                typeof(string),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -194,7 +190,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(string),
                typeof(string),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -212,7 +208,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(byte[]),
                typeof(byte[]),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -230,7 +226,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(byte[]),
                typeof(byte[]),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
         [Theory]
@@ -248,7 +244,7 @@ namespace Parquet.Test.Reader {
                typeof(double?),
                typeof(byte[]),
                typeof(byte[]),
-               typeof(DateTimeOffset?));
+               typeof(DateTime?));
         }
 
 
@@ -272,8 +268,8 @@ namespace Parquet.Test.Reader {
                typeof(string),
                typeof(string),
                typeof(string),   //Constituency
-               typeof(DateTimeOffset?),
-               typeof(DateTimeOffset?),
+               typeof(DateTime?),
+               typeof(DateTime?),
                typeof(string),   //Parish
                typeof(string),   //NationalPark
                typeof(int?),     //Population
@@ -293,7 +289,7 @@ namespace Parquet.Test.Reader {
         [InlineData("v2")]
         public async Task ReadSampleFile(string dataPageVersion) {
             await CompareFilesAsync("table", "", dataPageVersion, false,
-                typeof(double?), typeof(string), typeof(bool?), typeof(string), typeof(DateTimeOffset?));
+                typeof(double?), typeof(string), typeof(bool?), typeof(DateTime?), typeof(DateTime?), typeof(string));
         }
 
         [Fact]
@@ -307,7 +303,7 @@ namespace Parquet.Test.Reader {
         [Fact]
         public async Task DeltaLengthByteArray() {
 
-            Type[] types = Enumerable.Repeat(typeof(long?), 65).Concat(Enumerable.Repeat(typeof(int?), 1)).ToArray();
+            Type[] types = new[] { typeof(string) };
 
             await CompareFilesAsync("delta_length_byte_array", "", "", false, types);
         }
@@ -315,9 +311,28 @@ namespace Parquet.Test.Reader {
         [Fact]
         public async Task DeltaByteArray() {
 
-            Type[] types = new Type[] { typeof(string) };
+            var types = Enumerable.Repeat(typeof(string), 9).ToArray();
 
             await CompareFilesAsync("delta_byte_array", "", "", false, types);
+        }
+        
+        [Theory]
+        [InlineData("")]
+        [InlineData("v2")]
+        public async Task DecimalTypes(string dataPageVersion) {
+            await CompareFilesAsync("special/decimallegacy", "", dataPageVersion, true, 
+                typeof(int?),
+                typeof(decimal?),
+                typeof(decimal?),
+                typeof(decimal?));
+        }
+        
+        [Theory]
+        [InlineData("")]
+        public async Task DecimalPrecision(string dataPageVersion) {
+            await CompareFilesAsync("types/decimal_precision", "", dataPageVersion, true, 
+                typeof(decimal?),
+                typeof(decimal?));
         }
     }
 }
