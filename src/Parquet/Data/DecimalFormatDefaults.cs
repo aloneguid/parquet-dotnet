@@ -2,7 +2,7 @@
     /// <summary>
     /// Pre-defined decimal handling default values; providing backwards compatibility prior to v3.9 where these were made configurable.
     /// </summary>
-    public class DecimalFormatDefaults {
+    public static class DecimalFormatDefaults {
 
         //todo : move to ParquetOptions
 
