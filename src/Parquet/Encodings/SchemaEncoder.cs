@@ -247,6 +247,8 @@ namespace Parquet.Encodings {
 
             if(st == typeof(DateTime)) {
                 df = GetDateTimeDataField(se);
+            } else if(st == typeof(decimal)) {
+                df = GetDecimalDataField(se);
             } else {
                 // successful field built
                 df = new DataField(se.Name, st);
@@ -258,6 +260,11 @@ namespace Parquet.Encodings {
             df.SchemaElement = se;
             return true;
         }
+
+        private static DataField GetDecimalDataField(SchemaElement se) =>
+            new DecimalDataField(se.Name,
+                se.Precision.GetValueOrDefault(DecimalFormatDefaults.DefaultPrecision),
+                se.Scale.GetValueOrDefault(DecimalFormatDefaults.DefaultScale));
 
         private static DataField GetDateTimeDataField(SchemaElement se) {
             switch(se.ConvertedType) {
