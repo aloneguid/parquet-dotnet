@@ -178,7 +178,7 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(new ParquetSchema(
                 new ListField("IntList", new DataField<int>("element")),
-                new DataField<int[]>("LegacyIntList")),
+                new DataField<int[]>("LegacyIntList", true)),
                 schema);
         }
 

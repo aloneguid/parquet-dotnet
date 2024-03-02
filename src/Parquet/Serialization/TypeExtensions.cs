@@ -127,7 +127,7 @@ namespace Parquet.Serialization {
             Field r;
             bool? isNullable = member == null
                 ? null
-                : member.IsRequired ? false : null;
+                : member.IsRequired ? false : t.IsNullable();
 
             if(t == typeof(DateTime) || t == typeof(DateTime?)) {
                 ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
