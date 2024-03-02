@@ -314,6 +314,8 @@ namespace Parquet.Test.Serialisation {
 
             public DateTime ImpalaDate { get; set; }
 
+            public DateTime? NullableImpalaDate { get; set; }
+
             [ParquetTimestamp]
             public DateTime TimestampDate { get; set; }
 
@@ -330,6 +332,8 @@ namespace Parquet.Test.Serialisation {
 
             public TimeOnly DefaultTimeOnly { get; set; }
 
+            public TimeOnly? DefaultNullableTimeOnly { get; set; }
+
             [ParquetMicroSecondsTime]
             public TimeOnly MicroTimeOnly { get; set; }
 
@@ -345,93 +349,116 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public void Date_default_impala() {
+        public void Type_DateTime_DefaultImpala() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+            DataField df = s.FindDataField(nameof(DatesPoco.ImpalaDate));
 
-            Assert.True(s.DataFields[0] is DateTimeDataField);
-            Assert.Equal(DateTimeFormat.Impala, ((DateTimeDataField)s.DataFields[0]).DateTimeFormat);
+            Assert.True(df is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.Impala, ((DateTimeDataField)df).DateTimeFormat);
+            Assert.False(df.IsNullable);
         }
 
         [Fact]
-        public void Date_timestamp() {
+        public void Type_DateTime_NullableImpala() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableImpalaDate));
 
-            int no = 1;
-            Assert.True(s.DataFields[no] is DateTimeDataField);
-            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[no]).DateTimeFormat);
+            Assert.True(df is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.Impala, ((DateTimeDataField)df).DateTimeFormat);
+            Assert.True(df.IsNullable);
         }
 
         [Fact]
-        public void Date_timestamp_nullable() {
+        public void Type_DateTime_Timestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            int no = 2;
-            Assert.True(s.DataFields[no] is DateTimeDataField);
-            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)s.DataFields[no]).DateTimeFormat);
+            DataField df = s.FindDataField(nameof(DatesPoco.TimestampDate));
+            Assert.True(df is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)df).DateTimeFormat);
         }
 
         [Fact]
-        public void Time_default() {
+        public void Type_DateTime_TimestampNullable() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            int no = 3;
-            Assert.True(s.DataFields[no] is TimeSpanDataField);
-            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)s.DataFields[no]).TimeSpanFormat);
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableTimestampDate));
+            Assert.True(df is DateTimeDataField);
+            Assert.Equal(DateTimeFormat.DateAndTime, ((DateTimeDataField)df).DateTimeFormat);
         }
 
         [Fact]
-        public void Time_micros() {
+        public void Type_TimeSpan_Default() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            int no = 4;
-            Assert.True(s.DataFields[no] is TimeSpanDataField);
-            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)s.DataFields[no]).TimeSpanFormat);
+            DataField df = s.FindDataField(nameof(DatesPoco.DefaultTime));
+            Assert.True(df is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void Type_TimeSpan_Micros() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.MicroTime));
+            Assert.True(df is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
         }
 
 #if NET6_0_OR_GREATER
         [Fact]
-        public void DateOnly_timestamp() {
+        public void Type_DateOnly_Timestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            int no = 5;
-            Assert.True(s.DataFields[no].GetType() == typeof(DataField));
-            Assert.Equal(SchemaType.Data, s.DataFields[no].SchemaType);
-            Assert.Equal(typeof(DateOnly), s.DataFields[no].ClrType);
-            Assert.False(s.DataFields[no].IsNullable);
-        }
-        
-        [Fact]
-        public void TimeOnly_default() {
-            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
-
-            int no = 6;
-            Assert.True(s.DataFields[6] is TimeOnlyDataField);
-            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)s.DataFields[6]).TimeSpanFormat);
+            DataField df = s.FindDataField(nameof(DatesPoco.ImpalaDateOnly));
+            Assert.True(df.GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, df.SchemaType);
+            Assert.Equal(typeof(DateOnly), df.ClrType);
+            Assert.False(df.IsNullable);
         }
 
         [Fact]
-        public void TimeOnly_micros() {
+        public void Type_TimeOnly_Default() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            int no = 7;
-            Assert.True(s.DataFields[no] is TimeOnlyDataField);
-            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeOnlyDataField)s.DataFields[no]).TimeSpanFormat);
+            DataField df = s.FindDataField(nameof(DatesPoco.DefaultTimeOnly));
+            Assert.True(df is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)df).TimeSpanFormat);
+            Assert.False(df.IsNullable);
         }
 
         [Fact]
-        public void DateOnly_nullable_timestamp() {
+        public void Type_TimeOnly_Nullable() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
-            int no = 8;
-            Assert.True(s.DataFields[no].GetType() == typeof(DataField));
-            Assert.Equal(SchemaType.Data, s.DataFields[no].SchemaType);
-            Assert.Equal(typeof(DateOnly), s.DataFields[no].ClrType);
-            Assert.True(s.DataFields[no].IsNullable);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.DefaultNullableTimeOnly));
+            Assert.True(df is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeOnlyDataField)df).TimeSpanFormat);
+            Assert.True(df.IsNullable);
         }
 
         [Fact]
-        public void TimeOnly_nullable_timestamp() {
+        public void Type_TimeOnly_Micros() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
-            DataField? df = s.DataFields[9] as DataField;
+
+            DataField df = s.FindDataField(nameof(DatesPoco.MicroTimeOnly));
+            Assert.True(df is TimeOnlyDataField);
+            Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeOnlyDataField)df).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void Type_DateOnly_NullableTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableDateOnly));
+            Assert.True(df.GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, df.SchemaType);
+            Assert.Equal(typeof(DateOnly), df.ClrType);
+            Assert.True(df.IsNullable);
+        }
+
+        [Fact]
+        public void Type_TimeOnly_NullableTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableTimeOnly));
 
             Assert.NotNull(df);
             Assert.Equal(nameof(DatesPoco.NullableTimeOnly), df.Name);
