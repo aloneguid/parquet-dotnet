@@ -72,7 +72,7 @@ namespace Parquet.File {
             long fileOffset = GetFileOffset(out bool isDictionaryPageOffset);
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-            if(_footer.Decrypter != null) {
+            if(_footer.Decrypter is not null) {
                 var protoReader = new ThriftCompactProtocolReader(_inputStream);
 
                 short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
@@ -197,15 +197,6 @@ namespace Parquet.File {
             }
             isDictionaryPageOffset = false;
             return firstDataPageOffset;
-
-            // get the minimum offset, we'll just read pages in sequence as DictionaryPageOffset/Data_page_offset are not reliable
-            //new[]
-            //    {
-            //        _thriftColumnChunk.MetaData?.DictionaryPageOffset ?? 0,
-            //        _thriftColumnChunk.MetaData!.DataPageOffset
-            //    }
-            //    .Where(e => e != 0)
-            //    .Min();
         }
 
         private async Task ReadDataPageV1Async(PageHeader ph, PackedColumn pc) {

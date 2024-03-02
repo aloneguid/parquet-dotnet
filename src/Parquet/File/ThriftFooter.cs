@@ -176,7 +176,7 @@ namespace Parquet.File {
             return ph;
         }
 
-        public EncryptionBase? Decrypter => _fileMeta.Decrypter ?? throw new InvalidOperationException("Not an encrypted file");
+        public EncryptionBase? Decrypter => _fileMeta.Decrypter;
 
         #region [ Conversion to Model Schema ]
 
