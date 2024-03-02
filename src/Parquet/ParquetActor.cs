@@ -86,50 +86,5 @@ namespace Parquet {
 
             return footerLength;
         }
-
-        //Source: https://stackoverflow.com/a/51188472/1458738
-        private static void AesCtrTransform(byte[] key, byte[] salt, Stream inputStream, Stream outputStream) {
-#pragma warning disable SYSLIB0021 // Type or member is obsolete (TODO: replace this with non-obsolete implementation)
-            using var aes = new AesManaged { Mode = CipherMode.ECB, Padding = PaddingMode.None };
-#pragma warning restore SYSLIB0021 // Type or member is obsolete
-
-            int blockSize = aes.BlockSize / 8;
-
-            if(salt.Length != blockSize) {
-                throw new ArgumentException(
-                    "Salt size must be same as block size " +
-                    $"(actual: {salt.Length}, expected: {blockSize})");
-            }
-
-            byte[] counter = (byte[])salt.Clone();
-
-            var xorMask = new Queue<byte>();
-
-            byte[] zeroIv = new byte[blockSize];
-            ICryptoTransform counterEncryptor = aes.CreateEncryptor(key, zeroIv);
-
-            int b;
-            while((b = inputStream.ReadByte()) != -1) {
-                if(xorMask.Count == 0) {
-                    byte[] counterModeBlock = new byte[blockSize];
-
-                    counterEncryptor.TransformBlock(
-                        counter, 0, counter.Length, counterModeBlock, 0);
-
-                    for(int i2 = counter.Length - 1; i2 >= 0; i2--) {
-                        if(++counter[i2] != 0) {
-                            break;
-                        }
-                    }
-
-                    foreach(byte b2 in counterModeBlock) {
-                        xorMask.Enqueue(b2);
-                    }
-                }
-
-                byte mask = xorMask.Dequeue();
-                outputStream.WriteByte((byte)(((byte)b) ^ mask));
-            }
-        }
     }
 }

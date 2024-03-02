@@ -34,18 +34,8 @@ namespace Parquet.Encryption {
                     decrypter.AadPrefix = cryptoMetaData.EncryptionAlgorithm.AESGCMV1.AadPrefix ?? Array.Empty<byte>();
                 }
             } else if(cryptoMetaData.EncryptionAlgorithm.AESGCMCTRV1 is not null) {
-                //NOTE: This hasn't been tested!!!
-                //int cipherTextLength = encryptionBufferLength - nonce.Length;
-                //byte[] cipherText = reader.ReadBytesExactly(cipherTextLength);
-
-                //using var cipherStream = new MemoryStream(cipherText);
-                //using var plaintextStream = new MemoryStream(); //This will contain the decrypted result
-                //AesCtrTransform(keyBytes, nonce, cipherStream, plaintextStream);
-
-                //plaintextStream.Position = 0;
-
-                //return plaintextStream.ToArray();
-                decrypter = new AES_GCM_V1_Encryption(); // AES_GCM_CTR_V1_Encryption();
+                
+                decrypter = new AES_GCM_CTR_V1_Encryption();
             } else {
                 throw new NotSupportedException("No encryption algorithm defined");
             }
@@ -89,7 +79,7 @@ namespace Parquet.Encryption {
         /// Module format: length (4 bytes) nonce (12 bytes) ciphertext (length-28 bytes) tag (16 bytes)
         /// Reference: https://github.com/apache/parquet-format/blob/master/Encryption.md#5-file-format
         /// </summary>
-        private byte[] Decrypt(ThriftCompactProtocolReader reader, Meta.ParquetModules module, short? rowGroupOrdinal = null, short? columnOrdinal = null, short? pageOrdinal = null) {
+        protected virtual byte[] Decrypt(ThriftCompactProtocolReader reader, Meta.ParquetModules module, short? rowGroupOrdinal = null, short? columnOrdinal = null, short? pageOrdinal = null) {
             IEnumerable<byte> aadSuffix = AadFileUnique!
                 .Concat(new byte[] { (byte)module })
                 .Concat(rowGroupOrdinal != null ? BitConverter.GetBytes((short)rowGroupOrdinal).EnsureLittleEndian() : Array.Empty<byte>())
@@ -121,11 +111,69 @@ namespace Parquet.Encryption {
     }
 
 
-    //shorternal class AES_GCM_CTR_V1_Encryption : EncryptionBase {
-    //    public AES_GCM_CTR_V1_Encryption() {
+    internal class AES_GCM_CTR_V1_Encryption : AES_GCM_V1_Encryption {
+        public AES_GCM_CTR_V1_Encryption() {
 
-    //    }
+        }
 
-    //    public override byte[] Decrypt(ThriftCompactProtocolReader reader, Meta.ParquetModules module) => throw new NotImplementedException();
-    //}
+        protected override byte[] Decrypt(ThriftCompactProtocolReader reader, Meta.ParquetModules module, short? rowGroupOrdinal = null, short? columnOrdinal = null, short? pageOrdinal = null) {
+            byte[] encryptionBufferLengthBytes = reader.ReadBytesExactly(4).EnsureLittleEndian();
+            int encryptionBufferLength = BitConverter.ToInt32(encryptionBufferLengthBytes, 0);
+            byte[] nonce = reader.ReadBytesExactly(12);
+            int cipherTextLength = encryptionBufferLength - nonce.Length;
+            byte[] cipherText = reader.ReadBytesExactly(cipherTextLength);
+
+            using var cipherStream = new MemoryStream(cipherText);
+            using var plaintextStream = new MemoryStream(); //This will contain the decrypted result
+            AesCtrTransform(DecryptionKey!, nonce, cipherStream, plaintextStream);
+
+            plaintextStream.Position = 0;
+            return plaintextStream.ToArray();
+        }
+
+        // TODO: This hasn't been tested!!!
+        // Source: https://stackoverflow.com/a/51188472/1458738
+        private static void AesCtrTransform(byte[] key, byte[] salt, Stream inputStream, Stream outputStream) {
+            using var aes = Aes.Create();
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.None;
+
+            int blockSize = aes.BlockSize / 8;
+            if(salt.Length != blockSize) {
+                throw new ArgumentException(
+                    "Salt size must be same as block size " +
+                    $"(actual: {salt.Length}, expected: {blockSize})");
+            }
+
+            byte[] counter = (byte[])salt.Clone();
+
+            var xorMask = new Queue<byte>();
+
+            byte[] zeroIv = new byte[blockSize];
+            ICryptoTransform counterEncryptor = aes.CreateEncryptor(key, zeroIv);
+
+            int b;
+            while((b = inputStream.ReadByte()) != -1) {
+                if(xorMask.Count == 0) {
+                    byte[] counterModeBlock = new byte[blockSize];
+
+                    counterEncryptor.TransformBlock(
+                        counter, 0, counter.Length, counterModeBlock, 0);
+
+                    for(int i2 = counter.Length - 1; i2 >= 0; i2--) {
+                        if(++counter[i2] != 0) {
+                            break;
+                        }
+                    }
+
+                    foreach(byte b2 in counterModeBlock) {
+                        xorMask.Enqueue(b2);
+                    }
+                }
+
+                byte mask = xorMask.Dequeue();
+                outputStream.WriteByte((byte)(((byte)b) ^ mask));
+            }
+        }
+    }
 }
