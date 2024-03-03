@@ -10,10 +10,16 @@ using Xunit;
 using System.Text;
 
 namespace Parquet.Test {
+    [CollectionDefinition(nameof(ParquetReaderOnTestFilesCollection), DisableParallelization = true)]
+    public class ParquetReaderOnTestFilesCollection {
+
+    }
+
     /// <summary>
     /// Tests a set of predefined test files that they read back correct.
     /// Find more test data (some taken from there): https://github.com/apache/parquet-testing/tree/master/data
     /// </summary>
+    [Collection(nameof(ParquetReaderOnTestFilesCollection))]
     public class ParquetReaderOnTestFilesTest : TestBase {
 
         [Theory]
