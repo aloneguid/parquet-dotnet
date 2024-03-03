@@ -63,7 +63,7 @@ namespace Parquet {
             ColumnChunk columnChunk = GetMetadata(field)
                 ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
             var columnReader = new DataColumnReader(field, _stream,
-                columnChunk, ReadColumnStatistics(columnChunk), _footer, _options);
+                columnChunk, ReadColumnStatistics(columnChunk), _footer, _options, _rowGroup);
             return columnReader.ReadAsync(cancellationToken);
         }
 

@@ -55,5 +55,19 @@ namespace Parquet {
         /// your readers do not understand it.
         /// </summary>
         public bool UseDeltaBinaryPackedEncoding { get; set; } = true;
+
+        /// <summary>
+        /// Key used to decrypt encrypted parquet files created in encrypted footer mode.
+        /// </summary>
+        /// <remarks>Currently only used by <see cref="ParquetReader"/></remarks>
+        public string? EncryptionKey { get; set; } = null;
+
+        /// <summary>
+        /// Optional Additional Authentication Data Prefix used to verify the integrity of the encrypted file. Only required
+        /// if the file was encrypted with an AAD Prefix *and* the prefix wasn't embedded into the 
+        /// file by the author.
+        /// </summary>
+        /// <remarks>Currently only used by <see cref="ParquetReader"/></remarks>
+        public string? AADPrefix { get; set; } = null;
     }
 }
