@@ -14,7 +14,7 @@ namespace Parquet.File {
     /// </summary>
     class PackedColumn : IDisposable {
 
-        private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
+        private readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
 
         // fields declared in write order
 
