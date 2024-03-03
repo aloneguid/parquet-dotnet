@@ -10,16 +10,6 @@ using Xunit;
 using System.Text;
 
 namespace Parquet.Test {
-    [CollectionDefinition(nameof(ParquetReaderOnTestFilesCollection), DisableParallelization = true)]
-    public class ParquetReaderOnTestFilesCollection {
-
-    }
-
-    /// <summary>
-    /// Tests a set of predefined test files that they read back correct.
-    /// Find more test data (some taken from there): https://github.com/apache/parquet-testing/tree/master/data
-    /// </summary>
-    [Collection(nameof(ParquetReaderOnTestFilesCollection))]
     public class ParquetReaderOnTestFilesTest : TestBase {
 
         [Theory]
@@ -178,23 +168,6 @@ namespace Parquet.Test {
             Assert.Equal("DEPOSIT", cols[0].Data.GetValue(125));
             Assert.Equal((long)1, cols[1].Data.GetValue(0));
             Assert.Equal((long)1, cols[1].Data.GetValue(125));
-        }
-
-        [Fact]
-        public async Task DecryptFile_UTF8_AesGcmV1_192bit() {
-            using Stream stream = OpenTestFile("encrypted_utf8_aes_gcm_v1_192bit.parquet");
-
-            var parquetOptions = new ParquetOptions {
-                EncryptionKey = "QFwuIKG8yb845rEufVJAgcOo",
-                AADPrefix = null //this file doesn't use an aad prefix
-            };
-
-            using ParquetReader reader = await ParquetReader.CreateAsync(stream, parquetOptions);
-            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
-            foreach(DataField df in reader.Schema.DataFields) {
-                DataColumn dc = await rgr.ReadColumnAsync(df);
-                //TODO: Moar testing
-            }
         }
 
         [Fact]

@@ -72,39 +72,39 @@ namespace Parquet.File {
             long fileOffset = GetFileOffset(out bool isDictionaryPageOffset);
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-            if(_footer.Decrypter is not null) {
-                var protoReader = new ThriftCompactProtocolReader(_inputStream);
+            while(pc.ValuesRead < totalValuesInChunk) {
+                if(_footer.Decrypter is not null) {
+                    var protoReader = new ThriftCompactProtocolReader(_inputStream);
 
-                short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
-                if(columnOrdinal < 0)
-                    throw new InvalidDataException("Could not determine column ordinal");
+                    short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
+                    if(columnOrdinal < 0)
+                        throw new InvalidDataException("Could not determine column ordinal");
 
-                if(isDictionaryPageOffset) {
-                    byte[] dictPageHeader = _footer.Decrypter.DecryptDictionaryPageHeader(protoReader, _rowGroup.Ordinal!.Value, columnOrdinal);
-                    using var ms = new MemoryStream(dictPageHeader);
-                    var tempReader = new ThriftCompactProtocolReader(ms);
-                    var ph = PageHeader.Read(tempReader);
-                    await ReadDictionaryPage(ph, pc);
-                }
+                    if(isDictionaryPageOffset) {
+                        byte[] dictPageHeader = _footer.Decrypter.DecryptDictionaryPageHeader(protoReader, _rowGroup.Ordinal!.Value, columnOrdinal);
+                        using var ms = new MemoryStream(dictPageHeader);
+                        var tempReader = new ThriftCompactProtocolReader(ms);
+                        var ph = PageHeader.Read(tempReader);
+                        await ReadDictionaryPage(ph, pc);
+                    }
 
-                if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null) {
-                    byte[] dataPageHeader = _footer.Decrypter.DecryptDataPageHeader(protoReader, _rowGroup.Ordinal!.Value, columnOrdinal, 0);
-                    using var ms = new MemoryStream(dataPageHeader);
-                    var tempReader = new ThriftCompactProtocolReader(ms);
-                    var ph = PageHeader.Read(tempReader);
-                    if(ph.Type == PageType.DATA_PAGE)
-                        await ReadDataPageV1Async(ph, pc);
-                    else if(ph.Type == PageType.DATA_PAGE_V2)
-                        await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
-                    else
-                        throw new InvalidDataException($"Unsupported page type '{ph.Type}'");
-                } else if (_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null) {
-                    throw new NotSupportedException("Column key encryption is currently not supported");
+                    if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null) {
+                        byte[] dataPageHeader = _footer.Decrypter.DecryptDataPageHeader(protoReader, _rowGroup.Ordinal!.Value, columnOrdinal, 0);
+                        using var ms = new MemoryStream(dataPageHeader);
+                        var tempReader = new ThriftCompactProtocolReader(ms);
+                        var ph = PageHeader.Read(tempReader);
+                        if(ph.Type == PageType.DATA_PAGE)
+                            await ReadDataPageV1Async(ph, pc);
+                        else if(ph.Type == PageType.DATA_PAGE_V2)
+                            await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
+                        else
+                            throw new InvalidDataException($"Unsupported page type '{ph.Type}'");
+                    } else if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null) {
+                        throw new NotSupportedException("Column key encryption is currently not supported");
+                    } else {
+                        throw new InvalidDataException($"Either {nameof(EncryptionWithFooterKey)} or {nameof(EncryptionWithColumnKey)} must be set");
+                    }
                 } else {
-                    throw new InvalidDataException($"Either {nameof(EncryptionWithFooterKey)} or {nameof(EncryptionWithColumnKey)} must be set");
-                }
-            } else {
-                while(pc.ValuesRead < totalValuesInChunk) {
                     var protoReader = new ThriftCompactProtocolReader(_inputStream);
                     PageHeader ph = PageHeader.Read(protoReader);
 
