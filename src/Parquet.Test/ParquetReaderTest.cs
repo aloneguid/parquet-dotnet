@@ -132,26 +132,27 @@ namespace Parquet.Test {
                await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
                 DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
 
-                string[] s = (string[])columns[0].Data;
-                double?[] d = (double?[])columns[1].Data;
+                string[] words = (string[])columns[0].Data;
+                double?[] values = (double?[])columns[1].Data;
+
+                var testValues = new List<double>();
 
                 // check for nulls (issue #370)
-                for(int i = 0; i < s.Length; i++) {
-                    Assert.True(s[i] != null, "found null in s at " + i);
-                    Assert.True(d[i] != null, "found null in d at " + i);
+                for(int i = 0; i < words.Length; i++) {
+                    Assert.True(words[i] != null, "found null in s at " + i);
+                    Assert.True(values[i] != null, "found null in d at " + i);
+
+                    // run aggregations checking row alignment (issue #371)
+                    if("favorable".Equals(words[i])) {
+                        testValues.Add((double)values[i]!);
+                    }
                 }
-
-                // run aggregations checking row alignment (issue #371)
-                var seq = s.Zip(d.Cast<double>(), (w, v) => new { w, v })
-                   .Where(p => p.w == "favorable")
-                   .ToList();
-
-                // double matching is fuzzy, but matching strings is enough for this test
+                
                 // ground truth was computed using Spark
-                Assert.Equal(26706.6185312147, seq.Sum(p => p.v), 5);
-                Assert.Equal(0.808287234987281, seq.Average(p => p.v), 5);
-                Assert.Equal(0.71523915461624, seq.Min(p => p.v), 5);
-                Assert.Equal(0.867111980015206, seq.Max(p => p.v), 5);
+                Assert.Equal(26706.6185312147, testValues.Sum(), 5);
+                Assert.Equal(0.808287234987281, testValues.Average(), 5);
+                Assert.Equal(0.71523915461624, testValues.Min(), 5);
+                Assert.Equal(0.867111980015206, testValues.Max(), 5);
             }
         }
 
