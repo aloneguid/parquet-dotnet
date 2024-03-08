@@ -3,11 +3,35 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Parquet.Encodings;
+using Parquet.Rows;
 using Xunit;
 
 namespace Parquet.Test.Encodings {
-    public class DeltaBinaryPackedEncodingTest {
+    public class DeltaBinaryPackedEncodingTest : TestBase {
+        [Fact]
+        public async Task TestDeltaBinaryPackedFile() {
+            Table t;
+            using(Stream stream = OpenTestFile("test-delta-binary-packed.parquet")) {
+                using(ParquetReader reader = await ParquetReader.CreateAsync(stream)) {
+                    t = await reader.ReadAsTableAsync();
+                }
+            }
+
+            Assert.Equal("{'column1': 1000}", t[0].ToString());
+            Assert.Equal("{'column1': 1}", t[1].ToString());
+            Assert.Equal("{'column1': 2}", t[2].ToString());
+            Assert.Equal("{'column1': 3}", t[3].ToString());
+            Assert.Equal("{'column1': 4}", t[4].ToString());
+            Assert.Equal("{'column1': 5}", t[5].ToString());
+            Assert.Equal("{'column1': 6}", t[6].ToString());
+            Assert.Equal("{'column1': 7}", t[7].ToString());
+            Assert.Equal("{'column1': 8}", t[8].ToString());
+            Assert.Equal("{'column1': 9}", t[9].ToString());
+            Assert.Equal("{'column1': 10}", t[10].ToString());
+        }
+
         [Fact]
         public void EncodeAndDecodeInt32() {
 
