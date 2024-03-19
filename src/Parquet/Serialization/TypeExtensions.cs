@@ -139,7 +139,7 @@ namespace Parquet.Serialization {
                     member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
-                    isNullable, null, propertyName);
+                    t == typeof(TimeSpan?), null, propertyName);
 #if NET6_0_OR_GREATER
             } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
                 r = new TimeOnlyDataField(name,
