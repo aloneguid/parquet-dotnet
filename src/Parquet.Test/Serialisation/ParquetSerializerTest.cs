@@ -90,6 +90,23 @@ namespace Parquet.Test.Serialisation {
 
             await Compare(data);
         }
+        
+        class TimespanRecord {
+            public TimeSpan TimeSpan { get; set; }
+
+            public TimeSpan? NullableTimeSpan { get; set; }
+        }
+
+        [Fact]
+        public async Task TimeSpan_Simplest_Serde() {
+
+            var data = Enumerable.Range(0, 1_000).Select(i => new TimespanRecord {
+                TimeSpan = TimeSpan.Parse("6:12:14:45"),
+                NullableTimeSpan = null,
+            }).ToList();
+
+            await Compare(data);
+        }
 
         [Fact]
         public async Task Atomics_Simplest_Serde_Dict() {
