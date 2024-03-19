@@ -324,6 +324,8 @@ namespace Parquet.Test.Serialisation {
             public DateTime? NullableTimestampDate { get; set; }
 
             public TimeSpan DefaultTime { get; set; }
+            
+            public TimeSpan? NullableTimeSpan { get; set; }
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
@@ -393,6 +395,16 @@ namespace Parquet.Test.Serialisation {
 
             DataField df = s.FindDataField(nameof(DatesPoco.DefaultTime));
             Assert.True(df is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
+        }
+        
+        [Fact]
+        public void Type_TimeSpan_Nullable() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableTimeSpan));
+            Assert.True(df is TimeSpanDataField);
+            Assert.True(df.IsNullable);
             Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
         }
 
