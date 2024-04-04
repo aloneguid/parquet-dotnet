@@ -1,3 +1,11 @@
+## 4.24.0
+
+WIP
+
+### Bug fixes
+
+- Reading decimal fields ignores precision and scale by @sierzput in #482.
+
 ## 4.23.4
 
 ### Bug fixes
