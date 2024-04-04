@@ -311,7 +311,7 @@ namespace Parquet.Test.Reader {
         [Fact]
         public async Task DeltaByteArray() {
 
-            var types = Enumerable.Repeat(typeof(string), 9).ToArray();
+            Type[] types = Enumerable.Repeat(typeof(string), 9).ToArray();
 
             await CompareFilesAsync("delta_byte_array", "", "", false, types);
         }

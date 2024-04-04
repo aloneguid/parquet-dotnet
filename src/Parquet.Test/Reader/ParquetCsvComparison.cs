@@ -22,13 +22,13 @@ namespace Parquet.Test.Reader {
             if(!string.IsNullOrEmpty(dataPageVersion)) {
                 parquetFilePrefix += $".{dataPageVersion}";
             }
-            var parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
+            (DataColumn[] Columns, IReadOnlyList<Field> Fields) parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
             DataColumn[] csv = ReadCsv($"{baseName}.csv");
             Compare(parquet, csv, columnTypes);
         }
 
         private void Compare((DataColumn[] Columns, IReadOnlyList<Field> Fields) parquet, DataColumn[] csv, Type[] columnTypes) {
-            var parquetCols = parquet.Columns;
+            DataColumn[] parquetCols = parquet.Columns;
 
             Assert.All(parquet.Fields, (field, i) => {
                 var dataField = field as DataField;
@@ -41,7 +41,7 @@ namespace Parquet.Test.Reader {
             Assert.True(parquetCols.Length == csv.Length, $"parquet has {parquetCols.Length} column(s) but CSV has {csv.Length}");
 
             //compare column names
-            foreach(var column in parquetCols) {
+            foreach(DataColumn column in parquetCols) {
                 string colName = column.Field.Name;
                 bool contains = csv.Any(f => f.Field.Name == colName);
                 Assert.True(contains, $"csv does not contain column '{colName}'");
