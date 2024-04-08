@@ -213,6 +213,32 @@ namespace Parquet.Data.Analysis {
                 }
                 return;
             }
+            if(dc.Field.ClrType == typeof(short)) {
+                var tdfc = (PrimitiveDataFrameColumn<short>)dfc;
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    foreach(short el in (short[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                } else {
+                    foreach(short? el in (short?[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                }
+                return;
+            }
+            if(dc.Field.ClrType == typeof(ushort)) {
+                var tdfc = (PrimitiveDataFrameColumn<ushort>)dfc;
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    foreach(ushort el in (ushort[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                } else {
+                    foreach(ushort? el in (ushort?[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                }
+                return;
+            }
             if(dc.Field.ClrType == typeof(DateTime)) {
                 var tdfc = (PrimitiveDataFrameColumn<DateTime>)dfc;
                 if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
@@ -312,6 +338,12 @@ namespace Parquet.Data.Analysis {
             }
             if(col.DataType == typeof(sbyte)) {
                 return ((PrimitiveDataFrameColumn<sbyte>)col).ToArray();
+            }
+            if(col.DataType == typeof(short)) {
+                return ((PrimitiveDataFrameColumn<short>)col).ToArray();
+            }
+            if(col.DataType == typeof(ushort)) {
+                return ((PrimitiveDataFrameColumn<ushort>)col).ToArray();
             }
             if(col.DataType == typeof(DateTime)) {
                 return ((PrimitiveDataFrameColumn<DateTime>)col).ToArray();

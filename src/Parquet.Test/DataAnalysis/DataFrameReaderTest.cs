@@ -12,6 +12,8 @@ namespace Parquet.Test.DataAnalysis {
     public class DataFrameReaderTest : TestBase {
 
         [Theory]
+        [InlineData(typeof(short), (short)1, (short)2)]
+        [InlineData(typeof(short?), null, (short)2)]
         [InlineData(typeof(int), 1, 2)]
         [InlineData(typeof(int?), null, 2)]
         [InlineData(typeof(bool), true, false)]
