@@ -175,7 +175,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task TestTest() {
+        public async Task FixedLenByteArrayWithDictTest() {
             using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
             using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
@@ -192,6 +192,17 @@ namespace Parquet.Test {
             Assert.Equal(Encoding.ASCII.GetBytes("jkl"), data[3]);
             Assert.Equal(Encoding.ASCII.GetBytes("mno"), data[4]);
             Assert.Equal(Encoding.ASCII.GetBytes("qrs"), data[5]);
+        }
+
+        [Fact]
+        public async Task GuidEndianTest() {
+            using Stream s = OpenTestFile("cetas4.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Single(cols);
+            DataColumn col = cols[0];
+            Assert.Equal(Guid.Parse("15A2501E-4899-4FF8-AF51-A1805FE0718F"), col.Data.GetValue(0));
         }
     }
 }

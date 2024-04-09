@@ -779,11 +779,10 @@ namespace Parquet.Encodings {
 
         public static void Encode(ReadOnlySpan<Guid> data, Stream destination) {
             foreach(Guid element in data) {
-                byte[] b = element.ToByteArray();
+                byte[] b = element.ToBigEndianByteArray();
                 destination.Write(b, 0, b.Length);
             }
         }
-
 
         public static int Decode(Span<byte> source, Span<byte[]> data, SchemaElement tse) {
             int read = 0;
@@ -1129,11 +1128,7 @@ namespace Parquet.Encodings {
 
             int i = 0;
             for(int offset = 0; offset + 16 <= source.Length && i < data.Length; offset += 16, i++) {
-#if NETSTANDARD2_0
-                data[i] = new Guid(source.Slice(offset, 16).ToArray());
-#else
-                data[i] = new Guid(source.Slice(offset, 16));
-#endif
+                data[i] = ((ReadOnlySpan<byte>)source.Slice(offset, 16)).ToGuidFromBigEndian();
             }
             return i;
         }

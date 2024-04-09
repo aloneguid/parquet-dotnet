@@ -1,3 +1,10 @@
+## 4.23.5
+
+### Bug fixes
+
+- Reading decimal fields ignores precision and scale by @sierzput in #482.
+- UUID logical type was not read correctly, it must always be in big-endian format. Thanks to @anatoliy-savchak in #496.
+
 ## 4.23.4
 
 ### Bug fixes
