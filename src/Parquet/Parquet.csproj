@@ -1,6 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
         <TargetFrameworks Condition="'$(LATEST_NET_ONLY)' != ''">net8.0</TargetFrameworks>
         <TargetFrameworks Condition="'$(LATEST_NET_ONLY)' == ''">netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0;net8.0</TargetFrameworks>
         <Company></Company>
