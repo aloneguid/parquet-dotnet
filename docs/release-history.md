@@ -5,6 +5,10 @@
 - Nullable `TimeSpan` support in `ParquetSerializer` by @cliedeman in #409.
 - `DataFrame` support for `int16/uint16` types by @asmirnov82 in #469.
 
+### Bug fixes
+
+- loop will read past the end of a block #487 by @alex-harper.
+
 ## 4.23.5
 
 ### Bug fixes
