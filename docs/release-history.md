@@ -1,3 +1,9 @@
+## 4.24.0
+
+### Improvements
+
+- Nullable `TimeSpan` support in `ParquetSerializer` by @cliedeman in #409.
+
 ## 4.23.5
 
 ### Bug fixes
