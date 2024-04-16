@@ -3,6 +3,7 @@
 ### Improvements
 
 - Nullable `TimeSpan` support in `ParquetSerializer` by @cliedeman in #409.
+- `DataFrame` support for `int16/uint16` types by @asmirnov82 in #469.
 
 ## 4.23.5
 
