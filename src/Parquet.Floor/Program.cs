@@ -2,6 +2,7 @@
 using Avalonia;
 using Projektanker.Icons.Avalonia.FontAwesome;
 using Projektanker.Icons.Avalonia;
+using System.Threading.Tasks;
 
 namespace Parquet.Floor;
 
@@ -10,18 +11,23 @@ class Program {
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
+    public static async Task Main(string[] args) {
+
+        Tracker.Instance = new Tracker("floor", Globals.Version);
+        Tracker.Instance.Constants.Add("iid", Settings.Instance.InstanceId.ToString());
+        Tracker.Instance.Constants.Add("os", Environment.OSVersion.Platform.ToString());
+
+        try {
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        } catch {
+            await Tracker.Instance.FlushAsync();
+        }
+    }
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp() {
-
-        Tracker.Instance.Constants.Add("iid", Settings.Instance.InstanceId.ToString());
-        Tracker.Instance.Constants.Add("os", Environment.OSVersion.Platform.ToString());
-        Tracker.Instance.Constants.Add(Settings.TelemetryConstant, Settings.Instance.BasicTelemetryEnabled.ToString());
-
         try {
-            Tracker.Instance.Track("start", force: true);
+            Tracker.Instance.Track("start");
         }catch(Exception ex) {
             Console.WriteLine(ex);
         }

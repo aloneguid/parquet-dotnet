@@ -9,6 +9,9 @@
 
 - loop will read past the end of a block #487 by @alex-harper.
 
+### Parquet Floor
+- telemetry agreement made more clear to understand.
+
 ## 4.23.5
 
 ### Bug fixes

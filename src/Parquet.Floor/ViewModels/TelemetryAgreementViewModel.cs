@@ -1,26 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using ActiproSoftware.Extensions;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Parquet.Floor.ViewModels {
     partial class TelemetryAgreementViewModel : ViewModelBase {
 
         [ObservableProperty]
-        private bool _decisionMade;
+        private bool _agreementPassed;
 
         public TelemetryAgreementViewModel() {
 
-            DecisionMade = Settings.Instance.TelemetryDecisionMade;
+            AgreementPassed = Settings.Instance.TelemetryAgreementPassed;
 
 #if DEBUG
             if(Design.IsDesignMode) {
-                DecisionMade = false;
+                AgreementPassed = false;
             }
 #endif
         }
@@ -34,14 +27,8 @@ namespace Parquet.Floor.ViewModels {
         }
 
         private void MakeDecision(bool optIn) {
-            DecisionMade = true;
-            Settings.Instance.TelemetryDecisionMade = true;
-            Settings.Instance.BasicTelemetryEnabled = optIn;
-
-            if(Tracker.Instance!.Constants.ContainsKey(Settings.TelemetryConstant)) {
-                Tracker.Instance.Constants.Remove(Settings.TelemetryConstant);
-            }
-            Tracker.Instance.Constants.Add(Settings.TelemetryConstant, Settings.Instance.BasicTelemetryEnabled.ToString());
+            AgreementPassed = true;
+            Settings.Instance.TelemetryAgreementPassed = true;
         }
     }
 }

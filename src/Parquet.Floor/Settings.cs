@@ -7,16 +7,13 @@ namespace Parquet.Floor {
     public interface ISettings {
         Guid InstanceId { get; set; }
 
-        bool BasicTelemetryEnabled { get; set; }
-
-        bool TelemetryDecisionMade { get; set; }
+        bool TelemetryAgreementPassed { get; set; }
 
         string? ThemeVariant { get; set; }
     }
 
     static class Settings {
 
-        public const string TelemetryConstant = "tel";
         public static ISettings Instance { get; private set; }
 
         static Settings() {
