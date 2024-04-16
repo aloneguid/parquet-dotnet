@@ -139,6 +139,8 @@
                     if(bitWidth == 0) {
                         // there's not data for bitwidth 0
                         for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
+                            if(read >= totalValueCount)
+                                break;
                             currentValue += minDelta;
                             dest[destOffset++] = currentValue;
                         }
@@ -150,7 +152,7 @@
                             spos += bitWidth;
                         }
 
-                        for(int i = 0; i < vbuf.Length && destOffset < dest.Length; i++, read++) {
+                        for(int i = 0; i < vbuf.Length && destOffset < dest.Length && read < totalValueCount; i++, read++) {
                             currentValue += minDelta + vbuf[i];
                             dest[destOffset++] = currentValue;
                         }
@@ -297,6 +299,8 @@
                     if(bitWidth == 0) {
                         // there's not data for bitwidth 0
                         for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
+                            if(read >= totalValueCount)
+                                break;
                             currentValue += minDelta;
                             dest[destOffset++] = currentValue;
                         }
@@ -308,7 +312,7 @@
                             spos += bitWidth;
                         }
 
-                        for(int i = 0; i < vbuf.Length && destOffset < dest.Length; i++, read++) {
+                        for(int i = 0; i < vbuf.Length && destOffset < dest.Length && read < totalValueCount; i++, read++) {
                             currentValue += minDelta + vbuf[i];
                             dest[destOffset++] = currentValue;
                         }
