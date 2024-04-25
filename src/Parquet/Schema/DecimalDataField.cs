@@ -41,8 +41,8 @@ namespace Parquet.Schema {
                 throw new ArgumentException("precision is required and must be a non-zero positive integer", nameof(precision));
             if(scale < 0)
                 throw new ArgumentException("scale must be zero or a positive integer", nameof(scale));
-            if(scale >= precision)
-                throw new ArgumentException("scale must be less than the precision", nameof(scale));
+            if(scale > precision)
+                throw new ArgumentException("scale must be less than or equal to the precision", nameof(scale));
 
             Precision = precision;
             Scale = scale;
