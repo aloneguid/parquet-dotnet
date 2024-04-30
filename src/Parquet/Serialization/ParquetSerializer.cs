@@ -65,6 +65,22 @@ namespace Parquet.Serialization {
         }
 
         /// <summary>
+        /// Serialize a collection into one row group using an existing writer.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="objectInstances"></param>
+        /// <param name="cancellationToken"></param>
+        /// <typeparam name="T"></typeparam>
+        public static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, IEnumerable<T> objectInstances,
+            CancellationToken cancellationToken) {
+            using ParquetRowGroupWriter rowGroupWritter = writer.CreateRowGroup();
+            object boxedStriper = _typeToStriper.GetOrAdd(typeof(T), _ => new Striper<T>(typeof(T).GetParquetSchema(false)));
+            var striper = (Striper<T>)boxedStriper;
+
+            await SerializeRowGroupAsync(writer, striper, objectInstances, cancellationToken);
+        }
+
+        /// <summary>
         /// Serialize 
         /// </summary>
         /// <typeparam name="T"></typeparam>
