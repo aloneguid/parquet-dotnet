@@ -73,7 +73,6 @@ namespace Parquet.Serialization {
         /// <typeparam name="T"></typeparam>
         public static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, IEnumerable<T> objectInstances,
             CancellationToken cancellationToken) {
-            using ParquetRowGroupWriter rowGroupWritter = writer.CreateRowGroup();
             object boxedStriper = _typeToStriper.GetOrAdd(typeof(T), _ => new Striper<T>(typeof(T).GetParquetSchema(false)));
             var striper = (Striper<T>)boxedStriper;
 
@@ -361,6 +360,33 @@ namespace Parquet.Serialization {
                 result.Clear();
             }
         }
+        
+        /// <summary>
+        /// Deserialize row group per row group as IAsyncEnumerable
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static async IAsyncEnumerable<IList<T>> DeserializeAllByGroupsAsync<T>(Stream source,
+            ParquetOptions? options = null,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+            where T : new()
+        {
+            Assembler<T> asm = GetAssembler<T>();
+
+            using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
+
+            for (int rgi = 0; rgi < reader.RowGroupCount; rgi++)
+            {
+                ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(rgi);
+                List<T> result = GetList<T>(rowGroupReader.RowCount);
+                await DeserializeRowGroupAsync(rowGroupReader, reader.Schema, asm, result, cancellationToken);
+                yield return result;
+            }
+        }
+
 
         /// <summary>
         /// Deserialise
