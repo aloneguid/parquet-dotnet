@@ -854,6 +854,233 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(data2, data);
         }
 
+        public record TrivialRecord(int E, string F);
+
+        [Fact]
+        public async Task TrivialRecord_Roundtrip()
+        {
+            var expected = new[]
+            {
+                new TrivialRecord(4, "[4]"),
+                new TrivialRecord(7, "[7]"),
+            };
+
+            Assert.Equivalent(await RoundTripAsync(expected), expected);
+        }
+
+        public record NonTrivialRecord(int E, string F)
+        {
+            // Private field refers to constructor params/props, 
+            // so generates code in the primary constructor.
+            private readonly string _g = $@"{E} {F}";
+
+            public string GetG() => _g;
+        }
+
+        [Fact]
+        public async Task NonTrivialRecord_Roundtrip()
+        {
+            var expected = new[]
+            {
+                new NonTrivialRecord(5, "{5}"),
+                new NonTrivialRecord(15, "{15}"),
+                new NonTrivialRecord(25, "{25}"),
+                new NonTrivialRecord(35, "{35}"),            
+            };
+
+            var actual = await RoundTripAsync(expected);
+            Assert.Equivalent(expected, actual);
+
+            Assert.Equivalent(expected.Select(x => x.GetG()), actual.Select(x => x.GetG()));
+        }
+
+        public record RecordWithNestedList(int A, string B, List<NonTrivialRecord> NestedList)
+        {
+            private readonly string _c = $@"{A} {B}";
+
+            public string GetC() => _c;
+        }
+
+        [Fact]
+        public async Task RecordWithNestedList_Roundtrip()
+        {
+            var expected = new[]
+            {
+                new RecordWithNestedList(4, "[4]", 
+                [
+                    new NonTrivialRecord(5, "{5}"),
+                    new NonTrivialRecord(15, "{15}"),
+                    new NonTrivialRecord(25, "{25}"),
+                    new NonTrivialRecord(35, "{35}"),
+                ]),
+
+                new RecordWithNestedList(7, "[4]", 
+                [
+                    new NonTrivialRecord(2, "{2}"),
+                    new NonTrivialRecord(4, "{4}"),
+                    new NonTrivialRecord(8, "{8}"),
+                    new NonTrivialRecord(16, "{16}"),
+                ]),
+            };
+
+            var actual = await RoundTripAsync(expected);
+
+            Assert.Equivalent(expected, actual);
+
+            Assert.Equivalent(expected.Select(x => x.GetC()), actual.Select(x => x.GetC()));
+
+            Assert.Equivalent(expected[0].NestedList.Select(x => x.GetG()), actual[0].NestedList.Select(x => x.GetG()));
+            Assert.Equivalent(expected[1].NestedList.Select(x => x.GetG()), actual[1].NestedList.Select(x => x.GetG()));
+        }
+
+        public class ClassWithNullableRecordProperties
+        {
+            public TrivialRecord? Trivial { get; set; }
+
+            public NonTrivialRecord? NonTrivial { get; set; }
+
+            public RecordWithNestedList? NestedList { get; set; }
+
+            public List<TrivialRecord>? ListOfTrivial { get; set; }
+
+            public List<NonTrivialRecord>? ListOfNonTrivial { get; set; }
+
+            public List<RecordWithNestedList>? ListOfNestedList { get; set; }
+        }
+
+        [Fact]
+        public async Task ClassWithNullableRecordProperties_AllNull()
+        {
+            var expected = new[]
+            {
+                new ClassWithNullableRecordProperties(),
+            };
+
+            var actual = await RoundTripAsync(expected);
+
+            Assert.Equivalent(expected, actual);
+        }
+
+        [Fact]
+        public async Task ClassWithNullableRecordProperties_SimpleProperties()
+        {
+            var expected = new[]
+            {
+                new ClassWithNullableRecordProperties(),
+
+                new ClassWithNullableRecordProperties
+                {
+                    Trivial = new(11, "[11]"),
+                    NonTrivial = new(22, "{22}"),                    
+                },
+            };
+
+            var actual = await RoundTripAsync(expected);
+
+            Assert.Equivalent(expected, actual);
+
+            Assert.Equivalent(expected[1].NonTrivial!.GetG(), actual[1].NonTrivial!.GetG());
+        }
+
+        [Fact]
+        public async Task ClassWithNullableRecordProperties_Lists()
+        {
+            var expected = new[]
+            {
+                new ClassWithNullableRecordProperties(),
+
+                new ClassWithNullableRecordProperties
+                {
+                    ListOfTrivial =
+                    [
+                        new(33, "[33]"),
+                        new(44, "[44]"),
+                    ],
+                    ListOfNonTrivial =
+                    [
+                        new(55, "[55]"),
+                        new(66, "[66]"),
+                    ],
+                },
+            };
+
+            var actual = await RoundTripAsync(expected);
+
+            Assert.Equivalent(expected, actual);
+
+            Assert.Equivalent(
+                expected[1].ListOfNonTrivial!.Select(x => x?.GetG()), 
+                actual[1].ListOfNonTrivial!.Select(x => x?.GetG()));
+        }
+
+        [Fact]
+        public async Task ClassWithNullableRecordProperties_Mixed()
+        {
+            var expected = new[]
+            {
+                new ClassWithNullableRecordProperties(),
+
+                new ClassWithNullableRecordProperties
+                {
+                    Trivial = new(11, "[11]"),
+                    NonTrivial = new(22, "{22}"),
+                    ListOfTrivial =
+                    [
+                        new(33, "[33]"),
+                        new(44, "[44]"),
+                    ],
+                    ListOfNonTrivial =
+                    [
+                        new(55, "[55]"),
+                        new(66, "[66]"),
+                    ],
+                    ListOfNestedList =
+                    [
+                        new RecordWithNestedList(4, "[4]", 
+                        [
+                            new NonTrivialRecord(5, "{5}"),
+                            new NonTrivialRecord(15, "{15}"),
+                            new NonTrivialRecord(25, "{25}"),
+                            new NonTrivialRecord(35, "{35}"),
+                        ]),
+
+                        new RecordWithNestedList(7, "[4]", 
+                        [
+                            new NonTrivialRecord(2, "{2}"),
+                            new NonTrivialRecord(4, "{4}"),
+                            new NonTrivialRecord(8, "{8}"),
+                            new NonTrivialRecord(16, "{16}"),
+                        ]),
+                    ]
+                },
+            };
+
+            var actual = await RoundTripAsync(expected);
+
+            Assert.Equivalent(expected, actual);
+
+            Assert.Equivalent(expected[1].NonTrivial!.GetG(), actual[1].NonTrivial!.GetG());
+
+            Assert.Equivalent(
+                expected[1].ListOfNonTrivial!.Select(x => x?.GetG()), 
+                actual[1].ListOfNonTrivial!.Select(x => x?.GetG()));
+
+            Assert.Equivalent(
+                expected[1].ListOfNestedList!.Select(x => x?.GetC()), 
+                actual[1].ListOfNestedList!.Select(x => x?.GetC()));
+
+            Assert.Equivalent(
+                expected[1].ListOfNestedList!.SelectMany(x => x.NestedList.Select(y => y?.GetG())), 
+                actual[1].ListOfNestedList!.SelectMany(x => x.NestedList.Select(y => y?.GetG())));
+        }
+
+        private static async Task<IList<T>> RoundTripAsync<T>(IList<T> records)
+        {
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(records, ms);
+            ms.Position = 0;
+            return await ParquetSerializer.DeserializeAsync<T>(ms);
+        }
 #endif
     }
 }
