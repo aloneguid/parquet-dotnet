@@ -51,7 +51,7 @@ namespace Parquet.Serialization {
 
             public bool ShouldIgnore {
                 get {
-                    return _mi.GetCustomAttribute<JsonIgnoreAttribute>() != null;
+                    return _mi.GetCustomAttribute<JsonIgnoreAttribute>() != null || _mi.GetCustomAttribute<ParquetIgnoreFieldAttribute>() != null;
                 }
             }
 
