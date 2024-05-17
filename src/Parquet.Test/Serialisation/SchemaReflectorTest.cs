@@ -194,6 +194,9 @@ namespace Parquet.Test.Serialisation {
 
             [JsonIgnore]
             public int Ignored2 { get; set; }
+
+            [ParquetIgnoreField]
+            public int Ignored3 { get; set; }
         }
 #pragma warning restore CS0618 // Type or member is obsolete
 
