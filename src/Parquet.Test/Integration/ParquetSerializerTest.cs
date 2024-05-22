@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Serialization;
+using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 
@@ -26,7 +27,7 @@ namespace Parquet.Test.Integration {
         }
 
 
-        [Fact]
+        [SkipOnMac]
         public async Task SimpleMapReadsWithParquetMr() {
             var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
                 Id = i,
@@ -45,7 +46,7 @@ namespace Parquet.Test.Integration {
             Assert.Contains("gen", javaCat);
         }
 
-        [Fact]
+        [SkipOnMac]
         public async Task SimpleMapReadsWithPyArrow() {
             var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
                 Id = i,

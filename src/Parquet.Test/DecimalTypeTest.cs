@@ -44,7 +44,7 @@ namespace Parquet.Test {
             const int precision = 3;
             const int scale = 4;
             ArgumentException ex = Assert.Throws<ArgumentException>(() => new DecimalDataField("field-name", precision, scale));
-            Assert.Equal("scale must be less than the precision (Parameter 'scale')", ex.Message);
+            Assert.Equal("scale must be less than or equal to the precision (Parameter 'scale')", ex.Message);
         }
     }
 }
