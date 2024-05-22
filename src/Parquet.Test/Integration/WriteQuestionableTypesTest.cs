@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
+using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 using Path = System.IO.Path;
@@ -30,7 +31,7 @@ namespace Parquet.Test.Integration {
             return json ?? string.Empty;
         }
 
-        [Fact]
+        [SkipOnMac]
         public async Task DateTime_Default() {
             var schema = new ParquetSchema(new DataField<DateTime>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { new DateTime(2023, 04, 25, 1, 2, 3) });
@@ -38,7 +39,7 @@ namespace Parquet.Test.Integration {
             Assert.Equal("{\"qtype\":\"AK4X1GIDAACciSUA\"}", json);
         }
 
-        [Fact]
+        [SkipOnMac]
         public async Task Timestamp_Default() {
             var schema = new ParquetSchema(new DataField<TimeSpan>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { TimeSpan.FromHours(7) });
