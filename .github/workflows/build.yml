@@ -1,7 +1,9 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 4.23.5
+  VERSION: 4.24.0
+  PACKAGE_SUFFIX: '-pre.2'
+  # PACKAGE_SUFFIX: ''
   ASM_VERSION: 4.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
@@ -36,9 +38,7 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          3.1.x
           6.0.x
-          7.0.x
           8.0.x
     - name: Setup Python
       uses: actions/setup-python@v4
@@ -65,16 +65,14 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          3.1.x
           6.0.x
-          7.0.x
           8.0.x
 
     - name: Build Library
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.sln -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - name: collect artifacts
       run: |
@@ -115,7 +113,7 @@ jobs:
         run: |
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
           dotnet restore src/Parquet.Floor/Parquet.Floor.csproj
-          dotnet publish src/Parquet.Floor/Parquet.Floor.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
+          dotnet publish src/Parquet.Floor/Parquet.Floor.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
           mkdir -p floor-dist
           zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
 
