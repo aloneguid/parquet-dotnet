@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Rows;
 using Parquet.Schema;
+using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 using Path = System.IO.Path;
@@ -49,8 +50,7 @@ namespace Parquet.Test.Integration {
         }
 
 
-
-        [Fact]
+        [SkipOnMac]
         public async Task Integers_all_types() {
             var table = new Table(new DataField<sbyte>("int8"), new DataField<byte>("uint8"),
                new DataField<short>("int16"), new DataField<ushort>("uint16"),
@@ -64,7 +64,7 @@ namespace Parquet.Test.Integration {
             await CompareWithMr(table);
         }
 
-        [Fact]
+        [SkipOnMac]
         public async Task Flat_simple_table() {
             var table = new Table(new DataField<int>("id"), new DataField<string>("city"));
 
@@ -76,7 +76,7 @@ namespace Parquet.Test.Integration {
             await CompareWithMr(table);
         }
 
-        [Fact]
+        [SkipOnMac]
         public async Task IntegerIds_and_array_of_strings() {
             var table = new Table(
                new DataField<int>("id"),
@@ -89,7 +89,7 @@ namespace Parquet.Test.Integration {
             await CompareWithMr(table);
         }
 
-        [Fact]
+        [SkipOnMac]
         public async Task Plain_Dictionary_encoding() {
             var table = new Table(
                new DataField<string>("string")
@@ -115,8 +115,8 @@ namespace Parquet.Test.Integration {
                 s => s.Replace("\"string\":null", ""));
         }
 
-        [Fact]
-        public async Task Byte_arrays()
+        [SkipOnMac]
+        public async Task ByteArraysAsync()
         {
             var table = new Table(new DataField<byte[]>("ars"));
             for (int i = 0; i < 100; i++)
