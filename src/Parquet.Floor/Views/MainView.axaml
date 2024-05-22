@@ -120,7 +120,7 @@
                     <views:RawMetaView DataContext="{Binding File.Metadata}"/>
                 </TabItem>
             </TabControl>
-            <views:ErrorView DataContext="{Binding}" IsVisible="{Binding HasError}"/>
+            <views:ErrorView IsVisible="{Binding HasError}"/>
             <StackPanel Orientation="Horizontal" IsVisible="{Binding !HasFile}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">

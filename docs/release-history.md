@@ -10,11 +10,12 @@
 
 ### Bug fixes
 
-- loop will read past the end of a block #487 by @alex-harper.
-- decimal scale condition check fixed in #504 by @sierzput.
+- Loop will read past the end of a block #487 by @alex-harper.
+- Decimal scale condition check fixed in #504 by @sierzput.
 
 ### Parquet Floor
-- telemetry agreement changed and made clearer to understand.
+- Telemetry agreement changed and made clearer to understand.
+- Icon updated to use the official Parquet logo.
 
 ## 4.23.5
 
