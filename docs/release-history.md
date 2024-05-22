@@ -10,6 +10,7 @@
 ### Bug fixes
 
 - loop will read past the end of a block #487 by @alex-harper.
+- decimal scale condition check fixed in #504 by @sierzput.
 
 ### Parquet Floor
 - telemetry agreement made more clear to understand.
