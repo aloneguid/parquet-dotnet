@@ -8,7 +8,7 @@ namespace Parquet.Serialization.Attributes {
     /// Attribute to Ignore Field in Serialization, some times need data in json but not need in parquet.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class ParquetIgnoreFieldAttribute : Attribute {
+    public class ParquetIgnoreAttribute : Attribute {
 
     }
 }
