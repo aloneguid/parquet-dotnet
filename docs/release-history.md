@@ -5,7 +5,8 @@
 - Nullable `TimeSpan` support in `ParquetSerializer` by @cliedeman in #409.
 - `DataFrame` support for `int16/uint16` types by @asmirnov82 in #469.
 - Dropping build targets for .NET Core 3.1 and .NET 7.0 (STS). This should not affect anyone as .NET 6 and 8 are the LTS versions now.
- - Upgraded to latest IronCompress dependency.
+- Added convenience methods to serialize/deserialize collections into a single row group in #506 by @piiertho. 
+- Upgraded to latest IronCompress dependency.
 
 ### Bug fixes
 
@@ -13,7 +14,7 @@
 - decimal scale condition check fixed in #504 by @sierzput.
 
 ### Parquet Floor
-- telemetry agreement made more clear to understand.
+- telemetry agreement changed and made clearer to understand.
 
 ## 4.23.5
 
