@@ -8,7 +8,7 @@ env:
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
   DOC_ALGOLIA_ARTIFACT: algolia-indexes-PQ.zip
-  DOC_DOCKER_VERSION: 232.10275
+  DOC_DOCKER_VERSION: 241.15989
 
 # Gives the workflow permissions to clone the repo and create a page deployment
 permissions:
