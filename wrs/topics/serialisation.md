@@ -74,7 +74,11 @@ Serialisation tries to fit into C# ecosystem like a ninja 🥷, including custom
 - [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
 - [`JsonPropertyOrder`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertyorderattribute?view=net-6.0) - allows to reorder columns when writing to file (by default they are written in class definition order). Only root properties and struct (classes) properties can be ordered (it won't make sense to do the others).
 
-Where built-in JSON attributes are not sufficient, extra attributes are added.
+Where built-in JSON attributes are not sufficient, extra attributes are added. Find extra attributes below in the relevant sections. List of generic attributes is presented below:
+
+### Generic attributes
+
+- `[ParquetIgnore]` - functionally equivalent to `JsonIgnore` attribute, use when your code is conflicting with `[JsonIgnore]` attribute. Other than that, there are no differences.
 
 ### Strings
 
