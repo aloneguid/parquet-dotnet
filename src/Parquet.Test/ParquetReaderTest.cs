@@ -270,6 +270,18 @@ namespace Parquet.Test {
             Assert.True(reader.CustomMetadata.ContainsKey("geo"));
             Assert.True(reader.CustomMetadata.ContainsKey("ARROW:schema"));
         }
+
+        [Theory]
+        [InlineData("multi.page.parquet")]
+        [InlineData("multi.page.v2.parquet")]
+        public async Task RowGroups_EnumeratesRowGroups(string parquetFile) {
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+
+                Assert.Single(reader.RowGroups);
+                IParquetRowGroupReader rowGroup = reader.RowGroups.Single();
+                Assert.Equal(927861, rowGroup.RowCount);
+            }
+        }
         
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
