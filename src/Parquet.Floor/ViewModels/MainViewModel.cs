@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using NetBox.Performance;
 using Parquet.Floor.Controllers;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -24,9 +25,6 @@ public partial class MainViewModel : ViewModelBase {
 
     [ObservableProperty]
     private string? _subTitle;
-
-    [ObservableProperty]
-    private string? _subTitleTooltip;
 
     [ObservableProperty]
     private FileViewModel? _file;
@@ -104,7 +102,7 @@ public partial class MainViewModel : ViewModelBase {
     }
     private void LoadDesignData() {
         File = new FileViewModel {
-            Path = "design.parquet",
+            Name = "design.parquet",
             CreatedBy = "Parquet.Floor",
         };
         ErrorMessage = "This is a design-time error message.";
@@ -121,7 +119,6 @@ public partial class MainViewModel : ViewModelBase {
         SubTitle = isTooLong
             ? $"{fileName.Substring(0, maxLength)}..."
             : fileName;
-        SubTitleTooltip = fileName;
 
         Task.Run(() => LoadFromFileAsync(path));
     }
@@ -130,7 +127,7 @@ public partial class MainViewModel : ViewModelBase {
         if(!System.IO.File.Exists(path))
             return;
 
-        await LoadAsync(System.IO.File.OpenRead(path));
+        await LoadAsync(new FileInfo(path).Name, System.IO.File.OpenRead(path));
     }
 
     #region [ Command bindings ]
@@ -153,7 +150,7 @@ public partial class MainViewModel : ViewModelBase {
 
     #endregion
 
-    private async Task LoadAsync(Stream fileStream) {
+    private async Task LoadAsync(string name, Stream fileStream) {
 
         if(_fileStream != null) {
             _fileStream.Close();
@@ -169,19 +166,23 @@ public partial class MainViewModel : ViewModelBase {
         ShowErrorDetails = false;
 
         try {
-            using(ParquetReader reader = await ParquetReader.CreateAsync(_fileStream)) {
-                File = new FileViewModel {
-                    Schema = reader.Schema,
-                    CustomMetadata = reader.CustomMetadata,
-                    RowGroupCount = reader.RowGroupCount,
-                    Metadata = new FileMetaDataViewModel(reader.Metadata),
-                    RowCount = reader.Metadata?.NumRows ?? 0,
-                    CreatedBy = reader.Metadata?.CreatedBy
-                };
+            using(var ts = new TimeMeasure()) {
+                using(ParquetReader reader = await ParquetReader.CreateAsync(_fileStream)) {
+                    File = new FileViewModel {
+                        Name = name,
+                        Schema = reader.Schema,
+                        CustomMetadata = reader.CustomMetadata,
+                        RowGroupCount = reader.RowGroupCount,
+                        Metadata = new FileMetaDataViewModel(reader.Metadata),
+                        RowCount = reader.Metadata?.NumRows ?? 0,
+                        CreatedBy = reader.Metadata?.CreatedBy
+                    };
+                }
+                HasFile = true;
+                Schema.InitSchema(File.Schema);
+                await Data.InitReaderAsync(File, _fileStream);
+                File.LoadTimeMs = ts.ElapsedMilliseconds;
             }
-            HasFile = true;
-            Schema.InitSchema(File.Schema);
-            await Data.InitReaderAsync(File, _fileStream);
 
             Tracker.Instance.Track("fileOpen", new Dictionary<string, string> {
                 { "rowCount", File.RowCount.ToString() },

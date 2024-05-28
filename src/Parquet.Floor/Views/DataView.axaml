@@ -7,6 +7,7 @@
              xmlns:i="https://github.com/projektanker/icons.avalonia"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="450"
              x:Class="Parquet.Floor.Views.DataView"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              x:DataType="vm:DataViewModel">
     <Design.DataContext>
         <vm:DataViewModel />

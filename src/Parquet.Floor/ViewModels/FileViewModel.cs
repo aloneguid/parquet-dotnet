@@ -11,7 +11,7 @@ namespace Parquet.Floor.ViewModels {
     public partial class FileViewModel : ViewModelBase {
 
         [ObservableProperty]
-        private string? _path;
+        private string? _name;
 
         [ObservableProperty]
         private ParquetSchema? _schema;
@@ -24,6 +24,9 @@ namespace Parquet.Floor.ViewModels {
 
         [ObservableProperty]
         private long _rowCount;
+
+        [ObservableProperty]
+        private long _loadTimeMs;
 
         [ObservableProperty]
         private string? _createdBy;

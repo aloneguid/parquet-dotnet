@@ -41,10 +41,17 @@
                         </Image.Effect>
                     </Image>
 
-                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center" IsHitTestVisible="False"
-                                ToolTip.Tip="{Binding SubTitleTooltip}">
+                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center">
                         <TextBlock Text="{Binding SubTitle}" FontSize="12" TextTrimming="CharacterEllipsis" Opacity="0.85"/>
                         <TextBlock Margin="0,-2,0,0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <ToolTip.Tip>
+                            <StackPanel>
+                                <TextBlock Text="Name" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding File.Name}" Opacity="0.85"></TextBlock>
+                                <TextBlock Text="Load time (ms)" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding File.LoadTimeMs}" Opacity="0.85"></TextBlock>
+                            </StackPanel>
+                        </ToolTip.Tip>
                     </StackPanel>
 
                     <Button Click="OpenFile_Click"

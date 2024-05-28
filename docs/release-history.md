@@ -17,8 +17,9 @@
 - Decimal scale condition check fixed in #504 by @sierzput.
 
 ### Parquet Floor
-- Telemetry agreement changed and made clearer to understand.
 - Icon updated to use the official Parquet logo.
+- Telemetry agreement changed and made clearer to understand.
+- Hovering over title will show full file path and load time in milliseconds.
 
 ## 4.23.5
 
