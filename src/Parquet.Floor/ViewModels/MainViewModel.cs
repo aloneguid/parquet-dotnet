@@ -47,6 +47,9 @@ public partial class MainViewModel : ViewModelBase {
     [ObservableProperty]
     private string? _newerVersionNumber;
 
+    [ObservableProperty]
+    private bool _isDataExplorerOpen;
+
     public string? LatestParquetPath;
 
     public SchemaViewModel Schema { get; } = new SchemaViewModel();

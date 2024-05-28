@@ -54,6 +54,11 @@
                         </ToolTip.Tip>
                     </StackPanel>
 
+                    <ToggleButton
+                            IsChecked="{Binding IsDataExplorerOpen}"
+                            i:Attached.Icon="fa-solid fa-database"
+                            Theme="{actipro:ControlTheme TitleBarButton}"
+                            ToolTip.Tip="Data explorer"/>
                     <Button Click="OpenFile_Click"
                             i:Attached.Icon="fa-solid fa-folder-open"
                             Theme="{actipro:ControlTheme TitleBarButton}"
@@ -107,36 +112,45 @@
         </actipro:ChromedTitleBar>
 
         <!-- Client Area -->
-        <Grid x:Name="ClientArea">
-            <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
-                        BorderThickness="0,0,0,1"
-                        Padding="0"
-                        IsVisible="{Binding HasFile}">
-                <TabControl.Resources>
-                    <SolidColorBrush x:Key="{actipro:ThemeResourceKey TabItemBorderBrushOutline}" Color="Transparent" />
-                    <Thickness x:Key="{actipro:ThemeResourceKey TabControlHeaderPaddingOutline}">3,0,3,3</Thickness>
-                </TabControl.Resources>
 
-                <TabItem Header="Data">
-                    <views:DataView DataContext="{Binding Data}"/>
-                </TabItem>
-                <TabItem Header="Schema">
-                    <views:SchemaView DataContext="{Binding Schema}"/>
-                </TabItem>
-                <TabItem Header="Metadata">
-                    <views:RawMetaView DataContext="{Binding File.Metadata}"/>
-                </TabItem>
-            </TabControl>
-            <views:ErrorView IsVisible="{Binding HasError}"/>
-            <StackPanel Orientation="Horizontal" IsVisible="{Binding !HasFile}"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-                <Button Classes="theme-solid" Click="OpenFile_Click">
-                    Open...
-                </Button>
-            </StackPanel>
-            <views:TelemetryAgreement Width="400" Height="200"/>
-        </Grid>
+        <SplitView IsPaneOpen="{Binding IsDataExplorerOpen}"
+                   DisplayMode="Inline"
+                   OpenPaneLength="300">
+            <SplitView.Pane>
+                <views:DataExplorer/>
+            </SplitView.Pane>
+
+            <Grid x:Name="ClientArea">
+                <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
+                            BorderThickness="0,0,0,1"
+                            Padding="0"
+                            IsVisible="{Binding HasFile}">
+                    <TabControl.Resources>
+                        <SolidColorBrush x:Key="{actipro:ThemeResourceKey TabItemBorderBrushOutline}" Color="Transparent" />
+                        <Thickness x:Key="{actipro:ThemeResourceKey TabControlHeaderPaddingOutline}">3,0,3,3</Thickness>
+                    </TabControl.Resources>
+
+                    <TabItem Header="Data">
+                        <views:DataView DataContext="{Binding Data}"/>
+                    </TabItem>
+                    <TabItem Header="Schema">
+                        <views:SchemaView DataContext="{Binding Schema}"/>
+                    </TabItem>
+                    <TabItem Header="Metadata">
+                        <views:RawMetaView DataContext="{Binding File.Metadata}"/>
+                    </TabItem>
+                </TabControl>
+                <views:ErrorView IsVisible="{Binding HasError}"/>
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding !HasFile}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <Button Classes="theme-solid" Click="OpenFile_Click">
+                        Open...
+                    </Button>
+                </StackPanel>
+                <views:TelemetryAgreement Width="400" Height="200"/>
+            </Grid>
+        </SplitView>
         
     </DockPanel>
 

@@ -46,6 +46,7 @@
         <PackageReference Include="CsvHelper" Version="32.0.3" />
         <PackageReference Include="Projektanker.Icons.Avalonia" Version="9.3.0" />
         <PackageReference Include="Projektanker.Icons.Avalonia.FontAwesome" Version="9.3.0" />
+        <PackageReference Include="Stowage" Version="2.0.0" />
 
     </ItemGroup>
 
@@ -61,5 +62,9 @@
 
     <ItemGroup>
       <Folder Include="Assets\icons\col\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Views\DataExplorer.axaml" />
     </ItemGroup>
 </Project>

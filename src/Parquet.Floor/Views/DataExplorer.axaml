@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
+             x:Class="Parquet.Floor.Views.DataExplorer"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
+             x:DataType="vm:DataExplorerViewModel">
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:DataExplorerViewModel />
+    </Design.DataContext>
+    <Grid Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBox Text="{Binding CurrentPath}" Margin="0 0 4 4"/>
+        <TreeDataGrid Grid.Row="1"
+            Source="{Binding FilesTreeSource}"/>
+    </Grid>
+</UserControl>
