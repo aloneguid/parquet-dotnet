@@ -1,4 +1,8 @@
-# Apache Parquet for .NET [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
+# Apache Parquet for .NET [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![NuGet Version](https://img.shields.io/nuget/vpre/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aloneguid/parquet-dotnet) ![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet) ![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
+
+
+
+
 
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
