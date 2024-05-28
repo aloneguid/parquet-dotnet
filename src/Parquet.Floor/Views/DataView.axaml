@@ -23,6 +23,11 @@
                   IsReadOnly="True"
                   ItemsSource="{Binding Data}"
                   CellPointerPressed="DataGrid_CellPointerPressed">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy _Row" i:MenuItem.Icon="fa-solid fa-copy" Command="{Binding CopyRow}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
         </DataGrid>
 
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasError}">

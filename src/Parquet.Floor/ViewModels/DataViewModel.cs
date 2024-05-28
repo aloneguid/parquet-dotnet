@@ -20,6 +20,10 @@ public class CellModel {
     }
 }
 
+public interface IDataViewGridView {
+    string? GetFormattedSelectedRowText(bool copyToClipboard);
+}
+
 public partial class DataViewModel : ViewModelBase {
 
     [ObservableProperty]
@@ -39,6 +43,8 @@ public partial class DataViewModel : ViewModelBase {
 
     [ObservableProperty]
     private bool _showErrorDetails;
+
+    public IDataViewGridView? DataGridView { get; set; }
 
     public DataViewModel() {
 #if DEBUG
@@ -82,5 +88,12 @@ public partial class DataViewModel : ViewModelBase {
             File = file;
             Data = data;
         });
+    }
+
+    public void CopyRow() {
+        if(DataGridView == null)
+            return;
+
+        DataGridView.GetFormattedSelectedRowText(true);
     }
 }

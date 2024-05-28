@@ -17,9 +17,11 @@
 - Decimal scale condition check fixed in #504 by @sierzput.
 
 ### Parquet Floor
+- Hovering over title will show full file path and load time in milliseconds.
+- Right-click on a row shows context menu allowing to copy the row to clipboard in text format.
 - Icon updated to use the official Parquet logo.
 - Telemetry agreement changed and made clearer to understand.
-- Hovering over title will show full file path and load time in milliseconds.
+
 
 ## 4.23.5
 

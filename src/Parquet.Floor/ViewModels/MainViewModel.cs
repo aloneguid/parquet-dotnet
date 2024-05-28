@@ -145,7 +145,6 @@ public partial class MainViewModel : ViewModelBase {
             return;
 
         bool useClipboard = toClipboard is bool b && b;
-        
     }
 
     #endregion

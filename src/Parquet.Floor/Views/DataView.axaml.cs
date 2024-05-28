@@ -10,7 +10,7 @@ using Parquet.Floor.Views.Templates;
 using Parquet.Schema;
 
 namespace Parquet.Floor.Views {
-    public partial class DataView : UserControl {
+    public partial class DataView : UserControl, IDataViewGridView {
 
         public DataView() {
             InitializeComponent();
@@ -21,6 +21,7 @@ namespace Parquet.Floor.Views {
         protected override void OnDataContextChanged(EventArgs e) {
             if(Model != null) {
                 Model.PropertyChanged += ViewModel_PropertyChanged;
+                Model.DataGridView = this;
             }
         }
 
@@ -58,7 +59,23 @@ namespace Parquet.Floor.Views {
         }
 
         private void DataGrid_CellPointerPressed(object? sender, Avalonia.Controls.DataGridCellPointerPressedEventArgs e) {
+            if(e is null)
+                throw new ArgumentNullException(nameof(e));
             grid.SelectedItem = null;
+        }
+
+        public string? GetFormattedSelectedRowText(bool copyToClipboard) {
+            if(grid.SelectedItem is Dictionary<string, object> row) {
+                string text = string.Join(Environment.NewLine, row.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+
+                if(copyToClipboard) {
+                    TopLevel.GetTopLevel(this)?.Clipboard?.SetTextAsync(text);
+                }
+
+                return text;
+            }
+
+            return null;
         }
     }
 }
