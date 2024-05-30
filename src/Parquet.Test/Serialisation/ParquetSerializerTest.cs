@@ -826,6 +826,31 @@ namespace Parquet.Test.Serialisation {
             await Compare(data);
         }
 
+        interface IInterface {
+            int Id { get; set; }
+        }
+
+        class InterfaceImpl : IInterface {
+            public int Id { get; set; }
+        }
+
+        [Fact]
+        public async Task Interface_Serialize() {
+            var data = new IInterface[] {
+                new InterfaceImpl { Id = 1 },
+                new InterfaceImpl { Id = 2 },
+            };
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<InterfaceImpl> data2 = await ParquetSerializer.DeserializeAllAsync<InterfaceImpl>(ms).ToArrayAsync();
+
+            Assert.Equivalent(data, data2);
+
+        }
+
 #if NET6_0_OR_GREATER
 
         record RecordContainingDateAndtimeOnly {
