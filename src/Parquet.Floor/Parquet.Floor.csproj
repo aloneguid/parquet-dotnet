@@ -22,6 +22,8 @@
 
 
     <ItemGroup>
+      <None Remove="Assets\file.png" />
+      <None Remove="Assets\folder.png" />
       <None Remove="Assets\icon.ico" />
     </ItemGroup>
 

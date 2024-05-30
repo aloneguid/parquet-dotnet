@@ -20,6 +20,25 @@
         </Grid.RowDefinitions>
         <TextBox Text="{Binding CurrentPath}" Margin="0 0 4 4"/>
         <TreeDataGrid Grid.Row="1"
-            Source="{Binding FilesTreeSource}"/>
+            Source="{Binding FilesTreeSource}">
+            <TreeDataGrid.Resources>
+                <!-- Template for Name column cells -->
+                <DataTemplate x:Key="FileNameCell" DataType="vm:FileNode">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Margin="0 0 4 0"
+                               Source="/Assets/folder.png"
+                               Width="15"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding Entry.Path.IsFolder}"/>
+                        <Image Margin="0 0 4 0"
+                               Source="/Assets/file.png"
+                               Width="15"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding Entry.Path.IsFile}"/>
+                        <TextBlock Text="{Binding NameDisplay}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </TreeDataGrid.Resources>
+        </TreeDataGrid>
     </Grid>
 </UserControl>

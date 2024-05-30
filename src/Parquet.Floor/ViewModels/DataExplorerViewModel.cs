@@ -19,7 +19,9 @@ namespace Parquet.Floor.ViewModels {
 
         public IOEntry Entry { get; }
 
-        public string SizeDisplay => Entry.Size?.ToString() ?? string.Empty;
+        public string NameDisplay => Entry.Name.Trim('/');
+
+        public string SizeDisplay => Entry.Size?.ToFileSizeUiString() ?? string.Empty;
 
         public ObservableCollection<FileNode> SubNodes => _subNodes ??= LoadChildren();
 
@@ -61,6 +63,7 @@ namespace Parquet.Floor.ViewModels {
 
         private async Task LoadRootAsync() {
             IReadOnlyCollection<IOEntry> roots = await _storage.Ls();
+            roots = roots.OrderBy(r => r.Path.IsFolder ? 0 : 1).ToList();
             Files.Clear();
             foreach(IOEntry root in roots) {
                 Files.Add(new FileNode(root, _storage));
@@ -77,7 +80,8 @@ namespace Parquet.Floor.ViewModels {
             FilesTreeSource = new HierarchicalTreeDataGridSource<FileNode>(Files) {
                 Columns = {
                     new HierarchicalExpanderColumn<FileNode>(
-                        new TextColumn<FileNode, string>("Name", x => x.Entry.Name),
+                        //new TextColumn<FileNode, string>("Name", x => x.Entry.Name),
+                        new TemplateColumn<FileNode>("Name", "FileNameCell"),
                         x => x.SubNodes,
                         x => x.Entry.Path.IsFolder),
                     new TextColumn<FileNode, string>("Size", x => x.SizeDisplay),
