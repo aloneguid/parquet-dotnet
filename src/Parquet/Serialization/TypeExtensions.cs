@@ -226,7 +226,7 @@ namespace Parquet.Serialization {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
                 return ConstructListField(columnName, propertyName, elementType!, forWriting);
-            } else if(t.IsClass || t.IsValueType) {
+            } else if(t.IsClass || t.IsInterface || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
                 List<ClassMember> props = FindMembers(t, forWriting);
                 Field[] fields = props

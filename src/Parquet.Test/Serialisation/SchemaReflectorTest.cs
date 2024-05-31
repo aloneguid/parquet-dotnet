@@ -553,5 +553,20 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(typeof(int), df.ClrType);
             Assert.False(df.IsNullable);
         }
+
+        public interface IRootInterface {
+            IInterface Child { get; set; }
+        }
+
+        [Fact]
+        public void InterfacePropertyOnInterfaceIsSupported() {
+            ParquetSchema s = typeof(IRootInterface).GetParquetSchema(true);
+
+            Assert.NotNull(s);
+            Field df = s.Fields[0];
+            Assert.True(df.GetType() == typeof(StructField));
+            Assert.Equal(SchemaType.Struct, df.SchemaType);
+            Assert.True(df.IsNullable);
+        }
     }
 }

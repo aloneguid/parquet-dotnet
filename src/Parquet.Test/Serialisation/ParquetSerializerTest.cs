@@ -830,8 +830,20 @@ namespace Parquet.Test.Serialisation {
             int Id { get; set; }
         }
 
+        interface IRootInterface {
+            IInterface Child { get; set; }
+        }
+
         class InterfaceImpl : IInterface {
             public int Id { get; set; }
+        }
+
+        class RootInterfaceImpl : IRootInterface {
+            public IInterface Child { get; set; } = new InterfaceImpl();
+        }
+
+        class ConcreteRootInterfaceImpl {
+            public InterfaceImpl Child { get; set; } = new InterfaceImpl();
         }
 
         [Fact]
@@ -846,6 +858,23 @@ namespace Parquet.Test.Serialisation {
 
             ms.Position = 0;
             IList<InterfaceImpl> data2 = await ParquetSerializer.DeserializeAllAsync<InterfaceImpl>(ms).ToArrayAsync();
+
+            Assert.Equivalent(data, data2);
+
+        }
+
+        [Fact]
+        public async Task InterfaceProperty_Serialize() {
+            var data = new IRootInterface[] {
+                new RootInterfaceImpl { Child = new InterfaceImpl { Id = 1 } },
+                new RootInterfaceImpl { Child = new InterfaceImpl { Id = 2 } },
+            };
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<ConcreteRootInterfaceImpl> data2 = await ParquetSerializer.DeserializeAllAsync<ConcreteRootInterfaceImpl>(ms).ToArrayAsync();
 
             Assert.Equivalent(data, data2);
 
