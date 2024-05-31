@@ -16,6 +16,7 @@
 
 - Loop will read past the end of a block #487 by @alex-harper.
 - Decimal scale condition check fixed in #504 by @sierzput.
+- Class schema reflector was using single cache for reading and writing, which resulted in incorrect schema for writing. Thanks to @Pragmateek in #514.
 
 ### Parquet Floor
 - Hovering over title will show full file path and load time in milliseconds.

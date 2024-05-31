@@ -16,7 +16,8 @@ namespace Parquet.Serialization {
     /// Migrated from SchemaReflector to better fit into C# design strategy.
     /// </summary>
     public static class TypeExtensions {
-        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReflectedSchemas = new();
+        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedWriteReflectedSchemas = new();
+        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReadReflectedSchemas = new();
 
         abstract class ClassMember {
 
@@ -98,12 +99,17 @@ namespace Parquet.Serialization {
         /// </param>
         /// <returns></returns>
         public static ParquetSchema GetParquetSchema(this Type t, bool forWriting) {
-            if(_cachedReflectedSchemas.TryGetValue(t, out ParquetSchema? schema))
+
+            ConcurrentDictionary<Type, ParquetSchema> cache = forWriting
+                ? _cachedWriteReflectedSchemas
+                : _cachedReadReflectedSchemas;
+
+            if(cache.TryGetValue(t, out ParquetSchema? schema))
                 return schema;
 
             schema = CreateSchema(t, forWriting);
 
-            _cachedReflectedSchemas[t] = schema;
+            cache[t] = schema;
             return schema;
         }
 

@@ -568,5 +568,20 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(SchemaType.Struct, df.SchemaType);
             Assert.True(df.IsNullable);
         }
+
+        public class ReadOnlyProperty {
+            public int Id { get; set; }
+
+            public int ReadOnly => 42;
+        }
+
+        [Fact]
+        public void ReadOnlyPropertyNotWriteable() {
+            ParquetSchema sr = typeof(ReadOnlyProperty).GetParquetSchema(false);
+            ParquetSchema sw = typeof(ReadOnlyProperty).GetParquetSchema(true);
+
+            Assert.True(sr.Fields.Count == 2);
+            Assert.True(sw.Fields.Count == 1);
+        }
     }
 }

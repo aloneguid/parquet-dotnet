@@ -877,7 +877,6 @@ namespace Parquet.Test.Serialisation {
             IList<ConcreteRootInterfaceImpl> data2 = await ParquetSerializer.DeserializeAllAsync<ConcreteRootInterfaceImpl>(ms).ToArrayAsync();
 
             Assert.Equivalent(data, data2);
-
         }
 
 #if NET6_0_OR_GREATER
