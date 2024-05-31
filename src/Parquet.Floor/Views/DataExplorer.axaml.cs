@@ -7,6 +7,6 @@ public partial class DataExplorer : UserControl {
     public DataExplorer() {
         InitializeComponent();
 
-        DataContext = new DataExplorerViewModel();
+        DataContext = new FileExplorerViewModel();
     }
 }

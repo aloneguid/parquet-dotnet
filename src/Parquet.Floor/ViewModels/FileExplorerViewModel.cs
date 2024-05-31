@@ -38,7 +38,7 @@ namespace Parquet.Floor.ViewModels {
         }
     } 
 
-    public partial class DataExplorerViewModel : ViewModelBase {
+    public partial class FileExplorerViewModel : ViewModelBase {
 
         private readonly IFileStorage _storage;
 
@@ -52,7 +52,7 @@ namespace Parquet.Floor.ViewModels {
         [ObservableProperty]
         private ObservableCollection<FileNode> _files = new ObservableCollection<FileNode>();
 
-        public DataExplorerViewModel() {
+        public FileExplorerViewModel() {
             _storage = Stowage.Files.Of.EntireLocalDisk();
 
             //if(Design.IsDesignMode) {
