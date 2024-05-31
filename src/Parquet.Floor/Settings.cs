@@ -10,6 +10,8 @@ namespace Parquet.Floor {
         bool TelemetryAgreementPassed { get; set; }
 
         string? ThemeVariant { get; set; }
+
+        string? LastFileExplorerPath { get; set; }
     }
 
     static class Settings {

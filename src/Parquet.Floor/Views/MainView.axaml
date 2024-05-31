@@ -58,7 +58,7 @@
                             IsChecked="{Binding IsDataExplorerOpen}"
                             i:Attached.Icon="fa-solid fa-database"
                             Theme="{actipro:ControlTheme TitleBarButton}"
-                            ToolTip.Tip="Data explorer"/>
+                            ToolTip.Tip="File explorer"/>
                     <Button Click="OpenFile_Click"
                             i:Attached.Icon="fa-solid fa-folder-open"
                             Theme="{actipro:ControlTheme TitleBarButton}"
@@ -117,7 +117,7 @@
                    DisplayMode="Inline"
                    OpenPaneLength="300">
             <SplitView.Pane>
-                <views:DataExplorer/>
+                <views:FileExplorer/>
             </SplitView.Pane>
 
             <Grid x:Name="ClientArea">

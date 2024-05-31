@@ -19,6 +19,7 @@
 - Class schema reflector was using single cache for reading and writing, which resulted in incorrect schema for writing. Thanks to @Pragmateek in #514.
 
 ### Parquet Floor
+- New feature "File explorer" lists filesystem using a panel on the left, allowing you to quickly load different files in the same directory and navigate to other directories.
 - Hovering over title will show full file path and load time in milliseconds.
 - Right-click on a row shows context menu allowing to copy the row to clipboard in text format.
 - Icon updated to use the official Parquet logo.

@@ -9,8 +9,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using NetBox.Performance;
 using Parquet.Floor.Controllers;
+using Parquet.Floor.Messages;
 using Parquet.Meta;
 using Parquet.Schema;
 
@@ -75,6 +77,10 @@ public partial class MainViewModel : ViewModelBase {
                 LoadFromFile(args[1]);
             }
         }
+
+        WeakReferenceMessenger.Default.Register<FileOpenMessage>(this, (r, m) => {
+            LoadFromFile(m.Value);
+        });
 
         CheckForUpdates().Forget();
     }

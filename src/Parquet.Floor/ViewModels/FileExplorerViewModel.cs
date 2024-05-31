@@ -9,7 +9,10 @@ using Avalonia.Controls.Models.TreeDataGrid;
 using Avalonia.Controls.Selection;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
+using Parquet.Floor.Messages;
 using Stowage;
+using Stowage.Impl;
 
 namespace Parquet.Floor.ViewModels {
 
@@ -46,45 +49,55 @@ namespace Parquet.Floor.ViewModels {
         private string _currentPath = IOPath.Root;
 
         [ObservableProperty]
-        private HierarchicalTreeDataGridSource<FileNode>? _filesTreeSource;
+        private FlatTreeDataGridSource<FileNode>? _filesTreeSource;
 
 
         [ObservableProperty]
         private ObservableCollection<FileNode> _files = new ObservableCollection<FileNode>();
 
+        [ObservableProperty]
+        private bool _canGoUp;
+
+
         public FileExplorerViewModel() {
             _storage = Stowage.Files.Of.EntireLocalDisk();
+            CurrentPath = Settings.Instance.LastFileExplorerPath ?? IOPath.Root;
+            BindFiles();
 
-            //if(Design.IsDesignMode) {
-            //}
-
-            LoadRootAsync().Forget();
+            ReloadCurrentPath().Forget();
         }
 
-        private async Task LoadRootAsync() {
-            IReadOnlyCollection<IOEntry> roots = await _storage.Ls();
-            roots = roots.OrderBy(r => r.Path.IsFolder ? 0 : 1).ToList();
+        private async Task ReloadCurrentPath() {
+            CanGoUp = !IOPath.IsRoot(CurrentPath);
+            IReadOnlyCollection<IOEntry> entries = await _storage.Ls(CurrentPath);
+            entries = entries.OrderBy(r => r.Path.IsFolder ? 0 : 1).ToList();
+
+            //await Dispatcher.UIThread.InvokeAsync(BindFiles);
+
             Files.Clear();
-            foreach(IOEntry root in roots) {
-                Files.Add(new FileNode(root, _storage));
+            foreach(IOEntry e in entries) {
+                Files.Add(new FileNode(e, _storage));
             }
-
-            // call BindFiles on ui thread
-            await Dispatcher.UIThread.InvokeAsync(BindFiles);
         }
 
-        public void BindFiles() {
+        public void GoLevelUp() {
+            string? parent = IOPath.GetParent(CurrentPath);
+            if(parent == null)
+                return;
+            CurrentPath = parent;
+
+            ReloadCurrentPath().Forget();
+        }
+
+        private void BindFiles() {
             // see sample here: https://github.com/AvaloniaUI/Avalonia.Controls.TreeDataGrid/blob/master/samples/TreeDataGridDemo/ViewModels/FilesPageViewModel.cs
             // for the view: https://github.com/AvaloniaUI/Avalonia.Controls.TreeDataGrid/blob/master/samples/TreeDataGridDemo/MainWindow.axaml
 
-            FilesTreeSource = new HierarchicalTreeDataGridSource<FileNode>(Files) {
+            FilesTreeSource = new FlatTreeDataGridSource<FileNode>(Files) {
                 Columns = {
-                    new HierarchicalExpanderColumn<FileNode>(
-                        //new TextColumn<FileNode, string>("Name", x => x.Entry.Name),
-                        new TemplateColumn<FileNode>("Name", "FileNameCell"),
-                        x => x.SubNodes,
-                        x => x.Entry.Path.IsFolder),
-                    new TextColumn<FileNode, string>("Size", x => x.SizeDisplay),
+                    new TemplateColumn<FileNode>("Name", "FileNameCell", width: GridLength.Auto),
+                    new TextColumn<FileNode, string>("Size", x => x.SizeDisplay, GridLength.Star,
+                    new TextColumnOptions<FileNode> { TextAlignment = Avalonia.Media.TextAlignment.Right }),
                 }
             };
 
@@ -96,7 +109,14 @@ namespace Parquet.Floor.ViewModels {
             if(node == null)
                 return;
 
-            CurrentPath = node.Entry.Path;
+            if(node.Entry.Path.IsFolder) {
+                CurrentPath = node.Entry.Path;
+                ReloadCurrentPath().Forget();
+            } else {
+                string filePath = ((ILocalDiskFileStorage)_storage).ToNativeLocalPath(node.Entry.Path);
+                // send a message to open file
+                WeakReferenceMessenger.Default.Send(new FileOpenMessage(filePath));
+            }
         }
     }
 }
