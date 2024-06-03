@@ -23,6 +23,12 @@
                   IsReadOnly="True"
                   ItemsSource="{Binding Data}"
                   CellPointerPressed="DataGrid_CellPointerPressed">
+            <DataGrid.Styles>
+                <!-- hide the cell selection rectangle -->
+                <Style Selector="DataGridCell:current #focusVisual Border">
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                </Style>
+            </DataGrid.Styles>
             <DataGrid.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Copy _Row" i:MenuItem.Icon="fa-solid fa-copy" Command="{Binding CopyRow}"/>
