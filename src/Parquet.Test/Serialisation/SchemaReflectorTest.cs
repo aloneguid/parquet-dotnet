@@ -133,8 +133,7 @@ namespace Parquet.Test.Serialisation {
             Assert.False(extraProp.IsArray);
         }
 
-        class AliasedPocoChild
-        {
+        class AliasedPocoChild {
             [JsonPropertyName("ChildID")]
             public int _id { get; set; }
         }
@@ -179,7 +178,7 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(new ParquetSchema(
                 new ListField("IntList", new DataField<int>("element")),
-                new DataField<int[]>("LegacyIntList")),
+                new DataField<int[]>("LegacyIntList", true)),
                 schema);
         }
 
@@ -332,7 +331,7 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
-            
+
 #if NET6_0_OR_GREATER
             public DateOnly ImpalaDateOnly { get; set; }
 
@@ -431,7 +430,7 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(typeof(DateOnly), df.ClrType);
             Assert.False(df.IsNullable);
         }
-        
+
         [Fact]
         public void Type_TimeOnly_Default() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);

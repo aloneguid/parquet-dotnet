@@ -257,9 +257,9 @@ namespace Parquet.Test {
                 DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
                 var col0 = (DateTime?[])columns[0].Data;
                 Assert.Equal(3, col0.Length);
-                Assert.Equal(new DateTime(2022,12,23,11,43,49).AddTicks(10 * 10), col0[0]);
-                Assert.Equal(new DateTime(2021,12,23,12,44,50).AddTicks(11 * 10), col0[1]);
-                Assert.Equal(new DateTime(2020,12,23,13,45,51).AddTicks(12 * 10), col0[2]);
+                Assert.Equal(new DateTime(2022, 12, 23, 11, 43, 49).AddTicks(10 * 10), col0[0]);
+                Assert.Equal(new DateTime(2021, 12, 23, 12, 44, 50).AddTicks(11 * 10), col0[1]);
+                Assert.Equal(new DateTime(2020, 12, 23, 13, 45, 51).AddTicks(12 * 10), col0[2]);
             }
         }
 
@@ -270,7 +270,7 @@ namespace Parquet.Test {
             Assert.True(reader.CustomMetadata.ContainsKey("geo"));
             Assert.True(reader.CustomMetadata.ContainsKey("ARROW:schema"));
         }
-        
+
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }

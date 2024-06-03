@@ -11,6 +11,7 @@ using Parquet.Encodings;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
 using Parquet.Extensions;
+using System.Collections.Generic;
 
 namespace Parquet.File {
 
@@ -25,6 +26,7 @@ namespace Parquet.File {
         private readonly ThriftFooter _footer;
         private readonly ParquetOptions _options;
         private readonly DataColumnStatistics? _stats;
+        private readonly RowGroup _rowGroup;
 
         internal DataColumnReader(
            DataField dataField,
@@ -32,13 +34,15 @@ namespace Parquet.File {
            ColumnChunk thriftColumnChunk,
            DataColumnStatistics? stats,
            ThriftFooter footer,
-           ParquetOptions? parquetOptions) {
+           ParquetOptions? parquetOptions,
+           RowGroup rowGroup) {
             _dataField = dataField ?? throw new ArgumentNullException(nameof(dataField));
             _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
             _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
             _stats = stats;
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
+            _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
 
             dataField.EnsureAttachedToSchema(nameof(dataField));
 
@@ -65,24 +69,58 @@ namespace Parquet.File {
             if(_stats?.NullCount != null)
                 definedValuesCount -= (int)_stats.NullCount.Value;
             using var pc = new PackedColumn(_dataField, totalValuesInChunk, definedValuesCount);
-            long fileOffset = GetFileOffset();
+            long fileOffset = GetFileOffset(out bool isDictionaryPageOffset);
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
             while(pc.ValuesRead < totalValuesInChunk) {
-                PageHeader ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
+                if(_footer.Decrypter is not null) {
+                    var protoReader = new ThriftCompactProtocolReader(_inputStream);
 
-                switch(ph.Type) {
-                    case PageType.DICTIONARY_PAGE:
+                    short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
+                    if(columnOrdinal < 0)
+                        throw new InvalidDataException("Could not determine column ordinal");
+
+                    if(isDictionaryPageOffset) {
+                        byte[] dictPageHeader = _footer.Decrypter.DecryptDictionaryPageHeader(protoReader, _rowGroup.Ordinal!.Value, columnOrdinal);
+                        using var ms = new MemoryStream(dictPageHeader);
+                        var tempReader = new ThriftCompactProtocolReader(ms);
+                        var ph = PageHeader.Read(tempReader);
                         await ReadDictionaryPage(ph, pc);
-                        break;
-                    case PageType.DATA_PAGE:
-                        await ReadDataPageV1Async(ph, pc);
-                        break;
-                    case PageType.DATA_PAGE_V2:
-                        await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
-                        break;
-                    default:
-                        throw new NotSupportedException($"can't read page type {ph.Type}");
+                    }
+
+                    if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null) {
+                        byte[] dataPageHeader = _footer.Decrypter.DecryptDataPageHeader(protoReader, _rowGroup.Ordinal!.Value, columnOrdinal, 0);
+                        using var ms = new MemoryStream(dataPageHeader);
+                        var tempReader = new ThriftCompactProtocolReader(ms);
+                        var ph = PageHeader.Read(tempReader);
+                        if(ph.Type == PageType.DATA_PAGE)
+                            await ReadDataPageV1Async(ph, pc);
+                        else if(ph.Type == PageType.DATA_PAGE_V2)
+                            await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
+                        else
+                            throw new InvalidDataException($"Unsupported page type '{ph.Type}'");
+                    } else if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null) {
+                        throw new NotSupportedException("Column key encryption is currently not supported");
+                    } else {
+                        throw new InvalidDataException($"Either {nameof(EncryptionWithFooterKey)} or {nameof(EncryptionWithColumnKey)} must be set");
+                    }
+                } else {
+                    var protoReader = new ThriftCompactProtocolReader(_inputStream);
+                    PageHeader ph = PageHeader.Read(protoReader);
+
+                    switch(ph.Type) {
+                        case PageType.DICTIONARY_PAGE:
+                            await ReadDictionaryPage(ph, pc);
+                            break;
+                        case PageType.DATA_PAGE:
+                            await ReadDataPageV1Async(ph, pc);
+                            break;
+                        case PageType.DATA_PAGE_V2:
+                            await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
+                            break;
+                        default:
+                            throw new NotSupportedException($"can't read page type {ph.Type}");
+                    }
                 }
             }
 
@@ -148,15 +186,18 @@ namespace Parquet.File {
             pc.AssignDictionary(dictionary);
         }
 
-        private long GetFileOffset() =>
-            // get the minimum offset, we'll just read pages in sequence as DictionaryPageOffset/Data_page_offset are not reliable
-            new[]
-                {
-                    _thriftColumnChunk.MetaData?.DictionaryPageOffset ?? 0,
-                    _thriftColumnChunk.MetaData!.DataPageOffset
-                }
-                .Where(e => e != 0)
-                .Min();
+        private long GetFileOffset(out bool isDictionaryPageOffset) {
+            //https://stackoverflow.com/a/55226688/1458738
+            long dictionaryPageOffset = _thriftColumnChunk.MetaData?.DictionaryPageOffset ?? 0;
+            long firstDataPageOffset = _thriftColumnChunk.MetaData!.DataPageOffset;
+            if(dictionaryPageOffset > 0 && dictionaryPageOffset < firstDataPageOffset) {
+                // if there's a dictionary and it's before the first data page, start from there
+                isDictionaryPageOffset = true;
+                return dictionaryPageOffset;
+            }
+            isDictionaryPageOffset = false;
+            return firstDataPageOffset;
+        }
 
         private async Task ReadDataPageV1Async(PageHeader ph, PackedColumn pc) {
             using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
