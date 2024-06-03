@@ -135,6 +135,11 @@ namespace Parquet {
         }
 
         /// <summary>
+        /// Collection of row group readers, fast random access and enumeration
+        /// </summary>
+        public IReadOnlyList<IParquetRowGroupReader> RowGroups => _groupReaders;
+
+        /// <summary>
         /// Reads entire row group's data columns in one go.
         /// </summary>
         /// <param name="rowGroupIndex">Index of the row group. Default to the first row group if not specified.</param>
