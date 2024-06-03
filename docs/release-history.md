@@ -11,6 +11,7 @@
 - Dropping build targets for .NET Core 3.1 and .NET 7.0 (STS). This should not affect anyone as .NET 6 and 8 are the LTS versions now.
 - Added convenience methods to serialize/deserialize collections into a single row group in #506 by @piiertho. 
 - Serialization of interfaces and interface member properties is now supported, see #513 thanks to @Pragmateek.
+- `ParquetReader` is now easier to use in LINQ expressions thanks to @danielearwicker in #509.
 - Upgraded to latest IronCompress dependency.
 
 ### Bug fixes
