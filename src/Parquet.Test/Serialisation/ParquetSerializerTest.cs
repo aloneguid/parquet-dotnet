@@ -826,6 +826,35 @@ namespace Parquet.Test.Serialisation {
             await Compare(data);
         }
 
+        enum DefaultEnum {
+           One,
+           Two
+        }
+
+        enum ShortEnum {
+            One = 1,
+            Two = 2
+        }
+
+        class EnumProps {
+            public int Id { get; set; }
+
+            public DefaultEnum DE { get; set; }
+
+            public ShortEnum SE { get; set; }
+        }
+
+        [Fact]
+        public async Task Enums_Serde() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new EnumProps {
+                Id = i,
+                DE = i % 2 == 0 ? DefaultEnum.One : DefaultEnum.Two,
+                SE = i % 2 == 0 ? ShortEnum.One : ShortEnum.Two
+            }).ToList();
+
+            await Compare(data);
+        }
+
         interface IInterface {
             int Id { get; set; }
         }

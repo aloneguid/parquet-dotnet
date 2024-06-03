@@ -133,7 +133,7 @@ namespace Parquet.Encodings {
             return true;
         }
 
-        public static bool IsSupported(SType? t) => SupportedTypes.Contains(t);
+        public static bool IsSupported(SType t) => t.IsEnum || SupportedTypes.Contains(t);
 
         /// <summary>
         /// Builds <see cref="Field"/> from schema

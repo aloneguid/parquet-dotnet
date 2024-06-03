@@ -165,6 +165,11 @@ namespace Parquet.Serialization {
                     : new DecimalDataField(name, ps.Precision, ps.Scale,
                         isNullable: isTypeNullable, propertyName: propertyName);
             } else {
+
+                if(t.IsEnum) {
+                    t = t.GetEnumUnderlyingType();
+                }
+
                 r = new DataField(name, t, isNullable, null, propertyName);
             }
 

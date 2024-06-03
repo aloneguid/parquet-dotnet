@@ -86,6 +86,9 @@ namespace Parquet.Serialization.Dremel {
                         ? Expression.Property(valueVar, "Value")
                         : valueVar;
 
+                    // cast if required
+                    getNonNullValue = Expression.Convert(getNonNullValue, _df.ClrType);
+
                     return Expression.IfThenElse(
                         // value == null?
                         Expression.Equal(valueVar, Expression.Constant(null)),
@@ -102,9 +105,13 @@ namespace Parquet.Serialization.Dremel {
                             _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty()));
 
                 } else {
+
+                    // cast if required
+                    UnaryExpression converted = Expression.Convert(valueVar, _df.ClrType);
+
                     // required atomics are simple - add value, RL and DL as is
                     return Expression.Block(
-                        Expression.Call(_valuesVar, _valuesListAddMethod, valueVar),
+                        Expression.Call(_valuesVar, _valuesListAddMethod, converted),
                         _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
                         _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
                 }

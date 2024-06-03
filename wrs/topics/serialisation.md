@@ -66,6 +66,10 @@ Apparently, in order to serialize a class, a property must be readable, and in o
 
 In case of fields, they are by default both readable and writable, so you don't need to do anything special to make them work. 
 
+## Enum support
+
+Starting with version _4.24.0_, %product% supports [.NET enums](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum). These are stored in both schema and parquet file as their underlying type (by default, it's `System.Int32`).  
+
 ## Customising serialisation
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):

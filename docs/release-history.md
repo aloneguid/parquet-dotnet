@@ -1,6 +1,7 @@
 ## 4.24.0
 
 ### New features
+- Enum serialization is supported now, using Enum's underlying type as a storage type.
 - `[ParquetIgnore]` is supported in addition to `[JsonIgnore]` for class properties. This is useful when you want to ignore a property in Parquet serialization but not in JSON serialization. Thanks to @rhvieira1980 in #411.
 
 ### Improvements

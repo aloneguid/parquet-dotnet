@@ -583,5 +583,37 @@ namespace Parquet.Test.Serialisation {
             Assert.True(sr.Fields.Count == 2);
             Assert.True(sw.Fields.Count == 1);
         }
+
+        public enum DefaultEnum {
+            One,
+            Two,
+            Three
+        }
+
+        public enum ShortEnum : short {
+            One,
+            Two,
+            Three
+        }
+
+        public class EnumsInClasses {
+            public int Id { get; set; }
+
+            public DefaultEnum DE { get; set; }
+
+            public ShortEnum SE { get; set; }
+        }
+
+        [Fact]
+        public void Enums() {
+            ParquetSchema schema = typeof(EnumsInClasses).GetParquetSchema(true);
+            Assert.Equal(3, schema.Fields.Count);
+
+            DataField dedf = schema.FindDataField("DE");
+            DataField sedf = schema.FindDataField("SE");
+
+            Assert.Equal(typeof(int), dedf.ClrType);
+            Assert.Equal(typeof(short), sedf.ClrType);
+        }
     }
 }
