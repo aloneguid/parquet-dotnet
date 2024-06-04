@@ -33,6 +33,7 @@
                     Width="32" Height="32"
                     ToolTip.Tip="Up to parent folder"/>
             <TextBox Grid.Column="1"
+                     IsReadOnly="True"
                      Height="32"
                      Text="{Binding CurrentPath}"
                      Margin="5 4 4 4"/>

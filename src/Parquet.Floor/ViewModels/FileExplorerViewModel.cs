@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -61,10 +62,25 @@ namespace Parquet.Floor.ViewModels {
 
         public FileExplorerViewModel() {
             _storage = Stowage.Files.Of.EntireLocalDisk();
-            CurrentPath = Settings.Instance.LastFileExplorerPath ?? IOPath.Root;
+            CurrentPath = GetArgsStartPath() ?? Settings.Instance.LastFileExplorerPath ?? IOPath.Root;
             BindFiles();
 
             ReloadCurrentPath().Forget();
+        }
+
+        private static string? GetArgsStartPath() {
+            string[] args = Environment.GetCommandLineArgs();
+            if(args.Length < 2)
+                return null;
+
+            var fi = new FileInfo(args[1]);
+
+            string path = fi.Directory!.FullName;
+            path = path
+                .Replace(Path.DirectorySeparatorChar, IOPath.PathSeparator);
+            if(path.StartsWith("c:", StringComparison.OrdinalIgnoreCase))
+                path = path.Substring(2);
+            return path + IOPath.PathSeparator;
         }
 
         private async Task ReloadCurrentPath() {
