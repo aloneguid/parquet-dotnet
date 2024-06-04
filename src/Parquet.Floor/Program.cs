@@ -20,7 +20,7 @@ class Program {
         try {
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         } catch {
-            await Tracker.Instance.FlushAsync();
+            Tracker.Instance.Track("stop", force: true);
         }
     }
 
