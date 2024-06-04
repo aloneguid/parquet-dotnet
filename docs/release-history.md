@@ -20,6 +20,7 @@
 - Loop will read past the end of a block #487 by @alex-harper.
 - Decimal scale condition check fixed in #504 by @sierzput.
 - Class schema reflector was using single cache for reading and writing, which resulted in incorrect schema for writing. Thanks to @Pragmateek in #514.
+- Incorrect definition level for null values in #516 by @greg0rym.
 
 ### Parquet Floor
 - New feature "File explorer" lists filesystem using a panel on the left, allowing you to quickly load different files in the same directory and navigate to other directories.
