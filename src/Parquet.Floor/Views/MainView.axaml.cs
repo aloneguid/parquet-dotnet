@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using ActiproSoftware.Logging;
 using ActiproSoftware.UI.Avalonia.Themes;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using Avalonia.Controls.Primitives;
 using Avalonia.Platform.Storage;
 using Parquet.Floor.ViewModels;
@@ -13,11 +15,39 @@ using Parquet.Floor.ViewModels;
 namespace Parquet.Floor.Views;
 
 public partial class MainView : UserControl {
+
+    private WindowNotificationManager? _notificationManager;
+
     public MainView() {
         InitializeComponent();
     }
 
     public MainViewModel ViewModel => (MainViewModel)DataContext!;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
+        _notificationManager ??= new WindowNotificationManager(TopLevel.GetTopLevel(this));
+        base.OnAttachedToVisualTree(e);
+    }
+
+    void OpenLatestReleasePage() {
+        "https://github.com/aloneguid/parquet-dotnet/releases".OpenInBrowser();
+        Tracker.Instance.Track("openLatestReleasePage");
+    }
+
+    protected override void OnDataContextChanged(EventArgs e) {
+        if(ViewModel != null) {
+            ViewModel.OnNewVersionAvailable += (v) => {
+                if(_notificationManager != null) {
+                    _notificationManager.Show(
+                        new Notification("New version available",
+                        $"Version {v} is available. Please download it from the GitHub releases page.",
+                            NotificationType.Information, onClick: () => {
+                                OpenLatestReleasePage();
+                            }));
+                }
+            };
+        }
+    }
 
     private async void OpenFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
 
@@ -27,7 +57,8 @@ public partial class MainView : UserControl {
 
         // Get top level from the current control. Alternatively, you can use Window reference instead.
         var topLevel = TopLevel.GetTopLevel(this);
-        if(topLevel == null) return;
+        if(topLevel == null)
+            return;
 
         // Start async operation to open the dialog.
         IReadOnlyList<IStorageFile> files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
@@ -68,5 +99,9 @@ public partial class MainView : UserControl {
 
             ClientArea.Children.Add(tcControl);
         }
+    }
+
+    private async void Util_Merger_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+
     }
 }

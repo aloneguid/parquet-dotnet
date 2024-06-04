@@ -87,18 +87,24 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+                    <Button Theme="{actipro:ControlTheme TitleBarButton}"
+                        ToolTip.Tip="Utilities"
+                        i:Attached.Icon="fa-solid fa-building">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="File merger" Click="Util_Merger_Click">
+                                    <MenuItem.Icon>
+                                        <i:Icon Value="fa-solid fa-code-merge"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                     </StackPanel>
             </actipro:ChromedTitleBar.LeftContent>
 
             <actipro:ChromedTitleBar.RightContent>
                 <StackPanel Margin="{Binding $parent[actipro:ChromedTitleBar].HasCaptionButtons, Converter={StaticResource RightContentMarginConverter}}" Orientation="Horizontal">
-                    <Button Theme="{actipro:ControlTheme TitleBarButton}"
-                            ToolTip.Tip="New version available!"
-                            i:Attached.Icon="fa-solid fa-rss"
-                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
-                            IsVisible="{Binding NewerVersionNumber, Converter={x:Static ObjectConverters.IsNotNull}}"
-                            Command="{Binding OpenLatestReleasePage}">
-                    </Button>
                     <Button ContentTemplate="{actipro:GlyphTemplate Help16}"
                             Theme="{actipro:ControlTheme TitleBarButton}"
                             Command="{Binding OpenHomePage}"

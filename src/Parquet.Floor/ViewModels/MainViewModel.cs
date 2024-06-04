@@ -58,6 +58,8 @@ public partial class MainViewModel : ViewModelBase {
 
     public DataViewModel Data { get; } = new DataViewModel();
 
+    public event Action<string> OnNewVersionAvailable;
+
     public MainViewModel() {
 
         string version = Parquet.Globals.Version;
@@ -91,6 +93,7 @@ public partial class MainViewModel : ViewModelBase {
             GitHub.Release latestRelease = await gh.GetLatestRelease("aloneguid", "parquet-dotnet");
             if(latestRelease.Name != Globals.Version) {
                 NewerVersionNumber = latestRelease.Name;
+                OnNewVersionAvailable?.Invoke(NewerVersionNumber!);
             }
         }
         catch(Exception ex) {
@@ -105,10 +108,6 @@ public partial class MainViewModel : ViewModelBase {
         Tracker.Instance.Track("openHomePage");
     }
 
-    public void OpenLatestReleasePage() {
-        "https://github.com/aloneguid/parquet-dotnet/releases".OpenInBrowser();
-        Tracker.Instance.Track("openLatestReleasePage");
-    }
     private void LoadDesignData() {
         File = new FileViewModel {
             Name = "design.parquet",
