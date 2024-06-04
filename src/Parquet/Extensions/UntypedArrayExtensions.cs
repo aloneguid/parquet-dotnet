@@ -458,7 +458,7 @@ namespace Parquet.Extensions {
                 bool? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -477,7 +477,7 @@ namespace Parquet.Extensions {
                 byte? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -496,7 +496,7 @@ namespace Parquet.Extensions {
                 sbyte? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -515,7 +515,7 @@ namespace Parquet.Extensions {
                 short? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -534,7 +534,7 @@ namespace Parquet.Extensions {
                 ushort? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -553,7 +553,7 @@ namespace Parquet.Extensions {
                 int? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -572,7 +572,7 @@ namespace Parquet.Extensions {
                 uint? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -591,7 +591,7 @@ namespace Parquet.Extensions {
                 long? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -610,7 +610,7 @@ namespace Parquet.Extensions {
                 ulong? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -629,7 +629,7 @@ namespace Parquet.Extensions {
                 BigInteger? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -648,7 +648,7 @@ namespace Parquet.Extensions {
                 float? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -667,7 +667,7 @@ namespace Parquet.Extensions {
                 double? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -686,7 +686,7 @@ namespace Parquet.Extensions {
                 decimal? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -705,7 +705,7 @@ namespace Parquet.Extensions {
                 DateTime? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -724,7 +724,7 @@ namespace Parquet.Extensions {
                 TimeSpan? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -743,7 +743,7 @@ namespace Parquet.Extensions {
                 Interval? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -762,7 +762,7 @@ namespace Parquet.Extensions {
                 string value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -781,7 +781,7 @@ namespace Parquet.Extensions {
                 byte[] value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -800,7 +800,7 @@ namespace Parquet.Extensions {
                 Guid? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -820,7 +820,7 @@ namespace Parquet.Extensions {
                 DateOnly? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
@@ -839,7 +839,7 @@ namespace Parquet.Extensions {
                 TimeOnly? value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;
