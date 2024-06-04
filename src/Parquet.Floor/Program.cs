@@ -27,7 +27,7 @@ class Program {
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp() {
         try {
-            Tracker.Instance.Track("start");
+            Tracker.Instance.Track("start", force: true);
         }catch(Exception ex) {
             Console.WriteLine(ex);
         }
