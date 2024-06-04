@@ -9,7 +9,7 @@ using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Types {
-    public class ListOfStructuresTest : TestBase {
+    public class ListOfStructuresTest {
         [Theory]
         [MemberData(nameof(NullableDataFields))]
         public async Task List_of_structures_with_nullable_fields_sets_correct_definition_levels(DataField nullableDataField) {
