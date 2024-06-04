@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 using Parquet.Schema;
 using Parquet.Serialization;
 
-namespace Parquet.Converters {
+namespace Parquet.Utils {
 
     /// <summary>
     /// Converts Parquet to a flat table. This class needs to be inherited to inject a specific
     /// target format implementation.
     /// </summary>
-    public abstract class ParquetToFlatTableConverter : IDisposable {
+    public abstract class FlatTableConverter : IDisposable {
         private readonly Stream _parquetInputStream;
         private readonly ParquetOptions? _options;
 
@@ -37,7 +37,7 @@ namespace Parquet.Converters {
         /// </summary>
         /// <param name="parquetInputStream"></param>
         /// <param name="options"></param>
-        protected ParquetToFlatTableConverter(Stream parquetInputStream, ParquetOptions? options = null) {
+        protected FlatTableConverter(Stream parquetInputStream, ParquetOptions? options = null) {
             _parquetInputStream = parquetInputStream;
             _options = options;
         }
@@ -45,7 +45,7 @@ namespace Parquet.Converters {
         /// <summary>
         /// Gets the total number of rows in the Parquet file
         /// </summary>
-        public long TotalRows { get; private set; } 
+        public long TotalRows { get; private set; }
 
         /// <summary>
         /// Gets the number of rows converted so far
@@ -71,20 +71,16 @@ namespace Parquet.Converters {
             foreach(Dictionary<string, object> row in parquetData.Data) {
                 await NewRow();
 
-                foreach(Field f in parquetData.Schema.Fields) {
-                    if(f.SchemaType == SchemaType.Data) {
-                        DataField df = (DataField)f;
+                foreach(Field f in parquetData.Schema.Fields)                     if(f.SchemaType == SchemaType.Data) {
+                        var df = (DataField)f;
                         row.TryGetValue(df.Name, out object? value);
-                        if(df.IsArray) {
-                            value = ConvertArray(value);
-                        }
+                        if(df.IsArray)                             value = ConvertArray(value);
                         await WriteCellAsync(df, value, cancellationToken);
                     } else if(f.SchemaType == SchemaType.List) {
                         row.TryGetValue(f.Name, out object? value);
                         value = ConvertArray(value);
                         await WriteCellAsync(f, value, cancellationToken);
                     }
-                }
 
                 ConvertedRows++;
                 OnRowConverted?.Invoke(ConvertedRows, TotalRows);
@@ -94,9 +90,7 @@ namespace Parquet.Converters {
         private object? ConvertArray(object? value) {
             if(value is IEnumerable ie) {
                 var strings = new List<string>();
-                foreach(object? element in ie) {
-                    strings.Add(element?.ToString() ?? "");
-                }
+                foreach(object? element in ie)                     strings.Add(element?.ToString() ?? "");
                 return string.Join(ListSeparator.ToString(), strings);
             }
             return value;
@@ -124,7 +118,7 @@ namespace Parquet.Converters {
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         protected abstract Task WriteCellAsync(Field df, object? value, CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// 
         /// </summary>

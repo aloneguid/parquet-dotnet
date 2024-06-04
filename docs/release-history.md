@@ -3,6 +3,7 @@
 ### New features
 - [Enum serialization](https://aloneguid.github.io/parquet-dotnet/serialisation.html#enum-support) is supported, using Enum's underlying type as a storage type.
 - `[ParquetIgnore]` is supported in addition to `[JsonIgnore]` for class properties. This is useful when you want to ignore a property in Parquet serialization but not in JSON serialization. Thanks to @rhvieira1980 in #411.
+- By popular demand, there is now a `FileMerger` utility which can merge multiple parquet files into a single file by either merging files or actual data together.
 
 ### Improvements
 

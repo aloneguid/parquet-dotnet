@@ -3,15 +3,15 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using CsvHelper;
-using Parquet.Converters;
 using Parquet.Schema;
+using Parquet.Utils;
 
 namespace Parquet.Floor.Controllers {
     /// <summary>
     /// Example use of CsvHelper to convert Parquet to CSV.
     /// 
     /// </summary>
-    class ParquetToCsvConverter : ParquetToFlatTableConverter {
+    class ParquetToCsvConverter : FlatTableConverter {
 
         private readonly StreamWriter _sw;
         private readonly CsvWriter _csv;
