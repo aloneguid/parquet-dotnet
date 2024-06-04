@@ -40,6 +40,11 @@ namespace Parquet.Utils {
         }
 
         /// <summary>
+        /// All the input files to concatenate.
+        /// </summary>
+        public IReadOnlyCollection<FileInfo> InputFiles => _files;
+
+        /// <summary>
         /// Merges all the files into a single file by copying row groups from each file into the resulting file.
         /// The resulting file will end up having as many row groups as the sum of row groups in all the files.
         /// </summary>

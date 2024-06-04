@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Parquet.Floor.ViewModels"
+        xmlns:views="clr-namespace:Parquet.Floor.Views"
+        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
+        xmlns:actiproImages="using:ActiproSoftware.UI.Avalonia.Images"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
+        x:Class="Parquet.Floor.Views.Utils.WindowContainer"
+        Title="Utils">
+    <DockPanel>
+        <actipro:ChromedTitleBar DockPanel.Dock="Top">
+            <actipro:ChromedTitleBar.Resources>
+                <actipro:ComparisonConverter x:Key="RightContentMarginConverter">
+                    <actipro:ComparisonConverter.TrueResult>
+                        <Thickness>0,0,20,0</Thickness>
+                    </actipro:ComparisonConverter.TrueResult>
+                    <actipro:ComparisonConverter.FalseResult>
+                        <Thickness>0,0,0,0</Thickness>
+                    </actipro:ComparisonConverter.FalseResult>
+                </actipro:ComparisonConverter>
+            </actipro:ChromedTitleBar.Resources>
+
+            <actipro:ChromedTitleBar.LeftContent>
+                <StackPanel Orientation="Horizontal" Margin="14,0,0,0">
+                    <Image DockPanel.Dock="Left" Width="24" Height="24"
+                           Source="avares://floor/Assets/icon.ico"
+                           VerticalAlignment="Center" IsHitTestVisible="False">
+                        <Image.Effect>
+                            <DropShadowEffect OffsetX="0" OffsetY="1" BlurRadius="3" Opacity="{DynamicResource {actipro:ThemeResourceKey ShadowOpacity}}" />
+                        </Image.Effect>
+                    </Image>
+
+                    <StackPanel Margin="10,7,0,7" VerticalAlignment="Center">
+                        <TextBlock x:Name="TextTitle"
+                                   Margin="0,-2,0,0"
+                                   Text="Utils"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </StackPanel>
+            </actipro:ChromedTitleBar.LeftContent>
+
+        </actipro:ChromedTitleBar>
+
+        <!-- Client Area -->
+        <Grid x:Name="ClientArea">
+        </Grid>
+        
+    </DockPanel>
+</Window>

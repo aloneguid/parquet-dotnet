@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             xmlns:vm="clr-namespace:Parquet.Floor.ViewModels.Utils"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+             x:DataType="vm:FileMergerViewModel"
+             x:Class="Parquet.Floor.Views.Utils.FileMergerUtil">
+    <Design.DataContext>
+        <vm:FileMergerViewModel />
+    </Design.DataContext>
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top"
+                   IsEnabled="{Binding !IsRunning}">
+            <Button ToolTip.Tip="Select folder to scan for parquet files as input recursively"
+                    i:Attached.Icon="fa-solid fa-folder-open"
+                    Margin="5"
+                    Click="SelectSourceFolderClick"/>
+            <Button ToolTip.Tip="Select files to convert"
+                    i:Attached.Icon="fa-solid fa-folder-tree"
+                    Margin="5"
+                    Click="SelectSourceFilesClick"/>
+            <TextBox Text="{Binding SourceFilesDisplay}"
+                     Margin="5"
+                     IsReadOnly="True"/>
+        </DockPanel>
+        <DockPanel DockPanel.Dock="Top"
+                   IsEnabled="{Binding !IsRunning}">
+            <Button i:Attached.Icon="fa-solid fa-bullseye"
+                    ToolTip.Tip="Select destination file"
+                    Margin="5"
+                    Click="SelectTargetClick"
+                    Width="80"/>
+            <TextBox Text="{Binding TargetFile.Name}"
+                     Margin="5"
+                     IsReadOnly="True"/>
+        </DockPanel>
+        <StackPanel DockPanel.Dock="Top"
+                    IsEnabled="{Binding !IsRunning}">
+            <RadioButton Content="Merge files" Margin="5" GroupName="Method" IsChecked="{Binding !MergeColumns}"/>
+            <RadioButton Content="Merge columns" Margin="5" GroupName="Method" IsChecked="{Binding MergeColumns}"/>
+        </StackPanel>
+        <Button Classes="success"
+                Margin="5"
+                Content="Merge" DockPanel.Dock="Top"
+                IsEnabled="{Binding CanStart}"
+                Command="{Binding Run}"/>
+        <ProgressBar IsIndeterminate="True" DockPanel.Dock="Top"
+            Minimum="0" Maximum="100" Value="50" IsVisible="{Binding IsRunning}"/>
+        <TextBlock Text="{Binding Error}" IsVisible="{Binding Error}"/>
+        <TextBlock Text="{Binding Result}" IsVisible="{Binding Result}"/>
+    </DockPanel>
+</UserControl>

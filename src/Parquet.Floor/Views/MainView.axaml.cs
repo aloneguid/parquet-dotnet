@@ -11,6 +11,8 @@ using Avalonia.Controls.Notifications;
 using Avalonia.Controls.Primitives;
 using Avalonia.Platform.Storage;
 using Parquet.Floor.ViewModels;
+using Parquet.Floor.Views.Utils;
+using Parquet.Utils;
 
 namespace Parquet.Floor.Views;
 
@@ -101,7 +103,18 @@ public partial class MainView : UserControl {
         }
     }
 
-    private async void Util_Merger_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+    private void OpenUtil<T>(string title) where T : UserControl, new() {
+        var wnd = new WindowContainer(title, new T());
+        wnd.Width = 600;
+        wnd.Height = 400;
+        if(TopLevel.GetTopLevel(this) is Window topWindow) {
+            wnd.ShowDialog(topWindow);
+            //wnd.Show(topWindow);
+            //wnd.Show();
+        }
+    }
 
+    private void Util_Merger_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+        OpenUtil<FileMergerUtil>("File merger");
     }
 }
