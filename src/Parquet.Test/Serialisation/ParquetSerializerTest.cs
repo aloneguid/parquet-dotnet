@@ -102,7 +102,7 @@ namespace Parquet.Test.Serialisation {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new TimespanRecord {
                 TimeSpan = TimeSpan.Parse("6:12:14:45"),
-                NullableTimeSpan = null,
+                NullableTimeSpan = i % 2 == 0 ? TimeSpan.Parse("01:00:03") : null,
             }).ToList();
 
             await Compare(data);
