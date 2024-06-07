@@ -59,7 +59,7 @@ namespace Parquet.Floor.ViewModels.Utils {
         }
 
         public async Task Run() {
-            var merger = new FileMerger(SourceFiles);
+            using var merger = new FileMerger(SourceFiles);
 
             using FileStream destStream = System.IO.File.Create(TargetFile!.FullName);
 
@@ -72,7 +72,7 @@ namespace Parquet.Floor.ViewModels.Utils {
                     await merger.MergeFilesAsync(destStream);
                 }
 
-                Result = $"{merger.InputFiles.Count} file(s) merged.";
+                Result = $"{merger.InputStreams.Count} file(s) merged.";
             } catch(Exception ex) {
                 Error = ex.Message;
             } finally {

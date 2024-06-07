@@ -13,11 +13,12 @@ namespace Parquet.Utils {
     /// Concatenates multiple files into a single file. The resulting file will contain all the data and row groups from the original files.
     /// Schemas in all the files must match.
     /// </summary>
-    public class FileMerger {
+    public class FileMerger : IDisposable {
 
         private const string ParquetFileExtension = ".parquet";
 
-        private readonly List<FileInfo> _files = new();
+        private readonly List<FileInfo> _inputFiles = new();
+        private readonly List<Stream> _inputStreams = new();
 
         /// <summary>
         /// Specifies the directory containing the files to concatenate.
@@ -27,7 +28,8 @@ namespace Parquet.Utils {
         public FileMerger(DirectoryInfo directory) {
 
             foreach(FileInfo fi in directory.EnumerateFiles("*" + ParquetFileExtension, SearchOption.AllDirectories)) {
-                _files.Add(fi);
+                _inputFiles.Add(fi);
+                _inputStreams.Add(fi.OpenRead());
             }
         }
 
@@ -36,13 +38,19 @@ namespace Parquet.Utils {
         /// </summary>
         /// <param name="files"></param>
         public FileMerger(IEnumerable<FileInfo> files) {
-            _files.AddRange(files);
+            _inputFiles.AddRange(files);
+            _inputStreams.AddRange(files.Select(f => f.OpenRead()));
         }
 
         /// <summary>
-        /// All the input files to concatenate.
+        /// All the input streams to concatenate.
         /// </summary>
-        public IReadOnlyCollection<FileInfo> InputFiles => _files;
+        public IReadOnlyCollection<Stream> InputStreams => _inputStreams;
+
+        /// <summary>
+        /// All the input files to concatenate, if this instance was created using <see cref="DirectoryInfo"/> or <see cref="FileInfo"/> constructor.
+        /// </summary>
+        public IReadOnlyCollection<FileInfo> InputFiles => _inputFiles;
 
         /// <summary>
         /// Merges all the files into a single file by copying row groups from each file into the resulting file.
@@ -52,7 +60,7 @@ namespace Parquet.Utils {
             ParquetOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            if(_files.Count == 0) {
+            if(_inputStreams.Count == 0) {
                 throw new InvalidOperationException("No files to merge");
             }
 
@@ -61,23 +69,22 @@ namespace Parquet.Utils {
             }
 
             // the first file will be taken as is
-            using(Stream src = System.IO.File.OpenRead(_files[0].FullName)) {
+            Stream src = _inputStreams.First();
 #if NETSTANDARD2_0
-                await src.CopyToAsync(destination);
+            await src.CopyToAsync(destination);
 #else
-                await src.CopyToAsync(destination, cancellationToken);
+            await src.CopyToAsync(destination, cancellationToken);
 #endif
-            }
 
             // get the schema from the first file, it will be used to validate the rest of the files
-            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_files[0].FullName);
+            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_inputStreams.First());
 
             // create writer for the destination file
             using ParquetWriter destWriter = await ParquetWriter.CreateAsync(schema, destination, options, true, cancellationToken);
 
             // the rest of the files will be appended
-            for(int i = 1; i < _files.Count; i++) {
-                using ParquetReader pr = await ParquetReader.CreateAsync(_files[i].FullName, options, cancellationToken);
+            for(int i = 1; i < _inputStreams.Count; i++) {
+                using ParquetReader pr = await ParquetReader.CreateAsync(_inputStreams[i], options, cancellationToken: cancellationToken);
 
                 for(int ig = 0; ig < pr.RowGroupCount; ig++) {
                     using ParquetRowGroupReader rrg = pr.OpenRowGroupReader(ig);
@@ -106,7 +113,7 @@ namespace Parquet.Utils {
             ParquetOptions? options = null,
             CancellationToken cancellationToken = default) {
 
-            if(_files.Count == 0) {
+            if(_inputStreams.Count == 0) {
                 throw new InvalidOperationException("No files to merge");
             }
 
@@ -115,7 +122,7 @@ namespace Parquet.Utils {
             }
 
             // get the schema from the first file, it will be used to validate the rest of the files
-            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_files[0].FullName);
+            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_inputStreams.First());
 
             // create writer for the destination file
             using ParquetWriter destWriter = await ParquetWriter.CreateAsync(schema, destination, options, false, cancellationToken);
@@ -123,11 +130,11 @@ namespace Parquet.Utils {
             // We will open all of the files to utilise random access. They need to be opened sequentially one by one,
             // to avoid an error of not disposing successfully opened files in case not all of them are valid.
 
-            var readers = new List<ParquetReader>(_files.Count);
+            var readers = new List<ParquetReader>(_inputStreams.Count);
 
             try {
-                foreach(FileInfo fi in _files) {
-                    ParquetReader reader = await ParquetReader.CreateAsync(fi.FullName, options, cancellationToken);
+                foreach(Stream s in _inputStreams) {
+                    ParquetReader reader = await ParquetReader.CreateAsync(s, options, cancellationToken: cancellationToken);
                     readers.Add(reader);
                 }
 
@@ -162,6 +169,13 @@ namespace Parquet.Utils {
                 foreach(ParquetReader reader in readers) {
                     reader.Dispose();
                 }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Dispose() {
+            foreach(Stream stream in _inputStreams) {
+                stream.Dispose();
             }
         }
     }

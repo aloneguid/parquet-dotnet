@@ -1,3 +1,8 @@
+## 4.25.0
+
+### Improvements
+- File merger utility has `Stream` overload for non file -based operations.
+
 ## 4.24.0
 
 ### New features

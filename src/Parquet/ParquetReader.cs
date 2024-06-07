@@ -101,10 +101,16 @@ namespace Parquet {
         /// <summary>
         /// Opens file at specified path to read schema and return
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
         public static async Task<ParquetSchema> ReadSchemaAsync(string filePath) {
             using ParquetReader reader = await CreateAsync(filePath);
+            return reader.Schema;
+        }
+
+        /// <summary>
+        /// Reads file stream and returns
+        /// </summary>
+        public static async Task<ParquetSchema> ReadSchemaAsync(Stream parquetStream) {
+            using ParquetReader reader = await CreateAsync(parquetStream);
             return reader.Schema;
         }
 
