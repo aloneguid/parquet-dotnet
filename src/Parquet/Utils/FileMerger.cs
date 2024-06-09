@@ -58,7 +58,9 @@ namespace Parquet.Utils {
         /// </summary>
         public async Task MergeFilesAsync(Stream destination,
             ParquetOptions? options = null,
-            CancellationToken cancellationToken = default) {
+            CancellationToken cancellationToken = default,
+            Dictionary<string, string>? metadata = null,
+            CompressionMethod? compressionMethod = null) {
 
             if(_inputStreams.Count == 0) {
                 throw new InvalidOperationException("No files to merge");
@@ -69,7 +71,7 @@ namespace Parquet.Utils {
             }
 
             // the first file will be taken as is
-            Stream src = _inputStreams.First();
+            Stream src = _inputStreams[0];
 #if NETSTANDARD2_0
             await src.CopyToAsync(destination);
 #else
@@ -77,10 +79,17 @@ namespace Parquet.Utils {
 #endif
 
             // get the schema from the first file, it will be used to validate the rest of the files
-            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_inputStreams.First());
+            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(src);
 
             // create writer for the destination file
             using ParquetWriter destWriter = await ParquetWriter.CreateAsync(schema, destination, options, true, cancellationToken);
+
+            if(metadata != null) {
+                destWriter.CustomMetadata = metadata;
+            }
+            if(compressionMethod.HasValue) {
+                destWriter.CompressionMethod = compressionMethod.Value;
+            }
 
             // the rest of the files will be appended
             for(int i = 1; i < _inputStreams.Count; i++) {
@@ -108,10 +117,14 @@ namespace Parquet.Utils {
         /// <param name="destination"></param>
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
+        /// <param name="metadata"></param>
+        /// <param name="compressionMethod"></param>
         /// <returns></returns>
         public async Task MergeRowGroups(Stream destination,
             ParquetOptions? options = null,
-            CancellationToken cancellationToken = default) {
+            CancellationToken cancellationToken = default,
+            Dictionary<string, string>? metadata = null,
+            CompressionMethod? compressionMethod = null) {
 
             if(_inputStreams.Count == 0) {
                 throw new InvalidOperationException("No files to merge");
@@ -122,10 +135,17 @@ namespace Parquet.Utils {
             }
 
             // get the schema from the first file, it will be used to validate the rest of the files
-            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_inputStreams.First());
+            ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_inputStreams[0]);
 
             // create writer for the destination file
             using ParquetWriter destWriter = await ParquetWriter.CreateAsync(schema, destination, options, false, cancellationToken);
+
+            if(metadata != null) {
+                destWriter.CustomMetadata = metadata;
+            }
+            if(compressionMethod.HasValue) {
+                destWriter.CompressionMethod = compressionMethod.Value;
+            }
 
             // We will open all of the files to utilise random access. They need to be opened sequentially one by one,
             // to avoid an error of not disposing successfully opened files in case not all of them are valid.
