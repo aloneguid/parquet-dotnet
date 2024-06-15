@@ -49,6 +49,8 @@ namespace Parquet.Test.Types {
                ["dateTime local kind"] = (new DataField<DateTime>("dateTime unknown kind"), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                ["impala date local kind"] = (new DateTimeDataField("dateImpala unknown kind", DateTimeFormat.Impala), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                ["dateDateAndTime local kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
+               ["timestamp utc kind"] = (new DateTimeDataField("timestamp utc kind", DateTimeFormat.Timestamp, true), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Utc)),
+               ["timestamp local kind"] = (new DateTimeDataField("timestamp local kind", DateTimeFormat.Timestamp, false), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                // don't want any excess info in the offset INT32 doesn't contain or care about this data 
                ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
 #if !NETCOREAPP3_1
@@ -84,7 +86,7 @@ namespace Parquet.Test.Types {
                ["unsigned long max value"] = (new DataField<ulong>("ulong"), ulong.MaxValue),
 
                ["nullable decimal"] = (new DecimalDataField("decimal?", 4, 1, true, true), null),
-               ["nullable DateTime"] = (new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, true), null),
+               ["nullable DateTime"] = (new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, isNullable: true), null),
 
                ["bool"] = (new DataField<bool>("bool"), true),
                ["nullable bool"] = (new DataField<bool?>("bool?"), new bool?(true)),
@@ -124,6 +126,8 @@ namespace Parquet.Test.Types {
         [InlineData("dateTime local kind")]
         [InlineData("impala date local kind")]
         [InlineData("dateDateAndTime local kind")]
+        [InlineData("timestamp utc kind")]
+        [InlineData("timestamp local kind")]
         [InlineData("dateDate")]
 #if !NETCOREAPP3_1
         [InlineData("dateOnly")]
@@ -174,6 +178,11 @@ namespace Parquet.Test.Types {
                 equal = true;
             else if(actual.GetType().IsArrayOf<byte>() && input.expectedValue != null) {
                 equal = ((byte[])actual).SequenceEqual((byte[])input.expectedValue);
+            } else if(input.field is DateTimeDataField { DateTimeFormat: DateTimeFormat.Timestamp }) {
+                var dtActual = (DateTime)actual;
+                var dtExpected = (DateTime)input.expectedValue!;
+                Assert.Equal(dtExpected.Kind, dtActual.Kind);
+                equal = dtActual.Equals(dtExpected);
             } else if(actual.GetType() == typeof(DateTime)) {
                 var dtActual = (DateTime)actual;
                 Assert.Equal(DateTimeKind.Utc, dtActual.Kind);

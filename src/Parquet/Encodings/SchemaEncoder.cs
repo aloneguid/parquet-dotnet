@@ -6,6 +6,7 @@ using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Meta;
 using Parquet.Schema;
+using Parquet.Serialization;
 using SType = System.Type;
 using Type = Parquet.Meta.Type;
 
@@ -201,7 +202,7 @@ namespace Parquet.Encodings {
                     _ => typeof(int)
                 },
                 Type.INT32 => typeof(int),
-
+                Type.INT64 when se.LogicalType?.TIMESTAMP != null => typeof(DateTime),
                 Type.INT64 when se.ConvertedType != null => se.ConvertedType switch {
                     ConvertedType.INT_64 => typeof(long),
                     ConvertedType.UINT_64 => typeof(ulong),
@@ -267,6 +268,10 @@ namespace Parquet.Encodings {
                 se.Scale.GetValueOrDefault(DecimalFormatDefaults.DefaultScale));
 
         private static DataField GetDateTimeDataField(SchemaElement se) {
+            if(se.LogicalType is not null)
+                if(se.LogicalType.TIMESTAMP is not null)
+                    return new DateTimeDataField(se.Name, DateTimeFormat.Timestamp, isAdjustedToUTC: se.LogicalType.TIMESTAMP.IsAdjustedToUTC, unit: se.LogicalType.TIMESTAMP.Unit.Convert());
+            
             switch(se.ConvertedType) {
                 case ConvertedType.TIMESTAMP_MILLIS:
                     if(se.Type == Type.INT64)
@@ -464,6 +469,25 @@ namespace Parquet.Encodings {
                         case DateTimeFormat.Date:
                             tse.Type = Type.INT32;
                             tse.ConvertedType = ConvertedType.DATE;
+                            break;
+                        case DateTimeFormat.Timestamp:
+                            tse.Type = Type.INT64;
+                            tse.LogicalType = new LogicalType { TIMESTAMP = new TimestampType {
+                                    IsAdjustedToUTC = dfDateTime.IsAdjustedToUTC,
+                                    Unit = dfDateTime.Unit switch {
+                                        DateTimeTimeUnit.Millis => new TimeUnit {
+                                            MILLIS = new MilliSeconds(),
+                                        },
+                                        DateTimeTimeUnit.Micros => new TimeUnit {
+                                            MICROS = new MicroSeconds(),
+                                        },
+                                        DateTimeTimeUnit.Nanos => new TimeUnit {
+                                            NANOS = new NanoSeconds(),
+                                        },
+                                        _ => throw new ParquetException($"Unexpected TimeUnit: {dfDateTime.Unit}")
+                                    }
+                                }
+                            };
                             break;
                         default:
                             tse.Type = Type.INT96;
