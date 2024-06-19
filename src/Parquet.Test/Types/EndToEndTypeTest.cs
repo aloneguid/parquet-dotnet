@@ -51,6 +51,7 @@ namespace Parquet.Test.Types {
                ["dateDateAndTime local kind"] = (new DateTimeDataField("dateDateAndTime unknown kind", DateTimeFormat.DateAndTime), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
                ["timestamp utc kind"] = (new DateTimeDataField("timestamp utc kind", DateTimeFormat.Timestamp, true), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Utc)),
                ["timestamp local kind"] = (new DateTimeDataField("timestamp local kind", DateTimeFormat.Timestamp, false), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
+               ["datetimeoffset utc kind"] = (new DateTimeOffsetDataField("datetimeoffset utc kind", DateTimeTimeUnit.Millis), new DateTimeOffset(2020, 06, 10, 11, 12, 13, TimeSpan.Zero)),
                // don't want any excess info in the offset INT32 doesn't contain or care about this data 
                ["dateDate"] = (new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
 #if !NETCOREAPP3_1
@@ -128,6 +129,7 @@ namespace Parquet.Test.Types {
         [InlineData("dateDateAndTime local kind")]
         [InlineData("timestamp utc kind")]
         [InlineData("timestamp local kind")]
+        [InlineData("datetimeoffset utc kind")]
         [InlineData("dateDate")]
 #if !NETCOREAPP3_1
         [InlineData("dateOnly")]
@@ -190,6 +192,10 @@ namespace Parquet.Test.Types {
                 dtExpected = dtExpected.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
                     : dtExpected.ToUniversalTime();
+                equal = dtActual.Equals(dtExpected);
+            } else if(actual.GetType() == typeof(DateTimeOffset)) {
+                var dtActual = (DateTimeOffset)actual;
+                var dtExpected = (DateTimeOffset)input.expectedValue!;
                 equal = dtActual.Equals(dtExpected);
             } else {
                 equal = actual.Equals(input.expectedValue);

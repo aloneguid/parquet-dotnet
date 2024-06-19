@@ -35,9 +35,11 @@ namespace Parquet.Serialization.Attributes {
         /// </summary>
         /// <param name="resolution"></param>
         /// <param name="useLogicalTimestamp"></param>
-        public ParquetTimestampAttribute(ParquetTimestampResolution resolution = ParquetTimestampResolution.Milliseconds, bool useLogicalTimestamp = false) {
+        /// <param name="isAdjustedToUtc"></param>
+        public ParquetTimestampAttribute(ParquetTimestampResolution resolution = ParquetTimestampResolution.Milliseconds, bool useLogicalTimestamp = false, bool isAdjustedToUtc = false) {
             Resolution = resolution;
             UseLogicalTimestamp = useLogicalTimestamp;
+            IsAdjustedToUTC = isAdjustedToUtc;
         }
 
         /// <summary>
