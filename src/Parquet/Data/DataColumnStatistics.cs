@@ -47,11 +47,11 @@ namespace Parquet.Data {
         internal Statistics ToThriftStatistics(SchemaElement tse) {
 
             if(!ParquetPlainEncoder.TryEncode(MinValue, tse, out byte[]? min)) {
-                throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
+                throw new ArgumentException($"could not encode {MinValue}", nameof(MinValue));
             }
 
             if(!ParquetPlainEncoder.TryEncode(MaxValue, tse, out byte[]? max)) {
-                throw new ArgumentException($"cound not encode {MinValue}", nameof(MinValue));
+                throw new ArgumentException($"could not encode {MinValue}", nameof(MinValue));
             }
 
             return new Statistics {
