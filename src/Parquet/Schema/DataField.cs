@@ -183,13 +183,7 @@ namespace Parquet.Schema {
                 isArray = true;
             }
 
-            if(isCompiledWithNullable) {
-                bool isActualNullableType = baseType.IsNullableStrict();
-                if(isActualNullableType) {
-                    baseType = baseType.GetNonNullable();
-                    isNullable = isActualNullableType;
-                }
-            } else if (baseType.IsNullable()) {
+            if (baseType.IsNullable()) {
                 baseType = baseType.GetNonNullable();
                 isNullable = true;
             }

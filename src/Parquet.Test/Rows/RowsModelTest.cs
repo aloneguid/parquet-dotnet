@@ -226,8 +226,8 @@ namespace Parquet.Test.Rows {
                new ParquetSchema(
                   new DataField<string>("isbn"),
                   new StructField("author",
-                     new DataField<string>("firstName"),
-                     new DataField<string>("lastName"))));
+                     new DataField<string>("firstName", true),
+                     new DataField<string>("lastName", true))));
             var ms = new MemoryStream();
 
             table.Add("12345-6", new Row("Hazel", "Nut"));

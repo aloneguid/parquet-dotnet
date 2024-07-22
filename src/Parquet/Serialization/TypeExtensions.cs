@@ -40,8 +40,8 @@ namespace Parquet.Serialization {
 
             public abstract Type MemberType { get; }
 
-            public int? Order { 
-                get{
+            public int? Order {
+                get {
 #if NETCOREAPP3_1
                     return null;
 #else
@@ -67,6 +67,36 @@ namespace Parquet.Serialization {
 
             public ParquetDecimalAttribute? DecimalAttribute => _mi.GetCustomAttribute<ParquetDecimalAttribute>();
 
+            /// <summary>
+            /// https://github.com/dotnet/roslyn/blob/main/docs/features/nullable-metadata.md
+            /// This check if a class T (nullable by default) doesn't have the nullable mark.
+            /// Every class should be considered nullable unless the compiler has been instructed to make it non-nullable.
+            /// </summary>
+            /// <returns></returns>
+            public bool IsNotNullable {
+                get {
+                    CustomAttributeData? nullableContextAttribute = _mi.DeclaringType?.CustomAttributes
+                            .FirstOrDefault(attr => attr.AttributeType.Name == "NullableContextAttribute" || attr.AttributeType.Name == "NullableAttribute");
+                    byte? classFlag = null;
+                    if(nullableContextAttribute != null) {
+                        classFlag = (byte)nullableContextAttribute.ConstructorArguments[0].Value!;
+                    }                    
+                    // Check if any properties have the NullableContextAttribute
+                    CustomAttributeData? nullableAttribute = _mi.CustomAttributes
+                            .FirstOrDefault(attr => attr.AttributeType.Name == "NullableAttribute");
+
+                    byte? attributeFlag = classFlag;
+                    if(nullableAttribute != null) {
+                        attributeFlag = (byte)nullableAttribute.ConstructorArguments[0].Value!;
+                    }
+                    if(attributeFlag == 1) {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+
+
         }
 
         class ClassPropertyMember : ClassMember {
@@ -83,7 +113,7 @@ namespace Parquet.Serialization {
         class ClassFieldMember : ClassMember {
             private readonly FieldInfo _fi;
 
-            public ClassFieldMember(FieldInfo fi) :base(fi) {
+            public ClassFieldMember(FieldInfo fi) : base(fi) {
                 _fi = fi;
             }
 
@@ -170,7 +200,10 @@ namespace Parquet.Serialization {
                 if(t.IsEnum) {
                     t = t.GetEnumUnderlyingType();
                 }
-
+                bool? isMemberNotNullable = member?.IsNotNullable;
+                if (isMemberNotNullable == true) {
+                    isNullable = false;
+                }
                 r = new DataField(name, t, isNullable, null, propertyName, isCompiledWithNullable);
             }
 
