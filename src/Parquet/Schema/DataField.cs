@@ -54,13 +54,14 @@ namespace Parquet.Schema {
         /// </summary>
         /// <param name="name">Field name</param>
         /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
+        /// <param name="isCompiledWithNullable">Indicates if the source type was compiled with nullable enabled or not.</param>
         /// <param name="isNullable">When set, will override <see cref="IsNullable"/> attribute regardless whether passed type was nullable or not.</param>
         /// <param name="isArray">When set, will override <see cref="IsArray"/> attribute regardless whether passed type was an array or not.</param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
-        public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string? propertyName = null)
+        public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string? propertyName = null, bool? isCompiledWithNullable = null)
            : base(name, SchemaType.Data) {
 
-            Discover(clrType, out Type baseType, out bool discIsArray, out bool discIsNullable);
+            Discover(clrType, isCompiledWithNullable ?? false, out Type baseType, out bool discIsArray, out bool discIsNullable);
             ClrType = baseType;
             if(!SchemaEncoder.IsSupported(ClrType)) {
                 if(baseType == typeof(DateTimeOffset)) {
@@ -167,7 +168,7 @@ namespace Parquet.Schema {
 
         #region [ Type Resolution ]
 
-        private static void Discover(Type t, out Type baseType, out bool isArray, out bool isNullable) {
+        private static void Discover(Type t, bool isCompiledWithNullable, out Type baseType, out bool isArray, out bool isNullable) {
             baseType = t;
             isArray = false;
             isNullable = false;
@@ -182,7 +183,13 @@ namespace Parquet.Schema {
                 isArray = true;
             }
 
-            if(baseType.IsNullable()) {
+            if(isCompiledWithNullable) {
+                bool isActualNullableType = baseType.IsNullableStrict();
+                if(isActualNullableType) {
+                    baseType = baseType.GetNonNullable();
+                    isNullable = isActualNullableType;
+                }
+            } else if (baseType.IsNullable()) {
                 baseType = baseType.GetNonNullable();
                 isNullable = true;
             }
