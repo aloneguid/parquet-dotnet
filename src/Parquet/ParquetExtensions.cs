@@ -209,7 +209,7 @@ namespace Parquet {
         public static async Task WriteAsync(this DataFrame df, Stream outputStream, CancellationToken cancellationToken = default) {
             // create schema
             var schema = new ParquetSchema(
-                df.Columns.Select(col => new DataField(col.Name, col.DataType.GetNullable(), false)));
+                df.Columns.Select(col => new DataField(col.Name, col.DataType.GetNullable(), isNullable: col.DataType.CanNullifyType() ? null : col.NullCount > 0)));
 
             using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, outputStream, cancellationToken: cancellationToken);
             using ParquetRowGroupWriter rgw = writer.CreateRowGroup();

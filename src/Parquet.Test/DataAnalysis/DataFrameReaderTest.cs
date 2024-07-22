@@ -12,19 +12,19 @@ namespace Parquet.Test.DataAnalysis {
     public class DataFrameReaderTest : TestBase {
 
         [Theory]
-        [InlineData(typeof(short), (short)1, (short)2)]
-        [InlineData(typeof(short?), null, (short)2)]
-        [InlineData(typeof(int), 1, 2)]
-        [InlineData(typeof(int?), null, 2)]
-        [InlineData(typeof(bool), true, false)]
-        [InlineData(typeof(bool?), true, null)]
-        [InlineData(typeof(long), 1L, 2L)]
-        [InlineData(typeof(long?), 1L, 2L)]
-        [InlineData(typeof(ulong), 1UL, 2UL)]
-        [InlineData(typeof(ulong?), 1UL, 2UL)]
-        [InlineData(typeof(string), "1", "2")]
-        [InlineData(typeof(string), null, "2")]
-        public async Task Roundtrip_all_types(Type t, object? el1, object? el2) {
+        [InlineData(typeof(short), false, (short)1, (short)2)]
+        [InlineData(typeof(short?), false, null, (short)2)]
+        [InlineData(typeof(int), false, 1, 2)]
+        [InlineData(typeof(int?), false, null, 2)]
+        [InlineData(typeof(bool), false, true, false)]
+        [InlineData(typeof(bool?), false, true, null)]
+        [InlineData(typeof(long), false, 1L, 2L)]  
+        [InlineData(typeof(long?), false, 1L, 2L)]
+        [InlineData(typeof(ulong), false, 1UL, 2UL)]
+        [InlineData(typeof(ulong?), false, 1UL, 2UL)]
+        [InlineData(typeof(string), false, "1", "2")]
+        [InlineData(typeof(string), true, null, "2")]
+        public async Task Roundtrip_all_types(Type t, bool makeNullable, object? el1, object? el2) {
 
             // arrange
             using var ms = new MemoryStream();
@@ -34,7 +34,7 @@ namespace Parquet.Test.DataAnalysis {
 
 
             // make schema
-            var schema = new ParquetSchema(new DataField(t.Name, t));
+            var schema = new ParquetSchema(new DataField(t.Name, t, isNullable: makeNullable?true:null, isCompiledWithNullable: true));
 
             // make data
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {

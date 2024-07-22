@@ -61,7 +61,7 @@ namespace Parquet.Schema {
         public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string? propertyName = null, bool? isCompiledWithNullable = null)
            : base(name, SchemaType.Data) {
 
-            Discover(clrType, isCompiledWithNullable ?? false, out Type baseType, out bool discIsArray, out bool discIsNullable);
+            Discover(clrType, isCompiledWithNullable ?? true, out Type baseType, out bool discIsArray, out bool discIsNullable);
             ClrType = baseType;
             if(!SchemaEncoder.IsSupported(ClrType)) {
                 if(baseType == typeof(DateTimeOffset)) {
