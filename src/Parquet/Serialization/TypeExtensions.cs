@@ -73,27 +73,48 @@ namespace Parquet.Serialization {
             /// Every class should be considered nullable unless the compiler has been instructed to make it non-nullable.
             /// </summary>
             /// <returns></returns>
-            public bool IsNotNullable {
-                get {
-                    CustomAttributeData? nullableContextAttribute = _mi.DeclaringType?.CustomAttributes
-                            .FirstOrDefault(attr => attr.AttributeType.Name == "NullableContextAttribute" || attr.AttributeType.Name == "NullableAttribute");
-                    byte? classFlag = null;
-                    if(nullableContextAttribute != null) {
-                        classFlag = (byte)nullableContextAttribute.ConstructorArguments[0].Value!;
-                    }                    
-                    // Check if any properties have the NullableContextAttribute
-                    CustomAttributeData? nullableAttribute = _mi.CustomAttributes
-                            .FirstOrDefault(attr => attr.AttributeType.Name == "NullableAttribute");
+            public bool? IsNullable(Type finalType) {
+                if(finalType.IsClass == false)
+                    return null;
+                bool isCompiledWithNullable = _mi.DeclaringType?.CustomAttributes
+                        .Any(attr => attr.AttributeType.Name == "NullableAttribute") == true;
+                if(!isCompiledWithNullable) {
+                    return null;
+                }
 
-                    byte? attributeFlag = classFlag;
-                    if(nullableAttribute != null) {
-                        attributeFlag = (byte)nullableAttribute.ConstructorArguments[0].Value!;
+                // Check if any properties have the NullableContextAttribute
+                CustomAttributeData? nullableAttribute = _mi.CustomAttributes
+                        .FirstOrDefault(attr => attr.AttributeType.Name == "NullableAttribute");
+
+                byte? attributeFlag = null;
+                if(nullableAttribute != null) {
+                    if(nullableAttribute.ConstructorArguments[0].Value is byte t) {
+                        attributeFlag = t;
+                    } else if(nullableAttribute.ConstructorArguments[0].Value is byte[] tArray) {
+                        attributeFlag = tArray[0];
                     }
-                    if(attributeFlag == 1) {
-                        return true;
-                    }
+                }
+                if(attributeFlag == 1) {
                     return false;
                 }
+                if(attributeFlag == 2) {
+                    return true;
+                }
+
+                CustomAttributeData? nullableContextAttribute = _mi.DeclaringType?.CustomAttributes
+                        .FirstOrDefault(attr => attr.AttributeType.Name == "NullableContextAttribute");
+                byte? classFlag = null;
+                if(nullableContextAttribute != null) {
+                    classFlag = (byte)nullableContextAttribute.ConstructorArguments[0].Value!;
+                }
+                if(classFlag == 1) {
+                    return false;
+                }
+                if(classFlag == 2) {
+                    return true;
+                }
+
+                return null;
             }
 
 
@@ -200,9 +221,13 @@ namespace Parquet.Serialization {
                 if(t.IsEnum) {
                     t = t.GetEnumUnderlyingType();
                 }
-                bool? isMemberNotNullable = member?.IsNotNullable;
-                if (isMemberNotNullable == true) {
-                    isNullable = false;
+                bool? isMemberNullable = null;
+                if (isCompiledWithNullable) {
+                    isMemberNullable = member?.IsNullable(t);
+                }
+                
+                if(isMemberNullable is not null) {
+                    isNullable = isMemberNullable.Value;
                 }
                 r = new DataField(name, t, isNullable, null, propertyName, isCompiledWithNullable);
             }
@@ -270,7 +295,7 @@ namespace Parquet.Serialization {
             }
 
             if(SchemaEncoder.IsSupported(bt)) {
-                return ConstructDataField(columnName, propertyName, t, member, isCompiledWithNullable);
+                return ConstructDataField(columnName, propertyName, t, member, isCompiledWithNullable && !(member?.IsLegacyRepeatable??false));
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting, isCompiledWithNullable);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
