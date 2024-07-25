@@ -55,22 +55,6 @@ namespace Parquet.Rows {
             return rows;
         }
 
-        //private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn,
-        //    out Row? row) {
-        //    var rowList = new List<object>();
-        //    foreach(Field f in fields) {
-        //        if(!TryBuildNextCell(f, pathToColumn, out object? cell)) {
-        //            row = null;
-        //            return false;
-        //        }
-
-        //        rowList.Add(cell!);
-        //    }
-
-        //    row = new Row(fields, rowList);
-        //    return true;
-        //}
-
         private bool TryBuildNextRow(IReadOnlyCollection<Field> fields, Dictionary<FieldPath, LazyColumnEnumerator> pathToColumn,
             out Row? row) {
             var rowList = new List<object>();
