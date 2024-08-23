@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Parquet.Data;
 using Parquet.Extensions;
@@ -594,21 +593,9 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<int> data) {
-            Span<byte> dataBytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(dataBytes);
-            return data.Length;
-        }
-
         public static void Encode(ReadOnlySpan<uint> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
-        }
-
-        public static int Decode(Span<byte> source, Span<uint> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return data.Length;
         }
 
         public static void Encode(ReadOnlySpan<long> data, Stream destination) {
@@ -616,21 +603,9 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<long> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return data.Length;
-        }
-
         public static void Encode(ReadOnlySpan<ulong> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
-        }
-
-        public static int Decode(Span<byte> source, Span<ulong> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return data.Length;
         }
 
         public static void Encode(ReadOnlySpan<BigInteger> data, Stream destination) {
@@ -638,10 +613,10 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<BigInteger> data) {
+        public static int Decode<T>(Span<byte> source, Span<T> data) where T : struct {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
             source.CopyWithLimitTo(bytes);
-            return data.Length;
+            return Math.Min(data.Length, source.Length / Unsafe.SizeOf<T>());
         }
 
         public static void Encode(ReadOnlySpan<decimal> data, Stream destination, SchemaElement tse) {
@@ -751,12 +726,6 @@ namespace Parquet.Encodings {
         public static void Encode(ReadOnlySpan<double> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
-        }
-
-        public static int Decode(Span<byte> source, Span<double> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return data.Length;
         }
 
         public static void Encode(ReadOnlySpan<float> data, Stream destination) {
