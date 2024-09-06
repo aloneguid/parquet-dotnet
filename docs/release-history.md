@@ -3,6 +3,7 @@
 ### Improvements
 - File merger utility has `Stream` overload for non file-based operations.
 - File merger utility has extra overload to choose compression codec and specify custom metadata, by @dxdjgl in #519.
+- Timestamp logical type is supported, by @cliedeman in #521.
 
 ## 4.24.0
 

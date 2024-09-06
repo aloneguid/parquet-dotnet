@@ -293,7 +293,7 @@ namespace Parquet.Test.Schema {
 
         [Fact]
         public async Task ReadSchemaActuallyEqualToWriteSchema() {
-            var field = new DateTimeDataField("Date", DateTimeFormat.DateAndTime, true);
+            var field = new DateTimeDataField("Date", DateTimeFormat.DateAndTime, isNullable: true);
             var schema = new ParquetSchema(field);
 
             using var memoryStream = new MemoryStream();
