@@ -11,8 +11,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
-        <PackageReference Include="ParquetSharp" Version="15.0.2.1" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+        <PackageReference Include="ParquetSharp" Version="16.1.0" />
     </ItemGroup>
 
     <ItemGroup>

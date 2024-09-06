@@ -191,7 +191,9 @@ namespace Parquet.Serialization {
                 ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
                 r = new DateTimeDataField(name,
                     tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
-                    t == typeof(DateTime?), null, propertyName);
+                    isAdjustedToUTC: tsa == null ? true : tsa.IsAdjustedToUTC,
+                    unit: tsa?.Resolution.Convert(),
+                    isNullable: t == typeof(DateTime?), null, propertyName);
             } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
                 r = new TimeSpanDataField(name,
                     member?.MicroSecondsTimeAttribute == null
@@ -334,6 +336,46 @@ namespace Parquet.Serialization {
                 .ToList();
 
             return new ParquetSchema(fields);
+        }
+        
+        /// <summary>
+        /// Convert Resolution to TimeUnit
+        /// </summary>
+        /// <param name="resolution"></param>
+        /// <returns></returns>
+        public static DateTimeTimeUnit Convert(this ParquetTimestampResolution resolution) {
+            switch(resolution) {
+                case ParquetTimestampResolution.Milliseconds:
+                    return DateTimeTimeUnit.Millis;
+#if NET7_0_OR_GREATER
+                case ParquetTimestampResolution.Microseconds:
+                    return DateTimeTimeUnit.Micros;
+#endif
+                default:
+                    throw new ParquetException($"Unexpected Resolution: {resolution}");
+                // nanoseconds to be added
+            }
+        }
+        
+        /// <summary>
+        /// Convert Parquet TimeUnit to TimeUnit
+        /// </summary>
+        /// <param name="unit"></param>
+        /// <returns></returns>
+        public static DateTimeTimeUnit Convert(this Parquet.Meta.TimeUnit unit) {
+            if(unit.MILLIS is not null) {
+                return DateTimeTimeUnit.Millis;
+            }
+
+            if(unit.MICROS is not null) {
+                return DateTimeTimeUnit.Micros;
+            }
+
+            if(unit.NANOS is not null) {
+                return DateTimeTimeUnit.Nanos;
+            }
+
+            throw new ParquetException($"Unexpected TimeUnit: {unit}");
         }
     }
 }
