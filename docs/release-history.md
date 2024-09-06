@@ -5,6 +5,7 @@
 - File merger utility has extra overload to choose compression codec and specify custom metadata, by @dxdjgl in #519.
 - Timestamp logical type is supported, by @cliedeman in #521.
 - More data types support encoding using Dictionary encoding, by @EamonHetherton in #531.
+- Support for Roslyn nullable types, by @ErikApption in #537.
 
 ## 4.24.0
 
