@@ -38,13 +38,15 @@ namespace Parquet {
 #endif
 
         /// <summary>
-        /// Whether to use dictionary encoding for string columns. Other column types are not supported.
+        /// Whether to use dictionary encoding for columns if data meets <seealso cref="DictionaryEncodingThreshold"/>
+        /// The following CLR types are currently supported:
+        /// <see cref="string"/>, <see cref="DateTime"/>, <see cref="decimal"/>, <see cref="byte"/>, <see cref="short"/>, <see cref="ushort"/>, <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, <see cref="ulong"/>, <see cref="float"/>, <see cref="double"/>"/>
         /// </summary>
         public bool UseDictionaryEncoding { get; set; } = true;
 
         /// <summary>
-        /// String dictionary uniqueness threshold, which is a value from 0 (no unique values) 
-        /// to 1 (all values are unique) indicating when string dictionary encoding is applied.
+        /// Dictionary uniqueness threshold, which is a value from 0 (no unique values) 
+        /// to 1 (all values are unique) indicating when dictionary encoding is applied.
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
