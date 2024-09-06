@@ -34,16 +34,31 @@ namespace Parquet.Serialization.Attributes {
         /// Creates an instance of the attribute
         /// </summary>
         /// <param name="resolution"></param>
-        public ParquetTimestampAttribute(ParquetTimestampResolution resolution = ParquetTimestampResolution.Milliseconds) {
+        /// <param name="useLogicalTimestamp"></param>
+        public ParquetTimestampAttribute(ParquetTimestampResolution resolution = ParquetTimestampResolution.Milliseconds, bool useLogicalTimestamp = false) {
             Resolution = resolution;
+            UseLogicalTimestamp = useLogicalTimestamp;
         }
 
         /// <summary>
         /// Resolution of Parquet timestamp
         /// </summary>
         public ParquetTimestampResolution Resolution { get; private set; }
+        
+        /// <summary>
+        /// Resolution of Parquet timestamp
+        /// </summary>
+        public bool UseLogicalTimestamp { get; private set; }
+        
+        /// <summary>
+        /// IsAdjustedToUTC
+        /// </summary>
+        public bool IsAdjustedToUTC { get; private set; }
 
         internal DateTimeFormat GetDateTimeFormat() {
+            if(UseLogicalTimestamp)
+                return DateTimeFormat.Timestamp;
+            
             return Resolution switch {
                 ParquetTimestampResolution.Milliseconds => DateTimeFormat.DateAndTime,
 #if NET7_0_OR_GREATER
