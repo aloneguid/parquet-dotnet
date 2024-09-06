@@ -1117,8 +1117,10 @@ namespace Parquet.Encodings {
                     else
                         Array.Copy(BitConverter.GetBytes(len), 0, rb, rbOffset, sizeof(int));
                     rbOffset += sizeof(int);
-                    E.GetBytes(s, 0, s.Length, rb, rbOffset);
-                    rbOffset += len;
+                    if(len > 0) {
+                        E.GetBytes(s, 0, s.Length, rb, rbOffset);
+                        rbOffset += len;
+                    }
                 }
 
                 if(rbOffset > 0)

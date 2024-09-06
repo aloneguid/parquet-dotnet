@@ -33,7 +33,7 @@ namespace Parquet.Test {
             "zzz",
             };
 
-            var dataField = new DataField<string>("string");
+            var dataField = new DataField<string>("string", true);
             var parquetSchema = new ParquetSchema(dataField);
 
             using var stream = new MemoryStream();
