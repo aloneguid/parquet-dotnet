@@ -350,8 +350,11 @@ namespace Parquet.Test.Serialisation {
             [ParquetTimestamp]
             public DateTime TimestampDate { get; set; }
 
+            [ParquetTimestamp(useLogicalTimestamp: true, isAdjustedToUTC: false)]
+            public DateTime LogicalLocalTimestampDate { get; set; }
+            
             [ParquetTimestamp(useLogicalTimestamp: true)]
-            public DateTime LogicalTimestampDate { get; set; }
+            public DateTime LogicalUtcTimestampDate { get; set; }
 
             [ParquetTimestamp]
             public DateTime? NullableTimestampDate { get; set; }
@@ -414,11 +417,22 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
-        public void Type_DateTime_LogicalTimestamp() {
+        public void Type_DateTime_LogicalLocalTimestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
-            DataField df = s.FindDataField(nameof(DatesPoco.LogicalTimestampDate));
+            DataField df = s.FindDataField(nameof(DatesPoco.LogicalLocalTimestampDate));
             Assert.True(df is DateTimeDataField);
+            Assert.False(((DateTimeDataField)df).IsAdjustedToUTC);
+            Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
+        }
+        
+        [Fact]
+        public void Type_DateTime_LogicalUtcTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.LogicalUtcTimestampDate));
+            Assert.True(df is DateTimeDataField);
+            Assert.True(((DateTimeDataField)df).IsAdjustedToUTC);
             Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
         }
 
