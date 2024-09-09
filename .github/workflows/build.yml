@@ -2,8 +2,8 @@
 
 env:
   VERSION: 4.25.0
-  PACKAGE_SUFFIX: '-pre.3'
-  # PACKAGE_SUFFIX: ''
+#  PACKAGE_SUFFIX: '-pre.3'
+  PACKAGE_SUFFIX: ''
   ASM_VERSION: 4.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip

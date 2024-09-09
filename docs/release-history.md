@@ -6,6 +6,7 @@
 - Timestamp logical type is supported, by @cliedeman in #521.
 - More data types support encoding using Dictionary encoding, by @EamonHetherton in #531.
 - Support for Roslyn nullable types, by @ErikApption in #537.
+- internal: fix return of `Decode` methods to returning the actual destination length, by @artnim in #543.
 
 ## 4.24.0
 
