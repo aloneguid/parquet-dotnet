@@ -50,6 +50,7 @@ This repository now includes an implementation of parquet desktop viewer applica
 - [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
 - [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
 - [Omni Loader: Self-tuning Database Migration Accelerator](https://www.omniloader.com).
+- [Contoso Data Generator V2 : sample data generator](https://github.com/sql-bi/Contoso-Data-Generator-V2).
 
 *...raise a PR to appear here...*
 
