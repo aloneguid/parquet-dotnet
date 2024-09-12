@@ -838,10 +838,13 @@ namespace Parquet.Test.Serialisation {
 
         class EnumProps {
             public int Id { get; set; }
-
+            
             public DefaultEnum DE { get; set; }
-
+            
             public ShortEnum SE { get; set; }
+
+            // Nullable Enum
+            public DefaultEnum? NE { get; set; }
         }
 
         [Fact]
@@ -849,7 +852,8 @@ namespace Parquet.Test.Serialisation {
             var data = Enumerable.Range(0, 1_000).Select(i => new EnumProps {
                 Id = i,
                 DE = i % 2 == 0 ? DefaultEnum.One : DefaultEnum.Two,
-                SE = i % 2 == 0 ? ShortEnum.One : ShortEnum.Two
+                SE = i % 2 == 0 ? ShortEnum.One : ShortEnum.Two,
+                NE = i % 2 == 0 ? null : DefaultEnum.One,
             }).ToList();
 
             await Compare(data);

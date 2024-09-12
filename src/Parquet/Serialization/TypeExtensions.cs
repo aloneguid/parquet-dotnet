@@ -219,10 +219,6 @@ namespace Parquet.Serialization {
                     : new DecimalDataField(name, ps.Precision, ps.Scale,
                         isNullable: isTypeNullable, propertyName: propertyName);
             } else {
-
-                if(t.IsEnum) {
-                    t = t.GetEnumUnderlyingType();
-                }
                 bool? isMemberNullable = null;
                 if (isCompiledWithNullable) {
                     isMemberNullable = member?.IsNullable(t);
@@ -231,6 +227,17 @@ namespace Parquet.Serialization {
                 if(isMemberNullable is not null) {
                     isNullable = isMemberNullable.Value;
                 }
+                
+                Type? nt = Nullable.GetUnderlyingType(t);
+
+                if(nt is { IsEnum: true }) {
+                    isNullable = true;
+                    t = nt.GetEnumUnderlyingType();
+                }
+                if(t.IsEnum) {
+                    t = t.GetEnumUnderlyingType();
+                }
+
                 r = new DataField(name, t, isNullable, null, propertyName, isCompiledWithNullable);
             }
 
