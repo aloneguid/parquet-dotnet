@@ -633,6 +633,9 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
 
             public DefaultEnum DE { get; set; }
+ 
+            // Nullable Enum
+            public DefaultEnum? NE { get; set; }
 
             public ShortEnum SE { get; set; }
         }
@@ -640,13 +643,18 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void Enums() {
             ParquetSchema schema = typeof(EnumsInClasses).GetParquetSchema(true);
-            Assert.Equal(3, schema.Fields.Count);
+            Assert.Equal(4, schema.Fields.Count);
 
             DataField dedf = schema.FindDataField("DE");
+            DataField nedf = schema.FindDataField("NE");
             DataField sedf = schema.FindDataField("SE");
 
             Assert.Equal(typeof(int), dedf.ClrType);
+            Assert.False(dedf.IsNullable);
+            Assert.Equal(typeof(int), nedf.ClrType);
+            Assert.True(nedf.IsNullable);
             Assert.Equal(typeof(short), sedf.ClrType);
+            Assert.False(dedf.IsNullable);
         }
     }
 }
