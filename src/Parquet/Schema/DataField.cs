@@ -153,13 +153,20 @@ namespace Parquet.Schema {
                 return false;
 
             return base.Equals(obj) &&
-                BaseClrType == other.BaseClrType &&
+                BaseClrTypeCompatible(other) &&
                 IsNullable == other.IsNullable &&
                 IsArray == other.IsArray;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode() => base.GetHashCode();
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        protected virtual bool BaseClrTypeCompatible(DataField other) => this.BaseClrType == other.BaseClrType;
 
         #region [ Type Resolution ]
 

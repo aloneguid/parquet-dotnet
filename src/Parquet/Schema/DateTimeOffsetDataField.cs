@@ -28,5 +28,18 @@ namespace Parquet.Schema {
            : base(name, typeof(DateTimeOffset), isNullable, isArray, propertyName) {
             Unit = unit ?? DateTimeTimeUnit.Millis;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        protected override bool BaseClrTypeCompatible(DataField other) {
+            if(other is DateTimeDataField) {
+                return true;
+            }
+
+            return base.BaseClrTypeCompatible(other);
+        }
     }
 }

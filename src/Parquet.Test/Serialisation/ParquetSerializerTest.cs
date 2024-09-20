@@ -891,6 +891,35 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(data, data2);
 
         }
+        
+        [Fact]
+        public async Task DateTimeOffset_Serialize() {
+            var ms = new MemoryStream();
+            var value = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var expected = new DateTimeOffsetClass {
+                DateTimeOffset = value,
+            };
+
+            //write
+            await ParquetSerializer.SerializeAsync([expected], ms);
+
+            //read back
+            ms.Position = 0;
+            IList<DateTimeOffsetClass> data = await ParquetSerializer.DeserializeAsync<DateTimeOffsetClass>(ms); 
+            DateTimeOffsetClass actual = Assert.Single(data);
+            Assert.Equal(expected.DateTimeOffset, actual.DateTimeOffset);
+            
+            //write append
+            ms.Position = 0;
+            await ParquetSerializer.SerializeAsync([expected], ms, new ParquetSerializerOptions {
+                Append = true,
+            });
+        }
+
+        private class DateTimeOffsetClass {
+            public DateTimeOffset DateTimeOffset { get; set; }
+        }
 
         [Fact]
         public async Task InterfaceProperty_Serialize() {
