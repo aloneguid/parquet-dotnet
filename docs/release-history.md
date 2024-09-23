@@ -1,3 +1,9 @@
+## 5.0.0
+
+### Breaking changes
+
+- Table/Row API is now removed.
+
 ## 4.25.0
 
 ### Improvements

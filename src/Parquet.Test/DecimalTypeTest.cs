@@ -1,19 +1,10 @@
 ﻿using System;
-using Parquet.Data;
 using Xunit;
 using System.Threading.Tasks;
 using Parquet.Schema;
-using Parquet.Rows;
 
 namespace Parquet.Test {
     public class DecimalTypeTest : TestBase {
-        [Fact]
-        public async Task Read_File_As_Table_With_Decimal_Column_Should_Read_File() {
-            const int decimalColumnIndex = 4;
-            Table table = await ReadTestFileAsTableAsync("test-types-with-decimal.parquet");
-
-            Assert.Equal(1234.56m, table[0].Get<decimal>(decimalColumnIndex));
-        }
 
         [Fact]
         public void Validate_Scale_Zero_Should_Be_Allowed() {

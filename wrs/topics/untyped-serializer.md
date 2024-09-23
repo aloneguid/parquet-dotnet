@@ -1,4 +1,4 @@
-# Untyped Serializer (Experimental)
+# Untyped Serializer
 
 Version 4.19.0 introduced a new experimental feature: the ability to write and read data without the need to define low-level column data or define classes. This is extremely useful for use case like:
 

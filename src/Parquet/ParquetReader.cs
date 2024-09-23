@@ -6,7 +6,6 @@ using Parquet.Data;
 using System.Threading.Tasks;
 using System.Threading;
 using Parquet.Schema;
-using Parquet.Rows;
 using Parquet.Meta;
 
 namespace Parquet {
@@ -90,15 +89,6 @@ namespace Parquet {
         #region [ Helpers ]
 
         /// <summary>
-        /// Reads entire file as a table
-        /// </summary>
-        public static async Task<Table> ReadTableFromFileAsync(string filePath, ParquetOptions? parquetOptions = null) {
-            using(ParquetReader reader = await CreateAsync(filePath, parquetOptions)) {
-                return await reader.ReadAsTableAsync();
-            }
-        }
-
-        /// <summary>
         /// Opens file at specified path to read schema and return
         /// </summary>
         public static async Task<ParquetSchema> ReadSchemaAsync(string filePath) {
@@ -112,15 +102,6 @@ namespace Parquet {
         public static async Task<ParquetSchema> ReadSchemaAsync(Stream parquetStream) {
             using ParquetReader reader = await CreateAsync(parquetStream);
             return reader.Schema;
-        }
-
-        /// <summary>
-        /// Reads entire stream as a table
-        /// </summary>
-        public static async Task<Table> ReadTableFromStreamAsync(Stream stream, ParquetOptions? parquetOptions = null) {
-            using(ParquetReader reader = await CreateAsync(stream, parquetOptions)) {
-                return await reader.ReadAsTableAsync();
-            }
         }
 
         #endregion
