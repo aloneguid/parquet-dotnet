@@ -66,58 +66,6 @@ namespace Parquet.Serialization {
             public ParquetMicroSecondsTimeAttribute? MicroSecondsTimeAttribute => _mi.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>();
 
             public ParquetDecimalAttribute? DecimalAttribute => _mi.GetCustomAttribute<ParquetDecimalAttribute>();
-
-            /// <summary>
-            /// https://github.com/dotnet/roslyn/blob/main/docs/features/nullable-metadata.md
-            /// This check if a class T (nullable by default) doesn't have the nullable mark.
-            /// Every class should be considered nullable unless the compiler has been instructed to make it non-nullable.
-            /// </summary>
-            /// <returns></returns>
-            public bool? IsNullable(Type finalType) {
-                if(finalType.IsClass == false)
-                    return null;
-                bool isCompiledWithNullable = _mi.DeclaringType?.CustomAttributes
-                        .Any(attr => attr.AttributeType.Name == "NullableAttribute") == true;
-                if(!isCompiledWithNullable) {
-                    return null;
-                }
-
-                // Check if any properties have the NullableContextAttribute
-                CustomAttributeData? nullableAttribute = _mi.CustomAttributes
-                        .FirstOrDefault(attr => attr.AttributeType.Name == "NullableAttribute");
-
-                byte? attributeFlag = null;
-                if(nullableAttribute != null) {
-                    if(nullableAttribute.ConstructorArguments[0].Value is byte t) {
-                        attributeFlag = t;
-                    } else if(nullableAttribute.ConstructorArguments[0].Value is byte[] tArray) {
-                        attributeFlag = tArray[0];
-                    }
-                }
-                if(attributeFlag == 1) {
-                    return false;
-                }
-                if(attributeFlag == 2) {
-                    return true;
-                }
-
-                CustomAttributeData? nullableContextAttribute = _mi.DeclaringType?.CustomAttributes
-                        .FirstOrDefault(attr => attr.AttributeType.Name == "NullableContextAttribute");
-                byte? classFlag = null;
-                if(nullableContextAttribute != null) {
-                    classFlag = (byte)nullableContextAttribute.ConstructorArguments[0].Value!;
-                }
-                if(classFlag == 1) {
-                    return false;
-                }
-                if(classFlag == 2) {
-                    return true;
-                }
-
-                return null;
-            }
-
-
         }
 
         class ClassPropertyMember : ClassMember {
@@ -181,7 +129,7 @@ namespace Parquet.Serialization {
             return members;
         }
 
-        private static Field ConstructDataField(string name, string propertyName, Type t, ClassMember? member, bool isCompiledWithNullable) {
+        private static Field ConstructDataField(string name, string propertyName, Type t, ClassMember? member) {
             Field r;
             bool? isNullable = member == null
                 ? null
@@ -219,17 +167,7 @@ namespace Parquet.Serialization {
                     : new DecimalDataField(name, ps.Precision, ps.Scale,
                         isNullable: isTypeNullable, propertyName: propertyName);
             } else {
-                bool? isMemberNullable = null;
-                if (isCompiledWithNullable) {
-                    isMemberNullable = member?.IsNullable(t);
-                }
-                
-                if(isMemberNullable is not null) {
-                    isNullable = isMemberNullable.Value;
-                }
-                
                 Type? nt = Nullable.GetUnderlyingType(t);
-
                 if(nt is { IsEnum: true }) {
                     isNullable = true;
                     t = nt.GetEnumUnderlyingType();
@@ -238,7 +176,7 @@ namespace Parquet.Serialization {
                     t = t.GetEnumUnderlyingType();
                 }
 
-                r = new DataField(name, t, isNullable, null, propertyName, isCompiledWithNullable);
+                r = new DataField(name, t, isNullable, null, propertyName);
             }
 
             return r;
@@ -246,18 +184,17 @@ namespace Parquet.Serialization {
 
         private static MapField ConstructMapField(string name, string propertyName,
             Type tKey, Type tValue,
-            bool forWriting,
-            bool isCompiledWithNullable) {
+            bool forWriting) {
 
             Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
             PropertyInfo piKey = kvpType.GetProperty("Key")!;
             PropertyInfo piValue = kvpType.GetProperty("Value")!;
 
-            Field keyField = MakeField(new ClassPropertyMember(piKey), forWriting, isCompiledWithNullable)!;
+            Field keyField = MakeField(new ClassPropertyMember(piKey), forWriting)!;
             if(keyField is DataField keyDataField && keyDataField.IsNullable) {
                 keyField.IsNullable = false;
             }
-            Field valueField = MakeField(new ClassPropertyMember(piValue), forWriting, isCompiledWithNullable)!;
+            Field valueField = MakeField(new ClassPropertyMember(piValue), forWriting)!;
             var mf = new MapField(name, keyField, valueField);
             mf.ClrPropName = propertyName;
             return mf;
@@ -265,19 +202,18 @@ namespace Parquet.Serialization {
 
         private static ListField ConstructListField(string name, string propertyName,
             Type elementType,
-            bool forWriting,
-            bool isCompiledWithNullable) {
+            bool forWriting) {
 
-            ListField lf = new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting, isCompiledWithNullable)!);
+            ListField lf = new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting)!);
             lf.ClrPropName = propertyName;
             return lf;
         }
 
-        private static Field? MakeField(ClassMember member, bool forWriting, bool isCompiledWithNullable) {
+        private static Field? MakeField(ClassMember member, bool forWriting) {
             if(member.ShouldIgnore)
                 return null;
 
-            Field r = MakeField(member.MemberType, member.ColumnName, member.Name, member, forWriting, isCompiledWithNullable);
+            Field r = MakeField(member.MemberType, member.ColumnName, member.Name, member, forWriting);
             r.Order = member.Order;
             return r;
         }
@@ -290,13 +226,11 @@ namespace Parquet.Serialization {
         /// <param name="propertyName">Class property name</param>
         /// <param name="member">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
         /// <param name="forWriting"></param>
-        /// <param name="isCompiledWithNullable">if nullable was enabled to compile the type</param>
         /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
         /// <exception cref="NotImplementedException"></exception>
         private static Field MakeField(Type t, string columnName, string propertyName,
             ClassMember? member,
-            bool forWriting,
-            bool isCompiledWithNullable) {
+            bool forWriting) {
 
             Type bt = t.IsNullable() ? t.GetNonNullable() : t;
             if(member != null && member.IsLegacyRepeatable && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
@@ -304,16 +238,16 @@ namespace Parquet.Serialization {
             }
 
             if(SchemaEncoder.IsSupported(bt)) {
-                return ConstructDataField(columnName, propertyName, t, member, isCompiledWithNullable && !(member?.IsLegacyRepeatable??false));
+                return ConstructDataField(columnName, propertyName, t, member);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting, isCompiledWithNullable);
+                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
-                return ConstructListField(columnName, propertyName, elementType!, forWriting, isCompiledWithNullable);
+                return ConstructListField(columnName, propertyName, elementType!, forWriting);
             } else if(t.IsClass || t.IsInterface || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
                 List<ClassMember> props = FindMembers(t, forWriting);
                 Field[] fields = props
-                    .Select(p => MakeField(p, forWriting, isCompiledWithNullable))
+                    .Select(p => MakeField(p, forWriting))
                     .Where(f => f != null)
                     .Select(f => f!)
                     .OrderBy(f => f.Order)
@@ -333,10 +267,9 @@ namespace Parquet.Serialization {
         private static ParquetSchema CreateSchema(Type t, bool forWriting) {
 
             // get it all, including base class properties (may be a hierarchy)
-            bool isCompiledWithNullable = NullableChecker.IsNullableEnabled(t);
             List<ClassMember> props = FindMembers(t, forWriting);
             List<Field> fields = props
-                .Select(p => MakeField(p, forWriting, isCompiledWithNullable))
+                .Select(p => MakeField(p, forWriting))
                 .Where(f => f != null)
                 .Select(f => f!)
                 .OrderBy(f => f.Order)
@@ -344,7 +277,7 @@ namespace Parquet.Serialization {
 
             return new ParquetSchema(fields);
         }
-        
+
         /// <summary>
         /// Convert Resolution to TimeUnit
         /// </summary>
@@ -360,10 +293,10 @@ namespace Parquet.Serialization {
 #endif
                 default:
                     throw new ParquetException($"Unexpected Resolution: {resolution}");
-                // nanoseconds to be added
+                    // nanoseconds to be added
             }
         }
-        
+
         /// <summary>
         /// Convert Parquet TimeUnit to TimeUnit
         /// </summary>

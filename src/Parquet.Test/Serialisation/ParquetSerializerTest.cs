@@ -912,6 +912,32 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(data, data2);
         }
 
+        /*class OneRequiredStringProperty {
+            [ParquetRequired]
+            public string S { get; set; } = "";
+        }
+
+        class OneOptionalStringProperty {
+            public string? S { get; set; }
+        }
+
+        [Fact]
+        public async Task String_RequiredIntoOptional_Serde() {
+            OneRequiredStringProperty[] dataRequired = [
+                new OneRequiredStringProperty { S = "a" },
+                new OneRequiredStringProperty { S = "b" },
+            ];
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(dataRequired, ms);
+
+            ms.Position = 0;
+
+            IList<OneOptionalStringProperty> dataOptional = await ParquetSerializer.DeserializeAsync<OneOptionalStringProperty>(ms);
+
+            Assert.Equivalent(dataRequired, dataOptional);
+        }*/
+
 #if NET6_0_OR_GREATER
 
         record RecordContainingDateAndtimeOnly {

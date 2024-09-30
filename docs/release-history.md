@@ -11,6 +11,7 @@
 ### Bugs fixed
 
 - Nullable `Enum`s were not correctly unwrapped to primitive types, by @cliedeman in #551.
+- Reverting #537 due to it breaking binary compatibility in 4.25.0. Thanks to @NeilMacMullen for reporting this.
 
 ## 4.25.0
 

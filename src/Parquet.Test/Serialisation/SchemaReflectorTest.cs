@@ -550,27 +550,6 @@ namespace Parquet.Test.Serialisation {
             Assert.True(s.DataFields[2].IsNullable);
         }
 
-
-        class PocoClassNotNullable {
-            [JsonPropertyName("id")]
-            public long Id { get; set; }
-
-            [JsonPropertyName("value")]
-            public string Value { get; set; } = null!;
-
-            [JsonPropertyName("frequency")]
-            public double Frequency { get; set; }
-        }
-
-        [Fact]
-        public void Strings_NotNullable() {
-            ParquetSchema s = typeof(PocoClassNotNullable).GetParquetSchema(true);
-            Assert.False(s.DataFields[0].IsNullable);
-            Assert.False(s.DataFields[1].IsNullable);
-            Assert.False(s.DataFields[2].IsNullable);
-        }
-
-
         public interface IInterface {
             int Id { get; set; }
         }
