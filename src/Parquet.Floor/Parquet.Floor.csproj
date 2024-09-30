@@ -43,7 +43,7 @@
         <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.1.3" />
         <PackageReference Include="Avalonia.Controls.TreeDataGrid" Version="11.0.10" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
         <PackageReference Include="Config.Net" Version="5.2.0" />
         <PackageReference Include="CsvHelper" Version="33.0.1" />
         <PackageReference Include="Projektanker.Icons.Avalonia" Version="9.4.0" />

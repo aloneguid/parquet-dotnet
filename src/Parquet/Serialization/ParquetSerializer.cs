@@ -45,14 +45,14 @@ namespace Parquet.Serialization {
         }
 
         private static async Task SerializeRowGroupAsync(ParquetWriter writer,
-            Striper<IDictionary<string, object>> striper,
+            Striper<IDictionary<string, object?>> striper,
             ParquetSchema schema,
-            IReadOnlyCollection<IDictionary<string, object>> data,
+            IReadOnlyCollection<IDictionary<string, object?>> data,
             CancellationToken cancellationToken) {
 
             using ParquetRowGroupWriter rg = writer.CreateRowGroup();
 
-            foreach(FieldStriper<IDictionary<string, object>> fs in striper.FieldStripers) {
+            foreach(FieldStriper<IDictionary<string, object?>> fs in striper.FieldStripers) {
                 DataColumn dc;
                 try {
                     ShreddedColumn sc = fs.Stripe(fs.Field, data);
@@ -125,14 +125,14 @@ namespace Parquet.Serialization {
         /// Experimental object serialisation
         /// </summary>
         public static async Task SerializeAsync(ParquetSchema schema,
-            IReadOnlyCollection<IDictionary<string, object>> data,
+            IReadOnlyCollection<IDictionary<string, object?>> data,
             Stream destination,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
 
 
-            object boxedStriper = _schemaToStriper.GetOrAdd(schema, _ => new Striper<IDictionary<string, object>>(schema));
-            var striper = (Striper<IDictionary<string, object>>)boxedStriper;
+            object boxedStriper = _schemaToStriper.GetOrAdd(schema, _ => new Striper<IDictionary<string, object?>>(schema));
+            var striper = (Striper<IDictionary<string, object?>>)boxedStriper;
 
             bool append = options != null && options.Append;
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination,
@@ -148,7 +148,7 @@ namespace Parquet.Serialization {
                     int rgs = options.RowGroupSize.Value;
                     if(rgs < 1)
                         throw new InvalidOperationException($"row group size must be a positive number, but passed {rgs}");
-                    foreach(IDictionary<string, object>[] chunk in data.Chunk(rgs)) {
+                    foreach(IDictionary<string, object?>[] chunk in data.Chunk(rgs)) {
                         await SerializeRowGroupAsync(writer, striper, schema, chunk, cancellationToken);
                     }
                 } else {

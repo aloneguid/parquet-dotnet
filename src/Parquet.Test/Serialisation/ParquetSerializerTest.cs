@@ -46,7 +46,7 @@ namespace Parquet.Test.Serialisation {
             }
         }
 
-        private async Task DictCompare<TSchema>(List<Dictionary<string, object>> data, bool asJson = false,
+        private async Task DictCompare<TSchema>(List<Dictionary<string, object?>> data, bool asJson = false,
             string? writeTestFile = null) {
 
             // serialize to parquet
@@ -111,7 +111,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Atomics_Simplest_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
                 ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
                 ["EventName"] = i % 2 == 0 ? "on" : "off",
                 ["MeterValue"] = (double)i,
@@ -199,7 +199,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Atomics_Nullable_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
                 ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
                 ["EventName"] = i % 2 == 0 ? "on" : "off",
                 ["MeterValue"] = (double)i,
@@ -321,7 +321,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Struct_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
                 ["FirstName"] = "Joe",
                 ["LastName"] = "Bloggs",
                 ["Address"] = new Dictionary<string, object> {
@@ -395,10 +395,10 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task List_Structs_Serde_Dict() {
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
                 ["PersonId"] = i,
                 ["Comments"] = i % 2 == 0 ? "none" : null,
-                ["Addresses"] = Enumerable.Range(0, 4).Select(a => new Dictionary<string, object> {
+                ["Addresses"] = Enumerable.Range(0, 4).Select(a => new Dictionary<string, object?> {
                     ["City"] = "Birmingham",
                     ["Country"] = "United Kingdom"
                 }).ToList()
@@ -485,7 +485,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task List_Atomics_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object?> {
                 ["PersonId"] = i,
                 ["ParentIds"] = Enumerable.Range(i, 4).ToList()
             }).ToList();
@@ -496,7 +496,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task List_NullableAtomics_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object?> {
                 ["PersonId"] = i,
                 ["ParentIds"] = Enumerable.Range(i, 4).Select(i => (int?)i).ToList()
             }).ToList();
@@ -507,7 +507,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Array_Atomics_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 100).Select(i => new Dictionary<string, object?> {
                 ["PersonId"] = i,
                 ["ParentIds"] = Enumerable.Range(i, 4).ToList()
             }).ToList();
@@ -615,7 +615,7 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task Map_Simple_Serde_Dict() {
-            var data = Enumerable.Range(0, 10).Select(i => new Dictionary<string, object> {
+            var data = Enumerable.Range(0, 10).Select(i => new Dictionary<string, object?> {
                 ["Id"] = i,
                 ["Tags"] = new Dictionary<string, string> {
                     ["id"] = i.ToString(),

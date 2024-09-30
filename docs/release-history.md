@@ -2,7 +2,11 @@
 
 ### Breaking changes
 
-- Table/Row API is now removed.
+- This is the first version without old Table/Row API, which is now completely removed. This has been one of the major headaches and source of bugs since being introduced in the very first version of this library. If you need a similar functionality, consider [untyped serializer](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html).
+
+### Improvements
+
+- `IronCompress` upstream dependency updated to 1.6.0.
 
 ## 4.25.0
 
