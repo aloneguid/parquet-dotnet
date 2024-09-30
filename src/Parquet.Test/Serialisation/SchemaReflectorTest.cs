@@ -326,6 +326,9 @@ namespace Parquet.Test.Serialisation {
             [ParquetTimestamp(useLogicalTimestamp: true)]
             public DateTime LogicalTimestampDate { get; set; }
 
+            [ParquetTimestamp(useLogicalTimestamp: true, isAdjustedToUtc: true)]
+            public DateTimeOffset DateTimeOffset { get; set; }
+
             [ParquetTimestamp]
             public DateTime? NullableTimestampDate { get; set; }
 
@@ -393,6 +396,15 @@ namespace Parquet.Test.Serialisation {
             DataField df = s.FindDataField(nameof(DatesPoco.LogicalTimestampDate));
             Assert.True(df is DateTimeDataField);
             Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
+        }
+        
+        [Fact]
+        public void Type_DateTimeOffset() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.DateTimeOffset));
+            Assert.True(df is DateTimeOffsetDataField);
+            Assert.Equal(DateTimeTimeUnit.Millis, ((DateTimeOffsetDataField)df).Unit);
         }
 
         [Fact]

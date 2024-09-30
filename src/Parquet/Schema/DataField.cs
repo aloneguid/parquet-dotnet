@@ -63,13 +63,8 @@ namespace Parquet.Schema {
 
             Discover(clrType, isCompiledWithNullable ?? true, out Type baseType, out bool discIsArray, out bool discIsNullable);
             ClrType = baseType;
-            if(!SchemaEncoder.IsSupported(ClrType)) {
-                if(baseType == typeof(DateTimeOffset)) {
-                    throw new NotSupportedException($"{nameof(DateTimeOffset)} support was dropped due to numerous ambiguity issues, please use {nameof(DateTime)} from now on.");
-                }
-                else {
-                    throw new NotSupportedException($"type {clrType} is not supported");
-                }
+            if(!SchemaEncoder.IsSupported(ClrType)){
+                throw new NotSupportedException($"type {clrType} is not supported");
             }
 
             IsNullable = isNullable ?? discIsNullable;
@@ -158,13 +153,20 @@ namespace Parquet.Schema {
                 return false;
 
             return base.Equals(obj) &&
-                BaseClrType == other.BaseClrType &&
+                BaseClrTypeCompatible(other) &&
                 IsNullable == other.IsNullable &&
                 IsArray == other.IsArray;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode() => base.GetHashCode();
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        protected virtual bool BaseClrTypeCompatible(DataField other) => this.BaseClrType == other.BaseClrType;
 
         #region [ Type Resolution ]
 

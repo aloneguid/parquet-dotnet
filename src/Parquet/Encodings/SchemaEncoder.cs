@@ -24,6 +24,7 @@ namespace Parquet.Encodings {
             typeof(decimal),
             typeof(BigInteger),
             typeof(DateTime),
+            typeof(DateTimeOffset),
 #if NET6_0_OR_GREATER
             typeof(DateOnly),
             typeof(TimeOnly),
@@ -472,7 +473,8 @@ namespace Parquet.Encodings {
                             break;
                         case DateTimeFormat.Timestamp:
                             tse.Type = Type.INT64;
-                            tse.LogicalType = new LogicalType { TIMESTAMP = new TimestampType {
+                            tse.LogicalType = new LogicalType {
+                                TIMESTAMP = new TimestampType {
                                     IsAdjustedToUTC = dfDateTime.IsAdjustedToUTC,
                                     Unit = dfDateTime.Unit switch {
                                         DateTimeTimeUnit.Millis => new TimeUnit {
@@ -493,8 +495,33 @@ namespace Parquet.Encodings {
                             tse.Type = Type.INT96;
                             break;
                     }
+                } else if(field is DateTimeOffsetDataField) {
+                    throw new ParquetException($"Unexpected DataField: {field.GetType()} should be DateTimeDataField");
                 } else {
                     tse.Type = Type.INT96;
+                }
+            } else if(st == typeof(DateTimeOffset)) {
+                if(field is DateTimeOffsetDataField dtDateTimeOffset) {
+                    tse.Type = Type.INT64;
+                    tse.LogicalType = new LogicalType {
+                        TIMESTAMP = new TimestampType {
+                            IsAdjustedToUTC = dtDateTimeOffset.IsAdjustedToUTC,
+                            Unit = dtDateTimeOffset.Unit switch {
+                                DateTimeTimeUnit.Millis => new TimeUnit {
+                                    MILLIS = new MilliSeconds(),
+                                },
+                                DateTimeTimeUnit.Micros => new TimeUnit {
+                                    MICROS = new MicroSeconds(),
+                                },
+                                DateTimeTimeUnit.Nanos => new TimeUnit {
+                                    NANOS = new NanoSeconds(),
+                                },
+                                _ => throw new ParquetException($"Unexpected TimeUnit: {dtDateTimeOffset.Unit}")
+                            }
+                        }
+                    };
+                } else {
+                    throw new ParquetException($"Unexpected DataField: {field.GetType()} should be DateTimeOffsetDataField");
                 }
 #if NET6_0_OR_GREATER
             } else if(st == typeof(DateOnly)) {
