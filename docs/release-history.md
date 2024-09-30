@@ -8,6 +8,10 @@
 
 - `IronCompress` upstream dependency updated to 1.6.0.
 
+### Bugs fixed
+
+- Nullable `Enum`s were not correctly unwrapped to primitive types, by @cliedeman in #551.
+
 ## 4.25.0
 
 ### Improvements
