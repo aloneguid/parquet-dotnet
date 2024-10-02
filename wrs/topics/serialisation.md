@@ -471,8 +471,7 @@ await ParquetSerializer.SerializeAsync(data, ms);
 ms.Position = 0;
 
 // this will deserialize the data, but `LowerCase` property will be null, because it does not exist in the parquet file.
-IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
-    new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
+IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
 
 // this will successfully deserialize the data, because property names are case insensitive
 IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
