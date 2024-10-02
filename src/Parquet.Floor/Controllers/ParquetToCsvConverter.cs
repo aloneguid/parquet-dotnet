@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CsvHelper;
 using Parquet.Schema;
+using Parquet.Serialization;
 using Parquet.Utils;
 
 namespace Parquet.Floor.Controllers {
@@ -15,7 +16,7 @@ namespace Parquet.Floor.Controllers {
 
         private readonly StreamWriter _sw;
         private readonly CsvWriter _csv;
-        public ParquetToCsvConverter(Stream parquetStream, string csvFilePath, ParquetOptions? options = null) 
+        public ParquetToCsvConverter(Stream parquetStream, string csvFilePath, ParquetSerializerOptions? options = null) 
             : base(parquetStream, options) {
             _sw = new StreamWriter(csvFilePath);
             _csv = new CsvWriter(_sw, CultureInfo.InvariantCulture);

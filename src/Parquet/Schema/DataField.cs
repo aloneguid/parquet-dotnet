@@ -7,7 +7,7 @@ namespace Parquet.Schema {
     /// <summary>
     /// Field containing actual data, unlike fields containing metadata.
     /// </summary>
-    public class DataField : Field {
+    public class DataField : Field, ICloneable {
 
         private bool _isNullable;
         private bool _isArray;
@@ -185,6 +185,14 @@ namespace Parquet.Schema {
                 baseType = baseType.GetNonNullable();
                 isNullable = true;
             }
+        }
+
+        /// <summary>
+        /// Simple memberwise clone
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            return MemberwiseClone();
         }
 
         #endregion

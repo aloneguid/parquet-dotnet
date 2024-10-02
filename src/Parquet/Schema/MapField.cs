@@ -72,6 +72,11 @@ namespace Parquet.Schema {
             }
         }
 
+        internal override void Rename(string newName) {
+            base.Rename(newName);
+            PathPrefix = null;
+        }
+
         internal override Field[] Children => new Field[] { Key, Value };
 
         internal SchemaElement ? GroupSchemaElement { get; set; } = null;

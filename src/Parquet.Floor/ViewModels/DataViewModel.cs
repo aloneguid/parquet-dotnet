@@ -70,8 +70,10 @@ public partial class DataViewModel : ViewModelBase {
         try {
             ParquetSerializer.UntypedResult fd = await ParquetSerializer.DeserializeAsync(
                 fileStream,
-                new ParquetOptions {
-                    TreatByteArrayAsString = true
+                new ParquetSerializerOptions {
+                    ParquetOptions = new ParquetOptions {
+                        TreatByteArrayAsString = true
+                    }
                 });
             data = fd.Data;
         } catch(Exception ex) {

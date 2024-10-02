@@ -193,6 +193,35 @@ namespace Parquet.Schema {
             return "not sure!";
         }
 
+        #region [ Schema augmentation ]
+
+        /// <summary>
+        /// Augments this schema with any information that can be taken from an external schema, to make it more complete.
+        /// It's internal for now due to the fact that it's not clear whether it should be exposed and what are the full side effects.
+        /// </summary>
+        /// <param name="schema"></param>
+        internal void Augment(ParquetSchema schema) {
+            Augment(Fields, schema.Fields, true);
+        }
+
+        internal static void Augment(IEnumerable<Field> target, IEnumerable<Field> extras, bool fixCase) {
+            foreach(Field tf in target) {
+                Field? xf = extras.FirstOrDefault(f => fixCase
+                    ? string.Equals(f.Name, tf.Name, StringComparison.OrdinalIgnoreCase)
+                    : f.Name == tf.Name);
+                if(xf == null)
+                    continue;
+
+                Augment(tf.Children, xf.Children, fixCase);
+
+                if(fixCase) {
+                    tf.Rename(xf.Name);
+                }
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
         /// </summary>

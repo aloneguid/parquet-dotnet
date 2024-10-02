@@ -938,6 +938,51 @@ namespace Parquet.Test.Serialisation {
             Assert.Equivalent(dataRequired, dataOptional);
         }*/
 
+        class BeforeRename {
+            public string? lowerCase { get; set; }
+        }
+
+        class AfterRename {
+            public string? LowerCase { get; set; }
+        }
+
+        [Fact]
+        public async Task RenameProperty_Serde() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new BeforeRename {
+                lowerCase = i % 2 == 0 ? "on" : "off"
+            }).ToList();
+
+            // serialise to memory stream
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+            ms.Position = 0;
+
+            // deserialize from memory stream, but use the new class
+            IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
+
+            // because property names are case sensitive, we should have nulls in the new class
+            Assert.True(data2.All(d => d.LowerCase == null));
+        }
+
+        [Fact]
+        public async Task RenameProperty_CaseInsensitive_Serde() {
+            var data = Enumerable.Range(0, 1_000).Select(i => new BeforeRename {
+                lowerCase = i % 2 == 0 ? "on" : "off"
+            }).ToList();
+
+            // serialise to memory stream
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+            ms.Position = 0;
+
+            // deserialize from memory stream, but use the new class
+            IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+                new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            // because property names are case sensitive, we should have nulls in the new class
+            Assert.True(data2.All(d => d.LowerCase == "on" || d.LowerCase == "off"));
+        }
+
 #if NET6_0_OR_GREATER
 
         record RecordContainingDateAndtimeOnly {

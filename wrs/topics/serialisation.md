@@ -74,7 +74,7 @@ Starting with version _4.24.0_, %product% supports [.NET enums](https://learn.mi
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
-- [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name.
+- [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name. See also [ignoring property casing](#ignoring-property-casing).
 - [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
 - [`JsonPropertyOrder`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertyorderattribute?view=net-6.0) - allows to reorder columns when writing to file (by default they are written in class definition order). Only root properties and struct (classes) properties can be ordered (it won't make sense to do the others).
 
@@ -447,6 +447,37 @@ await ParquetSerializer.SerializeAsync(data, stream, new ParquetSerializerOption
 ```
 
 Note that small row groups make parquet files very inefficient in general, so you should use this parameter only when you are absolutely sure what you are doing. For example, if you have a very large dataset that needs to be split into smaller files for distributed processing, you might want to use a smaller row group size to avoid having too many rows in one file. However, this will also increase the file size and the metadata overhead, so you should balance the trade-offs carefully.
+
+## Ignoring property casing
+
+Since v5.0 %product% supports ignoring property casing when deserializing data. This can be useful when you have a class with properties that have different casing than the column names in the parquet file. For example, if you have a class with properties like `FirstName` and `LastName`, but the parquet file has columns named `first_name` and `last_name`, you can use the `IgnorePropertyCasing` option to ignore the casing differences and match the properties with the columns. Here is an example:
+
+```C#
+class BeforeRename {
+  public string? lowerCase { get; set; }
+}
+
+class AfterRename {
+  public string? LowerCase { get; set; }
+}
+
+var data = Enumerable.Range(0, 1_000).Select(i => new BeforeRename {
+    lowerCase = i % 2 == 0 ? "on" : "off"
+}).ToList();
+
+// serialise to memory stream
+using var ms = new MemoryStream();
+await ParquetSerializer.SerializeAsync(data, ms);
+ms.Position = 0;
+
+// this will deserialize the data, but `LowerCase` property will be null, because it does not exist in the parquet file.
+IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+    new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
+
+// this will successfully deserialize the data, because property names are case insensitive
+IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+    new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
+```
 
 ## FAQ
 

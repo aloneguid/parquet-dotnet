@@ -2,7 +2,12 @@
 
 ### Breaking changes
 
-- This is the first version without old Table/Row API, which is now completely removed. This has been one of the major headaches and source of bugs since being introduced in the very first version of this library. If you need a similar functionality, consider [untyped serializer](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html).
+- This is the first version without old Table/Row API, which is now completely removed. This has been one of the major headaches and source of bugs since being introduced in the very first version of this library. If you need a similar functionality, consider [untyped serializer](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) which should be stable enough (Floor utility relies on this exclusively for quite some time).
+- `ParquetSerializer`'s `SerializeAsync` was accepting `ParquetSerializerOptions` but `DeserializeAsync` was accepting `ParquetOptions`. This is now aligned for consistency so they both use `ParquetSerializerOptions`.
+
+### New features
+
+- todo: case insensitive
 
 ### Improvements
 

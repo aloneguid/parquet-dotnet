@@ -15,7 +15,7 @@ namespace Parquet.Utils {
     /// </summary>
     public abstract class FlatTableConverter : IDisposable {
         private readonly Stream _parquetInputStream;
-        private readonly ParquetOptions? _options;
+        private readonly ParquetSerializerOptions? _options;
 
         /// <summary>
         /// When writing list values, this character is used to separate the values.
@@ -37,7 +37,7 @@ namespace Parquet.Utils {
         /// </summary>
         /// <param name="parquetInputStream"></param>
         /// <param name="options"></param>
-        protected FlatTableConverter(Stream parquetInputStream, ParquetOptions? options = null) {
+        protected FlatTableConverter(Stream parquetInputStream, ParquetSerializerOptions? options = null) {
             _parquetInputStream = parquetInputStream;
             _options = options;
         }

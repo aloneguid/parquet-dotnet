@@ -367,5 +367,131 @@ namespace Parquet.Test.Schema {
                 Assert.Fail("list expected");
             }
         }
+
+
+        [Fact]
+        public void Augment_changes_name_and_path() {
+            var typeSchema = new ParquetSchema(
+                new DataField<int>("id"),
+                new DataField<string>("name"));
+
+            var fileSchema = new ParquetSchema(
+                new DataField<int>("id"),
+                new DataField<string>("Name"));
+
+            Assert.Equal("name", typeSchema[1].Name);
+            Assert.Equal("name", typeSchema[1].ClrPropName);
+            Assert.Equal("name", typeSchema[1].Path.ToString());
+            typeSchema.Augment(fileSchema);
+            Assert.Equal("Name", typeSchema[1].Name);
+            Assert.Equal("name", typeSchema[1].ClrPropName);    // but should not change ClrPropName
+            Assert.Equal("Name", typeSchema[1].Path.ToString());
+        }
+
+        [Fact]
+        public void Augment_changes_struct_member_name_and_path() {
+            var typeSchema = new ParquetSchema(
+                new StructField("s",
+                    new DataField<int>("id"),
+                    new DataField<string>("name")));
+
+            var fileSchema = new ParquetSchema(
+                new StructField("s",
+                    new DataField<int>("id"),
+                    new DataField<string>("Name")));
+
+            Assert.Equal("name", typeSchema[0].Children[1].Name);
+            Assert.Equal("s/name", typeSchema[0].Children[1].Path.ToString());
+            typeSchema.Augment(fileSchema);
+            Assert.Equal("Name", typeSchema[0].Children[1].Name);
+            Assert.Equal("s/Name", typeSchema[0].Children[1].Path.ToString());
+        }
+
+        [Fact]
+        public void Augment_changes_list_member_name_and_path() {
+            var typeSchema = new ParquetSchema(
+                new ListField("l",
+                    new DataField<int>("id")));
+
+            var fileSchema1 = new ParquetSchema(
+                new ListField("l",
+                    new DataField<int>("Id")));
+
+            // pre-checks
+            ListField lf = (ListField)typeSchema[0];
+            Assert.Equal("l", lf.Name);
+            Assert.Equal("id", lf.Item.Name);
+            Assert.Equal("l/list", lf.Path.ToString());
+            Assert.Equal("l/list/id", lf.Item.Path.ToString());
+
+            // augment
+            typeSchema.Augment(fileSchema1);
+
+            // post-checks
+            Assert.Equal("l", lf.Name);
+            Assert.Equal("Id", lf.Item.Name);
+            Assert.Equal("l/list", lf.Path.ToString());
+            Assert.Equal("l/list/Id", lf.Item.Path.ToString());
+        }
+
+        [Fact]
+        public void Augment_changes_list_container_and_item_name_and_path() {
+            var typeSchema = new ParquetSchema(
+                new ListField("l",
+                    new DataField<int>("id")));
+
+            var fileSchema1 = new ParquetSchema(
+                new ListField("L",
+                    new DataField<int>("Id")));
+
+            // pre-checks
+            ListField lf = (ListField)typeSchema[0];
+            Assert.Equal("l", lf.Name);
+            Assert.Equal("id", lf.Item.Name);
+            Assert.Equal("l/list", lf.Path.ToString());
+            Assert.Equal("l/list/id", lf.Item.Path.ToString());
+
+            // augment
+            typeSchema.Augment(fileSchema1);
+
+            // post-checks
+            Assert.Equal("L", lf.Name);
+            Assert.Equal("Id", lf.Item.Name);
+            Assert.Equal("L/list", lf.Path.ToString());
+            Assert.Equal("L/list/Id", lf.Item.Path.ToString());
+        }
+
+        [Fact]
+        public void Augment_changes_map_key_and_value_name_and_path() {
+            var typeSchema = new ParquetSchema(
+                new MapField("m",
+                    new DataField<int>("key"),
+                    new DataField<string>("value")));
+
+            var fileSchema = new ParquetSchema(
+                new MapField("m",
+                    new DataField<int>("Key"),
+                    new DataField<string>("Value")));
+
+            // pre-checks
+            MapField mf = (MapField)typeSchema[0];
+            Assert.Equal("m", mf.Name);
+            Assert.Equal("key", mf.Key.Name);
+            Assert.Equal("value", mf.Value.Name);
+            Assert.Equal("m/key_value", mf.Path.ToString());
+            Assert.Equal("m/key_value/key", mf.Key.Path.ToString());
+            Assert.Equal("m/key_value/value", mf.Value.Path.ToString());
+
+            // augment
+            typeSchema.Augment(fileSchema);
+
+            // post-checks
+            Assert.Equal("m", mf.Name);
+            Assert.Equal("Key", mf.Key.Name);
+            Assert.Equal("Value", mf.Value.Name);
+            Assert.Equal("m/key_value", mf.Path.ToString());
+            Assert.Equal("m/key_value/Key", mf.Key.Path.ToString());
+            Assert.Equal("m/key_value/Value", mf.Value.Path.ToString());
+        }
     }
 }
