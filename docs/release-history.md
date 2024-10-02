@@ -1,8 +1,14 @@
 ## 5.0.0
 
+### Support Parquet.Net
+
+![](https://camo.githubusercontent.com/0e4a4c9c33927ac9cf93907ec12a9b5e22f2d825954b6f2c50290269d3fa3aea/68747470733a2f2f6d656469612e67697068792e636f6d2f6d656469612f76312e59326c6b505463354d4749334e6a4578626a593265576335593246305a5735364d6d5234615745306444687a5a586c696458526d59575a79616a6c3162575a6964585a7063795a6c634431324d563970626e526c636d35686246396e61575a66596e6c666157516d593351395a772f3837434b4471457256664d71592f67697068792e676966)
+
+If you find the project helpful, you can support Parquet.Net by starring it.
+
 ### Breaking changes
 
-- This is the first version without old Table/Row API, which is now completely removed. This has been one of the major headaches and source of bugs since being introduced in the very first version of this library. If you need a similar functionality, consider [untyped serializer](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) which should be stable enough (Floor utility relies on this exclusively for quite some time).
+- This is the first version without old Table/Row API, which is now completely removed. This API was one of the major headaches and source of bugs since being introduced in the very first version of this library. If you need a similar functionality, consider [untyped serializer](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) which should be stable enough (Floor utility relies on this exclusively for quite some time).
 - `ParquetSerializer`'s `SerializeAsync` was accepting `ParquetSerializerOptions` but `DeserializeAsync` was accepting `ParquetOptions`. This is now aligned for consistency so they both use `ParquetSerializerOptions`.
 
 ### New features
