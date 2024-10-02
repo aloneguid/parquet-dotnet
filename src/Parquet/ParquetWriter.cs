@@ -14,10 +14,7 @@ namespace Parquet {
     /// <summary>
     /// Implements Apache Parquet format writer
     /// </summary>
-#pragma warning disable CA1063 // Implement IDisposable Correctly
-    public class ParquetWriter : ParquetActor, IDisposable
-#pragma warning restore CA1063 // Implement IDisposable Correctly
-    {
+    public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable {
         private ThriftFooter? _footer;
         private readonly ParquetSchema _schema;
         private readonly ParquetOptions _formatOptions;
@@ -105,15 +102,13 @@ namespace Parquet {
                 ValidateSchemasCompatible(_footer, _schema);
 
                 await GoBeforeFooterAsync();
-            }
-            else {
+            } else {
                 if(_footer == null) {
                     _footer = new ThriftFooter(_schema, 0 /* todo: don't forget to set the total row count at the end!!! */);
 
                     //file starts with magic
-                    WriteMagic();
-                }
-                else {
+                    await WriteMagicAsync();
+                } else {
                     ValidateSchemasCompatible(_footer, _schema);
 
                     _footer.Add(0 /* todo: don't forget to set the total row count at the end!!! */);
@@ -131,34 +126,44 @@ namespace Parquet {
         }
 
         private void WriteMagic() => Stream.Write(MagicBytes, 0, MagicBytes.Length);
+        private Task WriteMagicAsync() => Stream.WriteAsync(MagicBytes, 0, MagicBytes.Length);
 
-        /// <summary>
-        /// Disposes the writer and writes the file footer.
-        /// </summary>
-#pragma warning disable CA1063 // Implement IDisposable Correctly
-        public void Dispose()
-#pragma warning restore CA1063 // Implement IDisposable Correctly
-        {
+        private void DisposeCore() {
             if(_dataWritten) {
                 //update row count (on append add row count to existing metadata)
                 _footer!.Add(_openedWriters.Sum(w => w.RowCount ?? 0));
             }
+        }
 
-            //finalize file
-            //long size = _footer.WriteAsync(tream).Result;
+        /// <summary>
+        /// Disposes the writer and writes the file footer.
+        /// </summary>
+        public void Dispose() {
 
-            var sizeTask = Task.Run(() => _footer!.WriteAsync(Stream));
-            sizeTask.Wait();
-            long size = sizeTask.Result;
+            DisposeCore();
 
-            //metadata size
-            Writer.Write((int)size);  //4 bytes
+            if(_footer == null)
+                return;
 
-            //end magic
-            WriteMagic();              //4 bytes
-
-            Writer.Flush();
+            long size = _footer.Write(Stream);
+            Stream.WriteInt32((int)size); // metadata size: 4 bytes
+            WriteMagic();                 // end magic:     4 bytes
             Stream.Flush();
+        }
+
+        /// <summary>
+        /// Dispose the writer asynchronously
+        /// </summary>
+        public async ValueTask DisposeAsync() {
+            DisposeCore();
+
+            if(_footer == null)
+                return;
+
+            long size = await _footer.WriteAsync(Stream).ConfigureAwait(false);
+            await Stream.WriteInt32Async((int)size);
+            await WriteMagicAsync();
+            await Stream.FlushAsync();
         }
     }
 }

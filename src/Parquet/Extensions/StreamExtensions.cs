@@ -32,6 +32,11 @@ namespace Parquet.Extensions {
             s.Write(tmp, 0, sizeof(int));
         }
 
+        public static Task WriteInt32Async(this Stream s, int value) {
+            byte[] tmp = BitConverter.GetBytes(value);
+            return s.WriteAsync(tmp, 0, sizeof(int));
+        }
+
         public static long ReadInt64(this Stream s) {
             byte[] tmp = new byte[sizeof(long)];
             s.Read(tmp, 0, sizeof(long));

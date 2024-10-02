@@ -7,10 +7,11 @@
 
 ### New features
 
-- Class deserialiser can optionally [ignore property name casing](https://aloneguid.github.io/parquet-dotnet/serialisation.html#ignoring-property-casing) (#536).
+- Class deserializer can optionally [ignore property name casing](https://aloneguid.github.io/parquet-dotnet/serialisation.html#ignoring-property-casing) (#536).
 
 ### Improvements
 
+- `ParquetWriter` supports asynchronous dispose pattern (`IAsyncDisposable`), thanks to @andagr in #479.
 - `IronCompress` upstream dependency updated to 1.6.0.
 
 ### Bugs fixed

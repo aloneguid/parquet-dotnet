@@ -98,7 +98,7 @@ namespace Parquet.Serialization {
             var striper = (Striper<T>)boxedStriper;
 
             bool append = options != null && options.Append;
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
                 options?.ParquetOptions,
                 append, cancellationToken)) {
 
@@ -136,7 +136,7 @@ namespace Parquet.Serialization {
             var striper = (Striper<IDictionary<string, object?>>)boxedStriper;
 
             bool append = options != null && options.Append;
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination,
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination,
                 options?.ParquetOptions,
                 append, cancellationToken)) {
 

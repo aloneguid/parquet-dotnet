@@ -370,7 +370,7 @@ namespace Parquet.Test {
             var id = new DataField<int>("id");
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms,
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms,
                 new ParquetOptions { UseDeltaBinaryPackedEncoding = false })) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
