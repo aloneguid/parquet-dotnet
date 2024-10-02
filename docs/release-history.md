@@ -7,7 +7,7 @@
 
 ### New features
 
-- todo: case insensitive
+- Class deserialiser can optionally [ignore property name casing](https://aloneguid.github.io/parquet-dotnet/serialisation.html#ignoring-property-casing) (#536).
 
 ### Improvements
 
