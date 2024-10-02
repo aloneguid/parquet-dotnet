@@ -202,9 +202,10 @@ namespace Parquet.Serialization {
 
         private static ListField ConstructListField(string name, string propertyName,
             Type elementType,
+            ClassMember? member,
             bool forWriting) {
 
-            ListField lf = new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, null, forWriting)!);
+            ListField lf = new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, member, forWriting)!);
             lf.ClrPropName = propertyName;
             return lf;
         }
@@ -242,7 +243,7 @@ namespace Parquet.Serialization {
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
-                return ConstructListField(columnName, propertyName, elementType!, forWriting);
+                return ConstructListField(columnName, propertyName, elementType!, member, forWriting);
             } else if(t.IsClass || t.IsInterface || t.IsValueType) {
                 // must be a struct then (c# class or c# struct)!
                 List<ClassMember> props = FindMembers(t, forWriting);
