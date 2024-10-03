@@ -1004,11 +1004,13 @@ namespace Parquet.Test.Serialisation {
 
         public class TrackedObjectsTest {
             public Header header { get; set; }
+
+            [ParquetRequired, ParquetListElementRequired]
             public List<TrackedObjectsTestListElement> tracked_objects { get; set; }
             public String _launch_id { get; set; }
         }
 
-        //[Fact]
+        [Fact]
         public async Task Test1() {
             IList<TrackedObjectsTest> r = await ParquetSerializer.DeserializeAsync<TrackedObjectsTest>("c:\\users\\alone\\Downloads\\0.parquet");
         }

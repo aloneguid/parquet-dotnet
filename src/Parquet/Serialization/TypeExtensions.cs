@@ -61,6 +61,8 @@ namespace Parquet.Serialization {
 
             public bool IsRequired => _mi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
 
+            public bool IsListElementRequired => _mi.GetCustomAttribute<ParquetListElementRequiredAttribute>() != null;
+
             public ParquetTimestampAttribute? TimestampAttribute => _mi.GetCustomAttribute<ParquetTimestampAttribute>();
 
             public ParquetMicroSecondsTimeAttribute? MicroSecondsTimeAttribute => _mi.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>();
@@ -205,8 +207,15 @@ namespace Parquet.Serialization {
             ClassMember? member,
             bool forWriting) {
 
-            ListField lf = new ListField(name, MakeField(elementType, ListField.ElementName, propertyName, member, forWriting)!);
+            Field listItemField = MakeField(elementType, ListField.ElementName, propertyName, member, forWriting)!;
+            if(member != null && member.IsListElementRequired) {
+                listItemField.IsNullable = false;
+            }
+            ListField lf = new ListField(name, listItemField);
             lf.ClrPropName = propertyName;
+            if(member != null && member.IsRequired) {
+                lf.IsNullable = false;
+            }
             return lf;
         }
 

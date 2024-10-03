@@ -302,6 +302,14 @@ namespace Parquet.Test.Serialisation {
         public void ListOfStructs() {
             ParquetSchema actualSchema = typeof(ListOfStructsPoco).GetParquetSchema(true);
 
+            ListField lf = (ListField)actualSchema[1];
+            Assert.Equal(1, lf.MaxRepetitionLevel);
+            Assert.Equal(2, lf.MaxDefinitionLevel);
+
+            DataField df = (DataField)lf.Item.Children[0];
+            Assert.Equal(1, df.MaxRepetitionLevel);
+            Assert.Equal(4, df.MaxDefinitionLevel);
+
             var expectedSchema = new ParquetSchema(
                 new DataField<int>("Id"),
                 new ListField("Members",
@@ -313,6 +321,25 @@ namespace Parquet.Test.Serialisation {
                 expectedSchema.Equals(actualSchema),
                 expectedSchema.GetNotEqualsMessage(actualSchema, "expected", "actual"));
         }
+
+        class RequiredListOfStructsPoco {
+            public int Id { get; set; }
+
+            [ParquetRequired, ParquetListElementRequired]
+            public List<StructMemberPoco>? Members { get; set; }
+        }
+
+        [Fact]
+        public void ListOfStructsRequired() {
+            ParquetSchema actualSchema = typeof(RequiredListOfStructsPoco).GetParquetSchema(true);
+
+            ListField lf = (ListField)actualSchema[1];
+
+            DataField df = (DataField)lf.Item.Children[0];
+            Assert.Equal(1, df.MaxRepetitionLevel);
+            Assert.Equal(2, df.MaxDefinitionLevel);
+        }
+
 
         class DatesPoco {
 
