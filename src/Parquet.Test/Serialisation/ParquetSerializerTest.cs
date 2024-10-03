@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Apache.Arrow;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
@@ -981,6 +983,46 @@ namespace Parquet.Test.Serialisation {
 
             // because property names are case sensitive, we should have nulls in the new class
             Assert.True(data2.All(d => d.LowerCase == "on" || d.LowerCase == "off"));
+        }
+
+        public class HeaderStamp {
+            public Int64? secs { get; set; }
+            public Int64? nsecs { get; set; }
+        }
+
+        public class Header {
+            public Int64? seq { get; set; }
+            public HeaderStamp stamp { get; set; }
+            public String frame_id { get; set; }
+        }
+
+        public class TrackedObjectsTestListElement {
+            public long? track_id { get; set; }
+            public Double? existence_probability { get; set; }
+            public Boolean? moving { get; set; }
+        }
+
+        public class TrackedObjectsTest {
+            public Header header { get; set; }
+            public List<TrackedObjectsTestListElement> tracked_objects { get; set; }
+            public String _launch_id { get; set; }
+        }
+
+        //[Fact]
+        public async Task Test1() {
+            IList<TrackedObjectsTest> r = await ParquetSerializer.DeserializeAsync<TrackedObjectsTest>("c:\\users\\alone\\Downloads\\0.parquet");
+        }
+
+        //[Fact]
+        public async Task Test2() {
+            using ParquetReader reader = await ParquetReader.CreateAsync("c:\\users\\alone\\Downloads\\0.parquet");
+            ParquetSchema schema = reader.Schema;
+            DataField field = schema.FindDataField(new FieldPath("tracked_objects/list/element/track_id".Split('/')));
+
+            for(int i = 0; i < reader.RowGroupCount; i++) {
+                using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i);
+                DataColumn dc = await rowGroupReader.ReadColumnAsync(field);
+            }
         }
 
 #if NET6_0_OR_GREATER

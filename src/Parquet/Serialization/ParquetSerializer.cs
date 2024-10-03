@@ -473,6 +473,15 @@ namespace Parquet.Serialization {
             if(fileField == null)
                 return null;
 
+            // validate "absolute must" in schema compatibility
+            if(fileField.MaxDefinitionLevel != assemblerField.MaxDefinitionLevel)
+                throw new InvalidDataException($"class definition level ({assemblerField.MaxDefinitionLevel}) does not match file's definition level ({fileField.MaxDefinitionLevel}) in field '{assemblerField.Path}'. This usually means nullability in class definiton is incompatible.");
+
+            if(fileField.MaxRepetitionLevel != assemblerField.MaxRepetitionLevel)
+                throw new InvalidDataException($"class repetition level ({assemblerField.MaxRepetitionLevel}) does not match file's repetition level ({fileField.MaxRepetitionLevel}) in field '{assemblerField.Path}'. This usually means collection in class definition is incompatible.");
+
+
+            // make final result
             DataField r = (DataField)assemblerField.Clone();
             r.Path = fileField.Path;
 
@@ -498,19 +507,25 @@ namespace Parquet.Serialization {
 
             foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
 
-                DataField? actualField = MakeForReading(schema, fasm.Field, options);
+                DataField? readerField = MakeForReading(schema, fasm.Field, options);
 
                 // skips column deserialisation if it doesn't exist in file's schema
-                if(actualField == null)
+                if(readerField == null)
                     continue;
 
                 // validate reflected vs actual schema field
                 //if(!actualField.IsArray && !fasm.Field.Equals(actualField)) {
-                    //throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actualField}'");
+                //throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actualField}'");
                 //}
 
                 // this needs reflected schema field due to it containing important schema adjustments
-                DataColumn dc = await rg.ReadColumnAsync(actualField, cancellationToken);
+                DataColumn dc;
+
+                try {
+                    dc = await rg.ReadColumnAsync(readerField, cancellationToken);
+                } catch(Exception ex) {
+                    throw new InvalidDataException($"failed to read column '{fasm.Field.Path}'", ex);
+                }
 
                 try {
                     fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), dc);
