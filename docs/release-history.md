@@ -2,7 +2,7 @@
 
 ### New feature
 
-You can deserialise "required" lists and "required" list elements, as raised by @akaloshych84 in #502.
+You can deserialise "required" lists and "required" list elements, as raised by @akaloshych84 in #502. See [nullability and lists](https://aloneguid.github.io/parquet-dotnet/serialisation.html#nullability-and-lists).
 
 ### Improvements
 
