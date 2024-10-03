@@ -28,7 +28,7 @@ namespace Parquet.Schema {
         public FieldPath Path { get; internal set; }
 
         /// <summary>
-        /// Original nullability
+        /// Original nullability.
         /// </summary>
         public virtual bool IsNullable { get; internal set; } = false;
 

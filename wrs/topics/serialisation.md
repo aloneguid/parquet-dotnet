@@ -286,13 +286,13 @@ class MovementHistory {
 }
 
  var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
-                PersonId = i,
-                Comments = i % 2 == 0 ? "none" : null,
-                Addresses = Enumerable.Range(0, 4).Select(a => new Address {
-                    City = "Birmingham",
-                    Country = "United Kingdom"
-                }).ToList()
-            }).ToList();
+    PersonId = i,
+    Comments = i % 2 == 0 ? "none" : null,
+    Addresses = Enumerable.Range(0, 4).Select(a => new Address {
+        City = "Birmingham",
+        Country = "United Kingdom"
+    }).ToList()
+}).ToList();
 
 await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
 ```
@@ -326,6 +326,75 @@ and data
 |       8|    none|[{United Kingdom,...|
 |       9|    null|[{United Kingdom,...|
 +--------+--------+--------------------+
+```
+
+#### Nullability and lists
+
+By default, %product% assumes that both lists and list elements are nullable. This is because list is a class in .NET, and classes are nullable. Therefore, coming back to the previous example definition:
+
+```c#
+class MovementHistory {
+    public List<Address>? Addresses { get; set; }
+}
+```
+
+will produce the following [low-level schema](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists):
+
+```
+OPTIONAL group Addresses (LIST) {
+  repeated group list {
+    OPTIONAL group element {
+        OPTIONAL binary Country (UTF8);
+        OPTIONAL binary City (UTF8);
+    }
+  }
+}
+```
+
+Usually this is not a problem, however you might encounter a problem when deserialising some files to handcrafted C# classes when nullability of the files and classes do not match the default.
+
+To fix this, you can use `[ParquetRequired]` attribute on the list property:
+
+```c#
+class MovementHistory {
+    [ParquetRequired]
+    public List<Address>? Addresses { get; set; }
+}
+```
+
+which will in turn produce the following low-level schema:
+
+```
+REQUIRED group Addresses (LIST) {
+  repeated group list {
+    OPTIONAL group element {
+        OPTIONAL binary Country (UTF8);
+        OPTIONAL binary City (UTF8);
+    }
+  }
+}
+```
+
+As you can see, "Addresses" container is now "required". If you also need to mark the actual element ("Address" instance) as nullable, you can use `[ParquetListElementRequired]` attribute on the element property:
+
+```c#
+class MovementHistory {
+    [ParquetRequired, ParquetListElementRequired]
+    public List<Address>? Addresses { get; set; }
+}
+```
+
+which will produce the following low-level schema:
+
+```
+REQUIRED group Addresses (LIST) {
+  repeated group list {
+    REQUIRED group element {
+        OPTIONAL binary Country (UTF8);
+        OPTIONAL binary City (UTF8);
+    }
+  }
+}
 ```
 
 ### Maps (Dictionaries)

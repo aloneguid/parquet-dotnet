@@ -1,5 +1,9 @@
 ## 5.0.1
 
+### New feature
+
+You can deserialise "required" lists and "required" list elements, as raised by @akaloshych84 in #502.
+
 ### Improvements
 
 - Better error reporting in case class serializer has mismatched definition and repetition levels (as per #502).
