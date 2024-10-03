@@ -2,7 +2,8 @@
 
 ### Improvements
 
-- Better error reporting in case class serializer has mismatched definition and repetition levels (as per #502)
+- Better error reporting in case class serializer has mismatched definition and repetition levels (as per #502).
+- Pass property attributes down to list data field, by @agaskill in #559.
 
 ## 5.0.0
 
