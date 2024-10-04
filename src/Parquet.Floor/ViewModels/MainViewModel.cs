@@ -29,6 +29,9 @@ public partial class MainViewModel : ViewModelBase {
     private string? _subTitle;
 
     [ObservableProperty]
+    private bool _isLoading;
+
+    [ObservableProperty]
     private FileViewModel? _file;
 
     [ObservableProperty]
@@ -171,6 +174,7 @@ public partial class MainViewModel : ViewModelBase {
         ErrorMessage = null;
         ErrorDetails = null;
         ShowErrorDetails = false;
+        IsLoading = true;
 
         try {
             using(var ts = new TimeMeasure()) {
@@ -208,6 +212,8 @@ public partial class MainViewModel : ViewModelBase {
                 { "message", ex.Message },
                 { "details", ex.ToString() }
             });
+        } finally {
+            IsLoading = false;
         }
     }
 

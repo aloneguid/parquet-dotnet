@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Data;
+using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
 using Avalonia.Threading;
 using Parquet.Floor.ViewModels;
 using Parquet.Floor.Views.Templates;
@@ -25,16 +26,18 @@ namespace Parquet.Floor.Views {
             }
         }
 
-        private IEnumerable<DataGridColumn>? BuildColumns(ParquetSchema schema) {
-            // build columns
+        private DataGridColumn CreateColumn(Field f) {
+            return new DataGridTemplateColumn {
+                Header = f.Name,
+                HeaderTemplate = new DataViewHeaderTemplate(f),
+                CellTemplate = new DataViewCellTemplate(f)
+            };
+        }
 
+        private IEnumerable<DataGridColumn>? BuildColumns(ParquetSchema schema) {
             return schema == null
                 ? null
-                : schema.Fields.Select(f => new DataGridTemplateColumn {
-                    Header = f.Name,
-                    HeaderTemplate = new DataViewHeaderTemplate(f),
-                    CellTemplate = new DataViewCellTemplate(f)
-                }).Cast<DataGridColumn>().ToList();
+                : schema.Fields.Select(CreateColumn).ToList();
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
