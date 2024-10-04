@@ -21,7 +21,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - The only library that supports [dynamic](https://aloneguid.github.io/parquet-dotnet/writing.html) schemas.
   - Supports all parquet [types](https://aloneguid.github.io/parquet-dotnet/nested-types.html), encodings and compressions.
   - Fully supports [C# class serialization](https://aloneguid.github.io/parquet-dotnet/serialisation.html), for all simple and **complex** Parquet types.
-  - Provides **low-level**, [high-level](https://aloneguid.github.io/parquet-dotnet/serialisation.html), and [row-based](https://aloneguid.github.io/parquet-dotnet/rows.html) API.
+  - Provides **low-level**, [high-level](https://aloneguid.github.io/parquet-dotnet/serialisation.html), and [untyped](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) API.
   - Access to [file and column metadata](https://aloneguid.github.io/parquet-dotnet/metadata.html).
   - [Integration with DataFrames](https://aloneguid.github.io/parquet-dotnet/dataframe.html) (`Microsoft.Data.Analysis`).
 
@@ -33,17 +33,19 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 ## UI
 
-This repository now includes an implementation of parquet desktop viewer application called **Floor** (parquet floor, get it?). It's cross-platform, self-contained executable made with Avalonia, and is compiled for Linux, Windows and MacOS. You can download it from the [releases section](https://github.com/aloneguid/parquet-dotnet/releases). 
+This repository now includes an implementation of parquet desktop viewer application called **Floor** (parquet floor, get it?). It's cross-platform, self-contained executable made with Avalonia, and is compiled for Linux, Windows and MacOS.
 
 ![](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/floor.gif?raw=true)
 
 **Floor** is not meant to be the best parquet viewer on the planet, but just a reference implementation. There are probably better, more feature-rich applications out there.
 
+### Installing
+
+Download it from the [releases section](https://github.com/aloneguid/parquet-dotnet/releases). On Windows, you can install it with winget - `winget install aloneguid.ParquetDotnet.floor`.
+
 ## Used by
 
 - [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool).
-- [Parquet Viewer (web assembly app)](https://github.com/aloneguid/parquet-online).
-- [Komodo Search](https://github.com/jchristn/komodo).
 - [RavenDB - An ACID NoSQL Document Database](https://github.com/ravendb/ravendb).
 - [Cinchoo ETL: An ETL framework for .NET](https://github.com/Cinchoo/ChoETL).
 - [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
@@ -51,9 +53,10 @@ This repository now includes an implementation of parquet desktop viewer applica
 - [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
 - [Omni Loader: Self-tuning Database Migration Accelerator](https://www.omniloader.com).
 - [Contoso Data Generator V2 : sample data generator](https://github.com/sql-bi/Contoso-Data-Generator-V2).
+- [Recfuence - An analysis of YouTube's political influence through recommendations]().
+- [Kusto-loco - C# KQL query engine with flexible I/O layers and visualization](https://github.com/NeilMacMullen/kusto-loco).
 
 *...raise a PR to appear here...*
-
 
 ## Contributing
 
