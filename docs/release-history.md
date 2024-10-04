@@ -9,6 +9,11 @@ You can deserialise "required" lists and "required" list elements, as raised by 
 - Better error reporting in case class serializer has mismatched definition and repetition levels (as per #502).
 - Pass property attributes down to list data field, by @agaskill in #559.
 
+### Floor
+
+- `boolean` columns display as checks.
+- Structs display as expandable objects, with properly aligned keys.
+
 ## 5.0.0
 
 ### Support Parquet.Net

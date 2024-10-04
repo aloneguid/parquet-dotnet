@@ -52,6 +52,24 @@ namespace Parquet.Floor.Views.Templates {
             return r;
         }
 
+        private static Control CreatePrimitiveValueControl(Field f, object value, string? extraClassName = null) {
+
+            if(f is DataField df) {
+                if(df.ClrType == typeof(bool) && value is bool bValue) {
+                    var r = new CheckBox {
+                        IsChecked = bValue
+                    };
+                    r.Classes.Add(DataCellClassName);
+                    r.IsEnabled = false;
+                    return r;
+                }
+            }
+
+            TextBlock tb = CreateTextBlock(value.ToString()!, extraClassName);
+            tb.HorizontalAlignment = GetAlignment(f);
+            return tb;
+        }
+
         private static HorizontalAlignment GetAlignment(Field f) => 
             f is DataField df && (df.ClrType == typeof(string) || df.ClrType == typeof(byte[]))
                 ? HorizontalAlignment.Left
@@ -82,31 +100,40 @@ namespace Parquet.Floor.Views.Templates {
                     return sp;
                 }
 
-                TextBlock tb = CreateTextBlock(value.ToString()!, extraClassName);
-                tb.HorizontalAlignment = GetAlignment(f);
-                return tb;
+                return CreatePrimitiveValueControl(f, value, extraClassName);
             } else if(f.SchemaType == SchemaType.Struct) {
-                var sp = new StackPanel {
-                    Orientation = Orientation.Vertical
-                };
+                //var sp = new StackPanel { Orientation = Orientation.Vertical };
+                var hdr = new Expander { IsExpanded = false };
+                hdr.Classes.Add("data-cell-struct");
+                //hdr.Content = sp;
 
                 var structField = (StructField)f;
-                if(value is IDictionary<string, object> valueDictionary)
+                if(value is IDictionary<string, object> valueDictionary) {
+
+                    // create a simple grid control
+                    var grid = new Grid();
+                    hdr.Content = grid;
+                    grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));  // key
+                    grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));  // value
+                    int iRow = 0;
+
                     foreach(Field field in structField.Fields) {
-
-                        var vsp = new StackPanel {
-                            Orientation = Orientation.Horizontal
-                        };
-                        sp.Children.Add(vsp);
-
-                        vsp.Children.Add(BuildValue(field.Name, field, depth, DataCellKeyClassName, forceData = true));
-                        //vsp.Children.Add(CreateTextBlock(": "));
-
+                        Control keyControl = BuildValue(field.Name, field, depth, DataCellKeyClassName, forceData = true);
                         valueDictionary.TryGetValue(field.Name, out object? fieldValue);
-                        vsp.Children.Add(BuildValue(fieldValue, field, depth + 1));
-                    }
+                        Control valueControl = BuildValue(fieldValue, field, depth + 1);
 
-                return sp;
+                        grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                        grid.Children.Add(keyControl);
+                        grid.Children.Add(valueControl);
+                        Grid.SetColumn(keyControl, 0);
+                        Grid.SetColumn(valueControl, 1);
+                        Grid.SetRow(keyControl, iRow);
+                        Grid.SetRow(valueControl, iRow);
+                        iRow++;
+                    }
+                }
+
+                return hdr;
             } else if(f.SchemaType == SchemaType.Map) {
                 var sp = new StackPanel {
                     Orientation = Orientation.Vertical

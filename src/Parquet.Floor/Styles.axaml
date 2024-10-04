@@ -30,6 +30,11 @@
                 
             </Expander>
 
+            <Expander Header="+"
+                      Classes="data-cell-struct">
+                <TextBlock Text="test content"/>
+            </Expander>
+
 
             <Image Source="/Assets/icons/col/string.png" Classes="dt-icon"/>
 
@@ -124,6 +129,18 @@
         <Setter Property="Foreground" Value="{DynamicResource SystemControlHyperlinkTextBrush}"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
+
+    <Style Selector="Expander.data-cell-struct">
+        <Setter Property="ExpandDirection" Value="Right"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <Style Selector="Expander.data-cell-struct /template/ ToggleButton#headerButton">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
 
     <!-- raw meta -->
     <Style Selector="StackPanel.raw-meta-section StackPanel">
