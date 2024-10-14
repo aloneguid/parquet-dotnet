@@ -9,6 +9,10 @@ You can deserialise "required" lists and "required" list elements, as raised by 
 - Better error reporting in case class serializer has mismatched definition and repetition levels (as per #502).
 - Pass property attributes down to list data field, by @agaskill in #559.
 
+### Bug fixed
+
+- Compression/decompression would fail on some platforms like x86 or Linux x86 with musl runtime.
+
 ### Floor
 
 - `boolean` columns display as checks.
