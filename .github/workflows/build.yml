@@ -1,9 +1,9 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 5.0.1
-  # PACKAGE_SUFFIX: '-pre.1'
-  PACKAGE_SUFFIX: ''
+  VERSION: 5.0.2
+  PACKAGE_SUFFIX: '-pre.1'
+  # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
@@ -30,7 +30,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: windows-latest
+            name: Windows x64
+            runtime: win-x86
+          - os: macos-latest
+            name: MacOS ARM64
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
@@ -47,9 +56,15 @@ jobs:
     - name: Install Python dependencies
       run: pip install pyarrow pandas
 
-    - name: 'test on ${{ matrix.os }}'
+    # only run this step if matrix.runtime is empty
+    - name: 'test on ${{ matrix.runtime }}'
+      if: matrix.arch == ''
       run: dotnet test src/Parquet.sln -c release
 
+    # only run this step if matrix.arch is not empty
+    - name: 'test on ${{ matrix.runtime }}'
+      if: matrix.arch != ''
+      run: dotnet test src/Parquet.sln -c release -r ${{ matrix.runtime }}
 
   build:
 
