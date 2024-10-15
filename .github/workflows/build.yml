@@ -27,7 +27,7 @@ on:
 jobs:
   test:
     name: Unit Tests
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.name }}
     strategy:
       matrix:
         include:
