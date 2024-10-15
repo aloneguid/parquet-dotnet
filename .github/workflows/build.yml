@@ -1,9 +1,9 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 5.0.1
-  # PACKAGE_SUFFIX: '-pre.1'
-  PACKAGE_SUFFIX: ''
+  VERSION: 5.0.2
+  PACKAGE_SUFFIX: '-pre.1'
+  # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
@@ -26,11 +26,20 @@ on:
 
 jobs:
   test:
-    name: Unit Tests
+    name: 🧪 Unit Tests - ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: windows-latest
+            name: Windows x86
+            runtime: win-x86
+          - os: macos-latest
+            name: MacOS ARM64
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
@@ -47,14 +56,20 @@ jobs:
     - name: Install Python dependencies
       run: pip install pyarrow pandas
 
-    - name: 'test on ${{ matrix.os }}'
+    # only run this step if matrix.runtime is empty
+    - name: 'test on ${{ matrix.runtime }}'
+      if: matrix.arch == ''
       run: dotnet test src/Parquet.sln -c release
 
+    # only run this step if matrix.arch is not empty
+    - name: 'test on ${{ matrix.runtime }}'
+      if: matrix.arch != ''
+      run: dotnet test src/Parquet.sln -c release -r ${{ matrix.runtime }}
 
   build:
 
     runs-on: 'ubuntu-latest'
-    name: 'Build NuGet'
+    name: '🏛️ Build NuGet'
 
     steps:
     - run: |
@@ -89,13 +104,16 @@ jobs:
 
   floor-build:
     runs-on: ubuntu-latest
-    name: 'Build Floor'
+    name: '👤 Build Floor'
     strategy:
       matrix:
         rid:
           - linux-x64
+          - linux-musl-x64 
+          - linux-musl-arm64
           - win-x64
           - osx-x64
+          - osx-arm64 
 
     steps:
       - name: Checkout code
@@ -131,7 +149,7 @@ jobs:
   wrs-build:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
-    name: Build Documentation
+    name: '📃 Build Documentation'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -151,7 +169,7 @@ jobs:
   wrs-deploy:
     runs-on: ubuntu-latest
     needs: [wrs-build, test, build]
-    name: Deploy Documentation
+    name: '📄 Deploy Documentation'
     steps:
       - name: ⬇️ Download artifacts
         uses: actions/download-artifact@v4

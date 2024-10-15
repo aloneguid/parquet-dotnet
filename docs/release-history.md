@@ -1,3 +1,9 @@
+## 5.0.2
+
+### Improvements
+
+- For Windows, run unit tests on x86 and x32 explicitly.
+
 ## 5.0.1
 
 ### New feature
