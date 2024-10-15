@@ -26,8 +26,8 @@ on:
 
 jobs:
   test:
-    name: Unit Tests
-    runs-on: ${{ matrix.name }}
+    name: 🧪 Unit Tests - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
