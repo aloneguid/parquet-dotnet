@@ -36,7 +36,7 @@ jobs:
           - os: windows-latest
             name: Windows x64
           - os: windows-latest
-            name: Windows x64
+            name: Windows x86
             runtime: win-x86
           - os: macos-latest
             name: MacOS ARM64
