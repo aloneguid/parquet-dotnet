@@ -1,5 +1,9 @@
 ## 5.0.2
 
+### New features
+
+- Untyped serialisation supports async enumerable, thanks to @flambert860 in #566.
+
 ### Improvements
 
 - For Windows, run unit tests on x86 and x32 explicitly.
