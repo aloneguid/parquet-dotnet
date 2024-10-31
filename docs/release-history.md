@@ -8,6 +8,11 @@
 
 - For Windows, run unit tests on x86 and x32 explicitly.
 
+### Floor
+
+- application slimmed down a bit, removing "File Explorer". Sticking to doing one thing and do it well - view Parquet files.
+- Due to Avalonia startup times being not satisfactory when you are in the "mode" (1-2 seconds) Floor will reuse existing instance to open a file rather than starting the app again.
+
 ## 5.0.1
 
 ### New feature

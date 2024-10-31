@@ -25,17 +25,17 @@ namespace Parquet.Floor.Converters {
         }
 
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-            if(value is FileNode n) {
-                if(n.Entry.Path.IsFolder) {
-                    return _folderIcon;
-                } else if(n.Entry.Path.IsFile) {
-                    if(n.Entry.Path.Full.EndsWith(".parquet")) {
-                        return _parquetIcon;
-                    } else {
-                        return _fileIcon;
-                    }
-                }
-            }
+            //if(value is FileNode n) {
+            //    if(n.Entry.Path.IsFolder) {
+            //        return _folderIcon;
+            //    } else if(n.Entry.Path.IsFile) {
+            //        if(n.Entry.Path.Full.EndsWith(".parquet")) {
+            //            return _parquetIcon;
+            //        } else {
+            //            return _fileIcon;
+            //        }
+            //    }
+            //}
 
             return null;
         }

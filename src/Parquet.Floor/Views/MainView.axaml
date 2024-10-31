@@ -54,11 +54,6 @@
                         </ToolTip.Tip>
                     </StackPanel>
 
-                    <ToggleButton
-                            IsChecked="{Binding IsDataExplorerOpen}"
-                            i:Attached.Icon="fa-solid fa-database"
-                            Theme="{actipro:ControlTheme TitleBarButton}"
-                            ToolTip.Tip="File explorer"/>
                     <Button Click="OpenFile_Click"
                             i:Attached.Icon="fa-solid fa-folder-open"
                             Theme="{actipro:ControlTheme TitleBarButton}"
@@ -119,12 +114,6 @@
 
         <!-- Client Area -->
 
-        <SplitView IsPaneOpen="{Binding IsDataExplorerOpen}"
-                   DisplayMode="Inline"
-                   OpenPaneLength="300">
-            <SplitView.Pane>
-                <views:FileExplorer/>
-            </SplitView.Pane>
 
             <Grid x:Name="ClientArea">
                 <TabControl Classes="theme-outline" TabStripPlacement="Bottom"
@@ -156,7 +145,6 @@
                 </StackPanel>
                 <views:TelemetryAgreement Width="420" Height="220"/>
             </Grid>
-        </SplitView>
         
     </DockPanel>
 
