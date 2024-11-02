@@ -473,7 +473,7 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 | Type                                                         | Serialization | Deserialization |
 | ------------------------------------------------------------ | ------------- | --------------- |
 | [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ✔️             | ❌               |
-| [Muti-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
+| [Multi-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
 | [`IList<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ❌`**`           |
 | [`List<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ✔️               |
 | [`IDictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.idictionary-2?view=net-7.0) `**` | ❌             | ❌               |
