@@ -95,9 +95,7 @@ jobs:
       run: |
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
-        cp docs/release-history.md artifacts/
-        grep -m 2 -B 1000 '^## ' artifacts/release-history.md | tail -n +3 | head -n -2 > artifacts/release-notes.md
-        cat artifacts/release-notes.md
+        cp docs/rn/${{ env.VERSION }}.md artifacts/release-notes.md
 
     - uses: actions/upload-artifact@v4
       name: upload artifacts
