@@ -97,8 +97,10 @@ jobs:
         cp src/Parquet/bin/Release/*.nupkg artifacts/
         echo "${{ env.VERSION }}" >> artifacts/version.txt
         cp docs/release-history.md artifacts/
+        grep -m 2 -B 1000 '^## ' artifacts/release-history.md | tail -n +3 | head -n -2 > artifacts/release-notes.md
+        cat artifacts/release-notes.md
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       name: upload artifacts
       with:
         name: bin
@@ -205,8 +207,6 @@ jobs:
         with:
           name: bin
           path: bin
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ steps.runid.outputs.run-id }}
 
       - name: print release notes
         run: cat release-notes.md
