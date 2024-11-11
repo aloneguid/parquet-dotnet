@@ -228,11 +228,11 @@ jobs:
       # https://github.com/softprops/action-gh-release
       - name: 📢 Create release
         uses: softprops/action-gh-release@v1
-        if: ${{ !env.VERSION_SUFFIX }}
+        if: ${{ !env.PACKAGE_SUFFIX }}
         with:
           tag_name: ${{ env.VERSION }}
           name: ${{ env.VERSION }}
           files: |
             bin/*.nupkg
             floor/*.zip
-          body_path: release-notes.md
+          body_path: bin/release-notes.md

@@ -55,6 +55,7 @@ Download it from the [releases section](https://github.com/aloneguid/parquet-dot
 - [Contoso Data Generator V2 : sample data generator](https://github.com/sql-bi/Contoso-Data-Generator-V2).
 - [Recfuence - An analysis of YouTube's political influence through recommendations]().
 - [Kusto-loco - C# KQL query engine with flexible I/O layers and visualization](https://github.com/NeilMacMullen/kusto-loco).
+- [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
 
 *...raise a PR to appear here...*
 
