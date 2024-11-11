@@ -95,7 +95,6 @@ jobs:
       run: |
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
-        echo "${{ env.VERSION }}" >> artifacts/version.txt
         cp docs/release-history.md artifacts/
         grep -m 2 -B 1000 '^## ' artifacts/release-history.md | tail -n +3 | head -n -2 > artifacts/release-notes.md
         cat artifacts/release-notes.md
@@ -164,24 +163,6 @@ jobs:
           artifact: ${{ env.DOC_INSTANCE }}
           docker-version: ${{ env.DOC_DOCKER_VERSION }}
 
-      # - name: Upload documentation
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: docs
-      #     path: artifacts/*.zip
-      #     retention-days: 1
-
-  # wrs-deploy:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #   - wrs-build
-  #   name: '📄 Deploy Documentation'
-  #   steps:
-  #     - name: ⬇️ Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: docs
-
       - name: 🤐 Unzip artifact
         run: unzip -O UTF-8 artifacts/${{ env.DOC_ARTIFACT }} -d dir
       - name: Setup Pages
@@ -204,7 +185,7 @@ jobs:
 
     steps:
 
-      - name: ⬇️ Download binary output from build
+      - name: ⬇️ Download Library binaries
         uses: actions/download-artifact@v4
         with:
           name: bin
@@ -215,3 +196,43 @@ jobs:
 
       - name: 📦 Publish to NuGet
         run: dotnet nuget push bin/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  release-all:
+    name: '🕋 Make GitHub Release'
+    runs-on: ubuntu-latest 
+    needs:
+    - release
+    - floor-build
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+
+      - name: ⬇️ Download Library binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+
+      - name: ⬇️ Download Floor binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: floor-*
+          path: floor
+          merge-multiple: true
+
+
+      - name: 🔍 view artifacts to be used
+        run: ls -R
+        working-directory: .
+
+      # https://github.com/softprops/action-gh-release
+      - name: 📢 Create release
+        uses: softprops/action-gh-release@v1
+        if: ${{ !env.VERSION_SUFFIX }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          files: |
+            bin/*.nupkg
+            floor/*.zip
+          body_path: release-notes.md
