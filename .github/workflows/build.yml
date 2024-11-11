@@ -153,7 +153,7 @@ jobs:
   wrs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
-    name: '📃 Build Documentation'
+    name: '📃 Writerside docs'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -183,7 +183,7 @@ jobs:
   #         name: docs
 
       - name: 🤐 Unzip artifact
-        run: unzip -O UTF-8 -qq artifacts/${{ env.DOC_ARTIFACT }} -d dir
+        run: unzip -O UTF-8 artifacts/${{ env.DOC_ARTIFACT }} -d dir
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact to GH Pages
