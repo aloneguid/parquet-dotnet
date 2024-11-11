@@ -209,7 +209,7 @@ jobs:
           path: bin
 
       - name: print release notes
-        run: cat release-notes.md
+        run: cat bin/release-notes.md
 
       - name: 📦 Publish to NuGet
         run: dotnet nuget push bin/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
