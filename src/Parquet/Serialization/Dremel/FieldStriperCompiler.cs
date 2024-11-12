@@ -168,7 +168,9 @@ namespace Parquet.Serialization.Dremel {
 
                 isAtomic
                     ? Expression.Assign(isLeafVar, Expression.Constant(true))
-                    : Expression.Assign(isLeafVar, elementType.IsValueType ? Expression.Constant(false) : valueVar.IsNull()),
+                    : (elementType.IsValueType && !elementType.IsSystemNullable())
+                        ? Expression.Assign(isLeafVar, Expression.Constant(false))
+                        : Expression.Assign(isLeafVar, valueVar.IsNull()),
 
                 Expression.IfThenElse(
                     Expression.IsTrue(isLeafVar),
@@ -248,19 +250,28 @@ namespace Parquet.Serialization.Dremel {
                         Expression.Default(type)));
             }
 
-            PropertyInfo? pi = rootType.GetProperty(name);
+            Expression? result = rootVar;
+            type = rootType;
+
+            if(rootType.IsSystemNullable()) {
+                result = Expression.Property(result, "Value");
+                type = rootType.GetNonNullable();
+            }
+
+            PropertyInfo? pi = type.GetProperty(name);
+            FieldInfo? fi = type.GetField(name);
+
             if(pi != null) {
                 type = pi.PropertyType;
-                return Expression.Property(rootVar, name);
-            }
-
-            FieldInfo? fi = rootType.GetField(name);
-            if(fi != null) {
+                result = Expression.Property(result, name);
+            } else if(fi != null) {
                 type = fi.FieldType;
-                return Expression.Field(rootVar, name);
+                result = Expression.Field(result, name);
+            } else {
+                throw new NotSupportedException($"There is no class property of field called '{name}'.");
             }
 
-            throw new NotSupportedException($"There is no class property of field called '{name}'.");
+            return result;
         }
 
         private Expression DissectRecord(

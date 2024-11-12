@@ -242,20 +242,20 @@ namespace Parquet.Serialization {
             ClassMember? member,
             bool forWriting) {
 
-            Type bt = t.IsNullable() ? t.GetNonNullable() : t;
-            if(member != null && member.IsLegacyRepeatable && !bt.IsGenericIDictionary() && bt.TryExtractIEnumerableType(out Type? bti)) {
-                bt = bti!;
+            Type baseType = t.IsNullable() ? t.GetNonNullable() : t;
+            if(member != null && member.IsLegacyRepeatable && !baseType.IsGenericIDictionary() && baseType.TryExtractIEnumerableType(out Type? bti)) {
+                baseType = bti!;
             }
 
-            if(SchemaEncoder.IsSupported(bt)) {
+            if(SchemaEncoder.IsSupported(baseType)) {
                 return ConstructDataField(columnName, propertyName, t, member);
             } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
                 return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
             } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
                 return ConstructListField(columnName, propertyName, elementType!, member, forWriting);
-            } else if(t.IsClass || t.IsInterface || t.IsValueType) {
-                // must be a struct then (c# class or c# struct)!
-                List<ClassMember> props = FindMembers(t, forWriting);
+            } else if(baseType.IsClass || baseType.IsInterface || baseType.IsValueType) {
+                // must be a struct then (c# class, interface or struct)
+                List<ClassMember> props = FindMembers(baseType, forWriting);
                 Field[] fields = props
                     .Select(p => MakeField(p, forWriting))
                     .Where(f => f != null)
@@ -268,6 +268,7 @@ namespace Parquet.Serialization {
 
                 StructField sf = new StructField(columnName, fields);
                 sf.ClrPropName = propertyName;
+                sf.IsNullable = baseType.IsNullable() || t.IsSystemNullable();
                 return sf;
             }
 
