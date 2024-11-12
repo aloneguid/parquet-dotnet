@@ -1050,5 +1050,33 @@ namespace Parquet.Test.Serialisation {
         }
 
 #endif
+
+        private struct StructWithIntProp {
+            public int Id { get; set; }
+        }
+
+        private class ClassWithNullableCustomStruct {
+            public StructWithIntProp? NullableStruct { get; set; }
+        }
+
+        [Fact]
+        public async Task Class_With_Nullable_Struct() {
+
+            ParquetSchema schema = typeof(ClassWithNullableCustomStruct).GetParquetSchema(true);
+
+            var data = new List<ClassWithNullableCustomStruct> {
+                new ClassWithNullableCustomStruct() {
+                    NullableStruct = null
+                }
+            };
+
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(data, ms);
+
+            ms.Position = 0;
+            IList<ClassWithNullableCustomStruct> data2 = await ParquetSerializer.DeserializeAsync<ClassWithNullableCustomStruct>(ms);
+
+            Assert.Equivalent(data2, data);
+        }
     }
 }

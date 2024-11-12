@@ -662,5 +662,55 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(typeof(short), sedf.ClrType);
             Assert.False(dedf.IsNullable);
         }
+
+        struct SimpleClrStruct {
+            public int Id { get; set; }
+        }
+
+        [Fact]
+        public void ClrStruct_IsSupported() {
+            ParquetSchema schema = typeof(SimpleClrStruct).GetParquetSchema(true);
+            Assert.Single(schema.Fields);
+            Assert.Equal(typeof(int), schema.DataFields[0].ClrType);
+        }
+
+        class StructWithClrStruct {
+            public SimpleClrStruct S { get; set; }
+        }
+
+        [Fact]
+        public void ClrStruct_AsMember_IsSupported() {
+            ParquetSchema schema = typeof(StructWithClrStruct).GetParquetSchema(false);
+            Assert.Single(schema.Fields);
+
+            // check it's a required struct
+            StructField sf = (StructField)schema[0];
+            Assert.False(sf.IsNullable, "struct cannot be optional");
+
+            // check the struct field
+            Assert.Single(sf.Children);
+            var idField = (DataField)sf.Children[0];
+            Assert.Equal(typeof(int), idField.ClrType);
+        }
+
+        class StructWithNullableClrStruct {
+            // as CLR struct is ValueType, this resolves to System.Nullable<SimpleClrStruct>
+            public SimpleClrStruct? N { get; set; }
+        }
+
+        [Fact]
+        public void ClrStruct_AsNullableMember_IsSupported() {
+            ParquetSchema schema = typeof(StructWithNullableClrStruct).GetParquetSchema(false);
+            Assert.Single(schema.Fields);
+
+            // check it's a required struct
+            StructField sf = (StructField)schema[0];
+            Assert.True(sf.IsNullable, "struct must be nullable");
+
+            // check the struct field
+            Assert.Single(sf.Children);
+            var idField = (DataField)sf.Children[0];
+            Assert.Equal(typeof(int), idField.ClrType);
+        }
     }
 }

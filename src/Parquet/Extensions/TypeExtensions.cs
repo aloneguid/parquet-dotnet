@@ -108,7 +108,7 @@ namespace Parquet {
             TypeInfo ti = t.GetTypeInfo();
 
             return
-                ti.IsClass ||
+                ti.IsClass || ti.IsInterface ||
                 (ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
 
@@ -121,7 +121,7 @@ namespace Parquet {
         public static Type GetNonNullable(this Type t) {
             TypeInfo ti = t.GetTypeInfo();
 
-            if(ti.IsClass) {
+            if(ti.IsClass || ti.IsInterface) {
                 return t;
             }
 
