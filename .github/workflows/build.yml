@@ -95,6 +95,7 @@ jobs:
       run: |
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
+        cp src/Parquet.Data.Analysis/bin/Release/*.nupkg artifacts/
         cp docs/rn/${{ env.VERSION }}.md artifacts/release-notes.md
 
     - uses: actions/upload-artifact@v4

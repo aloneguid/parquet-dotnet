@@ -52,7 +52,6 @@
 
     <ItemGroup>
         <PackageReference Include="IronCompress" Version="1.6.3" />
-        <PackageReference Include="Microsoft.Data.Analysis" Version="0.21.1" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
     </ItemGroup>
 
@@ -77,10 +76,6 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
-        <None Update="Data\Analysis\DataFrameMapper.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>DataFrameMapper.cs</LastGenOutput>
-        </None>
         <None Update="Encodings\BitPackedEncoder.tt">
           <Generator>TextTemplatingFileGenerator</Generator>
           <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
@@ -104,11 +99,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Data\Analysis\DataFrameMapper.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>DataFrameMapper.tt</DependentUpon>
-      </Compile>
       <Compile Update="Encodings\BitPackedEncoder.Precompiled.cs">
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>

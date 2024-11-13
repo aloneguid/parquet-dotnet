@@ -33,6 +33,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Parquet.Data.Analysis\Parquet.Data.Analysis.csproj" />
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
     </ItemGroup>
 

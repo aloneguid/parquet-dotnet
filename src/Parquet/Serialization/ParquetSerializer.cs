@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Apache.Arrow;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
@@ -365,7 +364,7 @@ namespace Parquet.Serialization {
         }
 
         /// <summary>
-        /// Highly experimental
+        /// Untyped deserialisation result.
         /// </summary>
         public record UntypedAsyncEnumableResult(IAsyncEnumerable<Dictionary<string, object>> Data, ParquetSchema Schema);
 
@@ -532,12 +531,13 @@ namespace Parquet.Serialization {
 
             // add more empty class instances to the result
             int prevRowCount = result.Count;
-            
-            if(!resultsAlreadyAllocated)
+
+            if(!resultsAlreadyAllocated) {
                 for(int i = 0; i < rg.RowCount; i++) {
                     var ne = new T();
                     result.Add(ne);
                 }
+            }
 
             foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
 
@@ -546,11 +546,6 @@ namespace Parquet.Serialization {
                 // skips column deserialisation if it doesn't exist in file's schema
                 if(readerField == null)
                     continue;
-
-                // validate reflected vs actual schema field
-                //if(!actualField.IsArray && !fasm.Field.Equals(actualField)) {
-                //throw new InvalidDataException($"property '{fasm.Field.ClrPropName}' is declared as '{fasm.Field}' but source data has it as '{actualField}'");
-                //}
 
                 // this needs reflected schema field due to it containing important schema adjustments
                 DataColumn dc;
