@@ -18,14 +18,8 @@
 
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-        <ProjectReference Include="..\Parquet\Parquet.csproj" />
-    </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    </PropertyGroup>
-
     <ItemGroup>
+        <ProjectReference Include="..\Parquet\Parquet.csproj" />
         <PackageReference Include="Microsoft.Data.Analysis" Version="0.21.1" />
     </ItemGroup>
 
