@@ -8,22 +8,38 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <WarningsAsErrors />
-        <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.Net.Data.Analysis.xml</DocumentationFile>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Parquet.Data.Analysis.xml</DocumentationFile>
         <DebugType>full</DebugType>
         <DebugSymbols>true</DebugSymbols>
         <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone xbox</PackageTags>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
+        <AssemblyName>Parquet.Data.Analysis</AssemblyName>
 
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
     </ItemGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Analysis" Version="0.21.1" />
     </ItemGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
 
     <ItemGroup>
         <Compile Update="DataFrameMapper.cs">
