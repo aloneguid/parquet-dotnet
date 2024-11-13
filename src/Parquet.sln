@@ -41,6 +41,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rn", "rn", "{EE4ECD1F-5A44-
 		..\docs\rn\previous.md = ..\docs\rn\previous.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.Data.Analysis", "Parquet.Data.Analysis\Parquet.Data.Analysis.csproj", "{B7D4F7F8-4E90-4BC1-8CCB-98434ABFA491}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{882BE8ED-7F5F-4392-8884-CF602622E569}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{882BE8ED-7F5F-4392-8884-CF602622E569}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{882BE8ED-7F5F-4392-8884-CF602622E569}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7D4F7F8-4E90-4BC1-8CCB-98434ABFA491}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7D4F7F8-4E90-4BC1-8CCB-98434ABFA491}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7D4F7F8-4E90-4BC1-8CCB-98434ABFA491}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7D4F7F8-4E90-4BC1-8CCB-98434ABFA491}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
