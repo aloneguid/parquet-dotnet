@@ -69,6 +69,10 @@
           <PackagePath></PackagePath>
           <Pack>True</Pack>
         </None>
+        <None Include="README.md">
+            <PackagePath></PackagePath>
+            <Pack>True</Pack>
+        </None>
     </ItemGroup>
 
 
