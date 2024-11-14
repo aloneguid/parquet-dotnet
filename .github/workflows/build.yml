@@ -10,12 +10,6 @@ env:
   DOC_ALGOLIA_ARTIFACT: algolia-indexes-PQ.zip
   DOC_DOCKER_VERSION: 241.15989
 
-# Gives the workflow permissions to clone the repo and create a page deployment
-permissions:
-  id-token: write
-  pages: write
-  contents: write
-
 on:
   push:
     branches:
@@ -153,6 +147,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     name: '📃 Writerside docs'
+    permissions:
+      id-token: write
+      pages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
