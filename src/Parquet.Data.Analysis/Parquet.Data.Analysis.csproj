@@ -16,6 +16,23 @@
         <Nullable>enable</Nullable>
         <AssemblyName>Parquet.Data.Analysis</AssemblyName>
 
+        <!-- Sign with a fake no password signature for convenience. Note this is not a proof of anything.-->
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Authors>Ivan Gavryliuk (@aloneguid)</Authors>
+        <Product />
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/aloneguid/parquet-dotnet</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/aloneguid/parquet-dotnet</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageIcon>icon.png</PackageIcon>
+        <Description>Fully managed Apache Parquet implementation.</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
     </PropertyGroup>
 
     <ItemGroup>
@@ -47,6 +64,10 @@
         <None Update="DataFrameMapper.tt">
             <LastGenOutput>DataFrameMapper.cs</LastGenOutput>
             <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
+        <None Update="icon.png" Link="icon.png">
+          <PackagePath></PackagePath>
+          <Pack>True</Pack>
         </None>
     </ItemGroup>
 
