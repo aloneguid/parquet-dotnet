@@ -65,7 +65,7 @@
             <LastGenOutput>DataFrameMapper.cs</LastGenOutput>
             <Generator>TextTemplatingFileGenerator</Generator>
         </None>
-        <None Update="icon.png" Link="icon.png">
+        <None Include="icon.png">
           <PackagePath></PackagePath>
           <Pack>True</Pack>
         </None>
