@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+      <TargetFrameworks Condition="'$(LATEST_NET_ONLY)' != ''">net8.0</TargetFrameworks>
+      <TargetFrameworks Condition="'$(LATEST_NET_ONLY)' == ''">net8.0;net6.0</TargetFrameworks>
+
+      <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Stowage" Version="2.1.0-pre.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Parquet\Parquet.csproj" />
+  </ItemGroup>
+
+</Project>
