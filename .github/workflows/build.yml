@@ -46,6 +46,7 @@ jobs:
         dotnet-version: |
           6.0.x
           8.0.x
+          9.0.x
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
@@ -79,6 +80,7 @@ jobs:
         dotnet-version: |
           6.0.x
           8.0.x
+          9.0.x
 
     - name: Build Library
       run: |
