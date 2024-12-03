@@ -399,13 +399,15 @@ REQUIRED group Addresses (LIST) {
 
 ### Maps (Dictionaries)
 
-Maps are useful constructs if you need to serialize key-value pairs where each row can have different amount of keys. For example, if you want to store the names and hobbies of your friends, you can use a map like this:
+Maps are useful constructs if you need to serialize key-value pairs where each row can have different amount of keys.
+
+For example, if you want to store partition values like so:
 
 ```json
-{"Alice": ["reading", "cooking", "gardening"], "Bob": ["gaming", "coding", "sleeping"], "Charlie": ["traveling"]}
+{"partition1": "value1", "partition2": "value2" }
 ```
 
-Notice how Alice has three hobbies, Bob has two and Charlie has only one. A map allows you to handle this variability without wasting space or creating empty values. Of course, you could also use a list, but then you would have to remember the order of the elements and deal with missing data. A map makes your life easier by letting you access the values by their keys.
+without knowing beforehand how many partitions there will be.
 
 In this library, maps are represented as an instance of generic `IDictionary<TKey, TValue>` type. 
 
@@ -418,8 +420,6 @@ class IdWithTags {
     public Dictionary<string, string>? Tags { get; set; }
 }
 ```
-
-
 
 You can easily use `ParquetSerializer` to work with this class:
 

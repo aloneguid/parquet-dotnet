@@ -320,6 +320,48 @@ namespace Parquet.Test.Serialisation {
             Assert.NotNull(r);
         }
 
+        [Fact]
+        public async Task TestData_DeltaCheckpoint_Untyped() {
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(
+                OpenTestFile("delta.checkpoint.parquet"));
+
+            Assert.NotNull(r);
+        }
+
+        class DeltaCheckpointAdd {
+            [JsonPropertyName("path")]
+            public string? Path { get; set; }
+
+            [JsonPropertyName("size")]
+            public long? Size { get; set; }
+
+            [JsonPropertyName("partitionValues")]
+            public Dictionary<string, string>? PartitionValues { get; set; }
+        }
+
+        class DeltaCheckpoint {
+            [JsonPropertyName("add")]
+            public DeltaCheckpointAdd? Add { get; set; }
+        }
+
+        [Fact]
+        public async Task TestData_DeltaCheckpoint() {
+            IList<DeltaCheckpoint> r = await ParquetSerializer.DeserializeAsync<DeltaCheckpoint>(
+                OpenTestFile("delta.checkpoint.parquet"));
+
+            Assert.NotNull(r);
+
+            // test one record
+            Assert.NotEmpty(r);
+            DeltaCheckpoint c = r.First();
+            Assert.NotNull(c.Add);
+            Assert.Equal("MediaTypeId=1/part-00000-5ac684fb-5248-4f07-8288-b0cc47cc9b97.c000.snappy.parquet", c.Add.Path);
+            Assert.Equal(5671, c.Add.Size);
+            Assert.NotNull(c.Add.PartitionValues);
+            Assert.Single(c.Add.PartitionValues);
+            Assert.Equal("1", c.Add.PartitionValues["MediaTypeId"]);
+        }
+
         class Address {
             public string? Country { get; set; }
 
@@ -662,6 +704,28 @@ namespace Parquet.Test.Serialisation {
 
             await DictCompare<IdWithTags>(data, true);
             await DictAsyncCompare<IdWithTags>(data, true);
+        }
+
+        class ContainerForIdWithTags {
+            public string? Name { get; set; }
+            public IdWithTags? StructMember { get; set; }
+        }
+
+
+        [Fact]
+        public async Task Map_InStruct_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new ContainerForIdWithTags {
+                Name = "Joe",
+                StructMember = new IdWithTags {
+                    Id = i,
+                    Tags = new Dictionary<string, string> {
+                        ["id"] = i.ToString(),
+                        ["gen"] = DateTime.UtcNow.ToString()
+                    }
+                }
+            }).ToList();
+
+            await Compare(data, true);
         }
 
         [Fact]

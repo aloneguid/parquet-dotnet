@@ -23,6 +23,7 @@ namespace Parquet.Serialization {
         abstract class ClassMember {
 
             private readonly MemberInfo _mi;
+            private string? _columnName;
 
             protected ClassMember(MemberInfo mi) {
                 _mi = mi;
@@ -30,12 +31,19 @@ namespace Parquet.Serialization {
 
             public string Name => _mi.Name;
 
+            /// <summary>
+            /// Parquet column name for this member. Will check appropriate attribute to detect name.
+            /// </summary>
             public string ColumnName {
                 get {
-                    JsonPropertyNameAttribute? stxt = _mi.GetCustomAttribute<JsonPropertyNameAttribute>();
+                    if(_columnName == null) {
+                        JsonPropertyNameAttribute? stxt = _mi.GetCustomAttribute<JsonPropertyNameAttribute>();
+                        _columnName = stxt?.Name ?? _mi.Name;
+                    }
 
-                    return stxt?.Name ?? _mi.Name;
+                    return _columnName;
                 }
+                internal set => _columnName = value;
             }
 
             public abstract Type MemberType { get; }
@@ -191,12 +199,16 @@ namespace Parquet.Serialization {
             Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
             PropertyInfo piKey = kvpType.GetProperty("Key")!;
             PropertyInfo piValue = kvpType.GetProperty("Value")!;
+            var cpmKey = new ClassPropertyMember(piKey);
+            var cpmValue = new ClassPropertyMember(piValue);
+            cpmKey.ColumnName = MapField.KeyName;
+            cpmValue.ColumnName = MapField.ValueName;
 
-            Field keyField = MakeField(new ClassPropertyMember(piKey), forWriting)!;
+            Field keyField = MakeField(cpmKey, forWriting)!;
             if(keyField is DataField keyDataField && keyDataField.IsNullable) {
                 keyField.IsNullable = false;
             }
-            Field valueField = MakeField(new ClassPropertyMember(piValue), forWriting)!;
+            Field valueField = MakeField(cpmValue, forWriting)!;
             var mf = new MapField(name, keyField, valueField);
             mf.ClrPropName = propertyName;
             return mf;

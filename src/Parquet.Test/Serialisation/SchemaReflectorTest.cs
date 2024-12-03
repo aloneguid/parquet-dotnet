@@ -255,15 +255,15 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(new ParquetSchema(
                 new DataField<int?>("Id"),
                 new MapField("Tags",
-                    new DataField<string>("Key", false),
-                    new DataField<int>("Value"))), schema);
+                    new DataField<string>("key", false),
+                    new DataField<int>("value"))), schema);
         }
 
         [Fact]
         public void MapKeyMetadataIsSetToRequired() {
             ParquetSchema schema = typeof(SimpleMapPoco).GetParquetSchema(true);
 
-            Assert.Equal("Key", schema.DataFields[1].Name);
+            Assert.Equal("key", schema.DataFields[1].Name);
             Assert.False(schema.DataFields[1].IsNullable);
         }
 
