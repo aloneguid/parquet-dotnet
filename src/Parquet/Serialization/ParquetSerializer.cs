@@ -26,7 +26,7 @@ namespace Parquet.Serialization {
         private static readonly ConcurrentDictionary<Type, object> _typeToAssembler = new();
         private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToAssembler = new();
         private static readonly Dictionary<Type, HashSet<Type>> AllowedDeserializerConversions = new() {
-#if NET8_0_OR_GREATER
+#if NET6_0_OR_GREATER
             { typeof(DateOnly), new HashSet<Type>{ typeof(DateTime) } },
             { typeof(TimeOnly), new HashSet<Type>{ typeof(TimeSpan) } },
 #endif
