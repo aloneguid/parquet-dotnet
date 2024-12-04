@@ -25,6 +25,12 @@ namespace Parquet.Serialization {
         private static readonly ConcurrentDictionary<ParquetSchema,  object> _schemaToStriper = new();
         private static readonly ConcurrentDictionary<Type, object> _typeToAssembler = new();
         private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToAssembler = new();
+        private static readonly Dictionary<Type, HashSet<Type>> AllowedDeserializerConversions = new() {
+#if NET8_0_OR_GREATER
+            { typeof(DateOnly), new HashSet<Type>{ typeof(DateTime) } },
+            { typeof(TimeOnly), new HashSet<Type>{ typeof(TimeSpan) } },
+#endif
+        };
 
         private static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, Striper<T> striper,
             IEnumerable<T> objectInstances,
@@ -512,6 +518,17 @@ namespace Parquet.Serialization {
 
             if(fileField.MaxRepetitionLevel != assemblerField.MaxRepetitionLevel)
                 throw new InvalidDataException($"class repetition level ({assemblerField.MaxRepetitionLevel}) does not match file's repetition level ({fileField.MaxRepetitionLevel}) in field '{assemblerField.Path}'. This usually means collection in class definition is incompatible.");
+
+            if(fileField.ClrType != assemblerField.ClrType) {
+
+                // check if this is one of the allowed conversions
+                bool isStillAllowed =
+                    AllowedDeserializerConversions.TryGetValue(assemblerField.ClrType, out HashSet<Type>? allowedConversions) &&
+                    allowedConversions.Contains(fileField.ClrType);
+
+                if(!isStillAllowed)
+                    throw new InvalidCastException($"class type ({assemblerField.ClrType}) does not match file's type ({fileField.ClrType}) in field '{assemblerField.Path}'");
+            }
 
 
             // make final result

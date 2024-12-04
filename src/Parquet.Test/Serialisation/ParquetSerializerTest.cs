@@ -1147,23 +1147,40 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
         }
 
-        [Fact]
-        public async Task EdgeCase_rawint64_to_classInt32() {
-            var schema = new ParquetSchema(new DataField<long>("Id"));
-            using var ms = new MemoryStream();
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                    await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new long[] { 1, 2, 3 }));
-                }
-            }
-            ms.Position = 0;
-
-            IList<EdgeCaseInt32> data = await ParquetSerializer.DeserializeAsync<EdgeCaseInt32>(ms);
-
-            Assert.Equal(1, data[0].Id);
-            Assert.Equal(2, data[1].Id);
-            Assert.Equal(3, data[2].Id);
-
+        class EdgeCaseInt32Optional {
+            public int? Id { get; set; }
         }
+
+        class EdgeCaseInt64Optional {
+            public long? Id { get; set; }
+        }
+
+        /// <summary>
+        /// This shoudl throw InvalidCastException as the raw Int64 is being cast to Int32
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task EdgeCase_RawInt64_to_Int32() {
+
+            using Stream testFile = OpenTestFile("special/no-logical-type.parquet");
+
+            await Assert.ThrowsAsync<InvalidCastException>(async () => {
+                await ParquetSerializer.DeserializeAsync<EdgeCaseInt32Optional>(testFile);
+            });
+        }
+
+        [Fact]
+        public async Task EdgeCase_Int64() {
+
+            IList<EdgeCaseInt64Optional> r = await ParquetSerializer.DeserializeAsync<EdgeCaseInt64Optional>(
+               OpenTestFile("special/no-logical-type.parquet"));
+
+            Assert.NotNull(r);
+            Assert.Equal(3, r.Count);
+            Assert.Equal(1, r[0].Id);
+            Assert.Equal(2, r[1].Id);
+            Assert.Equal(3, r[2].Id);
+        }
+
     }
 }
