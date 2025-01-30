@@ -37,6 +37,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rn", "rn", "{EE4ECD1F-5A44-4FC7-BC73-930AFB15D372}"
 	ProjectSection(SolutionItems) = preProject
 		..\docs\rn\5.0.2.md = ..\docs\rn\5.0.2.md
+		..\docs\rn\5.1.1.md = ..\docs\rn\5.1.1.md
 		..\docs\rn\previous.md = ..\docs\rn\previous.md
 		..\docs\rn\5.1.0.md = ..\docs\rn\5.1.0.md
 	EndProjectSection

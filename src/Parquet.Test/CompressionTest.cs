@@ -13,6 +13,7 @@ namespace Parquet.Test {
         [InlineData(CompressionMethod.Brotli)]
         [InlineData(CompressionMethod.LZ4)]
         [InlineData(CompressionMethod.Zstd)]
+        [InlineData(CompressionMethod.Lz4Raw)]
         public async Task All_compression_methods_supported_for_simple_integeres(CompressionMethod compressionMethod) {
             const int value = 5;
             object actual = await WriteReadSingle(new DataField<int>("id"), value, compressionMethod);
@@ -27,6 +28,7 @@ namespace Parquet.Test {
         [InlineData(CompressionMethod.Brotli)]
         [InlineData(CompressionMethod.LZ4)]
         [InlineData(CompressionMethod.Zstd)]
+        [InlineData(CompressionMethod.Lz4Raw)]
         public async Task All_compression_methods_supported_for_simple_strings(CompressionMethod compressionMethod) {
             /*
              * uncompressed: length - 14, levels - 6
