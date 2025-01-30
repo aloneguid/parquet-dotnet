@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using System.Text;
+using Parquet.Serialization;
 
 namespace Parquet.Test {
     /// <summary>
@@ -196,6 +197,21 @@ namespace Parquet.Test {
             Assert.Single(cols);
             DataColumn col = cols[0];
             Assert.Equal(Guid.Parse("15A2501E-4899-4FF8-AF51-A1805FE0718F"), col.Data.GetValue(0));
+        }
+
+        [Fact]
+        public async Task ThriftProtocolBreakingChangeJune2024() {
+            using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Equal(55, cols.Length);
+        }
+
+        [Fact]
+        public async Task ThriftProtocolBreakingChangeJune2024_Untyped() {
+            using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
         }
     }
 }

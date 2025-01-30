@@ -24,6 +24,19 @@ namespace Parquet.Encodings {
             }
         }
 
+        private static void MakeBytes(int[] prefixLenghs, byte[][] dest, int destOffset, int count) {
+            if(count == 0) return;
+            byte[] v = dest[destOffset];
+            for(int i = 1, di = destOffset + 1; i < count; i++, di++) {
+                int pl = prefixLenghs[i];
+                byte[] vNext = new byte[pl + dest[di].Length];
+                Buffer.BlockCopy(v, 0, vNext, 0, pl);
+                Buffer.BlockCopy(dest[di], 0, vNext, pl, dest[di].Length);
+                v = vNext;
+                dest[di] = v;
+            }
+        }
+
         public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount) {
 
             // sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED)
@@ -40,7 +53,7 @@ namespace Parquet.Encodings {
                 if(et == typeof(string)) {
                     MakeStrings(prefixLenghs, (string[])dest, destOffset, valueCount);
                 } else if(et == typeof(byte[])) {
-                    throw new NotImplementedException(); // todo: byte arrays
+                    MakeBytes(prefixLenghs, (byte[][])dest, destOffset, valueCount);
                 } else {
                     throw new NotSupportedException($"unsupported type {et}, delta byte arrays only can do strings and byte arrays");
                 }

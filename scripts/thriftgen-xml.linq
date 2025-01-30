@@ -7,8 +7,8 @@
 #nullable enable
 
 const string Spacing = "    ";
-const string inputPath = @"C:\dev\parquet-dotnet\src\Parquet\Meta\parquet.xml";
-const string outputDir = @"C:\dev\parquet-dotnet\src\Parquet\Meta\";
+const string inputPath = @"D:\parquet-dotnet\src\Parquet\Meta\parquet.xml";
+const string outputDir = @"D:\parquet-dotnet\src\Parquet\Meta\";
 
 private static class Types {
     public const byte Stop = 0x00;

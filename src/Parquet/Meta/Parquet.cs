@@ -50,12 +50,12 @@ namespace Parquet.Meta {
         LIST = 3,
 
         /// <summary>
-        /// An enum is converted into a binary field.
+        /// An enum is converted into a BYTE_ARRAY field.
         /// </summary>
         ENUM = 4,
 
         /// <summary>
-        /// A decimal value.  This may be used to annotate binary or fixed primitive types. The underlying byte array stores the unscaled value encoded as two&#39;s complement using big-endian byte order (the most significant byte is the zeroth element). The value of the decimal is the value * 10^{-scale}.  This must be accompanied by a (maximum) precision and a scale in the SchemaElement. The precision specifies the number of digits in the decimal and the scale stores the location of the decimal point. For example 1.23 would have precision 3 (3 total digits) and scale 2 (the decimal point is 2 digits over).
+        /// A decimal value.  This may be used to annotate BYTE_ARRAY or FIXED_LEN_BYTE_ARRAY primitive types. The underlying byte array stores the unscaled value encoded as two&#39;s complement using big-endian byte order (the most significant byte is the zeroth element). The value of the decimal is the value * 10^{-scale}.  This must be accompanied by a (maximum) precision and a scale in the SchemaElement. The precision specifies the number of digits in the decimal and the scale stores the location of the decimal point. For example 1.23 would have precision 3 (3 total digits) and scale 2 (the decimal point is 2 digits over).
         /// </summary>
         DECIMAL = 5,
 
@@ -112,7 +112,7 @@ namespace Parquet.Meta {
         JSON = 19,
 
         /// <summary>
-        /// An embedded BSON document  A BSON document embedded within a single BINARY column.
+        /// An embedded BSON document  A BSON document embedded within a single BYTE_ARRAY column.
         /// </summary>
         BSON = 20,
 
@@ -128,12 +128,12 @@ namespace Parquet.Meta {
     /// </summary>
     public enum FieldRepetitionType {
         /// <summary>
-        /// This field is required (can not be null) and each record has exactly 1 value.
+        /// This field is required (can not be null) and each row has exactly 1 value.
         /// </summary>
         REQUIRED = 0,
 
         /// <summary>
-        /// The field is optional (can be null) and each record has 0 or 1 values.
+        /// The field is optional (can be null) and each row has 0 or 1 values.
         /// </summary>
         OPTIONAL = 1,
 
@@ -189,7 +189,7 @@ namespace Parquet.Meta {
         RLE_DICTIONARY = 8,
 
         /// <summary>
-        /// Encoding for floating-point data. K byte-streams are created where K is the size in bytes of the data type. The individual bytes of an FP value are scattered to the corresponding stream and the streams are concatenated. This itself does not reduce the size of the data but can lead to better compression afterwards.
+        /// Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY). K byte-streams are created where K is the size in bytes of the data type. The individual bytes of a value are scattered to the corresponding stream and the streams are concatenated. This itself does not reduce the size of the data but can lead to better compression afterwards.  Added in 2.8 for FLOAT and DOUBLE. Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
         /// </summary>
         BYTE_STREAM_SPLIT = 9,
 
@@ -241,6 +241,80 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
+    /// A structure for capturing metadata for estimating the unencoded, uncompressed size of data written. This is useful for readers to estimate how much memory is needed to reconstruct data in their memory model and for fine grained filter pushdown on nested structures (the histograms contained in this structure can help determine the number of nulls at a particular nesting level and maximum length of lists).
+    /// </summary>
+    public class SizeStatistics {
+        /// <summary>
+        /// The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the bytes needed to store the length of each byte array. In other words, this field is equivalent to the `(size of PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine unencoded sizes of other types readers can use schema information multiplied by the number of non-null and null values. The number of null/non-null values can be inferred from the histograms below.  For example, if a column chunk is dictionary-encoded with dictionary [&quot;a&quot;, &quot;bc&quot;, &quot;cde&quot;], and a data page contains the indices [0, 0, 1, 2], then this value for that data page should be 7 (1 + 1 + 2 + 3).  This field should only be set for types that use BYTE_ARRAY as their physical type.
+        /// </summary>
+        public long? UnencodedByteArrayDataBytes { get; set; }
+
+        /// <summary>
+        /// When present, there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) where each element represents the number of times the repetition level was observed in the data.  This field may be omitted if max_repetition_level is 0 without loss of information.
+        /// </summary>
+        public List<long>? RepetitionLevelHistogram { get; set; }
+
+        /// <summary>
+        /// Same as repetition_level_histogram except for definition levels.  This field may be omitted if max_definition_level is 0 or 1 without loss of information.
+        /// </summary>
+        public List<long>? DefinitionLevelHistogram { get; set; }
+
+
+        internal void Write(ThriftCompactProtocolWriter proto) {
+            proto.StructBegin();
+
+            // 1: UnencodedByteArrayDataBytes, i64
+            if(UnencodedByteArrayDataBytes != null) {
+                proto.WriteI64Field(1, UnencodedByteArrayDataBytes.Value);
+            }
+            // 2: RepetitionLevelHistogram, list
+            if(RepetitionLevelHistogram != null) {
+                proto.WriteListBegin(2, 6, RepetitionLevelHistogram.Count);
+                foreach(long element in RepetitionLevelHistogram) {
+                    proto.WriteI64Value(element);
+                }
+            }
+            // 3: DefinitionLevelHistogram, list
+            if(DefinitionLevelHistogram != null) {
+                proto.WriteListBegin(3, 6, DefinitionLevelHistogram.Count);
+                foreach(long element in DefinitionLevelHistogram) {
+                    proto.WriteI64Value(element);
+                }
+            }
+
+            proto.StructEnd();
+        }
+
+        internal static SizeStatistics Read(ThriftCompactProtocolReader proto) {
+            var r = new SizeStatistics();
+            proto.StructBegin();
+            int elementCount = 0;
+            while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
+                switch(fieldId) {
+                    case 1: // UnencodedByteArrayDataBytes, i64
+                        r.UnencodedByteArrayDataBytes = proto.ReadI64();
+                        break;
+                    case 2: // RepetitionLevelHistogram, list
+                        elementCount = proto.ReadListHeader(out _);
+                        r.RepetitionLevelHistogram = new List<long>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.RepetitionLevelHistogram.Add(proto.ReadI64()); }
+                        break;
+                    case 3: // DefinitionLevelHistogram, list
+                        elementCount = proto.ReadListHeader(out _);
+                        r.DefinitionLevelHistogram = new List<long>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.DefinitionLevelHistogram.Add(proto.ReadI64()); }
+                        break;
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            proto.StructEnd();
+            return r;
+        }
+    }
+
+    /// <summary>
     /// Statistics per row group and per page All fields are optional.
     /// </summary>
     public class Statistics {
@@ -252,7 +326,7 @@ namespace Parquet.Meta {
         public byte[]? Min { get; set; }
 
         /// <summary>
-        /// Count of null value in the column.
+        /// Count of null values in the column.  Writers SHOULD always write this field even if it is zero (i.e. no null value) or the column is not nullable. Readers MUST distinguish between null_count not being present and null_count == 0. If null_count is not present, readers MUST NOT assume null_count == 0.
         /// </summary>
         public long? NullCount { get; set; }
 
@@ -262,11 +336,21 @@ namespace Parquet.Meta {
         public long? DistinctCount { get; set; }
 
         /// <summary>
-        /// Min and max values for the column, determined by its ColumnOrder.  Values are encoded using PLAIN encoding, except that variable-length byte arrays do not include a length prefix.
+        /// Lower and upper bound values for the column, determined by its ColumnOrder.  These may be the actual minimum and maximum values found on a page or column chunk, but can also be (more compact) values that do not exist on a page or column chunk. For example, instead of storing &quot;Blart Versenwald III&quot;, a writer may set min_value=&quot;B&quot;, max_value=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type.  Values are encoded using PLAIN encoding, except that variable-length byte arrays do not include a length prefix.
         /// </summary>
         public byte[]? MaxValue { get; set; }
 
         public byte[]? MinValue { get; set; }
+
+        /// <summary>
+        /// If true, max_value is the actual maximum value for a column.
+        /// </summary>
+        public bool? IsMaxValueExact { get; set; }
+
+        /// <summary>
+        /// If true, min_value is the actual minimum value for a column.
+        /// </summary>
+        public bool? IsMinValueExact { get; set; }
 
 
         internal void Write(ThriftCompactProtocolWriter proto) {
@@ -296,6 +380,14 @@ namespace Parquet.Meta {
             if(MinValue != null) {
                 proto.WriteBinaryField(6, MinValue);
             }
+            // 7: IsMaxValueExact, bool
+            if(IsMaxValueExact != null) {
+                proto.WriteBoolField(7, IsMaxValueExact.Value);
+            }
+            // 8: IsMinValueExact, bool
+            if(IsMinValueExact != null) {
+                proto.WriteBoolField(8, IsMinValueExact.Value);
+            }
 
             proto.StructEnd();
         }
@@ -322,6 +414,12 @@ namespace Parquet.Meta {
                         break;
                     case 6: // MinValue, binary
                         r.MinValue = proto.ReadBinary();
+                        break;
+                    case 7: // IsMaxValueExact, bool
+                        r.IsMaxValueExact = compactType == CompactType.BooleanTrue;
+                        break;
+                    case 8: // IsMinValueExact, bool
+                        r.IsMinValueExact = compactType == CompactType.BooleanTrue;
                         break;
                     default:
                         proto.SkipField(compactType);
@@ -462,6 +560,27 @@ namespace Parquet.Meta {
         }
     }
 
+    public class Float16Type {
+
+        internal void Write(ThriftCompactProtocolWriter proto) {
+            proto.WriteEmptyStruct();
+        }
+
+        internal static Float16Type Read(ThriftCompactProtocolReader proto) {
+            var r = new Float16Type();
+            proto.StructBegin();
+            while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            proto.StructEnd();
+            return r;
+        }
+    }
+
     /// <summary>
     /// Logical type to annotate a column that is always null.  Sometimes when discovering the schema of existing data, values are always null and the physical type can&#39;t be determined. This annotation signals the case where the physical type was guessed from all null values.
     /// </summary>
@@ -487,7 +606,7 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
-    /// Decimal logical type annotation  Scale must be zero or a positive integer less than or equal to the precision. Precision must be a non-zero positive integer.  To maintain forward-compatibility in v1, implementations using this logical type must also set scale and precision on the annotated SchemaElement.  Allowed for physical types: INT32, INT64, FIXED, and BINARY.
+    /// Decimal logical type annotation  Scale must be zero or a positive integer less than or equal to the precision. Precision must be a non-zero positive integer.  To maintain forward-compatibility in v1, implementations using this logical type must also set scale and precision on the annotated SchemaElement.  Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.
     /// </summary>
     public class DecimalType {
         public int Scale { get; set; }
@@ -773,7 +892,7 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
-    /// Embedded JSON logical type annotation  Allowed for physical types: BINARY.
+    /// Embedded JSON logical type annotation  Allowed for physical types: BYTE_ARRAY.
     /// </summary>
     public class JsonType {
 
@@ -797,7 +916,7 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
-    /// Embedded BSON logical type annotation  Allowed for physical types: BINARY.
+    /// Embedded BSON logical type annotation  Allowed for physical types: BYTE_ARRAY.
     /// </summary>
     public class BsonType {
 
@@ -807,6 +926,30 @@ namespace Parquet.Meta {
 
         internal static BsonType Read(ThriftCompactProtocolReader proto) {
             var r = new BsonType();
+            proto.StructBegin();
+            while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
+                switch(fieldId) {
+                    default:
+                        proto.SkipField(compactType);
+                        break;
+                }
+            }
+            proto.StructEnd();
+            return r;
+        }
+    }
+
+    /// <summary>
+    /// Embedded Variant logical type annotation.
+    /// </summary>
+    public class VariantType {
+
+        internal void Write(ThriftCompactProtocolWriter proto) {
+            proto.WriteEmptyStruct();
+        }
+
+        internal static VariantType Read(ThriftCompactProtocolReader proto) {
+            var r = new VariantType();
             proto.StructBegin();
             while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
                 switch(fieldId) {
@@ -849,6 +992,10 @@ namespace Parquet.Meta {
         public BsonType? BSON { get; set; }
 
         public UUIDType? UUID { get; set; }
+
+        public Float16Type? FLOAT16 { get; set; }
+
+        public VariantType? VARIANT { get; set; }
 
 
         internal void Write(ThriftCompactProtocolWriter proto) {
@@ -919,6 +1066,16 @@ namespace Parquet.Meta {
                 proto.BeginInlineStruct(14);
                 UUID.Write(proto);
             }
+            // 15: FLOAT16, id
+            if(FLOAT16 != null) {
+                proto.BeginInlineStruct(15);
+                FLOAT16.Write(proto);
+            }
+            // 16: VARIANT, id
+            if(VARIANT != null) {
+                proto.BeginInlineStruct(16);
+                VARIANT.Write(proto);
+            }
 
             proto.StructEnd();
         }
@@ -966,6 +1123,12 @@ namespace Parquet.Meta {
                         break;
                     case 14: // UUID, id
                         r.UUID = UUIDType.Read(proto);
+                        break;
+                    case 15: // FLOAT16, id
+                        r.FLOAT16 = Float16Type.Read(proto);
+                        break;
+                    case 16: // VARIANT, id
+                        r.VARIANT = VariantType.Read(proto);
                         break;
                     default:
                         proto.SkipField(compactType);
@@ -1125,7 +1288,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class DataPageHeader {
         /// <summary>
-        /// Number of values, including NULLs, in this data page.
+        /// Number of values, including NULLs, in this data page.  If a OffsetIndex is present, a page must begin at a row boundary (repetition_level = 0). Otherwise, pages may begin within a row (repetition_level &gt; 0).
         /// </summary>
         public int NumValues { get; set; }
 
@@ -1295,7 +1458,7 @@ namespace Parquet.Meta {
         public int NumNulls { get; set; }
 
         /// <summary>
-        /// Number of rows in this data page. which means pages change on record boundaries (r = 0).
+        /// Number of rows in this data page. Every page must begin at a row boundary (repetition_level = 0): rows must **not** be split across page boundaries when using V2 data pages.
         /// </summary>
         public int NumRows { get; set; }
 
@@ -1798,11 +1961,11 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
-    /// Wrapper struct to specify sort order.
+    /// Sort order within a RowGroup of a leaf column.
     /// </summary>
     public class SortingColumn {
         /// <summary>
-        /// The column index (in this row group).
+        /// The ordinal position of the column (in this row group).
         /// </summary>
         public int ColumnIdx { get; set; }
 
@@ -1990,6 +2153,11 @@ namespace Parquet.Meta {
         /// </summary>
         public int? BloomFilterLength { get; set; }
 
+        /// <summary>
+        /// Optional statistics to help estimate total memory when converted to in-memory representations. The histograms contained in these statistics can also be useful in some cases for more fine-grained nullability/list length filter pushdown.
+        /// </summary>
+        public SizeStatistics? SizeStatistics { get; set; }
+
 
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.StructBegin();
@@ -2050,6 +2218,11 @@ namespace Parquet.Meta {
             // 15: BloomFilterLength, i32
             if(BloomFilterLength != null) {
                 proto.WriteI32Field(15, BloomFilterLength.Value);
+            }
+            // 16: SizeStatistics, id
+            if(SizeStatistics != null) {
+                proto.BeginInlineStruct(16);
+                SizeStatistics.Write(proto);
             }
 
             proto.StructEnd();
@@ -2113,6 +2286,9 @@ namespace Parquet.Meta {
                         break;
                     case 15: // BloomFilterLength, i32
                         r.BloomFilterLength = proto.ReadI32();
+                        break;
+                    case 16: // SizeStatistics, id
+                        r.SizeStatistics = SizeStatistics.Read(proto);
                         break;
                     default:
                         proto.SkipField(compactType);
@@ -2248,12 +2424,12 @@ namespace Parquet.Meta {
         public string? FilePath { get; set; }
 
         /// <summary>
-        /// Byte offset in file_path to the ColumnMetaData.
+        /// Deprecated: Byte offset in file_path to the ColumnMetaData  Past use of this field has been inconsistent, with some implementations using it to point to the ColumnMetaData and some using it to point to the first page in the column chunk. In many cases, the ColumnMetaData at this location is wrong. This field is now deprecated and should not be used. Writers should set this field to 0 if no ColumnMetaData has been written outside the footer.
         /// </summary>
         public long FileOffset { get; set; }
 
         /// <summary>
-        /// Column metadata for this chunk. This is the same content as what is at file_path/file_offset.  Having it here has it replicated in the file metadata.
+        /// Column metadata for this chunk. Some writers may also replicate this at the location pointed to by file_path/file_offset. Note: while marked as optional, this field is in fact required by most major Parquet implementations. As such, writers MUST populate this field.
         /// </summary>
         public ColumnMetaData? MetaData { get; set; }
 
@@ -2515,7 +2691,7 @@ namespace Parquet.Meta {
     /// </summary>
     public class ColumnOrder {
         /// <summary>
-        /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - unsigned comparison   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.      When writing statistics the following rules should be followed:     - NaNs should not be written to min or max statistics fields.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.
+        /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - undefined   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined   VARIANT - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.      When writing statistics the following rules should be followed:     - NaNs should not be written to min or max statistics fields.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.
         /// </summary>
         public TypeDefinedOrder? TYPEORDER { get; set; }
 
@@ -2562,7 +2738,7 @@ namespace Parquet.Meta {
         public int CompressedPageSize { get; set; }
 
         /// <summary>
-        /// Index within the RowGroup of the first row of the page; this means pages change on record boundaries (r = 0).
+        /// Index within the RowGroup of the first row of the page. When an OffsetIndex is present, pages must begin on row boundaries (repetition_level = 0).
         /// </summary>
         public long FirstRowIndex { get; set; }
 
@@ -2604,11 +2780,19 @@ namespace Parquet.Meta {
         }
     }
 
+    /// <summary>
+    /// Optional offsets for each data page in a ColumnChunk.  Forms part of the page index, along with ColumnIndex.  OffsetIndex may be present even if ColumnIndex is not.
+    /// </summary>
     public class OffsetIndex {
         /// <summary>
         /// PageLocations, ordered by increasing PageLocation.offset. It is required that page_locations[i].first_row_index &lt; page_locations[i+1].first_row_index.
         /// </summary>
         public List<PageLocation> PageLocations { get; set; } = new List<PageLocation>();
+
+        /// <summary>
+        /// Unencoded/uncompressed size for BYTE_ARRAY types.  See documention for unencoded_byte_array_data_bytes in SizeStatistics for more details on this field.
+        /// </summary>
+        public List<long>? UnencodedByteArrayDataBytes { get; set; }
 
 
         internal void Write(ThriftCompactProtocolWriter proto) {
@@ -2618,6 +2802,13 @@ namespace Parquet.Meta {
             proto.WriteListBegin(1, 12, PageLocations.Count);
             foreach(PageLocation element in PageLocations) {
                 element.Write(proto);
+            }
+            // 2: UnencodedByteArrayDataBytes, list
+            if(UnencodedByteArrayDataBytes != null) {
+                proto.WriteListBegin(2, 6, UnencodedByteArrayDataBytes.Count);
+                foreach(long element in UnencodedByteArrayDataBytes) {
+                    proto.WriteI64Value(element);
+                }
             }
 
             proto.StructEnd();
@@ -2634,6 +2825,11 @@ namespace Parquet.Meta {
                         r.PageLocations = new List<PageLocation>(elementCount);
                         for(int i = 0; i < elementCount; i++) { r.PageLocations.Add(PageLocation.Read(proto)); }
                         break;
+                    case 2: // UnencodedByteArrayDataBytes, list
+                        elementCount = proto.ReadListHeader(out _);
+                        r.UnencodedByteArrayDataBytes = new List<long>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.UnencodedByteArrayDataBytes.Add(proto.ReadI64()); }
+                        break;
                     default:
                         proto.SkipField(compactType);
                         break;
@@ -2645,7 +2841,7 @@ namespace Parquet.Meta {
     }
 
     /// <summary>
-    /// Description for ColumnIndex. Each &lt;array-field&gt;[i] refers to the page at OffsetIndex.page_locations[i].
+    /// Optional statistics for each data page in a ColumnChunk.  Forms part the page index, along with OffsetIndex.  If this structure is present, OffsetIndex must also be present.  For each field in this structure, &lt;field&gt;[i] refers to the page at OffsetIndex.page_locations[i].
     /// </summary>
     public class ColumnIndex {
         /// <summary>
@@ -2666,9 +2862,19 @@ namespace Parquet.Meta {
         public BoundaryOrder BoundaryOrder { get; set; } = new BoundaryOrder();
 
         /// <summary>
-        /// A list containing the number of null values for each page.
+        /// A list containing the number of null values for each page  Writers SHOULD always write this field even if no null values are present or the column is not nullable. Readers MUST distinguish between null_counts not being present and null_count being 0. If null_counts are not present, readers MUST NOT assume all null counts are 0.
         /// </summary>
         public List<long>? NullCounts { get; set; }
+
+        /// <summary>
+        /// Contains repetition level histograms for each page concatenated together.  The repetition_level_histogram field on SizeStatistics contains more details.  When present the length should always be (number of pages * (max_repetition_level + 1)) elements.  Element 0 is the first element of the histogram for the first page. Element (max_repetition_level + 1) is the first element of the histogram for the second page.
+        /// </summary>
+        public List<long>? RepetitionLevelHistograms { get; set; }
+
+        /// <summary>
+        /// Same as repetition_level_histograms except for definitions levels.
+        /// </summary>
+        public List<long>? DefinitionLevelHistograms { get; set; }
 
 
         internal void Write(ThriftCompactProtocolWriter proto) {
@@ -2695,6 +2901,20 @@ namespace Parquet.Meta {
             if(NullCounts != null) {
                 proto.WriteListBegin(5, 6, NullCounts.Count);
                 foreach(long element in NullCounts) {
+                    proto.WriteI64Value(element);
+                }
+            }
+            // 6: RepetitionLevelHistograms, list
+            if(RepetitionLevelHistograms != null) {
+                proto.WriteListBegin(6, 6, RepetitionLevelHistograms.Count);
+                foreach(long element in RepetitionLevelHistograms) {
+                    proto.WriteI64Value(element);
+                }
+            }
+            // 7: DefinitionLevelHistograms, list
+            if(DefinitionLevelHistograms != null) {
+                proto.WriteListBegin(7, 6, DefinitionLevelHistograms.Count);
+                foreach(long element in DefinitionLevelHistograms) {
                     proto.WriteI64Value(element);
                 }
             }
@@ -2730,6 +2950,16 @@ namespace Parquet.Meta {
                         elementCount = proto.ReadListHeader(out _);
                         r.NullCounts = new List<long>(elementCount);
                         for(int i = 0; i < elementCount; i++) { r.NullCounts.Add(proto.ReadI64()); }
+                        break;
+                    case 6: // RepetitionLevelHistograms, list
+                        elementCount = proto.ReadListHeader(out _);
+                        r.RepetitionLevelHistograms = new List<long>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.RepetitionLevelHistograms.Add(proto.ReadI64()); }
+                        break;
+                    case 7: // DefinitionLevelHistograms, list
+                        elementCount = proto.ReadListHeader(out _);
+                        r.DefinitionLevelHistograms = new List<long>(elementCount);
+                        for(int i = 0; i < elementCount; i++) { r.DefinitionLevelHistograms.Add(proto.ReadI64()); }
                         break;
                     default:
                         proto.SkipField(compactType);
