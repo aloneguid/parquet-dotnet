@@ -135,12 +135,22 @@ jobs:
           zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
 
 
+      - name: Make a screenshot
+        if: startsWith(matrix.rid, 'osx')
+        run: |
+          ls -R floor-pub/
+          ./floor-pub/floor
+          sleep 5
+          screencapture -x floor.png
+
       - uses: actions/upload-artifact@v4
         name: upload binary
         if: github.ref == 'refs/heads/master'
         with:
           name: floor-${{ matrix.rid }}
-          path: floor-dist/*.zip
+          path: |
+            floor-dist/*.zip
+            floor.png
           if-no-files-found: error
           compression-level: 9
           retention-days: 1
