@@ -148,7 +148,7 @@ jobs:
           echo "changing permissions"
           chmod +x floor-pub/${{ matrix.rid }}/floor
           echo "running floor"
-          ./floor-pub/${{ matrix.rid }}/floor &>/dev/null &fdfa
+          ./floor-pub/${{ matrix.rid }}/floor &>/dev/null &
           # dotnet ./floor-pub/${{ matrix.rid }}/floor.dll
           echo "waiting for floor to start to take screenshot"
           sleep 5
