@@ -145,9 +145,12 @@ jobs:
         if: startsWith(matrix.rid, 'osx')
         run: |
           ls -R floor-pub/
+          echo "changing permissions"
           chmod +x floor-pub/${{ matrix.rid }}/floor
-          ./floor-pub/${{ matrix.rid }}/floor
+          echo "running floor"
+          ./floor-pub/${{ matrix.rid }}/floor &>/dev/null &fdfa
           # dotnet ./floor-pub/${{ matrix.rid }}/floor.dll
+          echo "waiting for floor to start to take screenshot"
           sleep 5
           screencapture -x floor.png
 
