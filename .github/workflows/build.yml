@@ -102,17 +102,23 @@ jobs:
         path: artifacts/*
 
   floor-build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     name: '👤 Build Floor'
     strategy:
       matrix:
-        rid:
-          - linux-x64
-          - linux-musl-x64 
-          - linux-musl-arm64
-          - win-x64
-          - osx-x64
-          - osx-arm64 
+        include:
+        - os: ubuntu-latest
+          rid: linux-x64
+        - os: ubuntu-latest
+          rid: linux-musl-x64 
+        - os: ubuntu-latest
+          rid: linux-musl-arm64
+        - os: windows-latest
+          rid: win-x64
+        - os: macos-latest
+          rid: osx-x64
+        - os: macos-latest
+          rid: osx-arm64 
 
     steps:
       - name: Checkout code
