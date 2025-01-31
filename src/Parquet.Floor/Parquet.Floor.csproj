@@ -8,10 +8,10 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AssemblyName>floor</AssemblyName>
-        <!--<PublishTrimmed>true</PublishTrimmed>
+        <PublishTrimmed>true</PublishTrimmed>
         <TrimMode>partial</TrimMode>
         <PublishSingleFile>true</PublishSingleFile>
-        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>-->
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
     </PropertyGroup>
 
