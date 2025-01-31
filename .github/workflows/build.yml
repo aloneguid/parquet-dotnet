@@ -137,8 +137,8 @@ jobs:
           envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
           dotnet restore src/Parquet.Floor/Parquet.Floor.csproj
           dotnet publish src/Parquet.Floor/Parquet.Floor.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
-          # mkdir -p floor-dist
-          # zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
+          mkdir -p floor-dist
+          zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
 
 
       - name: Make a screenshot
@@ -152,7 +152,7 @@ jobs:
           # dotnet ./floor-pub/${{ matrix.rid }}/floor.dll
           echo "waiting for floor to start to take screenshot"
           sleep 5
-          screencapture -x floor.png
+          screencapture -x floor-dist/build-capture.png
 
       - uses: actions/upload-artifact@v4
         name: upload binary
@@ -160,10 +160,8 @@ jobs:
         with:
           name: floor-${{ matrix.rid }}
           path: |
-            floor-pub/*
-            floor.png
-            !**/*.pdb
-            !**/*.xml
+            floor-dist/*.zip
+            floor-dist/*.png
           if-no-files-found: error
           compression-level: 9
           retention-days: 1
