@@ -113,7 +113,7 @@ jobs:
           rid: linux-musl-x64 
         - os: ubuntu-latest
           rid: linux-musl-arm64
-        - os: windows-latest
+        - os: ubuntu-latest
           rid: win-x64
         - os: macos-latest
           rid: osx-x64
