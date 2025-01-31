@@ -156,7 +156,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         name: upload binary
-        if: github.ref == 'refs/heads/master'
+        # if: github.ref == 'refs/heads/master'
         with:
           name: floor-${{ matrix.rid }}
           path: |
