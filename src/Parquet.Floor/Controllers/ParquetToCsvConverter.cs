@@ -25,13 +25,15 @@ namespace Parquet.Floor.Controllers {
         protected override Task NewRow() {
             return _csv.NextRecordAsync();
         }
-        protected override async Task WriteCellAsync(Field f, object? value, CancellationToken cancellationToken = default) {
+        protected override Task WriteCellAsync(Field f, object? value, CancellationToken cancellationToken = default) {
             _csv.WriteField(value?.ToString() ?? "");
+            return Task.CompletedTask;
         }
-        protected override async Task WriteHeaderAsync(ParquetSchema schema, CancellationToken cancellationToken = default) {
+        protected override Task WriteHeaderAsync(ParquetSchema schema, CancellationToken cancellationToken = default) {
             foreach(Field f in schema.Fields) {
                 _csv.WriteField(f.Name);
             }
+            return Task.CompletedTask;
         }
 
         public override void Dispose() {

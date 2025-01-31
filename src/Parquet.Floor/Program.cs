@@ -17,9 +17,10 @@ class Program {
 
     private const string MutexName = "Parquet.Floor.SingleInstance";
     private const string PipeName = "Parquet.Floor.Pipe";
-    private static CancellationTokenSource cts = new CancellationTokenSource();
+    private static readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
     [STAThread]
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public static async Task Main(string[] args) {
         using(var mutex = new Mutex(true, MutexName, out bool isNewInstance)) {
             if(!isNewInstance) {
@@ -51,12 +52,13 @@ class Program {
             }
         }
     }
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
     private static async Task ListenForDataAsync() {
 
-        while(!cts.IsCancellationRequested) {
+        while(!_cts.IsCancellationRequested) {
             using var server = new NamedPipeServerStream(PipeName);
-            await server.WaitForConnectionAsync(cts.Token);
+            await server.WaitForConnectionAsync(_cts.Token);
             using var reader = new StreamReader(server);
             string? data = reader.ReadLine();
 

@@ -58,7 +58,7 @@ public partial class MainViewModel : ViewModelBase {
 
     public DataViewModel Data { get; } = new DataViewModel();
 
-    public event Action<string> OnNewVersionAvailable;
+    public event Action<string>? OnNewVersionAvailable;
 
     public MainViewModel() {
 
