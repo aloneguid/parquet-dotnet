@@ -139,8 +139,8 @@ jobs:
         if: startsWith(matrix.rid, 'osx')
         run: |
           ls -R floor-pub/
-          chmod +x floor-pub/${{ matrix.rid }}/floor
-          ./floor-pub/${{ matrix.rid }}/floor
+          # chmod +x floor-pub/${{ matrix.rid }}/floor
+          dotnet ./floor-pub/${{ matrix.rid }}/floor.dll
           sleep 5
           screencapture -x floor.png
 
