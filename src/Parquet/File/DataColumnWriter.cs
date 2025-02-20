@@ -38,6 +38,8 @@ namespace Parquet.File {
             _compressionLevel = compressionLevel;
             _keyValueMetadata = keyValueMetadata;
             _options = options;
+            _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
+            _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
         }
 
         public async Task<ColumnChunk> WriteAsync(

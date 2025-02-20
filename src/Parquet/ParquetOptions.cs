@@ -57,5 +57,39 @@ namespace Parquet {
         /// your readers do not understand it.
         /// </summary>
         public bool UseDeltaBinaryPackedEncoding { get; set; } = true;
+
+        /// <summary>
+        /// This option is passed to the <see cref="Microsoft.IO.RecyclableMemoryStreamManager"/> , 
+        /// which keeps a pool of streams in memory for reuse. 
+        /// By default when this option is unset, the RecyclableStreamManager 
+        /// will keep an unbounded amount of memory, which is 
+        /// "indistinguishable from a memory leak" per their documentation.
+        /// 
+        /// This does not restrict the size of the pool, but just allows 
+        /// the garbage collector to free unused memory over this limit.
+        /// 
+        /// You may want to adjust this smaller to reduce max memory usage, 
+        /// or larger to reduce garbage collection frequency.
+        /// 
+        /// Defaults to 16MB.  
+        /// </summary>
+        public int MaximumSmallPoolFreeBytes { get; set; } = 16 * 1024 * 1024;
+
+        /// <summary>
+        /// This option is passed to the <see cref="Microsoft.IO.RecyclableMemoryStreamManager"/> , 
+        /// which keeps a pool of streams in memory for reuse. 
+        /// By default when this option is unset, the RecyclableStreamManager 
+        /// will keep an unbounded amount of memory, which is 
+        /// "indistinguishable from a memory leak" per their documentation.
+        /// 
+        /// This does not restrict the size of the pool, but just allows 
+        /// the garbage collector to free unused memory over this limit.
+        /// 
+        /// You may want to adjust this smaller to reduce max memory usage, 
+        /// or larger to reduce garbage collection frequency.
+        /// 
+        /// Defaults to 64MB.
+        /// </summary>
+        public int MaximumLargePoolFreeBytes { get; set; } = 64 * 1024 * 1024;
     }
 }
