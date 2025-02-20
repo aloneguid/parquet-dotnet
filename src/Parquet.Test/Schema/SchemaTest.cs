@@ -8,8 +8,6 @@ using Parquet.Schema;
 using System.Linq;
 using TT = Parquet.Meta.Type;
 using CT = Parquet.Meta.ConvertedType;
-using System.Numerics;
-using Parquet.Encodings;
 using Parquet.File;
 using Parquet.Meta;
 
@@ -36,7 +34,7 @@ namespace Parquet.Test.Schema {
         }
 
         [Fact]
-        public void Schemas_idential_equal() {
+        public void Schemas_identical_equal() {
             var schema1 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("city"));
             var schema2 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("city"));
 
@@ -55,6 +53,152 @@ namespace Parquet.Test.Schema {
         public void Schemas_differ_only_in_repeated_fields_not_equal() {
             var schema1 = new ParquetSchema(new DataField<int>("id"), new DataField<string>("cities"));
             var schema2 = new ParquetSchema(new DataField<int>("id"), new DataField<IEnumerable<string>>("cities"));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+
+        [Fact]
+        public void Schemas_identical_structs_equal() {
+            var schema1 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<string>("city")));
+            var schema2 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<string>("city")));
+
+            Assert.Equal(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_structs_by_path_not_equal() {
+            var schema1 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<string>("city")));
+            var schema2 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<string>("city2")));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_structs_by_type_not_equal() {
+            var schema1 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<string>("city")));
+            var schema2 = new ParquetSchema(new StructField("struct", new DataField<string>("id"), new DataField<string>("city")));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_structs_by_nullable_type_not_equal() {
+            var schema1 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<int>("count")));
+            var schema2 = new ParquetSchema(new StructField("struct", new DataField<int>("id"), new DataField<int>("count", nullable: true)));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+
+        [Fact]
+        public void Schemas_identical_maps_equal() {
+            var schema1 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("value")));
+            var schema2 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("value")));
+
+            Assert.Equal(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_maps_by_path_not_equal() {
+            var schema1 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("value")));
+            var schema2 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("other_value")));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_maps_by_type_not_equal() {
+            var schema1 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("value")));
+            var schema2 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<double>("value")));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_maps_by_nullable_type_not_equal() {
+            var schema1 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("value")));
+            var schema2 = new ParquetSchema(new MapField("dictionary",
+                new DataField<int>("key"),
+                new DataField<int>("value", nullable: true)));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_identical_simple_lists_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id")));
+            var schema2 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id")));
+
+            Assert.Equal(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_simple_lists_by_path_not_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id")));
+            var schema2 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id2")));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_simple_lists_by_type_not_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id")));
+            var schema2 = new ParquetSchema(new ListField("list_of_items", new DataField<string>("id")));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_simple_lists_by_nullable_type_not_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id")));
+            var schema2 = new ParquetSchema(new ListField("list_of_items", new DataField<int>("id", nullable: true)));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_identical_complex_lists_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<string>("city"))));
+            var schema2 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<string>("city"))));
+
+            Assert.Equal(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_complex_lists_by_path_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<string>("city"))));
+            var schema2 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<string>("city2"))));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_complex_lists_by_type_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<string>("city"))));
+            var schema2 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<string>("id"), new DataField<string>("city2"))));
+
+            Assert.NotEqual(schema1, schema2);
+        }
+
+        [Fact]
+        public void Schemas_different_complex_lists_by_nullable_type_not_equal() {
+            var schema1 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<int>("count"))));
+            var schema2 = new ParquetSchema(new ListField("list_of_structs", new StructField("struct", new DataField<int>("id"), new DataField<int>("count", nullable: true))));
 
             Assert.NotEqual(schema1, schema2);
         }

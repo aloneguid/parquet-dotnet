@@ -150,11 +150,13 @@ namespace Parquet.Schema {
             if(ReferenceEquals(this, other))
                 return true;
 
-            if(_fields.Count != other._fields.Count)
+            DataField[] dataFields = DataFields;
+            DataField[] otherDataFields = other.DataFields;
+            if(dataFields.Length != otherDataFields.Length)
                 return false;
 
-            for(int i = 0; i < _fields.Count; i++) {
-                if(!_fields[i].Equals(other._fields[i]))
+            for(int i = 0; i < dataFields.Length; i++) {
+                if(!dataFields[i].Equals(otherDataFields[i]))
                     return false;
             }
 
@@ -165,13 +167,16 @@ namespace Parquet.Schema {
         /// Compares this schema to <paramref name="other"/> and produces a human readable message describing the differences.
         /// </summary>
         public string GetNotEqualsMessage(ParquetSchema other, string thisName, string otherName) {
-            if(_fields.Count != other._fields.Count) {
-                return $"different number of elements ({_fields.Count} != {other._fields.Count})";
+            DataField[] dataFields = DataFields;
+            DataField[] otherDataFields = other.DataFields;
+
+            if(dataFields.Length != otherDataFields.Length) {
+                return $"different number of elements ({dataFields.Length} != {otherDataFields.Length})";
             }
 
             var sb = new StringBuilder();
-            for(int i = 0; i < _fields.Count; i++) {
-                if(!_fields[i].Equals(other._fields[i])) {
+            for(int i = 0; i < dataFields.Length; i++) {
+                if(!dataFields[i].Equals(otherDataFields[i])) {
                     if(sb.Length != 0) {
                         sb.Append(", ");
                     }
@@ -179,11 +184,11 @@ namespace Parquet.Schema {
                     sb.Append("[");
                     sb.Append(thisName);
                     sb.Append(": ");
-                    sb.Append(_fields[i]);
+                    sb.Append(dataFields[i]);
                     sb.Append("] != [");
                     sb.Append(otherName);
                     sb.Append(": ");
-                    sb.Append(other._fields[i]);
+                    sb.Append(otherDataFields[i]);
                     sb.Append("]");
                 }
             }
@@ -247,7 +252,7 @@ namespace Parquet.Schema {
         /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
         /// </returns>
         public override int GetHashCode() {
-            return _fields.Aggregate(1, (current, se) => current * se.GetHashCode());
+            return DataFields.Aggregate(1, (current, se) => current * se.GetHashCode());
         }
 
         /// <summary>
