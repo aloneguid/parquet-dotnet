@@ -222,12 +222,13 @@ namespace Parquet.Test {
 
             Assert.Equal(8, cols.Length);
             
-            //Check a decimal column's values
+            //DECIMAL(9, 5)
             DataColumn decimal_p9_s5 = cols[5];
             var data = (decimal?[])decimal_p9_s5.Data;
             Assert.Equal(1.02232M, data[7]);
             Assert.Equal(-27.427M, data[344]);
 
+            //DECIMAL(9, 0)
             DataColumn decimal_p9_s0 = cols[6];
             data = (decimal?[])decimal_p9_s0.Data;
             Assert.Equal(0M, data[0]);
