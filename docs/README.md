@@ -55,6 +55,7 @@ Download it from the [releases section](https://github.com/aloneguid/parquet-dot
 - [Recfuence - An analysis of YouTube's political influence through recommendations]().
 - [Kusto-loco - C# KQL query engine with flexible I/O layers and visualization](https://github.com/NeilMacMullen/kusto-loco).
 - [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
+- [Personal Data Warehouse - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)](https://github.com/BlazorData-Net/PersonalDataWarehouse).
 
 *...raise a PR to appear here...*
 
