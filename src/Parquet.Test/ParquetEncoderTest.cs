@@ -43,5 +43,28 @@ namespace Parquet.Test {
             Assert.Equal(1, decoded[0]);
             Assert.Equal(2, decoded[1]);
         }
+
+        [Fact]
+        public void Decode_ByteArrays_WithEmptyArrays() {
+            var source = new MemoryStream();
+            
+            source.Write(BitConverter.GetBytes(3), 0, 4);
+            source.Write([1, 2, 3], 0, 3);
+            source.Write(BitConverter.GetBytes(0), 0, 4);
+            source.Write(BitConverter.GetBytes(2), 0, 4);
+            source.Write([4, 5], 0, 2);
+
+            byte[][] decoded = new byte[3][];
+            int elementsRead = ParquetPlainEncoder.Decode(
+                source.ToArray().AsSpan(),
+                decoded.AsSpan(),
+                new SchemaElement { Type = Meta.Type.BYTE_ARRAY });
+
+            Assert.Equal(3, elementsRead);
+            Assert.Equal(new byte[] { 1, 2, 3 }, decoded[0]);
+            Assert.NotNull(decoded[1]);
+            Assert.Empty(decoded[1]);
+            Assert.Equal(new byte[] { 4, 5 }, decoded[2]);
+        }
     }
 }
