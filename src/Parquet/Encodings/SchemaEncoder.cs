@@ -265,7 +265,7 @@ namespace Parquet.Encodings {
         private static DataField GetDecimalDataField(SchemaElement se) =>
             new DecimalDataField(se.Name,
                 se.Precision.GetValueOrDefault(DecimalFormatDefaults.DefaultPrecision),
-                se.Scale.GetValueOrDefault(DecimalFormatDefaults.DefaultScale));
+                se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : DecimalFormatDefaults.DefaultScale));
 
         private static DataField GetDateTimeDataField(SchemaElement se) {
             if(se.LogicalType is not null)

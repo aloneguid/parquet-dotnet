@@ -30,7 +30,7 @@ namespace Parquet.File.Values.Primitives {
 
             UnscaledValue = new BigInteger(data);
             Precision = schema.Precision!.Value;
-            Scale = schema.Scale!.Value;
+            Scale = schema.Scale ?? 0;
 
             BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
             decimal ipScaled = (decimal)BigInteger.DivRem(UnscaledValue, scaleMultiplier, out BigInteger fpUnscaled);
