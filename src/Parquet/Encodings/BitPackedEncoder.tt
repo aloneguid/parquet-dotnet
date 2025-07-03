@@ -182,26 +182,27 @@ namespace Parquet.Encodings {
                 int startIndex = valueIndex * w / 8;
                 int endIndex = paddedByteCountFromBits((valueIndex + 1) * w);
             #>
-            dest[<#= valueIndex #>] = <#
+    dest[<#= valueIndex #>] = <#
 
-                for (int byteIndex = startIndex; byteIndex < endIndex; byteIndex++) {
-                    if(byteIndex == startIndex) {#><#} else {#> | <#}
+        for (int byteIndex = startIndex; byteIndex < endIndex; byteIndex++) {
+            if(byteIndex == startIndex) {#><#} else {#> | <#}
 
-                    var shiftMask = getShiftMask(w, msbFirst, byteIndex, valueIndex);
-                    var ss = "";
-                    if(nt == "int" && shiftMask.Item2 == 4294967295) shiftMask = Tuple.Create<int, long>(shiftMask.Item1, -1);
+            var shiftMask = getShiftMask(w, msbFirst, byteIndex, valueIndex);
+            var ss = "";
+            if(nt == "int" && shiftMask.Item2 == 4294967295) shiftMask = Tuple.Create<int, long>(shiftMask.Item1, -1);
 
-                    if(shiftMask.Item1 < 0) {
-                        ss = " >> " + (- shiftMask.Item1);
-                    } else if(shiftMask.Item1 > 0) {
-                        ss = " << " + shiftMask.Item1;
-                    }
-
-                    #>((((<#= nt #>)src[<#= byteIndex #>])<#= ss #>) & <#= shiftMask.Item2 #>)<#
-                }
-
-            #>;<#
+            if(shiftMask.Item1 < 0) {
+                ss = " >> " + (- shiftMask.Item1);
+            } else if(shiftMask.Item1 > 0) {
+                ss = " << " + shiftMask.Item1;
             }
+
+            #>((((<#= nt #>)src[<#= byteIndex #>])<#= ss #>) & <#= shiftMask.Item2 #>)<#
+        }
+
+    #>;
+        <#
+        }
         } else { #> <#} #>
         }
 

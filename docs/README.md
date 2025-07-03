@@ -1,10 +1,9 @@
 # Apache Parquet for .NET 
-[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![NuGet Version](https://img.shields.io/nuget/vpre/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aloneguid/parquet-dotnet) ![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet) ![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
-
-
-
-
-
+[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aloneguid/parquet-dotnet)
+![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet)
+![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
 **Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 8`, `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
@@ -56,6 +55,7 @@ Download it from the [releases section](https://github.com/aloneguid/parquet-dot
 - [Recfuence - An analysis of YouTube's political influence through recommendations]().
 - [Kusto-loco - C# KQL query engine with flexible I/O layers and visualization](https://github.com/NeilMacMullen/kusto-loco).
 - [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
+- [Personal Data Warehouse - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)](https://github.com/BlazorData-Net/PersonalDataWarehouse).
 
 *...raise a PR to appear here...*
 
