@@ -728,6 +728,25 @@ namespace Parquet.Test.Serialisation {
             await Compare(data, true);
         }
 
+        class IdWithNames {
+            public int Id { get; set; }
+            public Dictionary<int, string>? Names { get; set; }
+        }
+
+        [Fact]
+        public async Task Map_Simple_With_Names_Dict_Serde() {
+            var data = new List<Dictionary<string, object?>> {
+        new Dictionary<string, object?> {
+            ["Id"] = 1,
+            ["Names"] = new Dictionary<int, string> {
+                [1] = "Name1",
+                [2] = "name2"
+            }}};
+
+            await DictCompare<IdWithNames>(data, true);
+            await DictAsyncCompare<IdWithNames>(data, true);
+        }
+
         [Fact]
         public async Task Append_reads_all_data() {
             var data = Enumerable.Range(0, 1_000).Select(i => new Record {
