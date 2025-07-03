@@ -213,5 +213,11 @@ namespace Parquet.Test {
             using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
             ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
         }
+
+        [Fact]
+        public async Task HyparquetCompressed() {
+            using Stream s = OpenTestFile("hyparquet.snappy.parquet");
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
+        }
     }
 }
