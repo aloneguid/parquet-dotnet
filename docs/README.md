@@ -30,18 +30,6 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - [Quick Start](https://aloneguid.github.io/parquet-dotnet/starter-topic.html#quick-start).
 - [Full Documentation](https://aloneguid.github.io/parquet-dotnet/starter-topic.html).
 
-## UI
-
-This repository now includes an implementation of parquet desktop viewer application called **Floor** (parquet floor, get it?). It's cross-platform, self-contained executable made with Avalonia, and is compiled for Linux, Windows and MacOS.
-
-![](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/floor.gif?raw=true)
-
-**Floor** is not meant to be the best parquet viewer on the planet, but just a reference implementation. There are probably better, more feature-rich applications out there.
-
-### Installing
-
-Download it from the [releases section](https://github.com/aloneguid/parquet-dotnet/releases). On Windows, you can install it with winget - `winget install aloneguid.ParquetDotnet.floor`.
-
 ## Used by
 
 - [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool).
