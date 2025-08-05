@@ -151,7 +151,7 @@ namespace Parquet.Serialization.Dremel {
             int dl, int rl,
             int dlDepth, int rlDepth,
             int[] rsm) {
-            Console.WriteLine("debug");
+            //Console.WriteLine("debug");
         }
 #endif
 
