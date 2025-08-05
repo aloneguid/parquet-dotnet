@@ -157,7 +157,6 @@ jobs:
     runs-on: ubuntu-latest 
     needs:
     - release
-    - floor-build
     if: github.ref == 'refs/heads/master'
 
     steps:
