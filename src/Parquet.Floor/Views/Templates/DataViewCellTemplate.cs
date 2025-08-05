@@ -115,6 +115,7 @@ namespace Parquet.Floor.Views.Templates {
                     hdr.Content = grid;
                     grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));  // key
                     grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));  // value
+
                     int iRow = 0;
 
                     foreach(Field field in structField.Fields) {

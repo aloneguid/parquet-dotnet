@@ -1,6 +1,7 @@
-﻿using System.IO;
-using Grey;
+﻿using Grey;
 using Parquet;
+using Parquet.Meta;
+using Parquet.Schema;
 using Parquet.Serialization;
 using static Grey.App;
 
@@ -65,6 +66,37 @@ if(!string.IsNullOrEmpty(fileName)) {
     title += $" - {Path.GetFileName(fileName)}";
 }
 
+void RenderPrimitiveValue(int rowIdx, int colIdx, DataField df, object value) {
+    if(df.ClrType == typeof(bool)) {
+        bool b = (bool)value;
+        Checkbox($"##{rowIdx}-{colIdx}", ref b);
+        return;
+    }
+
+    Label(value.ToString());
+}
+
+void RenderValue(int rowIdx, int colIdx, Field f, object? value) {
+    if(value == null) {
+        Button("null", isEnabled: false, isSmall: true);
+        return;
+    }
+
+    if(f.SchemaType == SchemaType.Data) {
+        if(f is DataField df) {
+            if(df.IsArray) {
+                Label("array");
+            } else {
+                RenderPrimitiveValue(rowIdx, colIdx, df, value);
+            }
+        }
+    } else if(f.SchemaType == SchemaType.Struct) {
+
+    } else {
+        Label(f.SchemaType.ToString());
+    }
+}
+
 void RenderData() {
     if(parquetData == null || columns == null) {
         Label("No data loaded.");
@@ -74,13 +106,9 @@ void RenderData() {
     Table("data", columns, parquetData.Data.Count, (int rowIdx, int colIdx) => {
         Dictionary<string, object> row = parquetData.Data[rowIdx];
         string columnName = columns[colIdx];
-        if(row.TryGetValue(columnName, out object? value)) {
-            if(value == null) {
-                Button("null", isEnabled: false, isSmall: true);
-            } else {
-                Label(value.ToString());
-            }
-        }
+        Field f = parquetData.Schema[colIdx];
+        row.TryGetValue(columnName, out object? value);
+        RenderValue(rowIdx, colIdx, f, value);
     });
 }
 
