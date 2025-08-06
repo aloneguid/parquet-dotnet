@@ -195,7 +195,7 @@ namespace Parquet.Encodings {
             if(numGroups == 0)
                 return 0;
 
-            int count = numGroups * 8;
+            int count = Math.Min(dest.Length, numGroups * 8);
             int bytesToRead = (int)Math.Ceiling(bitWidth * count / 8.0);
             bytesToRead = Math.Min(bytesToRead, data.Length - dataOffset);
             Span<byte> rawSpan = data.Slice(dataOffset, bytesToRead);
