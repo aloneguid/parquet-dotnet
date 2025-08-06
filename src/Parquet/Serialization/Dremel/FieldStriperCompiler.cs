@@ -200,6 +200,15 @@ namespace Parquet.Serialization.Dremel {
             return f.MaxDefinitionLevel;
         }
 
+        private static int GetNullCollectionDL(Field f)
+        {
+            return f.MaxDefinitionLevel - 2;    
+        }
+        
+        private static int GetEmptyCollectionDL(Field f) {
+            return f.MaxDefinitionLevel - 1;
+        }
+
         private static Type GetIdealUntypedType(Field f) {
             switch(f.SchemaType) {
                 case SchemaType.Data:
@@ -320,13 +329,13 @@ namespace Parquet.Serialization.Dremel {
                     Expression.Assign(countVar, Expression.Constant(0)),
                     Expression.IfThenElse(
                         Expression.Equal(levelProperty, Expression.Constant(null)),
-                        WriteMissingValue(dl - 2, currentRlVar),
+                        WriteMissingValue(GetNullCollectionDL(field), currentRlVar),
                         Expression.Block(
                             body,
                             // check if no elements are written and write out empty list if so
                             Expression.IfThen(
                                 Expression.Equal(countVar, Expression.Constant(0)),
-                                WriteMissingValue(dl - 1, currentRlVar))
+                                WriteMissingValue(GetEmptyCollectionDL(field), currentRlVar))
                             )));
             } else {
                 Expression element = levelProperty;
