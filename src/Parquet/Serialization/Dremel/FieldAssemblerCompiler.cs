@@ -175,6 +175,7 @@ namespace Parquet.Serialization.Dremel {
             ParameterExpression indexVar = Expression.Variable(typeof(int), "index");
             ParameterExpression resultElementVar = Expression.Variable(elementType, "resultElement");
             Expression downcastedCollection = Expression.Convert(collection, collectionType);
+            PropertyInfo? indexerProperty = collectionType.GetProperty("Item", new[] { typeof(int) });
             return Expression.Block(
                 new[] { indexVar, resultElementVar },
 
@@ -188,7 +189,7 @@ namespace Parquet.Serialization.Dremel {
                         Expression.Assign(resultElementVar, Expression.New(elementType)),
                         downcastedCollection.CollectionAdd(collectionType, resultElementVar, elementType)),
 
-                    Expression.Assign(resultElementVar, Expression.Property(downcastedCollection, "Item", indexVar))
+                    Expression.Assign(resultElementVar, Expression.Property(downcastedCollection, indexerProperty!, indexVar))
                     ),
 
                 resultElementVar);
@@ -286,7 +287,7 @@ namespace Parquet.Serialization.Dremel {
                 // is this a key or a value?
                 if(parentField != null && parentField.SchemaType == SchemaType.Map && field.SchemaType == SchemaType.Data) {
                     accessor = Expression.Property(rootVar, field.Name);
-                    isNull = Expression.Equal(accessor, Expression.Constant(null));
+                    isNull = Expression.Equal(Expression.Convert(accessor, typeof(object)), Expression.Constant(null));
 
                 } else {
                     accessor = Expression.Property(rootVar, "Item", Expression.Constant(name));
