@@ -11,6 +11,7 @@ namespace Parquet.Schema {
 
         private bool _isNullable;
         private bool _isArray;
+        private int _fieldId = -1;
 
         /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
@@ -48,6 +49,11 @@ namespace Parquet.Schema {
         /// Unsupported, use at your own risk!
         /// </summary>
         public Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
+
+        /// <summary>
+        /// Optional metadata integer, used in Lake implementations. See https://arrow.apache.org/docs/cpp/parquet.html#parquet-field-id
+        /// </summary>
+        public int FieldId { get => _fieldId; set => _fieldId = value; }
 
         /// <summary>
         /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
