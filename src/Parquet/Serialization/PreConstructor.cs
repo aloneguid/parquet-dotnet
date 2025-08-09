@@ -19,11 +19,6 @@ namespace Parquet.Serialization {
                 return Expression.New(type);
             }
 
-            if (PostConstructor.GetRecordConstructor(type).Constructor == null) {
-                throw new InvalidOperationException(
-                    $"{type} has neither a default constructor, nor a record-style constructor.");
-            }
-
 #if NET6_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
             MethodInfo getUninit = typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject))!;
 #else
