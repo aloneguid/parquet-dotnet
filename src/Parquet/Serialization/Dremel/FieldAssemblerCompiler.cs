@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
@@ -170,6 +172,9 @@ namespace Parquet.Serialization.Dremel {
                     _rsmVar.ClearArray(_rlVar)));
         }
 
+        private static Expression AllocateNew(Type type) 
+            => PreConstructor.AllocateNew(type);
+
         private Expression GetCollectionElement(Expression collection, int rlDepth,
             Type collectionType, Type elementType) {
             ParameterExpression indexVar = Expression.Variable(typeof(int), "index");
@@ -185,7 +190,7 @@ namespace Parquet.Serialization.Dremel {
                     Expression.LessThanOrEqual(downcastedCollection.CollectionCount(collectionType), indexVar),
 
                     Expression.Block(
-                        Expression.Assign(resultElementVar, Expression.New(elementType)),
+                        Expression.Assign(resultElementVar, AllocateNew(elementType)),
                         downcastedCollection.CollectionAdd(collectionType, resultElementVar, elementType)),
 
                     Expression.Assign(resultElementVar, Expression.Property(downcastedCollection, "Item", indexVar))
@@ -245,7 +250,7 @@ namespace Parquet.Serialization.Dremel {
                 return Expression.NewArrayBounds(t.GetElementType()!, Zero);
             }
 
-            return Expression.New(t);
+            return AllocateNew(t);
         }
 
         private static Expression RebuildArray(Expression arrayAccessor, Type arrayType, Expression newElement) {
