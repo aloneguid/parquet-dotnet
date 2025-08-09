@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
-using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Parquet.Data;
 using Parquet.Extensions;
@@ -593,21 +593,9 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<int> data) {
-            Span<byte> dataBytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(dataBytes);
-            return data.Length;
-        }
-
         public static void Encode(ReadOnlySpan<uint> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
-        }
-
-        public static int Decode(Span<byte> source, Span<uint> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return source.Length / sizeof(uint);
         }
 
         public static void Encode(ReadOnlySpan<long> data, Stream destination) {
@@ -615,21 +603,9 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<long> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return source.Length / sizeof(long);
-        }
-
         public static void Encode(ReadOnlySpan<ulong> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
-        }
-
-        public static int Decode(Span<byte> source, Span<ulong> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return source.Length / sizeof(ulong);
         }
 
         public static void Encode(ReadOnlySpan<BigInteger> data, Stream destination) {
@@ -637,10 +613,10 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<BigInteger> data) {
+        public static int Decode<T>(Span<byte> source, Span<T> data) where T : struct {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
             source.CopyWithLimitTo(bytes);
-            return source.Length / 12;
+            return Math.Min(data.Length, source.Length / Unsafe.SizeOf<T>());
         }
 
         public static void Encode(ReadOnlySpan<decimal> data, Stream destination, SchemaElement tse) {
@@ -752,12 +728,6 @@ namespace Parquet.Encodings {
             Write(destination, bytes);
         }
 
-        public static int Decode(Span<byte> source, Span<double> data) {
-            Span<byte> bytes = MemoryMarshal.AsBytes(data);
-            source.CopyWithLimitTo(bytes);
-            return source.Length / sizeof(double);
-        }
-
         public static void Encode(ReadOnlySpan<float> data, Stream destination) {
             ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
             Write(destination, bytes);
@@ -766,7 +736,7 @@ namespace Parquet.Encodings {
         public static int Decode(Span<byte> source, Span<float> data) {
             Span<byte> bytes = MemoryMarshal.AsBytes(data);
             source.CopyWithLimitTo(bytes);
-            return source.Length / sizeof(float);
+            return data.Length;
         }
 
         public static void Encode(ReadOnlySpan<byte[]> data, Stream destination) {
@@ -805,6 +775,8 @@ namespace Parquet.Encodings {
                         byte[] el = source.Slice(sourceOffset, length).ToArray();
                         sourceOffset += length;
                         data[read++] = el;
+                    } else {
+                        data[read++] = [];
                     }
                 }
             }
@@ -822,7 +794,27 @@ namespace Parquet.Encodings {
                     }
                     break;
                 case TType.INT64:
-                    if(tse.ConvertedType == ConvertedType.TIMESTAMP_MILLIS) {
+                    if(tse.LogicalType?.TIMESTAMP is not null) {
+                        foreach(DateTime element in data) {
+                            if(tse.LogicalType.TIMESTAMP.Unit.MILLIS is not null) {
+                                long unixTime = element.ToUnixMilliseconds();
+                                byte[] raw = BitConverter.GetBytes(unixTime);
+                                destination.Write(raw, 0, raw.Length);    
+#if NET7_0_OR_GREATER
+                            } else if (tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
+                                long unixTime = element.ToUtc().ToUnixMicroseconds();
+                                byte[] raw = BitConverter.GetBytes(unixTime);
+                                destination.Write(raw, 0, raw.Length);
+                            } else if (tse.LogicalType.TIMESTAMP.Unit.NANOS is not null) {
+                                long unixTime = element.ToUtc().ToUnixNanoseconds();
+                                byte[] raw = BitConverter.GetBytes(unixTime);
+                                destination.Write(raw, 0, raw.Length);
+#endif
+                            } else {
+                                throw new ParquetException($"Unexpected TimeUnit: {tse.LogicalType.TIMESTAMP.Unit}");
+                            }
+                        }
+                    } else if(tse.ConvertedType == ConvertedType.TIMESTAMP_MILLIS) {
                         foreach(DateTime element in data) {
                             long unixTime = element.ToUtc().ToUnixMilliseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
@@ -896,7 +888,31 @@ namespace Parquet.Encodings {
                     long[] longs = ArrayPool<long>.Shared.Rent(data.Length);
                     try {
                         int longsRead = Decode(source, longs.AsSpan(0, data.Length));
-                        if(tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
+                        if(tse.LogicalType?.TIMESTAMP is not null) {
+                            for(int i = 0; i < longsRead; i++) {
+                                if(tse.LogicalType.TIMESTAMP.Unit.MILLIS is not null) {
+                                    DateTime dt = longs[i].AsUnixMillisecondsInDateTime();
+                                    dt = DateTime.SpecifyKind(dt, tse.LogicalType.TIMESTAMP.IsAdjustedToUTC ? DateTimeKind.Utc : DateTimeKind.Local);
+                                    data[i] = dt;
+                                } else if(tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
+                                    long lv = longs[i];
+                                    long microseconds = lv % 1000;
+                                    lv /= 1000;
+                                    DateTime dt = lv.AsUnixMillisecondsInDateTime().AddTicks(microseconds * 10);
+                                    dt = DateTime.SpecifyKind(dt, tse.LogicalType.TIMESTAMP.IsAdjustedToUTC ? DateTimeKind.Utc : DateTimeKind.Local);
+                                    data[i] = dt;
+                                } else if(tse.LogicalType.TIMESTAMP.Unit.NANOS is not null) {
+                                    long lv = longs[i];
+                                    long nanoseconds = lv % 1000000;
+                                    lv /= 1000000;
+                                    DateTime dt = lv.AsUnixMillisecondsInDateTime().AddTicks(nanoseconds / 100); // 1 tick = 100 nanoseconds
+                                    dt = DateTime.SpecifyKind(dt, tse.LogicalType.TIMESTAMP.IsAdjustedToUTC ? DateTimeKind.Utc : DateTimeKind.Local);
+                                    data[i] = dt;
+                                } else {
+                                    throw new ParquetException($"Unexpected TimeUnit: {tse.LogicalType.TIMESTAMP.Unit}");
+                                }
+                            }
+                        } else if(tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
                             for(int i = 0; i < longsRead; i++) {
                                 long lv = longs[i];
                                 long microseconds = lv % 1000;
@@ -1072,8 +1088,10 @@ namespace Parquet.Encodings {
                     else
                         Array.Copy(BitConverter.GetBytes(len), 0, rb, rbOffset, sizeof(int));
                     rbOffset += sizeof(int);
-                    E.GetBytes(s, 0, s.Length, rb, rbOffset);
-                    rbOffset += len;
+                    if(len > 0) {
+                        E.GetBytes(s, 0, s.Length, rb, rbOffset);
+                        rbOffset += len;
+                    }
                 }
 
                 if(rbOffset > 0)

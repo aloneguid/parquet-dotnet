@@ -153,7 +153,7 @@ namespace Parquet.Serialization.Dremel {
             int dl, int rl,
             int dlDepth, int rlDepth,
             int[] rsm) {
-            Console.WriteLine("debug");
+            //Console.WriteLine("debug");
         }
 #endif
 
@@ -309,20 +309,25 @@ namespace Parquet.Serialization.Dremel {
 
                 // Dictionary is a special case, because it cannot be constructed independently in one go, so the client needs to know it a dictionary
 
-                Type? type = null;
-                MemberExpression? accessor = null;
+                Type type = rootType;
+                Expression accessor = rootVar;
 
-                PropertyInfo? pi = rootType.GetProperty(name);
+                if(type.IsSystemNullable()) {
+                    type = type.GetNonNullable();
+                    accessor = Expression.Property(accessor, "Value");
+                }
+
+                PropertyInfo? pi = type.GetProperty(name);
                 if(pi != null) {
                     type = pi.PropertyType;
-                    accessor = Expression.Property(rootVar, name);
+                    accessor = Expression.Property(accessor, name);
                 }
 
                 if(pi == null) {
                     FieldInfo? fi = rootType.GetField(name);
                     if(fi != null) {
                         type = fi.FieldType;
-                        accessor = Expression.Field(rootVar, name);
+                        accessor = Expression.Field(accessor, name);
                     }
                 }
 

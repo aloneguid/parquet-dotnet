@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.ML.Data;
 using Parquet.Extensions;
 using Parquet.File;
 
@@ -18,7 +17,6 @@ namespace Parquet {
 #pragma warning restore IDE1006
 
         private readonly Stream _fileStream;
-        private BinaryWriter? _binaryWriter;
 
         internal ParquetActor(Stream? fileStream) =>
             _fileStream = fileStream ?? throw new ArgumentNullException(nameof(fileStream));
@@ -27,8 +25,6 @@ namespace Parquet {
         /// Original stream to write or read
         /// </summary>
         protected Stream Stream => _fileStream;
-
-        internal BinaryWriter Writer => _binaryWriter ??= new BinaryWriter(_fileStream);
 
         /// <summary>
         /// Validates that this file is a valid parquet file by reading head and tail of it

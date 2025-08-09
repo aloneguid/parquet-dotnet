@@ -7,7 +7,7 @@ namespace Parquet.Schema {
     /// <summary>
     /// Field containing actual data, unlike fields containing metadata.
     /// </summary>
-    public class DataField : Field {
+    public class DataField : Field, ICloneable {
 
         private bool _isNullable;
         private bool _isArray;
@@ -65,8 +65,7 @@ namespace Parquet.Schema {
             if(!SchemaEncoder.IsSupported(ClrType)) {
                 if(baseType == typeof(DateTimeOffset)) {
                     throw new NotSupportedException($"{nameof(DateTimeOffset)} support was dropped due to numerous ambiguity issues, please use {nameof(DateTime)} from now on.");
-                }
-                else {
+                } else {
                     throw new NotSupportedException($"type {clrType} is not supported");
                 }
             }
@@ -130,7 +129,7 @@ namespace Parquet.Schema {
         internal bool IsDeltaEncodable => DeltaBinaryPackedEncoder.IsSupported(ClrType);
 
         /// <inheritdoc/>
-        public override string ToString() => 
+        public override string ToString() =>
             $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";
 
         private Type BaseClrType {
@@ -186,6 +185,14 @@ namespace Parquet.Schema {
                 baseType = baseType.GetNonNullable();
                 isNullable = true;
             }
+        }
+
+        /// <summary>
+        /// Simple memberwise clone
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            return MemberwiseClone();
         }
 
         #endregion

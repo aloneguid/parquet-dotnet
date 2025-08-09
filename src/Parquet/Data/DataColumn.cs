@@ -168,6 +168,60 @@ namespace Parquet.Data {
             return span;
         }
 
+        /// <summary>
+        /// Concatenates multiple columns into a single column. All columns must have the same schema.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
+        public static DataColumn Concat(IEnumerable<DataColumn> columns) {
+            // validate all columns have the same schema
+            DataField firstField = columns.First().Field;
+            if(columns.Any(c => !c.Field.Equals(firstField)))
+                throw new ArgumentException("all columns must have the same schema");
+
+            // there are 3 things we need to copy: definedData, definitionLevels, repetitionLevels
+            int definedDataLength = columns.Sum(c => c.DefinedData.Length);
+            int definitionLevelsLength = columns.Sum(c => c.DefinitionLevels?.Length ?? 0);
+            int repetitionLevelsLength = columns.Sum(c => c.RepetitionLevels?.Length ?? 0);
+
+            // concatenate defined data
+            Array definedData = firstField.CreateArray(definedDataLength);
+            int offset = 0;
+            foreach(DataColumn column in columns) {
+                column.DefinedData.CopyTo(definedData, offset);
+                offset += column.DefinedData.Length;
+            }
+
+            // concatenate definition levels
+            int[]? definitionLevels = null;
+            if(definitionLevelsLength > 0) {
+                definitionLevels = new int[definitionLevelsLength];
+                offset = 0;
+                foreach(DataColumn column in columns) {
+                    if(column.DefinitionLevels != null) {
+                        column.DefinitionLevels.CopyTo(definitionLevels, offset);
+                        offset += column.DefinitionLevels.Length;
+                    }
+                }
+            }
+
+            // concatenate repetition levels
+            int[]? repetitionLevels = null;
+            if(repetitionLevelsLength > 0) {
+                repetitionLevels = new int[repetitionLevelsLength];
+                offset = 0;
+                foreach(DataColumn column in columns) {
+                    if(column.RepetitionLevels != null) {
+                        column.RepetitionLevels.CopyTo(repetitionLevels, offset);
+                        offset += column.RepetitionLevels.Length;
+                    }
+                }
+            }
+
+            // build the resulting column
+            return new DataColumn(firstField, definedData, definitionLevels, repetitionLevels);
+        }
+
         internal bool IsDeltaEncodable => DefinedData.Length > 0 && Field.IsDeltaEncodable;
 
         internal long CalculateRowCount() =>

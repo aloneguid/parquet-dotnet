@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using Parquet.Meta;
 
 namespace Parquet.Schema {
@@ -27,7 +28,7 @@ namespace Parquet.Schema {
         public FieldPath Path { get; internal set; }
 
         /// <summary>
-        /// Original nullability
+        /// Original nullability.
         /// </summary>
         public virtual bool IsNullable { get; internal set; } = false;
 
@@ -110,6 +111,15 @@ namespace Parquet.Schema {
         }
 
         internal virtual bool IsAtomic => false;
+
+        /// <summary>
+        /// Rename this field. Renaming should also fix up the path in complex nested schemas.
+        /// </summary>
+        /// <param name="newName"></param>
+        internal virtual void Rename(string newName) {
+            Name = newName;
+            Path = new FieldPath(newName);
+        }
 
         internal bool Equals(SchemaElement tse) {
             if(ReferenceEquals(tse, null))

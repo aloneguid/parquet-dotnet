@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.Rows;
 using Parquet.Schema;
 using Xunit;
 
@@ -19,28 +18,6 @@ namespace Parquet.Test {
     }
 
     public class DocTest {
-
-        //[Fact]
-        public async Task Write2() {
-            var table = new Table(
-                new DataField<DateTime>("Timestamp"),
-                new DataField<string>("EventName"),
-                new DataField<double>("MeterName"));
-
-            for(int i = 0; i < 10; i++) {
-                table.Add(
-                    DateTime.UtcNow.AddSeconds(1),
-                    i % 2 == 0 ? "on" : "off",
-                    (double)i);
-            }
-
-            System.IO.File.Delete("c:\\tmp\\data.parquet");
-            await table.WriteAsync("c:\\tmp\\data.parquet");
-
-            Table tbl = await Table.ReadAsync("c:\\tmp\\data.parquet");
-            Assert.NotNull(tbl);
-        }
-
 
         //[Fact]
         public async Task Write3() {

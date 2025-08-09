@@ -36,7 +36,7 @@ Full schema type hierarchy can be expressed as:
 classDiagram
     Schema "1" o-- "1..*" Field
     Field <|-- DataField
-    DataField <|-- DataF1eld~T~
+    DataField <|-- DataField~T~
     DataField <|-- DateTimeDataField
     DataField <|-- DecimalDataField
     DataField <|-- TimeSpanDataField

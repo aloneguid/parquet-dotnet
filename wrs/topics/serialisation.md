@@ -66,15 +66,23 @@ Apparently, in order to serialize a class, a property must be readable, and in o
 
 In case of fields, they are by default both readable and writable, so you don't need to do anything special to make them work. 
 
+## Enum support
+
+Starting with version _4.24.0_, %product% supports [.NET enums](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum). These are stored in both schema and parquet file as their underlying type (by default, it's `System.Int32`).  
+
 ## Customising serialisation
 
 Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
-- [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name.
+- [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name. See also [ignoring property casing](#ignoring-property-casing).
 - [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
 - [`JsonPropertyOrder`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertyorderattribute?view=net-6.0) - allows to reorder columns when writing to file (by default they are written in class definition order). Only root properties and struct (classes) properties can be ordered (it won't make sense to do the others).
 
-Where built-in JSON attributes are not sufficient, extra attributes are added.
+Where built-in JSON attributes are not sufficient, extra attributes are added. Find extra attributes below in the relevant sections. List of generic attributes is presented below:
+
+### Generic attributes
+
+- `[ParquetIgnore]` - functionally equivalent to `JsonIgnore` attribute, use when your code is conflicting with `[JsonIgnore]` attribute. Other than that, there are no differences.
 
 ### Strings
 
@@ -278,13 +286,13 @@ class MovementHistory {
 }
 
  var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
-                PersonId = i,
-                Comments = i % 2 == 0 ? "none" : null,
-                Addresses = Enumerable.Range(0, 4).Select(a => new Address {
-                    City = "Birmingham",
-                    Country = "United Kingdom"
-                }).ToList()
-            }).ToList();
+    PersonId = i,
+    Comments = i % 2 == 0 ? "none" : null,
+    Addresses = Enumerable.Range(0, 4).Select(a => new Address {
+        City = "Birmingham",
+        Country = "United Kingdom"
+    }).ToList()
+}).ToList();
 
 await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
 ```
@@ -320,15 +328,86 @@ and data
 +--------+--------+--------------------+
 ```
 
-### Maps (Dictionaries)
+#### Nullability and lists
 
-Maps are useful constructs if you need to serialize key-value pairs where each row can have different amount of keys. For example, if you want to store the names and hobbies of your friends, you can use a map like this:
+By default, %product% assumes that both lists and list elements are nullable. This is because list is a class in .NET, and classes are nullable. Therefore, coming back to the previous example definition:
 
-```json
-{"Alice": ["reading", "cooking", "gardening"], "Bob": ["gaming", "coding", "sleeping"], "Charlie": ["traveling"]}
+```c#
+class MovementHistory {
+    public List<Address>? Addresses { get; set; }
+}
 ```
 
-Notice how Alice has three hobbies, Bob has two and Charlie has only one. A map allows you to handle this variability without wasting space or creating empty values. Of course, you could also use a list, but then you would have to remember the order of the elements and deal with missing data. A map makes your life easier by letting you access the values by their keys.
+will produce the following [low-level schema](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists):
+
+```
+OPTIONAL group Addresses (LIST) {
+  repeated group list {
+    OPTIONAL group element {
+        OPTIONAL binary Country (UTF8);
+        OPTIONAL binary City (UTF8);
+    }
+  }
+}
+```
+
+Usually this is not a problem, however you might encounter a problem when deserialising some files to handcrafted C# classes when nullability of the files and classes do not match the default.
+
+To fix this, you can use `[ParquetRequired]` attribute on the list property:
+
+```c#
+class MovementHistory {
+    [ParquetRequired]
+    public List<Address>? Addresses { get; set; }
+}
+```
+
+which will in turn produce the following low-level schema:
+
+```
+REQUIRED group Addresses (LIST) {
+  repeated group list {
+    OPTIONAL group element {
+        OPTIONAL binary Country (UTF8);
+        OPTIONAL binary City (UTF8);
+    }
+  }
+}
+```
+
+As you can see, "Addresses" container is now "required". If you also need to mark the actual element ("Address" instance) as nullable, you can use `[ParquetListElementRequired]` attribute on the element property:
+
+```c#
+class MovementHistory {
+    [ParquetRequired, ParquetListElementRequired]
+    public List<Address>? Addresses { get; set; }
+}
+```
+
+which will produce the following low-level schema:
+
+```
+REQUIRED group Addresses (LIST) {
+  repeated group list {
+    REQUIRED group element {
+        OPTIONAL binary Country (UTF8);
+        OPTIONAL binary City (UTF8);
+    }
+  }
+}
+```
+
+### Maps (Dictionaries)
+
+Maps are useful constructs if you need to serialize key-value pairs where each row can have different amount of keys.
+
+For example, if you want to store partition values like so:
+
+```json
+{"partition1": "value1", "partition2": "value2" }
+```
+
+without knowing beforehand how many partitions there will be.
 
 In this library, maps are represented as an instance of generic `IDictionary<TKey, TValue>` type. 
 
@@ -341,8 +420,6 @@ class IdWithTags {
     public Dictionary<string, string>? Tags { get; set; }
 }
 ```
-
-
 
 You can easily use `ParquetSerializer` to work with this class:
 
@@ -396,7 +473,7 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 | Type                                                         | Serialization | Deserialization |
 | ------------------------------------------------------------ | ------------- | --------------- |
 | [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ✔️             | ❌               |
-| [Muti-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
+| [Multi-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
 | [`IList<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ❌`**`           |
 | [`List<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ✔️               |
 | [`IDictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.idictionary-2?view=net-7.0) `**` | ❌             | ❌               |
@@ -439,6 +516,36 @@ await ParquetSerializer.SerializeAsync(data, stream, new ParquetSerializerOption
 ```
 
 Note that small row groups make parquet files very inefficient in general, so you should use this parameter only when you are absolutely sure what you are doing. For example, if you have a very large dataset that needs to be split into smaller files for distributed processing, you might want to use a smaller row group size to avoid having too many rows in one file. However, this will also increase the file size and the metadata overhead, so you should balance the trade-offs carefully.
+
+## Ignoring property casing
+
+Since v5.0 %product% supports ignoring property casing when deserializing data. This can be useful when you have a class with properties that have different casing than the column names in the parquet file. For example, if you have a class with properties like `FirstName` and `LastName`, but the parquet file has columns named `first_name` and `last_name`, you can use the `IgnorePropertyCasing` option to ignore the casing differences and match the properties with the columns. Here is an example:
+
+```C#
+class BeforeRename {
+  public string? lowerCase { get; set; }
+}
+
+class AfterRename {
+  public string? LowerCase { get; set; }
+}
+
+var data = Enumerable.Range(0, 1_000).Select(i => new BeforeRename {
+    lowerCase = i % 2 == 0 ? "on" : "off"
+}).ToList();
+
+// serialise to memory stream
+using var ms = new MemoryStream();
+await ParquetSerializer.SerializeAsync(data, ms);
+ms.Position = 0;
+
+// this will deserialize the data, but `LowerCase` property will be null, because it does not exist in the parquet file.
+IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
+
+// this will successfully deserialize the data, because property names are case insensitive
+IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+    new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
+```
 
 ## FAQ
 

@@ -1,6 +1,10 @@
 # DataFrame Support
 
-Since v4.8 support for [`Microsoft.Data.Analysis`](https://www.nuget.org/packages/Microsoft.Data.Analysis) was added. 
+Since v4.8 support for [`Microsoft.Data.Analysis`](https://www.nuget.org/packages/Microsoft.Data.Analysis) was added.
+
+<note>
+Since v5.0.2, this integration was moved out to a separate package, `Parquet.Data.Analysis`, which is available on <a href="https://www.nuget.org/packages/Parquet.Net.Data.Analysis">NuGet</a>.
+</note>
 
 ## What's supported?
 

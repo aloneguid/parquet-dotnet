@@ -86,6 +86,14 @@ namespace Parquet.File {
             return ms.Length;
         }
 
+        public long Write(Stream s) {
+            using var ms = new MemoryStream();
+            _fileMeta.Write(new ThriftCompactProtocolWriter(ms));
+            ms.Position = 0;
+            ms.CopyTo(s);
+            return ms.Length;
+        }
+
         public SchemaElement? GetSchemaElement(ColumnChunk columnChunk) {
             if(columnChunk == null) {
                 throw new ArgumentNullException(nameof(columnChunk));

@@ -75,7 +75,12 @@ namespace Parquet.Schema {
             }
         }
 
-        internal override Field[] Children => new Field[] { Item };
+        internal override void Rename(string newName) {
+            base.Rename(newName);
+            PathPrefix = null;
+        }
+
+        internal override Field[] Children => [Item];
 
         internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
@@ -96,7 +101,7 @@ namespace Parquet.Schema {
                     MaxRepetitionLevel += 1;
                 }
             } else {
-                // probably building manually
+                // probably building manually, or via class reflection
                 if(IsNullable)
                     MaxDefinitionLevel += 1;
 

@@ -1,0 +1,1 @@
+﻿This is an addition to [Parquet.Net](https://aloneguid.github.io/parquet-dotnet/starter-topic.html) to add [support for DataFrames](https://aloneguid.github.io/parquet-dotnet/dataframe.html) (Microsoft.Data.Analysis).

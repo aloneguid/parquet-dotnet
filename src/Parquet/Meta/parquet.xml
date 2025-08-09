@@ -44,11 +44,11 @@ See LogicalTypes.md for conversion between ConvertedType and LogicalType.">
       <member name="MAP_KEY_VALUE" value="2" doc="a key/value pair is converted into a group of two fields" />
       <member name="LIST" value="3" doc="a list is converted into an optional field containing a repeated field for its
 values" />
-      <member name="ENUM" value="4" doc="an enum is converted into a binary field" />
+      <member name="ENUM" value="4" doc="an enum is converted into a BYTE_ARRAY field" />
       <member name="DECIMAL" value="5" doc="A decimal value.
 
-This may be used to annotate binary or fixed primitive types. The
-underlying byte array stores the unscaled value encoded as two&apos;s
+This may be used to annotate BYTE_ARRAY or FIXED_LEN_BYTE_ARRAY primitive
+types. The underlying byte array stores the unscaled value encoded as two&apos;s
 complement using big-endian byte order (the most significant byte is the
 zeroth element). The value of the decimal is the value * 10^{-scale}.
 
@@ -99,7 +99,7 @@ physical type." />
 A JSON document embedded within a single UTF8 column." />
       <member name="BSON" value="20" doc="An embedded BSON document
 
-A BSON document embedded within a single BINARY column." />
+A BSON document embedded within a single BYTE_ARRAY column." />
       <member name="INTERVAL" value="21" doc="An interval of time
 
 This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
@@ -112,8 +112,8 @@ the provided duration.  This duration of time is independent of any
 particular timezone or date." />
     </enum>
     <enum name="FieldRepetitionType" doc="Representation of Schemas">
-      <member name="REQUIRED" value="0" doc="This field is required (can not be null) and each record has exactly 1 value." />
-      <member name="OPTIONAL" value="1" doc="The field is optional (can be null) and each record has 0 or 1 values." />
+      <member name="REQUIRED" value="0" doc="This field is required (can not be null) and each row has exactly 1 value." />
+      <member name="OPTIONAL" value="1" doc="The field is optional (can be null) and each row has 0 or 1 values." />
       <member name="REPEATED" value="2" doc="The field is repeated and can contain 0 or more values" />
     </enum>
     <enum name="Encoding" doc="Encodings supported by Parquet.  Not all encodings are valid for all types.  These
@@ -142,12 +142,15 @@ are encoded using DELTA_BINARY_PACKED" />
       <member name="DELTA_BYTE_ARRAY" value="7" doc="Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED.
 Suffixes are stored as delta length byte arrays." />
       <member name="RLE_DICTIONARY" value="8" doc="Dictionary encoding: the ids are encoded using the RLE encoding" />
-      <member name="BYTE_STREAM_SPLIT" value="9" doc="Encoding for floating-point data.
+      <member name="BYTE_STREAM_SPLIT" value="9" doc="Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY).
 K byte-streams are created where K is the size in bytes of the data type.
-The individual bytes of an FP value are scattered to the corresponding stream and
+The individual bytes of a value are scattered to the corresponding stream and
 the streams are concatenated.
 This itself does not reduce the size of the data but can lead to better compression
-afterwards." />
+afterwards.
+
+Added in 2.8 for FLOAT and DOUBLE.
+Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11." />
     </enum>
     <enum name="CompressionCodec" doc="Supported compression algorithms.
 
@@ -177,6 +180,43 @@ are ordered and if so, in which direction.">
       <member name="ASCENDING" value="1" />
       <member name="DESCENDING" value="2" />
     </enum>
+    <struct name="SizeStatistics" doc="A structure for capturing metadata for estimating the unencoded,
+uncompressed size of data written. This is useful for readers to estimate
+how much memory is needed to reconstruct data in their memory model and for
+fine grained filter pushdown on nested structures (the histograms contained
+in this structure can help determine the number of nulls at a particular
+nesting level and maximum length of lists).">
+      <field name="unencoded_byte_array_data_bytes" field-id="1" doc="The number of physical bytes stored for BYTE_ARRAY data values assuming
+no encoding. This is exclusive of the bytes needed to store the length of
+each byte array. In other words, this field is equivalent to the `(size
+of PLAIN-ENCODING the byte array values) - (4 bytes * number of values
+written)`. To determine unencoded sizes of other types readers can use
+schema information multiplied by the number of non-null and null values.
+The number of null/non-null values can be inferred from the histograms
+below.
+
+For example, if a column chunk is dictionary-encoded with dictionary
+[&quot;a&quot;, &quot;bc&quot;, &quot;cde&quot;], and a data page contains the indices [0, 0, 1, 2],
+then this value for that data page should be 7 (1 + 1 + 2 + 3).
+
+This field should only be set for types that use BYTE_ARRAY as their
+physical type." required="optional" type="i64" />
+      <field name="repetition_level_histogram" field-id="2" doc="When present, there is expected to be one element corresponding to each
+repetition (i.e. size=max repetition_level+1) where each element
+represents the number of times the repetition level was observed in the
+data.
+
+This field may be omitted if max_repetition_level is 0 without loss
+of information." required="optional" type="list">
+        <elemType type="i64" />
+      </field>
+      <field name="definition_level_histogram" field-id="3" doc="Same as repetition_level_histogram except for definition levels.
+
+This field may be omitted if max_definition_level is 0 or 1 without
+loss of information." required="optional" type="list">
+        <elemType type="i64" />
+      </field>
+    </struct>
     <struct name="Statistics" doc="Statistics per row group and per page
 All fields are optional.">
       <field name="max" field-id="1" doc="DEPRECATED: min and max value of the column. Use min_value and max_value.
@@ -191,13 +231,26 @@ and store the values in the min_value and max_value fields.
 To support older readers, these may be set when the column order is
 signed." required="optional" type="binary" />
       <field name="min" field-id="2" required="optional" type="binary" />
-      <field name="null_count" field-id="3" doc="count of null value in the column" required="optional" type="i64" />
+      <field name="null_count" field-id="3" doc="Count of null values in the column.
+
+Writers SHOULD always write this field even if it is zero (i.e. no null value)
+or the column is not nullable.
+Readers MUST distinguish between null_count not being present and null_count == 0.
+If null_count is not present, readers MUST NOT assume null_count == 0." required="optional" type="i64" />
       <field name="distinct_count" field-id="4" doc="count of distinct values occurring" required="optional" type="i64" />
-      <field name="max_value" field-id="5" doc="Min and max values for the column, determined by its ColumnOrder.
+      <field name="max_value" field-id="5" doc="Lower and upper bound values for the column, determined by its ColumnOrder.
+
+These may be the actual minimum and maximum values found on a page or column
+chunk, but can also be (more compact) values that do not exist on a page or
+column chunk. For example, instead of storing &quot;Blart Versenwald III&quot;, a writer
+may set min_value=&quot;B&quot;, max_value=&quot;C&quot;. Such more compact values must still be
+valid values within the column&apos;s logical type.
 
 Values are encoded using PLAIN encoding, except that variable-length byte
 arrays do not include a length prefix." required="optional" type="binary" />
       <field name="min_value" field-id="6" required="optional" type="binary" />
+      <field name="is_max_value_exact" field-id="7" doc="If true, max_value is the actual maximum value for a column" required="optional" type="bool" />
+      <field name="is_min_value_exact" field-id="8" doc="If true, min_value is the actual minimum value for a column" required="optional" type="bool" />
     </struct>
     <struct name="StringType" doc="Empty structs to use as logical type annotations" />
     <struct name="UUIDType" />
@@ -205,6 +258,7 @@ arrays do not include a length prefix." required="optional" type="binary" />
     <struct name="ListType" />
     <struct name="EnumType" />
     <struct name="DateType" />
+    <struct name="Float16Type" />
     <struct name="NullType" doc="Logical type to annotate a column that is always null.
 
 Sometimes when discovering the schema of existing data, values are always
@@ -218,7 +272,7 @@ Precision must be a non-zero positive integer.
 To maintain forward-compatibility in v1, implementations using this logical
 type must also set scale and precision on the annotated SchemaElement.
 
-Allowed for physical types: INT32, INT64, FIXED, and BINARY">
+Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.">
       <field name="scale" field-id="1" required="required" type="i32" />
       <field name="precision" field-id="2" required="required" type="i32" />
     </struct>
@@ -252,10 +306,11 @@ Allowed for physical types: INT32, INT64">
     </struct>
     <struct name="JsonType" doc="Embedded JSON logical type annotation
 
-Allowed for physical types: BINARY" />
+Allowed for physical types: BYTE_ARRAY" />
     <struct name="BsonType" doc="Embedded BSON logical type annotation
 
-Allowed for physical types: BINARY" />
+Allowed for physical types: BYTE_ARRAY" />
+    <struct name="VariantType" doc="Embedded Variant logical type annotation" />
     <union name="LogicalType" doc="LogicalType annotations to replace ConvertedType.
 
 To maintain compatibility, implementations using LogicalType for a
@@ -274,6 +329,8 @@ from the following table.">
       <field name="JSON" field-id="12" required="optional" type="id" type-module="parquet" type-id="JsonType" />
       <field name="BSON" field-id="13" required="optional" type="id" type-module="parquet" type-id="BsonType" />
       <field name="UUID" field-id="14" required="optional" type="id" type-module="parquet" type-id="UUIDType" />
+      <field name="FLOAT16" field-id="15" required="optional" type="id" type-module="parquet" type-id="Float16Type" />
+      <field name="VARIANT" field-id="16" required="optional" type="id" type-module="parquet" type-id="VariantType" />
     </union>
     <struct name="SchemaElement" doc="Represents a element inside a schema definition.
  - if it is a group (inner node) then type is undefined and num_children is defined
@@ -308,11 +365,15 @@ LogicalType replaces ConvertedType, but ConvertedType is still required
 for some logical types to ensure forward-compatibility in format v1." required="optional" type="id" type-module="parquet" type-id="LogicalType" />
     </struct>
     <struct name="DataPageHeader" doc="Data page header">
-      <field name="num_values" field-id="1" doc="Number of values, including NULLs, in this data page. *" required="required" type="i32" />
+      <field name="num_values" field-id="1" doc="Number of values, including NULLs, in this data page.
+
+If a OffsetIndex is present, a page must begin at a row
+boundary (repetition_level = 0). Otherwise, pages may begin
+within a row (repetition_level &gt; 0)." required="required" type="i32" />
       <field name="encoding" field-id="2" doc="Encoding used for this data page *" required="required" type="id" type-module="parquet" type-id="Encoding" />
       <field name="definition_level_encoding" field-id="3" doc="Encoding used for definition levels *" required="required" type="id" type-module="parquet" type-id="Encoding" />
       <field name="repetition_level_encoding" field-id="4" doc="Encoding used for repetition levels *" required="required" type="id" type-module="parquet" type-id="Encoding" />
-      <field name="statistics" field-id="5" doc="Optional statistics for the data in this page*" required="optional" type="id" type-module="parquet" type-id="Statistics" />
+      <field name="statistics" field-id="5" doc="Optional statistics for the data in this page *" required="optional" type="id" type-module="parquet" type-id="Statistics" />
     </struct>
     <struct name="IndexPageHeader" />
     <struct name="DictionaryPageHeader" doc="The dictionary page must be placed at the first position of the column chunk
@@ -328,11 +389,13 @@ The remaining section containing the data is compressed if is_compressed is true
       <field name="num_values" field-id="1" doc="Number of values, including NULLs, in this data page. *" required="required" type="i32" />
       <field name="num_nulls" field-id="2" doc="Number of NULL values, in this data page.
 Number of non-null = num_values - num_nulls which is also the number of values in the data section *" required="required" type="i32" />
-      <field name="num_rows" field-id="3" doc="Number of rows in this data page. which means pages change on record boundaries (r = 0) *" required="required" type="i32" />
+      <field name="num_rows" field-id="3" doc="Number of rows in this data page. Every page must begin at a
+row boundary (repetition_level = 0): rows must **not** be
+split across page boundaries when using V2 data pages." required="required" type="i32" />
       <field name="encoding" field-id="4" doc="Encoding used for data in this page *" required="required" type="id" type-module="parquet" type-id="Encoding" />
-      <field name="definition_levels_byte_length" field-id="5" doc="length of the definition levels" required="required" type="i32" />
-      <field name="repetition_levels_byte_length" field-id="6" doc="length of the repetition levels" required="required" type="i32" />
-      <field name="is_compressed" field-id="7" doc="whether the values are compressed.
+      <field name="definition_levels_byte_length" field-id="5" doc="Length of the definition levels" required="required" type="i32" />
+      <field name="repetition_levels_byte_length" field-id="6" doc="Length of the repetition levels" required="required" type="i32" />
+      <field name="is_compressed" field-id="7" doc="Whether the values are compressed.
 Which means the section of the page between
 definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
 is compressed with the compression_codec.
@@ -341,7 +404,7 @@ If missing it is considered compressed" required="optional" type="bool">
           <int>1</int>
         </default>
       </field>
-      <field name="statistics" field-id="8" doc="optional statistics for the data in this page *" required="optional" type="id" type-module="parquet" type-id="Statistics" />
+      <field name="statistics" field-id="8" doc="Optional statistics for the data in this page *" required="optional" type="id" type-module="parquet" type-id="Statistics" />
     </struct>
     <struct name="SplitBlockAlgorithm" doc="Block-based algorithm type annotation. *" />
     <union name="BloomFilterAlgorithm" doc="The algorithm used in Bloom filter. *">
@@ -393,8 +456,8 @@ pages need to be read." required="optional" type="i32" />
       <field name="key" field-id="1" required="required" type="string" />
       <field name="value" field-id="2" required="optional" type="string" />
     </struct>
-    <struct name="SortingColumn" doc="Wrapper struct to specify sort order">
-      <field name="column_idx" field-id="1" doc="The column index (in this row group) *" required="required" type="i32" />
+    <struct name="SortingColumn" doc="Sort order within a RowGroup of a leaf column">
+      <field name="column_idx" field-id="1" doc="The ordinal position of the column (in this row group) *" required="required" type="i32" />
       <field name="descending" field-id="2" doc="If true, indicates this column is sorted in descending order. *" required="required" type="bool" />
       <field name="nulls_first" field-id="3" doc="If true, nulls will come before non-null values, otherwise,
 nulls go at the end." required="required" type="bool" />
@@ -436,6 +499,10 @@ Added in 2.10 so readers may not read this field from old files and
 it can be obtained after the BloomFilterHeader has been deserialized.
 Writers should write this field so readers can read the bloom filter
 in a single I/O." required="optional" type="i32" />
+      <field name="size_statistics" field-id="16" doc="Optional statistics to help estimate total memory when converted to in-memory
+representations. The histograms contained in these statistics can
+also be useful in some cases for more fine-grained nullability/list length
+filter pushdown." required="optional" type="id" type-module="parquet" type-id="SizeStatistics" />
     </struct>
     <struct name="EncryptionWithFooterKey" />
     <struct name="EncryptionWithColumnKey">
@@ -451,10 +518,22 @@ in a single I/O." required="optional" type="i32" />
     <struct name="ColumnChunk">
       <field name="file_path" field-id="1" doc="File where column data is stored.  If not set, assumed to be same file as
 metadata.  This path is relative to the current file." required="optional" type="string" />
-      <field name="file_offset" field-id="2" doc="Byte offset in file_path to the ColumnMetaData *" required="required" type="i64" />
-      <field name="meta_data" field-id="3" doc="Column metadata for this chunk. This is the same content as what is at
-file_path/file_offset.  Having it here has it replicated in the file
-metadata." required="optional" type="id" type-module="parquet" type-id="ColumnMetaData" />
+      <field name="file_offset" field-id="2" doc="Deprecated: Byte offset in file_path to the ColumnMetaData
+
+Past use of this field has been inconsistent, with some implementations
+using it to point to the ColumnMetaData and some using it to point to
+the first page in the column chunk. In many cases, the ColumnMetaData at this
+location is wrong. This field is now deprecated and should not be used.
+Writers should set this field to 0 if no ColumnMetaData has been written outside
+the footer." required="required" type="i64">
+        <default>
+          <int>0</int>
+        </default>
+      </field>
+      <field name="meta_data" field-id="3" doc="Column metadata for this chunk. Some writers may also replicate this at the
+location pointed to by file_path/file_offset.
+Note: while marked as optional, this field is in fact required by most major
+Parquet implementations. As such, writers MUST populate this field." required="optional" type="id" type-module="parquet" type-id="ColumnMetaData" />
       <field name="offset_index_offset" field-id="4" doc="File offset of ColumnChunk&apos;s OffsetIndex *" required="optional" type="i64" />
       <field name="offset_index_length" field-id="5" doc="Size of ColumnChunk&apos;s OffsetIndex, in bytes *" required="optional" type="i32" />
       <field name="column_index_offset" field-id="6" doc="File offset of ColumnChunk&apos;s ColumnIndex *" required="optional" type="i64" />
@@ -506,12 +585,13 @@ for this column should be ignored.">
   TIME_MICROS - signed comparison
   TIMESTAMP_MILLIS - signed comparison
   TIMESTAMP_MICROS - signed comparison
-  INTERVAL - unsigned comparison
+  INTERVAL - undefined
   JSON - unsigned byte-wise comparison
   BSON - unsigned byte-wise comparison
   ENUM - unsigned byte-wise comparison
   LIST - undefined
   MAP - undefined
+  VARIANT - undefined
 
 In the absence of logical types, the sort order is determined by the physical type:
   BOOLEAN - false, true
@@ -543,17 +623,34 @@ In the absence of logical types, the sort order is determined by the physical ty
       <field name="offset" field-id="1" doc="Offset of the page in the file *" required="required" type="i64" />
       <field name="compressed_page_size" field-id="2" doc="Size of the page, including header. Sum of compressed_page_size and header
 length" required="required" type="i32" />
-      <field name="first_row_index" field-id="3" doc="Index within the RowGroup of the first row of the page; this means pages
-change on record boundaries (r = 0)." required="required" type="i64" />
+      <field name="first_row_index" field-id="3" doc="Index within the RowGroup of the first row of the page. When an
+OffsetIndex is present, pages must begin on row boundaries
+(repetition_level = 0)." required="required" type="i64" />
     </struct>
-    <struct name="OffsetIndex">
+    <struct name="OffsetIndex" doc="Optional offsets for each data page in a ColumnChunk.
+
+Forms part of the page index, along with ColumnIndex.
+
+OffsetIndex may be present even if ColumnIndex is not.">
       <field name="page_locations" field-id="1" doc="PageLocations, ordered by increasing PageLocation.offset. It is required
 that page_locations[i].first_row_index &lt; page_locations[i+1].first_row_index." required="required" type="list">
         <elemType type="id" type-module="parquet" type-id="PageLocation" />
       </field>
+      <field name="unencoded_byte_array_data_bytes" field-id="2" doc="Unencoded/uncompressed size for BYTE_ARRAY types.
+
+See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+more details on this field." required="optional" type="list">
+        <elemType type="i64" />
+      </field>
     </struct>
-    <struct name="ColumnIndex" doc="Description for ColumnIndex.
-Each &lt;array-field&gt;[i] refers to the page at OffsetIndex.page_locations[i]">
+    <struct name="ColumnIndex" doc="Optional statistics for each data page in a ColumnChunk.
+
+Forms part the page index, along with OffsetIndex.
+
+If this structure is present, OffsetIndex must also be present.
+
+For each field in this structure, &lt;field&gt;[i] refers to the page at
+OffsetIndex.page_locations[i]">
       <field name="null_pages" field-id="1" doc="A list of Boolean values to determine the validity of the corresponding
 min and max values. If true, a page contains only null values, and writers
 have to set the corresponding entries in min_values and max_values to
@@ -578,7 +675,29 @@ using them by inspecting null_pages." required="required" type="list">
 which direction. This allows readers to perform binary searches in both
 lists. Readers cannot assume that max_values[i] &lt;= min_values[i+1], even
 if the lists are ordered." required="required" type="id" type-module="parquet" type-id="BoundaryOrder" />
-      <field name="null_counts" field-id="5" doc="A list containing the number of null values for each page *" required="optional" type="list">
+      <field name="null_counts" field-id="5" doc="A list containing the number of null values for each page
+
+Writers SHOULD always write this field even if no null values
+are present or the column is not nullable.
+Readers MUST distinguish between null_counts not being present
+and null_count being 0.
+If null_counts are not present, readers MUST NOT assume all
+null counts are 0." required="optional" type="list">
+        <elemType type="i64" />
+      </field>
+      <field name="repetition_level_histograms" field-id="6" doc="Contains repetition level histograms for each page
+concatenated together.  The repetition_level_histogram field on
+SizeStatistics contains more details.
+
+When present the length should always be (number of pages *
+(max_repetition_level + 1)) elements.
+
+Element 0 is the first element of the histogram for the first page.
+Element (max_repetition_level + 1) is the first element of the histogram
+for the second page." required="optional" type="list">
+        <elemType type="i64" />
+      </field>
+      <field name="definition_level_histograms" field-id="7" doc="Same as repetition_level_histograms except for definitions levels." required="optional" type="list">
         <elemType type="i64" />
       </field>
     </struct>
