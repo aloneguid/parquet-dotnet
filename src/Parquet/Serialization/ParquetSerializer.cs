@@ -474,7 +474,7 @@ namespace Parquet.Serialization {
         }
 
         private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi, Assembler<T> asm,
-            ICollection<T> result, ParquetSerializerOptions? options, CancellationToken cancellationToken, bool resultsAlreadyAllocated = false) {
+            IList<T> result, ParquetSerializerOptions? options, CancellationToken cancellationToken, bool resultsAlreadyAllocated = false) {
 
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
@@ -539,20 +539,17 @@ namespace Parquet.Serialization {
         private static async Task DeserializeRowGroupAsync<T>(ParquetRowGroupReader rg,
             ParquetSchema schema,
             Assembler<T> asm,
-            ICollection<T> result, // Might need to be IList<T>?
+            IList<T> result,
             ParquetSerializerOptions? options,
             CancellationToken cancellationToken = default,
             bool resultsAlreadyAllocated = false) {
-
-            int prevRowCount = result.Count;
 
             // add more empty class instances to the result
             int prevRowCount = result.Count;
 
             if(!resultsAlreadyAllocated) {
                 for(int i = 0; i < rg.RowCount; i++) {
-                    var ne = PreConstructor<T>.AllocateNew();
-                    result.Add(ne);
+                    result.Add(PreConstructor<T>.AllocateNew());
                 }
             }
 
