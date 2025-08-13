@@ -213,5 +213,14 @@ namespace Parquet.Test {
             using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
             ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
         }
+
+        [Fact]
+        public async Task DuckDbRLE_637() {
+            using Stream s = OpenTestFile("issues/637-duckdb.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+            Assert.Single(cols);
+            Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
+        }
     }
 }
