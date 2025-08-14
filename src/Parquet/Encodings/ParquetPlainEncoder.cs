@@ -775,6 +775,8 @@ namespace Parquet.Encodings {
                         byte[] el = source.Slice(sourceOffset, length).ToArray();
                         sourceOffset += length;
                         data[read++] = el;
+                    } else {
+                        data[read++] = [];
                     }
                 }
             }

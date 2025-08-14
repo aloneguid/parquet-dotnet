@@ -234,5 +234,14 @@ namespace Parquet.Test {
             Assert.Equal(0M, data[0]);
             Assert.Equal(1000M, data[6616]);
         }
+
+        [Fact]
+        public async Task DuckDbRLE_637() {
+            using Stream s = OpenTestFile("issues/637-duckdb.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+            Assert.Single(cols);
+            Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
+        }
     }
 }

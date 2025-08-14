@@ -68,5 +68,25 @@ namespace Parquet.Test.Encodings {
             Assert.Equal(data, data2);
 
         }
+        
+        [Fact]
+        public void DecodeBitPackedDictionaryTest() {
+            // Issue 636 destination is too short
+            // 65 4
+            string binaryStr = "01000001 00000100 " + string.Join(" ", Enumerable.Repeat("00000000", 63));
+            byte[] bytes = BytesFromBinaryString(binaryStr);
+            int bitWidth = 2;
+            int[] input = new int[]{ 0, 1 };
+            int maxReadCount = input.Length;
+            int[] dest = new int[16];
+            
+            RleBitpackedHybridEncoder.Decode(bytes.AsSpan(), bitWidth, bytes.Length - 1, out _, dest.AsSpan(), maxReadCount);
+
+            Assert.Equal(input, dest[0..2]);
+        }
+
+        private byte[] BytesFromBinaryString(string s) {
+            return s.Split(' ').Select(s => Convert.ToByte(s, 2)).ToArray();
+        }
     }
 }
