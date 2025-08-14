@@ -215,6 +215,27 @@ namespace Parquet.Test {
         }
 
         [Fact]
+        public async Task DecimalsWithNoDefinedScale() {
+            using Stream s = OpenTestFile("decimals_with_precision_but_no_scale.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Equal(8, cols.Length);
+            
+            //DECIMAL(9, 5)
+            DataColumn decimal_p9_s5 = cols[5];
+            var data = (decimal?[])decimal_p9_s5.Data;
+            Assert.Equal(1.02232M, data[7]);
+            Assert.Equal(-27.427M, data[344]);
+
+            //DECIMAL(9, 0)
+            DataColumn decimal_p9_s0 = cols[6];
+            data = (decimal?[])decimal_p9_s0.Data;
+            Assert.Equal(0M, data[0]);
+            Assert.Equal(1000M, data[6616]);
+        }
+
+        [Fact]
         public async Task DuckDbRLE_637() {
             using Stream s = OpenTestFile("issues/637-duckdb.parquet");
             using ParquetReader r = await ParquetReader.CreateAsync(s);
