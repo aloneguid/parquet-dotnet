@@ -243,5 +243,11 @@ namespace Parquet.Test {
             Assert.Single(cols);
             Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
         }
+
+        [Fact]
+        public async Task HyparquetCompressed() {
+            using Stream s = OpenTestFile("hyparquet.snappy.parquet");
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
+        }
     }
 }
