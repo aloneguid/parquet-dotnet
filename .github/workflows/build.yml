@@ -1,9 +1,9 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 5.2.0
-  # PACKAGE_SUFFIX: '-pre.1'
-  PACKAGE_SUFFIX: ''
+  VERSION: 5.3.0
+  PACKAGE_SUFFIX: '-pre.1'
+  # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
