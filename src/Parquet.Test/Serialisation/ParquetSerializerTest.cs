@@ -1201,5 +1201,35 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(3, r[2].Id);
         }
 
+        class ClassWithPreinitializedDict {
+            public Dictionary<DateTime, double> DateTimeDoubleDict { get; set; } = new();
+        }
+
+        [Fact]
+        public async Task E2EPreInitializedDict() {
+            using var ms = new MemoryStream();
+
+            var testData = new ClassWithPreinitializedDict {
+                DateTimeDoubleDict = new Dictionary<DateTime, double> {
+                    { new DateTime(2021, 1, 1), 1.1 },
+                    { new DateTime(2021, 1, 2), 2.2 },
+                    { new DateTime(2021, 1, 3), 3.3 }
+                }
+            };
+
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(typeof(ClassWithPreinitializedDict).GetParquetSchema(true), ms)) {
+                await ParquetSerializer.SerializeRowGroupAsync(writer, new[] { testData }, default);
+            }
+            ms.Position = 0;
+
+            using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+            ParquetSchema schema = reader.Schema;
+            using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
+            var buffer = new List<ClassWithPreinitializedDict>();
+            await ParquetSerializer.DeserializeRowGroupAsync(rg, schema, buffer);
+
+            Assert.Equal(testData.DateTimeDoubleDict.Count, buffer[0]?.DateTimeDoubleDict?.Count);
+            Assert.Equal(testData.DateTimeDoubleDict[new DateTime(2021, 1, 1)], buffer[0]?.DateTimeDoubleDict?[new DateTime(2021, 1, 1)]);
+        }
     }
 }
