@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IronCompress;
 using Microsoft.IO;
+using Parquet.Bloom;
 using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Extensions;
@@ -117,6 +118,17 @@ namespace Parquet.File {
             using var pc = new PackedColumn(column);
             pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
 
+            BloomCollector? bloom = null;
+            if(_options.BloomFilterOptionsByColumn.TryGetValue(column.Field.Name, out ParquetOptions.BloomFilterOptions? bloomOptions)) {
+                if(bloomOptions != null && bloomOptions.EnableBloomFilters) {
+                    BloomSizing.BloomPlan plan = BloomSizing.Plan(
+                        estimatedDistinctValues: column.Statistics?.DistinctCount ?? column.NumValues,
+                        targetFpp: bloomOptions.BloomFilterFpp,
+                        bitsPerValueOverride: bloomOptions.BloomFilterBitsPerValueOverride);
+                    bloom = new BloomCollector(plan.Blocks);
+                }
+            }
+
             // dictionary page
             if(pc.HasDictionary) {
                 PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
@@ -126,6 +138,9 @@ namespace Parquet.File {
                        ms, column.Statistics);
 
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+                if(bloom != null) {
+                    BloomAddValues(bloom, pc.Dictionary, 0, pc.Dictionary.Length, _schemaElement);
+                }
             }
 
             // data page
@@ -148,6 +163,9 @@ namespace Parquet.File {
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
+                    if(bloom != null) {
+                        BloomAddValues(bloom, data, offset, count, _schemaElement);
+                    }
                     if(deltaEncode) {
                         DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
                         chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
@@ -156,8 +174,16 @@ namespace Parquet.File {
                     }
                 }
 
-                ph.DataPageHeader!.Statistics = column.Statistics.ToThriftStatistics(tse);
+                ph.DataPageHeader!.Statistics = column.Statistics!.ToThriftStatistics(tse);
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+            }
+
+            if(bloom != null && chunk?.MetaData != null) {
+                BloomFilterIO.WriteToStream(
+                    _stream,
+                    bloom.Filter,
+                    chunk.MetaData,
+                    s => new Meta.Proto.ThriftCompactProtocolWriter(s));
             }
 
             return r;
@@ -166,6 +192,79 @@ namespace Parquet.File {
         private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
             int bitWidth = maxValue.GetBitWidth();
             RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
+        }
+
+        private static void BloomAddValues(BloomCollector bloom, Array values, int offset, int count, SchemaElement tse) {
+            switch(tse.Type!.Value) {
+                case Meta.Type.BOOLEAN: {
+                        if(values is bool[] a)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddBoolean(a[offset + i]);
+                        break;
+                    }
+                case Meta.Type.INT32: {
+                        if(values is int[] a)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddInt32(a[offset + i]);
+                        else if(values is uint[] au)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddInt32(unchecked((int)au[offset + i]));
+                        break;
+                    }
+                case Meta.Type.INT64: {
+                        if(values is long[] a)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddInt64(a[offset + i]);
+                        else if(values is ulong[] au)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddInt64(unchecked((long)au[offset + i]));
+                        break;
+                    }
+                case Meta.Type.INT96: {
+                        if(values is DateTime[] a)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddInt96(a[offset + i]);
+                        break;
+                    }
+                case Meta.Type.FLOAT: {
+                        if(values is float[] a)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddFloat(a[offset + i]);
+                        break;
+                    }
+                case Meta.Type.DOUBLE: {
+                        if(values is double[] a)
+                            for(int i = 0; i < count; i++)
+                                bloom.AddDouble(a[offset + i]);
+                        break;
+                    }
+                case Meta.Type.BYTE_ARRAY: {
+                        if(values is string[] sa) {
+                            for(int i = 0; i < count; i++)
+                                bloom.AddString(sa[offset + i]);
+                        } else if(values is byte[][] ba) {
+                            for(int i = 0; i < count; i++)
+                                bloom.AddByteArray(ba[offset + i]);
+                        } else if(values is Array any && any.Length > 0 && any.GetValue(0) is byte[]) {
+                            // Handles jagged byte[][] typed as Array
+                            for(int i = 0; i < count; i++)
+                                bloom.AddByteArray((byte[])any.GetValue(offset + i)!);
+                        }
+                        break;
+                    }
+                case Meta.Type.FIXED_LEN_BYTE_ARRAY: {
+                        if(values is byte[][] ba) {
+                            for(int i = 0; i < count; i++)
+                                bloom.AddFixed(ba[offset + i]);
+                        } else if(values is Array any && any.Length > 0 && any.GetValue(0) is byte[]) {
+                            for(int i = 0; i < count; i++)
+                                bloom.AddFixed((byte[])any.GetValue(offset + i)!);
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
         }
     }
 }
