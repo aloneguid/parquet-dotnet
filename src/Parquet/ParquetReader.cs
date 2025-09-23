@@ -140,17 +140,22 @@ namespace Parquet {
         /// Reads entire row group's data columns in one go.
         /// </summary>
         /// <param name="rowGroupIndex">Index of the row group. Default to the first row group if not specified.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns></returns>
-        public async Task<DataColumn[]> ReadEntireRowGroupAsync(int rowGroupIndex = 0) {
+        public async Task<DataColumn[]> ReadEntireRowGroupAsync(int rowGroupIndex = 0, CancellationToken cancellationToken = default)
+        {
             if(Schema == null)
                 throw new InvalidOperationException("schema is not initialised yet");
 
             DataField[] dataFields = Schema.GetDataFields();
             DataColumn[] result = new DataColumn[dataFields.Length];
 
-            using(ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex)) {
-                for(int i = 0; i < dataFields.Length; i++) {
-                    DataColumn column = await reader.ReadColumnAsync(dataFields[i]);
+            using(ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex))
+            {
+                for(int i = 0; i < dataFields.Length; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    DataColumn column = await reader.ReadColumnAsync(dataFields[i], cancellationToken);
                     result[i] = column;
                 }
             }
