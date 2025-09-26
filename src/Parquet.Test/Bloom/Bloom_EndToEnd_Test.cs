@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Bloom;
 using Parquet.Data;
@@ -15,7 +16,7 @@ namespace Parquet.Test.Bloom {
     /// End-to-end tests for writing and reading columns with Split-Block Bloom filters.
     /// Verifies on-disk metadata (offset/length), in-memory probing, pruning, and data roundtrip.
     /// </summary>
-    public sealed class Bloom_EndToEnd_Test {
+    public sealed class Bloom_EndToEnd_Test : TestBase {
         private static DataField I32(string name = "c") => new DataField(name, System.Type.GetType("System.Int32")!);
         private static DataField STRING(string name = "s") => new DataField(name, System.Type.GetType("System.String")!);
         private static SchemaElement I32Physical(string name = "c") =>
@@ -282,6 +283,97 @@ namespace Parquet.Test.Bloom {
             }
         }
 
+        [Fact]
+        public async Task Bloom_Metadata_Indicates_BloomFilter() {
+            await using Stream stream = this.OpenTestFile("bloom.parquet");
+            using ParquetReader reader = await ParquetReader.CreateAsync(stream);
+
+            var idField = (DataField)reader.Schema.GetDataFields().Single(f => f.Name == "id");
+
+            bool anyHasBloom = false;
+            for(int rg = 0; rg < reader.RowGroupCount; rg++) {
+                using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(rg);
+                ColumnChunk? cc = rgr.GetMetadata(idField);
+                Assert.NotNull(cc);
+                if(cc!.MetaData!.BloomFilterOffset.HasValue && cc.MetaData.BloomFilterOffset.Value > 0) {
+                    anyHasBloom = true;
+                }
+            }
+
+            Assert.True(anyHasBloom); // at least one RG should have a BF written for 'id'
+        }
+
+        [Fact]
+        public async Task Bloom_Prunes_Negatives_For_Id() {
+
+            await using Stream stream = this.OpenTestFile("bloom.parquet");
+            using ParquetReader reader = await ParquetReader.CreateAsync(stream);
+
+            var idField = (DataField)reader.Schema.GetDataFields().Single(f => f.Name == "id");
+
+            int totalGroups = reader.RowGroupCount;
+            int prunedGroups = 0;
+
+            // Try a handful of clearly-absent values
+            string[] negatives = Enumerable.Range(0, 8).Select(i => $"nope-{i:00000000}").ToArray();
+
+            for(int rgIndex = 0; rgIndex < totalGroups; rgIndex++) {
+                using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgIndex);
+
+                // if ANY negative probes return false, this RG can be pruned
+                bool thisGroupDefinitelyNo = false;
+                foreach(string? val in negatives) {
+                    if(!rg.MightMatchEquals(idField, val)) {
+                        thisGroupDefinitelyNo = true;
+                        break;
+                    }
+                }
+                if(thisGroupDefinitelyNo)
+                    prunedGroups++;
+            }
+
+            // We expect at least SOME pruning (don’t over-assert due to possible FPs)
+            Assert.True(prunedGroups > 0);
+            Assert.InRange(prunedGroups, 1, totalGroups);
+        }
+
+        [Fact]
+        public async Task Bloom_Probe_DoesNotMoveStream() {
+            await using Stream stream = this.OpenTestFile("bloom.parquet");
+            using ParquetReader reader = await ParquetReader.CreateAsync(stream);
+
+            var idField = (DataField)reader.Schema.GetDataFields().Single(f => f.Name == "id");
+
+            using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
+
+            long before = stream.CanSeek ? stream.Position : 0;
+            _ = rg.MightMatchEquals(idField, $"nope-{42:00000000}");
+            long after = stream.CanSeek ? stream.Position : 0;
+
+            if(stream.CanSeek)
+                Assert.Equal(before, after);
+        }
+
+        [Fact]
+        public async Task Bloom_MightMatch_TruePositive_OnExistingId() {
+            await using Stream stream = this.OpenTestFile("bloom.parquet");
+            using ParquetReader reader = await ParquetReader.CreateAsync(stream);
+
+            var idField = (DataField)reader.Schema.GetDataFields().Single(f => f.Name == "id");
+
+            bool anyPossible = false;
+
+            for(int rgIndex = 0; rgIndex < reader.RowGroupCount; rgIndex++) {
+                using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgIndex);
+                // pick a very likely existing id from your generator
+                if(rg.MightMatchEquals(idField, "user-12345")) {
+                    anyPossible = true;
+                    break;
+                }
+            }
+
+            Assert.True(anyPossible); // Bloom must not rule out a real value
+        }
 
         // ---------- helpers ----------
 
