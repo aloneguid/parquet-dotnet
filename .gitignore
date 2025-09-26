@@ -8,3 +8,4 @@ BenchmarkDotNet.Artifacts/
 Parquet.sln.DotSettings.user
 launchSettings.json
 .DS_Store
+.vscode
