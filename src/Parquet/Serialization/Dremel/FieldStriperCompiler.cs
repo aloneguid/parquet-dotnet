@@ -86,6 +86,9 @@ namespace Parquet.Serialization.Dremel {
                         ? Expression.Property(valueVar, "Value")
                         : valueVar;
 
+                    // cast if required
+                    getNonNullValue = Expression.Convert(getNonNullValue, _df.ClrType);
+
                     return Expression.IfThenElse(
                         // value == null?
                         Expression.Equal(valueVar, Expression.Constant(null)),
@@ -102,9 +105,13 @@ namespace Parquet.Serialization.Dremel {
                             _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty()));
 
                 } else {
+
+                    // cast if required
+                    UnaryExpression converted = Expression.Convert(valueVar, _df.ClrType);
+
                     // required atomics are simple - add value, RL and DL as is
                     return Expression.Block(
-                        Expression.Call(_valuesVar, _valuesListAddMethod, valueVar),
+                        Expression.Call(_valuesVar, _valuesListAddMethod, converted),
                         _hasDls ? Expression.Call(_dlsVar, LevelsAddMethod, Expression.Constant(dl)) : Expression.Empty(),
                         _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
                 }
@@ -161,7 +168,9 @@ namespace Parquet.Serialization.Dremel {
 
                 isAtomic
                     ? Expression.Assign(isLeafVar, Expression.Constant(true))
-                    : Expression.Assign(isLeafVar, elementType.IsValueType ? Expression.Constant(false) : valueVar.IsNull()),
+                    : (elementType.IsValueType && !elementType.IsSystemNullable())
+                        ? Expression.Assign(isLeafVar, Expression.Constant(false))
+                        : Expression.Assign(isLeafVar, valueVar.IsNull()),
 
                 Expression.IfThenElse(
                     Expression.IsTrue(isLeafVar),
@@ -189,6 +198,15 @@ namespace Parquet.Serialization.Dremel {
                 return lf.Item.MaxDefinitionLevel;
 
             return f.MaxDefinitionLevel;
+        }
+
+        private static int GetNullCollectionDL(Field f)
+        {
+            return f.MaxDefinitionLevel - 2;    
+        }
+        
+        private static int GetEmptyCollectionDL(Field f) {
+            return f.MaxDefinitionLevel - 1;
         }
 
         private static Type GetIdealUntypedType(Field f) {
@@ -241,19 +259,28 @@ namespace Parquet.Serialization.Dremel {
                         Expression.Default(type)));
             }
 
-            PropertyInfo? pi = rootType.GetProperty(name);
+            Expression? result = rootVar;
+            type = rootType;
+
+            if(rootType.IsSystemNullable()) {
+                result = Expression.Property(result, "Value");
+                type = rootType.GetNonNullable();
+            }
+
+            PropertyInfo? pi = type.GetProperty(name);
+            FieldInfo? fi = type.GetField(name);
+
             if(pi != null) {
                 type = pi.PropertyType;
-                return Expression.Property(rootVar, name);
-            }
-
-            FieldInfo? fi = rootType.GetField(name);
-            if(fi != null) {
+                result = Expression.Property(result, name);
+            } else if(fi != null) {
                 type = fi.FieldType;
-                return Expression.Field(rootVar, name);
+                result = Expression.Field(result, name);
+            } else {
+                throw new NotSupportedException($"There is no class property of field called '{name}'.");
             }
 
-            throw new NotSupportedException($"There is no class property of field called '{name}'.");
+            return result;
         }
 
         private Expression DissectRecord(
@@ -302,13 +329,13 @@ namespace Parquet.Serialization.Dremel {
                     Expression.Assign(countVar, Expression.Constant(0)),
                     Expression.IfThenElse(
                         Expression.Equal(levelProperty, Expression.Constant(null)),
-                        WriteMissingValue(dl - 2, currentRlVar),
+                        WriteMissingValue(GetNullCollectionDL(field), currentRlVar),
                         Expression.Block(
                             body,
                             // check if no elements are written and write out empty list if so
                             Expression.IfThen(
                                 Expression.Equal(countVar, Expression.Constant(0)),
-                                WriteMissingValue(dl - 1, currentRlVar))
+                                WriteMissingValue(GetEmptyCollectionDL(field), currentRlVar))
                             )));
             } else {
                 Expression element = levelProperty;

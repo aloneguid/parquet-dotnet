@@ -1,5 +1,6 @@
 .idea/
 *.iml
+*.user
 .vs/
 bin/
 obj/

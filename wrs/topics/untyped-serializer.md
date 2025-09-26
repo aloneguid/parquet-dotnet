@@ -1,9 +1,13 @@
-# Untyped Serializer (Experimental)
+# Untyped Serializer
 
-Version 4.19.0 introduced a new experimental feature: the ability to write and read data without the need to define low-level column data or define classes. This is extremely useful for use case like:
+Untyped serializer gives this library the ability to write and read data without the need to define low-level column data or define classes. This is extremely useful for use case like:
 
-- Reading data from a file where the schema is not known in advance (i.e. parquet file viewers).
+- Reading data from a file where the schema is not known in advance (i.e. parquet file viewers, generic utilities).
 - Writing parquet file converters, i.e. from parquet to JSON.
+
+<tip>
+Since v5 this API supersedes the Row API, which was a very old and buggy API that was extremely hard to evolve. Untyped serializer is the future of dynamic data serialization in this library.
+</tip>
 
 and so on.
 
@@ -11,9 +15,6 @@ and so on.
 1. Single codebase for class serializer and untyped dictionary serializer.
 2. De-serialization produces JSON-like structures in memory. These can be written back to JSON file as is.
 3. Row API is an old legacy that is somewhat buggy and very hard to evolve and fix.
-
-## Release plan
-This will be released as an addition to the current class serializer in v4. Row API methods will be marked as deprecated and eventually removed in v5, making it a primary dynamic API.
 
 ## Usage
 

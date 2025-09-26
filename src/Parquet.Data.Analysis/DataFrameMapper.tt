@@ -1,0 +1,105 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #><#
+    var valueTypes = new[] {
+        "bool",
+        "int",
+        "uint",
+        "long",
+        "ulong",
+        "byte",
+        "sbyte",
+        "short",
+        "ushort",
+        "DateTime",
+        "TimeSpan",
+        "decimal",
+        "float",
+        "double" };
+    var clrToColumnType = new Dictionary<string, string> {
+        { "bool", "BooleanDataFrameColumn" },
+        { "int", "Int32DataFrameColumn" },
+        { "uint", "UInt32DataFrameColumn" },
+        { "double", "DoubleDataFrameColumn" },
+        { "float", "SingleDataFrameColumn" },
+        { "byte", "ByteDataFrameColumn" },
+        { "sbyte", "SByteDataFrameColumn" },
+        { "short", "Int16DataFrameColumn" },
+        { "ushort", "UInt16DataFrameColumn" },
+        { "long", "Int64DataFrameColumn" },
+        { "ulong", "UInt64DataFrameColumn" },
+        { "string", "StringDataFrameColumn" },
+        { "DateTime", "DateTimeDataFrameColumn" },
+        { "TimeSpan", "PrimitiveDataFrameColumn<TimeSpan>" },
+        { "decimal", "DecimalDataFrameColumn" }
+    };
+#>using System;
+using System.Linq;
+using System.Numerics;
+using Microsoft.Data.Analysis;
+
+namespace Parquet.Data.Analysis {
+    static class DataFrameMapper {
+        public static DataFrameColumn ToDataFrameColumn(DataColumn dc) {
+            string colName = string.Join("_", dc.Field.Path.ToList());
+
+            <# foreach(var t in clrToColumnType) { #>if(dc.Field.ClrType == typeof(<#= t.Key #>)) {
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    return new <#= t.Value #>(colName, (<#= t.Key #>[])dc.Data);
+                } else {
+                    return new <#= t.Value #>(colName, (<#= t.Key #>?[])dc.Data);
+                }
+            }
+            <# } #>
+            // special case
+            if(dc.Field.ClrType == typeof(string)) {
+                return new StringDataFrameColumn(colName, (string[])dc.Data);
+            }
+
+            throw new NotSupportedException(dc.Field.ClrType.Name);
+        }
+
+        public static void AppendValues(DataFrameColumn dfc, DataColumn dc) {
+            <# foreach(var t in valueTypes) { #>if(dc.Field.ClrType == typeof(<#= t #>)) {
+                var tdfc = (PrimitiveDataFrameColumn<<#= t #>>)dfc;
+                if(dc.Field.ClrType == dc.Field.ClrNullableIfHasNullsType) {
+                    foreach(<#= t #> el in (<#= t #>[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                } else {
+                    foreach(<#= t #>? el in (<#= t #>?[])dc.Data) {
+                        tdfc.Append(el);
+                    }
+                }
+                return;
+            }
+            <# } #>
+            // special case
+            if(dc.Field.ClrType == typeof(string)) {
+                var tdfc = (StringDataFrameColumn)dfc;
+                foreach(string el in (string[])dc.Data) {
+                    tdfc.Append(el);
+                }
+                return;
+            }
+
+            throw new NotSupportedException(dc.Field.ClrType.Name);
+
+        }
+
+        public static Array GetTypedDataFast(DataFrameColumn col) {
+            <# foreach(var t in valueTypes) {
+            #>if(col.DataType == typeof(<#= t #>)) {
+                return ((PrimitiveDataFrameColumn<<#= t #>>)col).ToArray();
+            }
+            <# }
+            #>// special case
+            if(col.DataType == typeof(string)) {
+                return ((StringDataFrameColumn)col).ToArray();
+            }
+
+            throw new NotSupportedException($"type {col.DataType} is not supported (column: {col.Name})");
+        }
+    }
+}

@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 using Parquet.Encodings;
 using Xunit;
 
 namespace Parquet.Test.Encodings {
-    public class DeltaBinaryPackedEncodingTest {
+    public class DeltaBinaryPackedEncodingTest : TestBase {
+
         [Fact]
         public void EncodeAndDecodeInt32() {
 

@@ -7,10 +7,11 @@ namespace Parquet.Schema {
     /// <summary>
     /// Field containing actual data, unlike fields containing metadata.
     /// </summary>
-    public class DataField : Field {
+    public class DataField : Field, ICloneable {
 
         private bool _isNullable;
         private bool _isArray;
+        private int _fieldId = -1;
 
         /// <summary>
         /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
@@ -50,6 +51,11 @@ namespace Parquet.Schema {
         public Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
 
         /// <summary>
+        /// Optional metadata integer, used in Lake implementations. See https://arrow.apache.org/docs/cpp/parquet.html#parquet-field-id
+        /// </summary>
+        public int FieldId { get => _fieldId; set => _fieldId = value; }
+
+        /// <summary>
         /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
         /// </summary>
         /// <param name="name">Field name</param>
@@ -65,8 +71,7 @@ namespace Parquet.Schema {
             if(!SchemaEncoder.IsSupported(ClrType)) {
                 if(baseType == typeof(DateTimeOffset)) {
                     throw new NotSupportedException($"{nameof(DateTimeOffset)} support was dropped due to numerous ambiguity issues, please use {nameof(DateTime)} from now on.");
-                }
-                else {
+                } else {
                     throw new NotSupportedException($"type {clrType} is not supported");
                 }
             }
@@ -130,7 +135,7 @@ namespace Parquet.Schema {
         internal bool IsDeltaEncodable => DeltaBinaryPackedEncoder.IsSupported(ClrType);
 
         /// <inheritdoc/>
-        public override string ToString() => 
+        public override string ToString() =>
             $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";
 
         private Type BaseClrType {
@@ -186,6 +191,14 @@ namespace Parquet.Schema {
                 baseType = baseType.GetNonNullable();
                 isNullable = true;
             }
+        }
+
+        /// <summary>
+        /// Simple memberwise clone
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            return MemberwiseClone();
         }
 
         #endregion

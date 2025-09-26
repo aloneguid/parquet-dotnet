@@ -8,6 +8,10 @@ namespace Parquet {
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         private const long UnixEpochMilliseconds = 62_135_596_800_000L;
         private const long UnixEpochMicroseconds = 62_135_596_800_000_000L;
+        
+#if NET7_0_OR_GREATER
+        private static long UnixEpochNanoseconds = UnixEpoch.Ticks * TimeSpan.NanosecondsPerTick;
+#endif
 
         public static DateTimeOffset FromUnixMilliseconds(this long unixMilliseconds) {
             return UnixEpoch.AddMilliseconds(unixMilliseconds);
@@ -31,6 +35,11 @@ namespace Parquet {
         public static long ToUnixMicroseconds(this DateTime dto) {
             long microseconds = dto.Ticks / TimeSpan.TicksPerMicrosecond;
             return microseconds - UnixEpochMicroseconds;
+        }
+        
+        public static long ToUnixNanoseconds(this DateTime dto) {
+            long nanoseconds = dto.Ticks * TimeSpan.NanosecondsPerTick;
+            return nanoseconds - UnixEpochNanoseconds;
         }
 #endif
 

@@ -1,5 +1,9 @@
-# Apache Parquet for .NET [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
-
+# Apache Parquet for .NET 
+[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aloneguid/parquet-dotnet)
+![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet)
+![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
 **Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 8`, `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
@@ -16,7 +20,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - The only library that supports [dynamic](https://aloneguid.github.io/parquet-dotnet/writing.html) schemas.
   - Supports all parquet [types](https://aloneguid.github.io/parquet-dotnet/nested-types.html), encodings and compressions.
   - Fully supports [C# class serialization](https://aloneguid.github.io/parquet-dotnet/serialisation.html), for all simple and **complex** Parquet types.
-  - Provides **low-level**, [high-level](https://aloneguid.github.io/parquet-dotnet/serialisation.html), and [row-based](https://aloneguid.github.io/parquet-dotnet/rows.html) API.
+  - Provides **low-level**, [high-level](https://aloneguid.github.io/parquet-dotnet/serialisation.html), and [untyped](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) API.
   - Access to [file and column metadata](https://aloneguid.github.io/parquet-dotnet/metadata.html).
   - [Integration with DataFrames](https://aloneguid.github.io/parquet-dotnet/dataframe.html) (`Microsoft.Data.Analysis`).
 
@@ -26,28 +30,22 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - [Quick Start](https://aloneguid.github.io/parquet-dotnet/starter-topic.html#quick-start).
 - [Full Documentation](https://aloneguid.github.io/parquet-dotnet/starter-topic.html).
 
-## UI
-
-This repository now includes an implementation of parquet desktop viewer application called **Floor** (parquet floor, get it?). It's cross-platform, self-contained executable made with Avalonia, and is compiled for Linux, Windows and MacOS. You can download it from the [releases section](https://github.com/aloneguid/parquet-dotnet/releases). 
-
-![](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/floor.gif?raw=true)
-
-**Floor** is not meant to be the best parquet viewer on the planet, but just a reference implementation. There are probably better, more feature-rich applications out there.
-
 ## Used by
 
 - [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool).
-- [Parquet Viewer (web assembly app)](https://github.com/aloneguid/parquet-online).
-- [Komodo Search](https://github.com/jchristn/komodo).
 - [RavenDB - An ACID NoSQL Document Database](https://github.com/ravendb/ravendb).
 - [Cinchoo ETL: An ETL framework for .NET](https://github.com/Cinchoo/ChoETL).
 - [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
 - [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
 - [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
 - [Omni Loader: Self-tuning Database Migration Accelerator](https://www.omniloader.com).
+- [Contoso Data Generator V2 : sample data generator](https://github.com/sql-bi/Contoso-Data-Generator-V2).
+- [Recfuence - An analysis of YouTube's political influence through recommendations]().
+- [Kusto-loco - C# KQL query engine with flexible I/O layers and visualization](https://github.com/NeilMacMullen/kusto-loco).
+- [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
+- [Personal Data Warehouse - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)](https://github.com/BlazorData-Net/PersonalDataWarehouse).
 
 *...raise a PR to appear here...*
-
 
 ## Contributing
 

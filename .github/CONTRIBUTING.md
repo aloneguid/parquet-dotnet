@@ -31,7 +31,7 @@ At this point, you should switch back to your master branch and make sure it's
 up to date with *Parquet.Net* master branch:
 
 ```sh
-git remote add upstream git@github.com:parquet-dotnet.git
+git remote add upstream git@github.com:aloneguid/parquet-dotnet.git
 git checkout master
 git pull upstream master
 ```

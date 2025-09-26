@@ -1,45 +1,52 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 4.23.4
-  ASM_VERSION: 4.0.0
+  VERSION: 5.3.0
+  PACKAGE_SUFFIX: '-pre.1'
+  # PACKAGE_SUFFIX: ''
+  ASM_VERSION: 5.0.0
   DOC_INSTANCE: wrs/pq
   DOC_ARTIFACT: webHelpPQ2-all.zip
   DOC_ALGOLIA_ARTIFACT: algolia-indexes-PQ.zip
-  DOC_DOCKER_VERSION: 232.10275
-
-# Gives the workflow permissions to clone the repo and create a page deployment
-permissions:
-  id-token: write
-  pages: write
+  DOC_DOCKER_VERSION: 241.15989
 
 on:
   push:
-    branches: [ master ]
+    branches:
+    - master
 
   pull_request:
-    branches: [ master ]
+    branches:
+    - master
 
   workflow_dispatch:
 
 jobs:
   test:
-    name: Unit Tests
+    name: 🧪 Unit Tests - ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: windows-latest
+            name: Windows x86
+            runtime: win-x86
+          - os: macos-latest
+            name: MacOS ARM64
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          3.1.x
           6.0.x
-          7.0.x
           8.0.x
+          9.0.x
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
@@ -47,93 +54,60 @@ jobs:
     - name: Install Python dependencies
       run: pip install pyarrow pandas
 
-    - name: 'test on ${{ matrix.os }}'
+    # only run this step if matrix.runtime is empty
+    - name: 'test on ${{ matrix.runtime }}'
+      if: matrix.arch == ''
       run: dotnet test src/Parquet.sln -c release
 
+    # only run this step if matrix.arch is not empty
+    - name: 'test on ${{ matrix.runtime }}'
+      if: matrix.arch != ''
+      run: dotnet test src/Parquet.sln -c release -r ${{ matrix.runtime }}
 
   build:
 
     runs-on: 'ubuntu-latest'
-    name: 'Build NuGet'
+    name: '🏛️ Build NuGet'
 
     steps:
     - run: |
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          3.1.x
           6.0.x
-          7.0.x
           8.0.x
+          9.0.x
 
     - name: Build Library
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.sln -c release /p:Version=$VERSION /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.sln -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - name: collect artifacts
       run: |
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
-        echo "${{ env.VERSION }}" >> artifacts/version.txt
-        cp docs/release-history.md artifacts/
+        cp src/Parquet.Data.Analysis/bin/Release/*.nupkg artifacts/
+        cp docs/rn/${{ env.VERSION }}.md artifacts/release-notes.md
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       name: upload artifacts
       with:
         name: bin
         path: artifacts/*
 
-  floor-build:
-    runs-on: ubuntu-latest
-    name: 'Build Floor'
-    strategy:
-      matrix:
-        rid:
-          - linux-x64
-          - win-x64
-          - osx-x64
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: |
-            8.0.x
-
-      - name: Build
-        env:
-          LATEST_NET_ONLY: true
-        run: |
-          envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
-          dotnet restore src/Parquet.Floor/Parquet.Floor.csproj
-          dotnet publish src/Parquet.Floor/Parquet.Floor.csproj -c release -r ${{ matrix.rid }} -o floor-pub/${{ matrix.rid }} /p:Version=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }} /p:AssemblyVersion=${{ env.ASM_VERSION }}
-          mkdir -p floor-dist
-          zip -r -9 -j floor-dist/floor-${{ matrix.rid }}-${{ env.VERSION }}.zip floor-pub/${{ matrix.rid }}/* -x *.pdb *.xml
-
-
-      - uses: actions/upload-artifact@v4
-        name: upload binary
-        if: github.ref == 'refs/heads/master'
-        with:
-          name: floor-${{ matrix.rid }}
-          path: floor-dist/*.zip
-          if-no-files-found: error
-          compression-level: 9
-          retention-days: 1
-
-  wrs-build:
+  wrs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
-    name: Build Documentation
+    name: '📃 Writerside docs'
+    permissions:
+      id-token: write
+      pages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -143,31 +117,67 @@ jobs:
           instance: ${{ env.DOC_INSTANCE }}
           artifact: ${{ env.DOC_INSTANCE }}
           docker-version: ${{ env.DOC_DOCKER_VERSION }}
-      - name: Upload documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs
-          path: artifacts/*.zip
-          retention-days: 1
 
-  wrs-deploy:
-    runs-on: ubuntu-latest
-    needs: [wrs-build, test, build]
-    name: Deploy Documentation
-    steps:
-      - name: ⬇️ Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: docs
       - name: 🤐 Unzip artifact
-        run: unzip -O UTF-8 -qq ${{ env.DOC_ARTIFACT }} -d dir
+        run: unzip -O UTF-8 artifacts/${{ env.DOC_ARTIFACT }} -d dir
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact to GH Pages
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dir
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
 
+  release:
+    name: '🕋 Release library'
+    runs-on: ubuntu-latest 
+    needs:
+    - test
+    - build
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+
+      - name: ⬇️ Download Library binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+
+      - name: print release notes
+        run: cat bin/release-notes.md
+
+      - name: 📦 Publish to NuGet
+        run: dotnet nuget push bin/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  release-all:
+    name: '🕋 Make GitHub Release'
+    runs-on: ubuntu-latest 
+    needs:
+    - release
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+
+      - name: ⬇️ Download Library binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+
+      - name: 🔍 view artifacts to be used
+        run: ls -R
+        working-directory: .
+
+      # https://github.com/softprops/action-gh-release
+      - name: 📢 Create release
+        uses: softprops/action-gh-release@v1
+        if: ${{ !env.PACKAGE_SUFFIX }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          files: |
+            bin/*.nupkg
+          body_path: bin/release-notes.md

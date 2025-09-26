@@ -1,5 +1,4 @@
-﻿using NetBox.FileFormats;
-using NetBox.FileFormats.Csv;
+﻿using NetBox.FileFormats.Csv;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
@@ -23,28 +22,34 @@ namespace Parquet.Test.Reader {
             if(!string.IsNullOrEmpty(dataPageVersion)) {
                 parquetFilePrefix += $".{dataPageVersion}";
             }
-            DataColumn[] parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
+            (DataColumn[] Columns, IReadOnlyList<Field> Fields) parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
             DataColumn[] csv = ReadCsv($"{baseName}.csv");
             Compare(parquet, csv, columnTypes);
         }
 
-        private void Compare(DataColumn[] parquet, DataColumn[] csv, Type[] columnTypes) {
+        private void Compare((DataColumn[] Columns, IReadOnlyList<Field> Fields) parquet, DataColumn[] csv, Type[] columnTypes) {
+            DataColumn[] parquetCols = parquet.Columns;
+
+            Assert.All(parquet.Fields, (field, i) => {
+                var dataField = field as DataField;
+                Assert.Equal(columnTypes[i], dataField?.ClrNullableIfHasNullsType);
+            });
 
             var errors = new List<string>();
 
-            //compar number of columns is the same
-            Assert.True(parquet.Length == csv.Length, $"parquet has {parquet.Length} column(s) but CSV has {csv.Length}");
+            //compare number of columns is the same
+            Assert.True(parquetCols.Length == csv.Length, $"parquet has {parquetCols.Length} column(s) but CSV has {csv.Length}");
 
             //compare column names
-            for(int i = 0; i < parquet.Length; i++) {
-                string colName = parquet[i].Field.Name;
+            foreach(DataColumn column in parquetCols) {
+                string colName = column.Field.Name;
                 bool contains = csv.Any(f => f.Field.Name == colName);
                 Assert.True(contains, $"csv does not contain column '{colName}'");
             }
 
             //compare column values one by one
-            for(int ci = 0; ci < parquet.Length; ci++) {
-                DataColumn pc = parquet[ci];
+            for(int ci = 0; ci < parquetCols.Length; ci++) {
+                DataColumn pc = parquetCols[ci];
                 DataColumn cc = csv[ci];
 
                 for(int ri = 0; ri < pc.Data.Length; ri++) {
@@ -112,17 +117,15 @@ namespace Parquet.Test.Reader {
             return Convert.ChangeType(v, t);
         }
 
-        private async Task<DataColumn[]> ReadParquetAsync(string name, bool treatByteArrayAsString) {
-            using(Stream s = OpenTestFile(name)) {
-                using(ParquetReader pr = await ParquetReader.CreateAsync(
-                    s, new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString })) {
-                    using(ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0)) {
-                        return await pr.Schema.GetDataFields()
-                           .Select(df => rgr.ReadColumnAsync(df))
-                           .SequentialWhenAll();
-                    }
-                }
-            }
+        private async Task<(DataColumn[] Columns, IReadOnlyList<Field> Fields)> ReadParquetAsync(string name,
+            bool treatByteArrayAsString) {
+            await using Stream s = OpenTestFile(name);
+            var parquetOptions = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
+            using ParquetReader pr = await ParquetReader.CreateAsync(s, parquetOptions);
+            using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
+            return (await pr.Schema.GetDataFields()
+                .Select(df => rgr.ReadColumnAsync(df))
+                .SequentialWhenAll(), pr.Schema.Fields);
         }
 
         private DataColumn[] ReadCsv(string name) {

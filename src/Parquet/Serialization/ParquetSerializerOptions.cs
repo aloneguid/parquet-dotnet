@@ -34,6 +34,12 @@ namespace Parquet.Serialization {
         public int? RowGroupSize { get; set; }
 
         /// <summary>
+        /// Gets or sets a value that indicates whether a property's name uses a case-insensitive comparison during deserialization. The default value is false.
+        /// Full credits to https://learn.microsoft.com/en-us/dotnet/api/system.text.json.jsonserializeroptions.propertynamecaseinsensitive?view=net-8.0#system-text-json-jsonserializeroptions-propertynamecaseinsensitive
+        /// </summary>
+        public bool PropertyNameCaseInsensitive { get; set; } = false;
+
+        /// <summary>
         /// Further customisations
         /// </summary>
         public ParquetOptions? ParquetOptions { get; set; } = new ParquetOptions();

@@ -7,35 +7,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Parquet.Extensions;
 using Parquet.Schema;
-using Parquet.Rows;
 
 namespace Parquet.Test {
     public class TestBase {
         protected Stream OpenTestFile(string name) {
             return F.OpenRead("./data/" + name);
-        }
-
-        protected async Task<Table> ReadTestFileAsTableAsync(string name) {
-            using Stream s = OpenTestFile(name);
-            return await Table.ReadAsync(s);
-        }
-
-        protected async Task<Table> WriteReadAsync(Table table, bool saveLocal = false) {
-            var ms = new MemoryStream();
-
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(table.Schema, ms)) {
-                await writer.WriteAsync(table);
-            }
-
-            if(saveLocal) {
-                F.WriteAllBytes("c:\\tmp\\test.parquet", ms.ToArray());
-            }
-
-            ms.Position = 0;
-
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                return await reader.ReadAsTableAsync();
-            }
         }
 
         protected async Task<DataColumn?> WriteReadSingleColumn(DataColumn dataColumn) {

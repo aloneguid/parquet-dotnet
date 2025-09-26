@@ -36,3 +36,25 @@ using (var reader = await ParquetReader.CreateAsync(ms)) {
 ## Statistics
 
 You can read column statistics of a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
+
+## Parallelism
+
+File stream are generally not compatible with parallel processing. You can, however, open file stream per parallel thread i.e. your `Parallel.For` should perform file opening operation. Or you can introduce a lock on file read, depends on what works better for you. I might state the obvious here, but asynchronous and parallel are not the same thing.
+
+Here is an example of reading a file in parallel, where a unit of paralellism is a row group:
+
+```C#
+var reader = await reader.CreateAsync(path);
+var count = reader.RowGroupCount;
+
+await Parallel.ForAsync(0, count,
+    async (i, cancellationToken) => {
+        // create an instance of a row group reader for each group
+        using (var gr = await ParquetReader.CreateAsync(path)) {
+            using (var rgr = gr.OpenRowGroupReader(i)) {
+              // process the row group ...
+            }
+        }
+    }
+);
+```

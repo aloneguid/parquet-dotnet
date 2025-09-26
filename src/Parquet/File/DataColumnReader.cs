@@ -327,12 +327,33 @@ namespace Parquet.File {
                     break;
 
                 case Encoding.RLE: { // 3
-                        Span<int> span = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
-                        int indexCount = RleBitpackedHybridEncoder.Decode(src,
-                            _schemaElement!.TypeLength ?? 0,
-                            src.Length, out int usedLength, span, totalValuesInPage);
-                        pc.MarkUsefulDictionaryIndexes(indexCount);
-                        pc.Checkpoint();
+                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                        if(_dataField.ClrType == typeof(bool)) {
+                            // for boolean values, we need to read into temporary int buffer and convert to booleans.
+                            // todo: we can optimise this by implementing boolean RLE decoder
+
+                            int[] tmp = new int[plainData.Length];
+                            int read = RleBitpackedHybridEncoder.Decode(src,
+                                _schemaElement!.TypeLength ?? 0,
+                                src.Length, out int usedLength, tmp.AsSpan(offset), totalValuesInPage);
+
+                            // copy back to bool array
+                            bool[] tgt = (bool[])plainData;
+                            for(int i = 0; i < read; i++) {
+                                tgt[i + offset] = tmp[i] == 1;
+                            }
+
+                            pc.MarkUsefulPlainData(read);
+                            pc.Checkpoint();
+
+                        } else {
+                            Span<int> span = ((int[])plainData).AsSpan(offset);
+                            int read = RleBitpackedHybridEncoder.Decode(src,
+                                _schemaElement!.TypeLength ?? 0,
+                                src.Length, out int usedLength, span, totalValuesInPage);
+                            pc.MarkUsefulPlainData(read);
+                            pc.Checkpoint();
+                        }
                     }
                     break;
 

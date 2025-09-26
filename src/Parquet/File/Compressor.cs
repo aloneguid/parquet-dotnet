@@ -24,6 +24,8 @@ namespace Parquet.File {
                     return Codec.LZ4;
                 case CompressionMethod.Zstd:
                     return Codec.Zstd;
+                case CompressionMethod.Lz4Raw:
+                    return Codec.LZ4;
                 default:
                     throw new NotSupportedException($"{method} not supported");
             }

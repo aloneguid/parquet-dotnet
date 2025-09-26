@@ -41,6 +41,11 @@ namespace Parquet.Schema {
             }
         }
 
+        internal override void Rename(string newName) {
+            base.Rename(newName);
+            PathPrefix = null;
+        }
+
         internal override Field[] Children => Fields.ToArray(); // make a copy
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {

@@ -1,7 +1,5 @@
 # About %product%
 
-[![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net) [![Nuget](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
-
 ![](banner.png)
 
 %product% is a **fully managed, safe, extremely fast** .NET library to read and ✍write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets `.NET 8`, `.NET 7`, `.NET 6.0`, `.NET Core 3.1`,  `.NET Standard 2.1` and `.NET Standard 2.0`.
@@ -65,39 +63,9 @@ await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 
 That's pretty much it! You can [customise many things](serialisation.md) in addition to the magical magic process, but if you are a really lazy person that will do just fine for today.
 
-#### Writing with row based API
+#### Writing untyped data
 
-Another way to serialise data is to use [row-based API](rows.md). They look at your data as a `Table`, which consists of a set of `Row`s. Basically looking at the data backwards from the point of view of how Parquet format sees it. However, that's how most people think about data. This is also useful when converting data from row-based formats to parquet and vice versa. Anyway, use it, I won't judge you (very often).
-
-Let's generate a million of rows for our table, which is slightly more complicated. First, we need to declare table and it's schema:
-
-```C#
-var table = new Table(
-    new DataField<DateTime>("Timestamp"),
-    new DataField<string>("EventName"),
-    new DataField<double>("MeterName"));
-```
-
-The code above says we are creating a new empty table with 3 *fields*, identical to example above with class serialisation. We are essentially declaring table's [schema](schema.md) here. Parquet format is *strongly typed* and all the rows will have to have *identical amount of values and their types*.
-
-Now that empty table is ready, add a million rows to it:
-
-```C#
-for(int i = 0; i < 1_000_000; i++) {
-    table.Add(
-        DateTime.UtcNow.AddSeconds(1),
-        i % 2 == 0 ? "on" : "off",
-        (double)i);
-}
-```
-
-The data will be identical to example above. And to write the table to a file:
-
-```C#
-await table.WriteAsync("/mnt/storage/data.parquet");
-```
-
-Of course this is a trivial example, and you can [customise it further](rows.md).
+Another way to serialise data is to use [Untyped serializer](untyped-serializer.md). 
 
 #### Writing with low level API
 
@@ -180,19 +148,9 @@ This will give us an array with one million class instances similar to this:
 
 Of course [class serialisation](serialisation.md) has more to it, and you can customise it further than that.
 
-#### Reading with row based API
+#### Reading untyped data
 
-A read counterpart to the write example above is also a simple one-liner:
-
-```C#
-Table tbl = await Table.ReadAsync("/mnt/storage/data.parquet");
-```
-
-This will do the magic behind the scenes, give you table schema and rows, similar to this:
-
-![](read-rows.png)
-
-As always, there's [more to it](rows.md).
+Read [here](untyped-serializer.md) for more information on how to read untyped data.
 
 #### Reading with low level API
 
@@ -239,10 +197,10 @@ Read each <code>DataField</code> from the row group, in the same order as it's d
 
 If you have a choice, then the choice is easy - use Low Level API. They are the fastest and the most flexible. But what if you for some reason don't have a choice? Then think about this:
 
-| Feature               | Class Serialisation | Table API        | Low Level API            |
-|-----------------------|---------------------|------------------|--------------------------|
-| Performance           | high                | very low         | very high                |
-| Developer Convenience | C# native           | feels like Excel | close to Parquet internals |
-| Row based access      | easy                | easy             | hard                     |
-| Column based access   | C# native           | hard             | easy                     |
+| Feature               | Class Serialisation | Untyped Serializer API | Low Level API            |
+|-----------------------|---------------------|------------------------|--------------------------|
+| Performance           | high                | very low               | very high                |
+| Developer Convenience | C# native           | feels like Excel       | close to Parquet internals |
+| Row based access      | easy                | easy                   | hard                     |
+| Column based access   | C# native           | hard                   | easy                     |
 

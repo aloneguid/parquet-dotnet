@@ -12,9 +12,54 @@ using Parquet.Schema;
 
 namespace Parquet {
     /// <summary>
+    /// Operations available on a row group reader, omitting Dispose, which is 
+    /// exposed on the implementing class for backward compatibility only.
+    /// </summary>
+    public interface IParquetRowGroupReader {
+        /// <summary>
+        /// Exposes raw metadata about this row group
+        /// </summary>
+        RowGroup RowGroup { get; }
+
+        /// <summary>
+        /// Gets the number of rows in this row group
+        /// </summary>
+        long RowCount { get; }
+
+        /// <summary>
+        /// Checks if this field exists in source schema
+        /// </summary>
+        bool ColumnExists(DataField field);
+
+        /// <summary>
+        /// Reads a column from this row group. Unlike writing, columns can be read in any order.
+        /// If the column is missing, an exception will be thrown.
+        /// </summary>
+        Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets raw column chunk metadata for this field
+        /// </summary>
+        ColumnChunk? GetMetadata(DataField field);
+
+        /// <summary>
+        /// Get custom key-value metadata for a data field
+        /// </summary>
+        Dictionary<string, string> GetCustomMetadata(DataField field);
+
+        /// <summary>
+        /// Returns data column statistics for a particular data field
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        /// <exception cref="ParquetException"></exception>
+        DataColumnStatistics? GetStatistics(DataField field);
+    }
+
+    /// <summary>
     /// Reader for Parquet row groups
     /// </summary>
-    public class ParquetRowGroupReader : IDisposable {
+    public class ParquetRowGroupReader : IDisposable, IParquetRowGroupReader {
         private readonly RowGroup _rowGroup;
         private readonly ThriftFooter _footer;
         private readonly Stream _stream;
@@ -118,12 +163,8 @@ namespace Parquet {
         }
 
         /// <summary>
-        /// 
+        /// Dispose isn't required, retained for backward compatibility
         /// </summary>
-        public void Dispose() {
-            //don't need to dispose anything here, but for clarity we implement IDisposable and client must use it as we may add something
-            //important in it later
-        }
-
+        public void Dispose() { }
     }
 }

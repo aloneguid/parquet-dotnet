@@ -1,5 +1,4 @@
 using Parquet.Data;
-using Parquet.Rows;
 using Parquet.Schema;
 using System;
 using System.Collections.Generic;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using System.Text;
+using Parquet.Serialization;
 
 namespace Parquet.Test {
     /// <summary>
@@ -129,12 +129,6 @@ namespace Parquet.Test {
             }
         }
 
-        [Fact]
-        public async Task Read_col_names_with_trailing_dots() {
-            using Stream s = OpenTestFile("trailing_dot_col_name.parquet");
-            Table tbl = await ParquetReader.ReadTableFromStreamAsync(s);
-            Assert.NotNull(tbl);
-        }
 
         [Fact]
         public async Task Read_legacy_list() {
@@ -175,7 +169,7 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task TestTest() {
+        public async Task FixedLenByteArrayWithDictTest() {
             using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
             using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
@@ -192,6 +186,62 @@ namespace Parquet.Test {
             Assert.Equal(Encoding.ASCII.GetBytes("jkl"), data[3]);
             Assert.Equal(Encoding.ASCII.GetBytes("mno"), data[4]);
             Assert.Equal(Encoding.ASCII.GetBytes("qrs"), data[5]);
+        }
+
+        [Fact]
+        public async Task GuidEndianTest() {
+            using Stream s = OpenTestFile("cetas4.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Single(cols);
+            DataColumn col = cols[0];
+            Assert.Equal(Guid.Parse("15A2501E-4899-4FF8-AF51-A1805FE0718F"), col.Data.GetValue(0));
+        }
+
+        [Fact]
+        public async Task ThriftProtocolBreakingChangeJune2024() {
+            using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Equal(55, cols.Length);
+        }
+
+        [Fact]
+        public async Task ThriftProtocolBreakingChangeJune2024_Untyped() {
+            using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
+        }
+
+        [Fact]
+        public async Task DecimalsWithNoDefinedScale() {
+            using Stream s = OpenTestFile("decimals_with_precision_but_no_scale.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+
+            Assert.Equal(8, cols.Length);
+            
+            //DECIMAL(9, 5)
+            DataColumn decimal_p9_s5 = cols[5];
+            var data = (decimal?[])decimal_p9_s5.Data;
+            Assert.Equal(1.02232M, data[7]);
+            Assert.Equal(-27.427M, data[344]);
+
+            //DECIMAL(9, 0)
+            DataColumn decimal_p9_s0 = cols[6];
+            data = (decimal?[])decimal_p9_s0.Data;
+            Assert.Equal(0M, data[0]);
+            Assert.Equal(1000M, data[6616]);
+        }
+
+        [Fact]
+        public async Task DuckDbRLE_637() {
+            using Stream s = OpenTestFile("issues/637-duckdb.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+            Assert.Single(cols);
+            Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
         }
     }
 }

@@ -193,6 +193,9 @@ namespace Parquet.Test.Serialisation {
 
             [JsonIgnore]
             public int Ignored2 { get; set; }
+
+            [ParquetIgnore]
+            public int Ignored3 { get; set; }
         }
 #pragma warning restore CS0618 // Type or member is obsolete
 
@@ -251,15 +254,15 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(new ParquetSchema(
                 new DataField<int?>("Id"),
                 new MapField("Tags",
-                    new DataField<string>("Key", false),
-                    new DataField<int>("Value"))), schema);
+                    new DataField<string>("key", false),
+                    new DataField<int>("value"))), schema);
         }
 
         [Fact]
         public void MapKeyMetadataIsSetToRequired() {
             ParquetSchema schema = typeof(SimpleMapPoco).GetParquetSchema(true);
 
-            Assert.Equal("Key", schema.DataFields[1].Name);
+            Assert.Equal("key", schema.DataFields[1].Name);
             Assert.False(schema.DataFields[1].IsNullable);
         }
 
@@ -298,6 +301,14 @@ namespace Parquet.Test.Serialisation {
         public void ListOfStructs() {
             ParquetSchema actualSchema = typeof(ListOfStructsPoco).GetParquetSchema(true);
 
+            ListField lf = (ListField)actualSchema[1];
+            Assert.Equal(1, lf.MaxRepetitionLevel);
+            Assert.Equal(2, lf.MaxDefinitionLevel);
+
+            DataField df = (DataField)lf.Item.Children[0];
+            Assert.Equal(1, df.MaxRepetitionLevel);
+            Assert.Equal(4, df.MaxDefinitionLevel);
+
             var expectedSchema = new ParquetSchema(
                 new DataField<int>("Id"),
                 new ListField("Members",
@@ -310,6 +321,25 @@ namespace Parquet.Test.Serialisation {
                 expectedSchema.GetNotEqualsMessage(actualSchema, "expected", "actual"));
         }
 
+        class RequiredListOfStructsPoco {
+            public int Id { get; set; }
+
+            [ParquetRequired, ParquetListElementRequired]
+            public List<StructMemberPoco>? Members { get; set; }
+        }
+
+        [Fact]
+        public void ListOfStructsRequired() {
+            ParquetSchema actualSchema = typeof(RequiredListOfStructsPoco).GetParquetSchema(true);
+
+            ListField lf = (ListField)actualSchema[1];
+
+            DataField df = (DataField)lf.Item.Children[0];
+            Assert.Equal(1, df.MaxRepetitionLevel);
+            Assert.Equal(2, df.MaxDefinitionLevel);
+        }
+
+
         class DatesPoco {
 
             public DateTime ImpalaDate { get; set; }
@@ -319,10 +349,18 @@ namespace Parquet.Test.Serialisation {
             [ParquetTimestamp]
             public DateTime TimestampDate { get; set; }
 
+            [ParquetTimestamp(useLogicalTimestamp: true, isAdjustedToUTC: false)]
+            public DateTime LogicalLocalTimestampDate { get; set; }
+            
+            [ParquetTimestamp(useLogicalTimestamp: true)]
+            public DateTime LogicalUtcTimestampDate { get; set; }
+
             [ParquetTimestamp]
             public DateTime? NullableTimestampDate { get; set; }
 
             public TimeSpan DefaultTime { get; set; }
+            
+            public TimeSpan? NullableTimeSpan { get; set; }
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
@@ -378,6 +416,26 @@ namespace Parquet.Test.Serialisation {
         }
 
         [Fact]
+        public void Type_DateTime_LogicalLocalTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.LogicalLocalTimestampDate));
+            Assert.True(df is DateTimeDataField);
+            Assert.False(((DateTimeDataField)df).IsAdjustedToUTC);
+            Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
+        }
+        
+        [Fact]
+        public void Type_DateTime_LogicalUtcTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.LogicalUtcTimestampDate));
+            Assert.True(df is DateTimeDataField);
+            Assert.True(((DateTimeDataField)df).IsAdjustedToUTC);
+            Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
+        }
+
+        [Fact]
         public void Type_DateTime_TimestampNullable() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
 
@@ -392,6 +450,16 @@ namespace Parquet.Test.Serialisation {
 
             DataField df = s.FindDataField(nameof(DatesPoco.DefaultTime));
             Assert.True(df is TimeSpanDataField);
+            Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
+        }
+        
+        [Fact]
+        public void Type_TimeSpan_Nullable() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableTimeSpan));
+            Assert.True(df is TimeSpanDataField);
+            Assert.True(df.IsNullable);
             Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
         }
 
@@ -520,6 +588,142 @@ namespace Parquet.Test.Serialisation {
             Assert.False(s.DataFields[0].IsNullable);
             Assert.True(s.DataFields[1].IsNullable);
             Assert.True(s.DataFields[2].IsNullable);
+        }
+
+        public interface IInterface {
+            int Id { get; set; }
+        }
+
+        [Fact]
+        public void InterfaceIsSupported() {
+            ParquetSchema s = typeof(IInterface).GetParquetSchema(true);
+
+            Assert.NotNull(s);
+            DataField df = s.FindDataField(nameof(IInterface.Id));
+            Assert.True(df.GetType() == typeof(DataField));
+            Assert.Equal(SchemaType.Data, df.SchemaType);
+            Assert.Equal(typeof(int), df.ClrType);
+            Assert.False(df.IsNullable);
+        }
+
+        public interface IRootInterface {
+            IInterface Child { get; set; }
+        }
+
+        [Fact]
+        public void InterfacePropertyOnInterfaceIsSupported() {
+            ParquetSchema s = typeof(IRootInterface).GetParquetSchema(true);
+
+            Assert.NotNull(s);
+            Field df = s.Fields[0];
+            Assert.True(df.GetType() == typeof(StructField));
+            Assert.Equal(SchemaType.Struct, df.SchemaType);
+            Assert.True(df.IsNullable);
+        }
+
+        public class ReadOnlyProperty {
+            public int Id { get; set; }
+
+            public int ReadOnly => 42;
+        }
+
+        [Fact]
+        public void ReadOnlyPropertyNotWriteable() {
+            ParquetSchema sr = typeof(ReadOnlyProperty).GetParquetSchema(false);
+            ParquetSchema sw = typeof(ReadOnlyProperty).GetParquetSchema(true);
+
+            Assert.True(sr.Fields.Count == 2);
+            Assert.True(sw.Fields.Count == 1);
+        }
+
+        public enum DefaultEnum {
+            One,
+            Two,
+            Three
+        }
+
+        public enum ShortEnum : short {
+            One,
+            Two,
+            Three
+        }
+
+        public class EnumsInClasses {
+            public int Id { get; set; }
+
+            public DefaultEnum DE { get; set; }
+ 
+            // Nullable Enum
+            public DefaultEnum? NE { get; set; }
+
+            public ShortEnum SE { get; set; }
+        }
+
+        [Fact]
+        public void Enums() {
+            ParquetSchema schema = typeof(EnumsInClasses).GetParquetSchema(true);
+            Assert.Equal(4, schema.Fields.Count);
+
+            DataField dedf = schema.FindDataField("DE");
+            DataField nedf = schema.FindDataField("NE");
+            DataField sedf = schema.FindDataField("SE");
+
+            Assert.Equal(typeof(int), dedf.ClrType);
+            Assert.False(dedf.IsNullable);
+            Assert.Equal(typeof(int), nedf.ClrType);
+            Assert.True(nedf.IsNullable);
+            Assert.Equal(typeof(short), sedf.ClrType);
+            Assert.False(dedf.IsNullable);
+        }
+
+        struct SimpleClrStruct {
+            public int Id { get; set; }
+        }
+
+        [Fact]
+        public void ClrStruct_IsSupported() {
+            ParquetSchema schema = typeof(SimpleClrStruct).GetParquetSchema(true);
+            Assert.Single(schema.Fields);
+            Assert.Equal(typeof(int), schema.DataFields[0].ClrType);
+        }
+
+        class StructWithClrStruct {
+            public SimpleClrStruct S { get; set; }
+        }
+
+        [Fact]
+        public void ClrStruct_AsMember_IsSupported() {
+            ParquetSchema schema = typeof(StructWithClrStruct).GetParquetSchema(false);
+            Assert.Single(schema.Fields);
+
+            // check it's a required struct
+            StructField sf = (StructField)schema[0];
+            Assert.False(sf.IsNullable, "struct cannot be optional");
+
+            // check the struct field
+            Assert.Single(sf.Children);
+            var idField = (DataField)sf.Children[0];
+            Assert.Equal(typeof(int), idField.ClrType);
+        }
+
+        class StructWithNullableClrStruct {
+            // as CLR struct is ValueType, this resolves to System.Nullable<SimpleClrStruct>
+            public SimpleClrStruct? N { get; set; }
+        }
+
+        [Fact]
+        public void ClrStruct_AsNullableMember_IsSupported() {
+            ParquetSchema schema = typeof(StructWithNullableClrStruct).GetParquetSchema(false);
+            Assert.Single(schema.Fields);
+
+            // check it's a required struct
+            StructField sf = (StructField)schema[0];
+            Assert.True(sf.IsNullable, "struct must be nullable");
+
+            // check the struct field
+            Assert.Single(sf.Children);
+            var idField = (DataField)sf.Children[0];
+            Assert.Equal(typeof(int), idField.ClrType);
         }
     }
 }

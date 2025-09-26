@@ -6,7 +6,7 @@ namespace Parquet {
     /// Parquet options
     /// </summary>
     public class ParquetOptions {
-        
+
         /// <summary>
         /// When true byte arrays will be treated as UTF-8 strings on read
         /// </summary>
@@ -38,13 +38,15 @@ namespace Parquet {
 #endif
 
         /// <summary>
-        /// Whether to use dictionary encoding for string columns. Other column types are not supported.
+        /// Whether to use dictionary encoding for columns if data meets <seealso cref="DictionaryEncodingThreshold"/>
+        /// The following CLR types are currently supported:
+        /// <see cref="string"/>, <see cref="DateTime"/>, <see cref="decimal"/>, <see cref="byte"/>, <see cref="short"/>, <see cref="ushort"/>, <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, <see cref="ulong"/>, <see cref="float"/>, <see cref="double"/>"/>
         /// </summary>
         public bool UseDictionaryEncoding { get; set; } = true;
 
         /// <summary>
-        /// String dictionary uniqueness threshold, which is a value from 0 (no unique values) 
-        /// to 1 (all values are unique) indicating when string dictionary encoding is applied.
+        /// Dictionary uniqueness threshold, which is a value from 0 (no unique values) 
+        /// to 1 (all values are unique) indicating when dictionary encoding is applied.
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
@@ -69,5 +71,39 @@ namespace Parquet {
         /// </summary>
         /// <remarks>Currently only used by <see cref="ParquetReader"/></remarks>
         public string? AADPrefix { get; set; } = null;
+
+        /// <summary>
+        /// This option is passed to the <see cref="Microsoft.IO.RecyclableMemoryStreamManager"/> , 
+        /// which keeps a pool of streams in memory for reuse. 
+        /// By default when this option is unset, the RecyclableStreamManager 
+        /// will keep an unbounded amount of memory, which is 
+        /// "indistinguishable from a memory leak" per their documentation.
+        /// 
+        /// This does not restrict the size of the pool, but just allows 
+        /// the garbage collector to free unused memory over this limit.
+        /// 
+        /// You may want to adjust this smaller to reduce max memory usage, 
+        /// or larger to reduce garbage collection frequency.
+        /// 
+        /// Defaults to 16MB.  
+        /// </summary>
+        public int MaximumSmallPoolFreeBytes { get; set; } = 16 * 1024 * 1024;
+
+        /// <summary>
+        /// This option is passed to the <see cref="Microsoft.IO.RecyclableMemoryStreamManager"/> , 
+        /// which keeps a pool of streams in memory for reuse. 
+        /// By default when this option is unset, the RecyclableStreamManager 
+        /// will keep an unbounded amount of memory, which is 
+        /// "indistinguishable from a memory leak" per their documentation.
+        /// 
+        /// This does not restrict the size of the pool, but just allows 
+        /// the garbage collector to free unused memory over this limit.
+        /// 
+        /// You may want to adjust this smaller to reduce max memory usage, 
+        /// or larger to reduce garbage collection frequency.
+        /// 
+        /// Defaults to 64MB.
+        /// </summary>
+        public int MaximumLargePoolFreeBytes { get; set; } = 64 * 1024 * 1024;
     }
 }

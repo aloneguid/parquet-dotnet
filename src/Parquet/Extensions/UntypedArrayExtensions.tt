@@ -127,7 +127,7 @@ namespace Parquet.Extensions {
                 <#= nt #> value = array[i];
 
                 if(value == null) {
-                    dest[y] = 0;
+                    dest[y] = fillerValue - 1;
                 }
                 else {
                     dest[y] = fillerValue;

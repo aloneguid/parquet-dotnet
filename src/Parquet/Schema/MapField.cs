@@ -10,6 +10,8 @@ namespace Parquet.Schema {
     /// </summary>
     public class MapField : Field {
         internal const string ContainerName = "key_value";
+        internal const string KeyName = "key";
+        internal const string ValueName = "value";
 
         private bool _keyAssigned = false;
         private bool _valueAssigned = false;
@@ -70,6 +72,11 @@ namespace Parquet.Schema {
                 Key.PathPrefix = Path;
                 Value.PathPrefix = Path;
             }
+        }
+
+        internal override void Rename(string newName) {
+            base.Rename(newName);
+            PathPrefix = null;
         }
 
         internal override Field[] Children => new Field[] { Key, Value };
