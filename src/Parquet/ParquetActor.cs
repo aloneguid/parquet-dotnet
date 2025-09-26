@@ -21,6 +21,8 @@ namespace Parquet {
 
         private readonly Stream _fileStream;
 
+        private BinaryWriter? _binaryWriter;
+
         internal ParquetActor(Stream? fileStream) =>
             _fileStream = fileStream ?? throw new ArgumentNullException(nameof(fileStream));
 
