@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -16,7 +15,7 @@ namespace Parquet.Test.Integration {
         public IntegrationBase() {
             _toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
             _toolsJarPath = Path.Combine(_toolsPath, "parquet-tools-1.9.0.jar");
-            _encryptedParquetInspectorJarPath = Path.Combine(_toolsPath, "encrypted-parquet-inspector-1.0.0-all.jar");
+            _encryptedParquetInspectorJarPath = Path.Combine(_toolsPath, "encrypted-parquet-inspector-1.0.0.jar");
 
             _javaExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
                ? "java.exe"
