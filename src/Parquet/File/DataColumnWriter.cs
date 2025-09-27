@@ -85,25 +85,26 @@ namespace Parquet.File {
         }
 
         private async Task CompressAndWriteAsync(
-            PageHeader ph, MemoryStream data,
-            ColumnSizes cs,
-            CancellationToken cancellationToken) {
+    PageHeader ph,
+    MemoryStream data,
+    ColumnSizes cs,
+    CancellationToken cancellationToken) {
+            // Compress (or pass-through) the page body first
             using IronCompress.IronCompressResult compressedData =
                 _compressionMethod == CompressionMethod.None
                     ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
                     : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
 
-            ph.UncompressedPageSize = (int)data.Length;
-            ph.CompressedPageSize = compressedData.AsSpan().Length;
-
-            // Serialize header
-            using MemoryStream headerMs = _rmsMgr.GetStream();
-            ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
-            int headerSize = (int)headerMs.Length;
-            headerMs.Position = 0;
-
-            // If not encrypting, write as before
+            // Plaintext path (no encryption)
             if(_footer.Encrypter is null) {
+                ph.UncompressedPageSize = (int)data.Length;
+                ph.CompressedPageSize = compressedData.AsSpan().Length;
+
+                using MemoryStream headerMs = _rmsMgr.GetStream();
+                ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
+                int headerSize = (int)headerMs.Length;
+                headerMs.Position = 0;
+
                 await headerMs.CopyToAsync(_stream, 81920, cancellationToken: cancellationToken);
                 _stream.WriteSpan(compressedData);
 
@@ -112,26 +113,43 @@ namespace Parquet.File {
                 return;
             }
 
-            // Encrypt header + body
-            byte[] headerBytes = headerMs.ToArray();
+            // Encrypted path
+            // 1) Set plaintext uncompressed size in header
+            ph.UncompressedPageSize = (int)data.Length;
+
+            // 2) Prepare plaintext body bytes to encrypt
             byte[] bodyBytes = compressedData.AsSpan().ToArray();
 
-            byte[] encHeader = ph.Type == PageType.DICTIONARY_PAGE
-                ? _footer.Encrypter.EncryptDictionaryPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal)
-                : _footer.Encrypter.EncryptDataPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
-
+            // 3) Encrypt page BODY first so we know the encrypted length
+            //    GCM profile: page bodies must be framed as [nonce(12)][ciphertext][tag(16)]
+            //    (No 4-byte length prefix in the page body frame)
             byte[] encBody = ph.Type == PageType.DICTIONARY_PAGE
                 ? _footer.Encrypter.EncryptDictionaryPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal)
                 : _footer.Encrypter.EncryptDataPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
 
+            // 4) Now set the header's CompressedPageSize to the ENCRYPTED body length
+            ph.CompressedPageSize = encBody.Length;
+
+            // 5) Serialize the PLAINTEXT header (with corrected sizes)
+            byte[] headerBytes;
+            using(MemoryStream headerMs = _rmsMgr.GetStream()) {
+                ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
+                headerBytes = headerMs.ToArray();
+            }
+
+            // 6) Encrypt the header (header framing remains as per your GCM framing helper)
+            byte[] encHeader = ph.Type == PageType.DICTIONARY_PAGE
+                ? _footer.Encrypter.EncryptDictionaryPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal)
+                : _footer.Encrypter.EncryptDataPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
+
+            // 7) Write encrypted header + encrypted body
             await _stream.WriteAsync(encHeader, 0, encHeader.Length, cancellationToken);
             await _stream.WriteAsync(encBody, 0, encBody.Length, cancellationToken);
 
-            // Sizes: on-disk is encrypted frames; uncompressed is original header+body
+            // 8) Update counters: "compressed" = on-disk encrypted sizes; "uncompressed" = original plain sizes
             cs.CompressedSize += encHeader.Length + encBody.Length;
-            cs.UncompressedSize += headerSize + ph.UncompressedPageSize;
+            cs.UncompressedSize += headerBytes.Length + ph.UncompressedPageSize;
         }
-
 
         private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
            SchemaElement tse,
