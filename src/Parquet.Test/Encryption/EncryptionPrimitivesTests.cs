@@ -20,19 +20,17 @@ namespace Parquet.Test.Encryption {
         private const short Column = 2;
         private const short Page = 7;
 
-        private static byte[] Le16(short v) => BitConverter.GetBytes(v);
-
         private static byte[] BuildAadSuffix(ParquetModules module, bool addRowCol, bool addPage) {
             // AAD suffix = fileUnique || moduleType(1B) || [rowGroup(LE16)] || [column(LE16)] || [page(LE16)]
             using var ms = new MemoryStream();
             ms.Write(AadFileUnique, 0, AadFileUnique.Length);
             ms.WriteByte((byte)module);
             if(addRowCol) {
-                ms.Write(Le16(RowGroup), 0, 2);
-                ms.Write(Le16(Column), 0, 2);
+                ms.Write(TestCryptoUtils.Le16(RowGroup), 0, 2);
+                ms.Write(TestCryptoUtils.Le16(Column), 0, 2);
             }
             if(addPage) {
-                ms.Write(Le16(Page), 0, 2);
+                ms.Write(TestCryptoUtils.Le16(Page), 0, 2);
             }
             return ms.ToArray();
         }

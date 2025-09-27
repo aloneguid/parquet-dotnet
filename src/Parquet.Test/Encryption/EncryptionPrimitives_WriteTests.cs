@@ -17,9 +17,6 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] Prefix = Encoding.ASCII.GetBytes("writer-aad");
         private static readonly byte[] Unique = new byte[] { 0x10, 0x20, 0x30, 0x40 };
 
-        private static ThriftCompactProtocolReader R(byte[] buf)
-            => new ThriftCompactProtocolReader(new MemoryStream(buf));
-
         private static AES_GCM_V1_Encryption MakeGcm(byte[] key) => new AES_GCM_V1_Encryption {
             SecretKey = key,
             AadPrefix = Prefix,
@@ -42,7 +39,7 @@ namespace Parquet.Test.Encryption {
             byte[] framed = enc.EncryptFooter(plain);
 
             // decrypt
-            byte[] outBytes = dec.DecryptFooter(R(framed));
+            byte[] outBytes = dec.DecryptFooter(TestCryptoUtils.R(framed));
             Assert.Equal(plain, outBytes);
         }
 
@@ -54,12 +51,12 @@ namespace Parquet.Test.Encryption {
 
             short rg = 2, col = 3, page = 0;
             byte[] framed = enc.EncryptDataPageHeader(plain, rg, col, page);
-            byte[] outBytes = dec.DecryptDataPageHeader(R(framed), rg, col, page);
+            byte[] outBytes = dec.DecryptDataPageHeader(TestCryptoUtils.R(framed), rg, col, page);
             Assert.Equal(plain, outBytes);
 
             // wrong ordinal fails
             Assert.ThrowsAny<CryptographicException>(() =>
-                dec.DecryptDataPageHeader(R(framed), rg, col, 1));
+                dec.DecryptDataPageHeader(TestCryptoUtils.R(framed), rg, col, 1));
         }
 
         [Fact]
@@ -74,7 +71,7 @@ namespace Parquet.Test.Encryption {
             short rg = 0, col = 0, page = 5;
 
             byte[] framed = gcm.EncryptDataPage(plain, rg, col, page);
-            byte[] outBytes = gcm.DecryptDataPage(R(framed), rg, col, page);
+            byte[] outBytes = gcm.DecryptDataPage(TestCryptoUtils.R(framed), rg, col, page);
 
             Assert.Equal(plain, outBytes);
         }
@@ -89,7 +86,7 @@ namespace Parquet.Test.Encryption {
 
             short rg = 1, col = 1, page = 9;
             byte[] framed = enc.EncryptDataPage(plain, rg, col, page); // CTR framing
-            byte[] outBytes = dec.DecryptDataPage(R(framed), rg, col, page);
+            byte[] outBytes = dec.DecryptDataPage(TestCryptoUtils.R(framed), rg, col, page);
             Assert.Equal(plain, outBytes);
         }
 
@@ -107,11 +104,11 @@ namespace Parquet.Test.Encryption {
 
             byte[] framed = enc.EncryptModuleGcm(plain, module, rg, col);
             byte[] outBytes = module switch {
-                ParquetModules.ColumnMetaData => dec.DecryptColumnMetaData(R(framed), rg, col),
-                ParquetModules.ColumnIndex => dec.DecryptColumnIndex(R(framed), rg, col),
-                ParquetModules.OffsetIndex => dec.DecryptOffsetIndex(R(framed), rg, col),
-                ParquetModules.BloomFilter_Header => dec.BloomFilterHeader(R(framed), rg, col),
-                ParquetModules.BloomFilter_Bitset => dec.BloomFilterBitset(R(framed), rg, col),
+                ParquetModules.ColumnMetaData => dec.DecryptColumnMetaData(TestCryptoUtils.R(framed), rg, col),
+                ParquetModules.ColumnIndex => dec.DecryptColumnIndex(TestCryptoUtils.R(framed), rg, col),
+                ParquetModules.OffsetIndex => dec.DecryptOffsetIndex(TestCryptoUtils.R(framed), rg, col),
+                ParquetModules.BloomFilter_Header => dec.BloomFilterHeader(TestCryptoUtils.R(framed), rg, col),
+                ParquetModules.BloomFilter_Bitset => dec.BloomFilterBitset(TestCryptoUtils.R(framed), rg, col),
                 _ => throw new NotSupportedException()
             };
             Assert.Equal(plain, outBytes);

@@ -15,26 +15,6 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] Prefix = Encoding.ASCII.GetBytes("mix");
         private static readonly byte[] Unique = new byte[] { 9, 9, 9, 9 };
 
-        private static ThriftCompactProtocolReader R(byte[] buf) => new ThriftCompactProtocolReader(new MemoryStream(buf));
-
-        private static byte[] FrameGcm(byte[] nonce12, byte[] ciphertext, byte[] tag16) {
-            int len = nonce12.Length + ciphertext.Length + tag16.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            ms.Write(tag16, 0, tag16.Length);
-            return ms.ToArray();
-        }
-        private static byte[] FrameCtr(byte[] nonce12, byte[] ciphertext) {
-            int len = nonce12.Length + ciphertext.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            return ms.ToArray();
-        }
-
         [Fact]
         public void PageHeader_GCM_and_Page_CTR_Both_Decrypt() {
             const short RG = 1, COL = 2, PAGE = 3;
@@ -58,7 +38,7 @@ namespace Parquet.Test.Encryption {
             byte[] ctH = new byte[headerPlain.Length];
             byte[] tagH = new byte[16];
             gcm.Encrypt(nonceH, headerPlain, ctH, tagH, aadH);
-            byte[] framedHeader = FrameGcm(nonceH, ctH, tagH);
+            byte[] framedHeader = TestCryptoUtils.FrameGcm(nonceH, ctH, tagH);
 
             // --- Page (CTR) ---
             byte[] pagePlain = Encoding.ASCII.GetBytes("page-bytes-ctr");
@@ -78,7 +58,7 @@ namespace Parquet.Test.Encryption {
                 using ICryptoTransform encryptor = aes.CreateEncryptor();
                 ctP = XorCtr(encryptor, iv, pagePlain);
             }
-            byte[] framedPage = FrameCtr(nonceP, ctP);
+            byte[] framedPage = TestCryptoUtils.FrameCtr(nonceP, ctP);
 
             var enc = new AES_GCM_CTR_V1_Encryption {
                 SecretKey = Key,
@@ -86,8 +66,8 @@ namespace Parquet.Test.Encryption {
                 AadFileUnique = Unique
             };
 
-            byte[] headerOut = enc.DecryptDataPageHeader(R(framedHeader), RG, COL, PAGE);
-            byte[] pageOut = enc.DecryptDataPage(R(framedPage), RG, COL, PAGE);
+            byte[] headerOut = enc.DecryptDataPageHeader(TestCryptoUtils.R(framedHeader), RG, COL, PAGE);
+            byte[] pageOut = enc.DecryptDataPage(TestCryptoUtils.R(framedPage), RG, COL, PAGE);
 
             Assert.Equal(headerPlain, headerOut);
             Assert.Equal(pagePlain, pageOut);

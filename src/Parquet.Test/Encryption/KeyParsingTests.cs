@@ -12,8 +12,6 @@ using Encoding = System.Text.Encoding;
 namespace Parquet.Test.Encryption {
     [Collection(nameof(ParquetEncryptionTestCollection))]
     public class KeyParsingTests : TestBase {
-        private static ThriftCompactProtocolReader DummyReader(params byte[] bytes)
-            => new ThriftCompactProtocolReader(new MemoryStream(bytes));
 
         [Theory]
         [InlineData(16)]

@@ -15,17 +15,6 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] FileUnique = new byte[] { 1, 2, 3, 4 };
         private const short RG = 0, COL = 0;
 
-        private static byte[] FrameGcm(byte[] nonce12, byte[] ciphertext, byte[] tag16) {
-            int len = nonce12.Length + ciphertext.Length + tag16.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            ms.Write(tag16, 0, tag16.Length);
-            return ms.ToArray();
-        }
-        private static ThriftCompactProtocolReader R(byte[] buf) => new ThriftCompactProtocolReader(new MemoryStream(buf));
-
         [Fact]
         public void Uses_Stored_AadPrefix_When_SupplyAadPrefix_False() {
             byte[] storedPrefix = Encoding.ASCII.GetBytes("stored-prefix");
@@ -56,8 +45,8 @@ namespace Parquet.Test.Encryption {
                 AadFileUnique = FileUnique
             };
 
-            byte[] framed = FrameGcm(nonce, ct, tag);
-            byte[] outBytes = enc.DecryptColumnMetaData(R(framed), RG, COL);
+            byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
+            byte[] outBytes = enc.DecryptColumnMetaData(TestCryptoUtils.R(framed), RG, COL);
             Assert.Equal(plaintext, outBytes);
         }
 
@@ -92,11 +81,11 @@ namespace Parquet.Test.Encryption {
                 AadFileUnique = FileUnique
             };
 
-            byte[] framed = FrameGcm(nonce, ct, tag);
+            byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
 
             // Wrong AAD -> Auth tag mismatch (platform may throw AuthenticationTagMismatchException or CryptographicException)
             Assert.ThrowsAny<CryptographicException>(() => {
-                enc.DecryptOffsetIndex(R(framed), RG, COL);
+                enc.DecryptOffsetIndex(TestCryptoUtils.R(framed), RG, COL);
             });
         }
     }

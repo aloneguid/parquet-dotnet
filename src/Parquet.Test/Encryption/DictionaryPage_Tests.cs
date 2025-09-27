@@ -17,26 +17,6 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] Unique = new byte[] { 0x11, 0x22, 0x33, 0x44 };
         private const short RG = 1, COL = 2;
 
-        private static ThriftCompactProtocolReader R(byte[] buf) => new ThriftCompactProtocolReader(new MemoryStream(buf));
-
-        private static byte[] FrameGcm(byte[] nonce12, byte[] ciphertext, byte[] tag16) {
-            int len = nonce12.Length + ciphertext.Length + tag16.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            ms.Write(tag16, 0, tag16.Length);
-            return ms.ToArray();
-        }
-        private static byte[] FrameCtr(byte[] nonce12, byte[] ciphertext) {
-            int len = nonce12.Length + ciphertext.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            return ms.ToArray();
-        }
-
         [Theory]
         [InlineData(false)] // AES_GCM_V1
         [InlineData(true)]  // AES_GCM_CTR_V1
@@ -62,13 +42,13 @@ namespace Parquet.Test.Encryption {
             byte[] tag = new byte[16];
             gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
-            byte[] framed = FrameGcm(nonce, ct, tag);
+            byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
 
             EncryptionBase dec = ctrVariant
               ? new AES_GCM_CTR_V1_Encryption { SecretKey = key, AadPrefix = Prefix, AadFileUnique = Unique }
               : new AES_GCM_V1_Encryption { SecretKey = key, AadPrefix = Prefix, AadFileUnique = Unique };
 
-            byte[] outBytes = dec.DecryptDictionaryPageHeader(R(framed), RG, COL);
+            byte[] outBytes = dec.DecryptDictionaryPageHeader(TestCryptoUtils.R(framed), RG, COL);
             Assert.Equal(plaintext, outBytes);
 
             // Negative: pretending there is a page ordinal in AAD must fail
@@ -77,9 +57,9 @@ namespace Parquet.Test.Encryption {
             byte[] ct2 = new byte[plaintext.Length];
             byte[] nonce2 = RandomNumberGenerator.GetBytes(12);
             gcm.Encrypt(nonce2, plaintext, ct2, tag2, aadWrong);
-            byte[] framedWrong = FrameGcm(nonce2, ct2, tag2);
+            byte[] framedWrong = TestCryptoUtils.FrameGcm(nonce2, ct2, tag2);
             Assert.ThrowsAny<CryptographicException>(() =>
-              dec.DecryptDictionaryPageHeader(R(framedWrong), RG, COL));
+              dec.DecryptDictionaryPageHeader(TestCryptoUtils.R(framedWrong), RG, COL));
         }
 
         [Fact]
@@ -105,8 +85,8 @@ namespace Parquet.Test.Encryption {
             byte[] tag = new byte[16];
             gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
-            byte[] framed = FrameGcm(nonce, ct, tag);
-            byte[] outBytes = gcmAlg.DecryptDictionaryPage(R(framed), RG, COL);
+            byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
+            byte[] outBytes = gcmAlg.DecryptDictionaryPage(TestCryptoUtils.R(framed), RG, COL);
             Assert.Equal(plaintext, outBytes);
         }
 
@@ -133,8 +113,8 @@ namespace Parquet.Test.Encryption {
                 ciphertext = XorCtr(enc, iv, plaintext);
             }
 
-            byte[] framed = FrameCtr(nonce, ciphertext);
-            byte[] outBytes = ctrAlg.DecryptDictionaryPage(R(framed), RG, COL);
+            byte[] framed = TestCryptoUtils.FrameCtr(nonce, ciphertext);
+            byte[] outBytes = ctrAlg.DecryptDictionaryPage(TestCryptoUtils.R(framed), RG, COL);
             Assert.Equal(plaintext, outBytes);
         }
 
@@ -177,10 +157,10 @@ namespace Parquet.Test.Encryption {
             byte[] ct = new byte[pt.Length];
             byte[] tag = new byte[16];
             gcm.Encrypt(nonce, pt, ct, tag, aad);
-            byte[] framed = FrameGcm(nonce, ct, tag);
+            byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
 
             Assert.ThrowsAny<CryptographicException>(() => {
-                enc.DecryptDataPage(R(framed), RG, COL, pageOrdinal: 0); // wrong module id -> AAD mismatch
+                enc.DecryptDataPage(TestCryptoUtils.R(framed), RG, COL, pageOrdinal: 0); // wrong module id -> AAD mismatch
             });
         }
     }

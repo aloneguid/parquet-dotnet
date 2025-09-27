@@ -8,7 +8,6 @@ using Xunit;
 namespace Parquet.Test.Encryption {
     [Collection(nameof(ParquetEncryptionTestCollection))]
     public class WriteFactoryTests {
-        private static ThriftCompactProtocolReader R(Stream s) => new ThriftCompactProtocolReader(s);
         private static ThriftCompactProtocolWriter W(Stream s) => new ThriftCompactProtocolWriter(s);
 
         private static MemoryStream BuildFooterRegion(
@@ -43,7 +42,7 @@ namespace Parquet.Test.Encryption {
             using MemoryStream region = BuildFooterRegion(meta, framed);
 
             // decrypt via the read-side factory
-            byte[] decrypted = EncryptionBase.DecryptFooter(R(region), key, aadPrefix: null, out EncryptionBase? decr);
+            byte[] decrypted = EncryptionBase.DecryptFooter(TestCryptoUtils.R(region), key, aadPrefix: null, out EncryptionBase? decr);
             Assert.Equal(footerPlain, decrypted);
         }
 
@@ -65,7 +64,7 @@ namespace Parquet.Test.Encryption {
             using MemoryStream region = BuildFooterRegion(meta, framed);
 
             // must supply prefix on decrypt
-            byte[] decrypted = EncryptionBase.DecryptFooter(R(region), key, aadPrefix: Encoding.ASCII.GetString(prefix), out _);
+            byte[] decrypted = EncryptionBase.DecryptFooter(TestCryptoUtils.R(region), key, aadPrefix: Encoding.ASCII.GetString(prefix), out _);
             Assert.Equal(footerPlain, decrypted);
         }
 
@@ -86,7 +85,7 @@ namespace Parquet.Test.Encryption {
 
             using MemoryStream region = BuildFooterRegion(meta, framed);
 
-            byte[] decrypted = EncryptionBase.DecryptFooter(R(region), key, aadPrefix: null, out _);
+            byte[] decrypted = EncryptionBase.DecryptFooter(TestCryptoUtils.R(region), key, aadPrefix: null, out _);
             Assert.Equal(footerPlain, decrypted);
         }
     }

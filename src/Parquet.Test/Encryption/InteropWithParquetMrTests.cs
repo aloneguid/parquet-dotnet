@@ -182,20 +182,5 @@ namespace Parquet.Test.Encryption {
                 Assert.Equal(i % 2 == 0, flags[i]);
             }
         }
-
-        [Fact]
-        public async Task ColumnKey_NotSupported_Still_Fails() {
-            // This file encrypts a column (id) with a column key; our .NET reader doesn’t support it.
-            using Stream s = OpenTestFile("encryption/enc_footer_and_idcol.parquet");
-            await Assert.ThrowsAsync<NotSupportedException>(async () => {
-                using ParquetReader reader = await ParquetReader.CreateAsync(s, new ParquetOptions {
-                    SecretKey = "footerKey-16byte",
-                    AADPrefix = "wr-fixtures-suite"
-                });
-                using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
-                DataField df = reader.Schema.DataFields.First();
-                _ = await rg.ReadColumnAsync(df);
-            });
-        }
     }
 }

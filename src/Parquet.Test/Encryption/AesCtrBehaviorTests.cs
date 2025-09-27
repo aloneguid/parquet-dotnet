@@ -16,27 +16,6 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] AadFileUnique = new byte[] { 0x10, 0x20, 0x30, 0x40 };
         private const short RG = 5, COL = 9, PAGE = 1;
 
-        private static ThriftCompactProtocolReader Reader(byte[] buf) => new ThriftCompactProtocolReader(new MemoryStream(buf));
-
-        private static byte[] FrameGcm(byte[] nonce12, byte[] ciphertext, byte[] tag16) {
-            int len = nonce12.Length + ciphertext.Length + tag16.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            ms.Write(tag16, 0, tag16.Length);
-            return ms.ToArray();
-        }
-
-        private static byte[] FrameCtr(byte[] nonce12, byte[] ciphertext) {
-            int len = nonce12.Length + ciphertext.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            return ms.ToArray();
-        }
-
         private static byte[] AadSuffix(byte module, short? rg, short? col, short? page) {
             using var ms = new MemoryStream();
             ms.Write(AadFileUnique, 0, AadFileUnique.Length);
@@ -73,14 +52,14 @@ namespace Parquet.Test.Encryption {
                 ciphertext = XorWithCtr(enc, iv, plaintext);
             }
 
-            byte[] framed = FrameCtr(nonce, ciphertext);
+            byte[] framed = TestCryptoUtils.FrameCtr(nonce, ciphertext);
             var encCtr = new AES_GCM_CTR_V1_Encryption {
                 SecretKey = Key256,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };
 
-            byte[] outBytes = encCtr.DecryptDataPage(Reader(framed), RG, COL, PAGE);
+            byte[] outBytes = encCtr.DecryptDataPage(TestCryptoUtils.R(framed), RG, COL, PAGE);
             Assert.Equal(plaintext, outBytes);
         }
 
@@ -100,7 +79,7 @@ namespace Parquet.Test.Encryption {
             byte[] tag = new byte[16];
             gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
-            byte[] framed = FrameGcm(nonce, ct, tag);
+            byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
 
             var encCtr = new AES_GCM_CTR_V1_Encryption {
                 SecretKey = Key256,
@@ -108,7 +87,7 @@ namespace Parquet.Test.Encryption {
                 AadFileUnique = AadFileUnique
             };
 
-            byte[] outBytes = encCtr.DecryptDataPageHeader(Reader(framed), RG, COL, PAGE);
+            byte[] outBytes = encCtr.DecryptDataPageHeader(TestCryptoUtils.R(framed), RG, COL, PAGE);
             Assert.Equal(plaintext, outBytes);
         }
 
@@ -134,7 +113,7 @@ namespace Parquet.Test.Encryption {
                 ciphertext = XorWithCtr(enc, iv, bogusHdr);
             }
 
-            byte[] framed = FrameCtr(nonce, ciphertext);
+            byte[] framed = TestCryptoUtils.FrameCtr(nonce, ciphertext);
             var encCtr = new AES_GCM_CTR_V1_Encryption {
                 SecretKey = Key256,
                 AadPrefix = AadPrefix,
@@ -142,7 +121,7 @@ namespace Parquet.Test.Encryption {
             };
 
             Assert.Throws<InvalidDataException>(() => {
-                encCtr.DecryptDataPageHeader(Reader(framed), RG, COL, PAGE);
+                encCtr.DecryptDataPageHeader(TestCryptoUtils.R(framed), RG, COL, PAGE);
             });
         }
 

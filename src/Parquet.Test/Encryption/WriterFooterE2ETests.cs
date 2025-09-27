@@ -19,9 +19,6 @@ namespace Parquet.Test.Encryption {
             return new DataColumn(sField, values);
         }
 
-        private static DataField[] SampleFields() =>
-            new DataField[] { new DataField<string>("s") };
-
         private static DataColumn[] SampleColumns() =>
             new[] { MakeColumn(MakeSchema(), "a", "b", "c") };
 

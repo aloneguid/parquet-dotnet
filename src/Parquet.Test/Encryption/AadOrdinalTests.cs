@@ -17,17 +17,6 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] Key = Enumerable.Range(1, 16).Select(i => (byte)i).ToArray();
         private static readonly byte[] Prefix = Encoding.ASCII.GetBytes("ord-reset");
         private static readonly byte[] Unique = new byte[] { 1, 3, 3, 7 };
-
-        private static byte[] FrameGcm(byte[] nonce12, byte[] ciphertext, byte[] tag16) {
-            int len = nonce12.Length + ciphertext.Length + tag16.Length;
-            using var ms = new MemoryStream();
-            ms.Write(BitConverter.GetBytes(len), 0, 4);
-            ms.Write(nonce12, 0, nonce12.Length);
-            ms.Write(ciphertext, 0, ciphertext.Length);
-            ms.Write(tag16, 0, tag16.Length);
-            return ms.ToArray();
-        }
-
         private static byte[] EncryptHeader(short rg, short col, short pageOrd, string txt) {
             byte[] plain = Encoding.ASCII.GetBytes(txt);
             byte[] nonce = RandomNumberGenerator.GetBytes(12);
@@ -48,7 +37,7 @@ namespace Parquet.Test.Encryption {
             using var gcm = new AesGcm(Key);
 #endif
             gcm.Encrypt(nonce, plain, ct, tag, aad);
-            return FrameGcm(nonce, ct, tag);
+            return TestCryptoUtils.FrameGcm(nonce, ct, tag);
         }
 
         [Fact]
