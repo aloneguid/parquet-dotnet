@@ -40,7 +40,7 @@ namespace Parquet {
         /// </summary>
         /// <returns></returns>
         /// <exception cref="IOException"></exception>
-        protected async Task ValidateFileAsync() {
+        public async Task ValidateFileAsync() {
             _fileStream.Seek(0, SeekOrigin.Begin);
             byte[] head = await _fileStream.ReadBytesExactlyAsync(4);
 
@@ -55,26 +55,38 @@ namespace Parquet {
             }
         }
 
-        internal async ValueTask<Meta.FileMetaData> ReadMetadataAsync(string? decryptionKey = null, string? aadPrefix = null, CancellationToken cancellationToken = default) {
-            int footerLength = await GoBeforeFooterAsync();
-            byte[] footerData = await _fileStream.ReadBytesExactlyAsync(footerLength);
-            using var ms = new MemoryStream(footerData);
+        internal async ValueTask<Meta.FileMetaData> ReadMetadataAsync(
+            string? decryptionKey = null, string? aadPrefix = null, CancellationToken cancellationToken = default) {
+            int tailLen = await GoBeforeFooterAsync();                       // -8 (len + magic)
+            byte[] tail = await Stream.ReadBytesExactlyAsync(tailLen);       // == FileCryptoMetaData || EncryptedFooter
 
-            EncryptionBase? decrypter = null;
-            var protoReader = new Meta.Proto.ThriftCompactProtocolReader(ms);
-            if(IsEncryptedFile) {
-                byte[] decryptedFooter = EncryptionBase.DecryptFooter(protoReader, decryptionKey!, aadPrefix, out decrypter);
+            using var ms = new MemoryStream(tail);
+            var proto = new Parquet.Meta.Proto.ThriftCompactProtocolReader(ms);
 
-                //re-use the same proto reader
-                ms.SetLength(0);
-                ms.Write(decryptedFooter, 0, decryptedFooter.Length);
-                ms.Position = 0;
+            if(!IsEncryptedFile) {
+                var metaPlain = Meta.FileMetaData.Read(proto);
+                metaPlain.Decrypter = null;
+                return metaPlain;
             }
 
-            var fileMetaData = Meta.FileMetaData.Read(protoReader);
-            fileMetaData.Decrypter = decrypter; //save the decrypter because we will need it to decrypt every module
+            if(string.IsNullOrWhiteSpace(decryptionKey))
+                throw new InvalidDataException($"{nameof(ParquetOptions.EncryptionKey)} is required for files with encrypted footers");
 
-            return fileMetaData;
+            // 1) Build decrypter from FileCryptoMetaData at the start of 'ms'
+            var decr = EncryptionBase.CreateFromCryptoMeta(proto, decryptionKey!, aadPrefix);
+
+            // 2) Decrypt the footer module that immediately follows
+            byte[] plainFooter = decr.DecryptFooter(proto);
+
+            // 3) Parse the plaintext footer
+            ms.SetLength(0);
+            ms.Write(plainFooter, 0, plainFooter.Length);
+            ms.Position = 0;
+
+            var footerReader = new Meta.Proto.ThriftCompactProtocolReader(ms);
+            var meta = Meta.FileMetaData.Read(footerReader);
+            meta.Decrypter = decr;
+            return meta;
         }
 
         internal async ValueTask<int> GoBeforeFooterAsync() {

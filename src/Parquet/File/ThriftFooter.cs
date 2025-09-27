@@ -127,8 +127,15 @@ namespace Parquet.File {
             var rg = new RowGroup();
             _fileMeta.RowGroups ??= new List<RowGroup>();
             _fileMeta.RowGroups.Add(rg);
+
+            // NEW: assign ordinal (short)
+            rg.Ordinal = (short)(_fileMeta.RowGroups.Count - 1);
+
             return rg;
         }
+
+        internal short GetRowGroupOrdinal(RowGroup rg)
+            => (short)(_fileMeta.RowGroups?.IndexOf(rg) ?? -1);
 
         public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
             Parquet.Meta.Type columnType, FieldPath path, int valuesCount,
@@ -185,6 +192,8 @@ namespace Parquet.File {
         }
 
         public EncryptionBase? Decrypter => _fileMeta.Decrypter;
+
+        public EncryptionBase? Encrypter { get; set; }
 
         #region [ Conversion to Model Schema ]
 

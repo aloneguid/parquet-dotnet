@@ -175,6 +175,22 @@ namespace Parquet.Meta.Proto {
             return size;
         }
 
+        public int ReadMapHeader(out CompactType keyType, out CompactType valueType) {
+            // TCompactProtocol: map header = size (varint32), then one byte of types (if size > 0)
+            int size = (int)ReadVarInt32();
+            if(size == 0) {
+                keyType = 0;
+                valueType = 0;
+                return 0;
+            }
+
+            byte types = (byte)_inputStream.ReadByte();
+            keyType = (CompactType)((types & 0xF0) >> 4); // high nibble
+            valueType = (CompactType)(types & 0x0F);        // low nibble
+            return size;
+        }
+
+
         public void SkipField(CompactType compactType) {
             switch(compactType) {
                 case CompactType.BooleanTrue:
@@ -204,6 +220,7 @@ namespace Parquet.Meta.Proto {
                     break;
                 case CompactType.Struct:
                     StructBegin();
+                    // TODO: is this a bug?
                     while(ReadNextField(out _, out _)) {
 
                     }
@@ -215,6 +232,20 @@ namespace Parquet.Meta.Proto {
                         SkipField(elementType);
                     }
                     break;
+                case CompactType.Set: {
+                        int n = ReadListHeader(out CompactType elemType);
+                        for(int i = 0; i < n; i++)
+                            SkipField(elemType);
+                        break;
+                    }
+                case CompactType.Map: {
+                        int n = ReadMapHeader(out CompactType keyType, out CompactType valueType);
+                        for(int i = 0; i < n; i++) {
+                            SkipField(keyType);
+                            SkipField(valueType);
+                        }
+                        break;
+                    }
                 default:
                     throw new InvalidOperationException($"don't know how to skip type {compactType}");
             }

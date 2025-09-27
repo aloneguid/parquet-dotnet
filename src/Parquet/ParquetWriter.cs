@@ -9,6 +9,7 @@ using Parquet.Schema;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Extensions;
+using Parquet.Encryption;
 
 namespace Parquet {
     /// <summary>
@@ -34,6 +35,9 @@ namespace Parquet {
 #else
         public CompressionLevel CompressionLevel = CompressionLevel.Optimal;
 #endif
+
+        EncryptionBase? _encrypter;
+        Meta.FileCryptoMetaData? _cryptoMeta;
 
         private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false)
            : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
@@ -103,16 +107,36 @@ namespace Parquet {
 
                 await GoBeforeFooterAsync();
             } else {
+                if(!string.IsNullOrWhiteSpace(_formatOptions.EncryptionKey)) {
+                    byte[]? aadPrefixBytes = _formatOptions.AADPrefix is null
+                        ? null
+                        : System.Text.Encoding.ASCII.GetBytes(_formatOptions.AADPrefix);
+
+                    if(_formatOptions.SupplyAadPrefix && aadPrefixBytes is null)
+                        throw new ArgumentException("SupplyAadPrefix=true requires AADPrefix to be set.");
+
+                    (_encrypter, _cryptoMeta) = EncryptionBase.CreateEncrypterForWrite(
+                        _formatOptions.EncryptionKey!,
+                        aadPrefixBytes,
+                        supplyAadPrefix: _formatOptions.SupplyAadPrefix,
+                        useCtrVariant: _formatOptions.UseCtrVariant
+                    );
+
+                    this._encrypter = _encrypter ?? throw new InvalidOperationException("encrypter was not created");
+                }
                 if(_footer == null) {
                     _footer = new ThriftFooter(_schema, 0 /* todo: don't forget to set the total row count at the end!!! */);
-
+                    _footer.Encrypter = _encrypter;
                     //file starts with magic
-                    await WriteMagicAsync();
+                    await WriteMagicAsync(encrypted: _encrypter != null);
                 } else {
                     ValidateSchemasCompatible(_footer, _schema);
-
                     _footer.Add(0 /* todo: don't forget to set the total row count at the end!!! */);
                 }
+                // if(_cryptoMeta is not null) {
+                //     var w = new Meta.Proto.ThriftCompactProtocolWriter(Stream);
+                //     _cryptoMeta.Write(w);
+                // }
             }
         }
 
@@ -125,8 +149,8 @@ namespace Parquet {
             }
         }
 
-        private void WriteMagic() => Stream.Write(MagicBytes, 0, MagicBytes.Length);
-        private Task WriteMagicAsync() => Stream.WriteAsync(MagicBytes, 0, MagicBytes.Length);
+        private void WriteMagic(bool encrypted) => Stream.Write(encrypted ? MagicBytesEncrypted : MagicBytes, 0, MagicBytes.Length);
+        private Task WriteMagicAsync(bool encrypted) => Stream.WriteAsync(encrypted ? MagicBytesEncrypted : MagicBytes, 0, MagicBytes.Length);
 
         private void DisposeCore() {
             if(_dataWritten) {
@@ -139,30 +163,67 @@ namespace Parquet {
         /// Disposes the writer and writes the file footer.
         /// </summary>
         public void Dispose() {
-
             DisposeCore();
-
             if(_footer == null)
                 return;
 
-            long size = _footer.Write(Stream);
-            Stream.WriteInt32((int)size); // metadata size: 4 bytes
-            WriteMagic();                 // end magic:     4 bytes
+            if(_encrypter is null) {
+                long size = _footer.Write(Stream);
+                Stream.WriteInt32((int)size);
+                WriteMagic(false);
+                Stream.Flush();
+                return;
+            }
+
+            // 1) Serialize plaintext footer to a buffer
+            using var ms = new MemoryStream();
+            _footer.Write(ms);
+            byte[] encFooter = _encrypter.EncryptFooter(ms.ToArray());  // framed: len|nonce|ct|tag
+
+            // 2) Serialize FileCryptoMetaData now (TAIL, not head)
+            using var metaMs = new MemoryStream();
+            var metaWriter = new Parquet.Meta.Proto.ThriftCompactProtocolWriter(metaMs);
+            _cryptoMeta!.Write(metaWriter);
+            byte[] metaBytes = metaMs.ToArray();
+
+            // 3) Write [meta][encFooter][combinedLen][ "PARE" ]
+            Stream.Write(metaBytes, 0, metaBytes.Length);
+            Stream.Write(encFooter, 0, encFooter.Length);
+            Stream.WriteInt32(metaBytes.Length + encFooter.Length);
+            WriteMagic(true);
             Stream.Flush();
         }
+
 
         /// <summary>
         /// Dispose the writer asynchronously
         /// </summary>
         public async ValueTask DisposeAsync() {
             DisposeCore();
-
             if(_footer == null)
                 return;
 
-            long size = await _footer.WriteAsync(Stream).ConfigureAwait(false);
-            await Stream.WriteInt32Async((int)size);
-            await WriteMagicAsync();
+            if(_encrypter is null) {
+                long size = await _footer.WriteAsync(Stream).ConfigureAwait(false);
+                await Stream.WriteInt32Async((int)size);
+                await WriteMagicAsync(false);
+                await Stream.FlushAsync();
+                return;
+            }
+
+            using var ms = new MemoryStream();
+            await _footer.WriteAsync(ms).ConfigureAwait(false);
+            byte[] encFooter = _encrypter.EncryptFooter(ms.ToArray());
+
+            using var metaMs = new MemoryStream();
+            var metaWriter = new Parquet.Meta.Proto.ThriftCompactProtocolWriter(metaMs);
+            _cryptoMeta!.Write(metaWriter);
+            byte[] metaBytes = metaMs.ToArray();
+
+            await Stream.WriteAsync(metaBytes, 0, metaBytes.Length);
+            await Stream.WriteAsync(encFooter, 0, encFooter.Length);
+            await Stream.WriteInt32Async(metaBytes.Length + encFooter.Length);
+            await WriteMagicAsync(true);
             await Stream.FlushAsync();
         }
     }

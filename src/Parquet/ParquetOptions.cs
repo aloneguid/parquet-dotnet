@@ -73,6 +73,42 @@ namespace Parquet {
         public string? AADPrefix { get; set; } = null;
 
         /// <summary>
+        /// Controls whether the writer embeds the AAD prefix in the file metadata
+        /// or requires readers to supply it out-of-band.
+        /// </summary>
+        /// <value>
+        /// <c>false</c> (default): store the AAD prefix in the file (if provided in <see cref="AADPrefix"/>).<br/>
+        /// <c>true</c>: do not store the prefix; readers must provide the same prefix to decrypt.
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// When <c>true</c>, <see cref="AADPrefix"/> must be set at write time. During read, the same prefix
+        /// must be provided in <see cref="AADPrefix"/>; otherwise decryption fails with an explicit error.
+        /// </para>
+        /// <para>
+        /// This maps to the Parquet encryption algorithm field <c>supply_aad_prefix</c>.
+        /// </para>
+        /// </remarks>
+        public bool SupplyAadPrefix { get; set; } = false;
+
+        /// <summary>
+        /// Use the AES-GCM-CTR variant for page bodies (per Parquet modular encryption spec).
+        /// </summary>
+        /// <value>
+        /// <c>false</c> (default): all modules use AES-GCM (V1).<br/>
+        /// <c>true</c>: page <b>bodies</b> use AES-CTR framing; page headers and all other modules remain AES-GCM.
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Regardless of this setting, the file <b>footer</b> is always encrypted with AES-GCM.
+        /// </para>
+        /// <para>
+        /// Set this only if you need interoperability with writers/readers expecting the AES_GCM_CTR_V1 profile.
+        /// </para>
+        /// </remarks>
+        public bool UseCtrVariant { get; set; } = false;
+
+        /// <summary>
         /// This option is passed to the <see cref="Microsoft.IO.RecyclableMemoryStreamManager"/> , 
         /// which keeps a pool of streams in memory for reuse. 
         /// By default when this option is unset, the RecyclableStreamManager 

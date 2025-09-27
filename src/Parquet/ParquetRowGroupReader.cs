@@ -77,9 +77,14 @@ namespace Parquet {
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             //cache chunks
-            foreach(ColumnChunk hunk in _rowGroup.Columns) {
-                FieldPath path = hunk.GetPath();
-                _pathToChunk[path] = hunk;
+            for(int i = 0; i < rowGroup.Columns.Count; i++) {
+                ColumnChunk cc = rowGroup.Columns[i];
+
+                if(cc.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null)
+                    throw new NotSupportedException($"Column-key encryption is not supported (column index {i}).");
+
+                FieldPath path = cc.GetPath();
+                _pathToChunk[path] = cc;
             }
         }
 
@@ -140,7 +145,8 @@ namespace Parquet {
         private DataColumnStatistics? ReadColumnStatistics(ColumnChunk cc) {
 
             Statistics? st = cc.MetaData!.Statistics;
-            if(st == null) return null;
+            if(st == null)
+                return null;
 
             SchemaElement? se = _footer.GetSchemaElement(cc) ?? throw new ArgumentException("can't find schema element", nameof(cc));
 

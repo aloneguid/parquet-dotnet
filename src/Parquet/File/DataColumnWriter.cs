@@ -22,15 +22,21 @@ namespace Parquet.File {
         private readonly Dictionary<string, string>? _keyValueMetadata;
         private readonly ParquetOptions _options;
         private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
+        private readonly short _rowGroupOrdinal;
+        private readonly short _columnOrdinal;
+        private short _pageOrdinal; // increments per DATA page only
 
         public DataColumnWriter(
-           Stream stream,
-           ThriftFooter footer,
-           SchemaElement schemaElement,
-           CompressionMethod compressionMethod,
-           ParquetOptions options,
-           CompressionLevel compressionLevel,
-           Dictionary<string, string>? keyValueMetadata) {
+            Stream stream,
+            ThriftFooter footer,
+            SchemaElement schemaElement,
+            CompressionMethod compressionMethod,
+            ParquetOptions options,
+            CompressionLevel compressionLevel,
+            Dictionary<string, string>? keyValueMetadata,
+            short rowGroupOrdinal,
+            short columnOrdinal
+        ) {
             _stream = stream;
             _footer = footer;
             _schemaElement = schemaElement;
@@ -40,6 +46,9 @@ namespace Parquet.File {
             _options = options;
             _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
             _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
+            _rowGroupOrdinal = rowGroupOrdinal;
+            _columnOrdinal = columnOrdinal;
+            _pageOrdinal = 0;
         }
 
         public async Task<ColumnChunk> WriteAsync(
@@ -50,6 +59,12 @@ namespace Parquet.File {
             ColumnChunk chunk = _footer.CreateColumnChunk(
                 _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
                 _keyValueMetadata);
+
+            if(_footer.Encrypter is not null) {
+                chunk.CryptoMetadata = new ColumnCryptoMetaData {
+                    ENCRYPTIONWITHFOOTERKEY = new EncryptionWithFooterKey()
+                };
+            }
 
             ColumnSizes columnSizes = await WriteColumnAsync(
                 chunk, column, _schemaElement,
@@ -73,32 +88,50 @@ namespace Parquet.File {
             PageHeader ph, MemoryStream data,
             ColumnSizes cs,
             CancellationToken cancellationToken) {
-            
-            using IronCompress.IronCompressResult compressedData = _compressionMethod == CompressionMethod.None
-                ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
-                : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
-            
+            using IronCompress.IronCompressResult compressedData =
+                _compressionMethod == CompressionMethod.None
+                    ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
+                    : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
+
             ph.UncompressedPageSize = (int)data.Length;
             ph.CompressedPageSize = compressedData.AsSpan().Length;
 
-            //write the header in
+            // Serialize header
             using MemoryStream headerMs = _rmsMgr.GetStream();
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
             int headerSize = (int)headerMs.Length;
             headerMs.Position = 0;
-            _stream.Flush();
 
-            await headerMs.CopyToAsync(_stream);
+            // If not encrypting, write as before
+            if(_footer.Encrypter is null) {
+                await headerMs.CopyToAsync(_stream, 81920, cancellationToken: cancellationToken);
+                _stream.WriteSpan(compressedData);
 
-            // write data
-            _stream.WriteSpan(compressedData);
+                cs.CompressedSize += headerSize + ph.CompressedPageSize;
+                cs.UncompressedSize += headerSize + ph.UncompressedPageSize;
+                return;
+            }
 
-            cs.CompressedSize += headerSize;
-            cs.UncompressedSize += headerSize;
+            // Encrypt header + body
+            byte[] headerBytes = headerMs.ToArray();
+            byte[] bodyBytes = compressedData.AsSpan().ToArray();
 
-            cs.CompressedSize += ph.CompressedPageSize;
-            cs.UncompressedSize += ph.UncompressedPageSize;
+            byte[] encHeader = ph.Type == PageType.DICTIONARY_PAGE
+                ? _footer.Encrypter.EncryptDictionaryPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal)
+                : _footer.Encrypter.EncryptDataPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
+
+            byte[] encBody = ph.Type == PageType.DICTIONARY_PAGE
+                ? _footer.Encrypter.EncryptDictionaryPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal)
+                : _footer.Encrypter.EncryptDataPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
+
+            await _stream.WriteAsync(encHeader, 0, encHeader.Length, cancellationToken);
+            await _stream.WriteAsync(encBody, 0, encBody.Length, cancellationToken);
+
+            // Sizes: on-disk is encrypted frames; uncompressed is original header+body
+            cs.CompressedSize += encHeader.Length + encBody.Length;
+            cs.UncompressedSize += headerSize + ph.UncompressedPageSize;
         }
+
 
         private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
            SchemaElement tse,
@@ -119,17 +152,18 @@ namespace Parquet.File {
 
             // dictionary page
             if(pc.HasDictionary) {
+                chunk.MetaData!.DictionaryPageOffset = _stream.Position;
                 PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
                 using MemoryStream ms = _rmsMgr.GetStream();
                 ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
                        tse,
                        ms, column.Statistics);
-
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             }
 
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
+                chunk.MetaData!.DataPageOffset = _stream.Position;
                 bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding;
                 // data page Num_values also does include NULLs
                 PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode);
@@ -158,6 +192,7 @@ namespace Parquet.File {
 
                 ph.DataPageHeader!.Statistics = column.Statistics.ToThriftStatistics(tse);
                 await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+                _pageOrdinal++;
             }
 
             return r;
