@@ -65,8 +65,8 @@ namespace Parquet.Test.Encryption {
             byte[] framed = FrameGcm(nonce, ct, tag);
 
             EncryptionBase dec = ctrVariant
-              ? new AES_GCM_CTR_V1_Encryption { DecryptionKey = key, AadPrefix = Prefix, AadFileUnique = Unique }
-              : new AES_GCM_V1_Encryption { DecryptionKey = key, AadPrefix = Prefix, AadFileUnique = Unique };
+              ? new AES_GCM_CTR_V1_Encryption { SecretKey = key, AadPrefix = Prefix, AadFileUnique = Unique }
+              : new AES_GCM_V1_Encryption { SecretKey = key, AadPrefix = Prefix, AadFileUnique = Unique };
 
             byte[] outBytes = dec.DecryptDictionaryPageHeader(R(framed), RG, COL);
             Assert.Equal(plaintext, outBytes);
@@ -84,7 +84,7 @@ namespace Parquet.Test.Encryption {
 
         [Fact]
         public void DictionaryPage_Body_AES_GCM_V1_uses_GCM_NoPageOrdinal() {
-            var gcmAlg = new AES_GCM_V1_Encryption { DecryptionKey = Key16, AadPrefix = Prefix, AadFileUnique = Unique };
+            var gcmAlg = new AES_GCM_V1_Encryption { SecretKey = Key16, AadPrefix = Prefix, AadFileUnique = Unique };
             byte[] plaintext = Enumerable.Range(0, 123).Select(i => (byte)i).ToArray();
             byte[] nonce = RandomNumberGenerator.GetBytes(12);
 
@@ -112,7 +112,7 @@ namespace Parquet.Test.Encryption {
 
         [Fact]
         public void DictionaryPage_Body_AES_GCM_CTR_V1_uses_CTR_NoAAD() {
-            var ctrAlg = new AES_GCM_CTR_V1_Encryption { DecryptionKey = Key32, AadPrefix = Prefix, AadFileUnique = Unique };
+            var ctrAlg = new AES_GCM_CTR_V1_Encryption { SecretKey = Key32, AadPrefix = Prefix, AadFileUnique = Unique };
             byte[] plaintext = Encoding.ASCII.GetBytes("dict-page-ctr");
             byte[] nonce = RandomNumberGenerator.GetBytes(12);
 
@@ -159,7 +159,7 @@ namespace Parquet.Test.Encryption {
         [Fact]
         public void DictionaryPage_Encrypted_As_Dictionary_Fails_When_Decoded_As_DataPage() {
             // Encrypt a tiny dict page body with GCM (AES_GCM_V1) and try to decrypt with DecryptDataPage (module=Data_Page)
-            var enc = new AES_GCM_V1_Encryption { DecryptionKey = Key16, AadPrefix = Prefix, AadFileUnique = Unique };
+            var enc = new AES_GCM_V1_Encryption { SecretKey = Key16, AadPrefix = Prefix, AadFileUnique = Unique };
             byte[] pt = Encoding.ASCII.GetBytes("mod-swap");
             byte[] nonce = RandomNumberGenerator.GetBytes(12);
             byte[] aad = Prefix

@@ -21,13 +21,13 @@ namespace Parquet.Test.Encryption {
             => new ThriftCompactProtocolReader(new MemoryStream(buf));
 
         private static AES_GCM_V1_Encryption MakeGcm(byte[] key) => new AES_GCM_V1_Encryption {
-            DecryptionKey = key,
+            SecretKey = key,
             AadPrefix = Prefix,
             AadFileUnique = Unique
         };
 
         private static AES_GCM_CTR_V1_Encryption MakeCtr(byte[] key) => new AES_GCM_CTR_V1_Encryption {
-            DecryptionKey = key,
+            SecretKey = key,
             AadPrefix = Prefix,
             AadFileUnique = Unique
         };
@@ -65,7 +65,7 @@ namespace Parquet.Test.Encryption {
         [Fact]
         public void Gcm_DataPageBody_Encrypt_RoundTrip() {
             var gcm = new AES_GCM_V1_Encryption {
-                DecryptionKey = Key16,
+                SecretKey = Key16,
                 AadPrefix = Encoding.ASCII.GetBytes("writer-aad"),
                 AadFileUnique = new byte[] { 0x10, 0x20, 0x30, 0x40 }
             };

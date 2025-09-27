@@ -59,7 +59,7 @@ namespace Parquet.Encryption {
             short? columnOrdinal = null,
             short? pageOrdinal = null) {
 
-            if(DecryptionKey == null || DecryptionKey.Length == 0) {
+            if(SecretKey == null || SecretKey.Length == 0) {
                 throw new InvalidDataException("Missing decryption key for AES-GCM-V1 decryption.");
             }
 
@@ -89,7 +89,7 @@ namespace Parquet.Encryption {
             byte[] aad = prefix.Concat(aadSuffix).ToArray();
 
 #if NET8_0_OR_GREATER
-        using var cipher = new AesGcm(DecryptionKey, TagLength);
+        using var cipher = new AesGcm(SecretKey, TagLength);
         byte[] plainText = new byte[cipherTextLength];
         cipher.Decrypt(nonce, cipherText, tag, plainText, aad);
         return plainText;
@@ -142,10 +142,17 @@ namespace Parquet.Encryption {
 
         // Build full AAD = AadPrefix || BuildAadSuffix(...)
         private byte[] BuildAad(Meta.ParquetModules module, short? rowGroupOrdinal, short? columnOrdinal, short? pageOrdinal) {
-            byte[] prefix = AadPrefix ?? System.Array.Empty<byte>();
+            byte[] prefix = AadPrefix ?? Array.Empty<byte>();
+            if(prefix.Length > 1_000_000) {
+                throw new InvalidDataException("AAD prefix too large.");
+            }
             byte[] fileUnique = AadFileUnique ?? throw new InvalidDataException("Missing AadFileUnique for AES-GCM-V1 encryption.");
             byte[] suffix = BuildAadSuffix(fileUnique, module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-            return prefix.Concat(suffix).ToArray();
+
+            byte[] aad = new byte[prefix.Length + suffix.Length];
+            Buffer.BlockCopy(prefix, 0, aad, 0, prefix.Length);
+            Buffer.BlockCopy(suffix, 0, aad, prefix.Length, suffix.Length);
+            return aad;
         }
 
         // Core GCM encrypt for any module
@@ -153,7 +160,7 @@ namespace Parquet.Encryption {
 #if !NET8_0_OR_GREATER
             throw new PlatformNotSupportedException("AES-GCM encryption requires netcoreapp3.0+ (e.g., .NET 5/6/7/8).");
 #else
-    if (DecryptionKey == null || DecryptionKey.Length == 0)
+    if (SecretKey == null || SecretKey.Length == 0)
         throw new InvalidDataException("Missing key for AES-GCM-V1 encryption.");
 
     byte[] nonce = RandomNumberGenerator.GetBytes(NonceLength);
@@ -162,7 +169,7 @@ namespace Parquet.Encryption {
     byte[] tag = new byte[TagLength];
     byte[] ct = new byte[plaintext.Length];
 
-    using var gcm = new AesGcm(DecryptionKey, TagLength);
+    using var gcm = new AesGcm(SecretKey, TagLength);
     gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
     return FrameGcm(nonce, ct, tag);
@@ -200,14 +207,5 @@ namespace Parquet.Encryption {
 
         public override byte[] EncryptBloomFilterBitset(byte[] bytes, short rowGroupOrdinal, short columnOrdinal)
             => EncryptModuleGcm(bytes, Meta.ParquetModules.BloomFilter_Bitset, rowGroupOrdinal, columnOrdinal);
-
-        internal byte[] DebugBuildAadFor(
-            Meta.ParquetModules module,
-            short? rowGroupOrdinal,
-            short? columnOrdinal,
-            short? pageOrdinal
-        ) {
-            return BuildAad(module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-        }
     }
 }

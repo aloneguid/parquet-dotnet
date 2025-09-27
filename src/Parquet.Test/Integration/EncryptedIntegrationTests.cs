@@ -34,7 +34,7 @@ namespace Parquet.Test.Integration {
             );
 
             var opts = new ParquetOptions {
-                EncryptionKey = KeyUtf8,
+                SecretKey = KeyUtf8,
                 AADPrefix = AadPrefix,
                 SupplyAadPrefix = supplyAadPrefix,
                 UseCtrVariant = useCtrVariant

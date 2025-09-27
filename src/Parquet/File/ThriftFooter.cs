@@ -134,8 +134,12 @@ namespace Parquet.File {
             return rg;
         }
 
-        internal short GetRowGroupOrdinal(RowGroup rg)
-            => (short)(_fileMeta.RowGroups?.IndexOf(rg) ?? -1);
+        internal short GetRowGroupOrdinal(RowGroup rg) {
+            if(!rg.Ordinal.HasValue) {
+                throw new InvalidOperationException("RowGroup ordinal is missing.");
+            }
+            return rg.Ordinal.Value;
+        }
 
         public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
             Parquet.Meta.Type columnType, FieldPath path, int valuesCount,

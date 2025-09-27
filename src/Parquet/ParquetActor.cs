@@ -56,7 +56,7 @@ namespace Parquet {
         }
 
         internal async ValueTask<Meta.FileMetaData> ReadMetadataAsync(
-            string? decryptionKey = null, string? aadPrefix = null, CancellationToken cancellationToken = default) {
+            string? secretKey = null, string? aadPrefix = null, CancellationToken cancellationToken = default) {
             int tailLen = await GoBeforeFooterAsync();                       // -8 (len + magic)
             byte[] tail = await Stream.ReadBytesExactlyAsync(tailLen);       // == FileCryptoMetaData || EncryptedFooter
 
@@ -69,11 +69,11 @@ namespace Parquet {
                 return metaPlain;
             }
 
-            if(string.IsNullOrWhiteSpace(decryptionKey))
-                throw new InvalidDataException($"{nameof(ParquetOptions.EncryptionKey)} is required for files with encrypted footers");
+            if(string.IsNullOrWhiteSpace(secretKey))
+                throw new InvalidDataException($"{nameof(ParquetOptions.SecretKey)} is required for files with encrypted footers");
 
             // 1) Build decrypter from FileCryptoMetaData at the start of 'ms'
-            var decr = EncryptionBase.CreateFromCryptoMeta(proto, decryptionKey!, aadPrefix);
+            var decr = EncryptionBase.CreateFromCryptoMeta(proto, secretKey!, aadPrefix);
 
             // 2) Decrypt the footer module that immediately follows
             byte[] plainFooter = decr.DecryptFooter(proto);

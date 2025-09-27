@@ -46,7 +46,7 @@ namespace Parquet.Encryption {
                 using var cipherStream = new MemoryStream(cipherText, writable: false);
                 using var plainStream = new MemoryStream(cipherText.Length);
 
-                AesCtrTransform(DecryptionKey!, iv16, cipherStream, plainStream);
+                AesCtrTransform(SecretKey!, iv16, cipherStream, plainStream);
 
                 return plainStream.ToArray();
             }
@@ -89,10 +89,10 @@ namespace Parquet.Encryption {
         }
 
         public override byte[] EncryptDataPage(byte[] body, short rowGroupOrdinal, short columnOrdinal, short pageOrdinal)
-            => EncryptCtrPageBody(body, DecryptionKey!);
+            => EncryptCtrPageBody(body, SecretKey!);
 
         public override byte[] EncryptDictionaryPage(byte[] body, short rowGroupOrdinal, short columnOrdinal)
-            => EncryptCtrPageBody(body, DecryptionKey!);
+            => EncryptCtrPageBody(body, SecretKey!);
 
         private static void AesCtrTransform(byte[] key, byte[] iv16, Stream inputStream, Stream outputStream) {
             if(key == null)
@@ -133,6 +133,14 @@ namespace Parquet.Encryption {
                 for(int p = 15; p >= 12; p--) {
                     if(++counter[p] != 0)
                         break;
+                }
+                // overflow check (should never happen in practice, as it would require >2^32 blocks = >64TB per page)
+                bool wrapped = true;
+                for(int p = 12; p <= 15; p++) {
+                    if(counter[p] != 0) { wrapped = false; break; }
+                }
+                if(wrapped) {
+                    throw new CryptographicException("AES-CTR counter overflow (exceeded 2^32-1 blocks).");
                 }
             }
         }

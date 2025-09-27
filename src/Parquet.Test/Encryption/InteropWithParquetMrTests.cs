@@ -17,7 +17,7 @@ namespace Parquet.Test.Encryption {
           ReadBasicContent(Stream s, string encryptionKey, string? aadPrefix) {
 
             using ParquetReader reader = await ParquetReader.CreateAsync(s, new ParquetOptions {
-                EncryptionKey = encryptionKey,
+                SecretKey = encryptionKey,
                 AADPrefix = aadPrefix
             });
 
@@ -73,7 +73,7 @@ namespace Parquet.Test.Encryption {
         public async Task A_FooterOnly_NoPrefix_Succeeds() {
             using Stream s = OpenTestFile("encryption/enc_footer_only.parquet");
             var opts = new ParquetOptions {
-                EncryptionKey = "footerKey-16byte",
+                SecretKey = "footerKey-16byte",
                 AADPrefix = null
             };
             using ParquetReader r = await ParquetReader.CreateAsync(s, opts);
@@ -88,7 +88,7 @@ namespace Parquet.Test.Encryption {
         public async Task B1_Missing_AadPrefix_throws_InvalidDataException() {
             using Stream s = OpenTestFile("encryption/enc_footer_with_aadprefix.parquet");
             var opts = new ParquetOptions {
-                EncryptionKey = "footerKey-16byte",
+                SecretKey = "footerKey-16byte",
                 AADPrefix = null // missing
             };
 
@@ -101,7 +101,7 @@ namespace Parquet.Test.Encryption {
         public async Task B2_Wrong_AadPrefix_throws_CryptographicException() {
             using Stream s = OpenTestFile("encryption/enc_footer_with_aadprefix.parquet");
             var opts = new ParquetOptions {
-                EncryptionKey = "footerKey-16byte",
+                SecretKey = "footerKey-16byte",
                 AADPrefix = "wr-fixtures-suiteX" // wrong bytes
             };
 
@@ -115,7 +115,7 @@ namespace Parquet.Test.Encryption {
         public async Task B_WithAadPrefix_CorrectPrefix_Succeeds() {
             using Stream s = OpenTestFile("encryption/enc_footer_with_aadprefix.parquet");
             var good = new ParquetOptions {
-                EncryptionKey = "footerKey-16byte",
+                SecretKey = "footerKey-16byte",
                 AADPrefix = "wr-fixtures-suite"
             };
             using ParquetReader r = await ParquetReader.CreateAsync(s, good);
@@ -129,7 +129,7 @@ namespace Parquet.Test.Encryption {
         public async Task C_ColumnKey_NotSupported_Throws() {
             using Stream s = OpenTestFile("encryption/enc_footer_and_idcol.parquet");
             var opts = new ParquetOptions {
-                EncryptionKey = "footerKey-16byte",
+                SecretKey = "footerKey-16byte",
                 AADPrefix = "wr-fixtures-suite"
             };
             await Assert.ThrowsAsync<NotSupportedException>(async () => {
@@ -189,7 +189,7 @@ namespace Parquet.Test.Encryption {
             using Stream s = OpenTestFile("encryption/enc_footer_and_idcol.parquet");
             await Assert.ThrowsAsync<NotSupportedException>(async () => {
                 using ParquetReader reader = await ParquetReader.CreateAsync(s, new ParquetOptions {
-                    EncryptionKey = "footerKey-16byte",
+                    SecretKey = "footerKey-16byte",
                     AADPrefix = "wr-fixtures-suite"
                 });
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);

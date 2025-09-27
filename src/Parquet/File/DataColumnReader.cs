@@ -79,13 +79,12 @@ namespace Parquet.File {
             bool useEncryption = _footer.Decrypter is not null && _thriftColumnChunk.CryptoMetadata is not null;
 
             short pageOrdinal = 0;
+            short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
+            if(columnOrdinal < 0)
+                throw new InvalidDataException("Could not determine column ordinal");
+
             while(pc.ValuesRead < totalValuesInChunk) {
                 if(useEncryption) {
-                    var protoReader = new ThriftCompactProtocolReader(_inputStream);
-
-                    short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
-                    if(columnOrdinal < 0)
-                        throw new InvalidDataException("Could not determine column ordinal");
 
                     // Dictionary (encrypted) if positioned there
                     if(isDictionaryPageOffset) {
@@ -182,6 +181,12 @@ namespace Parquet.File {
             if(_stats != null)
                 column.Statistics = _stats;
             return column;
+        }
+
+        private static Span<byte> AsMutableSpan(ReadOnlySpan<byte> src, out byte[] rented) {
+            rented = ArrayPool<byte>.Shared.Rent(src.Length);
+            src.CopyTo(rented);
+            return rented.AsSpan(0, src.Length);
         }
 
         private async Task<IronCompress.IronCompressResult> ReadPageDataAsync(PageHeader ph) {
@@ -361,112 +366,114 @@ namespace Parquet.File {
             PackedColumn pc
         ) {
             // Bridge to APIs that require Span<byte>
-            byte[] buf = src.ToArray();
-            Span<byte> spanSrc = buf.AsSpan();
-
-            switch(encoding) {
-                case Encoding.PLAIN: // 0
-                {
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        ParquetPlainEncoder.Decode(
-                            plainData,
-                            offset,
-                            totalValuesInPage,
-                            _schemaElement!,
-                            spanSrc,
-                            out int read);
-                        pc.MarkUsefulPlainData(read);
-                        break;
-                    }
-
-                case Encoding.PLAIN_DICTIONARY: // 2
-                case Encoding.RLE_DICTIONARY:   // 8
-                {
-                        Span<int> idxDest = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
-                        int indexCount = ReadRleDictionary(spanSrc, totalValuesInPage, idxDest);
-                        pc.MarkUsefulDictionaryIndexes(indexCount);
-                        pc.Checkpoint();
-                        break;
-                    }
-
-                case Encoding.RLE: // 3
-                {
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-
-                        if(_dataField.ClrType == typeof(bool)) {
-                            // Decode to temp int[] then map to bool[]
-                            int[] tmp = new int[plainData.Length];
-                            int read = RleBitpackedHybridEncoder.Decode(
+            Span<byte> spanSrc = AsMutableSpan(src, out byte[] rented);
+            try {
+                switch(encoding) {
+                    case Encoding.PLAIN: // 0
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            ParquetPlainEncoder.Decode(
+                                plainData,
+                                offset,
+                                totalValuesInPage,
+                                _schemaElement!,
                                 spanSrc,
-                                _schemaElement!.TypeLength ?? 0,
-                                spanSrc.Length,
-                                out int _,
-                                tmp.AsSpan(offset),
-                                totalValuesInPage);
-
-                            bool[] tgt = (bool[])plainData;
-                            for(int i = 0; i < read; i++)
-                                tgt[i + offset] = tmp[i] == 1;
-
+                                out int read);
                             pc.MarkUsefulPlainData(read);
-                            pc.Checkpoint();
-                        } else {
-                            Span<int> dest = ((int[])plainData).AsSpan(offset);
-                            int read = RleBitpackedHybridEncoder.Decode(
-                                spanSrc,
-                                _schemaElement!.TypeLength ?? 0,
-                                spanSrc.Length,
-                                out int _,
-                                dest,
-                                totalValuesInPage);
-
-                            pc.MarkUsefulPlainData(read);
-                            pc.Checkpoint();
+                            break;
                         }
-                        break;
-                    }
 
-                case Encoding.DELTA_BINARY_PACKED: // 5
-                {
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        int read = DeltaBinaryPackedEncoder.Decode(
-                            spanSrc,
-                            plainData,
-                            offset,
-                            totalValuesInPage,
-                            out _);
-                        pc.MarkUsefulPlainData(read);
-                        break;
-                    }
+                    case Encoding.PLAIN_DICTIONARY: // 2
+                    case Encoding.RLE_DICTIONARY:   // 8
+                    {
+                            Span<int> idxDest = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
+                            int indexCount = ReadRleDictionary(spanSrc, totalValuesInPage, idxDest);
+                            pc.MarkUsefulDictionaryIndexes(indexCount);
+                            pc.Checkpoint();
+                            break;
+                        }
 
-                case Encoding.DELTA_LENGTH_BYTE_ARRAY: // 6
-                {
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        int read = DeltaLengthByteArrayEncoder.Decode(
-                            spanSrc,
-                            plainData,
-                            offset,
-                            totalValuesInPage);
-                        pc.MarkUsefulPlainData(read);
-                        break;
-                    }
+                    case Encoding.RLE: // 3
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
 
-                case Encoding.DELTA_BYTE_ARRAY: // 7
-                {
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        int read = DeltaByteArrayEncoder.Decode(
-                            spanSrc,
-                            plainData,
-                            offset,
-                            totalValuesInPage);
-                        pc.MarkUsefulPlainData(read);
-                        break;
-                    }
+                            if(_dataField.ClrType == typeof(bool)) {
+                                // Decode to temp int[] then map to bool[]
+                                int[] tmp = new int[plainData.Length];
+                                int read = RleBitpackedHybridEncoder.Decode(
+                                    spanSrc,
+                                    _schemaElement!.TypeLength ?? 0,
+                                    spanSrc.Length,
+                                    out int _,
+                                    tmp.AsSpan(offset),
+                                    totalValuesInPage);
 
-                case Encoding.BIT_PACKED:        // 4 (deprecated)
-                case Encoding.BYTE_STREAM_SPLIT: // 9
-                default:
-                    throw new ParquetException($"encoding {encoding} is not supported.");
+                                bool[] tgt = (bool[])plainData;
+                                for(int i = 0; i < read; i++)
+                                    tgt[i + offset] = tmp[i] == 1;
+
+                                pc.MarkUsefulPlainData(read);
+                                pc.Checkpoint();
+                            } else {
+                                Span<int> dest = ((int[])plainData).AsSpan(offset);
+                                int read = RleBitpackedHybridEncoder.Decode(
+                                    spanSrc,
+                                    _schemaElement!.TypeLength ?? 0,
+                                    spanSrc.Length,
+                                    out int _,
+                                    dest,
+                                    totalValuesInPage);
+
+                                pc.MarkUsefulPlainData(read);
+                                pc.Checkpoint();
+                            }
+                            break;
+                        }
+
+                    case Encoding.DELTA_BINARY_PACKED: // 5
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            int read = DeltaBinaryPackedEncoder.Decode(
+                                spanSrc,
+                                plainData,
+                                offset,
+                                totalValuesInPage,
+                                out _);
+                            pc.MarkUsefulPlainData(read);
+                            break;
+                        }
+
+                    case Encoding.DELTA_LENGTH_BYTE_ARRAY: // 6
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            int read = DeltaLengthByteArrayEncoder.Decode(
+                                spanSrc,
+                                plainData,
+                                offset,
+                                totalValuesInPage);
+                            pc.MarkUsefulPlainData(read);
+                            break;
+                        }
+
+                    case Encoding.DELTA_BYTE_ARRAY: // 7
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            int read = DeltaByteArrayEncoder.Decode(
+                                spanSrc,
+                                plainData,
+                                offset,
+                                totalValuesInPage);
+                            pc.MarkUsefulPlainData(read);
+                            break;
+                        }
+
+                    case Encoding.BIT_PACKED:        // 4 (deprecated)
+                    case Encoding.BYTE_STREAM_SPLIT: // 9
+                    default:
+                        throw new ParquetException($"encoding {encoding} is not supported.");
+                }
+            } finally {
+                ArrayPool<byte>.Shared.Return(rented);
             }
         }
 

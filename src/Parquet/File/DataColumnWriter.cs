@@ -85,15 +85,18 @@ namespace Parquet.File {
         }
 
         private async Task CompressAndWriteAsync(
-    PageHeader ph,
-    MemoryStream data,
-    ColumnSizes cs,
-    CancellationToken cancellationToken) {
+            PageHeader ph,
+            MemoryStream data,
+            ColumnSizes cs,
+            CancellationToken cancellationToken
+        ) {
             // Compress (or pass-through) the page body first
+            byte[]? borrowed;
+            ReadOnlySpan<byte> plain = GetBytesFast(data, out borrowed);
             using IronCompress.IronCompressResult compressedData =
                 _compressionMethod == CompressionMethod.None
-                    ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
-                    : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
+                    ? new IronCompress.IronCompressResult(plain.ToArray(), Codec.Snappy, false)
+                    : Compressor.Compress(_compressionMethod, plain, _compressionLevel);
 
             // Plaintext path (no encryption)
             if(_footer.Encrypter is null) {
@@ -219,6 +222,17 @@ namespace Parquet.File {
         private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
             int bitWidth = maxValue.GetBitWidth();
             RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
+        }
+
+        private static ReadOnlySpan<byte> GetBytesFast(MemoryStream ms, out byte[]? borrowedArray) {
+            borrowedArray = null;
+            ArraySegment<byte> seg;
+            if(ms.TryGetBuffer(out seg)) {
+                return new ReadOnlySpan<byte>(seg.Array, seg.Offset, seg.Count);
+            }
+            byte[] arr = ms.ToArray();
+            borrowedArray = arr;
+            return new ReadOnlySpan<byte>(arr);
         }
     }
 }

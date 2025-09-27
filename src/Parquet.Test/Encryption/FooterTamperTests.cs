@@ -57,7 +57,7 @@ namespace Parquet.Test.Encryption {
             tampered.Position = 0;
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(tampered, new ParquetOptions {
-                    EncryptionKey = "footerKey-16byte",
+                    SecretKey = "footerKey-16byte",
                     AADPrefix = null
                 });
             });
@@ -72,7 +72,7 @@ namespace Parquet.Test.Encryption {
 
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(tampered, new ParquetOptions {
-                    EncryptionKey = "footerKey-16byte",
+                    SecretKey = "footerKey-16byte",
                     AADPrefix = null
                 });
             });
@@ -97,7 +97,7 @@ namespace Parquet.Test.Encryption {
             tampered.Position = 0;
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(tampered, new ParquetOptions {
-                    EncryptionKey = "footerKey-16byte",
+                    SecretKey = "footerKey-16byte",
                     AADPrefix = null
                 });
             });

@@ -16,7 +16,7 @@ namespace Parquet.Test.Encryption {
         public async Task A_PageEncryption_GcmV1_RoundTrip() {
             ParquetSchema schema = MakeSchema();
             var opts = new ParquetOptions {
-                EncryptionKey = Convert.ToBase64String(Enumerable.Range(1, 16).Select(i => (byte)i).ToArray()),
+                SecretKey = Convert.ToBase64String(Enumerable.Range(1, 16).Select(i => (byte)i).ToArray()),
                 AADPrefix = "suite-a",
                 SupplyAadPrefix = false,     // store prefix in file
                 UseCtrVariant = false        // GCM profile
@@ -31,7 +31,7 @@ namespace Parquet.Test.Encryption {
 
             ms.Position = 0;
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                EncryptionKey = opts.EncryptionKey
+                SecretKey = opts.SecretKey
             });
 
             Assert.True(reader.IsEncryptedFile);
@@ -45,7 +45,7 @@ namespace Parquet.Test.Encryption {
         public async Task B_PageEncryption_CtrVariant_RoundTrip() {
             ParquetSchema schema = MakeSchema();
             var opts = new ParquetOptions {
-                EncryptionKey = "sixteen-byte-key",  // 16 bytes UTF-8
+                SecretKey = "sixteen-byte-key",  // 16 bytes UTF-8
                 AADPrefix = "suite-b",
                 SupplyAadPrefix = false,
                 UseCtrVariant = true                 // CTR bodies, GCM headers
@@ -60,7 +60,7 @@ namespace Parquet.Test.Encryption {
 
             ms.Position = 0;
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                EncryptionKey = opts.EncryptionKey
+                SecretKey = opts.SecretKey
             });
 
             using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
@@ -75,7 +75,7 @@ namespace Parquet.Test.Encryption {
         public async Task C_PageEncryption_MissingPrefix_Fails_When_SupplyAadPrefix_True() {
             ParquetSchema schema = MakeSchema();
             var opts = new ParquetOptions {
-                EncryptionKey = Convert.ToBase64String(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray()),
+                SecretKey = Convert.ToBase64String(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray()),
                 AADPrefix = "require-supply",
                 SupplyAadPrefix = true,          // do not store prefix in file
                 UseCtrVariant = false
@@ -91,7 +91,7 @@ namespace Parquet.Test.Encryption {
             ms.Position = 0;
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                    EncryptionKey = opts.EncryptionKey,
+                    SecretKey = opts.SecretKey,
                     AADPrefix = null     // not supplied -> should fail
                 });
             });

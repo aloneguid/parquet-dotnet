@@ -13,7 +13,7 @@ namespace Parquet.Test.Encryption {
     public class WriterPageEncryptionTests : TestBase {
         private static ParquetOptions EncryptedOptions(string key, string? aadPrefix = null)
             => new ParquetOptions {
-                EncryptionKey = key,      // 16/24/32 byte (or base64/hex) – we’ll use raw UTF-8 16B below
+                SecretKey = key,      // 16/24/32 byte (or base64/hex) – we’ll use raw UTF-8 16B below
                 AADPrefix = aadPrefix     // null = prefix stored in file when writer sets supplyAadPrefix=false
             };
 
@@ -75,7 +75,7 @@ namespace Parquet.Test.Encryption {
             await actor.ValidateFileAsync(); // sets IsEncryptedFile when PARE magic present
 
             FileMetaData meta = await actor.ReadMetadataAsync(
-                decryptionKey: opts.EncryptionKey,
+                secretKey: opts.SecretKey,
                 aadPrefix: opts.AADPrefix
             );
 
@@ -104,7 +104,7 @@ namespace Parquet.Test.Encryption {
 
             var opts = new ParquetOptions {
                 // 128-bit key (Base64)
-                EncryptionKey = RandomB64Key(16),
+                SecretKey = RandomB64Key(16),
                 // store the prefix in the file (no external supply)
                 AADPrefix = null,
                 SupplyAadPrefix = false,
@@ -141,7 +141,7 @@ namespace Parquet.Test.Encryption {
             var schema = new ParquetSchema(field);
 
             var opts = new ParquetOptions {
-                EncryptionKey = RandomB64Key(16),
+                SecretKey = RandomB64Key(16),
                 AADPrefix = null,
                 SupplyAadPrefix = false,
                 UseCtrVariant = useCtr,

@@ -30,6 +30,14 @@ namespace Parquet.Meta.Proto {
             return (long)(n >> 1) ^ -(long)(n & 1);
         }
 
+        private byte ReadByteOrThrow() {
+            int val = _inputStream.ReadByte();
+            if(val == -1) {
+                throw new EndOfStreamException("Unexpected end of stream while reading a byte.");
+            }
+            return (byte)val;
+        }
+
         private uint ReadVarInt32() {
             /*
             Read an i32 from the wire as a varint. The MSB of each byte is set
@@ -40,7 +48,7 @@ namespace Parquet.Meta.Proto {
             int shift = 0;
 
             while(true) {
-                byte b = (byte)_inputStream.ReadByte();
+                byte b = ReadByteOrThrow();
                 result |= (uint)(b & 0x7f) << shift;
                 if((b & 0x80) != 0x80) {
                     break;
@@ -60,7 +68,7 @@ namespace Parquet.Meta.Proto {
             int shift = 0;
             ulong result = 0;
             while(true) {
-                byte b = (byte)_inputStream.ReadByte();
+                byte b = ReadByteOrThrow();
                 result |= (ulong)(b & 0x7f) << shift;
                 if((b & 0x80) != 0x80) {
                     break;
@@ -72,12 +80,12 @@ namespace Parquet.Meta.Proto {
         }
 
         public bool ReadBool() {
-            byte b = (byte)_inputStream.ReadByte();
+            byte b = ReadByteOrThrow();
             return (CompactType)b == CompactType.BooleanTrue;
         }
 
         public sbyte ReadByte() {
-            return (sbyte)_inputStream.ReadByte();
+            return (sbyte)ReadByteOrThrow();
         }
 
         public short ReadI16() {
@@ -134,7 +142,7 @@ namespace Parquet.Meta.Proto {
         public bool ReadNextField(out short fieldId, out CompactType compactType) {
 
             // Read a field header off the wire.
-            byte header = (byte)_inputStream.ReadByte();
+            byte header = ReadByteOrThrow();
 
             // if it's a stop, then we can return immediately, as the struct is over.
             if((CompactType)header == CompactType.Stop) {
@@ -166,7 +174,7 @@ namespace Parquet.Meta.Proto {
             true size.
             */
 
-            byte sizeAndType = (byte)_inputStream.ReadByte();
+            byte sizeAndType = ReadByteOrThrow();
             int size = (sizeAndType >> 4) & 0x0f;
             if(size == 15) {
                 size = (int)ReadVarInt32();
@@ -184,7 +192,7 @@ namespace Parquet.Meta.Proto {
                 return 0;
             }
 
-            byte types = (byte)_inputStream.ReadByte();
+            byte types = ReadByteOrThrow();
             keyType = (CompactType)((types & 0xF0) >> 4); // high nibble
             valueType = (CompactType)(types & 0x0F);        // low nibble
             return size;
@@ -220,9 +228,8 @@ namespace Parquet.Meta.Proto {
                     break;
                 case CompactType.Struct:
                     StructBegin();
-                    // TODO: is this a bug?
-                    while(ReadNextField(out _, out _)) {
-
+                    while(ReadNextField(out _, out CompactType innerType)) {
+                        SkipField(innerType);
                     }
                     StructEnd();
                     break;

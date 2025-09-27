@@ -107,7 +107,7 @@ namespace Parquet {
 
                 await GoBeforeFooterAsync();
             } else {
-                if(!string.IsNullOrWhiteSpace(_formatOptions.EncryptionKey)) {
+                if(!string.IsNullOrWhiteSpace(_formatOptions.SecretKey)) {
                     byte[]? aadPrefixBytes = _formatOptions.AADPrefix is null
                         ? null
                         : System.Text.Encoding.ASCII.GetBytes(_formatOptions.AADPrefix);
@@ -116,7 +116,7 @@ namespace Parquet {
                         throw new ArgumentException("SupplyAadPrefix=true requires AADPrefix to be set.");
 
                     (_encrypter, _cryptoMeta) = EncryptionBase.CreateEncrypterForWrite(
-                        _formatOptions.EncryptionKey!,
+                        _formatOptions.SecretKey!,
                         aadPrefixBytes,
                         supplyAadPrefix: _formatOptions.SupplyAadPrefix,
                         useCtrVariant: _formatOptions.UseCtrVariant

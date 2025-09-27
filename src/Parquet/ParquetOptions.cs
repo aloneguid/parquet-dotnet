@@ -62,7 +62,7 @@ namespace Parquet {
         /// Key used to decrypt encrypted parquet files created in encrypted footer mode.
         /// </summary>
         /// <remarks>Currently only used by <see cref="ParquetReader"/></remarks>
-        public string? EncryptionKey { get; set; } = null;
+        public string? SecretKey { get; set; } = null;
 
         /// <summary>
         /// Optional Additional Authentication Data Prefix used to verify the integrity of the encrypted file. Only required

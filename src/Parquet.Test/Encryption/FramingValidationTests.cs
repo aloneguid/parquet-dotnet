@@ -18,7 +18,7 @@ namespace Parquet.Test.Encryption {
             using var ms = new MemoryStream();
             ms.Write(BitConverter.GetBytes(8), 0, 4); // impossible total (< 12 + 16)
             ms.Write(new byte[8], 0, 8);
-            var enc = new AES_GCM_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 1 } };
+            var enc = new AES_GCM_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 1 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptColumnIndex(R(ms.ToArray()), 0, 0));
         }
 
@@ -27,7 +27,7 @@ namespace Parquet.Test.Encryption {
             using var ms = new MemoryStream();
             ms.Write(BitConverter.GetBytes(10), 0, 4); // < 12 (nonce)
             ms.Write(new byte[10], 0, 10);
-            var enc = new AES_GCM_CTR_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 1 } };
+            var enc = new AES_GCM_CTR_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 1 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptDataPage(R(ms.ToArray()), 0, 0, 0));
         }
 
@@ -37,7 +37,7 @@ namespace Parquet.Test.Encryption {
             using var ms = new MemoryStream();
             ms.Write(BitConverter.GetBytes(claimed), 0, 4);
             ms.Write(new byte[12 + 0 + 16], 0, 12 + 16); // actually provide only nonce + tag
-            var enc = new AES_GCM_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 2 } };
+            var enc = new AES_GCM_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 2 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptColumnIndex(R(ms.ToArray()), 0, 0));
         }
 
@@ -48,7 +48,7 @@ namespace Parquet.Test.Encryption {
             ms.Write(BitConverter.GetBytes(total), 0, 4);
             ms.Write(new byte[12], 0, 12);       // nonce ok
             ms.Write(new byte[8], 0, 8);         // only half the tag present
-            var enc = new AES_GCM_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 3 } };
+            var enc = new AES_GCM_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 3 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptOffsetIndex(R(ms.ToArray()), 0, 0));
         }
 
@@ -59,7 +59,7 @@ namespace Parquet.Test.Encryption {
             ms.Write(BitConverter.GetBytes(total), 0, 4);
             ms.Write(new byte[10], 0, 10);       // only 10 bytes of nonce
             ms.Write(new byte[16], 0, 16);       // tag present
-            var enc = new AES_GCM_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 4 } };
+            var enc = new AES_GCM_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 4 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptColumnMetaData(R(ms.ToArray()), 0, 0));
         }
 
@@ -69,7 +69,7 @@ namespace Parquet.Test.Encryption {
             using var ms = new MemoryStream();
             ms.Write(BitConverter.GetBytes(claimed), 0, 4);
             ms.Write(new byte[12 + 4], 0, 12 + 4); // but only provide 4
-            var enc = new AES_GCM_CTR_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 5 } };
+            var enc = new AES_GCM_CTR_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 5 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptDataPage(R(ms.ToArray()), 0, 0, 0));
         }
 
@@ -79,7 +79,7 @@ namespace Parquet.Test.Encryption {
             using var ms = new MemoryStream();
             ms.Write(BitConverter.GetBytes(total), 0, 4);
             ms.Write(new byte[10], 0, 10); // not enough for 12B nonce
-            var enc = new AES_GCM_CTR_V1_Encryption { DecryptionKey = Key, AadFileUnique = new byte[] { 6 } };
+            var enc = new AES_GCM_CTR_V1_Encryption { SecretKey = Key, AadFileUnique = new byte[] { 6 } };
             Assert.Throws<InvalidDataException>(() => enc.DecryptDataPage(R(ms.ToArray()), 0, 0, 0));
         }
     }

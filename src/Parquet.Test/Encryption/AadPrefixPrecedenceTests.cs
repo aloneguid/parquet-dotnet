@@ -30,7 +30,7 @@ namespace Parquet.Test.Encryption {
             string key = B64Key(16);
             string storedPrefix = "stored-prefix-precedence";
             var writeOpts = new ParquetOptions {
-                EncryptionKey = key,
+                SecretKey = key,
                 AADPrefix = storedPrefix,
                 SupplyAadPrefix = false,  // store in file
                 UseCtrVariant = useCtr
@@ -46,7 +46,7 @@ namespace Parquet.Test.Encryption {
             // Read: deliberately pass a WRONG prefix; it must be ignored because file stores its own.
             ms.Position = 0;
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                EncryptionKey = key,
+                SecretKey = key,
                 AADPrefix = "WRONG-WRONG-WRONG", // should not matter
             });
 
@@ -66,7 +66,7 @@ namespace Parquet.Test.Encryption {
             // but included here for completeness with the same writer settings).
             string key = B64Key(32);
             var writeOpts = new ParquetOptions {
-                EncryptionKey = key,
+                SecretKey = key,
                 AADPrefix = "stored-AAD-here",
                 SupplyAadPrefix = false,
                 UseCtrVariant = useCtr
@@ -81,7 +81,7 @@ namespace Parquet.Test.Encryption {
 
             ms.Position = 0;
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                EncryptionKey = key,
+                SecretKey = key,
                 AADPrefix = null
             });
 

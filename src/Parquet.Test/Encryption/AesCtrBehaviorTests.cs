@@ -75,7 +75,7 @@ namespace Parquet.Test.Encryption {
 
             byte[] framed = FrameCtr(nonce, ciphertext);
             var encCtr = new AES_GCM_CTR_V1_Encryption {
-                DecryptionKey = Key256,
+                SecretKey = Key256,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };
@@ -103,7 +103,7 @@ namespace Parquet.Test.Encryption {
             byte[] framed = FrameGcm(nonce, ct, tag);
 
             var encCtr = new AES_GCM_CTR_V1_Encryption {
-                DecryptionKey = Key256,
+                SecretKey = Key256,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };
@@ -136,7 +136,7 @@ namespace Parquet.Test.Encryption {
 
             byte[] framed = FrameCtr(nonce, ciphertext);
             var encCtr = new AES_GCM_CTR_V1_Encryption {
-                DecryptionKey = Key256,
+                SecretKey = Key256,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };
@@ -169,7 +169,7 @@ namespace Parquet.Test.Encryption {
 
         // Utility: fresh decryptor with CTR variant
         private static AES_GCM_CTR_V1_Encryption Ctr() => new AES_GCM_CTR_V1_Encryption {
-            DecryptionKey = Key256,
+            SecretKey = Key256,
             AadPrefix = Encoding.ASCII.GetBytes("ctr-multi"),
             AadFileUnique = new byte[] { 0xCA, 0xFE, 0xBA, 0xBE }
         };

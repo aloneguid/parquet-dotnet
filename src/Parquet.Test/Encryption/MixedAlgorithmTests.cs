@@ -81,7 +81,7 @@ namespace Parquet.Test.Encryption {
             byte[] framedPage = FrameCtr(nonceP, ctP);
 
             var enc = new AES_GCM_CTR_V1_Encryption {
-                DecryptionKey = Key,
+                SecretKey = Key,
                 AadPrefix = Prefix,
                 AadFileUnique = Unique
             };

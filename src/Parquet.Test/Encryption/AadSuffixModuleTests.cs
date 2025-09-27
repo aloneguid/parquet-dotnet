@@ -70,7 +70,7 @@ namespace Parquet.Test.Encryption {
             byte[] framed = FrameGcm(nonce, ct, tag);
 
             var enc = new AES_GCM_V1_Encryption {
-                DecryptionKey = Key128,
+                SecretKey = Key128,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };
@@ -110,7 +110,7 @@ namespace Parquet.Test.Encryption {
             byte[] framed = FrameGcm(nonce, ct, tag);
 
             var enc = new AES_GCM_V1_Encryption {
-                DecryptionKey = Key128,
+                SecretKey = Key128,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };

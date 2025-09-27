@@ -7,16 +7,16 @@ using Parquet.Meta.Proto;
 namespace Parquet.Encryption {
     internal abstract class EncryptionBase {
         internal byte[]? AadPrefix { get; set; }
-        internal byte[]? DecryptionKey { get; set; }
+        internal byte[]? SecretKey { get; set; }
         internal byte[]? AadFileUnique { get; set; }
 
         public static byte[] DecryptFooter(
             ThriftCompactProtocolReader reader,
-            string decryptionKey,
+            string secretKey,
             string? aadPrefix,
             out EncryptionBase decrypter) {
-            if(string.IsNullOrEmpty(decryptionKey)) {
-                throw new ArgumentException($"Encrypted parquet files require an {nameof(ParquetOptions.EncryptionKey)} value");
+            if(string.IsNullOrEmpty(secretKey)) {
+                throw new ArgumentException($"Encrypted parquet files require an {nameof(ParquetOptions.SecretKey)} value");
             }
 
             var cryptoMetaData = Meta.FileCryptoMetaData.Read(reader);
@@ -48,7 +48,7 @@ namespace Parquet.Encryption {
                 throw new NotSupportedException("No encryption algorithm defined");
             }
 
-            decrypter.DecryptionKey = ParseKeyString(decryptionKey);
+            decrypter.SecretKey = ParseKeyString(secretKey);
             return decrypter.DecryptFooter(reader);
         }
 
@@ -77,6 +77,9 @@ namespace Parquet.Encryption {
                 throw new ArgumentException("Encryption key is required.", nameof(encryptionKey));
 
             byte[] key = ParseKeyString(encryptionKey);
+            if(!(key.Length == 16 || key.Length == 24 || key.Length == 32)) {
+                throw new ArgumentException("AES key must be 128/192/256-bit.");
+            }
             if(aadFileUnique is null || aadFileUnique.Length == 0) {
                 aadFileUnique = new byte[16];
 #if NET8_0_OR_GREATER
@@ -91,7 +94,7 @@ namespace Parquet.Encryption {
                 ? new AES_GCM_CTR_V1_Encryption()
                 : new AES_GCM_V1_Encryption();
 
-            enc.DecryptionKey = key;
+            enc.SecretKey = key;
             enc.AadFileUnique = aadFileUnique;
             enc.AadPrefix = aadPrefixBytes ?? Array.Empty<byte>();
 
@@ -120,11 +123,11 @@ namespace Parquet.Encryption {
 
         public static EncryptionBase CreateFromCryptoMeta(
             ThriftCompactProtocolReader reader,
-            string decryptionKey,
+            string secretKey,
             string? aadPrefix
         ) {
-            if(string.IsNullOrWhiteSpace(decryptionKey))
-                throw new ArgumentException($"Encrypted parquet files require an {nameof(ParquetOptions.EncryptionKey)} value");
+            if(string.IsNullOrWhiteSpace(secretKey))
+                throw new ArgumentException($"Encrypted parquet files require an {nameof(ParquetOptions.SecretKey)} value");
 
             var cryptoMetaData = Meta.FileCryptoMetaData.Read(reader);
 
@@ -155,7 +158,7 @@ namespace Parquet.Encryption {
                 throw new NotSupportedException("No encryption algorithm defined");
             }
 
-            decrypter.DecryptionKey = ParseKeyString(decryptionKey);
+            decrypter.SecretKey = ParseKeyString(secretKey);
             return decrypter;
         }
 

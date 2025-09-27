@@ -53,7 +53,7 @@ namespace Parquet.Test.Encryption {
 
         [Fact]
         public void Ordinal_Resets_Per_Column_And_RowGroup() {
-            var dec = new AES_GCM_V1_Encryption { DecryptionKey = Key, AadPrefix = Prefix, AadFileUnique = Unique };
+            var dec = new AES_GCM_V1_Encryption { SecretKey = Key, AadPrefix = Prefix, AadFileUnique = Unique };
 
             // RG0 COL0 page0
             byte[] rg0c0p0 = EncryptHeader(0, 0, 0, "rg0c0p0");
@@ -119,7 +119,7 @@ namespace Parquet.Test.Encryption {
             gcm.Encrypt(nonce, plain, ct, tag, aad);
             byte[] framed = Frame(nonce, ct, tag);
 
-            var dec = new AES_GCM_V1_Encryption { DecryptionKey = Key, AadPrefix = Prefix, AadFileUnique = Unique };
+            var dec = new AES_GCM_V1_Encryption { SecretKey = Key, AadPrefix = Prefix, AadFileUnique = Unique };
 
             // Correct column works
             Assert.Equal(plain, dec.DecryptDataPageHeader(R(framed), 0, 0, 0));

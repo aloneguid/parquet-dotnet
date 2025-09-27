@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 
@@ -162,10 +163,18 @@ namespace Parquet.Meta.Proto {
             WriteI64Value(value);
         }
 
-        public void WriteBinaryValue(byte[] value) {
+        public void WriteBinaryValue(ReadOnlySpan<byte> value) {
             Int32ToVarInt((uint)value.Length, ref PreAllocatedVarInt);
             _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
-            _outputStream.Write(value, 0, value.Length);
+
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+    // Stream.Write(ReadOnlySpan<byte>) on modern frameworks
+    _outputStream.Write(value);
+#else
+            // Fallback: copy once
+            byte[] tmp = value.ToArray();
+            _outputStream.Write(tmp, 0, tmp.Length);
+#endif
         }
 
         public void WriteBinaryField(short fieldId, byte[] value) {
@@ -174,15 +183,43 @@ namespace Parquet.Meta.Proto {
         }
 
         public void WriteStringValue(string value) {
-            byte[] buf = ArrayPool<byte>.Shared.Rent(System.Text.Encoding.UTF8.GetByteCount(value));
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+    // Small strings: encode into a stack buffer, no heap allocs.
+    const int StackThreshold = 512; // bytes
+    int max = System.Text.Encoding.UTF8.GetMaxByteCount(value.Length);
+
+    if (max <= StackThreshold) {
+        Span<byte> buf = stackalloc byte[StackThreshold];
+        // Encode directly into the span; returns actual byte count.
+        int written = System.Text.Encoding.UTF8.GetBytes(value.AsSpan(), buf);
+        Int32ToVarInt((uint)written, ref PreAllocatedVarInt);
+        _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
+        _outputStream.Write(buf.Slice(0, written));
+        return;
+    }
+
+    // Larger strings: rent once using max-bytes; write only 'written' bytes.
+    byte[] rented = System.Buffers.ArrayPool<byte>.Shared.Rent(max);
+    try {
+        int written = System.Text.Encoding.UTF8.GetBytes(value.AsSpan(), rented.AsSpan());
+        Int32ToVarInt((uint)written, ref PreAllocatedVarInt);
+        _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
+        _outputStream.Write(rented, 0, written);
+    } finally {
+        System.Buffers.ArrayPool<byte>.Shared.Return(rented);
+    }
+#else
+            // Older targets: keep existing behavior (no span overloads available).
+            byte[] buf = System.Buffers.ArrayPool<byte>.Shared.Rent(System.Text.Encoding.UTF8.GetByteCount(value));
             try {
                 int numberOfBytes = System.Text.Encoding.UTF8.GetBytes(value, 0, value.Length, buf, 0);
                 Int32ToVarInt((uint)numberOfBytes, ref PreAllocatedVarInt);
                 _outputStream.Write(PreAllocatedVarInt.bytes, 0, PreAllocatedVarInt.count);
                 _outputStream.Write(buf, 0, numberOfBytes);
             } finally {
-                ArrayPool<byte>.Shared.Return(buf);
+                System.Buffers.ArrayPool<byte>.Shared.Return(buf);
             }
+#endif
         }
 
         public void WriteStringField(short fieldId, string value) {

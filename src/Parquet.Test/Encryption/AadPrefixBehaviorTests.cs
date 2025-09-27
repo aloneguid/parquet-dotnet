@@ -51,7 +51,7 @@ namespace Parquet.Test.Encryption {
             gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
             var enc = new AES_GCM_V1_Encryption {
-                DecryptionKey = Key,
+                SecretKey = Key,
                 AadPrefix = storedPrefix,        // stored value, not supplied
                 AadFileUnique = FileUnique
             };
@@ -87,7 +87,7 @@ namespace Parquet.Test.Encryption {
 
             // Simulate caller forgetting to provide the supplied prefix (AadPrefix = null/empty)
             var enc = new AES_GCM_V1_Encryption {
-                DecryptionKey = Key,
+                SecretKey = Key,
                 AadPrefix = Array.Empty<byte>(),
                 AadFileUnique = FileUnique
             };
