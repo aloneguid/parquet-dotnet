@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using Parquet.Meta;
 using Parquet.Meta.Proto;

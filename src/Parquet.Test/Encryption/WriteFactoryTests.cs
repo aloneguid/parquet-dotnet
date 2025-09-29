@@ -25,8 +25,8 @@ namespace Parquet.Test.Encryption {
         public void Factory_Gcm_PrefixStored_RoundTripFooter() {
             string key = Convert.ToBase64String(new byte[16] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
             byte[] prefix = Encoding.ASCII.GetBytes("stored-prefix");
-            (EncryptionBase enc, Meta.FileCryptoMetaData? meta) = EncryptionBase.CreateEncrypterForWrite(
-                encryptionKey: key,
+            (EncryptionBase enc, Meta.FileCryptoMetaData? meta) = EncryptionBase.CreateEncryptorForWrite(
+                encryptionOrSigningKey: key,
                 aadPrefixBytes: prefix,
                 supplyAadPrefix: false,   // store in file
                 useCtrVariant: false
@@ -51,8 +51,8 @@ namespace Parquet.Test.Encryption {
             string key = Convert.ToBase64String(new byte[32] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 });
             byte[] prefix = Encoding.ASCII.GetBytes("supply-me");
 
-            (EncryptionBase enc, Meta.FileCryptoMetaData? meta) = EncryptionBase.CreateEncrypterForWrite(
-                encryptionKey: key,
+            (EncryptionBase enc, Meta.FileCryptoMetaData? meta) = EncryptionBase.CreateEncryptorForWrite(
+                encryptionOrSigningKey: key,
                 aadPrefixBytes: prefix,
                 supplyAadPrefix: true,   // do NOT store in file
                 useCtrVariant: false
@@ -73,8 +73,8 @@ namespace Parquet.Test.Encryption {
             string key = "sixteen-byte-key"; // 16 bytes raw UTF-8
             byte[] prefix = Encoding.ASCII.GetBytes("ctr-variant");
 
-            (EncryptionBase enc, Meta.FileCryptoMetaData? meta) = EncryptionBase.CreateEncrypterForWrite(
-                encryptionKey: key,
+            (EncryptionBase enc, Meta.FileCryptoMetaData? meta) = EncryptionBase.CreateEncryptorForWrite(
+                encryptionOrSigningKey: key,
                 aadPrefixBytes: prefix,
                 supplyAadPrefix: false,
                 useCtrVariant: true   // CTR affects page bodies; footer remains GCM

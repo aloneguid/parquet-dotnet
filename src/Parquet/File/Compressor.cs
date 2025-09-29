@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO.Compression;
 using IronCompress;
+using Parquet.Encryption;
 
 namespace Parquet.File {
     static class Compressor {
@@ -8,7 +9,10 @@ namespace Parquet.File {
 
         public static IronCompressResult Compress(CompressionMethod method, ReadOnlySpan<byte> input, CompressionLevel compressionLevel) => _iron.Compress(ToCodec(method), input, compressionLevel: compressionLevel);
 
-        public static IronCompressResult Decompress(CompressionMethod method, ReadOnlySpan<byte> input, int outLength) => _iron.Decompress(ToCodec(method), input, outLength);
+        public static IronCompressResult Decompress(CompressionMethod method, ReadOnlySpan<byte> input, int outLength) {
+            EncTrace.Log($"Decompress codec={method} in={input.Length} outLenHint={outLength}");
+            return _iron.Decompress(ToCodec(method), input, outLength);
+        }
 
         private static Codec ToCodec(CompressionMethod method) {
             switch(method) {

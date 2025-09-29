@@ -9,8 +9,6 @@ using NetBox.Generator;
 using System.Linq;
 using System.Threading.Tasks;
 using Path = System.IO.Path;
-using System.Threading;
-using Parquet.Schema;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {

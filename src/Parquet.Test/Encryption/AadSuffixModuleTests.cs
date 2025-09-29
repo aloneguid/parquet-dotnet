@@ -1,10 +1,8 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Parquet.Encryption;
 using Parquet.Meta;
-using Parquet.Meta.Proto;
 using Xunit;
 using Encoding = System.Text.Encoding;
 
@@ -32,7 +30,7 @@ namespace Parquet.Test.Encryption {
             using AesGcm gcm = TestCryptoUtils.NewAesGcm(key);
             gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
-            var enc = new AES_GCM_V1_Encryption { SecretKey = key, AadPrefix = prefix, AadFileUnique = unique };
+            var enc = new AES_GCM_V1_Encryption { FooterEncryptionKey = key, AadPrefix = prefix, AadFileUnique = unique };
             byte[] framed = TestCryptoUtils.FrameGcm(nonce, ct, tag);
 
             byte[] result = module switch {

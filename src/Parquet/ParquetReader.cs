@@ -36,14 +36,15 @@ namespace Parquet {
         }
 
         private async Task InitialiseAsync(CancellationToken cancellationToken) {
-            await ValidateFileAsync();
+            await ValidateFileAsync().ConfigureAwait(false);
 
-            if(IsEncryptedFile && string.IsNullOrEmpty(_parquetOptions.SecretKey)) {
-                throw new InvalidDataException($"{nameof(_parquetOptions.SecretKey)} is required for files with encrypted footers");
-            }
+            // Let ReadMetadataAsync decide what’s required based on the file
+            _meta = await ReadMetadataAsync(
+                footerEncryptionKey: _parquetOptions.FooterEncryptionKey,
+                footerSigningKey: _parquetOptions.FooterSigningKey,
+                aadPrefix: _parquetOptions.AADPrefix
+            ).ConfigureAwait(false);
 
-            //read metadata instantly, now
-            _meta = await ReadMetadataAsync(_parquetOptions.SecretKey, _parquetOptions.AADPrefix, cancellationToken);
             _thriftFooter = new ThriftFooter(_meta);
 
             InitRowGroupReaders();

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.File;
 using Parquet.Schema;
 using Xunit;
 

@@ -1,10 +1,8 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Parquet.Encryption;
 using Parquet.Meta;
-using Parquet.Meta.Proto;
 using Xunit;
 using Encoding = System.Text.Encoding;
 
@@ -40,7 +38,7 @@ namespace Parquet.Test.Encryption {
             gcm.Encrypt(nonce, plaintext, ct, tag, aad);
 
             var enc = new AES_GCM_V1_Encryption {
-                SecretKey = Key,
+                FooterEncryptionKey = Key,
                 AadPrefix = storedPrefix,        // stored value, not supplied
                 AadFileUnique = FileUnique
             };
@@ -76,7 +74,7 @@ namespace Parquet.Test.Encryption {
 
             // Simulate caller forgetting to provide the supplied prefix (AadPrefix = null/empty)
             var enc = new AES_GCM_V1_Encryption {
-                SecretKey = Key,
+                FooterEncryptionKey = Key,
                 AadPrefix = Array.Empty<byte>(),
                 AadFileUnique = FileUnique
             };

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -74,7 +72,7 @@ namespace Parquet.Test.Serialisation.Paper {
                     new ListField("Name",
                         new StructField("element",
                             new ListField("Language",
-                                new StructField("element", 
+                                new StructField("element",
                                     new DataField<string>("Code"),
                                     new DataField<string>("Country"))),
 

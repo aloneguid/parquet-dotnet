@@ -52,29 +52,117 @@ namespace Parquet.File {
         }
 
         public async Task<ColumnChunk> WriteAsync(
-            FieldPath fullPath, DataColumn column,
-            CancellationToken cancellationToken = default) {
+            FieldPath fullPath,
+            DataColumn column,
+            CancellationToken cancellationToken = default
+        ) {
 
-            // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
+            if(column == null)
+                throw new ArgumentNullException(nameof(column));
+            column.Field.EnsureAttachedToSchema(nameof(column));
+
+            // Create the chunk as before
             ColumnChunk chunk = _footer.CreateColumnChunk(
-                _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
-                _keyValueMetadata);
+                _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues, _keyValueMetadata);
 
-            if(_footer.Encrypter is not null) {
-                chunk.CryptoMetadata = new ColumnCryptoMetaData {
-                    ENCRYPTIONWITHFOOTERKEY = new EncryptionWithFooterKey()
-                };
+            // Will we encrypt this column at all?
+            bool writerHasEncrypter = _footer.Encrypter is not null;
+
+            // Decide if this column uses a column-specific key or the footer key
+            bool useColumnKey = false;
+            byte[]? columnKeyBytes = null;
+            byte[]? columnKeyMetadata = null;
+
+            if(writerHasEncrypter) {
+                // Build a stable path string to match user-supplied map (you can adapt to your convention)
+                string pathStr = string.Join(".", fullPath.ToList());
+
+                if(_options is not null &&
+                   _options.ColumnKeys is not null &&
+                   _options.ColumnKeys.TryGetValue(pathStr, out ParquetOptions.ColumnKeySpec? spec)) {
+
+                    useColumnKey = true;
+                    columnKeyBytes = Encryption.EncryptionBase.ParseKeyString(spec.Key);
+                    columnKeyMetadata = spec.KeyMetadata;
+
+                    // Advertise column crypto metadata (column-key case)
+                    chunk.CryptoMetadata = new ColumnCryptoMetaData {
+                        ENCRYPTIONWITHCOLUMNKEY = new EncryptionWithColumnKey {
+                            PathInSchema = fullPath.ToList(),
+                            KeyMetadata = columnKeyMetadata
+                        }
+                    };
+                } else {
+                    // Footer-key case
+                    chunk.CryptoMetadata = new ColumnCryptoMetaData {
+                        ENCRYPTIONWITHFOOTERKEY = new EncryptionWithFooterKey()
+                    };
+                }
             }
 
-            ColumnSizes columnSizes = await WriteColumnAsync(
-                chunk, column, _schemaElement,
-                cancellationToken);
-            //generate stats for column chunk
+            // If we’re using a column key, temporarily swap it onto the encrypter so that
+            // *all* per-column modules (page headers/bodies, indexes, bloom) are sealed with that key.
+            byte[]? originalKey = null;
+            if(writerHasEncrypter && useColumnKey) {
+                originalKey = _footer.Encrypter!.FooterEncryptionKey;
+                _footer.Encrypter.FooterEncryptionKey = columnKeyBytes!;
+            }
+
+            ColumnSizes sizes;
+            try {
+                // This writes dictionary + data pages (and encrypts them if encrypter != null)
+                sizes = await WriteColumnAsync(chunk, column, _schemaElement, cancellationToken);
+            } finally {
+                if(writerHasEncrypter && useColumnKey) {
+                    _footer.Encrypter!.FooterEncryptionKey = originalKey!;
+                }
+            }
+
+            // Generate/attach stats to the (plaintext) ColumnMetaData we just produced
             chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
-            //the following counters must include both data size and header size
-            chunk.MetaData.TotalCompressedSize = columnSizes.CompressedSize;
-            chunk.MetaData.TotalUncompressedSize = columnSizes.UncompressedSize;
+            // Counters include page headers + bodies
+            chunk.MetaData.TotalCompressedSize = sizes.CompressedSize;
+            chunk.MetaData.TotalUncompressedSize = sizes.UncompressedSize;
+
+            // ---- ColumnMetaData protection per spec (§5.3/§5.4) ----
+            // If the column uses a *column-specific* key, we must serialize ColumnMetaData separately
+            // and encrypt it with the column key, storing the result in encrypted_column_metadata.
+            if(writerHasEncrypter && useColumnKey) {
+                // 1) Serialize ColumnMetaData
+                byte[] cmdPlain;
+                using(var ms = new MemoryStream()) {
+                    chunk.MetaData!.Write(new Meta.Proto.ThriftCompactProtocolWriter(ms));
+                    cmdPlain = ms.ToArray();
+                }
+
+                // 2) Encrypt with the *column key* (swap again just for this operation)
+                byte[]? originalKey2 = _footer.Encrypter!.FooterEncryptionKey;
+                _footer.Encrypter.FooterEncryptionKey = columnKeyBytes!;
+                try {
+                    byte[] encCmd = _footer.Encrypter.EncryptColumnMetaData(
+                        cmdPlain, _rowGroupOrdinal, _columnOrdinal);
+                    chunk.EncryptedColumnMetadata = encCmd;
+                    chunk.MetaData = null; // clear plaintext copy
+                } finally {
+                    _footer.Encrypter.FooterEncryptionKey = originalKey2!;
+                }
+
+                // 3) Adjust where meta_data lives according to footer mode:
+                //    - Encrypted footer mode: omit meta_data entirely.
+                //    - Plaintext footer mode: keep meta_data but strip sensitive stats so legacy readers can vectorize.
+                bool encryptedFooterMode = _footer.Encrypter is not null && !(_options?.UsePlaintextFooter ?? false);
+                if(encryptedFooterMode) {
+                    chunk.MetaData = null;
+                } else {
+                    if(chunk.MetaData?.Statistics != null) {
+                        chunk.MetaData.Statistics.MinValue = null;
+                        chunk.MetaData.Statistics.MaxValue = null;
+                        chunk.MetaData.Statistics.NullCount = null;
+                        chunk.MetaData.Statistics.DistinctCount = null;
+                    }
+                }
+            }
 
             return chunk;
         }
@@ -131,6 +219,7 @@ namespace Parquet.File {
                 : _footer.Encrypter.EncryptDataPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
 
             // 4) Now set the header's CompressedPageSize to the ENCRYPTED body length
+            // https://github.com/apache/parquet-format/blob/master/Encryption.md#51-encrypted-module-serialization
             ph.CompressedPageSize = encBody.Length;
 
             // 5) Serialize the PLAINTEXT header (with corrected sizes)

@@ -76,7 +76,7 @@ namespace Parquet.File {
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
             // NEW: only treat this column as encrypted when the chunk *has* CryptoMetadata
-            bool useEncryption = _footer.Decrypter is not null && _thriftColumnChunk.CryptoMetadata is not null;
+            bool useEncryption = _thriftColumnChunk.CryptoMetadata is not null;
 
             short pageOrdinal = 0;
             short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
@@ -107,8 +107,12 @@ namespace Parquet.File {
                         continue;
                     }
 
-                    // Footer-key encrypted column (column-key still not supported)
+                    // Footer-key encrypted column
                     if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null) {
+                        if(_footer.Decrypter is null)
+                            throw new InvalidDataException(
+                                "This file contains encrypted columns, but no footer key/decrypter is available. " +
+                                "Provide ParquetOptions.FooterEncryptionKey (and AAD prefix if required).");
                         // header (GCM)
                         byte[] hdr = _footer.Decrypter!.DecryptDataPageHeader(
                             new ThriftCompactProtocolReader(_inputStream),
@@ -134,7 +138,65 @@ namespace Parquet.File {
 
                         pageOrdinal++;
                     } else if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null) {
-                        throw new NotSupportedException("Column key encryption is currently not supported");
+                        EncryptionWithColumnKey ck = _thriftColumnChunk.CryptoMetadata.ENCRYPTIONWITHCOLUMNKEY;
+                        string? keyString = _options.ColumnKeyResolver?.Invoke(ck.PathInSchema, ck.KeyMetadata);
+
+                        if(string.IsNullOrWhiteSpace(keyString))
+                            throw new InvalidDataException(
+                                $"Column key is required to read encrypted column '{string.Join(".", ck.PathInSchema)}'.");
+
+                        byte[] columnKey = Encryption.EncryptionBase.ParseKeyString(keyString!);
+
+                        // Temporarily swap the decrypter key for this column
+                        byte[]? originalKey = _footer.Decrypter!.FooterEncryptionKey;
+                        _footer.Decrypter.FooterEncryptionKey = columnKey;
+                        try {
+                            // Dictionary page header/body (GCM)
+                            if(isDictionaryPageOffset) {
+                                byte[] dictHdr = _footer.Decrypter!.DecryptDictionaryPageHeader(
+                                    new ThriftCompactProtocolReader(_inputStream),
+                                    _rowGroup.Ordinal!.Value, columnOrdinal);
+
+                                using var ms = new MemoryStream(dictHdr);
+                                var hdrReader2 = new ThriftCompactProtocolReader(ms);
+                                var ph = PageHeader.Read(hdrReader2);
+
+                                byte[] dictBody = _footer.Decrypter.DecryptDictionaryPage(
+                                    new ThriftCompactProtocolReader(_inputStream),
+                                    _rowGroup.Ordinal!.Value, columnOrdinal);
+
+                                ReadDictionaryPageFromBuffer(ph, dictBody, pc);
+                                isDictionaryPageOffset = false;
+                            }
+
+                            // Data pages loop (same as footer-key path, but using the swapped key)
+                            // header (GCM)
+                            byte[] hdr = _footer.Decrypter!.DecryptDataPageHeader(
+                                new ThriftCompactProtocolReader(_inputStream),
+                                _rowGroup.Ordinal!.Value, columnOrdinal, pageOrdinal);
+
+                            using var msHdr = new MemoryStream(hdr);
+                            var hdrReader = new ThriftCompactProtocolReader(msHdr);
+                            var ph2 = PageHeader.Read(hdrReader);
+
+                            // body
+                            byte[] body = _footer.Decrypter.DecryptDataPage(
+                                new ThriftCompactProtocolReader(_inputStream),
+                                _rowGroup.Ordinal!.Value, columnOrdinal, pageOrdinal);
+
+                            if(ph2.Type == PageType.DATA_PAGE)
+                                ReadDataPageV1FromBuffer(ph2, body, pc);
+                            else if(ph2.Type == PageType.DATA_PAGE_V2)
+                                ReadDataPageV2FromBuffer(ph2, body, pc, totalValuesInChunk);
+                            else if(ph2.Type == PageType.DICTIONARY_PAGE)
+                                ReadDictionaryPageFromBuffer(ph2, body, pc);
+                            else
+                                throw new InvalidDataException($"Unsupported page type '{ph2.Type}'");
+
+                            pageOrdinal++;
+                        } finally {
+                            _footer.Decrypter!.FooterEncryptionKey = originalKey!;
+                        }
                     } else {
                         // Shouldn't happen because useEncryption implies CryptoMetadata != null,
                         // but keep a defensive fallback to plaintext.

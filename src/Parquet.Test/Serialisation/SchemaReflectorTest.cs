@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Attributes;
@@ -351,7 +349,7 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetTimestamp(useLogicalTimestamp: true, isAdjustedToUTC: false)]
             public DateTime LogicalLocalTimestampDate { get; set; }
-            
+
             [ParquetTimestamp(useLogicalTimestamp: true)]
             public DateTime LogicalUtcTimestampDate { get; set; }
 
@@ -359,7 +357,7 @@ namespace Parquet.Test.Serialisation {
             public DateTime? NullableTimestampDate { get; set; }
 
             public TimeSpan DefaultTime { get; set; }
-            
+
             public TimeSpan? NullableTimeSpan { get; set; }
 
             [ParquetMicroSecondsTime]
@@ -424,7 +422,7 @@ namespace Parquet.Test.Serialisation {
             Assert.False(((DateTimeDataField)df).IsAdjustedToUTC);
             Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
         }
-        
+
         [Fact]
         public void Type_DateTime_LogicalUtcTimestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -452,7 +450,7 @@ namespace Parquet.Test.Serialisation {
             Assert.True(df is TimeSpanDataField);
             Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
         }
-        
+
         [Fact]
         public void Type_TimeSpan_Nullable() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -652,7 +650,7 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
 
             public DefaultEnum DE { get; set; }
- 
+
             // Nullable Enum
             public DefaultEnum? NE { get; set; }
 

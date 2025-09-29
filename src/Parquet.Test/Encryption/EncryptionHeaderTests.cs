@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
-using Parquet;
 using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Meta;
@@ -24,7 +23,7 @@ namespace Parquet.Test.Encryption {
             );
 
             var opts = new ParquetOptions {
-                SecretKey = "footerKey-16byte",
+                FooterEncryptionKey = "footerKey-16byte",
                 AADPrefix = "mr-suite",
                 SupplyAadPrefix = false,      // store prefix in file
                 UseCtrVariant = false
@@ -40,7 +39,7 @@ namespace Parquet.Test.Encryption {
 
             // --- Act: open with reader so we have metadata + decrypter ---
             using ParquetReader reader = await ParquetReader.CreateAsync(path, new ParquetOptions {
-                SecretKey = "footerKey-16byte",
+                FooterEncryptionKey = "footerKey-16byte",
                 AADPrefix = "mr-suite"
             });
 

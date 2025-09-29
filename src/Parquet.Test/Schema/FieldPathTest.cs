@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Parquet.Schema;
+﻿using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Schema {

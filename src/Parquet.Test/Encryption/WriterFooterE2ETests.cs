@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -26,7 +25,7 @@ namespace Parquet.Test.Encryption {
         public async Task A_FooterEncrypted_GcmV1_PrefixStored_RoundTrip() {
             ParquetSchema schema = MakeSchema();
             var opts = new ParquetOptions {
-                SecretKey = Convert.ToBase64String(Enumerable.Range(1, 16).Select(i => (byte)i).ToArray()),
+                FooterEncryptionKey = Convert.ToBase64String(Enumerable.Range(1, 16).Select(i => (byte)i).ToArray()),
                 AADPrefix = "stored-prefix"  // we’ll store it in file in CreateEncrypterForWrite
             };
 
@@ -41,7 +40,7 @@ namespace Parquet.Test.Encryption {
 
             // read back (no prefix needed because it’s stored in file)
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                SecretKey = opts.SecretKey,
+                FooterEncryptionKey = opts.FooterEncryptionKey,
                 AADPrefix = null
             });
             Assert.True(reader.IsEncryptedFile);
@@ -57,7 +56,7 @@ namespace Parquet.Test.Encryption {
             ParquetSchema schema = MakeSchema();
             string prefix = "supply-me";
             var opts = new ParquetOptions {
-                SecretKey = Convert.ToBase64String(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray()),
+                FooterEncryptionKey = Convert.ToBase64String(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray()),
                 AADPrefix = prefix   // we’ll mark SupplyAadPrefix=true in CreateEncrypterForWrite
             };
 
@@ -73,7 +72,7 @@ namespace Parquet.Test.Encryption {
 
             // must supply prefix on read
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                SecretKey = opts.SecretKey,
+                FooterEncryptionKey = opts.FooterEncryptionKey,
                 AADPrefix = prefix
             });
             Assert.True(reader.IsEncryptedFile);
@@ -87,7 +86,7 @@ namespace Parquet.Test.Encryption {
         public async Task C_FooterEncrypted_CtrVariant_FooterStillGcm_RoundTrip() {
             ParquetSchema schema = MakeSchema();
             var opts = new ParquetOptions {
-                SecretKey = "sixteen-byte-key", // 16 bytes
+                FooterEncryptionKey = "sixteen-byte-key", // 16 bytes
                 AADPrefix = "ctr-variant"
             };
 
@@ -100,7 +99,7 @@ namespace Parquet.Test.Encryption {
             ms.Position = 0;
 
             using ParquetReader reader = await ParquetReader.CreateAsync(ms, new ParquetOptions {
-                SecretKey = opts.SecretKey,
+                FooterEncryptionKey = opts.FooterEncryptionKey,
                 AADPrefix = null // if stored; or same prefix if supply mode
             });
             Assert.True(reader.IsEncryptedFile);

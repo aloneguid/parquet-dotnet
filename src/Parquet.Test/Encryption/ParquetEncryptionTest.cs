@@ -25,7 +25,7 @@ namespace Parquet.Test.Encryption {
             using Stream stream = OpenTestFile(EncryptedFile);
 
             var parquetOptions = new ParquetOptions {
-                SecretKey = CorrectKey,
+                FooterEncryptionKey = CorrectKey,
                 AADPrefix = null
             };
 
@@ -63,7 +63,7 @@ namespace Parquet.Test.Encryption {
             using Stream stream = OpenTestFile(EncryptedFile);
 
             var parquetOptions = new ParquetOptions {
-                SecretKey = WrongKey,
+                FooterSigningKey = WrongKey,
                 AADPrefix = null
             };
 

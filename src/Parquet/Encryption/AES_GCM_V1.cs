@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using Parquet.Meta.Proto;
-using System.Security.Cryptography;
 
 namespace Parquet.Encryption {
     /// <summary>
@@ -13,6 +11,9 @@ namespace Parquet.Encryption {
     ///   aad = AadPrefix || (AadFileUnique || moduleId || [rowGroupLE16] || [columnLE16] || [pageLE16])
     /// </summary>
     internal class AES_GCM_V1_Encryption : EncryptionBase {
+        // sane default max (64MB) - protects against OOM attacks
+        const int MaxEncryptedModule = 64 * 1024 * 1024;
+
         private const int NonceLength = 12;
         private const int TagLength = 16;
 
@@ -57,123 +58,70 @@ namespace Parquet.Encryption {
             Meta.ParquetModules module,
             short? rowGroupOrdinal = null,
             short? columnOrdinal = null,
-            short? pageOrdinal = null) {
-
-            if(SecretKey == null || SecretKey.Length == 0) {
+            short? pageOrdinal = null
+        ) {
+            if(FooterEncryptionKey is null || FooterEncryptionKey.Length == 0)
                 throw new InvalidDataException("Missing decryption key for AES-GCM-V1 decryption.");
-            }
 
-            // Read total encrypted buffer length(little-endian)
+            // Spec framing: length(4 LE) | nonce(12) | ciphertext | tag(16)
             byte[] lenBytes = ReadExactlyOrInvalid(reader, 4, "GCM length").EnsureLittleEndian();
             int totalLength = BitConverter.ToInt32(lenBytes, 0);
-            if(totalLength < NonceLength + TagLength) {
-                throw new InvalidDataException("Encrypted buffer too small for AES-GCM framing.");
-            }
 
-            // Read nonce
-            byte[] nonce = ReadExactlyOrInvalid(reader, NonceLength, "GCM nonce");
+            const int NonceLen = 12;
+            const int TagLen = 16;
 
-            // Read ciphertext and tag
-            int cipherTextLength = totalLength - NonceLength - TagLength;
-            if(cipherTextLength < 0) {
+            if(totalLength < NonceLen + TagLen)
+                throw new InvalidDataException($"Encrypted GCM buffer too small ({totalLength} bytes).");
+
+            byte[] nonce = ReadExactlyOrInvalid(reader, NonceLen, "GCM nonce");
+            int ctLen = totalLength - NonceLen - TagLen;
+            if(ctLen < 0)
                 throw new InvalidDataException("Invalid ciphertext length for AES-GCM framing.");
-            }
 
-            byte[] cipherText = ReadExactlyOrInvalid(reader, cipherTextLength, "GCM ciphertext");
-            byte[] tag = ReadExactlyOrInvalid(reader, TagLength, "GCM tag");
+            byte[] ct = ReadExactlyOrInvalid(reader, ctLen, "GCM ciphertext");
+            byte[] tag = ReadExactlyOrInvalid(reader, TagLen, "GCM tag");
 
-            // Build AAD = AadPrefix || (AadFileUnique || moduleId || [ordinals])
+            EncTrace.FrameGcm("Decrypt", module, totalLength, nonce, ctLen, tag, rowGroupOrdinal, columnOrdinal, pageOrdinal);
+
+            // AAD = prefix || suffix(file-unique, module, ordinals)
+            byte[] aad = BuildAad(module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
+
+            // Pull prefix & file-unique from the instance for logging + AAD construction
             byte[] prefix = AadPrefix ?? Array.Empty<byte>();
-            byte[] fileUnique = AadFileUnique ?? throw new InvalidDataException("Missing AadFileUnique for AES-GCM-V1 decryption.");
-            byte[] aadSuffix = BuildAadSuffix(fileUnique, module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-            byte[] aad = prefix.Concat(aadSuffix).ToArray();
+            byte[] fileUnique = AadFileUnique ?? throw new InvalidDataException("Missing AadFileUnique for AES-GCM decryption.");
 
-#if NET8_0_OR_GREATER
-        using var cipher = new AesGcm(SecretKey, TagLength);
-        byte[] plainText = new byte[cipherTextLength];
-        cipher.Decrypt(nonce, cipherText, tag, plainText, aad);
-        return plainText;
-#else
-            throw new PlatformNotSupportedException("AES-GCM decryption requires netcoreapp3.0+ (e.g., .NET 5/6/7/8).");
-#endif
-        }
 
-        private static byte[] BuildAadSuffix(
-            byte[] aadFileUnique,
-            Meta.ParquetModules module,
-            short? rowGroupOrdinal,
-            short? columnOrdinal,
-            short? pageOrdinal) {
+            EncTrace.Aad("Decrypt", prefix, fileUnique, aad, module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
 
-            // AAD suffix = AadFileUnique
-            //            + moduleId (1 byte)
-            //            + [rowGroupOrdinal LE16]
-            //            + [columnOrdinal LE16]
-            //            + [pageOrdinal LE16]
-            using var ms = new MemoryStream();
-            ms.Write(aadFileUnique, 0, aadFileUnique.Length);
-            ms.WriteByte((byte)module);
+            // Decrypt
+            byte[] pt = new byte[ctLen];
+            CryptoHelpers.GcmDecryptOrThrow(FooterEncryptionKey!, nonce, ct, tag, pt, aad);
 
-            if(rowGroupOrdinal.HasValue) {
-                ms.Write(BitConverter.GetBytes(rowGroupOrdinal.Value).EnsureLittleEndian(), 0, sizeof(short));
-            }
-
-            if(columnOrdinal.HasValue) {
-                ms.Write(BitConverter.GetBytes(columnOrdinal.Value).EnsureLittleEndian(), 0, sizeof(short));
-            }
-
-            if(pageOrdinal.HasValue) {
-                ms.Write(BitConverter.GetBytes(pageOrdinal.Value).EnsureLittleEndian(), 0, sizeof(short));
-            }
-
-            return ms.ToArray();
-        }
-
-        // ---- GCM framing helper: 4-byte length (LE) | nonce(12) | ciphertext | tag(16)
-        private static byte[] FrameGcm(ReadOnlySpan<byte> nonce12, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> tag16) {
-            int len = nonce12.Length + ciphertext.Length + tag16.Length;
-            byte[] framed = new byte[4 + len];
-            BitConverter.GetBytes(len).CopyTo(framed, 0); // little-endian
-            nonce12.CopyTo(framed.AsSpan(4));
-            ciphertext.CopyTo(framed.AsSpan(4 + nonce12.Length));
-            tag16.CopyTo(framed.AsSpan(4 + nonce12.Length + ciphertext.Length));
-            return framed;
-        }
-
-        // Build full AAD = AadPrefix || BuildAadSuffix(...)
-        private byte[] BuildAad(Meta.ParquetModules module, short? rowGroupOrdinal, short? columnOrdinal, short? pageOrdinal) {
-            byte[] prefix = AadPrefix ?? Array.Empty<byte>();
-            if(prefix.Length > 1_000_000) {
-                throw new InvalidDataException("AAD prefix too large.");
-            }
-            byte[] fileUnique = AadFileUnique ?? throw new InvalidDataException("Missing AadFileUnique for AES-GCM-V1 encryption.");
-            byte[] suffix = BuildAadSuffix(fileUnique, module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-
-            byte[] aad = new byte[prefix.Length + suffix.Length];
-            Buffer.BlockCopy(prefix, 0, aad, 0, prefix.Length);
-            Buffer.BlockCopy(suffix, 0, aad, prefix.Length, suffix.Length);
-            return aad;
+            return pt;
         }
 
         // Core GCM encrypt for any module
-        internal byte[] EncryptModuleGcm(byte[] plaintext, Meta.ParquetModules module, short? rowGroupOrdinal = null, short? columnOrdinal = null, short? pageOrdinal = null) {
-#if !NET8_0_OR_GREATER
-            throw new PlatformNotSupportedException("AES-GCM encryption requires netcoreapp3.0+ (e.g., .NET 5/6/7/8).");
-#else
-    if (SecretKey == null || SecretKey.Length == 0)
-        throw new InvalidDataException("Missing key for AES-GCM-V1 encryption.");
+        internal byte[] EncryptModuleGcm(
+            byte[] plaintext,
+            Meta.ParquetModules module,
+            short? rowGroupOrdinal = null,
+            short? columnOrdinal = null,
+            short? pageOrdinal = null
+        ) {
+            if(FooterEncryptionKey == null || FooterEncryptionKey.Length == 0)
+                throw new InvalidDataException("Missing key for AES-GCM-V1 encryption.");
 
-    byte[] nonce = RandomNumberGenerator.GetBytes(NonceLength);
-    byte[] aad = BuildAad(module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
+            byte[] nonce = new byte[NonceLength];
+            CryptoHelpers.FillNonce12(nonce);
+            byte[] aad = BuildAad(module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
 
-    byte[] tag = new byte[TagLength];
-    byte[] ct = new byte[plaintext.Length];
+            byte[] tag = new byte[TagLength];
+            byte[] ct = new byte[plaintext.Length];
 
-    using var gcm = new AesGcm(SecretKey, TagLength);
-    gcm.Encrypt(nonce, plaintext, ct, tag, aad);
+            CryptoHelpers.GcmEncryptOrThrow(FooterEncryptionKey!, nonce, plaintext, ct, tag, aad);
+            CountGcmInvocation();
 
-    return FrameGcm(nonce, ct, tag);
-#endif
+            return FrameGcm(nonce, ct, tag);
         }
 
         // ---- Per-module convenience wrappers (match your decryptors) ----

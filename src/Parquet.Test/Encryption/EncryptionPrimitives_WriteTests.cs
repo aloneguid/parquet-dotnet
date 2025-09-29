@@ -1,11 +1,8 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using Parquet.Encryption;
 using Parquet.Meta;
-using Parquet.Meta.Proto;
 using Xunit;
 using Encoding = System.Text.Encoding;
 
@@ -18,13 +15,13 @@ namespace Parquet.Test.Encryption {
         private static readonly byte[] Unique = new byte[] { 0x10, 0x20, 0x30, 0x40 };
 
         private static AES_GCM_V1_Encryption MakeGcm(byte[] key) => new AES_GCM_V1_Encryption {
-            SecretKey = key,
+            FooterEncryptionKey = key,
             AadPrefix = Prefix,
             AadFileUnique = Unique
         };
 
         private static AES_GCM_CTR_V1_Encryption MakeCtr(byte[] key) => new AES_GCM_CTR_V1_Encryption {
-            SecretKey = key,
+            FooterEncryptionKey = key,
             AadPrefix = Prefix,
             AadFileUnique = Unique
         };
@@ -62,7 +59,7 @@ namespace Parquet.Test.Encryption {
         [Fact]
         public void Gcm_DataPageBody_Encrypt_RoundTrip() {
             var gcm = new AES_GCM_V1_Encryption {
-                SecretKey = Key16,
+                FooterEncryptionKey = Key16,
                 AadPrefix = Encoding.ASCII.GetBytes("writer-aad"),
                 AadFileUnique = new byte[] { 0x10, 0x20, 0x30, 0x40 }
             };

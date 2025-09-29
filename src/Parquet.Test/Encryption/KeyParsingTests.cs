@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using Parquet.Encryption;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
@@ -57,8 +56,8 @@ namespace Parquet.Test.Encryption {
         [Fact]
         public void Hex_Key_256_Accepted() {
             byte[] keyBytes = Enumerable.Range(1, 32).Select(i => (byte)i).ToArray();
+            string keyString = BitConverter.ToString(keyBytes).Replace("-", string.Empty); // 64 hex chars
             byte[] fileUnique = new byte[] { 7, 7, 7, 7 };
-            string keyString = Convert.ToBase64String(keyBytes);
 
             // 32 bytes (256-bit) hex
             var meta = new Meta.FileCryptoMetaData {

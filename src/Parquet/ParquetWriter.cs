@@ -10,6 +10,7 @@ using Parquet.File;
 using Parquet.Meta;
 using Parquet.Extensions;
 using Parquet.Encryption;
+using System.Security.Cryptography;
 
 namespace Parquet {
     /// <summary>
@@ -21,6 +22,14 @@ namespace Parquet {
         private readonly ParquetOptions _formatOptions;
         private bool _dataWritten;
         private readonly List<ParquetRowGroupWriter> _openedWriters = new List<ParquetRowGroupWriter>();
+        private EncryptionBase? _encrypter;
+        private Meta.FileCryptoMetaData? _cryptoMeta;
+
+        // for plaintext-footer mode
+        private Meta.EncryptionAlgorithm? _plaintextAlg;
+
+        // holds AadPrefix/AadFileUnique to build AAD for signing
+        private EncryptionBase? _signer;
 
         /// <summary>
         /// Type of compression to use, defaults to <see cref="CompressionMethod.Snappy"/>
@@ -35,9 +44,6 @@ namespace Parquet {
 #else
         public CompressionLevel CompressionLevel = CompressionLevel.Optimal;
 #endif
-
-        EncryptionBase? _encrypter;
-        Meta.FileCryptoMetaData? _cryptoMeta;
 
         private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false)
            : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
@@ -100,14 +106,14 @@ namespace Parquet {
 
                 await ValidateFileAsync();
 
-                FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken: cancellationToken);
+                FileMetaData fileMeta = await ReadMetadataAsync();
                 _footer = new ThriftFooter(fileMeta);
 
                 ValidateSchemasCompatible(_footer, _schema);
 
                 await GoBeforeFooterAsync();
             } else {
-                if(!string.IsNullOrWhiteSpace(_formatOptions.SecretKey)) {
+                if(!string.IsNullOrWhiteSpace(_formatOptions.FooterEncryptionKey) && !_formatOptions.UsePlaintextFooter) {
                     byte[]? aadPrefixBytes = _formatOptions.AADPrefix is null
                         ? null
                         : System.Text.Encoding.ASCII.GetBytes(_formatOptions.AADPrefix);
@@ -115,8 +121,8 @@ namespace Parquet {
                     if(_formatOptions.SupplyAadPrefix && aadPrefixBytes is null)
                         throw new ArgumentException("SupplyAadPrefix=true requires AADPrefix to be set.");
 
-                    (_encrypter, _cryptoMeta) = EncryptionBase.CreateEncrypterForWrite(
-                        _formatOptions.SecretKey!,
+                    (_encrypter, _cryptoMeta) = EncryptionBase.CreateEncryptorForWrite(
+                        _formatOptions.FooterEncryptionKey!,
                         aadPrefixBytes,
                         supplyAadPrefix: _formatOptions.SupplyAadPrefix,
                         useCtrVariant: _formatOptions.UseCtrVariant
@@ -125,18 +131,30 @@ namespace Parquet {
                     this._encrypter = _encrypter ?? throw new InvalidOperationException("encrypter was not created");
                 }
                 if(_footer == null) {
-                    _footer = new ThriftFooter(_schema, 0 /* todo: don't forget to set the total row count at the end!!! */);
+                    _footer = new ThriftFooter(_schema, 0);
                     _footer.Encrypter = _encrypter;
-                    //file starts with magic
-                    await WriteMagicAsync(encrypted: _encrypter != null);
+                    // Head magic (PAR1 for plaintext mode, PARE for encrypted footer)
+                    bool encryptedFooterMode = _encrypter != null && !_formatOptions.UsePlaintextFooter;
+                    await WriteMagicAsync(encrypted: encryptedFooterMode);
                 } else {
                     ValidateSchemasCompatible(_footer, _schema);
-                    _footer.Add(0 /* todo: don't forget to set the total row count at the end!!! */);
+                    _footer.Add(0);
                 }
-                // if(_cryptoMeta is not null) {
-                //     var w = new Meta.Proto.ThriftCompactProtocolWriter(Stream);
-                //     _cryptoMeta.Write(w);
-                // }
+                // Plaintext footer mode setup: advertise algorithm in FileMetaData and remember signer
+                if(_formatOptions.UsePlaintextFooter && !string.IsNullOrWhiteSpace(_formatOptions.FooterSigningKey)) {
+                    byte[]? aadPrefixBytes = _formatOptions.AADPrefix is null ? null : System.Text.Encoding.ASCII.GetBytes(_formatOptions.AADPrefix);
+                    (EncryptionBase? encTmp, FileCryptoMetaData? cryptoMeta) = EncryptionBase.CreateEncryptorForWrite(
+                        _formatOptions.FooterSigningKey!,
+                        aadPrefixBytes,
+                        supplyAadPrefix: _formatOptions.SupplyAadPrefix,
+                        useCtrVariant: _formatOptions.UseCtrVariant
+                    );
+                    _plaintextAlg = cryptoMeta.EncryptionAlgorithm;
+                    _signer = encTmp;             // keep for AAD building during signing
+                    _footer.SetPlaintextFooterAlgorithm(_plaintextAlg);
+                    // If you have metadata for the signing key, set it here:
+                    // _footer.SetFooterSigningKeyMetadata(...);
+                }
             }
         }
 
@@ -164,33 +182,76 @@ namespace Parquet {
         /// </summary>
         public void Dispose() {
             DisposeCore();
-            if(_footer == null)
+            if(_footer == null) {
                 return;
+            }
 
-            if(_encrypter is null) {
-                long size = _footer.Write(Stream);
-                Stream.WriteInt32((int)size);
-                WriteMagic(false);
+            using var ms = new MemoryStream();
+
+            // --- Plaintext footer mode (always ends with PAR1) ---
+            if(_formatOptions.UsePlaintextFooter) {
+                _footer.Write(ms);
+                byte[] footerBytes = ms.ToArray();
+
+                if(_plaintextAlg is not null) {
+                    // Signed plaintext footer (§5.5)
+                    if(_signer is null)
+                        throw new InvalidOperationException("Signer missing in plaintext footer mode.");
+
+                    byte[] aad = _signer.BuildAad(Meta.ParquetModules.Footer);
+
+                    byte[] nonce12 = new byte[12];
+                    CryptoHelpers.FillNonce12(nonce12);
+
+                    byte[] tag = new byte[16];
+                    byte[] tmpCt = new byte[footerBytes.Length];
+
+                    // Use the already parsed key on the signer
+                    CryptoHelpers.GcmEncryptOrThrow(_signer.FooterEncryptionKey!, nonce12, footerBytes, tmpCt, tag, aad);
+
+                    // [footer][nonce|tag][len=footer+28][PAR1]
+                    Stream.Write(footerBytes, 0, footerBytes.Length);
+                    Stream.Write(nonce12, 0, nonce12.Length);
+                    Stream.Write(tag, 0, tag.Length);
+                    Stream.WriteInt32(footerBytes.Length + 28);
+                    WriteMagic(false);
+                    Stream.Flush();
+                    return;
+                } else {
+                    // Legacy plaintext footer (unsigned)
+                    Stream.Write(footerBytes, 0, footerBytes.Length);
+                    Stream.WriteInt32(footerBytes.Length);
+                    WriteMagic(false);
+                    Stream.Flush();
+                    return;
+                }
+            }
+
+            // --- Encrypted footer mode (PARE) ---
+            if(_encrypter is not null) {
+                _footer.Write(ms);
+                byte[] encFooter = _encrypter.EncryptFooter(ms.ToArray());  // framed len|nonce|ct|tag
+
+                using var metaMs = new MemoryStream();
+                var metaWriter = new Parquet.Meta.Proto.ThriftCompactProtocolWriter(metaMs);
+                _cryptoMeta!.Write(metaWriter);
+                byte[] metaBytes = metaMs.ToArray();
+
+                // [meta][encFooter][combinedLen][PARE]
+                Stream.Write(metaBytes, 0, metaBytes.Length);
+                Stream.Write(encFooter, 0, encFooter.Length);
+                Stream.WriteInt32(metaBytes.Length + encFooter.Length);
+                WriteMagic(true);
                 Stream.Flush();
                 return;
             }
 
-            // 1) Serialize plaintext footer to a buffer
-            using var ms = new MemoryStream();
+            // --- Legacy plaintext footer (no encryption anywhere) ---
             _footer.Write(ms);
-            byte[] encFooter = _encrypter.EncryptFooter(ms.ToArray());  // framed: len|nonce|ct|tag
-
-            // 2) Serialize FileCryptoMetaData now (TAIL, not head)
-            using var metaMs = new MemoryStream();
-            var metaWriter = new Parquet.Meta.Proto.ThriftCompactProtocolWriter(metaMs);
-            _cryptoMeta!.Write(metaWriter);
-            byte[] metaBytes = metaMs.ToArray();
-
-            // 3) Write [meta][encFooter][combinedLen][ "PARE" ]
-            Stream.Write(metaBytes, 0, metaBytes.Length);
-            Stream.Write(encFooter, 0, encFooter.Length);
-            Stream.WriteInt32(metaBytes.Length + encFooter.Length);
-            WriteMagic(true);
+            byte[] footerPlain = ms.ToArray();
+            Stream.Write(footerPlain, 0, footerPlain.Length);
+            Stream.WriteInt32(footerPlain.Length);
+            WriteMagic(false);
             Stream.Flush();
         }
 
@@ -200,31 +261,78 @@ namespace Parquet {
         /// </summary>
         public async ValueTask DisposeAsync() {
             DisposeCore();
-            if(_footer == null)
-                return;
-
-            if(_encrypter is null) {
-                long size = await _footer.WriteAsync(Stream).ConfigureAwait(false);
-                await Stream.WriteInt32Async((int)size);
-                await WriteMagicAsync(false);
-                await Stream.FlushAsync();
+            if(_footer == null) {
                 return;
             }
 
             using var ms = new MemoryStream();
+
+            // --- Plaintext footer mode (always ends with PAR1) ---
+            if(_formatOptions.UsePlaintextFooter) {
+                await _footer.WriteAsync(ms).ConfigureAwait(false);
+                byte[] footerBytes = ms.ToArray();
+
+                if(_plaintextAlg is not null) {
+                    // Signed plaintext footer (§5.5)
+                    if(_signer is null)
+                        throw new InvalidOperationException("Signer missing in plaintext footer mode.");
+
+                    byte[] aad = _signer.BuildAad(Meta.ParquetModules.Footer);
+
+                    byte[] nonce12 = new byte[12];
+                    CryptoHelpers.FillNonce12(nonce12);
+
+                    byte[] tag = new byte[16];
+                    byte[] tmpCt = new byte[footerBytes.Length];
+
+                    CryptoHelpers.GcmEncryptOrThrow(_signer.FooterEncryptionKey!, nonce12, footerBytes, tmpCt, tag, aad);
+
+                    // [footer][nonce|tag][len=footer+28][PAR1]
+                    await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
+                    await Stream.WriteAsync(nonce12, 0, nonce12.Length).ConfigureAwait(false);
+                    await Stream.WriteAsync(tag, 0, tag.Length).ConfigureAwait(false);
+                    await Stream.WriteInt32Async(footerBytes.Length + 28).ConfigureAwait(false);
+                    await WriteMagicAsync(false).ConfigureAwait(false);
+                    await Stream.FlushAsync().ConfigureAwait(false);
+                    return;
+                } else {
+                    // Legacy plaintext footer (unsigned)
+                    await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
+                    await Stream.WriteInt32Async(footerBytes.Length).ConfigureAwait(false);
+                    await WriteMagicAsync(false).ConfigureAwait(false);
+                    await Stream.FlushAsync().ConfigureAwait(false);
+                    return;
+                }
+            }
+
+            // --- Encrypted footer mode (PARE) ---
+            if(_encrypter is not null) {
+                ms.SetLength(0);
+                await _footer.WriteAsync(ms).ConfigureAwait(false);
+                byte[] encFooter = _encrypter.EncryptFooter(ms.ToArray()); // framed len|nonce|ct|tag
+
+                using var metaMs = new MemoryStream();
+                var metaWriter = new Parquet.Meta.Proto.ThriftCompactProtocolWriter(metaMs);
+                _cryptoMeta!.Write(metaWriter);
+                byte[] metaBytes = metaMs.ToArray();
+
+                // [meta][encFooter][combinedLen][PARE]
+                await Stream.WriteAsync(metaBytes, 0, metaBytes.Length).ConfigureAwait(false);
+                await Stream.WriteAsync(encFooter, 0, encFooter.Length).ConfigureAwait(false);
+                await Stream.WriteInt32Async(metaBytes.Length + encFooter.Length).ConfigureAwait(false);
+                await WriteMagicAsync(true).ConfigureAwait(false);
+                await Stream.FlushAsync().ConfigureAwait(false);
+                return;
+            }
+
+            // --- Legacy plaintext footer (no encryption anywhere) ---
+            ms.SetLength(0);
             await _footer.WriteAsync(ms).ConfigureAwait(false);
-            byte[] encFooter = _encrypter.EncryptFooter(ms.ToArray());
-
-            using var metaMs = new MemoryStream();
-            var metaWriter = new Parquet.Meta.Proto.ThriftCompactProtocolWriter(metaMs);
-            _cryptoMeta!.Write(metaWriter);
-            byte[] metaBytes = metaMs.ToArray();
-
-            await Stream.WriteAsync(metaBytes, 0, metaBytes.Length);
-            await Stream.WriteAsync(encFooter, 0, encFooter.Length);
-            await Stream.WriteInt32Async(metaBytes.Length + encFooter.Length);
-            await WriteMagicAsync(true);
-            await Stream.FlushAsync();
+            byte[] footerPlain = ms.ToArray();
+            await Stream.WriteAsync(footerPlain, 0, footerPlain.Length).ConfigureAwait(false);
+            await Stream.WriteInt32Async(footerPlain.Length).ConfigureAwait(false);
+            await WriteMagicAsync(false).ConfigureAwait(false);
+            await Stream.FlushAsync().ConfigureAwait(false);
         }
     }
 }

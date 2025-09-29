@@ -8,14 +8,12 @@ namespace Parquet.Test.Integration {
     public class IntegrationBase : TestBase {
         private readonly string _toolsPath;
         private readonly string _toolsJarPath;
-        private readonly string _encryptedParquetInspectorJarPath;
         private readonly string _javaExecName;
         private readonly string _pythonExecName;
 
         public IntegrationBase() {
             _toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
             _toolsJarPath = Path.Combine(_toolsPath, "parquet-tools-1.9.0.jar");
-            _encryptedParquetInspectorJarPath = Path.Combine(_toolsPath, "encrypted-parquet-inspector-1.0.0.jar");
 
             _javaExecName = Environment.OSVersion.Platform == PlatformID.Win32NT
                ? "java.exe"
@@ -81,10 +79,6 @@ namespace Parquet.Test.Integration {
 
         protected string? ExecPyArrowToJson(string testFileName) {
             return ExecPythonAndGetOutout($"Integration/pyarrow_to_json.py \"{testFileName}\"");
-        }
-
-        protected EncParquetInspectorClient CreateInspectorClient() {
-            return new EncParquetInspectorClient(_encryptedParquetInspectorJarPath);
         }
     }
 }

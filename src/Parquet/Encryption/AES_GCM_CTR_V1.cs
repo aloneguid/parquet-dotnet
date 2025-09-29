@@ -5,6 +5,8 @@ using Parquet.Meta.Proto;
 
 namespace Parquet.Encryption {
     internal class AES_GCM_CTR_V1_Encryption : AES_GCM_V1_Encryption {
+        private const int NonceLength = 12;
+
         public AES_GCM_CTR_V1_Encryption() {
         }
 
@@ -13,45 +15,43 @@ namespace Parquet.Encryption {
             Meta.ParquetModules module,
             short? rowGroupOrdinal = null,
             short? columnOrdinal = null,
-            short? pageOrdinal = null) {
-
-            // Everything else (page headers, indexes, bloom filters, column metadata, footer) remains AES-GCM.
+            short? pageOrdinal = null
+        ) {
+            // Data/Dictionary page bodies use CTR; everything else falls back to base (GCM)
             if(module == Meta.ParquetModules.Data_Page || module == Meta.ParquetModules.Dictionary_Page) {
-                // CTR framing: length(4 LE) | nonce(12) | ciphertext
-                byte[] lengthBytes = ReadExactlyOrInvalid(reader, 4, "CTR length").EnsureLittleEndian();
-                int totalLength = BitConverter.ToInt32(lengthBytes, 0);
+                // Spec framing: length(4 LE) | nonce(12) | ciphertext
+                byte[] lenBytes = ReadExactlyOrInvalid(reader, 4, "CTR length").EnsureLittleEndian();
+                int totalLength = BitConverter.ToInt32(lenBytes, 0);
 
-                // NEW: validate total length before any reads
                 const int NonceLen = 12;
-                if(totalLength < NonceLen) {
-                    throw new InvalidDataException("Encrypted CTR buffer too small: missing 12-byte nonce.");
-                }
+                if(totalLength < NonceLen)
+                    throw new InvalidDataException($"Encrypted CTR buffer too small ({totalLength} bytes).");
 
-                byte[] nonce12 = ReadExactlyOrInvalid(reader, 12, "CTR nonce");
-                int cipherTextLength = totalLength - nonce12.Length;
-                if(cipherTextLength < 0) {
-                    throw new InvalidDataException("Invalid AES-GCM-CTR module length.");
-                }
+                byte[] nonce = ReadExactlyOrInvalid(reader, NonceLen, "CTR nonce");
+                int ctLen = totalLength - NonceLen;
+                if(ctLen < 0)
+                    throw new InvalidDataException("Invalid ciphertext length for AES-CTR framing.");
 
-                byte[] cipherText = ReadExactlyOrInvalid(reader, cipherTextLength, "CTR ciphertext");
+                byte[] ct = ReadExactlyOrInvalid(reader, ctLen, "CTR ciphertext");
+                EncTrace.FrameCtr("Decrypt", module, totalLength, nonce, ctLen, rowGroupOrdinal, columnOrdinal, pageOrdinal);
 
-                // Build 16-byte IV = nonce(12) || 0x00000001 (big-endian).
+
+                // IV = nonce(12) || 0x00000001 (big-endian)
                 byte[] iv16 = new byte[16];
-                Buffer.BlockCopy(nonce12, 0, iv16, 0, 12);
+                Buffer.BlockCopy(nonce, 0, iv16, 0, NonceLen);
                 iv16[12] = 0x00;
                 iv16[13] = 0x00;
                 iv16[14] = 0x00;
                 iv16[15] = 0x01;
 
-                using var cipherStream = new MemoryStream(cipherText, writable: false);
-                using var plainStream = new MemoryStream(cipherText.Length);
-
-                AesCtrTransform(SecretKey!, iv16, cipherStream, plainStream);
+                using var cipherStream = new MemoryStream(ct, writable: false);
+                using var plainStream = new MemoryStream(ctLen);
+                AesCtrTransform(FooterEncryptionKey!, iv16, cipherStream, plainStream);
 
                 return plainStream.ToArray();
             }
 
-            // Delegate to GCM for all non-page modules (keeps correct framing + AAD handling).
+            // Non-page modules remain GCM-framed (length|nonce|ciphertext|tag)
             return base.Decrypt(reader, module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
         }
 
@@ -60,39 +60,65 @@ namespace Parquet.Encryption {
                 throw new InvalidDataException("Missing or invalid AES key for AES-GCM-CTR-V1 encryption.");
 
             // nonce(12) for framing; IV = nonce(12) || 00 00 00 01 (counter starts at 1)
-            byte[] nonce12 = new byte[12];
+            byte[] nonce12 = new byte[NonceLength];
 #if NET8_0_OR_GREATER
     RandomNumberGenerator.Fill(nonce12);
 #else
             using(var rng = RandomNumberGenerator.Create())
                 rng.GetBytes(nonce12);
 #endif
+
             byte[] iv16 = new byte[16];
-            Buffer.BlockCopy(nonce12, 0, iv16, 0, 12);
-            iv16[12] = 0;
-            iv16[13] = 0;
-            iv16[14] = 0;
-            iv16[15] = 1;
+            Buffer.BlockCopy(nonce12, 0, iv16, 0, NonceLength);
+            iv16[12] = 0x00;
+            iv16[13] = 0x00;
+            iv16[14] = 0x00;
+            iv16[15] = 0x01; // big-endian counter starts at 1
+
+            // Optional but recommended: enforce per-key page count limit
+            // (call the instance method if this lives inside your EncryptionBase)
+            // CountPageEncryption();
 
             using var inMs = new MemoryStream(body, writable: false);
             using var outMs = new MemoryStream(body.Length);
-            AesCtrTransform(key, iv16, inMs, outMs);
+            AesCtrTransform(key, iv16, inMs, outMs);  // must increment last 4 bytes as big-endian counter
             byte[] ct = outMs.ToArray();
 
             // CTR framing: length(4 LE) | nonce(12) | ciphertext
-            int len = 12 + ct.Length;
-            byte[] framed = new byte[4 + len];
-            BitConverter.GetBytes(len).CopyTo(framed, 0);
-            Buffer.BlockCopy(nonce12, 0, framed, 4, 12);
-            Buffer.BlockCopy(ct, 0, framed, 4 + 12, ct.Length);
+            int payloadLen = NonceLength + ct.Length;
+
+            byte[] framed = new byte[4 + payloadLen];
+
+            // Always emit LE length, regardless of platform endianness
+            byte[] lenLE = BitConverter.GetBytes(payloadLen);
+            if(!BitConverter.IsLittleEndian)
+                Array.Reverse(lenLE);
+            Buffer.BlockCopy(lenLE, 0, framed, 0, 4);
+
+            Buffer.BlockCopy(nonce12, 0, framed, 4, NonceLength);
+            Buffer.BlockCopy(ct, 0, framed, 4 + NonceLength, ct.Length);
             return framed;
         }
 
-        public override byte[] EncryptDataPage(byte[] body, short rowGroupOrdinal, short columnOrdinal, short pageOrdinal)
-            => EncryptCtrPageBody(body, SecretKey!);
 
-        public override byte[] EncryptDictionaryPage(byte[] body, short rowGroupOrdinal, short columnOrdinal)
-            => EncryptCtrPageBody(body, SecretKey!);
+        public override byte[] EncryptDataPage(
+            byte[] body,
+            short rowGroupOrdinal,
+            short columnOrdinal,
+            short pageOrdinal
+        ) {
+            CountPageEncryption();
+            return EncryptCtrPageBody(body, FooterEncryptionKey!);
+        }
+
+        public override byte[] EncryptDictionaryPage(
+            byte[] body,
+            short rowGroupOrdinal,
+            short columnOrdinal
+        ) {
+            CountPageEncryption();
+            return EncryptCtrPageBody(body, FooterEncryptionKey!);
+        }
 
         private static void AesCtrTransform(byte[] key, byte[] iv16, Stream inputStream, Stream outputStream) {
             if(key == null)

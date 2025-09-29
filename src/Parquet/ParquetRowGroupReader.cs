@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Encryption;
 using Parquet.File;
 using Parquet.Meta;
+using Parquet.Meta.Proto;
 using Parquet.Schema;
 
 namespace Parquet {
@@ -65,6 +67,7 @@ namespace Parquet {
         private readonly Stream _stream;
         private readonly ParquetOptions? _options;
         private readonly Dictionary<FieldPath, ColumnChunk> _pathToChunk = new();
+        private readonly List<(short colOrd, ColumnChunk cc)> _encryptedColumnChunks = new();
 
         internal ParquetRowGroupReader(
            RowGroup rowGroup,
@@ -77,14 +80,27 @@ namespace Parquet {
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
             //cache chunks
-            for(int i = 0; i < rowGroup.Columns.Count; i++) {
-                ColumnChunk cc = rowGroup.Columns[i];
+            for(int colIdx = 0; colIdx < rowGroup.Columns.Count; colIdx++) {
+                ColumnChunk cc = rowGroup.Columns[colIdx];
 
-                if(cc.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null)
-                    throw new NotSupportedException($"Column-key encryption is not supported (column index {i}).");
+                // Case 1: Plain metadata present -> register immediately
+                if(cc.MetaData != null) {
+                    FieldPath path = _footer.GetPath(cc);
+                    _pathToChunk[path] = cc;
+                    continue;
+                }
 
-                FieldPath path = cc.GetPath();
-                _pathToChunk[path] = cc;
+                // Case 2: Metadata is encrypted -> DO NOT fail here.
+                // We may still be able to read plaintext columns in this file without column keys.
+                if(cc.EncryptedColumnMetadata != null) {
+                    _encryptedColumnChunks ??= new List<(short colOrd, ColumnChunk cc)>();
+                    short colOrd = (short)colIdx;
+                    _encryptedColumnChunks.Add((colOrd, cc));
+                    // We’ll resolve (decrypt or throw) lazily if the caller asks for this column.
+                    continue;
+                }
+                // Truly malformed chunk (neither MetaData nor EncryptedColumnMetadata)
+                throw new InvalidDataException("ColumnChunk is missing both MetaData and EncryptedColumnMetadata.");
             }
         }
 
@@ -101,9 +117,8 @@ namespace Parquet {
         /// <summary>
         /// Checks if this field exists in source schema
         /// </summary>
-        public bool ColumnExists(DataField field) {
-            return GetMetadata(field) != null;
-        }
+        public bool ColumnExists(DataField field) => GetMetadata(field) != null;
+
 
         /// <summary>
         /// Reads a column from this row group. Unlike writing, columns can be read in any order.
@@ -123,13 +138,9 @@ namespace Parquet {
         public ColumnChunk? GetMetadata(DataField field) {
             if(field == null)
                 throw new ArgumentNullException(nameof(field));
-
-            if(!_pathToChunk.TryGetValue(field.Path, out ColumnChunk? columnChunk)) {
-                return null;
-            }
-
-            return columnChunk;
+            return ResolveChunkFor(field.Path);
         }
+
 
         /// <summary>
         /// Get custom key-value metadata for a data field
@@ -143,18 +154,34 @@ namespace Parquet {
         }
 
         private DataColumnStatistics? ReadColumnStatistics(ColumnChunk cc) {
+            Statistics? st = cc.MetaData?.Statistics;
 
-            Statistics? st = cc.MetaData!.Statistics;
+            if((st == null || (st.MinValue == null && st.MaxValue == null && st.NullCount == null)) &&
+                cc.EncryptedColumnMetadata != null &&
+                cc.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null) {
+                // Find path and column ordinal
+                FieldPath path = _footer.GetPath(cc);
+                short rgOrd = _footer.GetRowGroupOrdinal(_rowGroup);
+                short colOrd = (short)_rowGroup.Columns.IndexOf(cc);
+
+                // Resolve (will decrypt and cache MetaData)
+                ColumnChunk? resolved = ResolveChunkFor(path);
+                if(resolved?.MetaData?.Statistics != null)
+                    st = resolved.MetaData.Statistics;
+            }
+
             if(st == null)
                 return null;
 
-            SchemaElement? se = _footer.GetSchemaElement(cc) ?? throw new ArgumentException("can't find schema element", nameof(cc));
+            SchemaElement? se = _footer.GetSchemaElement(cc)
+                ?? throw new ArgumentException("can't find schema element", nameof(cc));
 
-            ParquetPlainEncoder.TryDecode(st.MinValue, se, _options, out object? min);
-            ParquetPlainEncoder.TryDecode(st.MaxValue, se, _options, out object? max);
+            ParquetPlainEncoder.TryDecode(st.MinValue, se, _options!, out object? min);
+            ParquetPlainEncoder.TryDecode(st.MaxValue, se, _options!, out object? max);
 
             return new DataColumnStatistics(st.NullCount, st.DistinctCount, min, max);
         }
+
 
 
         /// <summary>
@@ -166,6 +193,66 @@ namespace Parquet {
         public DataColumnStatistics? GetStatistics(DataField field) {
             ColumnChunk cc = GetMetadata(field) ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
             return ReadColumnStatistics(cc);
+        }
+
+        private ColumnChunk? ResolveChunkFor(FieldPath path) {
+            if(_pathToChunk.TryGetValue(path, out ColumnChunk? ccPlain))
+                return ccPlain;
+
+            // Try find a matching encrypted chunk by path; if found, decrypt and cache
+            for(int i = 0; i < _encryptedColumnChunks.Count; i++) {
+                (short colOrd, ColumnChunk? encCc) = _encryptedColumnChunks[i];
+                FieldPath encPath = _footer.GetPath(encCc);
+                if(!encPath.Equals(path))
+                    continue;
+
+                DecryptColumnMetaFor(encCc, encPath, colOrd);
+                return encCc; // MetaData now populated & cached
+            }
+
+            return null;
+        }
+
+        private void DecryptColumnMetaFor(ColumnChunk encCc, FieldPath path, short colOrd) {
+            // Column-key info is required on encrypted column meta
+            EncryptionWithColumnKey ck = encCc.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY
+                     ?? throw new NotSupportedException(
+                         $"Column '{path}' has encrypted metadata but lacks column-key crypto metadata.");
+
+            string? keyString = _options?.ColumnKeyResolver?.Invoke(ck.PathInSchema, ck.KeyMetadata);
+            if(string.IsNullOrWhiteSpace(keyString))
+                throw new NotSupportedException(
+                    $"Column '{path}' uses column-key encryption. Provide a ColumnKeyResolver in ParquetOptions to supply the key.");
+
+            byte[] columnKey = EncryptionBase.ParseKeyString(keyString!);
+
+            // We need AAD context (prefix + fileUnique) from the file
+            EncryptionBase? ctx = _footer.Decrypter ?? _footer.Encrypter;
+            if(ctx == null)
+                throw new NotSupportedException($"Column '{path}' metadata is encrypted and AAD context is unavailable.");
+
+            // Create a fresh decrypter with the same algorithm, copy AAD, set the column key
+            EncryptionBase dec = ctx is AES_GCM_CTR_V1_Encryption
+                ? new AES_GCM_CTR_V1_Encryption()
+                : new AES_GCM_V1_Encryption();
+
+            dec.AadPrefix = ctx.AadPrefix;
+            dec.AadFileUnique = ctx.AadFileUnique;
+            dec.FooterEncryptionKey = columnKey;
+
+            // Decrypt ColumnMetaData (needs row-group & column ordinals)
+            using var msEnc = new MemoryStream(encCc.EncryptedColumnMetadata!);
+            var tpr = new Parquet.Meta.Proto.ThriftCompactProtocolReader(msEnc);
+
+            short rgOrd = _footer.GetRowGroupOrdinal(_rowGroup);     // <-- use your ThriftFooter helper
+            byte[] plain = dec.DecryptColumnMetaData(tpr, rgOrd, colOrd);
+
+            using var ms = new MemoryStream(plain);
+            var r = new Parquet.Meta.Proto.ThriftCompactProtocolReader(ms);
+            ColumnMetaData realMeta = Meta.ColumnMetaData.Read(r);
+
+            encCc.MetaData = realMeta;            // cache the real meta
+            _pathToChunk[path] = encCc;         // make lookups fast next time
         }
 
         /// <summary>

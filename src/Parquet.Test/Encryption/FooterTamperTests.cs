@@ -1,10 +1,7 @@
-// src/Parquet.Test/Encryption/FooterTamperTests.cs
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Parquet.Data;
-using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Encryption {
@@ -46,7 +43,7 @@ namespace Parquet.Test.Encryption {
 
         [Fact]
         public async Task TailMagic_Tampered_ValidateFile_Fails_And_Open_Fails() {
-            using Stream s = OpenTestFile("encryption/enc_footer_only.parquet");
+            using Stream s = OpenTestFile("encryption/algo=gcm,mode=EF,aad=none,uniform=Y_file-16.parquet");
             using MemoryStream tampered = TamperTailMagic(s, "PAXX");
 
             // 1) Validation must fail on bad tail magic
@@ -57,7 +54,7 @@ namespace Parquet.Test.Encryption {
             tampered.Position = 0;
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(tampered, new ParquetOptions {
-                    SecretKey = "footerKey-16byte",
+                    FooterSigningKey = "footerKey-16byte",
                     AADPrefix = null
                 });
             });
@@ -67,12 +64,12 @@ namespace Parquet.Test.Encryption {
         [InlineData(0)]            // impossible small
         [InlineData(int.MaxValue)] // absurdly large
         public async Task FooterLength_Tampered_Reader_Fails(int newLen) {
-            using Stream s = OpenTestFile("encryption/enc_footer_only.parquet");
+            using Stream s = OpenTestFile("encryption/algo=gcm,mode=EF,aad=none,uniform=Y_file-16.parquet");
             using MemoryStream tampered = TamperFooterLength(s, newLen);
 
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(tampered, new ParquetOptions {
-                    SecretKey = "footerKey-16byte",
+                    FooterSigningKey = "footerKey-16byte",
                     AADPrefix = null
                 });
             });
@@ -80,7 +77,7 @@ namespace Parquet.Test.Encryption {
 
         [Fact]
         public async Task HeadMagic_Tampered_ValidateFile_Fails_And_Open_Fails() {
-            using Stream s = OpenTestFile("encryption/enc_footer_only.parquet");
+            using Stream s = OpenTestFile("encryption/algo=gcm,mode=EF,aad=none,uniform=Y_file-16.parquet");
             using MemoryStream ms = new MemoryStream();
             s.CopyTo(ms);
             byte[] buf = ms.ToArray();
@@ -97,7 +94,7 @@ namespace Parquet.Test.Encryption {
             tampered.Position = 0;
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader _ = await ParquetReader.CreateAsync(tampered, new ParquetOptions {
-                    SecretKey = "footerKey-16byte",
+                    FooterSigningKey = "footerKey-16byte",
                     AADPrefix = null
                 });
             });

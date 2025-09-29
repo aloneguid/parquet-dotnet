@@ -348,6 +348,16 @@ namespace Parquet.File {
             }
         }
 
+        public void SetPlaintextFooterAlgorithm(Meta.EncryptionAlgorithm alg) {
+            if(alg == null)
+                throw new ArgumentNullException(nameof(alg));
+            _fileMeta.EncryptionAlgorithm = alg;
+        }
+
+        public void SetFooterSigningKeyMetadata(byte[]? metadata) {
+            _fileMeta.FooterSigningKeyMetadata = metadata;
+        }
+
         #endregion
     }
 }

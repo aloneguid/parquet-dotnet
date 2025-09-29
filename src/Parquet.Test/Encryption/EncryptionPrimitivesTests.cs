@@ -83,7 +83,7 @@ namespace Parquet.Test.Encryption {
             ThriftCompactProtocolReader reader = MakeReader(framed);
 
             var enc = new AES_GCM_V1_Encryption {
-                SecretKey = Key256,
+                FooterEncryptionKey = Key256,
                 AadPrefix = AadPrefix,
                 AadFileUnique = AadFileUnique
             };
@@ -117,7 +117,7 @@ namespace Parquet.Test.Encryption {
 
             byte[] wrongPrefix = Encoding.ASCII.GetBytes("WRONG_PREFIX");
             var enc = new AES_GCM_V1_Encryption {
-                SecretKey = Key128,
+                FooterEncryptionKey = Key128,
                 AadPrefix = wrongPrefix,       // <-- wrong on purpose
                 AadFileUnique = AadFileUnique
             };
@@ -160,7 +160,7 @@ namespace Parquet.Test.Encryption {
             ThriftCompactProtocolReader reader = MakeReader(framed);
 
             var enc = new AES_GCM_CTR_V1_Encryption {
-                SecretKey = Key256,
+                FooterEncryptionKey = Key256,
                 AadPrefix = AadPrefix,       // not used by CTR pages, but harmless
                 AadFileUnique = AadFileUnique
             };

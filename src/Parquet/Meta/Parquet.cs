@@ -3339,15 +3339,15 @@ namespace Parquet.Meta {
     public enum ParquetModules {
         //From: https://github.com/apache/parquet-format/blob/master/Encryption.md#442-aad-suffix
         Footer = 0,
-        ColumnMetaData,
-        Data_Page,
-        Dictionary_Page,
-        Data_PageHeader,
-        Dictionary_PageHeader,
-        ColumnIndex,
-        OffsetIndex,
-        BloomFilter_Header,
-        BloomFilter_Bitset
+        ColumnMetaData = 1,
+        Data_Page = 2,
+        Dictionary_Page = 3,
+        Data_PageHeader = 4,
+        Dictionary_PageHeader = 5,
+        ColumnIndex = 6,
+        OffsetIndex = 7,
+        BloomFilter_Header = 8,
+        BloomFilter_Bitset = 9
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
