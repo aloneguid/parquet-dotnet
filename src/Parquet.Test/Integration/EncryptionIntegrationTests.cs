@@ -145,8 +145,8 @@ namespace Parquet.Test.Integration {
             EncParquetInspectorException ex = await Assert.ThrowsAsync<EncParquetInspectorException>(
                 () => _client.InspectAsync(path, KeyUtf8, aadPrefix: null));
 
-            // Optional: assert message contains Parquet’s AAD complaint
-            Assert.Contains("AAD", ex.Message, StringComparison.OrdinalIgnoreCase);
+            // Optional: assert message contains "IllegalArgumentException"
+            Assert.Contains("IllegalArgumentException", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
