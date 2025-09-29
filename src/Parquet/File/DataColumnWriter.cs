@@ -73,11 +73,11 @@ namespace Parquet.File {
             PageHeader ph, MemoryStream data,
             ColumnSizes cs,
             CancellationToken cancellationToken) {
-            
+
             using IronCompress.IronCompressResult compressedData = _compressionMethod == CompressionMethod.None
                 ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
                 : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
-            
+
             ph.UncompressedPageSize = (int)data.Length;
             ph.CompressedPageSize = compressedData.AsSpan().Length;
 
@@ -130,7 +130,9 @@ namespace Parquet.File {
 
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
-                bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding;
+                Array data = pc.GetPlainData(out int offset, out int count);
+                bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
+               
                 // data page Num_values also does include NULLs
                 PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode);
                 if(pc.HasRepetitionLevels) {
@@ -146,8 +148,7 @@ namespace Parquet.File {
                     int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-                } else {
-                    Array data = pc.GetPlainData(out int offset, out int count);
+                } else {                
                     if(deltaEncode) {
                         DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
                         chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
