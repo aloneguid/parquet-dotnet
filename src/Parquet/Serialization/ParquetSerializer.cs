@@ -8,8 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Extensions;
+using Parquet.Meta;
 using Parquet.Schema;
 using Parquet.Serialization.Dremel;
+using Type = System.Type;
 
 namespace Parquet.Serialization {
 
@@ -367,40 +369,6 @@ namespace Parquet.Serialization {
 
                 result.Clear();
             }
-        }
-
-        /// <summary>
-        /// Untyped deserialisation result.
-        /// </summary>
-        public record UntypedAsyncEnumableResult(IAsyncEnumerable<Dictionary<string, object>> Data, ParquetSchema Schema);
-
-        /// <summary>
-        /// Highly experimental
-        /// </summary>
-        public static async Task<UntypedAsyncEnumableResult> DeserializeAllAsync(Stream source,
-            ParquetSerializerOptions? options = null,
-            CancellationToken cancellationToken = default) {
-            using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
-
-            ParquetSchema schema = reader.Schema;
-
-            async IAsyncEnumerable<Dictionary<string, object>> GetAsyncRowGroups([EnumeratorCancellation] CancellationToken ct = default) {
-                Assembler<Dictionary<string, object>> asm = GetAssembler(schema);
-                long? requestedCapacity = reader.Metadata?.RowGroups.Max(x => x.NumRows);
-                List<Dictionary<string, object>> result = GetList<Dictionary<string, object>>(requestedCapacity);
-
-                for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
-
-                    await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken: ct);
-                    foreach(Dictionary<string, object>? item in result) {
-                        yield return item;
-                    }
-
-                    result.Clear();
-                }
-            }
-
-            return new UntypedAsyncEnumableResult(GetAsyncRowGroups(cancellationToken), schema);
         }
 
         /// <summary>
