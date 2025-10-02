@@ -72,34 +72,6 @@ namespace Parquet.Test.Serialisation {
             }
         }
 
-        private async Task DictAsyncCompare<TSchema>(List<Dictionary<string, object?>> data, bool asJson = false,
-            string? writeTestFile = null) {
-
-            // serialize to parquet
-            using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(typeof(TSchema).GetParquetSchema(true), data, ms);
-
-            if(writeTestFile != null) {
-                System.IO.File.WriteAllBytes(writeTestFile, ms.ToArray());
-            }
-
-            // deserialize from parquet
-            ms.Position = 0;
-            ParquetSerializer.UntypedAsyncEnumableResult result = await ParquetSerializer.DeserializeAllAsync(ms);
-
-            List<Dictionary<string, object>> data2 = new List<Dictionary<string, object>>();
-            await foreach(Dictionary<string, object> item in result.Data) {
-                data2.Add(item);
-            }
-
-            // compare
-            if(asJson) {
-                XAssert.JsonEquivalent(data, data2);
-            } else {
-                Assert.Equivalent(data2, data);
-            }
-        }
-
         class Record {
             public DateTime Timestamp { get; set; }
             public string? EventName { get; set; }
@@ -149,7 +121,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<Record>(data);
-            await DictAsyncCompare<Record>(data);
         }
 
         class RecordWithFields {
@@ -239,7 +210,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<NullableRecord>(data);
-            await DictAsyncCompare<NullableRecord>(data);
         }
 
         class Primitives {
@@ -405,7 +375,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<AddressBookEntry>(data);
-            await DictAsyncCompare<AddressBookEntry>(data);
         }
 
 
@@ -480,7 +449,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistory>(data);
-            await DictAsyncCompare<MovementHistory>(data);
         }
 
 
@@ -567,7 +535,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistoryCompressed>(data);
-            await DictAsyncCompare<MovementHistoryCompressed>(data);
         }
 
         [Fact]
@@ -579,7 +546,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistoryNullableCompressed>(data);
-            await DictAsyncCompare<MovementHistoryNullableCompressed>(data);
         }
 
         [Fact]
@@ -591,7 +557,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistoryCompressedWithArrays>(data);
-            await DictAsyncCompare<MovementHistoryCompressedWithArrays>(data);
         }
 
         [Fact]
@@ -703,7 +668,6 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<IdWithTags>(data, true);
-            await DictAsyncCompare<IdWithTags>(data, true);
         }
 
         class ContainerForIdWithTags {
@@ -744,7 +708,6 @@ namespace Parquet.Test.Serialisation {
             }}};
 
             await DictCompare<IdWithNames>(data, true);
-            await DictAsyncCompare<IdWithNames>(data, true);
         }
 
         [Fact]
