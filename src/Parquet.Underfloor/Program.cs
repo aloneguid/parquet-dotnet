@@ -7,21 +7,22 @@ using Parquet.Underfloor;
 using static Grey.App;
 
 // global state
-FileData fd = new FileData(null);
+WorkFile fd = await WorkFile.CreateAsync(null);
 
 async Task LoadAsync(string path) {
-    fd = new FileData(path);
+
+    await fd.DisposeAsync();
+    fd = await WorkFile.CreateAsync(path);
 
     try {
-        using(Stream fileStream = File.OpenRead(path)) {
-            //await ParquetSerializer.DeserializeWithProgressAsync(fileStream, fd,
-            //    new ParquetSerializerOptions {
-            //        ParquetOptions = new ParquetOptions {
-            //            TreatByteArrayAsString = true
-            //        }
-            //    });
-        }
-
+        //using(Stream fileStream = File.OpenRead(path)) {
+        //    await ParquetSerializer.DeserializeWithProgressAsync(fileStream, fd,
+        //        new ParquetSerializerOptions {
+        //            ParquetOptions = new ParquetOptions {
+        //                TreatByteArrayAsString = true
+        //            }
+        //        });
+        //}
 
         //fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");        
         //fd.CustomMetadata = reader.CustomMetadata;
@@ -53,10 +54,6 @@ if(args.Length == 0) {
 }
 
 string title = "Parquet Underfloor";
-
-//if(!string.IsNullOrEmpty(fileName)) {
-//    title += $" - {Path.GetFileName(fileName)}";
-//}
 
 static void RenderNull(int rowIdx, int colIdx) {
     Button($"null##{rowIdx}-{colIdx}", isEnabled: false, isSmall: true);
@@ -104,7 +101,7 @@ void RenderValue(int rowIdx, int colIdx, Field f, object? value) {
 }
 
 void RenderData() {
-
+    /*
     if(fd.Columns == null || fd.ColumnsDisplay == null || fd.Schema == null)
         return;
 
@@ -126,6 +123,7 @@ void RenderData() {
         //row.TryGetValue(columnName, out object? value);
         //RenderValue(rowIdx, colIdx, f, value);
     }, 0, -20, true);
+    */
 }
 
 void LN(string? icon, string key, string? value) {
@@ -156,14 +154,18 @@ void ALN(string key, string? value) {
 
 void RenderInfo() {
 
+    if(!Accordion("Info"))
+        return;
+
     LN(Icon.Create, "Created by", fd.Metadata?.CreatedBy);
-   
+
     if(fd.RowGroups != null) {
         Sep("Row groups");
         int i = 0;
         foreach(IParquetRowGroupReader rg in fd.RowGroups) {
             RowGroup rg1 = rg.RowGroup;
-            string title = $"Row group {i++} ({rg.RowCount} rows)";
+            //string title = $"Row group {i++} ({rg.RowCount:N0} rows)";
+            string title = $"Row group {++i}/{fd.RowGroups.Count}";
             if(Accordion(title)) {
                 ALN("Rows", rg1.NumRows.ToString("N0"));
                 ALN("File offset", rg1.FileOffset.ToString());
@@ -173,13 +175,13 @@ void RenderInfo() {
         }
     }
 
-    if(fd.Metadata?.KeyValueMetadata != null) {
-        Sep("Key-value metadata");
-        foreach(KeyValue kv in fd.Metadata.KeyValueMetadata) {
-            string v = kv.Value ?? "";
-            Input(ref v, kv.Key, true, 0, true);
-        }
-    }
+    //if(fd.Metadata?.KeyValueMetadata != null) {
+    //    Sep("Key-value metadata");
+    //    foreach(KeyValue kv in fd.Metadata.KeyValueMetadata) {
+    //        string v = kv.Value ?? "";
+    //        Input(ref v, kv.Key, true, 0, true);
+    //    }
+    //}
 
 }
 
@@ -206,22 +208,21 @@ Run(title, () => {
         Label(fd.ErrorMessage, Emphasis.Error);
     }
 
-  
+    RenderInfo();
 
-    using(new TabBar()) {
+    //using(new TabBar()) {
+    //    using(var ti = new TabItem("Info")) {
+    //        if(ti) {
+    //            RenderInfo();
+    //        }
+    //    }
 
-        using(var ti = new TabItem("Data")) {
-            if(ti) {
-                RenderData();
-            }
-        }
-
-        using(var ti = new TabItem("Info")) {
-            if(ti) {
-                RenderInfo();
-            }
-        }
-    }
+    //    using(var ti = new TabItem("Data")) {
+    //        if(ti) {
+    //            RenderData();
+    //        }
+    //    }
+    //}
 
     using(new StatusBar()) {
         Label(fd.FileName);
