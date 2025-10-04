@@ -7,56 +7,35 @@ using Parquet.Underfloor;
 using static Grey.App;
 
 // global state
-FileData fd = new FileData(null);
+WorkFile fd = await WorkFile.CreateAsync(null);
 
-async Task LoadSchemaAsync() {
-    using ParquetReader reader = await ParquetReader.CreateAsync(fd.FilePath);
-    fd.Schema = reader.Schema;
-    fd.CustomMetadata = reader.CustomMetadata;
-    fd.FileMeta = reader.Metadata;
-    fd.RowGroups = reader.RowGroups;
-    
-    fd.RowCountDisplay = reader.Metadata?.NumRows.ToString("N0");
-    fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");
-    fd.VersionDisplay = reader.Metadata?.Version.ToString();
-    fd.ColumnCountDisplay = reader.Schema.Fields.Count.ToString("N0");
+async Task LoadAsync(string path) {
 
-    fd.Columns = reader.Schema.Fields.Select(f => f.Name).ToArray();
-}
-
-async Task LoadFromFileAsync(string path) {
-
-    fd = new FileData(path);
+    await fd.DisposeAsync();
+    fd = await WorkFile.CreateAsync(path);
 
     try {
-        await LoadSchemaAsync();
+        //using(Stream fileStream = File.OpenRead(path)) {
+        //    await ParquetSerializer.DeserializeWithProgressAsync(fileStream, fd,
+        //        new ParquetSerializerOptions {
+        //            ParquetOptions = new ParquetOptions {
+        //                TreatByteArrayAsString = true
+        //            }
+        //        });
+        //}
+
+        //fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");        
+        //fd.CustomMetadata = reader.CustomMetadata;
+        //fd.RowGroups = reader.RowGroups;
+        //fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");
+
     } catch(Exception ex) {
         fd.ErrorMessage = ex.Message;
-        return;
-    }
-
-    fd.IsDataLoading = true;
-    try {
-        using(Stream fileStream = File.OpenRead(path)) {
-            fd.Data = await ParquetSerializer.DeserializeAsync(
-                    fileStream,
-                    new ParquetSerializerOptions {
-                        ParquetOptions = new ParquetOptions {
-                            TreatByteArrayAsString = true
-                        }
-                    });
-        }
-
-        fd.HasLoaded = true;
-    } catch(Exception ex) {
-        fd.ErrorMessage = ex.Message;
-    } finally {
-        fd.IsDataLoading = false;
     }
 }
 
 void LoadFromFile(string path) {
-    LoadFromFileAsync(path).Forget();
+    LoadAsync(path).Forget();
 }
 
 if(args.Length == 0) {
@@ -76,9 +55,9 @@ if(args.Length == 0) {
 
 string title = "Parquet Underfloor";
 
-//if(!string.IsNullOrEmpty(fileName)) {
-//    title += $" - {Path.GetFileName(fileName)}";
-//}
+static void RenderNull(int rowIdx, int colIdx) {
+    Button($"null##{rowIdx}-{colIdx}", isEnabled: false, isSmall: true);
+}
 
 void RenderPrimitiveValue(int rowIdx, int colIdx, DataField df, object value) {
     if(df.ClrType == typeof(bool)) {
@@ -90,9 +69,19 @@ void RenderPrimitiveValue(int rowIdx, int colIdx, DataField df, object value) {
     Label(value?.ToString() ?? "");
 }
 
+void RenderStruct(int rowIdx, int colIdx, StructField sf, object value) {
+    if(value is Dictionary<string, object> dd) {
+        foreach(Field f in sf.Fields) {
+            Label(f.Name, isEnabled: false); SL();
+            dd.TryGetValue(f.Name, out object? v);
+            RenderValue(rowIdx, colIdx, f, v);
+        }
+    }
+}
+
 void RenderValue(int rowIdx, int colIdx, Field f, object? value) {
     if(value == null) {
-        Button($"null##{rowIdx}-{colIdx}", isEnabled: false, isSmall: true);
+        RenderNull(rowIdx, colIdx);
         return;
     }
 
@@ -105,29 +94,36 @@ void RenderValue(int rowIdx, int colIdx, Field f, object? value) {
             }
         }
     } else if(f.SchemaType == SchemaType.Struct) {
-
+        RenderStruct(rowIdx, colIdx, (StructField)f, value);
     } else {
         Label(f.SchemaType.ToString());
     }
 }
 
 void RenderData() {
-
-    if(fd.Columns == null)
+    /*
+    if(fd.Columns == null || fd.ColumnsDisplay == null || fd.Schema == null)
         return;
 
-    int rowCount = fd.Data?.Data.Count ?? 0;
+    int rowCount = (int)(fd.Metadata?.NumRows ?? 0);
 
-    Table("data", fd.Columns, rowCount, (int rowIdx, int colIdx) => {
-        if(fd.Data == null)
-            return;
+    Table("data", fd.ColumnsDisplay, rowCount, (int rowIdx, int colIdx) => {
+        //if(fd.DataColumns == null)
+        //    return;
 
-        Dictionary<string, object> row = fd.Data.Data[rowIdx];
-        string columnName = fd.Columns[colIdx];
-        Field f = fd.Data.Schema[colIdx];
-        row.TryGetValue(columnName, out object? value);
-        RenderValue(rowIdx, colIdx, f, value);
-    });
+        if(colIdx == 0) {
+            Label(rowIdx.ToString(), isEnabled: false);
+            return; // first column is row index
+        }
+
+        colIdx -= 1;
+        //Dictionary<string, object> row = fd.Data[rowIdx];
+        //string columnName = fd.Columns[colIdx];
+        //Field f = fd.Schema[colIdx];
+        //row.TryGetValue(columnName, out object? value);
+        //RenderValue(rowIdx, colIdx, f, value);
+    }, 0, -20, true);
+    */
 }
 
 void LN(string? icon, string key, string? value) {
@@ -158,14 +154,18 @@ void ALN(string key, string? value) {
 
 void RenderInfo() {
 
-    LN(Icon.Create, "Created by", fd.FileMeta?.CreatedBy);
-   
+    if(!Accordion("Info"))
+        return;
+
+    LN(Icon.Create, "Created by", fd.Metadata?.CreatedBy);
+
     if(fd.RowGroups != null) {
         Sep("Row groups");
         int i = 0;
         foreach(IParquetRowGroupReader rg in fd.RowGroups) {
             RowGroup rg1 = rg.RowGroup;
-            string title = $"Row group {i++} ({rg.RowCount} rows)";
+            //string title = $"Row group {i++} ({rg.RowCount:N0} rows)";
+            string title = $"Row group {++i}/{fd.RowGroups.Count}";
             if(Accordion(title)) {
                 ALN("Rows", rg1.NumRows.ToString("N0"));
                 ALN("File offset", rg1.FileOffset.ToString());
@@ -175,13 +175,13 @@ void RenderInfo() {
         }
     }
 
-    if(fd.FileMeta?.KeyValueMetadata != null) {
-        Sep("Key-value metadata");
-        foreach(KeyValue kv in fd.FileMeta.KeyValueMetadata) {
-            string v = kv.Value ?? "";
-            Input(ref v, kv.Key, true, 0, true);
-        }
-    }
+    //if(fd.Metadata?.KeyValueMetadata != null) {
+    //    Sep("Key-value metadata");
+    //    foreach(KeyValue kv in fd.Metadata.KeyValueMetadata) {
+    //        string v = kv.Value ?? "";
+    //        Input(ref v, kv.Key, true, 0, true);
+    //    }
+    //}
 
 }
 
@@ -208,22 +208,21 @@ Run(title, () => {
         Label(fd.ErrorMessage, Emphasis.Error);
     }
 
-  
+    RenderInfo();
 
-    using(new TabBar()) {
+    //using(new TabBar()) {
+    //    using(var ti = new TabItem("Info")) {
+    //        if(ti) {
+    //            RenderInfo();
+    //        }
+    //    }
 
-        using(var ti = new TabItem("Data")) {
-            if(ti) {
-                RenderData();
-            }
-        }
-
-        using(var ti = new TabItem("Info")) {
-            if(ti) {
-                RenderInfo();
-            }
-        }
-    }
+    //    using(var ti = new TabItem("Data")) {
+    //        if(ti) {
+    //            RenderData();
+    //        }
+    //    }
+    //}
 
     using(new StatusBar()) {
         Label(fd.FileName);
