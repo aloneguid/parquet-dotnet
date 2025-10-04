@@ -289,18 +289,8 @@ namespace Parquet.Encryption {
                 // ignore and fall through
             }
 
-            // 3) Raw UTF-8 bytes
-            byte[] utf8 = Encoding.UTF8.GetBytes(keyString);
-            if(utf8.Length is 16 or 24 or 32)
-                return utf8;
-
-            // If it looked hex but wasn't a valid hex key length, surface a helpful message.
-            if(evenLength && allHexChars)
-                throw new ArgumentException("Hex key must decode to 16/24/32 bytes.");
-
-            throw new ArgumentException(
-                "EncryptionKey must be 128/192/256-bit. " +
-                "Provide as Base64, hex, or a UTF-8 string of 16/24/32 bytes.");
+            // 3) Derive SHA256
+            return CryptoHelpers.DeriveKeyFromUtf8(keyString, expectedLen: 32);
         }
 
         protected static byte[] ReadExactlyOrInvalid(ThriftCompactProtocolReader reader, int length, string context) {

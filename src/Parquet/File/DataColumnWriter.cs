@@ -153,7 +153,7 @@ namespace Parquet.File {
                 //    - Plaintext footer mode: keep meta_data but strip sensitive stats so legacy readers can vectorize.
                 bool encryptedFooterMode = _footer.Encrypter is not null && !(_options?.UsePlaintextFooter ?? false);
                 if(encryptedFooterMode) {
-                    chunk.MetaData = null;
+                    // chunk.MetaData = null;
                 } else {
                     if(chunk.MetaData?.Statistics != null) {
                         chunk.MetaData.Statistics.MinValue = null;

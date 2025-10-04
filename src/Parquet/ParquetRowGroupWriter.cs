@@ -123,8 +123,8 @@ namespace Parquet {
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
             //luckily ColumnChunk already contains sizes of page+header in it's meta
-            _rowGroup.TotalCompressedSize = _rowGroup.Columns.Sum(c => c.MetaData!.TotalCompressedSize);
-            _rowGroup.TotalByteSize = _rowGroup.Columns.Sum(c => c.MetaData!.TotalUncompressedSize);
+            _rowGroup.TotalCompressedSize = _rowGroup.Columns.Sum(c => c.MetaData?.TotalCompressedSize ?? 0);
+            _rowGroup.TotalByteSize = _rowGroup.Columns.Sum(c => c.MetaData?.TotalUncompressedSize ?? 0);
         }
     }
 }

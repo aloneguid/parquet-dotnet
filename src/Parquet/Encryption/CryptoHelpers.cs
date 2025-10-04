@@ -94,12 +94,12 @@ namespace Parquet.Encryption {
             return (nonce, tag);
         }
 
-        public static byte[] DeriveKeyFromUtf8(string baseKeyUtf8, string label, int expectedLen) {
+        public static byte[] DeriveKeyFromUtf8(string baseKeyUtf8, string? label = null, int expectedLen = 16) {
             byte[] baseBytes = System.Text.Encoding.UTF8.GetBytes(baseKeyUtf8);
             using var sha256 = System.Security.Cryptography.SHA256.Create();
             sha256.TransformBlock(baseBytes, 0, baseBytes.Length, null, 0);
             sha256.TransformBlock(new byte[] { 0 }, 0, 1, null, 0);
-            byte[] labelBytes = System.Text.Encoding.UTF8.GetBytes(label);
+            byte[] labelBytes = System.Text.Encoding.UTF8.GetBytes(label ?? "derived");
             sha256.TransformFinalBlock(labelBytes, 0, labelBytes.Length);
             byte[] full = sha256.Hash!;
             if(expectedLen is 16 or 24 or 32) {

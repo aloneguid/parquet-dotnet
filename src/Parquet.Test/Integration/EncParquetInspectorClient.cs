@@ -22,7 +22,7 @@ namespace Interop.Inspector {
 
         public EncParquetInspectorClient(string? jarPath = null, string javaExe = "java") {
             string toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
-            string defaultJar = Path.Combine(toolsPath, "encrypted-parquet-inspector-1.0.2.jar");
+            string defaultJar = Path.Combine(toolsPath, "encrypted_parquet_inspector-1.0.3.jar");
             jarPath ??= defaultJar;
             JarPath = ResolveJar(jarPath)
                 ?? throw new FileNotFoundException(
