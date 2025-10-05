@@ -33,8 +33,6 @@ namespace Parquet.Encryption {
                     throw new InvalidDataException("Invalid ciphertext length for AES-CTR framing.");
 
                 byte[] ct = ReadExactlyOrInvalid(reader, ctLen, "CTR ciphertext");
-                EncTrace.FrameCtr("Decrypt", module, totalLength, nonce, ctLen, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-
 
                 // IV = nonce(12) || 0x00000001 (big-endian)
                 byte[] iv16 = new byte[16];
@@ -60,24 +58,14 @@ namespace Parquet.Encryption {
                 throw new InvalidDataException("Missing or invalid AES key for AES-GCM-CTR-V1 encryption.");
 
             // nonce(12) for framing; IV = nonce(12) || 00 00 00 01 (counter starts at 1)
-            byte[] nonce12 = new byte[NonceLength];
-#if NET8_0_OR_GREATER
-    RandomNumberGenerator.Fill(nonce12);
-#else
-            using(var rng = RandomNumberGenerator.Create())
-                rng.GetBytes(nonce12);
-#endif
+            byte[] nonce = CryptoHelpers.GetRandomBytes(NonceLength);
 
             byte[] iv16 = new byte[16];
-            Buffer.BlockCopy(nonce12, 0, iv16, 0, NonceLength);
+            Buffer.BlockCopy(nonce, 0, iv16, 0, NonceLength);
             iv16[12] = 0x00;
             iv16[13] = 0x00;
             iv16[14] = 0x00;
             iv16[15] = 0x01; // big-endian counter starts at 1
-
-            // Optional but recommended: enforce per-key page count limit
-            // (call the instance method if this lives inside your EncryptionBase)
-            // CountPageEncryption();
 
             using var inMs = new MemoryStream(body, writable: false);
             using var outMs = new MemoryStream(body.Length);
@@ -95,7 +83,7 @@ namespace Parquet.Encryption {
                 Array.Reverse(lenLE);
             Buffer.BlockCopy(lenLE, 0, framed, 0, 4);
 
-            Buffer.BlockCopy(nonce12, 0, framed, 4, NonceLength);
+            Buffer.BlockCopy(nonce, 0, framed, 4, NonceLength);
             Buffer.BlockCopy(ct, 0, framed, 4 + NonceLength, ct.Length);
             return framed;
         }

@@ -1,5 +1,6 @@
 // src/Parquet.Test/Encryption/Ctr_IvSemanticsTests.cs
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -26,7 +27,8 @@ namespace Parquet.Test.Encryption {
 
             var rdr = new ThriftCompactProtocolReader(new MemoryStream(framed, writable: false));
             // Frame: [len(4)][nonce(12)][ciphertext(N)]
-            int total = rdr.ReadI32();
+            Span<byte> counterBytes = rdr.ReadBytesExactly(4);
+            int total = BinaryPrimitives.ReadInt32LittleEndian(counterBytes);
             byte[] nonce = rdr.ReadBytesExactly(12);
             int ctLen = total - 12;
             byte[] ct = rdr.ReadBytesExactly(ctLen);

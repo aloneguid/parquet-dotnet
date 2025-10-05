@@ -7,7 +7,7 @@ namespace Parquet.Encryption {
         // Parquet uses 128-bit (16-byte) GCM tags everywhere.
         private const int GcmTagSizeBytes = 16;
 
-        public static void FillNonce12(byte[] nonce) {
+        public static void FillWithRandomBytes(byte[] nonce) {
 #if NET6_0_OR_GREATER
             RandomNumberGenerator.Fill(nonce);
 #else
@@ -15,6 +15,18 @@ namespace Parquet.Encryption {
             rng.GetBytes(nonce);
 #endif
         }
+
+        public static byte[] GetRandomBytes(int length) {
+            byte[] bytes = new byte[length];
+            FillWithRandomBytes(bytes);
+            return bytes;
+        }
+
+        public static byte[] GetRandomBytes(ref byte[] target) {
+            FillWithRandomBytes(target);
+            return target;
+        }
+
 
         public static void GcmEncryptOrThrow(
             byte[] key,
@@ -35,12 +47,12 @@ namespace Parquet.Encryption {
         }
 
         public static void GcmDecryptOrThrow(
-    byte[] key,
-    ReadOnlySpan<byte> nonce,
-    ReadOnlySpan<byte> ciphertext,
-    ReadOnlySpan<byte> tag,
-    Span<byte> plaintext,
-    ReadOnlySpan<byte> aad) {
+            byte[] key,
+            ReadOnlySpan<byte> nonce,
+            ReadOnlySpan<byte> ciphertext,
+            ReadOnlySpan<byte> tag,
+            Span<byte> plaintext,
+            ReadOnlySpan<byte> aad) {
 #if NET8_0_OR_GREATER
             using var gcm = new AesGcm(key, GcmTagSizeBytes);
             gcm.Decrypt(nonce, ciphertext, tag, plaintext, aad);
@@ -73,8 +85,7 @@ namespace Parquet.Encryption {
                 throw new InvalidDataException("Footer signing key is required.");
 
             // Nonce
-            byte[] nonce = new byte[12];
-            FillNonce12(nonce);
+            byte[] nonce = GetRandomBytes(12);
 
             // AAD' = parquetAAD || footerBytes
             byte[] aadPrime = new byte[parquetAad.Length + footerBytes.Length];

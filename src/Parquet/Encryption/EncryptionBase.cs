@@ -106,7 +106,7 @@ namespace Parquet.Encryption {
             if(aadFileUnique is null || aadFileUnique.Length == 0) {
                 aadFileUnique = new byte[16];
 #if NET8_0_OR_GREATER
-        System.Security.Cryptography.RandomNumberGenerator.Fill(aadFileUnique);
+                System.Security.Cryptography.RandomNumberGenerator.Fill(aadFileUnique);
 #else
                 using(var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
                     rng.GetBytes(aadFileUnique);
@@ -232,7 +232,7 @@ namespace Parquet.Encryption {
         }
 
         public abstract byte[] EncryptFooter(byte[] plaintext);
-        public abstract byte[] EncryptColumnMetaData(byte[] bytes, short rowGroupOrdinal, short columnOrdinal);
+        public abstract byte[] EncryptColumnMetaDataWithKey(byte[] plain, short rg, short col, byte[] key);
         public abstract byte[] EncryptDataPageHeader(byte[] header, short rowGroupOrdinal, short columnOrdinal, short pageOrdinal);
         public abstract byte[] EncryptDataPage(byte[] body, short rowGroupOrdinal, short columnOrdinal, short pageOrdinal);
         public abstract byte[] EncryptDictionaryPageHeader(byte[] header, short rowGroupOrdinal, short columnOrdinal);
@@ -289,8 +289,18 @@ namespace Parquet.Encryption {
                 // ignore and fall through
             }
 
-            // 3) Derive SHA256
-            return CryptoHelpers.DeriveKeyFromUtf8(keyString, expectedLen: 32);
+            // Try UTF8
+            if(keyString.Length is 16 or 24 or 32) {
+                try {
+                    return Encoding.UTF8.GetBytes(keyString);
+                } catch {
+                    //ignore and fall through
+                }
+            }
+
+            throw new ArgumentException(
+            "EncryptionKey must be 128/192/256-bit. " +
+            "Provide as Base64, hex, or a UTF-8 string of 16/24/32 bytes.");
         }
 
         protected static byte[] ReadExactlyOrInvalid(ThriftCompactProtocolReader reader, int length, string context) {
@@ -298,7 +308,6 @@ namespace Parquet.Encryption {
                 return reader.ReadBytesExactly(length);
             } catch(IOException ex) {
                 // Normalize framing issues to InvalidDataException for tests + callers
-                EncTrace.Log($"ReadExactly failed ctx='{context}' need={length}: {ex.Message}");
                 throw new InvalidDataException($"{context}: expected {length} bytes but stream ended early.", ex);
             }
         }

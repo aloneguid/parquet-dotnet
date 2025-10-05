@@ -81,17 +81,8 @@ namespace Parquet.Encryption {
             byte[] ct = ReadExactlyOrInvalid(reader, ctLen, "GCM ciphertext");
             byte[] tag = ReadExactlyOrInvalid(reader, TagLen, "GCM tag");
 
-            EncTrace.FrameGcm("Decrypt", module, totalLength, nonce, ctLen, tag, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-
             // AAD = prefix || suffix(file-unique, module, ordinals)
             byte[] aad = BuildAad(module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
-
-            // Pull prefix & file-unique from the instance for logging + AAD construction
-            byte[] prefix = AadPrefix ?? Array.Empty<byte>();
-            byte[] fileUnique = AadFileUnique ?? throw new InvalidDataException("Missing AadFileUnique for AES-GCM decryption.");
-
-
-            EncTrace.Aad("Decrypt", prefix, fileUnique, aad, module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
 
             // Decrypt
             byte[] pt = new byte[ctLen];
@@ -111,17 +102,16 @@ namespace Parquet.Encryption {
             if(FooterEncryptionKey == null || FooterEncryptionKey.Length == 0)
                 throw new InvalidDataException("Missing key for AES-GCM-V1 encryption.");
 
-            byte[] nonce = new byte[NonceLength];
-            CryptoHelpers.FillNonce12(nonce);
+            byte[] nonce12 = CryptoHelpers.GetRandomBytes(12);
             byte[] aad = BuildAad(module, rowGroupOrdinal, columnOrdinal, pageOrdinal);
 
             byte[] tag = new byte[TagLength];
             byte[] ct = new byte[plaintext.Length];
 
-            CryptoHelpers.GcmEncryptOrThrow(FooterEncryptionKey!, nonce, plaintext, ct, tag, aad);
+            CryptoHelpers.GcmEncryptOrThrow(FooterEncryptionKey!, nonce12, plaintext, ct, tag, aad);
             CountGcmInvocation();
 
-            return FrameGcm(nonce, ct, tag);
+            return FrameGcm(nonce12, ct, tag);
         }
 
         // ---- Per-module convenience wrappers (match your decryptors) ----
@@ -141,8 +131,15 @@ namespace Parquet.Encryption {
         public override byte[] EncryptDictionaryPage(byte[] body, short rowGroupOrdinal, short columnOrdinal)
             => EncryptModuleGcm(body, Meta.ParquetModules.Dictionary_Page, rowGroupOrdinal, columnOrdinal);
 
-        public override byte[] EncryptColumnMetaData(byte[] bytes, short rowGroupOrdinal, short columnOrdinal)
-            => EncryptModuleGcm(bytes, Meta.ParquetModules.ColumnMetaData, rowGroupOrdinal, columnOrdinal);
+        public override byte[] EncryptColumnMetaDataWithKey(byte[] plain, short rg, short col, byte[] key) {
+            byte[]? saved = FooterEncryptionKey;
+            try {
+                FooterEncryptionKey = key;
+                return EncryptModuleGcm(plain, Meta.ParquetModules.ColumnMetaData, rg, col);
+            } finally {
+                FooterEncryptionKey = saved;
+            }
+        }
 
         public override byte[] EncryptColumnIndex(byte[] bytes, short rowGroupOrdinal, short columnOrdinal)
             => EncryptModuleGcm(bytes, Meta.ParquetModules.ColumnIndex, rowGroupOrdinal, columnOrdinal);

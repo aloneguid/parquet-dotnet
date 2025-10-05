@@ -8,6 +8,7 @@ using IronCompress;
 using Microsoft.IO;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Encryption;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -56,79 +57,84 @@ namespace Parquet.File {
             DataColumn column,
             CancellationToken cancellationToken = default
         ) {
-
             if(column == null)
                 throw new ArgumentNullException(nameof(column));
             column.Field.EnsureAttachedToSchema(nameof(column));
 
-            // Create the chunk as before
             ColumnChunk chunk = _footer.CreateColumnChunk(
                 _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues, _keyValueMetadata);
 
-            // Will we encrypt this column at all?
+            // Global flags
             bool writerHasEncrypter = _footer.Encrypter is not null;
+            bool encryptedFooterMode = writerHasEncrypter && !(_options?.UsePlaintextFooter ?? false);
 
-            // Decide if this column uses a column-specific key or the footer key
+            // Per-column selection
             bool useColumnKey = false;
             byte[]? columnKeyBytes = null;
             byte[]? columnKeyMetadata = null;
 
+            // A footer key is considered "available" only if explicitly set in options
+            bool footerKeyAvailable = !string.IsNullOrWhiteSpace(_options?.FooterEncryptionKey);
+
+            // Decide crypto metadata + which encrypter instance to use for THIS column
+            Encryption.EncryptionBase? encrForThisColumn = null;
+
             if(writerHasEncrypter) {
-                // Build a stable path string to match user-supplied map (you can adapt to your convention)
                 string pathStr = string.Join(".", fullPath.ToList());
 
-                if(_options is not null &&
-                   _options.ColumnKeys is not null &&
-                   _options.ColumnKeys.TryGetValue(pathStr, out ParquetOptions.ColumnKeySpec? spec)) {
-
+                if(_options?.ColumnKeys != null &&
+                    _options.ColumnKeys.TryGetValue(pathStr, out ParquetOptions.ColumnKeySpec? spec)) {
+                    // Column-key column
                     useColumnKey = true;
                     columnKeyBytes = Encryption.EncryptionBase.ParseKeyString(spec.Key);
                     columnKeyMetadata = spec.KeyMetadata;
 
-                    // Advertise column crypto metadata (column-key case)
                     chunk.CryptoMetadata = new ColumnCryptoMetaData {
                         ENCRYPTIONWITHCOLUMNKEY = new EncryptionWithColumnKey {
                             PathInSchema = fullPath.ToList(),
                             KeyMetadata = columnKeyMetadata
                         }
                     };
-                } else {
-                    // Footer-key case
+
+                    // We'll swap the key on the shared encrypter for this column
+                    encrForThisColumn = _footer.Encrypter;
+                } else if(footerKeyAvailable) {
+                    // Footer-key column (only if footer key really exists)
                     chunk.CryptoMetadata = new ColumnCryptoMetaData {
                         ENCRYPTIONWITHFOOTERKEY = new EncryptionWithFooterKey()
                     };
+                    encrForThisColumn = _footer.Encrypter;
+                } else {
+                    // PF + no footer key → plaintext column (do NOT advertise crypto metadata)
+                    chunk.CryptoMetadata = null;
+                    encrForThisColumn = null;
                 }
             }
 
-            // If we’re using a column key, temporarily swap it onto the encrypter so that
-            // *all* per-column modules (page headers/bodies, indexes, bloom) are sealed with that key.
+            // If using a column key, temporarily swap it onto the encrypter instance
             byte[]? originalKey = null;
-            if(writerHasEncrypter && useColumnKey) {
+            if(useColumnKey && encrForThisColumn is not null) {
                 originalKey = _footer.Encrypter!.FooterEncryptionKey;
                 _footer.Encrypter.FooterEncryptionKey = columnKeyBytes!;
             }
 
             ColumnSizes sizes;
             try {
-                // This writes dictionary + data pages (and encrypts them if encrypter != null)
-                sizes = await WriteColumnAsync(chunk, column, _schemaElement, cancellationToken);
+                // Writes dictionary + data pages using encrForThisColumn (null => plaintext)
+                sizes = await WriteColumnAsync(chunk, column, _schemaElement, encrForThisColumn, cancellationToken);
             } finally {
-                if(writerHasEncrypter && useColumnKey) {
+                if(useColumnKey && encrForThisColumn is not null) {
                     _footer.Encrypter!.FooterEncryptionKey = originalKey!;
                 }
             }
 
-            // Generate/attach stats to the (plaintext) ColumnMetaData we just produced
+            // Populate plaintext ColumnMetaData (in-memory)
             chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
-
-            // Counters include page headers + bodies
             chunk.MetaData.TotalCompressedSize = sizes.CompressedSize;
             chunk.MetaData.TotalUncompressedSize = sizes.UncompressedSize;
 
-            // ---- ColumnMetaData protection per spec (§5.3/§5.4) ----
-            // If the column uses a *column-specific* key, we must serialize ColumnMetaData separately
-            // and encrypt it with the column key, storing the result in encrypted_column_metadata.
-            if(writerHasEncrypter && useColumnKey) {
+            // If this is a column-key column, emit encrypted_column_metadata and handle PF redaction
+            if(useColumnKey && encrForThisColumn is not null) {
                 // 1) Serialize ColumnMetaData
                 byte[] cmdPlain;
                 using(var ms = new MemoryStream()) {
@@ -136,31 +142,20 @@ namespace Parquet.File {
                     cmdPlain = ms.ToArray();
                 }
 
-                // 2) Encrypt with the *column key* (swap again just for this operation)
-                byte[]? originalKey2 = _footer.Encrypter!.FooterEncryptionKey;
-                _footer.Encrypter.FooterEncryptionKey = columnKeyBytes!;
-                try {
-                    byte[] encCmd = _footer.Encrypter.EncryptColumnMetaData(
-                        cmdPlain, _rowGroupOrdinal, _columnOrdinal);
-                    chunk.EncryptedColumnMetadata = encCmd;
-                    chunk.MetaData = null; // clear plaintext copy
-                } finally {
-                    _footer.Encrypter.FooterEncryptionKey = originalKey2!;
-                }
+                // 2) Encrypt with the column key (swap already active here)
+                byte[] encCmd = _footer.Encrypter!.EncryptColumnMetaDataWithKey(
+                    cmdPlain,
+                    _rowGroupOrdinal,
+                    _columnOrdinal,
+                    columnKeyBytes!);
+                chunk.EncryptedColumnMetadata = encCmd;
 
-                // 3) Adjust where meta_data lives according to footer mode:
-                //    - Encrypted footer mode: omit meta_data entirely.
-                //    - Plaintext footer mode: keep meta_data but strip sensitive stats so legacy readers can vectorize.
-                bool encryptedFooterMode = _footer.Encrypter is not null && !(_options?.UsePlaintextFooter ?? false);
-                if(encryptedFooterMode) {
-                    // chunk.MetaData = null;
-                } else {
-                    if(chunk.MetaData?.Statistics != null) {
-                        chunk.MetaData.Statistics.MinValue = null;
-                        chunk.MetaData.Statistics.MaxValue = null;
-                        chunk.MetaData.Statistics.NullCount = null;
-                        chunk.MetaData.Statistics.DistinctCount = null;
-                    }
+                // 3) PF: keep redacted plaintext stats; EF: footer serializer will omit meta_data on-wire
+                if(!encryptedFooterMode && chunk.MetaData?.Statistics != null) {
+                    chunk.MetaData.Statistics.MinValue = null;
+                    chunk.MetaData.Statistics.MaxValue = null;
+                    chunk.MetaData.Statistics.NullCount = null;
+                    chunk.MetaData.Statistics.DistinctCount = null;
                 }
             }
 
@@ -176,6 +171,7 @@ namespace Parquet.File {
             PageHeader ph,
             MemoryStream data,
             ColumnSizes cs,
+            Encryption.EncryptionBase? encrForThisColumn,
             CancellationToken cancellationToken
         ) {
             // Compress (or pass-through) the page body first
@@ -186,8 +182,8 @@ namespace Parquet.File {
                     ? new IronCompress.IronCompressResult(plain.ToArray(), Codec.Snappy, false)
                     : Compressor.Compress(_compressionMethod, plain, _compressionLevel);
 
-            // Plaintext path (no encryption)
-            if(_footer.Encrypter is null) {
+            // ---- PLAINTEXT path for this column ----
+            if(encrForThisColumn is null) {
                 ph.UncompressedPageSize = (int)data.Length;
                 ph.CompressedPageSize = compressedData.AsSpan().Length;
 
@@ -204,58 +200,44 @@ namespace Parquet.File {
                 return;
             }
 
-            // Encrypted path
-            // 1) Set plaintext uncompressed size in header
+            // ---- ENCRYPTED path for this column ----
             ph.UncompressedPageSize = (int)data.Length;
 
-            // 2) Prepare plaintext body bytes to encrypt
             byte[] bodyBytes = compressedData.AsSpan().ToArray();
 
-            // 3) Encrypt page BODY first so we know the encrypted length
-            //    GCM profile: page bodies must be framed as [nonce(12)][ciphertext][tag(16)]
-            //    (No 4-byte length prefix in the page body frame)
             byte[] encBody = ph.Type == PageType.DICTIONARY_PAGE
-                ? _footer.Encrypter.EncryptDictionaryPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal)
-                : _footer.Encrypter.EncryptDataPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
+                ? encrForThisColumn.EncryptDictionaryPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal)
+                : encrForThisColumn.EncryptDataPage(bodyBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
 
-            // 4) Now set the header's CompressedPageSize to the ENCRYPTED body length
-            // https://github.com/apache/parquet-format/blob/master/Encryption.md#51-encrypted-module-serialization
             ph.CompressedPageSize = encBody.Length;
 
-            // 5) Serialize the PLAINTEXT header (with corrected sizes)
             byte[] headerBytes;
             using(MemoryStream headerMs = _rmsMgr.GetStream()) {
                 ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
                 headerBytes = headerMs.ToArray();
             }
 
-            // 6) Encrypt the header (header framing remains as per your GCM framing helper)
             byte[] encHeader = ph.Type == PageType.DICTIONARY_PAGE
-                ? _footer.Encrypter.EncryptDictionaryPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal)
-                : _footer.Encrypter.EncryptDataPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
+                ? encrForThisColumn.EncryptDictionaryPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal)
+                : encrForThisColumn.EncryptDataPageHeader(headerBytes, _rowGroupOrdinal, _columnOrdinal, _pageOrdinal);
 
-            // 7) Write encrypted header + encrypted body
             await _stream.WriteAsync(encHeader, 0, encHeader.Length, cancellationToken);
             await _stream.WriteAsync(encBody, 0, encBody.Length, cancellationToken);
 
-            // 8) Update counters: "compressed" = on-disk encrypted sizes; "uncompressed" = original plain sizes
             cs.CompressedSize += encHeader.Length + encBody.Length;
             cs.UncompressedSize += headerBytes.Length + ph.UncompressedPageSize;
         }
 
-        private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
-           SchemaElement tse,
-           CancellationToken cancellationToken = default) {
-
+        private async Task<ColumnSizes> WriteColumnAsync(
+            ColumnChunk chunk,
+            DataColumn column,
+            SchemaElement tse,
+            Encryption.EncryptionBase? encrForThisColumn,
+            CancellationToken cancellationToken = default
+        ) {
             column.Field.EnsureAttachedToSchema(nameof(column));
 
             var r = new ColumnSizes();
-
-            /*
-             * Page header must preceeed actual data (compressed or not) however it contains both
-             * the uncompressed and compressed data size which we don't know! This somehow limits
-             * the write efficiency.
-             */
 
             using var pc = new PackedColumn(column);
             pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
@@ -265,18 +247,16 @@ namespace Parquet.File {
                 chunk.MetaData!.DictionaryPageOffset = _stream.Position;
                 PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
                 using MemoryStream ms = _rmsMgr.GetStream();
-                ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
-                       tse,
-                       ms, column.Statistics);
-                await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+                ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length, tse, ms, column.Statistics);
+                await CompressAndWriteAsync(ph, ms, r, encrForThisColumn, cancellationToken);
             }
 
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 chunk.MetaData!.DataPageOffset = _stream.Position;
                 bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding;
-                // data page Num_values also does include NULLs
                 PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode);
+
                 if(pc.HasRepetitionLevels) {
                     WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
                 }
@@ -285,10 +265,9 @@ namespace Parquet.File {
                 }
 
                 if(pc.HasDictionary) {
-                    // dictionary indexes are always encoded with RLE
                     int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
                     int bitWidth = pc.Dictionary!.Length.GetBitWidth();
-                    ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
+                    ms.WriteByte((byte)bitWidth);
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
                     Array data = pc.GetPlainData(out int offset, out int count);
@@ -301,7 +280,7 @@ namespace Parquet.File {
                 }
 
                 ph.DataPageHeader!.Statistics = column.Statistics.ToThriftStatistics(tse);
-                await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+                await CompressAndWriteAsync(ph, ms, r, encrForThisColumn, cancellationToken);
                 _pageOrdinal++;
             }
 

@@ -21,6 +21,30 @@ namespace Parquet.Test.Encryption {
           new DataField<string>("ssn")
         );
 
+        private static MemoryStream AsLengthPrefixedStream(byte[] payload) {
+            if(payload.Length >= 4) {
+                // Interpret first 4 bytes as LE length
+                int len = BitConverter.ToInt32(payload, 0);
+                // If that length equals the remaining bytes, it's already [len|frame]
+                if(len == payload.Length - 4 && len >= 12 + 16) // at least nonce+tag
+                {
+                    return new MemoryStream(payload, writable: false);
+                }
+            }
+
+            // Otherwise, wrap as [len (LE)] + payload
+            var ms = new MemoryStream(capacity: 4 + payload.Length);
+            byte[] lenLE = BitConverter.GetBytes(payload.Length);
+            if(!BitConverter.IsLittleEndian)
+                Array.Reverse(lenLE);
+            ms.Write(lenLE, 0, 4);
+            ms.Write(payload, 0, payload.Length);
+            ms.Position = 0;
+            return ms;
+        }
+
+
+
         private static (DataColumn name, DataColumn age, DataColumn salary, DataColumn ssn)
         MakeColumns(ParquetSchema s) {
             var fName = (DataField)s.Fields[0];
@@ -37,9 +61,9 @@ namespace Parquet.Test.Encryption {
         }
 
         // Handy constants (16B keys, accepted by ParseKeyString as raw UTF-8)
-        private const string FooterKey = "footerKey-16byte";
-        private const string SalaryKey = "salary-key-16b!";
-        private const string SsnKey = "ssn-key-16bytes";
+        private const string FooterKey = "01234567891234FO";
+        private const string SalaryKey = "01234567891234SA";
+        private const string SsnKey = "01234567891234SS";
 
         // --- 1) Encrypted footer mode: success with keys, failure without ---
 
@@ -173,27 +197,27 @@ namespace Parquet.Test.Encryption {
                 // Decrypt ColumnMetaData for salary using the reader’s decrypter + our resolver
                 EncryptionBase decr = meta.Decrypter!;
                 // salary
-                {
-                    decr.FooterEncryptionKey = Parquet.Encryption.EncryptionBase.ParseKeyString(SalaryKey);
-                    var rdr = new ThriftCompactProtocolReader(new MemoryStream(ccSalary.EncryptedColumnMetadata));
+                decr.FooterEncryptionKey = EncryptionBase.ParseKeyString(SalaryKey);
+                using(MemoryStream msWrap = AsLengthPrefixedStream(ccSalary.EncryptedColumnMetadata!)) {
+                    var rdr = new ThriftCompactProtocolReader(msWrap);
                     byte[] plain = decr.DecryptColumnMetaData(rdr, rg0.Ordinal!.Value, (short)2);
                     using var msCmd = new MemoryStream(plain, writable: false);
                     var cmd = ColumnMetaData.Read(new ThriftCompactProtocolReader(msCmd));
-                    Assert.NotNull(cmd.Statistics);
-                    Assert.NotNull(cmd.Statistics.MinValue);
-                    Assert.NotNull(cmd.Statistics.MaxValue);
+                    Assert.NotNull(cmd.Statistics?.MinValue);
+                    Assert.NotNull(cmd.Statistics?.MaxValue);
                 }
+
                 // ssn
-                {
-                    decr.FooterEncryptionKey = Parquet.Encryption.EncryptionBase.ParseKeyString(SsnKey);
-                    var rdr = new ThriftCompactProtocolReader(new MemoryStream(ccSsn.EncryptedColumnMetadata));
+                decr.FooterEncryptionKey = EncryptionBase.ParseKeyString(SsnKey);
+                using(MemoryStream msWrap = AsLengthPrefixedStream(ccSsn.EncryptedColumnMetadata!)) {
+                    var rdr = new ThriftCompactProtocolReader(msWrap);
                     byte[] plain = decr.DecryptColumnMetaData(rdr, rg0.Ordinal!.Value, (short)3);
                     using var msCmd = new MemoryStream(plain, writable: false);
                     var cmd = ColumnMetaData.Read(new ThriftCompactProtocolReader(msCmd));
-                    Assert.NotNull(cmd.Statistics);
-                    Assert.NotNull(cmd.Statistics.MinValue);
-                    Assert.NotNull(cmd.Statistics.MaxValue);
+                    Assert.NotNull(cmd.Statistics?.MinValue);
+                    Assert.NotNull(cmd.Statistics?.MaxValue);
                 }
+
             }
         }
 

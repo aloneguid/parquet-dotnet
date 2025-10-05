@@ -165,59 +165,52 @@ namespace Parquet {
                     CryptoHelpers.GcmEncryptOrThrow(key, nonce, footerBytes, tmpCt, calcTag, aad);
 
                     bool ok = CryptoHelpers.FixedTimeEquals(calcTag, storedTag);
-                    EncTrace.VerifyAttempt("PF-Footer", "encrypt-then-tag", nonce, storedTag, ok);
 
                     if(!ok) {
                         // Second try: “AAD-only” tag (empty plaintext, AAD = parquetAAD || footer)
-                        // i.e., authenticate footer bytes as part of AAD, with zero-length plaintext.
                         byte[] aad2 = new byte[aad.Length + footerBytes.Length];
                         Buffer.BlockCopy(aad, 0, aad2, 0, aad.Length);
                         Buffer.BlockCopy(footerBytes, 0, aad2, aad.Length, footerBytes.Length);
 
                         byte[] calcTag2 = new byte[16];
-                        VerifyPlaintextFooterSignature(tail, key, nonce, calcTag2, aad2);
+                        // Plaintext is EMPTY; footer bytes are authenticated via AAD (aad2)
+                        CryptoHelpers.GcmEncryptOrThrow(
+                            key: key,
+                            nonce: nonce,
+                            plaintext: Array.Empty<byte>(),
+                            ciphertext: Span<byte>.Empty,   // ignored
+                            tag: calcTag2,
+                            aad: aad2
+                        );
 
                         ok = CryptoHelpers.FixedTimeEquals(calcTag2, storedTag);
-                        EncTrace.VerifyAttempt("PF-Footer", "AAD-only", nonce, storedTag, ok);
                     }
-                    EncTrace.FooterMode("ReadMetadata", "PLAINTEXT_FOOTER");
 
                     if(!ok)
                         throw new InvalidDataException("Footer signature verification failed.");
 
-                    // Success — in plaintext-footer mode, EncryptionAlgorithm is present to carry AAD
-                    // for signature verification. Only require a footer key if any column actually
-                    // uses footer-key encryption. If columns are encrypted *only* with column-keys,
-                    // don't require a footer key; still create a decrypter with AAD so we can swap
-                    // in column keys later.
-                    bool hasAnyEncryptedCols =
-                    (metaSigned.RowGroups != null) &&
-                    metaSigned.RowGroups.Any(rg => rg.Columns != null &&
-                    rg.Columns.Any(cc => cc.CryptoMetadata != null));
-                    bool needsFooterKey =
-                    hasAnyEncryptedCols &&
-                    metaSigned.RowGroups!.Any(rg => rg.Columns!.Any(
-                    cc => cc.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null));
+                    bool hasAnyEncryptedCols = metaSigned.RowGroups?.Any(rg => rg.Columns?.Any(cc => cc.CryptoMetadata != null) == true) == true;
+                    bool hasFooterKeyCols =
+                        metaSigned.RowGroups?.Any(rg => rg.Columns?.Any(cc => cc.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null) == true) == true;
 
                     if(!hasAnyEncryptedCols) {
                         metaSigned.Decrypter = null;
-                    } else if(needsFooterKey) {
-                        if(string.IsNullOrWhiteSpace(footerEncryptionKey))
-                            throw new InvalidDataException($"{nameof(ParquetOptions.FooterEncryptionKey)} is required to read encrypted columns in plaintext-footer files.");
-                        metaSigned.Decrypter = EncryptionBase.CreateFromAlgorithm(
-                        metaSigned.EncryptionAlgorithm!,
-                        footerEncryptionKey!,
-                        aadPrefix
-                        );
                     } else {
-                        // Column-key only: build a decrypter with AAD; key will be supplied per-column.
+                        // Always provide a decrypter with the correct AAD; set a key only if provided.
                         EncryptionBase dec = (alg.AESGCMV1 is not null)
                             ? new AES_GCM_V1_Encryption()
                             : new AES_GCM_CTR_V1_Encryption();
                         dec.AadFileUnique = aadFileUnique;
                         dec.AadPrefix = aadPrefixBytes;
+
+                        // If caller supplied a footer key, set it now; otherwise leave null.
+                        if(!string.IsNullOrWhiteSpace(footerEncryptionKey)) {
+                            dec.FooterEncryptionKey = Encryption.EncryptionBase.ParseKeyString(footerEncryptionKey!);
+                        }
+
                         metaSigned.Decrypter = dec;
                     }
+
 
                     return metaSigned;
                 }
@@ -242,30 +235,6 @@ namespace Parquet {
             _fileStream.Seek(-8 - footerLength, SeekOrigin.End);
 
             return footerLength;
-        }
-
-        // inside ParquetActor
-        internal static void VerifyPlaintextFooterSignature(
-            ReadOnlySpan<byte> footerBytes,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> nonce12,
-            ReadOnlySpan<byte> storedTag16,
-            ReadOnlySpan<byte> moduleAad) {
-            // We only need to reproduce the tag; ciphertext is ignored.
-            Span<byte> tmpCt = footerBytes.Length == 0 ? Span<byte>.Empty : new byte[footerBytes.Length];
-            Span<byte> calcTag = stackalloc byte[16];
-
-            CryptoHelpers.GcmEncryptOrThrow(
-                key: key.ToArray(),
-                nonce: nonce12,
-                plaintext: footerBytes,
-                ciphertext: tmpCt,
-                tag: calcTag,
-                aad: moduleAad
-            );
-
-            if(!CryptoHelpers.FixedTimeEquals(calcTag, storedTag16))
-                throw new InvalidDataException("Footer signature verification failed.");
         }
     }
 }

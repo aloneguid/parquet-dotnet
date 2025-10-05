@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Interop.Inspector;
 using Parquet.Data;
 using Parquet.Schema;
-using Parquet.Test.Integration;
 using Xunit;
 using Xunit.Sdk;
 
