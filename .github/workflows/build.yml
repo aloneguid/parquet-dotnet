@@ -2,7 +2,7 @@
 
 env:
   VERSION: 5.3.0
-  PACKAGE_SUFFIX: '-pre.1'
+  PACKAGE_SUFFIX: '-pre.2'
   # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
   DOC_INSTANCE: wrs/pq

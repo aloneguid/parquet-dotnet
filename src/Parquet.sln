@@ -37,8 +37,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rn", "rn", "{EE4ECD1F-5A44-
 		..\docs\rn\5.0.2.md = ..\docs\rn\5.0.2.md
 		..\docs\rn\5.1.0.md = ..\docs\rn\5.1.0.md
 		..\docs\rn\5.1.1.md = ..\docs\rn\5.1.1.md
-		..\docs\rn\previous.md = ..\docs\rn\previous.md
 		..\docs\rn\5.2.0.md = ..\docs\rn\5.2.0.md
+		..\docs\rn\5.3.0.md = ..\docs\rn\5.3.0.md
+		..\docs\rn\previous.md = ..\docs\rn\previous.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parquet.Data.Analysis", "Parquet.Data.Analysis\Parquet.Data.Analysis.csproj", "{B7D4F7F8-4E90-4BC1-8CCB-98434ABFA491}"

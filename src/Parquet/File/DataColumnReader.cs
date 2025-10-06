@@ -227,7 +227,7 @@ namespace Parquet.File {
 
             int maxReadCount = ph.DataPageHeaderV2.NumValues - ph.DataPageHeaderV2.NumNulls;
 
-            if((!(ph.DataPageHeaderV2.IsCompressed ?? false)) || _thriftColumnChunk.MetaData!.Codec == CompressionCodec.UNCOMPRESSED) {
+            if(ph.DataPageHeaderV2.IsCompressed == false || _thriftColumnChunk.MetaData!.Codec == CompressionCodec.UNCOMPRESSED) {
                 ReadColumn(bytes.AsSpan().Slice(dataUsed), ph.DataPageHeaderV2.Encoding, maxValues, maxReadCount, pc);
                 return;
             }
@@ -337,8 +337,13 @@ namespace Parquet.File {
                     }
                     break;
 
+                case Encoding.BYTE_STREAM_SPLIT: {       // 9
+                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                        int read = ByteStreamSplitEncoder.DecodeByteStreamSplit(src, plainData, offset, totalValuesInPage);
+                        pc.MarkUsefulPlainData(read);
+                    }
+                    break;
                 case Encoding.BIT_PACKED:                // 4 (deprecated)
-                case Encoding.BYTE_STREAM_SPLIT:         // 9
                 default:
                     throw new ParquetException($"encoding {encoding} is not supported.");
             }
