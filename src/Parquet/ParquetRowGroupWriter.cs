@@ -79,6 +79,20 @@ namespace Parquet {
             if(RowCount == null) {
                 if(column.NumValues > 0 || column.Field.MaxRepetitionLevel == 0)
                     RowCount = column.CalculateRowCount();
+            } else {
+                // Validate that all columns have the same row count
+                long columnRowCount = column.CalculateRowCount();
+                if(columnRowCount != RowCount) {
+                    throw new InvalidOperationException(
+                        $"Column '{column.Field.Name}' has {columnRowCount} rows, but the row group expects {RowCount} rows. " +
+                        "All columns in a row group must have the same number of rows.");
+                }
+            }
+
+            if(_colIdx >= _thschema.Length) {
+                throw new InvalidOperationException(
+                    $"Cannot write column '{column.Field.Name}': all {_thschema.Length} columns from the schema have already been written. " +
+                    "You may have called WriteColumnAsync more times than there are columns in the schema.");
             }
 
             // Get the expected schema element and advance the schema index once
@@ -110,13 +124,18 @@ namespace Parquet {
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
 #pragma warning disable CA1063 // Implement IDisposable Correctly
         public void Dispose()
 #pragma warning restore CA1063 // Implement IDisposable Correctly
         {
-            //todo: check if all columns are present
+            // Check if all columns are present
+            if(_colIdx < _thschema.Length) {
+                throw new InvalidOperationException(
+                    $"Not all columns were written. Expected {_thschema.Length} columns but only {_colIdx} were written. " +
+                    $"Missing columns: {string.Join(", ", _thschema.Skip(_colIdx).Select(s => s.Name))}");
+            }
 
             //row count is know only after at least one column is written
             _rowGroup.NumRows = RowCount ?? 0;

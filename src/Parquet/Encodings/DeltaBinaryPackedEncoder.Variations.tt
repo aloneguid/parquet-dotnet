@@ -2,8 +2,15 @@
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".cs" #>
-<# 
-    var types = new[] { "int", "long" };
+<#
+    var supportedTypes = new[] {
+        new { Type = "short", BitPackingType = "int", RequiresConversion = true },
+        new { Type = "ushort", BitPackingType = "int", RequiresConversion = true },
+        new { Type = "int", BitPackingType = "int", RequiresConversion = false },
+        new { Type = "uint", BitPackingType = "long", RequiresConversion = true },
+        new { Type = "long", BitPackingType = "long", RequiresConversion = false },
+        new { Type = "ulong", BitPackingType = "long", RequiresConversion = true }
+    };
 #>
 namespace Parquet.Encodings {
     using System;
@@ -11,7 +18,10 @@ namespace Parquet.Encodings {
     using Parquet.Extensions;
 
     static partial class DeltaBinaryPackedEncoder {
-<# foreach(string nt in types) { 
+<# foreach(var config in supportedTypes) {
+    string nt = config.Type;
+    string bitPackingType = config.BitPackingType;
+    bool requiresConversion = config.RequiresConversion;
     string ntCap = nt.Substring(0, 1).ToUpper() + nt.Substring(1);#>
 
         private static void Flush<#=ntCap#>Block(Span<<#=nt#>> block, <#=nt#> minDelta,
@@ -23,7 +33,11 @@ namespace Parquet.Encodings {
 
             // subtract minDelta from all values
             for(int i = 0; i < block.Length; i++) {
+<# if (requiresConversion && (nt == "short" || nt == "ushort")) { #>
+                block[i] = (<#=nt#>)(block[i] - minDelta);
+<# } else { #>
                 block[i] = block[i] - minDelta;
+<# } #>
             }
 
             // we need bit widths for each miniblock (after minDelta is applied)
@@ -42,7 +56,11 @@ namespace Parquet.Encodings {
             destination.WriteSpan(bitWidths);
 
             // each miniblock is a list of bit packed ints according to the bit width stored at the begining of the block
+<# if (requiresConversion) { #>
+            Span<<#=bitPackingType#>> raw8 = stackalloc <#=bitPackingType#>[8];
+<# } else { #>
             Span<<#=nt#>> raw8 = stackalloc <#=nt#>[8];
+<# } #>
             for(int i = 0; i < miniblockCount; i++) {
                 int offset = i * miniblockSize;
                 int count = Math.Min(miniblockSize, block.Length - offset);
@@ -54,7 +72,17 @@ namespace Parquet.Encodings {
                 byte[] encoded8 = new byte[bitWidth];
                 for(int iv = 0; iv < miniblockData.Length; iv += 8) {
                     int count8 = Math.Min(8, miniblockData.Length - iv);
+<# if (requiresConversion) { #>
+                    // Convert to bit packing type for bit packing
+                    for(int j = 0; j < count8; j++) {
+                        raw8[j] = (<#=bitPackingType#>)miniblockData[iv + j];
+                    }
+                    for(int j = count8; j < 8; j++) {
+                        raw8[j] = 0;
+                    }
+<# } else { #>
                     miniblockData.Slice(iv, count8).CopyTo(raw8);
+<# } #>
                     BitPackedEncoder.Pack8ValuesLE(raw8, encoded8, bitWidth);
                     destination.Write(encoded8, 0, bitWidth);
                 }
@@ -81,7 +109,11 @@ namespace Parquet.Encodings {
             for(int i = 1; i < data.Length; i++) {
 
                 // calculate delta element and minDelta
+<# if (requiresConversion && (nt == "short" || nt == "ushort")) { #>
+                <#=nt#> delta = (<#=nt#>)(data[i] - data[i - 1]);
+<# } else { #>
                 <#=nt#> delta = data[i] - data[i - 1];
+<# } #>
                 if(blockCount == 0 || delta < minDelta) {
                     minDelta = delta;
                 }
@@ -124,7 +156,11 @@ namespace Parquet.Encodings {
             }
 
             int valuesPerMiniblock = blockSizeInValues / miniblocksInABlock;
+<# if (requiresConversion) { #>
+            <#= bitPackingType#>[] vbuf = new <#= bitPackingType#>[valuesPerMiniblock];
+<# } else { #>
             <#= nt#>[] vbuf = new <#= nt#>[valuesPerMiniblock];
+<# } #>
 
             // Each block contains
             // <min delta> <list of bitwidths of miniblocks> <miniblocks>
@@ -150,7 +186,11 @@ namespace Parquet.Encodings {
                         for(int i = 0; i < valuesPerMiniblock && destOffset < dest.Length; i++, read++) {
                             if(read >= totalValueCount)
                                 break;
+<# if (requiresConversion && (nt == "short" || nt == "ushort")) { #>
+                            currentValue = (<#=nt#>)(currentValue + minDelta);
+<# } else { #>
                             currentValue += minDelta;
+<# } #>
                             dest[destOffset++] = currentValue;
                         }
                     } else {
@@ -162,7 +202,13 @@ namespace Parquet.Encodings {
                         }
 
                         for(int i = 0; i < vbuf.Length && destOffset < dest.Length && read < totalValueCount; i++, read++) {
+<# if (requiresConversion && (nt == "short" || nt == "ushort")) { #>
+                            currentValue = (<#=nt#>)(currentValue + minDelta + (<#=nt#>)vbuf[i]);
+<# } else if (requiresConversion) { #>
+                            currentValue += (<#=nt#>)(minDelta + (<#=nt#>)vbuf[i]);
+<# } else { #>
                             currentValue += minDelta + vbuf[i];
+<# } #>
                             dest[destOffset++] = currentValue;
                         }
 

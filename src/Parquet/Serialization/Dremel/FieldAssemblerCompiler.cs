@@ -332,6 +332,25 @@ namespace Parquet.Serialization.Dremel {
                 }
 
                 bool isGenericDictionary = type.IsGenericIDictionary();
+
+                if(isGenericDictionary) {
+                    // Tell the pipeline we *expect* ParquetDictionary<,>
+                    ReplaceIDictionaryTypes(type, out Type expectedDictType, out _);
+
+                    // Treat "null OR wrong runtime type" as uninitialized
+                    BinaryExpression isNullOrWrongType =
+                        Expression.OrElse(
+                            Expression.Equal(accessor, Expression.Constant(null, type)),
+                            Expression.IsFalse(Expression.TypeIs(accessor, expectedDictType)));
+
+                    return new ClassMember(
+                        accessor,
+                        isNullOrWrongType,
+                        expectedDictType,
+                        isGenericDictionary,
+                        Expression.Empty());
+                }
+
                 return new ClassMember(accessor,
                     type.IsValueType
                         ? Expression.Constant(false)
