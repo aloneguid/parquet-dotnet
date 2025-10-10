@@ -36,10 +36,15 @@ namespace Parquet {
         }
 
         private async Task InitialiseAsync(CancellationToken cancellationToken) {
-            await ValidateFileAsync();
+            await ValidateFileAsync().ConfigureAwait(false);
 
-            //read metadata instantly, now
-            _meta = await ReadMetadataAsync(cancellationToken);
+            // Let ReadMetadataAsync decide what’s required based on the file
+            _meta = await ReadMetadataAsync(
+                footerEncryptionKey: _parquetOptions.FooterEncryptionKey,
+                footerSigningKey: _parquetOptions.FooterSigningKey,
+                aadPrefix: _parquetOptions.AADPrefix
+            ).ConfigureAwait(false);
+
             _thriftFooter = new ThriftFooter(_meta);
 
             InitRowGroupReaders();

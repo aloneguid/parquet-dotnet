@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Parquet.Schema;
 
 namespace Parquet {
@@ -19,7 +18,12 @@ namespace Parquet {
         }
 
         public static DateTime AsUnixMillisecondsInDateTime(this long unixMilliseconds) {
-            return UnixEpoch.AddMilliseconds(unixMilliseconds);
+            try {
+                //TODO: Remove this try/catch
+                return UnixEpoch.AddMilliseconds(unixMilliseconds);
+            } catch(Exception) {
+                return DateTime.Now;
+            }
         }
 
         public static long ToUnixMilliseconds(this DateTime dto) {
@@ -92,6 +96,13 @@ namespace Parquet {
 
         public static Exception NotImplemented(string reason) {
             return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, or implemented it and raise a PR.");
+        }
+
+        public static byte[] EnsureLittleEndian(this byte[] bytes) {
+            if(!BitConverter.IsLittleEndian) {
+                Array.Reverse(bytes);
+            }
+            return bytes;
         }
     }
 }

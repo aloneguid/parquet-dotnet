@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Data.Analysis;
-using Parquet.Encodings;
 using Parquet.Schema;
 using Xunit;
 using System.Linq;
@@ -63,7 +62,7 @@ namespace Parquet.Test.DataAnalysis {
                 // Int64 is a special case in DataFrame
                 // see https://github.com/aloneguid/parquet-dotnet/issues/343 for more info
                 df1.Columns.GetInt64Column(t.Name);
-            } else if (t == typeof(ulong)) {
+            } else if(t == typeof(ulong)) {
                 df1.Columns.GetUInt64Column(t.Name);
             }
 

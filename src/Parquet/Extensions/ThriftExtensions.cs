@@ -1,5 +1,7 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using Parquet.Data;
+using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
 
@@ -27,6 +29,18 @@ namespace Parquet {
 
         public static string Describe(this SchemaElement se) {
             return $"[n: {se.Name}, t: {se.Type}, ct: {se.ConvertedType}, rt: {se.RepetitionType}, c: {se.NumChildren}]";
+        }
+
+        public static FieldPath GetPath(this ThriftFooter footer, ColumnChunk cc) {
+            if(cc.MetaData?.PathInSchema != null)
+                return new FieldPath(cc.MetaData.PathInSchema);
+
+            // Fallback: look up the SchemaElement for this chunk and derive path from the schema tree
+            SchemaElement? se = footer.GetSchemaElement(cc);
+            if(se != null)
+                return footer.GetPath(se);
+
+            throw new InvalidDataException("Unable to determine column path (no MetaData.PathInSchema and no matching schema element).");
         }
     }
 }

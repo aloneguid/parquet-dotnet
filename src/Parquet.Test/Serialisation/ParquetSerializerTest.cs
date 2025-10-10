@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Apache.Arrow;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
@@ -66,8 +64,7 @@ namespace Parquet.Test.Serialisation {
             // compare
             if(asJson) {
                 XAssert.JsonEquivalent(data, data2.Data);
-            }
-            else {
+            } else {
                 Assert.Equivalent(data2.Data, data);
             }
         }
@@ -92,7 +89,7 @@ namespace Parquet.Test.Serialisation {
 
             await Compare(data);
         }
-        
+
         class TimespanRecord {
             public TimeSpan TimeSpan { get; set; }
 
@@ -339,7 +336,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         class AddressBookEntry {
-            
+
             public string? FirstName { get; set; }
 
             public string? LastName { get; set; }
@@ -419,7 +416,7 @@ namespace Parquet.Test.Serialisation {
                     }
                 }
             };
-            
+
             await Compare(data);
         }
 
@@ -652,7 +649,8 @@ namespace Parquet.Test.Serialisation {
                 Tags = new Dictionary<string, string> {
                     ["id"] = i.ToString(),
                     ["gen"] = DateTime.UtcNow.ToString()
-                }}).ToList();
+                }
+            }).ToList();
 
             await Compare(data, true);
         }
@@ -911,8 +909,8 @@ namespace Parquet.Test.Serialisation {
         }
 
         enum DefaultEnum {
-           One,
-           Two
+            One,
+            Two
         }
 
         enum ShortEnum {
@@ -922,9 +920,9 @@ namespace Parquet.Test.Serialisation {
 
         class EnumProps {
             public int Id { get; set; }
-            
+
             public DefaultEnum DE { get; set; }
-            
+
             public ShortEnum SE { get; set; }
 
             // Nullable Enum
@@ -1080,10 +1078,10 @@ namespace Parquet.Test.Serialisation {
         public async Task DateOnlyTimeOnly_Nullable_Serde() {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new RecordContainingDateAndtimeOnly {
-                NullableDate = i==0? null : DateOnly.MinValue.AddDays(i),
-                NullableTime = i==0? null: TimeOnly.MinValue.AddMinutes(i),
-                Date =  DateOnly.MinValue.AddDays(i+1),
-                Time = TimeOnly.MinValue.AddMinutes(i+1),
+                NullableDate = i == 0 ? null : DateOnly.MinValue.AddDays(i),
+                NullableTime = i == 0 ? null : TimeOnly.MinValue.AddMinutes(i),
+                Date = DateOnly.MinValue.AddDays(i + 1),
+                Time = TimeOnly.MinValue.AddMinutes(i + 1),
             }).ToList();
 
             using var ms = new MemoryStream();
