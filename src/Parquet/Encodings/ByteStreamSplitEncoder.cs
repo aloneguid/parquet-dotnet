@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 
 namespace Parquet.Encodings {
     static class ByteStreamSplitEncoder {
