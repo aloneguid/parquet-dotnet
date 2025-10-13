@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Parquet.Encodings {
     static class ByteStreamSplitEncoder {
 
-        public static int DecodeByteStreamSplit(Span<byte> s, Array dest, int destOffset, int valueCount) {
+        public static int DecodeByteStreamSplit(ReadOnlySpan<byte> s, Array dest, int destOffset, int valueCount) {
             System.Type? elementType = dest.GetType().GetElementType()!;
             int k;
             float[]? fDest = default;

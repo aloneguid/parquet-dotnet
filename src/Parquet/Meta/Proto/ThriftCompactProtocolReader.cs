@@ -30,6 +30,14 @@ namespace Parquet.Meta.Proto {
             return (long)(n >> 1) ^ -(long)(n & 1);
         }
 
+        private byte ReadByteOrThrow() {
+            int val = _inputStream.ReadByte();
+            if(val == -1) {
+                throw new EndOfStreamException("Unexpected end of stream while reading a byte.");
+            }
+            return (byte)val;
+        }
+
         private uint ReadVarInt32() {
             /*
             Read an i32 from the wire as a varint. The MSB of each byte is set
@@ -40,7 +48,7 @@ namespace Parquet.Meta.Proto {
             int shift = 0;
 
             while(true) {
-                byte b = (byte)_inputStream.ReadByte();
+                byte b = ReadByteOrThrow();
                 result |= (uint)(b & 0x7f) << shift;
                 if((b & 0x80) != 0x80) {
                     break;
@@ -60,7 +68,7 @@ namespace Parquet.Meta.Proto {
             int shift = 0;
             ulong result = 0;
             while(true) {
-                byte b = (byte)_inputStream.ReadByte();
+                byte b = ReadByteOrThrow();
                 result |= (ulong)(b & 0x7f) << shift;
                 if((b & 0x80) != 0x80) {
                     break;
@@ -72,12 +80,12 @@ namespace Parquet.Meta.Proto {
         }
 
         public bool ReadBool() {
-            byte b = (byte)_inputStream.ReadByte();
+            byte b = ReadByteOrThrow();
             return (CompactType)b == CompactType.BooleanTrue;
         }
 
         public sbyte ReadByte() {
-            return (sbyte)_inputStream.ReadByte();
+            return (sbyte)ReadByteOrThrow();
         }
 
         public short ReadI16() {
@@ -103,6 +111,22 @@ namespace Parquet.Meta.Proto {
             return _inputStream.ReadBytesExactly(length);
         }
 
+        public byte[] ReadBytesExactly(int length) {
+            return _inputStream.ReadBytesExactly(length);
+        }
+
+        public Guid ReadUuid() {
+            byte[] uuidBytes = _inputStream.ReadBytesExactly(16);
+            Guid result = new Guid(uuidBytes);
+            return result;
+        }
+
+        public double ReadDouble() {
+            byte[] doubleBytes = _inputStream.ReadBytesExactly(8);
+            double result = BitConverter.ToDouble(doubleBytes, 0);
+            return result;
+        }
+
         public string ReadString() {
             // read length
             int length = (int)ReadVarInt32();
@@ -118,7 +142,7 @@ namespace Parquet.Meta.Proto {
         public bool ReadNextField(out short fieldId, out CompactType compactType) {
 
             // Read a field header off the wire.
-            byte header = (byte)_inputStream.ReadByte();
+            byte header = ReadByteOrThrow();
 
             // if it's a stop, then we can return immediately, as the struct is over.
             if((CompactType)header == CompactType.Stop) {
@@ -150,7 +174,7 @@ namespace Parquet.Meta.Proto {
             true size.
             */
 
-            byte sizeAndType = (byte)_inputStream.ReadByte();
+            byte sizeAndType = ReadByteOrThrow();
             int size = (sizeAndType >> 4) & 0x0f;
             if(size == 15) {
                 size = (int)ReadVarInt32();
@@ -158,6 +182,22 @@ namespace Parquet.Meta.Proto {
             elementType = (CompactType)(byte)(sizeAndType & 0x0f);
             return size;
         }
+
+        public int ReadMapHeader(out CompactType keyType, out CompactType valueType) {
+            // TCompactProtocol: map header = size (varint32), then one byte of types (if size > 0)
+            int size = (int)ReadVarInt32();
+            if(size == 0) {
+                keyType = 0;
+                valueType = 0;
+                return 0;
+            }
+
+            byte types = ReadByteOrThrow();
+            keyType = (CompactType)((types & 0xF0) >> 4); // high nibble
+            valueType = (CompactType)(types & 0x0F);        // low nibble
+            return size;
+        }
+
 
         public void SkipField(CompactType compactType) {
             switch(compactType) {
@@ -176,20 +216,20 @@ namespace Parquet.Meta.Proto {
                 case CompactType.I64:
                     ReadI64();
                     break;
-                //case Types.Double:
-                    //await protocol.ReadDoubleAsync(cancellationToken);
-                    //break;
+                case CompactType.Double:
+                    ReadDouble();
+                    break;
                 case CompactType.Binary:
                     // Don't try to decode the string, just skip it.
                     ReadBinary();
                     break;
-                //case TType.Uuid:
-                //    await protocol.ReadUuidAsync(cancellationToken);
-                //    break;
+                case CompactType.Uuid:
+                    ReadUuid();
+                    break;
                 case CompactType.Struct:
                     StructBegin();
-                    while(ReadNextField(out _, out _)) {
-
+                    while(ReadNextField(out _, out CompactType innerType)) {
+                        SkipField(innerType);
                     }
                     StructEnd();
                     break;
@@ -199,6 +239,20 @@ namespace Parquet.Meta.Proto {
                         SkipField(elementType);
                     }
                     break;
+                case CompactType.Set: {
+                        int n = ReadListHeader(out CompactType elemType);
+                        for(int i = 0; i < n; i++)
+                            SkipField(elemType);
+                        break;
+                    }
+                case CompactType.Map: {
+                        int n = ReadMapHeader(out CompactType keyType, out CompactType valueType);
+                        for(int i = 0; i < n; i++) {
+                            SkipField(keyType);
+                            SkipField(valueType);
+                        }
+                        break;
+                    }
                 default:
                     throw new InvalidOperationException($"don't know how to skip type {compactType}");
             }
