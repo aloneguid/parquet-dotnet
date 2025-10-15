@@ -2,8 +2,8 @@
 using Xunit;
 
 namespace Parquet.Test.Xunit {
-    public class SkipOnMacAttribute : FactAttribute {
-        public SkipOnMacAttribute() {
+    public class NonMacOSFactAttribute : FactAttribute {
+        public NonMacOSFactAttribute() {
             if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 Skip = "Skip on Mac";
             }

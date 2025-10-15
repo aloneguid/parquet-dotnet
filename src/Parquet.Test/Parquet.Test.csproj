@@ -17,6 +17,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="DuckDB.NET.Data.Full" Version="1.4.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="System.Linq.Async" Version="6.0.3" />
         <PackageReference Include="System.ValueTuple" Version="4.6.1" />
