@@ -154,26 +154,105 @@ void ALN(string key, string? value) {
 
 void RenderInfo() {
 
-    if(!Accordion("Info"))
-        return;
+    //if(!Accordion("Info"))
+        //return;
 
     LN(Icon.Create, "Created by", fd.Metadata?.CreatedBy);
 
-    if(fd.RowGroups != null) {
-        Sep("Row groups");
-        int i = 0;
-        foreach(IParquetRowGroupReader rg in fd.RowGroups) {
-            RowGroup rg1 = rg.RowGroup;
-            //string title = $"Row group {i++} ({rg.RowCount:N0} rows)";
-            string title = $"Row group {++i}/{fd.RowGroups.Count}";
-            if(Accordion(title)) {
-                ALN("Rows", rg1.NumRows.ToString("N0"));
-                ALN("File offset", rg1.FileOffset.ToString());
-                ALN("Size uncompressed", rg1.TotalByteSize.ToFileSizeUiString());
-                ALN("Size compressed", rg1.TotalCompressedSize?.ToFileSizeUiString());
-            }
+    if(fd.Metadata?.KeyValueMetadata != null) {
+        foreach(KeyValue kv in fd.Metadata.KeyValueMetadata) {
+            string v = kv.Value ?? "";
+            Input(ref v, kv.Key, is_readonly: true);
         }
     }
+
+    if(fd.RowGroups != null) {
+
+        Sep();
+        Combo("row group", fd.RowGroupDisplayNames, ref fd.CurrentRowGroupIndex);
+        RowGroup rg1 = fd.RowGroups[(int)fd.CurrentRowGroupIndex].RowGroup;
+
+
+        ALN("Rows", rg1.NumRows.ToString("N0"));
+        ALN("File offset", rg1.FileOffset.ToString());
+        ALN("Size uncompressed", rg1.TotalByteSize.ToFileSizeUiString());
+        ALN("Size compressed", rg1.TotalCompressedSize?.ToFileSizeUiString());
+
+        Table($"rg{rg1.FileOffset}cols",
+            [
+            "path", "type", "encodings", "codec", "values", "sz uncomp", "sz comp", "KVM", "DPO", "IPO",
+                    "DictPO", "stat", "estat", "BFO", "BFL", "sz stat"],
+            rg1.Columns.Count,
+            (int rowIdx, int colIdx) => {
+                ColumnChunk cc = rg1.Columns[rowIdx];
+                ColumnMetaData? m = cc.MetaData;
+
+                //Label($"{rowIdx}x{colIdx}");
+
+                if(m != null) {
+                    switch(colIdx) {
+                        case 0:
+                            Label(string.Join(".", m.PathInSchema));
+                            break;
+                        case 1:
+                            Label(m.Type.ToString());
+                            break;
+                        case 2:
+                            Label(string.Join(", ", m.Encodings));
+                            break;
+                        case 3:
+                            Label(m.Codec.ToString());
+                            break;
+                        case 4:
+                            Label(m.NumValues.ToString("N0"));
+                            break;
+                        case 5:
+                            Label(m.TotalUncompressedSize.ToFileSizeUiString());
+                            break;
+                        case 6:
+                            Label(m.TotalCompressedSize.ToFileSizeUiString() ?? "");
+                            break;
+                        case 7:
+                            Label(m.KeyValueMetadata != null ? m.KeyValueMetadata.Count.ToString("N0") : "");
+                            break;
+                        case 8:
+                            Label(m.DataPageOffset.ToString("N0"));
+                            break;
+                        case 9:
+                            Label(m.IndexPageOffset?.ToString("N0") ?? "");
+                            break;
+                        case 10:
+                            Label(m.DictionaryPageOffset?.ToString("N0") ?? "");
+                            break;
+                        case 11:
+                            Label(m.Statistics != null ? "yes" : "no");
+                            break;
+                        case 12:
+                            Label(m.EncodingStats?.Count.ToString() ?? "");
+                            break;
+                        case 13:
+                            Label(m.BloomFilterOffset?.ToString("N0") ?? "");
+                            break;
+                        case 14:
+                            Label(m.BloomFilterLength?.ToString("N0") ?? "");
+                            break;
+                        case 15:
+                            Label(m.SizeStatistics != null ? "yes" : "no");
+                            break;
+
+                    }
+                }
+
+                switch(colIdx) {
+                    case 0:
+
+                        break;
+                }
+
+            }, 0, 200, true);
+    }
+
+    Sep();
 
     //if(fd.Metadata?.KeyValueMetadata != null) {
     //    Sep("Key-value metadata");

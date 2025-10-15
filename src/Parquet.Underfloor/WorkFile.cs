@@ -35,6 +35,8 @@ namespace Parquet.Underfloor {
                 wf.Metadata = wf._reader.Metadata;
                 wf.Schema = wf._reader.Schema;
                 wf.RowGroups = wf._reader.RowGroups;
+                wf.RowGroupDisplayNames = wf.RowGroups?.Select((rg, i) => $"#{i + 1}").ToArray();
+                wf.CurrentRowGroupIndex = 0;
             }
 
             return wf;
@@ -88,6 +90,10 @@ namespace Parquet.Underfloor {
         public string[]? ColumnsDisplay { get; set; }
 
         public IReadOnlyList<IParquetRowGroupReader>? RowGroups { get; set; }
+
+        public string[]? RowGroupDisplayNames;
+
+        public uint CurrentRowGroupIndex;
 
         public async ValueTask DisposeAsync() {
             if(_stream != null) {
