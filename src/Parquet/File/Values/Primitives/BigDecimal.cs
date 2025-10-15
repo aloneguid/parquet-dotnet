@@ -26,7 +26,7 @@ namespace Parquet.File.Values.Primitives {
         public int Precision { get; set; }
 
         public BigDecimal(byte[] data, SchemaElement schema, bool isReversed = false) {
-            if(!isReversed) data = data.Reverse().ToArray();
+            if(!isReversed) data = Enumerable.Reverse(data).ToArray();
 
             UnscaledValue = new BigInteger(data);
             Precision = schema.Precision!.Value;
@@ -182,7 +182,7 @@ namespace Parquet.File.Values.Primitives {
                 }
             }
 
-            result = result.Reverse().ToArray();
+            result = Enumerable.Reverse(result).ToArray();
             return result;
         }
     }
