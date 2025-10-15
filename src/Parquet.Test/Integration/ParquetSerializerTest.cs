@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Parquet.Serialization;
 using Parquet.Test.Xunit;
 using Xunit;
+using DuckDB.NET.Data;
 using F = System.IO.File;
 
 namespace Parquet.Test.Integration {
@@ -27,7 +28,7 @@ namespace Parquet.Test.Integration {
         }
 
 
-        [SkipOnMac]
+        [NonMacOSFact]
         public async Task SimpleMapReadsWithParquetMr() {
             var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
                 Id = i,
@@ -46,7 +47,7 @@ namespace Parquet.Test.Integration {
             Assert.Contains("gen", javaCat);
         }
 
-        [SkipOnMac]
+        [NonMacOSFact]
         public async Task SimpleMapReadsWithPyArrow() {
             var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
                 Id = i,
@@ -60,11 +61,17 @@ namespace Parquet.Test.Integration {
 
             //F.Copy(fileName, "c:\\tmp\\pyarrow.parquet", true);
 
-            // read with Java
+            // read with PyArrow
             string? arrowCat = ExecPyArrowToJson(fileName);
             Assert.NotNull(arrowCat);
             Assert.Contains("id", arrowCat);
             Assert.Contains("gen", arrowCat);
+        }
+
+        [Fact]
+        public async Task DuckDbWorks() {
+            using var conn = new DuckDBConnection("DataSource=:memory:");
+            await conn.OpenAsync();
         }
     }
 }
