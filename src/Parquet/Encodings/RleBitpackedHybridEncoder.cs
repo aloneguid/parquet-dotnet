@@ -153,7 +153,7 @@ namespace Parquet.Encodings {
 
             int byteWidth = (bitWidth + 7) / 8; //round up to next byte
             int destOffset = 0;
-            while(dataOffset < data.Length) {
+            while(dataOffset < data.Length && destOffset < pageSize) {
                 int header = (int)data.ULEB128Decode(ref dataOffset);
                 //int header = (int)data.ULEB128Decode(ref dataOffset);
                 bool isRle = (header & 1) == 0;
