@@ -65,10 +65,6 @@ namespace Parquet.Test.Integration {
                 return "TIME";
             }
 
-            if(field is TimeOnlyDataField) {
-                return "TIME";
-            }
-
             // Fallback to CLR type mapping
             if(_duckDbTypeMap.TryGetValue(field.ClrType, out string? mapped)) {
                 return mapped;
