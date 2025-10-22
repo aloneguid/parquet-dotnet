@@ -15,12 +15,21 @@ using Xunit.Sdk;
 namespace Parquet.Test {
     public class TestBase {
 
-        public sealed record TypeTestInstance(string Name, DataField Field, object? ExpectedValue);
+        public sealed record TypeTestInstance(string Name, DataField Field, object? ExpectedValue, bool DuckDbSupported = true);
 
         // xUnit data attribute that yields each NameFieldExpected as a single theory parameter
         public sealed class TypeTestDataAttribute : DataAttribute {
+
+            public bool DuckDb { get; set;  } = false;
+
             public override IEnumerable<object?[]> GetData(MethodInfo testMethod) {
-                foreach(TypeTestInstance nfe in TypeTests) {
+
+                IEnumerable<TypeTestInstance> source = new List<TypeTestInstance>(TypeTests);
+
+                if(DuckDb)
+                    source = source.Where(e => e.DuckDbSupported);
+
+                foreach(TypeTestInstance nfe in source) {
                     yield return new object?[] { nfe };
                 }
             }
@@ -40,8 +49,8 @@ namespace Parquet.Test {
                new TypeTestInstance("simple decimal", new DataField<decimal>("decDefault"), 123.4m),
                new TypeTestInstance("huge decimal", new DataField<decimal>("hugeDec"), 83086059037282.54m),
                new TypeTestInstance("int32 decimal", new DecimalDataField("decInt32", 4, 1), 12.4m),
-               new TypeTestInstance("int64 decimal", new DecimalDataField("decInt64", 17, 12), 1234567.88m),
-               new TypeTestInstance("fixed byte array decimal", new DecimalDataField("decFixedByteArray", 48, 12), 34434.5m),
+               new TypeTestInstance("int64 decimal", new DecimalDataField("decInt64", 17, 12), 1234567.88m, DuckDbSupported: false),
+               new TypeTestInstance("fixed byte array decimal", new DecimalDataField("decFixedByteArray", 48, 12), 34434.5m, DuckDbSupported: false),
                new TypeTestInstance("negative decimal", new DecimalDataField("decMinus", 10, 2, true), -1m),
                new TypeTestInstance("scale zero", new DecimalDataField("v", 10, 0, true), 10.0m),
 

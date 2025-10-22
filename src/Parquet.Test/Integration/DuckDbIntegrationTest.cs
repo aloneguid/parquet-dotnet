@@ -6,22 +6,54 @@ using System.Text;
 using System.Threading.Tasks;
 using DuckDB.NET.Data;
 using Parquet.Data;
+using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Integration {
 
-    //public class 
 
-    public class ClosedLoopTest : IntegrationBase {
+    /// <summary>
+    /// Initial prototype for DuckDB integration. Needs a lot of work.
+    /// </summary>
+    public class DuckDbIntegrationTest : IntegrationBase {
 
+        private static readonly IReadOnlyDictionary<Type, string> _duckDbTypeMap = new Dictionary<Type, string> {
+            [typeof(string)] = "VARCHAR",
+            [typeof(byte[])] = "BLOB",
+            [typeof(bool)] = "BOOLEAN",
+            [typeof(Guid)] = "UUID",
+            [typeof(double)] = "DOUBLE",
+            [typeof(float)] = "REAL",
+            [typeof(long)] = "BIGINT",
+            [typeof(ulong)] = "UBIGINT",
+            [typeof(int)] = "INTEGER",
+            [typeof(uint)] = "UINTEGER",
+            [typeof(short)] = "SMALLINT",
+            [typeof(ushort)] = "USMALLINT",
+            [typeof(sbyte)] = "TINYINT",
+            [typeof(byte)] = "UTINYINT",
+            [typeof(DateTime)] = "TIMESTAMP",
+            [typeof(decimal)] = "DECIMAL(29, 12)",
+            // Time-like CLR types
+            [typeof(TimeSpan)] = "TIME",
+            [typeof(Interval)] = "INTERVAL",
+#if !NETCOREAPP3_1
+            [typeof(DateOnly)] = "DATE",
+#endif
+#if NET6_0_OR_GREATER
+            [typeof(TimeOnly)] = "TIME"
+#endif
+        };
+
+        // https://duckdb.org/docs/stable/sql/data_types/overview
         private static string GetDuckDbSqlType(DataField field) {
-            // Decimal
+            // Decimal data field with specific precision/scale
             if(field is DecimalDataField ddf) {
                 return $"DECIMAL({ddf.Precision}, {ddf.Scale})";
             }
 
-            // Date/Time
+            // Date/Time logical fields with specific format
             if(field is DateTimeDataField dtf) {
                 return dtf.DateTimeFormat switch {
                     DateTimeFormat.Date => "DATE",
@@ -29,33 +61,19 @@ namespace Parquet.Test.Integration {
                 };
             }
 
-            // TimeSpan / TimeOnly
-            if(field is TimeSpanDataField) return "TIME";
-#if NET6_0_OR_GREATER
-            if(field is TimeOnlyDataField) return "TIME";
-#endif
-            // Interval
-            if(field.ClrType == typeof(Parquet.File.Values.Primitives.Interval)) return "INTERVAL";
+            if(field is TimeSpanDataField || field is TimeOnlyDataField) {
+                return "TIME";
+            }
 
-            // Primitives by CLR type
-            Type t = field.ClrType;
-            if(t == typeof(string)) return "VARCHAR";
-            if(t == typeof(byte[])) return "BLOB";
-            if(t == typeof(bool)) return "BOOLEAN";
-            if(t == typeof(Guid)) return "UUID";
-            if(t == typeof(double)) return "DOUBLE";
-            if(t == typeof(float)) return "REAL";
-            if(t == typeof(long)) return "BIGINT";
-            if(t == typeof(ulong)) return "UBIGINT";
-            if(t == typeof(int)) return "INTEGER";
-            if(t == typeof(uint)) return "UINTEGER";
-            if(t == typeof(short)) return "SMALLINT";
-            if(t == typeof(ushort)) return "USMALLINT";
-            if(t == typeof(sbyte)) return "TINYINT";
-            if(t == typeof(byte)) return "UTINYINT";
-#if !NETCOREAPP3_1
-            if(t == typeof(DateOnly)) return "DATE";
-#endif
+            if(field is TimeOnlyDataField) {
+                return "TIME";
+            }
+
+            // Fallback to CLR type mapping
+            if(_duckDbTypeMap.TryGetValue(field.ClrType, out string? mapped)) {
+                return mapped;
+            }
+
             throw new NotSupportedException($"DuckDB SQL type mapping not supported for {field}");
         }
 
@@ -70,15 +88,13 @@ namespace Parquet.Test.Integration {
 
         private static object? ConvertToDuckDbParameterValue(object? value) {
             if(value is null) return null;
-#if NET6_0_OR_GREATER
-            if(value is DateOnly d) return d.ToDateTime(TimeOnly.MinValue);
-            if(value is TimeOnly to) return to.ToTimeSpan();
-#endif
-            // Most types can be passed as is (Guid, byte[], numeric, bool, DateTime, TimeSpan, string, decimal)
+            
+            //
+
             return value;
         }
 
-        [Theory, TestBase.TypeTestData]
+        [Theory, TypeTestData(DuckDb = true)]
         public async Task DuckDbGeneratedFileReads(TypeTestInstance input) {
             string tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".parquet");
 
