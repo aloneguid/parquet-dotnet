@@ -5,10 +5,6 @@ env:
   PACKAGE_SUFFIX: '-pre.1'
   # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
-  DOC_INSTANCE: wrs/pq
-  DOC_ARTIFACT: webHelpPQ2-all.zip
-  DOC_ALGOLIA_ARTIFACT: algolia-indexes-PQ.zip
-  DOC_DOCKER_VERSION: 241.15989
 
 on:
   push:
@@ -102,35 +98,6 @@ jobs:
       with:
         name: bin
         path: artifacts/*
-
-  wrs:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    name: '📃 Writerside docs'
-    permissions:
-      id-token: write
-      pages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Build Writerside docs
-        uses: JetBrains/writerside-github-action@v4
-        with:
-          instance: ${{ env.DOC_INSTANCE }}
-          artifact: ${{ env.DOC_INSTANCE }}
-          docker-version: ${{ env.DOC_DOCKER_VERSION }}
-
-      - name: 🤐 Unzip artifact
-        run: unzip -O UTF-8 artifacts/${{ env.DOC_ARTIFACT }} -d dir
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - name: Upload artifact to GH Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dir
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 
   release:
     name: '🕋 Release library'

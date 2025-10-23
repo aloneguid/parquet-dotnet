@@ -89,7 +89,7 @@ using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
 
 Note that the only indication that this is a part of struct is `Path` property in the read schema containing struct name:
 
-![](struct-path.png)
+![](img/struct-path.png)
 
 ## Lists and Arrays
 

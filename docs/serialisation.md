@@ -1,16 +1,15 @@
 # Class serialisation
 
-%product% is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
+Parquet.Net is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
 
 Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become amazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
 
-<tip>
-Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
-</tip>
+> [!TIP]
+> Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
 
 ## Quick start
 
-Both serialiser and deserialiser works with collection of classes. Let's say you have the following class definition:
+Both serialiser and deserialiser work with collection of classes. Let's say you have the following class definition:
 
 ```C#
 class Record {
@@ -46,9 +45,8 @@ In order to deserialize this file back to array of classes you would write the f
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
 
-<note>
-Target `Record` class can have more properties than the source file, and they will be gracefully skipped when deserializing.
-</note>
+> [!NOTE]
+> Target `Record` class can have more properties than the source file, and they will be gracefully skipped when deserializing.
 
 ## Deserialize records by `RowGroup`
 
@@ -60,7 +58,7 @@ IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/stor
 
 ## Class member requirements
 
-%product% can serialize and deserialize into class properties and class fields (class fields support was introduced in _v4.23.0_).
+Parquet.Net can serialize and deserialize into class properties and class fields (class fields support was introduced in _v4.23.0_).
 
 Apparently, in order to serialize a class, a property must be readable, and in order to deserialize a class, a property must be writable. This is a standard requirement for any serialisation library.
 
@@ -68,7 +66,7 @@ In case of fields, they are by default both readable and writable, so you don't 
 
 ## Enum support
 
-Starting with version _4.24.0_, %product% supports [.NET enums](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum). These are stored in both schema and parquet file as their underlying type (by default, it's `System.Int32`).  
+Starting with version _4.24.0_, Parquet.Net supports [.NET enums](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum). These are stored in both schema and parquet file as their underlying type (by default, it's `System.Int32`).  
 
 ## Customising serialisation
 
@@ -99,9 +97,8 @@ public string RequiredString { get; set; }
 
 In this example of three properties, `OptionalString`will be serialized as optional, but `RequiredString` will be serialized as required.
 
-<note>
-%product% will also expect string to be optional when deserializing from a file. If you have a required string in your file, you will get an exception until you add <code>[ParquetRequired]</code> attribute to the relevant class property.  
-</note>
+> [!NOTE]
+> Parquet.Net will also expect string to be optional when deserializing from a file. If you have a required string in your file, you will get an exception until you add `[ParquetRequired]` attribute to the relevant class property.  
 
 ### Dates
 
@@ -123,9 +120,8 @@ which by default serialises date with millisecond precision. If you need to incr
 public DateTime TimestampDate { get; set; }
 ```
 
-<warning>
-Storing dates with microseconds precision relies on .NET <code>DateTime</code> type, which can only store microseconds starting from .NET 7. 
-</warning>
+> [!WARNING]
+> Storing dates with microseconds precision relies on .NET `DateTime` type, which can only store microseconds starting from .NET 7. 
 
 ### Times
 
@@ -330,7 +326,7 @@ and data
 
 #### Nullability and lists
 
-By default, %product% assumes that both lists and list elements are nullable. This is because list is a class in .NET, and classes are nullable. Therefore, coming back to the previous example definition:
+By default, Parquet.Net assumes that both lists and list elements are nullable. This is because list is a class in .NET, and classes are nullable. Therefore, coming back to the previous example definition:
 
 ```c#
 class MovementHistory {
@@ -519,7 +515,7 @@ Note that small row groups make parquet files very inefficient in general, so yo
 
 ## Ignoring property casing
 
-Since v5.0 %product% supports ignoring property casing when deserializing data. This can be useful when you have a class with properties that have different casing than the column names in the parquet file. For example, if you have a class with properties like `FirstName` and `LastName`, but the parquet file has columns named `first_name` and `last_name`, you can use the `IgnorePropertyCasing` option to ignore the casing differences and match the properties with the columns. Here is an example:
+Since v5.0 Parquet.Net supports ignoring property casing when deserializing data. This can be useful when you have a class with properties that have different casing than the column names in the parquet file. For example, if you have a class with properties like `FirstName` and `LastName`, but the parquet file has columns named `first_name` and `last_name`, you can use the `IgnorePropertyCasing` option to ignore the casing differences and match the properties with the columns. Here is an example:
 
 ```C#
 class BeforeRename {

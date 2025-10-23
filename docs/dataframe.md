@@ -2,9 +2,8 @@
 
 Since v4.8 support for [`Microsoft.Data.Analysis`](https://www.nuget.org/packages/Microsoft.Data.Analysis) was added.
 
-<note>
-Since v5.0.2, this integration was moved out to a separate package, `Parquet.Data.Analysis`, which is available on <a href="https://www.nuget.org/packages/Parquet.Net.Data.Analysis">NuGet</a>.
-</note>
+> [!NOTE]
+> Since v5.0.2, this integration was moved out to a separate package, `Parquet.Data.Analysis`, which is available on [NuGet](https://www.nuget.org/packages/Parquet.Net.Data.Analysis).
 
 ## What's supported?
 
@@ -31,9 +30,9 @@ DataFrame df = await fs.ReadParquetAsDataFrameAsync();
 
 ## Samples
 
-For your convenience, there is a [sample Jupyter notebook](%src_base%/../../notebooks/read_dataframe.ipynb) available that demonstrates reading parquet files into `DataFrame` and displaying them:
+For your convenience, there is a [sample Jupyter notebook](https://github.com/aloneguid/parquet-dotnet/blob/master/notebooks/read_dataframe.ipynb) available that demonstrates reading parquet files into `DataFrame` and displaying them:
 
-![](ipynb-preview.png)
+![](img/ipynb-preview.png)
 
 
 In order to run this notebook, you can use [VS Code](https://code.visualstudio.com/) with [Polyglot Notebooks extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode). 

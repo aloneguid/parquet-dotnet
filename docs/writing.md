@@ -1,13 +1,13 @@
 # Writing data
 
-You can write data by constructing an instance of [ParquetWriter class](%src_base%/ParquetWriter.cs) with one of its factory methods.
+You can write data by constructing an instance of [ParquetWriter class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetWriter.cs) with one of its factory methods.
 
 Writing files is a multi-stage process, giving you the full flexibility on what exactly to write to it:
 
 1. Create `ParquetWriter` passing it a *file schema* and a *writeable stream*. You should have declared file schema beforehand.
 2. Create a row group writer by calling to `writer.CreateRowGroup()`.
 3. Keep calling `.WriteAsync()` by passing the data columns with data you want to write. Note that the order of data columns you are writing must match the order of data fields declared in the schema.
-4. When required, repeat from step (2) to create more row groups. A row groups is like a physical data partition that should fit in memory for processing. It's a guess game how much data should be in a single row group, but a number of at least 5 thousand rows per column is great. Remember that parquet format works best on large chunks of data.
+4. When required, repeat from step (2) to create more row groups. A row group is like a physical data partition that should fit in memory for processing. It's a guess game how much data should be in a single row group, but a number of at least 5 thousand rows per column is great. Remember that parquet format works best on large chunks of data.
 
 ```C#
 // create file schema
@@ -37,15 +37,14 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 }
 ```
 
-<tip>
-After constructing a <code>DataColumn</code>, you should not modify the data passed until it's written out into the Parquet file. <code>DataColumn</code> performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
-</tip>
+> [!TIP]
+> After constructing a `DataColumn`, you should not modify the data passed until it's written out into the Parquet file. `DataColumn` performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
 
 To read more about DataColumn, see [this page](column.md).
 
 ### Specifying compression method and level
 
-After constructing `ParquetWriter` you can optionally set compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) which defaults to `Snappy`.  Unless you have specific needs to override compression, the default are very reasonable.
+After constructing `ParquetWriter` you can optionally set compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) which defaults to `Snappy`.  Unless you have specific needs to override compression, the defaults are very reasonable.
 
 For instance, to set compression to gzip/optimal:
 
@@ -61,7 +60,7 @@ using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, file
 
 This lib supports pseudo appending to files, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.
 
-This should make you The following code snippet illustrates this:
+The following code snippet illustrates this:
 
 ```C#
 //write a file with a single row group
@@ -100,7 +99,7 @@ using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
 }
 ```
 
-Note that you have to specify that you are opening `ParquetWriter` in **append** mode in it's constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream position to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
+Note that you have to specify that you are opening `ParquetWriter` in **append** mode in its constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream position to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
 
 Please keep in mind that row groups are designed to hold a large amount of data (50000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
 
