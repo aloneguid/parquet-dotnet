@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.32002.185
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11116.177 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A0507D42-940E-4EF9-BD33-46BB6561A2F5}"
 EndProject
@@ -39,6 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rn", "rn", "{EE4ECD1F-5A44-
 		..\docs\rn\5.1.1.md = ..\docs\rn\5.1.1.md
 		..\docs\rn\5.2.0.md = ..\docs\rn\5.2.0.md
 		..\docs\rn\5.3.0.md = ..\docs\rn\5.3.0.md
+		..\docs\rn\5.4.0.md = ..\docs\rn\5.4.0.md
 		..\docs\rn\previous.md = ..\docs\rn\previous.md
 	EndProjectSection
 EndProject
