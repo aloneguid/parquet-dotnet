@@ -9,7 +9,7 @@ Class serialisation is **really fast** as internally it generates [compiled expr
 
 ## Quick start
 
-Both serialiser and deserialiser works with collection of classes. Let's say you have the following class definition:
+Both serialiser and deserialiser work with collection of classes. Let's say you have the following class definition:
 
 ```C#
 class Record {

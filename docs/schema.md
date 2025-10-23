@@ -4,9 +4,9 @@ Parquet is a format that stores data in a structured way. It has different types
 
 Schema can be defined by creating an instance of `ParquetSchema` class and passing a collection of `Field`. Various helper methods on both `DataSet` and `ParquetSchema` exist to simplify the schema declaration, but we are going to be more specific on this page.
 
-There are several types of fields you can specify in your schema, and the most common is `DataField`. `DataField` is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means in declares an actual data rather than an abstraction.
+There are several types of fields you can specify in your schema, and the most common is `DataField`. `DataField` is derived from the base abstract `Field` class (just like all the rest of the field types) and simply means it declares an actual data rather than an abstraction.
 
-You can declare a `DataField` by specifying a column name, and it's type in the constructor, in one of two forms:
+You can declare a `DataField` by specifying a column name, and its type in the constructor, in one of two forms:
 
 ```C#
 var field = new DataField("id", typeof(int));
@@ -67,7 +67,7 @@ classDiagram
         +bool IsArray
     }
 
-    class DataF1eld~T~{
+    class DataField~T~{
         
     }
 
@@ -105,7 +105,7 @@ To declare a list, use `ListField` class and specify:
 1. The name of the list field.
 2. What data it is holding.
 
-`ListField`'s second parameter is of type `Field`, meaning you can specify **anything** as it's member - a primitive `DataField` or anything else.
+`ListField`'s second parameter is of type `Field`, meaning you can specify **anything** as its member - a primitive `DataField` or anything else.
 
 ### Lists of primitive types
 
@@ -146,7 +146,7 @@ new ListField("item", new DataField<int>("id"));
 
 ### Lists of structs
 
-Of course a list can contain anything, but just to demostrate it can, this is how you would declare a list of structs:
+Of course a list can contain anything, but just to demonstrate it can, this is how you would declare a list of structs:
 
 <details>
 <summary>Data structure</summary>

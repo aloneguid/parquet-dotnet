@@ -17,12 +17,12 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 - 🦄**Unique Features**:
-  - The only library that supports [dynamic](https://aloneguid.github.io/parquet-dotnet/writing.html) schemas.
-  - Supports all parquet [types](https://aloneguid.github.io/parquet-dotnet/nested-types.html), encodings and compressions.
-  - Fully supports [C# class serialization](https://aloneguid.github.io/parquet-dotnet/serialisation.html), for all simple and **complex** Parquet types.
-  - Provides **low-level**, [high-level](https://aloneguid.github.io/parquet-dotnet/serialisation.html), and [untyped](https://aloneguid.github.io/parquet-dotnet/untyped-serializer.html) API.
-  - Access to [file and column metadata](https://aloneguid.github.io/parquet-dotnet/metadata.html).
-  - [Integration with DataFrames](https://aloneguid.github.io/parquet-dotnet/dataframe.html) (`Microsoft.Data.Analysis`).
+  - The only library that supports [dynamic](writing.md) schemas.
+  - Supports all parquet [types](nested_types.md), encodings and compressions.
+  - Fully supports [C# class serialization](serialisation.md), for all simple and **complex** Parquet types.
+  - Provides **low-level**, [high-level](serialisation.md), and [untyped](untyped-serializer.md) API.
+  - Access to [file and column metadata](metadata.md).
+  - [Integration with DataFrames](dataframe.md) (`Microsoft.Data.Analysis`).
 
 ## Quick start
 
@@ -46,7 +46,7 @@ class Record {
 
 ### Writing data
 
-Let's say you have around a million of events like that to save to a `.parquet` file. There are three ways to do that with this library, starting from easiest to hardest.
+Let's say you have around a million events like that to save to a `.parquet` file. There are three ways to do that with this library, starting from easiest to hardest.
 
 #### Writing with class serialisation
 
@@ -62,11 +62,11 @@ var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
 
 Now, to write these to a file in say `/mnt/storage/data.parquet` you can use the following **line** of code:
 
-```C#
+```csharp
 await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 ```
 
-That's pretty much it! You can [customise many things](serialisation.md) in addition to the magical magic process, but if you are a really lazy person that will do just fine for today.
+That's pretty much it! You can [customise many things](serialisation.md) in addition to the magical serialisation process, but if you are a really lazy person that will do just fine for today.
 
 #### Writing untyped data
 
@@ -78,16 +78,16 @@ And finally, the lowest level API is the third method. This is the most performa
 
 First of all, you need schema. Always. Just like in row-based example, schema can be declared in the following way:
 
-```C#
+```csharp
 var schema = new ParquetSchema(
     new DataField<DateTime>("Timestamp"),
     new DataField<string>("EventName"),
-    new DataField<double>("MeterName"));
+    new DataField<double>("MeterValue"));
 ```
 
 Then, data columns need to be prepared for writing. As parquet is column-based format, low level APIs expect that low level column slice of data. I'll just shut up and show you the code:
 
-```C#
+```csharp
 var column1 = new DataColumn(
     schema.DataFields[0],
     Enumerable.Range(0, 1_000_000).Select(i => DateTime.UtcNow.AddSeconds(i)).ToArray());
@@ -105,7 +105,7 @@ Important thing to note here - `columnX` variables represent data in an entire c
 
 Time to write it down:
 
-```C#
+```csharp
 using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
     using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs)) {
         using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
@@ -135,7 +135,7 @@ Reading data also has three different approaches, so I'm going to unwrap them he
 
 Provided that you have written the data, or just have some external data with the same structure as above, you can read those by simply doing the following:
 
-```C#
+```csharp
 IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
 ```
 
@@ -153,7 +153,7 @@ Read [here](untyped-serializer.md) for more information on how to read untyped d
 
 And with low level API the reading is even more flexible:
 
-```C#
+```csharp
 using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
     using(ParquetReader reader = await ParquetReader.CreateAsync(fs)) {
         for(int i = 0; i < reader.RowGroupCount; i++) { 
@@ -178,7 +178,7 @@ using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
 4. Explicitly open row group for reading.
 5. Read each `DataField` from the row group, in the same order as it's declared in the schema.
 
-> Uou can also use web based [reader app](https://aloneguid.github.io/parquet-online/) to test your files, which was created using this library!
+> You can also use web based [reader app](https://aloneguid.github.io/parquet-online/) to test your files, which was created using this library!
 
 ## Choosing the API
 
@@ -232,4 +232,15 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 
 ## Contributing
 
-See the [contribution page](https://aloneguid.github.io/parquet-dotnet/contributing.html). The first important thing you can do is **simply star ⭐ this project**.
+See the [contribution page](contributing.md). The first important thing you can do is **simply star ⭐ this project**.
+
+## Special thanks
+
+Without these tools development would be really painful.
+
+- [Visual Studio Community](https://visualstudio.microsoft.com/vs/community/) - free IDE from Microsoft. The best in class C# and C++ development tool. It's worth using Windows just because Visual Studio exists there.
+- [JetBrains Rider](https://www.jetbrains.com/rider/) - for their cross-platform C# IDE, which has some great features.
+- [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
+- [LINQPad](https://www.linqpad.net/) - extremely powerful C# REPL with unique visualisation features, IL decompiler, expression tree visualiser, benchmarking, charting and so on. Again it's worth having Windows just for this tool. Please support the author and purchase it.
+- [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.
+- **You** starring ⭐ this project!
