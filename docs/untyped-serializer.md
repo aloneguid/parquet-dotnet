@@ -5,9 +5,8 @@ Untyped serializer gives this library the ability to write and read data without
 - Reading data from a file where the schema is not known in advance (i.e. parquet file viewers, generic utilities).
 - Writing parquet file converters, i.e. from parquet to JSON.
 
-<tip>
-Since v5 this API supersedes the Row API, which was a very old and buggy API that was extremely hard to evolve. Untyped serializer is the future of dynamic data serialization in this library.
-</tip>
+> [!TIP]
+> Since v5 this API supersedes the Row API, which was a very old and buggy API that was extremely hard to evolve. Untyped serializer is the future of dynamic data serialization in this library.
 
 and so on.
 

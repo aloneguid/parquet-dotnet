@@ -1,6 +1,6 @@
 # Utilities
 
-%product% provides out-of-the-box helpers that came out of frequently asked questions or repeated scenarios authors had to work with.
+Parquet.Net provides out-of-the-box helpers that came out of frequently asked questions or repeated scenarios authors had to work with.
 
 All the utilities reside in `Parquet.Utils` namespace.
 
@@ -11,7 +11,7 @@ All the utilities reside in `Parquet.Utils` namespace.
 - Not all parquet files can be represented in flat format. For instance, if a parquet file contains a list of structures, it cannot be represented in row format, therefore you cannot convert it to flat format.
 - Complex data (structs, maps etc.) will be simply skipped in current implementation. Support will be added in the future.
 
-To minimise external dependencies, %product% does not provide any implementations of a specific data format like CSV, TSV etc., but you can implement it yourself easily by deriving from a helper class.
+To minimise external dependencies, Parquet.Net does not provide any implementations of a specific data format like CSV, TSV etc., but you can implement it yourself easily by deriving from a helper class.
 
 The example below shows how to convert a parquet file to CSV using free open-source [CsvHelper](https://joshclose.github.io/CsvHelper/) library:
 

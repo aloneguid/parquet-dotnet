@@ -1,6 +1,6 @@
 # Writing data
 
-You can write data by constructing an instance of [ParquetWriter class](%src_base%/ParquetWriter.cs) with one of its factory methods.
+You can write data by constructing an instance of [ParquetWriter class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetWriter.cs) with one of its factory methods.
 
 Writing files is a multi-stage process, giving you the full flexibility on what exactly to write to it:
 
@@ -37,9 +37,8 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 }
 ```
 
-<tip>
-After constructing a <code>DataColumn</code>, you should not modify the data passed until it's written out into the Parquet file. <code>DataColumn</code> performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
-</tip>
+> [!TIP]
+> After constructing a `DataColumn`, you should not modify the data passed until it's written out into the Parquet file. `DataColumn` performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
 
 To read more about DataColumn, see [this page](column.md).
 

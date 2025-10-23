@@ -118,20 +118,12 @@ using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
 }
 ```
 
-<procedure title="What's going on?">
-<step>
-We are creating output file stream. You can probably use one of the overloads in the next line though. This will be the receiver of parquet data. The stream needs to be writeable and seekable.
-</step>
-<step>
-<code>ParquetWriter</code> is low-level class and is a root object to start writing from. It mostly performs coordination, check summing and enveloping of other data.
-</step>
-<step>
-Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory.
-</step>
-<step>
-Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
-</step>
-</procedure>
+**What's going on?**
+
+1. We are creating output file stream. You can probably use one of the overloads in the next line though. This will be the receiver of parquet data. The stream needs to be writeable and seekable.
+2. `ParquetWriter` is low-level class and is a root object to start writing from. It mostly performs coordination, check summing and enveloping of other data.
+3. Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory.
+4. Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
 
 Read more on writing [here](writing.md) which also includes guides on writing [nested types](nested_types.md) such as lists, maps, and structs.
 
@@ -178,23 +170,13 @@ using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
 }
 ```
 
-<procedure title="This is what's happening">
-<step>
-Create read stream <code>fs</code>.
-</step>
-<step>
-Create <code>ParquetReader</code> - root class for read operations.
-</step>
-<step>
-The reader has <code>RowGroupCount</code> property which indicates how many row groups (like partitions) the file contains.
-</step>
-<step>
-Explicitly open row group for reading.
-</step>
-<step>
-Read each <code>DataField</code> from the row group, in the same order as it's declared in the schema.
-</step>
-</procedure>
+**This is what's happening**
+
+1. Create read stream `fs`.
+2. Create `ParquetReader` - root class for read operations.
+3. The reader has `RowGroupCount` property which indicates how many row groups (like partitions) the file contains.
+4. Explicitly open row group for reading.
+5. Read each `DataField` from the row group, in the same order as it's declared in the schema.
 
 > Uou can also use web based [reader app](https://aloneguid.github.io/parquet-online/) to test your files, which was created using this library!
 

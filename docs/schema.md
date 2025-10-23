@@ -18,13 +18,12 @@ The first one is more declarative and allows you to select data type from the `D
 
 The second one is just a shortcut to `DataField` that allows you to use .NET Generics.
 
-<note>
-In the older %product% versions you used to be able to declare the field as
-```csharp
-var field = new DataField("id", DataType.Int32);
-```
-which was deprecated and then removed. <code>DataType</code> enumeration existed when %product% did not support many features in the beginning of the project history, but nowadays almost every single CLR type is supported, therefore there is no need for extra enumeration.
-</note>
+> [!NOTE]
+> In the older Parquet.Net versions you used to be able to declare the field as
+> ```csharp
+> var field = new DataField("id", DataType.Int32);
+> ```
+> which was deprecated and then removed. `DataType` enumeration existed when Parquet.Net did not support many features in the beginning of the project history, but nowadays almost every single CLR type is supported, therefore there is no need for extra enumeration.
 
 Then, there are specialised versions for `DataField` allowing you to specify more precise metadata about certain parquet data type, for instance `DecimalDataField` allows to specify precision and scale other than default values.
 
@@ -116,43 +115,41 @@ To declare a list of primitive types, just specify `DataField` as a second param
 new ListField("item", new DataField<int>("id"));
 ```
 
-<warning>
-
-Parquet format allows you to use `arrays` which can also contain a list of primitive types. Whilst supported, it is strongly discouraged due to poor compatibility with other systems. In fact, it's impossible to find anything that will write arrays instead of lists, even for primitive types.
-
-<chapter title="Using arrays (expand)" collapsible="true">
-
-To declare an array, or a "repeatable field" in schema you need specify it as <code>IEnumerable&lt;T&gt;</code> where <code>T</code> is one of the types %product% supports. For example:
-
-```csharp
-var se = new DataField&lt;IEnumerable&lt;int&gt;&gt;("ids");
-```
-
-You can also specify that a field is repeatable by setting `isArray` in `DataField` constructor to `true`.
-
-When writing to the field you can specify any value which derives from `IEnumerable<int>`, for instance
-
-```C#
-ds.Add(1, new int[] { 1, 2, 3 });
-```
-
-When reading schema back, you can check if it's repeatable by calling to `.IsArray` property.
-
-You should always prefer lists to arrays because:
-- Lists are more flexible - arrays can only contain a primitive type, whereas lists can contain anything.
-- Most big data platforms just default to lists.
-- Schema evolution is not possible with arrays.
-
-</chapter>
-
-</warning>
+> [!WARNING]
+> Parquet format allows you to use `arrays` which can also contain a list of primitive types. Whilst supported, it is strongly discouraged due to poor compatibility with other systems. In fact, it's impossible to find anything that will write arrays instead of lists, even for primitive types.
+>
+> <details>
+> <summary>Using arrays (expand)</summary>
+>
+> To declare an array, or a "repeatable field" in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
+>
+> ```csharp
+> var se = new DataField<IEnumerable<int>>("ids");
+> ```
+>
+> You can also specify that a field is repeatable by setting `isArray` in `DataField` constructor to `true`.
+>
+> When writing to the field you can specify any value which derives from `IEnumerable<int>`, for instance
+>
+> ```C#
+> ds.Add(1, new int[] { 1, 2, 3 });
+> ```
+>
+> When reading schema back, you can check if it's repeatable by calling to `.IsArray` property.
+>
+> You should always prefer lists to arrays because:
+> - Lists are more flexible - arrays can only contain a primitive type, whereas lists can contain anything.
+> - Most big data platforms just default to lists.
+> - Schema evolution is not possible with arrays.
+>
+> </details>
 
 ### Lists of structs
 
 Of course a list can contain anything, but just to demostrate it can, this is how you would declare a list of structs:
 
-<tabs>
-<tab title="Data structure">
+<details>
+<summary>Data structure</summary>
 
 ```mermaid
 classDiagram
@@ -171,8 +168,10 @@ classDiagram
 
 ```
 
-</tab>
-<tab title="Schema definition">
+</details>
+
+<details>
+<summary>Schema definition</summary>
 
 ```c#
 var idField = new DataField<int>("Id");
@@ -186,8 +185,7 @@ var schema = new ParquetSchema(
             nameField)));
 ```
 
-</tab>
-</tabs>
+</details>
 
 
 

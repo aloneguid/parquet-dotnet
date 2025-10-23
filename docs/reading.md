@@ -1,6 +1,6 @@
 # Reading data
 
-You can read the data by constructing an instance of [ParquetReader class](%src_base%/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
+You can read the data by constructing an instance of [ParquetReader class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
 
 Reading files is a multi-stage process, giving you the full flexibility on what exactly to read from it:
 
@@ -13,7 +13,7 @@ It's worth noting that *repetition levels* are only used for complex data types 
 
 ## Using format options
 
-When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](%src_base%/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
+When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
 
 For example, to force the reader to treat byte arrays as strings use the following code:
 

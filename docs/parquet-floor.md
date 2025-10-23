@@ -1,6 +1,6 @@
 # Parquet Floor
 
-**Floor** is a reference implementation of the desktop application to view Parquet files. It was created as a demonstration of what is possible with %product% library, and as a visual validator of parquet files for visual thinkers.
+**Floor** is a reference implementation of the desktop application to view Parquet files. It was created as a demonstration of what is possible with Parquet.Net library, and as a visual validator of parquet files for visual thinkers.
 
 It is not a competitor to any other parquet viewers out there, quite possibly outshining Floor in terms of features and performance. However, it is a good starting point for anyone who wants to create their own parquet viewer.
 
