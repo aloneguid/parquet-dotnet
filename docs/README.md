@@ -195,21 +195,20 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 
 ## Keep reading
 
-- [Starter topic](starter-topic.md)
 - [Serialisation](serialisation.md)
 - [Writing](writing.md)
 - [Reading](reading.md)
 - Diving deeper
- - [Schema](schema.md)
- - [Column](column.md)
- - [Nested types](nested_types.md)
- - [Metadata](metadata.md)
+  - [Schema](schema.md)
+  - [Column](column.md)
+  - [Nested types](nested_types.md)
+  - [Metadata](metadata.md)
 - [Encodings](encodings.md)
 - [Untyped serializer](untyped-serializer.md)
 - [DataFrame](dataframe.md)
 - [Utilities](utilities.md)
 - Parquet Floor
- - [Parquet Floor basics](parquet-floor-basics.md)
+  - [Parquet Floor basics](parquet-floor-basics.md)
 - [Parquet getting started](parquet-getting-started.md)
 - [Contributing](contributing.md)
 - [Special thanks](Special-thanks.md)
