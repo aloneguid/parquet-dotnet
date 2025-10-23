@@ -141,7 +141,7 @@ IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/stor
 
 This will give us an array with one million class instances similar to this:
 
-![](read-classes.png)
+![](img/read-classes.png)
 
 Of course [class serialisation](serialisation.md) has more to it, and you can customise it further than that.
 

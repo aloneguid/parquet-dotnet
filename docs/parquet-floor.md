@@ -4,7 +4,7 @@
 
 It is not a competitor to any other parquet viewers out there, quite possibly outshining Floor in terms of features and performance. However, it is a good starting point for anyone who wants to create their own parquet viewer.
 
-![](floor-simple.png)
+![](img/floor-simple.png)
 
 ## Features
 
