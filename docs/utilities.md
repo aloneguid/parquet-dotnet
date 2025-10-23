@@ -77,8 +77,6 @@ You can then call this converter like this:
 }
 ```
 
-In fact, [Parquet Floor](parquet-floor.md) uses exactly the same approach to convert parquet files to CSV.
-
 ## Merging files into one
 
 `FileMerger` helps to merge multiple parquet files into one. The files must have the same schema. File merger operates in one of two modes:

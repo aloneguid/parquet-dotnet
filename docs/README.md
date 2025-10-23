@@ -207,8 +207,6 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 - [Untyped serializer](untyped-serializer.md)
 - [DataFrame](dataframe.md)
 - [Utilities](utilities.md)
-- Parquet Floor
-  - [Parquet Floor basics](parquet-floor-basics.md)
 - [Parquet getting started](parquet-getting-started.md)
 - [Contributing](contributing.md)
 - [Special thanks](Special-thanks.md)
