@@ -20,9 +20,9 @@ The second one is just a shortcut to `DataField` that allows you to use .NET Gen
 
 <note>
 In the older %product% versions you used to be able to declare the field as
-<code-block lang="c#">
+```csharp
 var field = new DataField("id", DataType.Int32);
-</code-block>
+```
 which was deprecated and then removed. <code>DataType</code> enumeration existed when %product% did not support many features in the beginning of the project history, but nowadays almost every single CLR type is supported, therefore there is no need for extra enumeration.
 </note>
 
@@ -124,9 +124,9 @@ Parquet format allows you to use `arrays` which can also contain a list of primi
 
 To declare an array, or a "repeatable field" in schema you need specify it as <code>IEnumerable&lt;T&gt;</code> where <code>T</code> is one of the types %product% supports. For example:
 
-<code-block lang="c#">
+```csharp
 var se = new DataField&lt;IEnumerable&lt;int&gt;&gt;("ids");
-</code-block>
+```
 
 You can also specify that a field is repeatable by setting `isArray` in `DataField` constructor to `true`.
 
