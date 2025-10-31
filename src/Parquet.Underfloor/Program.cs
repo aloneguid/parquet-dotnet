@@ -54,6 +54,7 @@ if(args.Length == 0) {
 }
 
 string title = "Parquet Underfloor";
+bool showRawSchema = false;
 
 static void RenderNull(int rowIdx, int colIdx) {
     Button($"null##{rowIdx}-{colIdx}", isEnabled: false, isSmall: true);
@@ -152,116 +153,154 @@ void ALN(string key, string? value) {
     }
 }
 
-void RenderInfo() {
+// Formats Parquet LogicalType to a short, human-readable uppercase label
+string FormatLogicalType(LogicalType? lt) {
+    if(lt == null)
+        return string.Empty;
 
-    //if(!Accordion("Info"))
-        //return;
+    if(lt.STRING != null)
+        return "STRING";
+    if(lt.UUID != null)
+        return "UUID";
+    if(lt.MAP != null)
+        return "MAP";
+    if(lt.LIST != null)
+        return "LIST";
+    if(lt.ENUM != null)
+        return "ENUM";
+    if(lt.DECIMAL != null) {
+        DecimalType d = lt.DECIMAL;
+        return $"DECIMAL({d.Precision},{d.Scale})";
+    }
+    if(lt.DATE != null)
+        return "DATE";
 
-    LN(Icon.Create, "Created by", fd.Metadata?.CreatedBy);
-
-    if(fd.Metadata?.KeyValueMetadata != null) {
-        foreach(KeyValue kv in fd.Metadata.KeyValueMetadata) {
-            string v = kv.Value ?? "";
-            Input(ref v, kv.Key, is_readonly: true);
-        }
+    if(lt.TIME != null) {
+        TimeType t = lt.TIME;
+        string unit = t.Unit.MILLIS != null ? "MILLIS" : t.Unit.MICROS != null ? "MICROS" : t.Unit.NANOS != null ? "NANOS" : string.Empty;
+        string utc = t.IsAdjustedToUTC ? ",UTC" : string.Empty;
+        return string.IsNullOrEmpty(unit) ? "TIME" : $"TIME({unit}{utc})";
     }
 
-    if(fd.RowGroups != null) {
+    if(lt.TIMESTAMP != null) {
+        TimestampType ts = lt.TIMESTAMP;
+        string unit = ts.Unit.MILLIS != null ? "MILLIS" : ts.Unit.MICROS != null ? "MICROS" : ts.Unit.NANOS != null ? "NANOS" : string.Empty;
+        string utc = ts.IsAdjustedToUTC ? ",UTC" : string.Empty;
+        return string.IsNullOrEmpty(unit) ? "TIMESTAMP" : $"TIMESTAMP({unit}{utc})";
+    }
 
-        Sep();
-        Combo("row group", fd.RowGroupDisplayNames, ref fd.CurrentRowGroupIndex);
-        RowGroup rg1 = fd.RowGroups[(int)fd.CurrentRowGroupIndex].RowGroup;
+    if(lt.INTEGER != null) {
+        IntType i = lt.INTEGER;
+        string sign = i.IsSigned ? "INT" : "UINT";
+        return $"{sign}{i.BitWidth}";
+    }
+
+    if(lt.UNKNOWN != null)
+        return "NULL";
+
+    if(lt.JSON != null)
+        return "JSON";
+
+    if(lt.BSON != null)
+        return "BSON";
+
+    if(lt.VARIANT != null)
+        return "VARIANT";
+
+    return string.Empty;
+}
+
+void RenderOriginalSchema(List<SchemaElement> schemaElements) {
+    Table("schema",
+    ["name", "num children", "type", "type length", "repetition", "logical type", "converted type", "scale", "precision", "field id"],
+    t => {
+        foreach(SchemaElement se in schemaElements) {
+            t.BeginRow();
+            Label(se.Name);
+            t.NextColumn();
+            Label(se.NumChildren?.ToString() ?? "");
+            t.NextColumn();
+            Label(se.Type?.ToString() ?? "");
+            t.NextColumn();
+            Label(se.TypeLength?.ToString() ?? "");
+            t.NextColumn();
+            if(se.RepetitionType != null) {
+                Emphasis emp = se.RepetitionType switch {
+                    FieldRepetitionType.REQUIRED => Emphasis.Success,
+                    FieldRepetitionType.OPTIONAL => Emphasis.Warning,
+                    FieldRepetitionType.REPEATED => Emphasis.Info,
+                    _ => Emphasis.None
+                };
+                Label(se.RepetitionType.ToString(), emp);
+            }
+            t.NextColumn();
+            Label(FormatLogicalType(se.LogicalType));
+            t.NextColumn();
+            Label(se.ConvertedType?.ToString() ?? "");
+            t.NextColumn();
+            Label(se.Scale?.ToString() ?? "");
+            t.NextColumn();
+            Label(se.Precision?.ToString() ?? "");
+            t.NextColumn();
+            Label(se.FieldId?.ToString() ?? "");
+        }
+    }, 0, -20, true);
+}
+
+void Render(TableActions ta, IReadOnlyList<Field> fields) {
+    foreach(Field f in fields) {
+        ta.BeginRow();
+        bool isLeaf = f.SchemaType == SchemaType.Data;
+        TreeNode(f.Name, true, isLeaf, isOpen => {
+
+            if(f is DataField df) {
+                ta.NextColumn();
+                Label(df.ClrType.ToString());
+            } else {
+                ta.NextColumn();
+            }
+
+            ta.NextColumn();
+            Label(f.SchemaType.ToString());
+            ta.NextColumn();
+            bool n = f.IsNullable;
+            Checkbox("##n", ref n);
+            ta.NextColumn();
+            Label(f.MaxRepetitionLevel.ToString());
+            ta.NextColumn();
+            Label(f.MaxDefinitionLevel.ToString());
 
 
-        ALN("Rows", rg1.NumRows.ToString("N0"));
-        ALN("File offset", rg1.FileOffset.ToString());
-        ALN("Size uncompressed", rg1.TotalByteSize.ToFileSizeUiString());
-        ALN("Size compressed", rg1.TotalCompressedSize?.ToFileSizeUiString());
-
-        Table($"rg{rg1.FileOffset}cols",
-            [
-            "path", "type", "encodings", "codec", "values", "sz uncomp", "sz comp", "KVM", "DPO", "IPO",
-                    "DictPO", "stat", "estat", "BFO", "BFL", "sz stat"],
-            rg1.Columns.Count,
-            (int rowIdx, int colIdx) => {
-                ColumnChunk cc = rg1.Columns[rowIdx];
-                ColumnMetaData? m = cc.MetaData;
-
-                //Label($"{rowIdx}x{colIdx}");
-
-                if(m != null) {
-                    switch(colIdx) {
-                        case 0:
-                            Label(string.Join(".", m.PathInSchema));
-                            break;
-                        case 1:
-                            Label(m.Type.ToString());
-                            break;
-                        case 2:
-                            Label(string.Join(", ", m.Encodings));
-                            break;
-                        case 3:
-                            Label(m.Codec.ToString());
-                            break;
-                        case 4:
-                            Label(m.NumValues.ToString("N0"));
-                            break;
-                        case 5:
-                            Label(m.TotalUncompressedSize.ToFileSizeUiString());
-                            break;
-                        case 6:
-                            Label(m.TotalCompressedSize.ToFileSizeUiString() ?? "");
-                            break;
-                        case 7:
-                            Label(m.KeyValueMetadata != null ? m.KeyValueMetadata.Count.ToString("N0") : "");
-                            break;
-                        case 8:
-                            Label(m.DataPageOffset.ToString("N0"));
-                            break;
-                        case 9:
-                            Label(m.IndexPageOffset?.ToString("N0") ?? "");
-                            break;
-                        case 10:
-                            Label(m.DictionaryPageOffset?.ToString("N0") ?? "");
-                            break;
-                        case 11:
-                            Label(m.Statistics != null ? "yes" : "no");
-                            break;
-                        case 12:
-                            Label(m.EncodingStats?.Count.ToString() ?? "");
-                            break;
-                        case 13:
-                            Label(m.BloomFilterOffset?.ToString("N0") ?? "");
-                            break;
-                        case 14:
-                            Label(m.BloomFilterLength?.ToString("N0") ?? "");
-                            break;
-                        case 15:
-                            Label(m.SizeStatistics != null ? "yes" : "no");
-                            break;
-
-                    }
-                }
-
-                switch(colIdx) {
-                    case 0:
-
+            if(!isLeaf && isOpen) {
+                switch(f.SchemaType) {
+                    case SchemaType.List:
+                        Render(ta, [((ListField)f).Item]);
+                        break;
+                    case SchemaType.Struct:
+                        Render(ta, ((StructField)f).Fields);
                         break;
                 }
 
-            }, 0, 200, true);
+            }
+        });
     }
+}
 
-    Sep();
+void RenderLogicalSchema(ParquetSchema schema) {
+    Table("logicalSchema", ["Name", "CLR Type", "SchemaType", "IsNullable", "DL", "RL"], ta => {
+        Render(ta, schema.Fields);
+    }, 0, -20, true);
+}
 
-    //if(fd.Metadata?.KeyValueMetadata != null) {
-    //    Sep("Key-value metadata");
-    //    foreach(KeyValue kv in fd.Metadata.KeyValueMetadata) {
-    //        string v = kv.Value ?? "";
-    //        Input(ref v, kv.Key, true, 0, true);
-    //    }
-    //}
+void RenderInfo() {
 
+    Checkbox("raw", ref showRawSchema);
+
+    if(showRawSchema) {
+        RenderOriginalSchema(fd.Metadata!.Schema);
+    } else {
+        RenderLogicalSchema(fd.Schema);
+    }
 }
 
 bool SBI(string icon, string? value, string? tooltip = null) {
@@ -289,28 +328,14 @@ Run(title, () => {
 
     RenderInfo();
 
-    //using(new TabBar()) {
-    //    using(var ti = new TabItem("Info")) {
-    //        if(ti) {
-    //            RenderInfo();
-    //        }
-    //    }
-
-    //    using(var ti = new TabItem("Data")) {
-    //        if(ti) {
-    //            RenderData();
-    //        }
-    //    }
-    //}
-
-    using(new StatusBar()) {
+    StatusBar(() => {
         Label(fd.FileName);
         SBI(Icon.Attach_file, fd.SizeDisplay, "file size");
         SBI(Icon.Table_rows, fd.RowCountDisplay, "number of rows");
         SBI(Icon.Table_rows, fd.RowGroupCountDisplay, "number of row groups");
         SBI(Icon.View_column, fd.ColumnCountDisplay, "number of columns");
         SBI(Icon.Numbers, fd.VersionDisplay, "format version");
-    }
+    });
 
     return true;
 }, isScrollable: false);

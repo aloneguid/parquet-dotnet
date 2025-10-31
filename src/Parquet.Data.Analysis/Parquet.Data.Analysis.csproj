@@ -37,7 +37,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
-        <PackageReference Include="Microsoft.Data.Analysis" Version="0.22.2" />
+        <PackageReference Include="Microsoft.Data.Analysis" Version="0.22.3" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
