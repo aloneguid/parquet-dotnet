@@ -5,8 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using Parquet.Meta;
 using Parquet.Schema;
+using Parquet.Serialization;
 
 namespace Parquet.Underfloor {
+
+    enum ReadStatus {
+        NotStarted = 0,
+        InProgress,
+        Completed,
+        Failed
+    }
 
     /// <summary>
     /// This keeps parquet file open for the duration of the session, in order to read parts of it on demand.
@@ -76,7 +84,7 @@ namespace Parquet.Underfloor {
 
                 if(value != null) {
                     ColumnCountDisplay = value.DataFields.Length.ToString("N0");
-                    Columns = value.DataFields.Select(f => f.Name).ToArray();
+                    Columns = value.Fields.Select(f => f.Name).ToArray();
                     ColumnsDisplay = ["#", .. Columns];
 
                 }
@@ -94,6 +102,36 @@ namespace Parquet.Underfloor {
         public string[]? RowGroupDisplayNames;
 
         public uint CurrentRowGroupIndex;
+
+        public ReadStatus SampleReadStatus { get; set; } = ReadStatus.NotStarted;
+
+        public ParquetSerializer.UntypedResult? Sample { get; set; }
+
+        public Exception? SampleReadException { get; set; }
+
+        public async Task ReadDataSampleAsync() {
+            if(_stream == null || SampleReadStatus == ReadStatus.InProgress)
+                return;
+
+            if(SampleReadStatus == ReadStatus.NotStarted) {
+                SampleReadStatus = ReadStatus.InProgress;
+
+                try {
+                    ParquetSerializer.UntypedResult ur = await ParquetSerializer.DeserializeAsync(_stream,
+                        new ParquetSerializerOptions {
+                            ParquetOptions = new ParquetOptions {
+                                TreatByteArrayAsString = true
+                            }
+                        });
+
+                    Sample = ur;
+                    SampleReadStatus = ReadStatus.Completed;
+                } catch(Exception ex) {
+                    SampleReadException = ex;
+                    SampleReadStatus = ReadStatus.Failed;
+                }
+            }
+        }
 
         public async ValueTask DisposeAsync() {
             if(_stream != null) {

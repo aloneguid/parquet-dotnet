@@ -24,7 +24,7 @@ async Task LoadAsync(string path) {
         //        });
         //}
 
-        //fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");        
+        //fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");
         //fd.CustomMetadata = reader.CustomMetadata;
         //fd.RowGroups = reader.RowGroups;
         //fd.RowGroupCountDisplay = reader.RowGroupCount.ToString("N0");
@@ -54,104 +54,10 @@ if(args.Length == 0) {
 }
 
 string title = "Parquet Underfloor";
+
+#region [ Schema ]
+
 bool showRawSchema = false;
-
-static void RenderNull(int rowIdx, int colIdx) {
-    Button($"null##{rowIdx}-{colIdx}", isEnabled: false, isSmall: true);
-}
-
-void RenderPrimitiveValue(int rowIdx, int colIdx, DataField df, object value) {
-    if(df.ClrType == typeof(bool)) {
-        bool b = (bool)value;
-        Checkbox($"##{rowIdx}-{colIdx}", ref b);
-        return;
-    }
-
-    Label(value?.ToString() ?? "");
-}
-
-void RenderStruct(int rowIdx, int colIdx, StructField sf, object value) {
-    if(value is Dictionary<string, object> dd) {
-        foreach(Field f in sf.Fields) {
-            Label(f.Name, isEnabled: false); SL();
-            dd.TryGetValue(f.Name, out object? v);
-            RenderValue(rowIdx, colIdx, f, v);
-        }
-    }
-}
-
-void RenderValue(int rowIdx, int colIdx, Field f, object? value) {
-    if(value == null) {
-        RenderNull(rowIdx, colIdx);
-        return;
-    }
-
-    if(f.SchemaType == SchemaType.Data) {
-        if(f is DataField df) {
-            if(df.IsArray) {
-                Label("array");
-            } else {
-                RenderPrimitiveValue(rowIdx, colIdx, df, value);
-            }
-        }
-    } else if(f.SchemaType == SchemaType.Struct) {
-        RenderStruct(rowIdx, colIdx, (StructField)f, value);
-    } else {
-        Label(f.SchemaType.ToString());
-    }
-}
-
-void RenderData() {
-    /*
-    if(fd.Columns == null || fd.ColumnsDisplay == null || fd.Schema == null)
-        return;
-
-    int rowCount = (int)(fd.Metadata?.NumRows ?? 0);
-
-    Table("data", fd.ColumnsDisplay, rowCount, (int rowIdx, int colIdx) => {
-        //if(fd.DataColumns == null)
-        //    return;
-
-        if(colIdx == 0) {
-            Label(rowIdx.ToString(), isEnabled: false);
-            return; // first column is row index
-        }
-
-        colIdx -= 1;
-        //Dictionary<string, object> row = fd.Data[rowIdx];
-        //string columnName = fd.Columns[colIdx];
-        //Field f = fd.Schema[colIdx];
-        //row.TryGetValue(columnName, out object? value);
-        //RenderValue(rowIdx, colIdx, f, value);
-    }, 0, -20, true);
-    */
-}
-
-void LN(string? icon, string key, string? value) {
-    if(value == null)
-        return;
-
-    Label(icon ?? "");
-    SL(60);
-    Label(key, Emphasis.Primary);
-    SL(300);
-    Label(value);
-}
-
-void ALN(string key, string? value) {
-    if(value == null)
-        return;
-
-    Label(key, Emphasis.Primary);
-    SL(350);
-    
-    // If the value is a number, format it with thousands separator
-    if(long.TryParse(value, out long numValue)) {
-        Label(numValue.ToString("N0"));
-    } else {
-        Label(value);
-    }
-}
 
 // Formats Parquet LogicalType to a short, human-readable uppercase label
 string FormatLogicalType(LogicalType? lt) {
@@ -210,7 +116,7 @@ string FormatLogicalType(LogicalType? lt) {
     return string.Empty;
 }
 
-void RenderOriginalSchema(List<SchemaElement> schemaElements) {
+void RenderRawSchema(List<SchemaElement> schemaElements) {
     Table("schema",
     ["name", "num children", "type", "type length", "repetition", "logical type", "converted type", "scale", "precision", "field id"],
     t => {
@@ -247,11 +153,19 @@ void RenderOriginalSchema(List<SchemaElement> schemaElements) {
     }, 0, -20, true);
 }
 
-void Render(TableActions ta, IReadOnlyList<Field> fields) {
+void RenderLogicalSchemaFields(TableActions ta, IReadOnlyList<Field> fields) {
     foreach(Field f in fields) {
         ta.BeginRow();
         bool isLeaf = f.SchemaType == SchemaType.Data;
-        TreeNode(f.Name, true, isLeaf, isOpen => {
+
+        string name = f.SchemaType switch {
+            SchemaType.List => Icon.Data_array,
+            SchemaType.Map => Icon.Map,
+            SchemaType.Struct => Icon.Data_object,
+            _ => Icon.Square
+        } + " " + f.Name;
+
+        TreeNode(name, true, isLeaf, isOpen => {
 
             if(f is DataField df) {
                 ta.NextColumn();
@@ -264,7 +178,7 @@ void Render(TableActions ta, IReadOnlyList<Field> fields) {
             Label(f.SchemaType.ToString());
             ta.NextColumn();
             bool n = f.IsNullable;
-            Checkbox("##n", ref n);
+            SmallCheckbox("##n", ref n);
             ta.NextColumn();
             Label(f.MaxRepetitionLevel.ToString());
             ta.NextColumn();
@@ -274,51 +188,230 @@ void Render(TableActions ta, IReadOnlyList<Field> fields) {
             if(!isLeaf && isOpen) {
                 switch(f.SchemaType) {
                     case SchemaType.List:
-                        Render(ta, [((ListField)f).Item]);
+                        RenderLogicalSchemaFields(ta, [((ListField)f).Item]);
                         break;
                     case SchemaType.Struct:
-                        Render(ta, ((StructField)f).Fields);
+                        RenderLogicalSchemaFields(ta, ((StructField)f).Fields);
+                        break;
+                    case SchemaType.Map:
+                        MapField mf = (MapField)f;
+                        RenderLogicalSchemaFields(ta, [mf.Key, mf.Value]);
                         break;
                 }
 
             }
-        });
+        }, true);
     }
 }
 
 void RenderLogicalSchema(ParquetSchema schema) {
     Table("logicalSchema", ["Name", "CLR Type", "SchemaType", "IsNullable", "DL", "RL"], ta => {
-        Render(ta, schema.Fields);
+        RenderLogicalSchemaFields(ta, schema.Fields);
     }, 0, -20, true);
 }
 
-void RenderInfo() {
+void RenderSchema() {
 
-    Checkbox("raw", ref showRawSchema);
+    if(fd.Schema == null)
+        return;
+
+    SmallCheckbox("raw schema", ref showRawSchema);
 
     if(showRawSchema) {
-        RenderOriginalSchema(fd.Metadata!.Schema);
+        RenderRawSchema(fd.Metadata!.Schema);
     } else {
         RenderLogicalSchema(fd.Schema);
     }
 }
 
-bool SBI(string icon, string? value, string? tooltip = null) {
-    if(value == null)
-        return false;
+#endregion
 
+#region [ Metadata ]
+
+void RenderKeyValueMetadata(List<KeyValue>? kvm) {
+    if(kvm == null || kvm.Count == 0)
+        return;
+
+    if(Accordion($"Metadata ({kvm.Count})")) {
+        Table("kvm", ["key", "value"], ta => {
+
+            foreach(KeyValue kv in kvm) {
+                ta.BeginRow();
+                Label(kv.Key);
+
+                ta.NextColumn();
+                if(Button($"{Icon.Content_copy}##{kv.Key}")) {
+                    // copy to clipboard
+                }
+                SL();
+                Label(kv.Value ?? "");
+            }
+        }, 0, -20, true);
+    }
+}
+
+void RenderMetadata() {
+    if(fd.Metadata == null)
+        return;
+
+    Label(Icon.Attribution, Emphasis.Primary);
+    Tooltip("created by");
     SL();
-    Label("|", isEnabled: false);
-    SL();
-    Label(icon);
-    SL();
-    Label(value);
-    if(tooltip != null) {
-        Tooltip(tooltip);
+    Label(fd.Metadata.CreatedBy ?? "");
+
+    RenderKeyValueMetadata(fd.Metadata.KeyValueMetadata);
+
+    // row grops and so on
+    if(fd.RowGroups != null) {
+        Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec"], ta => {
+            int idx = 0;
+            foreach(IParquetRowGroupReader rg in fd.RowGroups) {
+                ta.BeginRow();
+                TreeNode(idx.ToString(), true, false, (bool isOpen) => {
+                    ta.NextColumn();
+                    Label(rg.RowGroup.NumRows.ToString("N0"));
+                    ta.NextColumn();
+                    Label(rg.RowGroup.FileOffset?.ToString() ?? "");
+                    ta.NextColumn();
+                    Label(rg.RowGroup.TotalByteSize.ToFileSizeUiString());
+                    ta.NextColumn();
+                    Label((rg.RowGroup.TotalCompressedSize ?? 0).ToFileSizeUiString());
+
+                    if(isOpen) {
+                        int idx1 = 0;
+                        foreach(ColumnChunk cc in rg.RowGroup.Columns) {
+
+                            ta.BeginRow();
+                            if(cc.MetaData != null) {
+                                Label(string.Join(".", cc.MetaData.PathInSchema));
+                            }
+                            ta.NextColumn();
+                            Label(cc.MetaData?.NumValues.ToString() ?? "");
+                            ta.NextColumn();
+                            Label(cc.FileOffset == 0 ? "" : cc.FileOffset.ToString());
+                            ta.NextColumn();
+                            Label(cc.MetaData?.TotalUncompressedSize.ToFileSizeUiString() ?? "");
+                            ta.NextColumn();
+                            Label(cc.MetaData?.TotalCompressedSize.ToFileSizeUiString() ?? "");
+                            ta.NextColumn();
+                            Label(cc.MetaData?.Codec.ToString() ?? "");
+
+                            idx1++;    
+                        }
+
+                    }
+
+                    idx++;
+                }, true);
+            }
+        }, 0, -20, true);
+    }
+}
+
+#endregion
+
+#region [ Status Bar ]
+void RenderStatusBar() {
+
+    void SBI(string icon, string? value, string? tooltip = null) {
+        if(value == null)
+            return;
+
+        SL();
+        Label("|", isEnabled: false);
+        SL();
+        Label(icon);
+        SL();
+        Label(value);
+        if(tooltip != null) {
+            Tooltip(tooltip);
+        }
     }
 
-    return true;
+    if(fd.FileName != null) {
+        Label(fd.FileName);
+    }
+
+    SBI(Icon.Attach_file, fd.SizeDisplay, "file size");
+    SBI(Icon.Table_rows, fd.RowCountDisplay, "number of rows");
+    SBI(Icon.Table_rows, fd.RowGroupCountDisplay, "number of row groups");
+    SBI(Icon.View_column, fd.ColumnCountDisplay, "number of columns");
+    SBI(Icon.Numbers, fd.VersionDisplay, "format version");
 }
+
+#endregion
+
+#region [ Data ]
+
+void RenderValue(int row, int col, Field f, object? value) {
+    if(value is null) {
+        Label("NULL", isEnabled: false);
+    } else {
+        switch(f.SchemaType) {
+            case SchemaType.Data:
+                Label(value.ToString() ?? "");
+                break;
+            case SchemaType.List:
+                if(Button(Icon.Data_array, isSmall: true)) {
+                    // todo
+                }
+                break;
+            case SchemaType.Map:
+                if(Button(Icon.Map, isSmall: true)) {
+                    // todo
+                }
+                break;
+            case SchemaType.Struct:
+                if(Button(Icon.Data_object, isSmall: true)) {
+                    // todo
+                }
+                break;
+            default:
+                Label("N/A", Emphasis.Warning);
+                break;
+        }
+    }
+}
+
+void RenderData() {
+    if(fd.Metadata == null || fd.Columns == null || fd.ColumnsDisplay == null || fd.Schema == null)
+        return;
+
+    Label(fd.SampleReadStatus.ToString(), Emphasis.Info);
+
+    if(fd.SampleReadStatus == ReadStatus.NotStarted) {
+        fd.ReadDataSampleAsync().Forget();
+        return;
+    }
+
+    if(fd.SampleReadException != null) {
+        Label("Error reading data sample", Emphasis.Error);
+        Label(fd.SampleReadException.ToString());
+        return;
+    }
+
+    BigTable("data", fd.ColumnsDisplay, (int)fd.Metadata.NumRows,
+        (int row, int col) => {
+
+            if(col == 0) {
+                Selectable(row.ToString(), spanColumns: true);
+                return;
+            }
+
+            if(fd.Sample == null || fd.Sample.Data.Count() < row)
+                return;
+
+            Dictionary<string, object> cell = fd.Sample.Data[row];
+            string colName = fd.ColumnsDisplay[col];
+            Field f = fd.Schema[col - 1];
+            cell.TryGetValue(colName, out object? value);
+            RenderValue(row, col, f, value);
+        },
+        0, -20, true);
+
+}
+
+#endregion
 
 Run(title, () => {
 
@@ -326,16 +419,13 @@ Run(title, () => {
         Label(fd.ErrorMessage, Emphasis.Error);
     }
 
-    RenderInfo();
-
-    StatusBar(() => {
-        Label(fd.FileName);
-        SBI(Icon.Attach_file, fd.SizeDisplay, "file size");
-        SBI(Icon.Table_rows, fd.RowCountDisplay, "number of rows");
-        SBI(Icon.Table_rows, fd.RowGroupCountDisplay, "number of row groups");
-        SBI(Icon.View_column, fd.ColumnCountDisplay, "number of columns");
-        SBI(Icon.Numbers, fd.VersionDisplay, "format version");
+    TabBar("top", tba => {
+        tba.TabItem("Schema", RenderSchema);
+        tba.TabItem("Metadata", RenderMetadata);
+        tba.TabItem("Data", RenderData);
     });
+
+    StatusBar(RenderStatusBar);
 
     return true;
 }, isScrollable: false);
