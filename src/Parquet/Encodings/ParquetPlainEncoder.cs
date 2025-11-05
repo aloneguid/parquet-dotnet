@@ -439,7 +439,7 @@ namespace Parquet.Encodings {
         #endregion
 
         public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
-            int targetLength = (data.Length / 8) + 1;
+            int targetLength = (data.Length + 7) / 8;
             byte[] buffer = ArrayPool<byte>.Shared.Rent(targetLength);
 
             int n = 0;
