@@ -33,7 +33,7 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
             await groupWriter.WriteColumnAsync(idColumn);
             await groupWriter.WriteColumnAsync(cityColumn);
             
-            // it's a good idea to validate all the columns were written (CompleteValidate will throw exception if not)
+            // it's a good idea to validate all the columns were written (CompleteValidate will throw an exception if not)
             groupWriter.CompleteValidate();
         }
     }
