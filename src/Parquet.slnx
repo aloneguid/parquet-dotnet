@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/Solution Items/.github/">
     <File Path="../.github/CONTRIBUTING.md" />
+    <File Path="../.github/copilot-instructions.md" />
   </Folder>
   <Folder Name="/Solution Items/.github/workflows/">
     <File Path="../.github/workflows/build.yml" />
