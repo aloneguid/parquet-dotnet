@@ -32,6 +32,9 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
         using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
             await groupWriter.WriteColumnAsync(idColumn);
             await groupWriter.WriteColumnAsync(cityColumn);
+            
+            // it's a good idea to validate all the columns were written (CompleteValidate will throw exception if not)
+            groupWriter.CompleteValidate();
         }
     }
 }
@@ -40,7 +43,7 @@ using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
 > [!TIP]
 > After constructing a `DataColumn`, you should not modify the data passed until it's written out into the Parquet file. `DataColumn` performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
 
-To read more about DataColumn, see [this page](column.md).
+To read more about `DataColumn`, see [this page](column.md).
 
 ### Specifying compression method and level
 

@@ -417,7 +417,8 @@ namespace Parquet.Test {
                     using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
                         // Write only the first column, missing the second one
                         gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 })).Wait();
-                        // Dispose should throw because not all columns were written
+                        // "Dispose" will not throw since v5.4.0
+                        gw.CompleteValidate();
                     }
                 });
             }
@@ -438,7 +439,8 @@ namespace Parquet.Test {
                 Assert.Throws<InvalidOperationException>(() => {
                     using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
                         gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 2 })).Wait();
-                        // Dispose should throw because not all columns were written
+                        // "Dispose" will not throw since v5.4.0
+                        gw.CompleteValidate();
                     }
                 });
             }
