@@ -129,7 +129,7 @@ namespace Parquet {
         /// Finalizes the row group writing by updating row count and size metadata.
         /// </summary>
         public void Dispose() {
-            //row count is know only after at least one column is written
+            //row count is known only after at least one column is written
             _owGroup.NumRows = RowCount ?? 0;
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
