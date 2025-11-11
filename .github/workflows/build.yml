@@ -54,12 +54,12 @@ jobs:
     # only run this step if matrix.runtime is empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch == ''
-      run: dotnet test src/Parquet.sln -c release
+      run: dotnet test src/Parquet.slnx -c release
 
     # only run this step if matrix.arch is not empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch != ''
-      run: dotnet test src/Parquet.sln -c release -r ${{ matrix.runtime }}
+      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
 
   build:
 
@@ -84,7 +84,7 @@ jobs:
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.sln -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.slnx -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - name: collect artifacts
       run: |
