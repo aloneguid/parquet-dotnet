@@ -111,20 +111,25 @@ namespace Parquet {
         }
 
         /// <summary>
-        ///
+        /// Call to indicate that all columns have been written, to validate completeness.
         /// </summary>
-#pragma warning disable CA1063 // Implement IDisposable Correctly
-        public void Dispose()
-#pragma warning restore CA1063 // Implement IDisposable Correctly
-        {
+        /// <exception cref="InvalidOperationException">Thrown when not all columns from the schema have been written.</exception>
+        public void CompleteValidate() {
+            // note: this code used to live in Dispose, but Dispose must not throw exceptions, see issue 666.
+
             // Check if all columns are present
             if(_colIdx < _thschema.Length) {
                 throw new InvalidOperationException(
                     $"Not all columns were written. Expected {_thschema.Length} columns but only {_colIdx} were written. " +
                     $"Missing columns: {string.Join(", ", _thschema.Skip(_colIdx).Select(s => s.Name))}");
             }
+        }
 
-            //row count is know only after at least one column is written
+        /// <summary>
+        /// Finalizes the row group writing by updating row count and size metadata.
+        /// </summary>
+        public void Dispose() {
+            //row count is known only after at least one column is written
             _owGroup.NumRows = RowCount ?? 0;
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
