@@ -126,7 +126,7 @@ namespace Parquet {
         }
 
         /// <summary>
-        ///
+        /// Finalizes the row group writing by updating row count and size metadata.
         /// </summary>
         public void Dispose() {
             //row count is know only after at least one column is written
