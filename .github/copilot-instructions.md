@@ -23,3 +23,4 @@
 ## Performance Optimization
 
 - Always consider performance implications of code changes.
+- Suggest interesting micro optimizations where applicable.
