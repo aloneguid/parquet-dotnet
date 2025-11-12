@@ -109,6 +109,10 @@ namespace Parquet.Underfloor {
 
         public Exception? SampleReadException { get; set; }
 
+        public TimeSpan SampleReadDuration { get; set; }
+
+        public string? SampleReadDurationDisplay { get; set; }
+
         public async Task ReadDataSampleAsync() {
             if(_stream == null || SampleReadStatus == ReadStatus.InProgress)
                 return;
@@ -116,6 +120,7 @@ namespace Parquet.Underfloor {
             if(SampleReadStatus == ReadStatus.NotStarted) {
                 SampleReadStatus = ReadStatus.InProgress;
 
+                DateTime start = DateTime.UtcNow;
                 try {
                     ParquetSerializer.UntypedResult ur = await ParquetSerializer.DeserializeAsync(_stream,
                         new ParquetSerializerOptions {
@@ -129,6 +134,9 @@ namespace Parquet.Underfloor {
                 } catch(Exception ex) {
                     SampleReadException = ex;
                     SampleReadStatus = ReadStatus.Failed;
+                } finally {
+                    SampleReadDuration = DateTime.UtcNow - start;
+                    SampleReadDurationDisplay = SampleReadDuration.ToString();
                 }
             }
         }
