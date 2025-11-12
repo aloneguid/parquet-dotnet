@@ -19,3 +19,6 @@
 
 - Always consider performance implications of code changes.
 - Suggest interesting micro optimizations where applicable.
+
+## Mixed
+- Do NOT check Parquet.Underfloor project for code reviews.
