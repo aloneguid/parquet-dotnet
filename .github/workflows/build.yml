@@ -2,7 +2,7 @@
 
 env:
   VERSION: 5.4.0
-  PACKAGE_SUFFIX: '-pre.4'
+  PACKAGE_SUFFIX: '-pre.5
   # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
 
