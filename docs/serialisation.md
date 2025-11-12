@@ -374,7 +374,7 @@ REQUIRED group Addresses (LIST) {
 }
 ```
 
-As you can see, "Addresses" container is now "required". If you also need to mark the actual element ("Address" instance) as non-nullable, you can use `[ParquetListElementRequired]` attribute on the element property:
+As you can see, the "Addresses" container is now "required". If you also need to ensure that each element ("Address" instance) within the list is non-nullable (i.e., required), you can use the `[ParquetListElementRequired]` attribute on the property. This attribute controls the nullability of the list elements in the Parquet schema, marking them as required.
 
 ```c#
 class MovementHistory {
