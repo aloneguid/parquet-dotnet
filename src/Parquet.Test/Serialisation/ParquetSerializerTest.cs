@@ -70,8 +70,7 @@ namespace Parquet.Test.Serialisation {
             // compare
             if(asJson) {
                 XAssert.JsonEquivalent(data, data2.Data);
-            }
-            else {
+            } else {
                 Assert.Equivalent(data2.Data, data);
             }
         }
@@ -98,7 +97,7 @@ namespace Parquet.Test.Serialisation {
 
             await Compare(data, useAsync: useAsync);
         }
-        
+
         class TimespanRecord {
             public TimeSpan TimeSpan { get; set; }
 
@@ -345,7 +344,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         class AddressBookEntry {
-            
+
             public string? FirstName { get; set; }
 
             public string? LastName { get; set; }
@@ -425,7 +424,7 @@ namespace Parquet.Test.Serialisation {
                     }
                 }
             };
-            
+
             await Compare(data);
         }
 
@@ -658,7 +657,8 @@ namespace Parquet.Test.Serialisation {
                 Tags = new Dictionary<string, string> {
                     ["id"] = i.ToString(),
                     ["gen"] = DateTime.UtcNow.ToString()
-                }}).ToList();
+                }
+            }).ToList();
 
             await Compare(data, true);
         }
@@ -863,7 +863,7 @@ namespace Parquet.Test.Serialisation {
             }
 
             ms.Position = 0;
-            IList<Record> data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
+            Record[] data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
 
             Assert.Equivalent(data, data2);
         }
@@ -931,8 +931,8 @@ namespace Parquet.Test.Serialisation {
         }
 
         enum DefaultEnum {
-           One,
-           Two
+            One,
+            Two
         }
 
         enum ShortEnum {
@@ -942,9 +942,9 @@ namespace Parquet.Test.Serialisation {
 
         class EnumProps {
             public int Id { get; set; }
-            
+
             public DefaultEnum DE { get; set; }
-            
+
             public ShortEnum SE { get; set; }
 
             // Nullable Enum
@@ -1100,10 +1100,10 @@ namespace Parquet.Test.Serialisation {
         public async Task DateOnlyTimeOnly_Nullable_Serde() {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new RecordContainingDateAndtimeOnly {
-                NullableDate = i==0? null : DateOnly.MinValue.AddDays(i),
-                NullableTime = i==0? null: TimeOnly.MinValue.AddMinutes(i),
-                Date =  DateOnly.MinValue.AddDays(i+1),
-                Time = TimeOnly.MinValue.AddMinutes(i+1),
+                NullableDate = i == 0 ? null : DateOnly.MinValue.AddDays(i),
+                NullableTime = i == 0 ? null : TimeOnly.MinValue.AddMinutes(i),
+                Date = DateOnly.MinValue.AddDays(i + 1),
+                Time = TimeOnly.MinValue.AddMinutes(i + 1),
             }).ToList();
 
             using var ms = new MemoryStream();
