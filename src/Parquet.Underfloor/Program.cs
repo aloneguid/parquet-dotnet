@@ -180,9 +180,9 @@ void RenderLogicalSchemaFields(TableActions ta, IReadOnlyList<Field> fields) {
             bool n = f.IsNullable;
             SmallCheckbox("##n", ref n);
             ta.NextColumn();
-            Label(f.MaxRepetitionLevel.ToString());
-            ta.NextColumn();
             Label(f.MaxDefinitionLevel.ToString());
+            ta.NextColumn();
+            Label(f.MaxRepetitionLevel.ToString());
 
 
             if(!isLeaf && isOpen) {
@@ -343,6 +343,10 @@ void RenderStatusBar() {
 
 #region [ Data ]
 
+string? cellTooltip = null;
+int cellTooltipRow = -1;
+int cellTooltipColumn = -1;
+
 void RenderValue(int row, int col, Field f, object? value) {
     if(value is null) {
         Label("NULL", isEnabled: false);
@@ -362,8 +366,14 @@ void RenderValue(int row, int col, Field f, object? value) {
                 }
                 break;
             case SchemaType.Struct:
-                if(Button(Icon.Data_object, isSmall: true)) {
-                    // todo
+                Label(Icon.Data_object);
+                if(IsHovered) {
+                    if(cellTooltipRow != row || cellTooltipColumn != col) {
+                        cellTooltip = $"{DateTime.UtcNow} {value}";
+                        cellTooltipRow = row;
+                        cellTooltipColumn = col;
+                    }
+                    Tooltip(cellTooltip ?? "");
                 }
                 break;
             default:
@@ -377,7 +387,11 @@ void RenderData() {
     if(fd.Metadata == null || fd.Columns == null || fd.ColumnsDisplay == null || fd.Schema == null)
         return;
 
-    Label(fd.SampleReadStatus.ToString(), Emphasis.Info);
+    if(fd.SampleReadStatus != ReadStatus.Completed) {
+        Label(fd.SampleReadStatus.ToString(), Emphasis.Info);
+    } else {
+        Label(fd.SampleReadDurationDisplay ?? "");
+    }
 
     if(fd.SampleReadStatus == ReadStatus.NotStarted) {
         fd.ReadDataSampleAsync().Forget();

@@ -352,7 +352,7 @@ namespace Parquet.Encodings {
         private static void Encode(StructField structField, SchemaElement parent, IList<SchemaElement> container) {
             var tseStruct = new SchemaElement {
                 Name = structField.Name,
-                RepetitionType = FieldRepetitionType.OPTIONAL
+                RepetitionType = structField.IsNullable ? FieldRepetitionType.OPTIONAL : FieldRepetitionType.REQUIRED
                 // no logical or converted type annotations for structs
             };
             container.Add(tseStruct);

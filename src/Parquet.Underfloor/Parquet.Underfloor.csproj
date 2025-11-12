@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GreyMatter" Version="0.0.0-pre.34" />
+        <PackageReference Include="GreyMatter" Version="0.0.0-pre.35" />
     </ItemGroup>
 
     <ItemGroup>

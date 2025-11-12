@@ -50,6 +50,8 @@ namespace Parquet.Serialization {
                     throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
                 }
             }
+
+            rg.CompleteValidate();
         }
 
         private static async Task SerializeRowGroupAsync(ParquetWriter writer,
@@ -70,6 +72,8 @@ namespace Parquet.Serialization {
                     throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
                 }
             }
+
+            rg.CompleteValidate();
         }
 
         /// <summary>

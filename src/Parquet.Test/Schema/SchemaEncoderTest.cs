@@ -31,5 +31,24 @@ namespace Parquet.Test.Schema {
             Field f = SchemaEncoder.Decode(new List<Meta.SchemaElement> { se }, new ParquetOptions(), ref i, out _)!;
             Assert.Equal(typeof(Guid), ((DataField)f).ClrType);
         }
+
+        [Fact]
+        public void Encode_ListOfOptionalAndRequiredStructs() {
+            var schema = new ParquetSchema(
+                new DataField<int>("id"),
+               new ListField("list1",
+                  new StructField("item",
+                     new DataField<int>("id"),
+                     new DataField<string>("name")
+                  )
+               ),
+               new ListField("list2",
+                  new StructField("item",
+                     new DataField<int>("id"),
+                     new DataField<string>("name")
+                  )
+               )
+            );
+        }
     }
 }

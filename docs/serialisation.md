@@ -176,6 +176,9 @@ You can also serialize [more complex types](https://github.com/apache/parquet-fo
 
 ### Structures
 
+> [!NOTE]
+> Struct in Parquet is not the same as `struct` in C#. Parquet Struct represents a collection of data columns grouped together. In C# terms, Parquet struct is C# class (or C# struct).
+
 Structures are just class members of a class and are completely transparent. For instance, `AddressBookEntry` class may contain a structure called `Address`:
 
 ```C#
@@ -347,7 +350,7 @@ OPTIONAL group Addresses (LIST) {
 }
 ```
 
-Usually this is not a problem, however you might encounter a problem when deserialising some files to handcrafted C# classes when nullability of the files and classes do not match the default.
+Usually this is not a problem, however you might encounter a problem when deserializing some files to handcrafted C# classes when nullability of the files and classes do not match the default.
 
 To fix this, you can use `[ParquetRequired]` attribute on the list property:
 
@@ -371,7 +374,7 @@ REQUIRED group Addresses (LIST) {
 }
 ```
 
-As you can see, "Addresses" container is now "required". If you also need to mark the actual element ("Address" instance) as nullable, you can use `[ParquetListElementRequired]` attribute on the element property:
+As you can see, "Addresses" container is now "required". If you also need to mark the actual element ("Address" instance) as non-nullable, you can use `[ParquetListElementRequired]` attribute on the element property:
 
 ```c#
 class MovementHistory {
