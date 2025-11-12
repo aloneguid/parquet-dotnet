@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Parquet.Encodings;
+using Parquet.Meta;
 using Parquet.Schema;
 using Xunit;
 
@@ -46,9 +47,29 @@ namespace Parquet.Test.Schema {
                   new StructField("item",
                      new DataField<int>("id"),
                      new DataField<string>("name")
-                  )
+                  ) { IsNullable = false }
                )
             );
+
+            // check repetition and definition levels on generated struct
+
+            // CLASS
+            var root = new SchemaElement { Name = "root" };
+            var lst = new List<SchemaElement>();
+            SchemaEncoder.Encode(schema[1], root, lst);
+
+            Assert.Equal(FieldRepetitionType.OPTIONAL, lst[0].RepetitionType);  // LIST
+            Assert.Equal(FieldRepetitionType.REPEATED, lst[1].RepetitionType);  // thumb
+            Assert.Equal(FieldRepetitionType.OPTIONAL, lst[2].RepetitionType);  // item
+
+            // STRUCT
+            root = new SchemaElement { Name = "root" };
+            lst = new List<SchemaElement>();
+            SchemaEncoder.Encode(schema[2], root, lst);
+
+            Assert.Equal(FieldRepetitionType.OPTIONAL, lst[0].RepetitionType);  // LIST
+            Assert.Equal(FieldRepetitionType.REPEATED, lst[1].RepetitionType);  // thumb
+            Assert.Equal(FieldRepetitionType.REQUIRED, lst[2].RepetitionType);  // item
         }
     }
 }
