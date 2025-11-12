@@ -20,11 +20,10 @@ namespace Parquet.Test {
         [InlineData("fixedlenbytearray.parquet")]
         [InlineData("fixedlenbytearray.v2.parquet")]
         public async Task FixedLenByteArray_dictionary(string parquetFile) {
-            using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
-                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
-                }
-            }
+            await using Stream s = OpenTestFile(parquetFile);
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            
+            DataColumn[] columns = await r.ReadEntireRowGroupAsync();
         }
 
         [Theory]
@@ -224,7 +223,7 @@ namespace Parquet.Test {
             
             //DECIMAL(9, 5)
             DataColumn decimal_p9_s5 = cols[5];
-            var data = (decimal?[])decimal_p9_s5.Data;
+            decimal?[] data = (decimal?[])decimal_p9_s5.Data;
             Assert.Equal(1.02232M, data[7]);
             Assert.Equal(-27.427M, data[344]);
 
