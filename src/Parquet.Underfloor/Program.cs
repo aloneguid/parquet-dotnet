@@ -1,4 +1,5 @@
-﻿using Grey;
+﻿using System.Collections;
+using Grey;
 using Parquet;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -255,7 +256,7 @@ void RenderMetadata() {
         return;
 
     Label(Icon.Attribution, Emphasis.Primary);
-    Tooltip("created by");
+    TT("created by");
     SL();
     Label(fd.Metadata.CreatedBy ?? "");
 
@@ -324,7 +325,7 @@ void RenderStatusBar() {
         SL();
         Label(value);
         if(tooltip != null) {
-            Tooltip(tooltip);
+            TT(tooltip);
         }
     }
 
@@ -347,39 +348,63 @@ string? cellTooltip = null;
 int cellTooltipRow = -1;
 int cellTooltipColumn = -1;
 
-void RenderValue(int row, int col, Field f, object? value) {
+
+void RenderValue(Field f, object? value) {
     if(value is null) {
         Label("NULL", isEnabled: false);
+
     } else {
         switch(f.SchemaType) {
             case SchemaType.Data:
                 Label(value.ToString() ?? "");
                 break;
             case SchemaType.List:
-                if(Button(Icon.Data_array, isSmall: true)) {
-                    // todo
-                }
-                break;
-            case SchemaType.Map:
-                if(Button(Icon.Map, isSmall: true)) {
-                    // todo
+                var lf = (ListField)f;
+                var listData = (IEnumerable)value;
+                int i = 0;
+                foreach(object? ivalue in listData) {
+                    Sep($"[{i}]");
+                    RenderValue(lf.Item, ivalue);
+                    i++;
                 }
                 break;
             case SchemaType.Struct:
-                Label(Icon.Data_object);
-                if(IsHovered) {
-                    if(cellTooltipRow != row || cellTooltipColumn != col) {
-                        cellTooltip = $"{DateTime.UtcNow} {value}";
-                        cellTooltipRow = row;
-                        cellTooltipColumn = col;
-                    }
-                    Tooltip(cellTooltip ?? "");
+                var sf = (StructField)f;
+                var rowData = (Dictionary<string, object?>)value;
+                foreach(Field isf in sf.Fields) {
+                    Label(isf.Name, Emphasis.Primary);
+                    SL();
+                    rowData.TryGetValue(isf.Name, out object? ivalue);
+                    RenderValue(isf, ivalue);
                 }
                 break;
+
             default:
                 Label("N/A", Emphasis.Warning);
                 break;
         }
+    }
+}
+
+void RenderCellValue(int row, int col, Field f, object? value) {
+    switch(f.SchemaType) {
+        case SchemaType.Data:
+            RenderValue(f, value);
+            break;
+        case SchemaType.List:
+            Label(Icon.Data_array);
+            TT(() => { RenderValue(f, value); }, ShowDelay.Immediate);
+            break;
+        case SchemaType.Map:
+            Label(Icon.Map); SL(); Label("todo");
+            break;
+        case SchemaType.Struct:
+            Label(Icon.Data_object);
+            TT(() => { RenderValue(f, value); }, ShowDelay.Immediate);
+            break;
+        default:
+            Label("N/A", Emphasis.Warning);
+            break;
     }
 }
 
@@ -419,7 +444,7 @@ void RenderData() {
             string colName = fd.ColumnsDisplay[col];
             Field f = fd.Schema[col - 1];
             cell.TryGetValue(colName, out object? value);
-            RenderValue(row, col, f, value);
+            RenderCellValue(row, col, f, value);
         },
         0, -20, true);
 
