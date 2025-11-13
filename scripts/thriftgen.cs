@@ -1,76 +1,25 @@
-<Query Kind="Program">
-  <NuGetReference>Humanizer</NuGetReference>
-  <Namespace>Humanizer</Namespace>
-  <Namespace>System.Web</Namespace>
-</Query>
+/**
+ * Migrated from LinqPad to .NET 10 FBA.
+ */
 
-#nullable enable
+#:package Humanizer@*
+
+using System.Xml.Linq;
+using System.Xml.XPath;
+using System.Text;
+using System.Web;
+using Humanizer;
 
 const string Spacing = "    ";
 const string inputPath = @"D:\parquet-dotnet\src\Parquet\Meta\parquet.xml";
 const string outputDir = @"D:\parquet-dotnet\src\Parquet\Meta\";
+HashSet<string> AtomicTypeIds = new() {
+    "bool", "i8", "i16", "i32", "i64", "binary", "string"
+};
 
-private static class Types {
-    public const byte Stop = 0x00;
-    public const byte BooleanTrue = 0x01;
-    public const byte BooleanFalse = 0x02;
-    public const byte Byte = 0x03;
-    public const byte I16 = 0x04;
-    public const byte I32 = 0x05;
-    public const byte I64 = 0x06;
-    public const byte Double = 0x07;
-    public const byte Binary = 0x08;
-    public const byte List = 0x09;
-    public const byte Set = 0x0A;
-    public const byte Map = 0x0B;
-    public const byte Struct = 0x0C;
-    public const byte Uuid = 0x0D;
-}
+Main();
 
-private void ProcessXmlDoc(XElement xEntry, int spaces, StringBuilder sb) {
-    string? doc = xEntry.Attribute("doc")?.Value.ToString();
-    if (doc == null) return;
-
-    for (int i = 0; i < spaces; i++) sb.Append(Spacing);
-    sb.AppendLine("/// <summary>");
-
-    foreach (string line1 in doc.Split('\n')) {
-        string line = line1.Trim(' ', '*');
-        if (string.IsNullOrEmpty(line)) continue;
-        if(!line.EndsWith('.')) line += ".";
-        line = line.Substring(0, 1).ToUpper() + line.Substring(1);
-        line = HttpUtility.HtmlEncode(line);
-        //line = XmlConvert.encod (line); // make sure xml string are xml compliant
-        for (int i = 0; i < spaces; i++) sb.Append(Spacing);
-        sb.AppendLine($"/// {line}");
-    }
-
-    for (int i = 0; i < spaces; i++) sb.Append(Spacing);
-    sb.AppendLine("/// </summary>");
-
-}
-
-string ProcessEnum(XElement xEnum, StringBuilder sb) {
-    //xEnum.Dump();
-    
-    ProcessXmlDoc(xEnum, 1, sb);
-
-    string typeName = xEnum.Attribute("name")!.Value;
-    sb.AppendLine($"{Spacing}public enum {typeName} {{");
-    foreach(XElement xMember in xEnum.Elements()) {
-        ProcessXmlDoc(xMember, 2, sb);
-        string mName = xMember.Attribute("name")!.Value.ToString();
-        string mValue = xMember.Attribute("value")!.Value.ToString();
-        sb.AppendLine($"{Spacing}{Spacing}{mName} = {mValue},");
-        sb.AppendLine();
-    }
-    sb.AppendLine($"{Spacing}}}");
-    sb.AppendLine();
-    
-    return typeName;
-}
-
-private string ToCSType(string thriftType, bool isRequired, XElement? xMember, out bool isRequiredClass,
+string ToCSType(string thriftType, bool isRequired, XElement? xMember, out bool isRequiredClass,
     out string? subType, out string? subTypeSubType) {
 
     isRequiredClass = false;
@@ -130,27 +79,14 @@ private string ToCSType(string thriftType, bool isRequired, XElement? xMember, o
 //
 //    }
 
-    xMember.Dump();
+    // xMember.Dump();
 
     return "unknown";
 }
 
-class ThriftField {
-    public int id;
-    public string csName;
-    public string typeId;
-    public string? subTypeId;
-    public string? subTypeSubTypeId;
-    public bool required;
-}
+bool IsAtomic(string typeId) => AtomicTypeIds.Contains(typeId);
 
-private static readonly HashSet<string> AtomicTypeIds = new() {
-    "bool", "i8", "i16", "i32", "i64", "binary", "string"
-};
-
-private bool IsAtomic(string typeId) => AtomicTypeIds.Contains(typeId);
-
-private void GenerateAtomicFieldWriter(int fieldId, string typeId, string getter, bool required, StringBuilder sb) {
+void GenerateAtomicFieldWriter(int fieldId, string typeId, string getter, bool required, StringBuilder sb) {
     switch (typeId) {
         case "bool":
             if (!required) getter += ".Value";
@@ -182,7 +118,7 @@ private void GenerateAtomicFieldWriter(int fieldId, string typeId, string getter
     }
 }
 
-private string GenerateAtomicWriter(string typeId, string getter, out string elementType, out byte atomicType) {
+string GenerateAtomicWriter(string typeId, string getter, out string elementType, out byte atomicType) {
     switch (typeId) {
         case "bool":
             elementType = "bool";
@@ -207,7 +143,7 @@ private string GenerateAtomicWriter(string typeId, string getter, out string ele
     }
 }
 
-private string GenerateAtomicReader(string typeId, bool isField, out string csType) {
+string GenerateAtomicReader(string typeId, bool isField, out string csType) {
     switch (typeId) {
         case "bool":
             csType = "bool";
@@ -431,6 +367,49 @@ string ProcessStruct(XElement xStruct, StringBuilder sb, HashSet<string> enumTyp
     return typeName;
 }
 
+void ProcessXmlDoc(XElement xEntry, int spaces, StringBuilder sb) {
+    string? doc = xEntry.Attribute("doc")?.Value.ToString();
+    if (doc == null) return;
+
+    for (int i = 0; i < spaces; i++) sb.Append(Spacing);
+    sb.AppendLine("/// <summary>");
+
+    foreach (string line1 in doc.Split('\n')) {
+        string line = line1.Trim(' ', '*');
+        if (string.IsNullOrEmpty(line)) continue;
+        if(!line.EndsWith('.')) line += ".";
+        line = line.Substring(0, 1).ToUpper() + line.Substring(1);
+        line = HttpUtility.HtmlEncode(line);
+        //line = XmlConvert.encod (line); // make sure xml string are xml compliant
+        for (int i = 0; i < spaces; i++) sb.Append(Spacing);
+        sb.AppendLine($"/// {line}");
+    }
+
+    for (int i = 0; i < spaces; i++) sb.Append(Spacing);
+    sb.AppendLine("/// </summary>");
+
+}
+
+string ProcessEnum(XElement xEnum, StringBuilder sb) {
+    //xEnum.Dump();
+    
+    ProcessXmlDoc(xEnum, 1, sb);
+
+    string typeName = xEnum.Attribute("name")!.Value;
+    sb.AppendLine($"{Spacing}public enum {typeName} {{");
+    foreach(XElement xMember in xEnum.Elements()) {
+        ProcessXmlDoc(xMember, 2, sb);
+        string mName = xMember.Attribute("name")!.Value.ToString();
+        string mValue = xMember.Attribute("value")!.Value.ToString();
+        sb.AppendLine($"{Spacing}{Spacing}{mName} = {mValue},");
+        sb.AppendLine();
+    }
+    sb.AppendLine($"{Spacing}}}");
+    sb.AppendLine();
+    
+    return typeName;
+}
+
 void Main() {
     XElement xRoot = XElement.Parse(File.ReadAllText(inputPath));
     
@@ -464,7 +443,8 @@ void Main() {
                 classTypeNames.Add(ProcessStruct(xItem, sb, enumTypeNames));
                 break;
             default:
-                xItem.Dump();
+                // xItem.Dump();
+                Console.WriteLine(xItem);
                 throw new InvalidOperationException($"don't know how to process {xItemName}");
         }
     }
@@ -474,4 +454,30 @@ void Main() {
     
     // save to file
     File.WriteAllText(outputDir + "Parquet.cs", sb.ToString());
+}
+
+class ThriftField {
+    public int id;
+    public string csName;
+    public string typeId;
+    public string? subTypeId;
+    public string? subTypeSubTypeId;
+    public bool required;
+}
+
+static class Types {
+    public const byte Stop = 0x00;
+    public const byte BooleanTrue = 0x01;
+    public const byte BooleanFalse = 0x02;
+    public const byte Byte = 0x03;
+    public const byte I16 = 0x04;
+    public const byte I32 = 0x05;
+    public const byte I64 = 0x06;
+    public const byte Double = 0x07;
+    public const byte Binary = 0x08;
+    public const byte List = 0x09;
+    public const byte Set = 0x0A;
+    public const byte Map = 0x0B;
+    public const byte Struct = 0x0C;
+    public const byte Uuid = 0x0D;
 }
