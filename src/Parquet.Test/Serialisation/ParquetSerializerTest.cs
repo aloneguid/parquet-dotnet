@@ -1214,5 +1214,46 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(testData.DateTimeDoubleDict.Count, buffer[0]?.DateTimeDoubleDict?.Count);
             Assert.Equal(testData.DateTimeDoubleDict[new DateTime(2021, 1, 1)], buffer[0]?.DateTimeDoubleDict?[new DateTime(2021, 1, 1)]);
         }
+
+        public class Data_A {
+            public List<Dictionary<string, Data_B>>? B { get; set; }
+        }
+        public class Data_B {
+            public string? b1 { get; set; }
+            public string? b2 { get; set; }
+        }
+        public class Data_C {
+            public Dictionary<string, Data_B>? B { get; set; }
+        }
+
+        [Fact]
+        public async Task Issue594() {
+            var data = new Data_A() {
+                B = new List<Dictionary<string, Data_B>>() {
+            {
+                new Dictionary<string, Data_B>() {
+                    { "AA", new Data_B() { b1 = "B1", b2 = "B2" } }
+                }
+            }
+        }
+            };
+
+
+            var data2 = new Data_C() {
+                B = new Dictionary<string, Data_B>() {
+            { "AA", new Data_B() { b1 = "B1", b2 = "B2" } }
+        }
+            };
+
+            //Doesn't work
+            using var ms = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(new List<Data_A>([data]), ms);
+            ms.Position = 0;
+
+            //Works
+            using var ms2 = new MemoryStream();
+            await ParquetSerializer.SerializeAsync(new List<Data_C>([data2]), ms2);
+            ms2.Position = 0;
+        }
     }
 }

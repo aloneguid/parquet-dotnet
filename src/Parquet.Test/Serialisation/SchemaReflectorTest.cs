@@ -347,6 +347,41 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(2, df.MaxDefinitionLevel);
         }
 
+        class ListOfDictionariesPoco {
+            public int Id { get; set; }
+            public List<Dictionary<string, int>>? Maps { get; set; }
+        }
+
+        [Fact]
+        public void ListOfDictionaries() {
+            ParquetSchema schema = typeof(ListOfDictionariesPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("Id"),
+                new ListField("Maps",
+                    new MapField("element",
+                        new DataField<string>("key", false),
+                        new DataField<int>("value")))), schema);
+        }
+
+        class ListOfDictionariesOfStructsPoco {
+            public int Id { get; set; }
+            public List<Dictionary<string, StructMemberPoco>>? Maps { get; set; }
+        }
+
+        [Fact]
+        public void ListOfDictionariesOfStructs() {
+            ParquetSchema schema = typeof(ListOfDictionariesOfStructsPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("Id"),
+                new ListField("Maps",
+                    new MapField("element",
+                        new DataField<string>("key", false),
+                        new StructField("value",
+                            new DataField<string>("FirstName"),
+                            new DataField<string>("LastName"))))), schema);
+        }
 
         class DatesPoco {
 
