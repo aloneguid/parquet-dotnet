@@ -17,8 +17,8 @@ namespace Parquet.Serialization {
     /// Migrated from SchemaReflector to better fit into C# design strategy.
     /// </summary>
     public static class TypeExtensions {
-        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedWriteReflectedSchemas = new();
-        private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReadReflectedSchemas = new();
+        private record struct ReflectedSchemaOptions(bool ForWriting, bool UseNullableAnnotations);
+        private static readonly ConcurrentDictionary<(Type, ReflectedSchemaOptions), ParquetSchema> _cachedReflectedSchemas = new();
 
         abstract class ClassMember {
 
@@ -107,198 +107,203 @@ namespace Parquet.Serialization {
         /// Set to true to get schema when deserialising into classes (writing to classes), otherwise false.
         /// The result will differ if for instance some properties are read-only and some write-only.
         /// </param>
+        /// <param name="useNullableAnnotations">
+        /// When true, all reference type fields are required, unless they are explicity marked as
+        /// nullable (e.g., with the nullability operator). When false, reference type fields are
+        /// non-required unless explicitly marked with the C# required keyword.
+        /// </param>
         /// <returns></returns>
-        public static ParquetSchema GetParquetSchema(this Type t, bool forWriting) {
-
-            ConcurrentDictionary<Type, ParquetSchema> cache = forWriting
-                ? _cachedWriteReflectedSchemas
-                : _cachedReadReflectedSchemas;
-
-            if(cache.TryGetValue(t, out ParquetSchema? schema))
+        public static ParquetSchema GetParquetSchema(this Type t, bool forWriting,
+            bool useNullableAnnotations = false) {
+            ReflectedSchemaOptions options = new ReflectedSchemaOptions(forWriting, useNullableAnnotations);
+            if (_cachedReflectedSchemas.TryGetValue((t, options), out ParquetSchema? schema))
+            {
                 return schema;
+            }
 
-            schema = CreateSchema(t, forWriting);
+            ReflectedSchemaCalculator schemaCalculator = new ReflectedSchemaCalculator(options);
+            schema = schemaCalculator.CreateSchema(t);
 
-            cache[t] = schema;
+            _cachedReflectedSchemas[(t, options)] = schema;
             return schema;
         }
 
-        private static List<ClassMember> FindMembers(Type t, bool forWriting) {
+        class ReflectedSchemaCalculator(ReflectedSchemaOptions opts) {
+            private ReflectedSchemaOptions _opts = opts;
 
-            var members = new List<ClassMember>();
+            private List<ClassMember> FindMembers(Type t) {
 
-            PropertyInfo[] allProps = t.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            members.AddRange((forWriting
-                ? allProps.Where(p => p.CanWrite)
-                : allProps.Where(p => p.CanRead)).Select(p => new ClassPropertyMember(p)));
+                var members = new List<ClassMember>();
 
-            // fields are always read/write
-            members.AddRange(t.GetFields(BindingFlags.Instance | BindingFlags.Public)
-                .Select(f => new ClassFieldMember(f)));
+                PropertyInfo[] allProps = t.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+                members.AddRange((_opts.ForWriting
+                    ? allProps.Where(p => p.CanWrite)
+                    : allProps.Where(p => p.CanRead)).Select(p => new ClassPropertyMember(p)));
 
-            return members;
-        }
+                // fields are always read/write
+                members.AddRange(t.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                    .Select(f => new ClassFieldMember(f)));
 
-        private static Field ConstructDataField(string name, string propertyName, Type t, ClassMember? member) {
-            Field r;
-            bool? isNullable = member == null
-                ? null
-                : member.IsRequired ? false : null;
+                return members;
+            }
 
-            if(t == typeof(DateTime) || t == typeof(DateTime?)) {
-                ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
-                r = new DateTimeDataField(name,
-                    tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
-                    isAdjustedToUTC: tsa == null ? true : tsa.IsAdjustedToUTC,
-                    unit: tsa?.Resolution.Convert(),
-                    isNullable: t == typeof(DateTime?), null, propertyName);
-            } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
-                r = new TimeSpanDataField(name,
-                    member?.MicroSecondsTimeAttribute == null
-                        ? TimeSpanFormat.MilliSeconds
-                        : TimeSpanFormat.MicroSeconds,
-                    t == typeof(TimeSpan?), null, propertyName);
-#if NET6_0_OR_GREATER
-            } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
-                r = new TimeOnlyDataField(name,
-                    member?.MicroSecondsTimeAttribute == null
-                        ? TimeSpanFormat.MilliSeconds
-                        : TimeSpanFormat.MicroSeconds,
-                    t == typeof(TimeOnly?),
-                    null, propertyName);
-#endif
-            } else if(t == typeof(decimal) || t == typeof(decimal?)) {
-                ParquetDecimalAttribute? ps = member?.DecimalAttribute;
-                bool isTypeNullable = t == typeof(decimal?);
-                r = ps == null
-                    ? new DecimalDataField(name,
-                        DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
-                            isNullable: isTypeNullable, propertyName: propertyName)
-                    : new DecimalDataField(name, ps.Precision, ps.Scale,
-                        isNullable: isTypeNullable, propertyName: propertyName);
-            } else {
-                Type? nt = Nullable.GetUnderlyingType(t);
-                if(nt is { IsEnum: true }) {
-                    isNullable = true;
-                    t = nt.GetEnumUnderlyingType();
+            private static Field ConstructDataField(string name, string propertyName, Type t, ClassMember? member) {
+                Field r;
+                bool? isNullable = member == null
+                    ? null
+                    : member.IsRequired ? false : null;
+
+                if(t == typeof(DateTime) || t == typeof(DateTime?)) {
+                    ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
+                    r = new DateTimeDataField(name,
+                        tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
+                        isAdjustedToUTC: tsa == null ? true : tsa.IsAdjustedToUTC,
+                        unit: tsa?.Resolution.Convert(),
+                        isNullable: t == typeof(DateTime?), null, propertyName);
+                } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
+                    r = new TimeSpanDataField(name,
+                        member?.MicroSecondsTimeAttribute == null
+                            ? TimeSpanFormat.MilliSeconds
+                            : TimeSpanFormat.MicroSeconds,
+                        t == typeof(TimeSpan?), null, propertyName);
+    #if NET6_0_OR_GREATER
+                } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
+                    r = new TimeOnlyDataField(name,
+                        member?.MicroSecondsTimeAttribute == null
+                            ? TimeSpanFormat.MilliSeconds
+                            : TimeSpanFormat.MicroSeconds,
+                        t == typeof(TimeOnly?),
+                        null, propertyName);
+    #endif
+                } else if(t == typeof(decimal) || t == typeof(decimal?)) {
+                    ParquetDecimalAttribute? ps = member?.DecimalAttribute;
+                    bool isTypeNullable = t == typeof(decimal?);
+                    r = ps == null
+                        ? new DecimalDataField(name,
+                            DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
+                                isNullable: isTypeNullable, propertyName: propertyName)
+                        : new DecimalDataField(name, ps.Precision, ps.Scale,
+                            isNullable: isTypeNullable, propertyName: propertyName);
+                } else {
+                    Type? nt = Nullable.GetUnderlyingType(t);
+                    if(nt is { IsEnum: true }) {
+                        isNullable = true;
+                        t = nt.GetEnumUnderlyingType();
+                    }
+                    if(t.IsEnum) {
+                        t = t.GetEnumUnderlyingType();
+                    }
+
+                    r = new DataField(name, t, isNullable, null, propertyName);
                 }
-                if(t.IsEnum) {
-                    t = t.GetEnumUnderlyingType();
+
+                return r;
+            }
+
+            private MapField ConstructMapField(string name, string propertyName,
+                Type tKey, Type tValue) {
+
+                Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
+                PropertyInfo piKey = kvpType.GetProperty("Key")!;
+                PropertyInfo piValue = kvpType.GetProperty("Value")!;
+                var cpmKey = new ClassPropertyMember(piKey);
+                var cpmValue = new ClassPropertyMember(piValue);
+                cpmKey.ColumnName = MapField.KeyName;
+                cpmValue.ColumnName = MapField.ValueName;
+
+                Field keyField = MakeField(cpmKey)!;
+                if(keyField is DataField keyDataField && keyDataField.IsNullable) {
+                    keyField.IsNullable = false;
+                }
+                Field valueField = MakeField(cpmValue)!;
+                var mf = new MapField(name, keyField, valueField);
+                mf.ClrPropName = propertyName;
+                return mf;
+            }
+
+            private ListField ConstructListField(string name, string propertyName,
+                Type elementType,
+                ClassMember? member) {
+
+                Field listItemField = MakeField(elementType, ListField.ElementName, propertyName, member)!;
+                if(member != null && member.IsListElementRequired) {
+                    listItemField.IsNullable = false;
+                }
+                ListField lf = new ListField(name, listItemField);
+                lf.ClrPropName = propertyName;
+                if(member != null && member.IsRequired) {
+                    lf.IsNullable = false;
+                }
+                return lf;
+            }
+
+            private Field? MakeField(ClassMember member) {
+                if(member.ShouldIgnore)
+                    return null;
+
+                Field r = MakeField(member.MemberType, member.ColumnName, member.Name, member);
+                r.Order = member.Order;
+                return r;
+            }
+
+            /// <summary>
+            /// Makes field from property. 
+            /// </summary>
+            /// <param name="t">Type of property</param>
+            /// <param name="columnName">Parquet file column name</param>
+            /// <param name="propertyName">Class property name</param>
+            /// <param name="member">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
+            /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
+            /// <exception cref="NotImplementedException"></exception>
+            private Field MakeField(Type t, string columnName, string propertyName,
+                ClassMember? member) {
+
+                Type baseType = t.IsNullable() ? t.GetNonNullable() : t;
+                if(member != null && member.IsLegacyRepeatable && !baseType.IsGenericIDictionary() && baseType.TryExtractIEnumerableType(out Type? bti)) {
+                    baseType = bti!;
                 }
 
-                r = new DataField(name, t, isNullable, null, propertyName);
+                if(SchemaEncoder.IsSupported(baseType)) {
+                    return ConstructDataField(columnName, propertyName, t, member);
+                } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
+                    return ConstructMapField(columnName, propertyName, tKey!, tValue!);
+                } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
+                    return ConstructListField(columnName, propertyName, elementType!, member);
+                } else if(baseType.IsClass || baseType.IsInterface || baseType.IsValueType) {
+                    // must be a struct then (c# class, interface or struct)
+                    List<ClassMember> props = FindMembers(baseType);
+                    Field[] fields = props
+                        .Select(p => MakeField(p))
+                        .Where(f => f != null)
+                        .Select(f => f!)
+                        .OrderBy(f => f.Order)
+                        .ToArray();
+
+                    if(fields.Length == 0)
+                        throw new InvalidOperationException($"property '{propertyName}' has no fields");
+
+                    StructField sf = new StructField(columnName, fields);
+                    sf.ClrPropName = propertyName;
+                    sf.IsNullable = baseType.IsNullable() || t.IsSystemNullable();
+                    return sf;
+                }
+
+                throw new NotImplementedException();
             }
 
-            return r;
-        }
+            public ParquetSchema CreateSchema(Type t) {
 
-        private static MapField ConstructMapField(string name, string propertyName,
-            Type tKey, Type tValue,
-            bool forWriting) {
-
-            Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
-            PropertyInfo piKey = kvpType.GetProperty("Key")!;
-            PropertyInfo piValue = kvpType.GetProperty("Value")!;
-            var cpmKey = new ClassPropertyMember(piKey);
-            var cpmValue = new ClassPropertyMember(piValue);
-            cpmKey.ColumnName = MapField.KeyName;
-            cpmValue.ColumnName = MapField.ValueName;
-
-            Field keyField = MakeField(cpmKey, forWriting)!;
-            if(keyField is DataField keyDataField && keyDataField.IsNullable) {
-                keyField.IsNullable = false;
-            }
-            Field valueField = MakeField(cpmValue, forWriting)!;
-            var mf = new MapField(name, keyField, valueField);
-            mf.ClrPropName = propertyName;
-            return mf;
-        }
-
-        private static ListField ConstructListField(string name, string propertyName,
-            Type elementType,
-            ClassMember? member,
-            bool forWriting) {
-
-            Field listItemField = MakeField(elementType, ListField.ElementName, propertyName, member, forWriting)!;
-            if(member != null && member.IsListElementRequired) {
-                listItemField.IsNullable = false;
-            }
-            ListField lf = new ListField(name, listItemField);
-            lf.ClrPropName = propertyName;
-            if(member != null && member.IsRequired) {
-                lf.IsNullable = false;
-            }
-            return lf;
-        }
-
-        private static Field? MakeField(ClassMember member, bool forWriting) {
-            if(member.ShouldIgnore)
-                return null;
-
-            Field r = MakeField(member.MemberType, member.ColumnName, member.Name, member, forWriting);
-            r.Order = member.Order;
-            return r;
-        }
-
-        /// <summary>
-        /// Makes field from property. 
-        /// </summary>
-        /// <param name="t">Type of property</param>
-        /// <param name="columnName">Parquet file column name</param>
-        /// <param name="propertyName">Class property name</param>
-        /// <param name="member">Optional <see cref="PropertyInfo"/> that can be used to get attribute metadata.</param>
-        /// <param name="forWriting"></param>
-        /// <returns><see cref="DataField"/> or complex field (recursively scans class). Can return null if property is explicitly marked to be ignored.</returns>
-        /// <exception cref="NotImplementedException"></exception>
-        private static Field MakeField(Type t, string columnName, string propertyName,
-            ClassMember? member,
-            bool forWriting) {
-
-            Type baseType = t.IsNullable() ? t.GetNonNullable() : t;
-            if(member != null && member.IsLegacyRepeatable && !baseType.IsGenericIDictionary() && baseType.TryExtractIEnumerableType(out Type? bti)) {
-                baseType = bti!;
-            }
-
-            if(SchemaEncoder.IsSupported(baseType)) {
-                return ConstructDataField(columnName, propertyName, t, member);
-            } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-                return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
-            } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
-                return ConstructListField(columnName, propertyName, elementType!, member, forWriting);
-            } else if(baseType.IsClass || baseType.IsInterface || baseType.IsValueType) {
-                // must be a struct then (c# class, interface or struct)
-                List<ClassMember> props = FindMembers(baseType, forWriting);
-                Field[] fields = props
-                    .Select(p => MakeField(p, forWriting))
+                // get it all, including base class properties (may be a hierarchy)
+                List<ClassMember> props = FindMembers(t);
+                List<Field> fields = props
+                    .Select(p => MakeField(p))
                     .Where(f => f != null)
                     .Select(f => f!)
                     .OrderBy(f => f.Order)
-                    .ToArray();
+                    .ToList();
 
-                if(fields.Length == 0)
-                    throw new InvalidOperationException($"property '{propertyName}' has no fields");
-
-                StructField sf = new StructField(columnName, fields);
-                sf.ClrPropName = propertyName;
-                sf.IsNullable = baseType.IsNullable() || t.IsSystemNullable();
-                return sf;
+                return new ParquetSchema(fields);
             }
-
-            throw new NotImplementedException();
-        }
-
-        private static ParquetSchema CreateSchema(Type t, bool forWriting) {
-
-            // get it all, including base class properties (may be a hierarchy)
-            List<ClassMember> props = FindMembers(t, forWriting);
-            List<Field> fields = props
-                .Select(p => MakeField(p, forWriting))
-                .Where(f => f != null)
-                .Select(f => f!)
-                .OrderBy(f => f.Order)
-                .ToList();
-
-            return new ParquetSchema(fields);
         }
 
         /// <summary>
