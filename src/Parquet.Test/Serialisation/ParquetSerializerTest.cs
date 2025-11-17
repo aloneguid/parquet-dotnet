@@ -456,6 +456,24 @@ namespace Parquet.Test.Serialisation {
             await DictCompare<MovementHistory>(data);
         }
 
+        class ListOfMapsPoco {
+            public int Id { get; set; }
+            public List<Dictionary<string, string>>? Maps { get; set; }
+        }
+
+        [Fact]
+        public async Task List_Maps_Simple_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new ListOfMapsPoco {
+                Id = i,
+                Maps = Enumerable.Range(0, 2).Select(m => new Dictionary<string, string> {
+                    ["First"] = "Value1",
+                    ["Second"] = "Value2"
+                }).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
         class ListOfDictionariesOfStructsItemPoco {
             public int Id { get; set; }
 
@@ -468,7 +486,7 @@ namespace Parquet.Test.Serialisation {
 
 
         [Fact]
-        public async Task List_MapOfStucts_Serde() {
+        public async Task List_Maps_StuctValue_Serde() {
             var data = Enumerable.Range(0, 10).Select(i => new ListOfDictionariesOfStructsPoco {
                 Id = i,
                 Maps = Enumerable.Range(0, 2).Select(m => new Dictionary<string, ListOfDictionariesOfStructsItemPoco> {
