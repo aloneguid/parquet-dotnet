@@ -458,6 +458,7 @@ namespace Parquet.Test.Serialisation {
 
         class ListOfMapsPoco {
             public int Id { get; set; }
+
             public List<Dictionary<string, string>>? Maps { get; set; }
         }
 
