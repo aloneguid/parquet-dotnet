@@ -817,5 +817,136 @@ namespace Parquet.Test.Serialisation {
 			Assert.Equal(3, structListElementROS.MaxDefinitionLevel);
 			Assert.Equal(2, structListElementROI.MaxDefinitionLevel);
 		}
+
+        class ClassWithComplexNullableAnnotations {
+            public string RequiredStringProp { get; set; } = "";
+
+            public string? OptionalStringProp { get; set; } = null;
+
+            public string[] RequiredStringArray { get; set; } = [];
+
+            public string[]? OptionalStringArray { get; set; } = [];
+
+            public string?[] ArrayOfOptionalString { get; set; } = [];
+
+            public int?[] ArrayOfOptionalInt { get; set; } = [];
+
+            public Dictionary<string, string>  SimpleDictionaryRequiredValue { get; set; } = [];
+
+            public Dictionary<string, string?>  SimpleDictionaryOptionalValue { get; set; } = [];
+
+            public Dictionary<string, Queue<Queue<string>>> ComplexDictionaryAllRequired { get; set; } = [];
+
+            public Dictionary<string, Stack<List<string>?>> ComplexDictionarySecondLevelOptional { get; set; } = [];
+            
+            public Dictionary<string, List<List<string>?>> ComplexDictionaryThirdLevelOptional { get; set; } = [];
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void TestClassWithNullableAnnotations(bool useNullableAnnotations){
+            ParquetSchema schema = typeof(ClassWithComplexNullableAnnotations).GetParquetSchema(
+                forWriting: true,
+                useNullableAnnotations: useNullableAnnotations);
+
+            Assert.Equal(11, schema.Fields.Count);
+            
+            bool expectedNullabilityForNonOptional = !useNullableAnnotations;
+            Assert.Equal(
+                new DataField("RequiredStringProp", typeof(string), expectedNullabilityForNonOptional),
+                schema.Fields[0]);
+            
+            Assert.Equal(
+                new DataField("OptionalStringProp", typeof(string), true),
+                schema.Fields[1]);
+
+            Assert.Equal(
+                new ListField("RequiredStringArray",
+                    new DataField("element", typeof(string), expectedNullabilityForNonOptional),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[2]);
+            
+            Assert.Equal(
+                new ListField("OptionalStringArray",
+                    new DataField("element", typeof(string), expectedNullabilityForNonOptional),
+                    isNullable: true
+                ),
+                schema.Fields[3]);
+            
+            Assert.Equal(
+                new ListField("ArrayOfOptionalString",
+                    new DataField("element", typeof(string), true),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[4]);
+            
+            Assert.Equal(
+                new ListField("ArrayOfOptionalInt",
+                    new DataField("element", typeof(int), true),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[5]);
+            
+            Assert.Equal(
+                new MapField("SimpleDictionaryRequiredValue",
+                    new DataField("key", typeof(string), false),
+                    new DataField("value", typeof(string), expectedNullabilityForNonOptional),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[6]);
+            
+            Assert.Equal(
+                new MapField("SimpleDictionaryOptionalValue",
+                    new DataField("key", typeof(string), false),
+                    new DataField("value", typeof(string), true),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[7]);
+            
+            Assert.Equal(
+                new MapField("ComplexDictionaryAllRequired",
+                    new DataField("key", typeof(string), false),
+                    new ListField("value",
+                        new ListField("element",
+                            new DataField("element", typeof(string), expectedNullabilityForNonOptional),
+                            isNullable: expectedNullabilityForNonOptional
+                        ),
+                        isNullable: expectedNullabilityForNonOptional
+                    ),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[8]);
+            
+            Assert.Equal(
+                new MapField("ComplexDictionarySecondLevelOptional",
+                    new DataField("key", typeof(string), false),
+                    new ListField("value",
+                        new ListField("element",
+                            new DataField("element", typeof(string), expectedNullabilityForNonOptional),
+                            isNullable: true
+                        ),
+                        isNullable: expectedNullabilityForNonOptional
+                    ),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[9]);
+
+            Assert.Equal(
+                new MapField("ComplexDictionaryThirdLevelOptional",
+                    new DataField("key", typeof(string), false),
+                    new ListField("value",
+                        new ListField("element",
+                            new DataField("element", typeof(string), expectedNullabilityForNonOptional),
+                            isNullable: true
+                        ),
+                        isNullable: expectedNullabilityForNonOptional
+                    ),
+                    isNullable: expectedNullabilityForNonOptional
+                ),
+                schema.Fields[10]
+            );
+        }
     }
 }

@@ -29,7 +29,7 @@ namespace Parquet.Schema {
         /// <summary>
         /// Declares a map field
         /// </summary>
-        public MapField(string name, Field keyField, Field valueField)
+        public MapField(string name, Field keyField, Field valueField, bool isNullable = true)
            : base(name, SchemaType.Map) {
 
             if(keyField is DataField keyDataField) {
@@ -45,13 +45,13 @@ namespace Parquet.Schema {
             Path = new FieldPath(name, ContainerName);
             Key.PathPrefix = Path;
             Value.PathPrefix = Path;
-            IsNullable = true;
+            IsNullable = isNullable;
         }
 
-        internal MapField(string name)
+        internal MapField(string name, bool isNullable = true)
            : base(name, SchemaType.Map) {
             Key = Value = new DataField<int>("invalid");
-            IsNullable = true;
+            IsNullable = isNullable;
         }
 
         internal override void Assign(Field se) {

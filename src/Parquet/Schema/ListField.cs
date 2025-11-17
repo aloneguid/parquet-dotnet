@@ -28,10 +28,10 @@ namespace Parquet.Schema {
         /// </summary>
         public Field Item { get; internal set; }
 
-        private ListField(string name) : base(name, SchemaType.List) {
+        private ListField(string name, bool isNullable) : base(name, SchemaType.List) {
             ContainerName = "list";
             Item = new DataField<int>("invalid");
-            IsNullable = true;  // lists are always nullable
+            IsNullable = isNullable;  // lists are always nullable
         }
 
 
@@ -41,7 +41,9 @@ namespace Parquet.Schema {
         /// <param name="name">Field name</param>
         /// <param name="item">Field representing list element</param>
         /// <param name="containerName">Container name</param>
-        public ListField(string name, Field item, string containerName = DefaultContainerName) : this(name) {
+        /// <param name="isNullable">Nullability of the list</param>
+        public ListField(string name, Field item, string containerName = DefaultContainerName,
+            bool isNullable = true) : this(name, isNullable) {
             Item = item ?? throw new ArgumentNullException(nameof(item));
             _itemAssigned = true;
             ContainerName = containerName;
@@ -56,11 +58,13 @@ namespace Parquet.Schema {
         /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
         /// <param name="containerName">Container name</param>
         /// <param name="elementName">Element name</param>
+        /// <param name="isNullable">Nullability of the list</param>
         public ListField(string name,
             Type itemDataType,
             string? propertyName = null,
             string containerName = "list",
-            string? elementName = null) : this(name) {
+            string? elementName = null,
+            bool isNullable = true) : this(name, isNullable) {
             Item = new DataField(elementName ?? name, itemDataType, null, null, propertyName ?? name);
             _itemAssigned = true;
             ContainerName = containerName;
@@ -114,7 +118,7 @@ namespace Parquet.Schema {
         }
 
         internal static ListField CreateWithNoItem(string name, bool isNullable) {
-            return new ListField(name) { IsNullable = isNullable };
+            return new ListField(name, isNullable);
         }
 
         internal override void Assign(Field field) {
