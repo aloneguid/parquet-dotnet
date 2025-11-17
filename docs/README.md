@@ -17,7 +17,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
 - 🦄**Unique Features**:
-  - The only library that supports [dynamic](writing.md) schemas.
+  - The only library that supports [dynamic](#writing-data) schemas.
   - Supports all parquet [types](nested_types.md), encodings and compressions.
   - Fully supports [C# class serialization](#serialization), for all simple and **complex** Parquet types.
   - Provides **low-level**, [high-level](#serialization), and [untyped](untyped-serializer.md) API.
@@ -125,7 +125,7 @@ using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
 3. Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory.
 4. Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
 
-Read more on writing [here](writing.md) which also includes guides on writing [nested types](nested_types.md) such as lists, maps, and structs.
+Read more on writing [here](#writing-data) which also includes guides on writing [nested types](nested_types.md) such as lists, maps, and structs.
 
 ### Reading data
 
@@ -196,8 +196,8 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 ## Keep reading
 
 - [Serialisation](#serialization)
-- [Writing](writing.md)
-- [Reading](reading.md)
+- [Writing](#writing-data)
+- [Reading](#reading-data)
 - Diving deeper
   - [Schema](schema.md)
   - [Column](column.md)
@@ -764,6 +764,179 @@ IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>
 **Q.** Can I specify schema for serialisation/deserialization.
 
 **A.** If you're using a class-based approach to define your data model, you don't have to worry about providing a schema separately. The class definition itself is the schema, meaning it specifies the fields and types of your data. This makes it easier to write and maintain your code, since you only have to define your data model once and use it everywhere.
+
+## Writing data
+
+You can write data by constructing an instance of [ParquetWriter class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetWriter.cs) with one of its factory methods.
+
+Writing files is a multi-stage process, giving you the full flexibility on what exactly to write to it:
+
+1. Create `ParquetWriter` passing it a *file schema* and a *writeable stream*. You should have declared file schema beforehand.
+2. Create a row group writer by calling to `writer.CreateRowGroup()`.
+3. Keep calling `.WriteAsync()` by passing the data columns with data you want to write. Note that the order of data columns you are writing must match the order of data fields declared in the schema.
+4. When required, repeat from step (2) to create more row groups. A row group is like a physical data partition that should fit in memory for processing. It's a guess game how much data should be in a single row group, but a number of at least 5 thousand rows per column is great. Remember that parquet format works best on large chunks of data.
+
+```C#
+// create file schema
+var schema = new ParquetSchema(
+    new DataField<int>("id"),
+    new DataField<string>("city"));
+
+//create data columns with schema metadata and the data you need
+var idColumn = new DataColumn(
+   schema.DataFields[0],
+   new int[] { 1, 2 });
+
+var cityColumn = new DataColumn(
+   schema.DataFields[1],
+   new string[] { "London", "Derby" });
+
+using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
+    using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
+        parquetWriter.CompressionMethod = CompressionMethod.Gzip;
+        parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
+        // create a new row group in the file
+        using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
+            await groupWriter.WriteColumnAsync(idColumn);
+            await groupWriter.WriteColumnAsync(cityColumn);
+            
+            // it's a good idea to validate all the columns were written (CompleteValidate will throw an exception if not)
+            groupWriter.CompleteValidate();
+        }
+    }
+}
+```
+
+> [!TIP]
+> After constructing a `DataColumn`, you should not modify the data passed until it's written out into the Parquet file. `DataColumn` performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
+
+To read more about `DataColumn`, see [this page](column.md).
+
+### Specifying compression method and level
+
+After constructing `ParquetWriter` you can optionally set compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) which defaults to `Snappy`.  Unless you have specific needs to override compression, the defaults are very reasonable.
+
+For instance, to set compression to gzip/optimal:
+
+```C#
+using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
+    parquetWriter.CompressionMethod = CompressionMethod.Gzip;
+    parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
+    // create row groups and write...
+}
+```
+
+### Appending to files
+
+This lib supports pseudo appending to files, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.
+
+The following code snippet illustrates this:
+
+```C#
+//write a file with a single row group
+var schema = new ParquetSchema(new DataField<int>("id"));
+var ms = new MemoryStream();
+
+using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+    using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+        await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 1, 2 }));
+    }
+}
+
+//append to this file. Note that you cannot append to existing row group, therefore create a new one
+ms.Position = 0;    // this is to rewind our memory stream, no need to do it in real code.
+using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, append: true)) {
+    using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+        await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 3, 4 }));
+    }
+}
+
+//check that this file now contains two row groups and all the data is valid
+ms.Position = 0;
+using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+    Assert.Equal(2, reader.RowGroupCount);
+
+    using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+        Assert.Equal(2, rg.RowCount);
+        Assert.Equal(new int[] { 1, 2 }, (await rg.ReadColumnAsync(schema.DataFields[0])).Data);
+    }
+
+    using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
+        Assert.Equal(2, rg.RowCount);
+        Assert.Equal(new int[] { 3, 4 }, (await rg.ReadColumnAsync(schema.DataFields[0])).Data);
+    }
+
+}
+```
+
+Note that you have to specify that you are opening `ParquetWriter` in **append** mode in its constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream position to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
+
+Please keep in mind that row groups are designed to hold a large amount of data (50000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
+
+### Complex types
+
+To write complex types (arrays, lists, maps, structs) read [this guide](nested_types.md).
+
+## Reading data
+
+You can read the data by constructing an instance of [ParquetReader class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
+
+Reading files is a multi-stage process, giving you the full flexibility on what exactly to read from it:
+
+1. Create `ParquetReader` from a source stream or open it with any utility method. Once the reader is open you can immediately access file schema and other global file options like key-value metadata and number of row groups.
+2. Open `RowGroupReader` by calling to `reader.OpenRowGroupReader(groupIndex)`. This class also exposes general row group properties like row count.
+3. Call `.Read()` on row group reader passing the `DataField` schema definition you wish to read.
+4. Returned `DataColumn` contains the column data. Important thing to note here is we automatically merge data and definition levels of the column so that `.Data` member of type `System.Array` contains actual usable column data. Note that we do not process *repetition levels* if the column is a part of a more complex structure, and you have to use them appropriately. Simple data columns do not contain *repetition levels*.
+
+It's worth noting that *repetition levels* are only used for complex data types like arrays, list and maps. Processing them automatically would add an enormous performance overhead, therefore we are leaving it up to you to decide how to use them.
+
+### Using format options
+
+When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
+
+For example, to force the reader to treat byte arrays as strings use the following code:
+
+```C#
+var options = new ParquetOptions { TreatByteArrayAsString = true };
+var reader = await ParquetReader.CreateAsync(stream, options);
+```
+
+### Metadata
+
+To read custom metadata you can access the `CustomMetadata` property on `ParquetReader`:
+
+```C#
+using (var reader = await ParquetReader.CreateAsync(ms)) {
+   Assert.Equal("value1", reader.CustomMetadata["key1"]);
+   Assert.Equal("value2", reader.CustomMetadata["key2"]);
+}
+```
+
+### Statistics
+
+You can read column statistics of a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
+
+### Parallelism
+
+File stream are generally not compatible with parallel processing. You can, however, open file stream per parallel thread i.e. your `Parallel.For` should perform file opening operation. Or you can introduce a lock on file read, depends on what works better for you. I might state the obvious here, but asynchronous and parallel are not the same thing.
+
+Here is an example of reading a file in parallel, where a unit of paralellism is a row group:
+
+```C#
+var reader = await reader.CreateAsync(path);
+var count = reader.RowGroupCount;
+
+await Parallel.ForAsync(0, count,
+    async (i, cancellationToken) => {
+        // create an instance of a row group reader for each group
+        using (var gr = await ParquetReader.CreateAsync(path)) {
+            using (var rgr = gr.OpenRowGroupReader(i)) {
+              // process the row group ...
+            }
+        }
+    }
+);
+```
 
 ## Used by
 
