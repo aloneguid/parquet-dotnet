@@ -208,8 +208,8 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 - [DataFrame](dataframe.md)
 - [Utilities](utilities.md)
 - [Parquet getting started](parquet-getting-started.md)
-- [Contributing](contributing.md)
-- [Special thanks](Special-thanks.md)
+- [Contributing](#contributing)
+- [Special thanks](#special-thanks)
 
 ## Used by
 
@@ -232,7 +232,9 @@ If you have a choice, then the choice is easy - use Low Level API. They are the 
 
 ## Contributing
 
-See the [contribution page](contributing.md). The first important thing you can do is **simply star ⭐ this project**.
+Any contributions are welcome, in any form. Documentation, code, tests, or anything else.
+
+If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md). The first important thing you can do is simply star ⭐ this project.
 
 ## Special thanks
 
