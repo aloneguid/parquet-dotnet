@@ -245,8 +245,7 @@ namespace Parquet.Serialization {
         public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
             int rowGroupIndex,
             ParquetSerializerOptions? options = null,
-            CancellationToken cancellationToken = default)
-            where T : new() {
+            CancellationToken cancellationToken = default) {
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
@@ -272,7 +271,7 @@ namespace Parquet.Serialization {
         /// <exception cref="ArgumentException"></exception>
         public static async Task DeserializeAsync<T>(Stream source, int rowGroupIndex, IList<T> result, 
             ParquetSerializerOptions? options = null, CancellationToken cancellationToken = default,
-            bool resultsAlreadyAllocated = false) where T : new() {
+            bool resultsAlreadyAllocated = false) {
 
             using ParquetReader reader =
                 await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
@@ -293,7 +292,7 @@ namespace Parquet.Serialization {
         /// <typeparam name="T"></typeparam>
         public static async Task DeserializeAsync<T>(ParquetReader reader, int rowGroupIndex, IList<T> result,
             CancellationToken cancellationToken = default, bool resultsAlreadyAllocated = false,
-            ParquetSerializerOptions? options = null) where T : new() {
+            ParquetSerializerOptions? options = null) {
             Assembler<T> asm = GetAssembler<T>();
             await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken, 
                 resultsAlreadyAllocated);
@@ -311,8 +310,7 @@ namespace Parquet.Serialization {
         public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
             int rowGroupIndex,
             ParquetSerializerOptions? options = null,
-            CancellationToken cancellationToken = default)
-            where T : new() {
+            CancellationToken cancellationToken = default) {
             using FileStream fs = System.IO.File.OpenRead(filePath);
             return await DeserializeAsync<T>(fs, rowGroupIndex, options, cancellationToken);
         }
@@ -328,8 +326,7 @@ namespace Parquet.Serialization {
         /// <exception cref="InvalidOperationException"></exception>
         public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
             ParquetSerializerOptions? options = null,
-            CancellationToken cancellationToken = default)
-            where T : new() {
+            CancellationToken cancellationToken = default) {
 
             Assembler<T> asm = GetAssembler<T>();
 
@@ -356,8 +353,7 @@ namespace Parquet.Serialization {
         /// <returns></returns>
         public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
             ParquetSerializerOptions? options = null,
-            CancellationToken cancellationToken = default)
-            where T : new() {
+            CancellationToken cancellationToken = default) {
             using FileStream fs = System.IO.File.OpenRead(filePath);
             return await DeserializeAsync<T>(fs, options, cancellationToken);
         }
@@ -398,8 +394,7 @@ namespace Parquet.Serialization {
         /// <returns></returns>
         public static async IAsyncEnumerable<T> DeserializeAllAsync<T>(Stream source,
             ParquetSerializerOptions? options = null,
-            [EnumeratorCancellation]CancellationToken cancellationToken = default)
-            where T : new() {
+            [EnumeratorCancellation]CancellationToken cancellationToken = default) {
 
             Assembler<T> asm = GetAssembler<T>();
 
@@ -429,8 +424,7 @@ namespace Parquet.Serialization {
         /// <returns></returns>
         public static async IAsyncEnumerable<IList<T>> DeserializeAllByGroupsAsync<T>(Stream source,
             ParquetSerializerOptions? options = null,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-            where T : new() {
+            [EnumeratorCancellation] CancellationToken cancellationToken = default) {
             Assembler<T> asm = GetAssembler<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
@@ -456,8 +450,7 @@ namespace Parquet.Serialization {
         /// <exception cref="InvalidDataException"></exception>
         public static async Task<IList<T>> DeserializeAsync<T>(ParquetRowGroupReader rowGroupReader,
             ParquetSchema schema,
-            CancellationToken cancellationToken = default)
-            where T : new() {
+            CancellationToken cancellationToken = default) {
             List<T> result = GetList<T>(rowGroupReader.RowGroup.NumRows);
 
             await DeserializeRowGroupAsync(rowGroupReader, schema, result, cancellationToken);
@@ -477,16 +470,16 @@ namespace Parquet.Serialization {
         /// <typeparam name="T"></typeparam>
         public static async Task DeserializeRowGroupAsync<T>(ParquetRowGroupReader rowGroupReader,
             ParquetSchema schema,
-            ICollection<T> result,
+            IList<T> result,
             CancellationToken cancellationToken = default,
             bool resultsAlreadyAllocated = false,
-            ParquetSerializerOptions? options = null) where T : new() {
+            ParquetSerializerOptions? options = null) {
             Assembler<T> asm = GetAssembler<T>();
             
             await DeserializeRowGroupAsync(rowGroupReader, schema, asm, result, options, cancellationToken, resultsAlreadyAllocated);
         }
 
-        private static Assembler<T> GetAssembler<T>() where T : new() {
+        private static Assembler<T> GetAssembler<T>() {
             object boxedAssembler = _typeToAssembler.GetOrAdd(typeof(T), _ => new Assembler<T>(typeof(T).GetParquetSchema(true)));
             return (Assembler<T>)boxedAssembler;
         }
@@ -497,8 +490,7 @@ namespace Parquet.Serialization {
         }
 
         private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi, Assembler<T> asm,
-            ICollection<T> result, ParquetSerializerOptions? options, CancellationToken cancellationToken, bool resultsAlreadyAllocated = false)
-            where T : new() {
+            IList<T> result, ParquetSerializerOptions? options, CancellationToken cancellationToken, bool resultsAlreadyAllocated = false) {
 
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
@@ -554,21 +546,26 @@ namespace Parquet.Serialization {
             return r;
         }
 
+        private static IEnumerable<T> SkipList<T>(IList<T> list, int skip) {
+            for (int n = skip; n < list.Count; n++) {
+                yield return list[n];
+            }
+        }
+
         private static async Task DeserializeRowGroupAsync<T>(ParquetRowGroupReader rg,
             ParquetSchema schema,
             Assembler<T> asm,
-            ICollection<T> result,
+            IList<T> result,
             ParquetSerializerOptions? options,
             CancellationToken cancellationToken = default,
-            bool resultsAlreadyAllocated = false) where T : new() {
+            bool resultsAlreadyAllocated = false) {
 
             // add more empty class instances to the result
             int prevRowCount = result.Count;
 
             if(!resultsAlreadyAllocated) {
                 for(int i = 0; i < rg.RowCount; i++) {
-                    var ne = new T();
-                    result.Add(ne);
+                    result.Add(PreConstructor<T>.AllocateNew());
                 }
             }
 
@@ -590,9 +587,17 @@ namespace Parquet.Serialization {
                 }
 
                 try {
-                    fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), dc);
+                    fasm.Assemble(SkipList(result, prevRowCount), dc);
                 } catch(Exception ex) {
                     throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
+                }
+            }
+
+            if(!resultsAlreadyAllocated) {
+                foreach (T record in SkipList(result, prevRowCount)) {
+                    if (record != null) {
+                        PostConstructor<T>.Execute(record);
+                    }
                 }
             }
         }
