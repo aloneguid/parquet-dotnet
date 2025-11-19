@@ -15,7 +15,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e. desktops, servers, phones, watches and so on.
 - 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
-- ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
+- ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around — forces Parquet to fit into .NET.
 - 🦄**Unique Features**:
   - The only library that supports [dynamic](#writing-data) schemas.
   - Supports all parquet [types](nested_types.md), encodings and compressions.
@@ -26,86 +26,45 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 
 ## Quick start
 
-Parquet is designed to handle *complex data in bulk*. It's *column-oriented* meaning that data is physically stored in columns rather than rows. This is very important for big data systems if you want to process only a subset of columns - reading just the right columns is extremely efficient.
+Parquet is designed to handle *complex data in bulk*. It's *column-oriented* meaning that data is physically stored in **columns** rather than rows. This is very important for big data systems if you want to process only a subset of columns - reading just the right columns is extremely efficient.
 
-As a quick start, suppose we have the following data records we'd like to save to parquet:
+Suppose we have the following data we'd like to save to a parquet file:
 
-1. Timestamp.
-2. Event name.
-3. Meter value.
+| Timestamp (`DateTime`) | Event name (`string`) | Meter value (`double`) |
+| ---------------------- | --------------------- | ---------------------- |
+| 2025-11-18 22:07:00    | start                 | 100                    |
+| 2025-11-18 22:08:00    | stop                  | 500                    |
+| 2025-11-18 22:09:00    | pause                 | 200                    |
 
-Or, to translate it to C# terms, this can be expressed as the following class:
+### Low level API
 
-```csharp
-class Record {
-    public DateTime Timestamp { get; set; }
-    public string EventName { get; set; }
-    public double MeterValue { get; set; }
-}
-```
+Because parquet is a **columnar** format, you'd need to prepare 3 chunks of data, where each chunk is an array of values per column (first chunk is`[2025-11-18 22:07:00, 2025-11-18 22:08:00, 2025-11-18 22:09:00]` and so on). And because parquet is **strongly typed**, you also need to prepare a schema definition, declaring what type of data the file contains. Schema in Parquet.Net is represented as an instance of `ParquetSchema` class, which contains a collection of `DataField`s (columns):
 
-### Writing data
-
-Let's say you have around a million events like that to save to a `.parquet` file. There are three ways to do that with this library, starting from easiest to hardest.
-
-#### Writing with class serialisation
-
-The first one is the easiest to work with, and the most straightforward. Let's generate those million fake records:
-
-```csharp
-var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
-    Timestamp = DateTime.UtcNow.AddSeconds(i),
-    EventName = i % 2 == 0 ? "on" : "off",
-    MeterValue = i 
-}).ToList();
-```
-
-Now, to write these to a file in say `/mnt/storage/data.parquet` you can use the following **line** of code:
-
-```csharp
-await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
-```
-
-That's pretty much it! You can [customise many things](#serialization) in addition to the magical serialisation process, but if you are a really lazy person that will do just fine for today.
-
-#### Writing untyped data
-
-Another way to serialise data is to use [Untyped serializer](untyped-serializer.md). 
-
-#### Writing with low level API
-
-And finally, the lowest level API is the third method. This is the most performant, most Parquet-resembling way to work with data, but least intuitive and involves some knowledge of Parquet data structures.
-
-First of all, you need schema. Always. Just like in row-based example, schema can be declared in the following way:
-
-```csharp
+```c#
 var schema = new ParquetSchema(
     new DataField<DateTime>("Timestamp"),
     new DataField<string>("EventName"),
     new DataField<double>("MeterValue"));
 ```
 
-Then, data columns need to be prepared for writing. As parquet is column-based format, low level APIs expect that low level column slice of data. I'll just shut up and show you the code:
+The next step is to create `ParquetWriter` class, which builds parquet file skeleton inside the passed stream, and allows you to create a `ParquetRowGroupsWriter` that can write column data to the file. Row group in parquet is a group of all columns from the schema. A file can have any number of row groups, but there must be at least one present. If file is small enough (less than 64Mb or so) it will usually have a single row group. Row groups allow parquet files to contain massive amounts of data and also enable read parallelism (but not write parallelism), Each row group contains all the columns from the schema, but different "rows" or data. This is how you create a simple file with a single row group and write all 3 columns to it:
 
-```csharp
+```c#
 var column1 = new DataColumn(
-    schema.DataFields[0],
-    Enumerable.Range(0, 1_000_000).Select(i => DateTime.UtcNow.AddSeconds(i)).ToArray());
+    (DataField)schema[0],
+    new[] { 
+        new DateTime(2025, 11, 18, 22, 07, 00),
+        new DateTime(2025, 11, 18, 22, 08, 00),
+        new DateTime(2025, 11, 18, 22, 09, 00)});
 
 var column2 = new DataColumn(
-    schema.DataFields[1],
-    Enumerable.Range(0, 1_000_000).Select(i => i % 2 == 0 ? "on" : "off").ToArray());
+    (DataField)schema[1],
+    new[] { "start", "stop", "pause" });
 
 var column3 = new DataColumn(
-    schema.DataFields[2],
-    Enumerable.Range(0, 1_000_000).Select(i => (double)i).ToArray());
-```
+    (DataField)schema[2],
+    new[] { 12.34, 56.78, 90.12 });
 
-Important thing to note here - `columnX` variables represent data in an entire column, all the values in that column independently from other columns. Values in other columns have the same order as well. So we have created three columns with data identical to the two examples above.
-
-Time to write it down:
-
-```csharp
 using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
     using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs)) {
         using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
@@ -118,44 +77,12 @@ using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
 }
 ```
 
-**What's going on?**
-
-1. We are creating output file stream. You can probably use one of the overloads in the next line though. This will be the receiver of parquet data. The stream needs to be writeable and seekable.
-2. `ParquetWriter` is low-level class and is a root object to start writing from. It mostly performs coordination, check summing and enveloping of other data.
-3. Row group is like a data partition inside the file. In this example we have just one, but you can create more if there are too many values that are hard to fit in computer memory.
-4. Three calls to row group writer write out the columns. Note that those are performed sequentially, and in the same order as schema defines them.
-
-Read more on writing [here](#writing-data) which also includes guides on writing [nested types](nested_types.md) such as lists, maps, and structs.
-
-### Reading data
-
-Reading data also has three different approaches, so I'm going to unwrap them here in the same order as above.
-
-#### Reading with class deserialisation
-
-Provided that you have written the data, or just have some external data with the same structure as above, you can read those by simply doing the following:
-
-```csharp
-IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
-```
-
-This will give us an array with one million class instances similar to this:
-
-![](img/read-classes.png)
-
-Of course [class serialisation](#serialization) has more to it, and you can customise it further than that.
-
-#### Reading untyped data
-
-Read [here](untyped-serializer.md) for more information on how to read untyped data.
-
-#### Reading with low level API
-
-And with low level API the reading is even more flexible:
+To read this file back (or just any file created with this or any other parquet software) you can do pretty much the reverse action:
 
 ```csharp
 using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
     using(ParquetReader reader = await ParquetReader.CreateAsync(fs)) {
+        // optionally access schema: reader.Schema
         for(int i = 0; i < reader.RowGroupCount; i++) { 
             using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
 
@@ -170,314 +97,102 @@ using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
 }
 ```
 
-**This is what's happening**
+Just like with reading, you create `ParquetReader` on the source stream. Upon creating the stream, Parquet.Net reads stream metadata from the end of the file (hence the requirement for the source stream to have random access) and initializes the internal structures without reading any data. You can even access schema immediately by calling to `reader.Schema` to inspect it. Then enumerate row groups and read columns one by one.
 
-1. Create read stream `fs`.
-2. Create `ParquetReader` - root class for read operations.
-3. The reader has `RowGroupCount` property which indicates how many row groups (like partitions) the file contains.
-4. Explicitly open row group for reading.
-5. Read each `DataField` from the row group, in the same order as it's declared in the schema.
+### High level API
 
-> You can also use web based [reader app](https://aloneguid.github.io/parquet-online/) to test your files, which was created using this library!
+Quick start above is only scratching the surface, but already gets a bit too much. If memory or slight performance loss is less important than developer convenience, there are high level APIs available, which tries to mimic class serialization. Sample above can be rewritten by first declaring data type to hold all 3 schema fields:
 
-## Choosing the API
-
-If you have a choice, then the choice is easy - use Low Level API. They are the fastest and the most flexible. But what if you for some reason don't have a choice? Then think about this:
-
-| Feature               | Class Serialisation | Untyped Serializer API | Low Level API            |
-|-----------------------|---------------------|------------------------|--------------------------|
-| Performance           | high              | very low               | very high                |
-| Developer Convenience | C# native           | feels like Excel       | close to Parquet internals |
-| Row based access      | easy                | easy                   | hard                     |
-| Column based access   | C# native           | hard                   | easy                     |
-
-
-
-## Keep reading
-
-- [Serialisation](#serialization)
-- [Writing](#writing-data)
-- [Reading](#reading-data)
-- Diving deeper
-  - [Schema](schema.md)
-  - [Column](column.md)
-  - [Nested types](nested_types.md)
-  - [Metadata](metadata.md)
-- [Encodings](encodings.md)
-- [Untyped serializer](untyped-serializer.md)
-- [DataFrame](dataframe.md)
-- [Utilities](utilities.md)
-- [Parquet getting started](parquet-getting-started.md)
-- [Contributing](#contributing)
-- [Special thanks](#special-thanks)
-
-## Serialization
-
-Parquet.Net is generally extremely flexible in terms of supporting internals of the Apache Parquet format and allows you to do whatever the low level API allow to. However, in many cases writing boilerplate code is not suitable if you are working with business objects and just want to serialise them into a parquet file. 
-
-Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become amazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
-
-> [!TIP]
-> Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
-
-### Quick start
-
-Both serialiser and deserialiser work with collection of classes. Let's say you have the following class definition:
-
-```C#
-class Record {
+```csharp
+class Event {
     public DateTime Timestamp { get; set; }
     public string EventName { get; set; }
     public double MeterValue { get; set; }
 }
 ```
 
-Let's generate a few instances of those for a test:
+Now let's generate some fake data:
 
-```C#
-var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
+```c#
+var data = Enumerable.Range(0, 1_000_000).Select(i => new Event {
     Timestamp = DateTime.UtcNow.AddSeconds(i),
     EventName = i % 2 == 0 ? "on" : "off",
     MeterValue = i 
 }).ToList();
 ```
 
-Here is what you can do to write out those classes in a single file:
+And write these to a file:
 
-```C#
+```csharp
 await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 ```
 
-That's it! Of course the `.SerializeAsync()` method also has overloads and optional parameters allowing you to control the serialization process slightly, such as selecting compression method, row group size etc.
+To read, simply call:
 
-Parquet.Net will automatically figure out file schema by reflecting class structure, types, nullability and other parameters for you.
-
-In order to deserialize this file back to array of classes you would write the following:
-
-```C#
-IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet");
+```c#
+IList<Event> data = await ParquetSerializer.DeserializeAsync<Event>("/mnt/storage/data.parquet");
 ```
 
-> [!NOTE]
-> Target `Record` class can have more properties than the source file, and they will be gracefully skipped when deserializing.
+Class serialization is really fast as it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a small delay when serializing the first entity, which in most cases is negligible. Once the class is serialized at least once, further operations become much faster (around ~40x compared to reflection on large amounts of data (~5 million records)).
 
-### Deserialize records by `RowGroup`
+> [!TIP]
+ > Class serialization philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
 
-If you have a large file, and you want to deserialize it in chunks, you can also read records by row group. This can help to keep memory usage low as you won't need to load the entire file into memory.
+Note that classes (or structs) in general purpose programming languages represent rows, but parquet is columnar. Therefore, there are natural limitations to what data structures are supported in parquet serialization:
 
-```C#
-IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>("/mnt/storage/data.parquet", rowGroupIndex);
-```
+- In order for the deserializer to work, classes need to have a parameterless constructor.
+- Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writeable. This might limit your use cases if you are trying to deserialize into immutable objects, and in this case you should probably keep DTOs specifically designed for parquet format, which is still easier than using low level API.
+-- The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
+- Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writable. This might limit your use cases if you are trying to deserialize into immutable objects; in this case you should probably keep DTOs specifically designed for Parquet format, which is still easier than using the low-level API.
+- The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
 
-### Class member requirements
+## Customising serialization
 
-Parquet.Net can serialize and deserialize into class properties and class fields (class fields support was introduced in _v4.23.0_).
-
-Apparently, in order to serialize a class, a property must be readable, and in order to deserialize a class, a property must be writable. This is a standard requirement for any serialisation library.
-
-In case of fields, they are by default both readable and writable, so you don't need to do anything special to make them work. 
-
-### Enum support
-
-Starting with version _4.24.0_, Parquet.Net supports [.NET enums](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum). These are stored in both schema and parquet file as their underlying type (by default, it's `System.Int32`).  
-
-### Customising serialisation
-
-Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
+Serialization tries to fit into the C# ecosystem like a ninja 🥷, including customizations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
 - [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name. See also [ignoring property casing](#ignoring-property-casing).
-- [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing.
+- [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing. Alternatively, there is `[ParquetIgnore]`.
 - [`JsonPropertyOrder`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertyorderattribute?view=net-6.0) - allows to reorder columns when writing to file (by default they are written in class definition order). Only root properties and struct (classes) properties can be ordered (it won't make sense to do the others).
 
-Where built-in JSON attributes are not sufficient, extra attributes are added. Find extra attributes below in the relevant sections. List of generic attributes is presented below:
+Where built-in JSON attributes are not sufficient, extra attributes are added.
 
-#### Generic attributes
+- `Enum` is supported by treating it as underlying type (by default it's `int`). There might be some improvements in future versions, such as mapping them to corresponding string values.
+- [`string`](https://learn.microsoft.com/en-us/dotnet/api/system.string?view=net-8.0) in .NET is a reference type, which means it can be `null`. However, Parquet specification allows types to be declared _required or optional_. To fit into .NET ecosystem as closely as possible, this library will serialize .NET strings as _optional_ by default. If you want to change this behaviour, annotate string member with`[ParquetRequired]` attribute. Parquet.Net will also expect string to be optional when deserializing from a file and you will get an exception until you add `[ParquetRequired]` attribute to the relevant class property.
+- Dates (`DateTime`) are serialized as `INT96` numbers, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet; however, older systems such as Impala and Hive are still actively using it to represent dates. Therefore, when this library sees an `INT96` type, it will automatically treat it as a date for both serialization and deserialization. If you prefer a non-legacy date type, annotate a property with `[ParquetTimestamp]`, which by default serializes dates with millisecond precision. If you need to increase precision, use the `[ParquetTimestamp]` attribute with an appropriate precision, like `[ParquetTimestamp(ParquetTimestampResolution.Microseconds)]`. Storing dates with microsecond precision relies on .NET `DateTime`, which can only store microseconds starting from .NET 7.
+- `TimeSpan` is serialized with millisecond precision, but you can increase it by adding the `[ParquetMicroSecondsTime]` attribute.
+- `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute, which allows to specify different precision and scale, i.e. `[ParquetDecimal(40, 20)]`.
 
-- `[ParquetIgnore]` - functionally equivalent to `JsonIgnore` attribute, use when your code is conflicting with `[JsonIgnore]` attribute. Other than that, there are no differences.
+You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format, like lists or maps. These are called *nested types* and they can be useful for organizing your information. However, they also come with a trade-off: they make your code slower and use more CPU resources. That's why you should only use them when you really need them and not just because they look cool. Simple columns are faster and easier to work with, so stick to them whenever you can.
 
-#### Strings
-
-In .NET, [`string`](https://learn.microsoft.com/en-us/dotnet/api/system.string?view=net-8.0) class is a reference type, which means it can be `null`. However, Parquet specification allows types to be declared _required or optional_. 
-
-To fit into .NET ecosystem as closely as possible, this library will serialize .NET strings as _optional_ by default. If you want to change this behaviour, you can use `[ParquetRequired]` attribute:
-
-```C#
-public string OptionalString { get; set; }
-
-[ParquetRequired]
-public string RequiredString { get; set; }
-```
-
-In this example of three properties, `OptionalString`will be serialized as optional, but `RequiredString` will be serialized as required.
-
-> [!NOTE]
-> Parquet.Net will also expect string to be optional when deserializing from a file. If you have a required string in your file, you will get an exception until you add `[ParquetRequired]` attribute to the relevant class property.  
-
-#### Dates
-
-By default, dates (`DateTime`) are serialized as `INT96` number, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet, however older systems such as Impala and Hive are still actively using it to represent dates.
-
-Therefore, when this library sees `INT96` type, it will automatically treat it as a date for both serialization and deserialization.
-
-If you need to rather use a normal non-legacy date type, just annotate a property with `[ParquetTimestamp]`:
-
-```C#
-[ParquetTimestamp]
-public DateTime TimestampDate { get; set; }
-```
-
-which by default serialises date with millisecond precision. If you need to increase precision, you can use `[ParquetTimestamp]` attribute with an appropriate precision:
-
-```C#
-[ParquetTimestamp(ParquetTimestampResolution.Microseconds)]
-public DateTime TimestampDate { get; set; }
-```
-
-> [!WARNING]
-> Storing dates with microseconds precision relies on .NET `DateTime` type, which can only store microseconds starting from .NET 7. 
-
-#### Times
-
-By default, time (`TimeSpan`) is serialised with millisecond precision. but you can increase it by adding `[ParquetMicroSecondsTime]` attribute:
-
-```C#
-[ParquetMicroSecondsTime]
-public TimeSpan MicroTime { get; set; }
-```
-
-#### Decimals Numbers
-
-By default, `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute:
-
-```C#
-[ParquetDecimal(40, 20)]
-public decimal With_40_20 { get; set; }
-```
-
-#### Legacy Repeatable (Legacy Arrays)
-
-One of the features of Parquet files is that they can contain simple repeatable fields, also known as arrays, that can store multiple values for a single column. However, this feature is not widely supported by most of the systems that process Parquet files, and it may cause errors or compatibility issues. An example of such a file can be found in test data folder, called `legacy_primitives_collection_arrays.parquet`. 
-
-If you want to read an array of primitive values, such as integers or booleans, from a parquet file created by another system, you might think that you can simply use a list property in your class, like this:
-
-```C#
-class Primitives {
-        public List<bool>? Booleans { get; set; }
-}
-
-IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(input);
-```
-
-However, this will not work, because this library expects a list of complex objects, not a list of primitives. It will throw an exception when it encounters an array in the parquet file.
-
-To fix this problem, you need to use the `ParquetSimpleRepeatable` attribute on your list property. This tells the library that the list contains simple values that can be repeated as an array. For example:
-
-```C#
-class Primitives {
-        [ParquetSimpleRepeatable]
-        public List<bool>? Booleans { get; set; }
-}
-```
-
-This will successfully deserialize the array of integers from the parquet file into your list property.
-
-### Nested types
-
-You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format. Sometimes you might want to store more complex data in your parquet files, like lists or maps. These are called *nested types* and they can be useful for organizing your information. However, they also come with a trade-off: they make your code slower and use more CPU resources. That's why you should only use them when you really need them and not just because they look cool. Simple columns are faster and easier to work with, so stick to them whenever you can.
-
-> If you would like to use low-level API for complex types, there is a [guide](nested_types.md) available too.
-
-#### Structures
+### Structures
 
 > [!NOTE]
 > Struct in Parquet is not the same as `struct` in C#. Parquet Struct represents a collection of data columns grouped together. In C# terms, Parquet struct is C# class (or C# struct).
 
-Structures are just class members of a class and are completely transparent. For instance, `AddressBookEntry` class may contain a structure called `Address`:
+Structures are just class members of a class and are completely transparent. Parquet.Net understands structures of any nesting level without any extra configuration. For instance, `AddressBookEntry` class may contain a structure called `Address`:
 
 ```C#
 class Address {
     public string? Country { get; set; }
-
     public string? City { get; set; }
 }
 
 class AddressBookEntry {
     public string? FirstName { get; set; }
-
     public string? LastName { get; set; }   
-
     public Address? Address { get; set; }
 }
 ```
 
-Populated with the following fake data:
+### Lists
+
+One of the interesting things about lists is that Parquet can handle any kind of data structure in a list. You can have a list of atoms, like `1, 2, 3`, or a list of lists, `[[1, 2], [3, 4], [5, 6]]`, or even a list of structures. For instance, a simple `MovementHistory` class with `Id` and list of `ParentIds` is totally natively supported:
 
 ```C#
-var data = Enumerable.Range(0, 1_000_000).Select(i => new AddressBookEntry {
-            FirstName = "Joe",
-            LastName = "Bloggs",
-            Address = new Address() {
-                Country = "UK",
-                City = "Unknown"
-            }
-        }).ToList();
-```
-
-You can serialise/deserialize those using the same `ParquetSerializer.SerializeAsync` / `ParquetSerializer.DeserializeAsync` methods. It does understand subclasses and will magically traverse inside them.
-
-#### Lists
-
-One of the cool things about lists is that Parquet can handle any kind of data structure in a list. You can have a list of atoms, like `1, 2, 3`, or a list of lists, `[[1, 2], [3, 4], [5, 6]]`, or even a list of structures. Parquet.Net is awesome like that!
-
-For instance, a simple `MovementHistory` class with `Id` and list of `ParentIds` looking like the following:
-
-```C#
-class MovementHistoryCompressed  {
+class MovementHistory  {
     public int? PersonId { get; set; }
-
     public List<int>? ParentIds { get; set; }
 }
-```
-
-Is totally fine to serialise/deserialise:
-
-```C#
-var data = Enumerable.Range(0, 100).Select(i => new MovementHistoryCompressed {
-    PersonId = i,
-    ParentIds = Enumerable.Range(i, 4).ToList()
-}).ToList();
-
-await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\lat.parquet");
-```
-
-
-
- Reading it in `Spark` produces the following schema
-
-```
-root
- |-- PersonId: integer (nullable = true)
- |-- ParentIds: array (nullable = true)
- |    |-- element: integer (containsNull = true)
-```
-
-and data:
-
-```
-+--------+---------------+
-|PersonId|ParentIds      |
-+--------+---------------+
-|0       |[0, 1, 2, 3]   |
-|1       |[1, 2, 3, 4]   |
-|2       |[2, 3, 4, 5]   |
-|3       |[3, 4, 5, 6]   |
-|4       |[4, 5, 6, 7]   |
-|5       |[5, 6, 7, 8]   |
-|6       |[6, 7, 8, 9]   |
-|7       |[7, 8, 9, 10]  |
-|8       |[8, 9, 10, 11] |
-|9       |[9, 10, 11, 12]|
-+--------+---------------+
 ```
 
 Or as a more complicate example, here is a list of structures (classes in C#):
@@ -485,64 +200,17 @@ Or as a more complicate example, here is a list of structures (classes in C#):
 ```C#
 class Address {
     public string? Country { get; set; }
-
     public string? City { get; set; }
 }
 
 class MovementHistory {
     public int? PersonId { get; set; }
-
     public string? Comments { get; set; }
-
     public List<Address>? Addresses { get; set; }
 }
-
- var data = Enumerable.Range(0, 1_000).Select(i => new MovementHistory {
-    PersonId = i,
-    Comments = i % 2 == 0 ? "none" : null,
-    Addresses = Enumerable.Range(0, 4).Select(a => new Address {
-        City = "Birmingham",
-        Country = "United Kingdom"
-    }).ToList()
-}).ToList();
-
-await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\ls.parquet");
 ```
 
-that by reading from Spark produced the following schema
-
-```
-root
- |-- PersonId: integer (nullable = true)
- |-- Comments: string (nullable = true)
- |-- Addresses: array (nullable = true)
- |    |-- element: struct (containsNull = true)
- |    |    |-- Country: string (nullable = true)
- |    |    |-- City: string (nullable = true)
-```
-
-and data
-
-```
-+--------+--------+--------------------+
-|PersonId|Comments|           Addresses|
-+--------+--------+--------------------+
-|       0|    none|[{United Kingdom,...|
-|       1|    null|[{United Kingdom,...|
-|       2|    none|[{United Kingdom,...|
-|       3|    null|[{United Kingdom,...|
-|       4|    none|[{United Kingdom,...|
-|       5|    null|[{United Kingdom,...|
-|       6|    none|[{United Kingdom,...|
-|       7|    null|[{United Kingdom,...|
-|       8|    none|[{United Kingdom,...|
-|       9|    null|[{United Kingdom,...|
-+--------+--------+--------------------+
-```
-
-##### Nullability and lists
-
-By default, Parquet.Net assumes that both lists and list elements are nullable. This is because list is a class in .NET, and classes are nullable. Therefore, coming back to the previous example definition:
+By default, Parquet.Net assumes that <u>both lists and list elements are nullable</u>. This is because list is a class in .NET, and classes are nullable. Therefore, coming back to the previous example definition:
 
 ```c#
 class MovementHistory {
@@ -609,87 +277,43 @@ REQUIRED group Addresses (LIST) {
 }
 ```
 
-#### Maps (Dictionaries)
+### Maps
 
-Maps are useful constructs if you need to serialize key-value pairs where each row can have different amount of keys.
+Maps are useful constructs to serialize key-value pairs where each row can have a different number of keys and they are not known beforehand. It's like duck typing in a strongly typed world. A property will be treated as a native Parquet map if its type is the generic `IDictionary<TKey, TValue>`.
 
-For example, if you want to store partition values like so:
+### Legacy Repeatable
 
-```json
-{"partition1": "value1", "partition2": "value2" }
-```
-
-without knowing beforehand how many partitions there will be.
-
-In this library, maps are represented as an instance of generic `IDictionary<TKey, TValue>` type. 
-
-To give you a minimal example, let's say we have the following class with two properties: `Id` and `Tags`. The `Id` property is an integer that can be used to identify a row or an item in a collection. The `Tags` property is a dictionary of strings that can store arbitrary key-value pairs. For example, the `Tags` property can be used to store metadata or attributes of the item:
+One of the features of Parquet files is that they can contain simple repeatable fields, also known as arrays, that can store multiple values for a single column. However, this feature is not widely supported by most of the systems that process Parquet files, and it may cause errors or compatibility issues. An example of such a file can be found in test data folder, called `legacy_primitives_collection_arrays.parquet`.  To read an array of primitive values, such as integers or booleans, from a parquet file created by another system, you might think that you can simply use a list property in your class, like this:
 
 ```C#
-class IdWithTags {
-    public int Id { get; set; }
+class Primitives {
+    public List<bool>? Booleans { get; set; }
+}
 
-    public Dictionary<string, string>? Tags { get; set; }
+IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(input);
+```
+
+However, this will not work, because this library expects a list of complex objects, not a list of primitives. It will throw an exception on an array in the parquet file. To fix this problem, you need to use the `ParquetSimpleRepeatable` attribute on the property:
+
+```C#
+class Primitives {
+    [ParquetSimpleRepeatable]
+    public List<bool>? Booleans { get; set; }
 }
 ```
 
-You can easily use `ParquetSerializer` to work with this class:
-
-```C#
-var data = Enumerable.Range(0, 10).Select(i => new IdWithTags { 
-    Id = i,
-    Tags = new Dictionary<string, string> {
-        ["id"] = i.ToString(),
-        ["gen"] = DateTime.UtcNow.ToString()
-    }}).ToList();
-
-await ParquetSerializer.SerializeAsync(data, "c:\\tmp\\map.parquet");
-```
-
-When read by Spark, the schema looks like the following:
-
-```
-root
- |-- Id: integer (nullable = true)
- |-- Tags: map (nullable = true)
- |    |-- key: string
- |    |-- value: string (valueContainsNull = true)
-
-```
-
-And the data:
-
-```
-+---+-------------------------------------+
-|Id |Tags                                 |
-+---+-------------------------------------+
-|0  |{id -> 0, gen -> 17/03/2023 13:06:04}|
-|1  |{id -> 1, gen -> 17/03/2023 13:06:04}|
-|2  |{id -> 2, gen -> 17/03/2023 13:06:04}|
-|3  |{id -> 3, gen -> 17/03/2023 13:06:04}|
-|4  |{id -> 4, gen -> 17/03/2023 13:06:04}|
-|5  |{id -> 5, gen -> 17/03/2023 13:06:04}|
-|6  |{id -> 6, gen -> 17/03/2023 13:06:04}|
-|7  |{id -> 7, gen -> 17/03/2023 13:06:04}|
-|8  |{id -> 8, gen -> 17/03/2023 13:06:04}|
-|9  |{id -> 9, gen -> 17/03/2023 13:06:04}|
-+---+-------------------------------------+
-```
-
-
-
-#### Supported collection types
+### Supported collection types
 
 Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-collection-types?pivots=dotnet-7-0), here are collections Parquet.Net currently supports:
 
-| Type                                                         | Serialization | Deserialization |
-| ------------------------------------------------------------ | ------------- | --------------- |
-| [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ✔️             | ❌               |
-| [Multi-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
-| [`IList<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ❌`**`           |
-| [`List<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ✔️               |
-| [`IDictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.idictionary-2?view=net-7.0) `**` | ❌             | ❌               |
-| [`Dictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=net-7.0) | ✔️             | ✔️               |
+| Type | Serialization | Deserialization |
+| --- | --- | --- |
+| Single-dimensional array (`T[]`) | ✔️ | ❌ |
+| Multi-dimensional arrays | ❌ | ❌ |
+| `IList<T>` | ✔️ | ❌ |
+| `List<T>` | ✔️ | ✔️ |
+| `IDictionary<TKey, TValue>` | ❌ | ❌ |
+| `Dictionary<TKey, TValue>` | ✔️ | ✔️ |
 
 `*` Technically impossible or very hard to implement.
 `**` Technically possible, but not implemented yet.
@@ -746,7 +370,7 @@ var data = Enumerable.Range(0, 1_000).Select(i => new BeforeRename {
     lowerCase = i % 2 == 0 ? "on" : "off"
 }).ToList();
 
-// serialise to memory stream
+// serialize to memory stream
 using var ms = new MemoryStream();
 await ParquetSerializer.SerializeAsync(data, ms);
 ms.Position = 0;
@@ -755,80 +379,19 @@ ms.Position = 0;
 IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
 
 // this will successfully deserialize the data, because property names are case insensitive
-IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+IList<AfterRename> data3 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
     new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
 ```
 
-### FAQ
+## Extra options
 
-**Q.** Can I specify schema for serialisation/deserialization.
+- **Compression** can be selected after constructing `ParquetWriter`, where compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) can be set. They default to `Snappy`, which is very reasonable.
+- **Metadata** reading and writing is supported on both parquet reader and writer.
+- **Statistics** can be read on a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
 
-**A.** If you're using a class-based approach to define your data model, you don't have to worry about providing a schema separately. The class definition itself is the schema, meaning it specifies the fields and types of your data. This makes it easier to write and maintain your code, since you only have to define your data model once and use it everywhere.
+## Appending to files
 
-## Writing data
-
-You can write data by constructing an instance of [ParquetWriter class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetWriter.cs) with one of its factory methods.
-
-Writing files is a multi-stage process, giving you the full flexibility on what exactly to write to it:
-
-1. Create `ParquetWriter` passing it a *file schema* and a *writeable stream*. You should have declared file schema beforehand.
-2. Create a row group writer by calling to `writer.CreateRowGroup()`.
-3. Keep calling `.WriteAsync()` by passing the data columns with data you want to write. Note that the order of data columns you are writing must match the order of data fields declared in the schema.
-4. When required, repeat from step (2) to create more row groups. A row group is like a physical data partition that should fit in memory for processing. It's a guess game how much data should be in a single row group, but a number of at least 5 thousand rows per column is great. Remember that parquet format works best on large chunks of data.
-
-```C#
-// create file schema
-var schema = new ParquetSchema(
-    new DataField<int>("id"),
-    new DataField<string>("city"));
-
-//create data columns with schema metadata and the data you need
-var idColumn = new DataColumn(
-   schema.DataFields[0],
-   new int[] { 1, 2 });
-
-var cityColumn = new DataColumn(
-   schema.DataFields[1],
-   new string[] { "London", "Derby" });
-
-using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
-    using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
-        parquetWriter.CompressionMethod = CompressionMethod.Gzip;
-        parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
-        // create a new row group in the file
-        using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
-            await groupWriter.WriteColumnAsync(idColumn);
-            await groupWriter.WriteColumnAsync(cityColumn);
-            
-            // it's a good idea to validate all the columns were written (CompleteValidate will throw an exception if not)
-            groupWriter.CompleteValidate();
-        }
-    }
-}
-```
-
-> [!TIP]
-> After constructing a `DataColumn`, you should not modify the data passed until it's written out into the Parquet file. `DataColumn` performs initial lightweight calculations on the data passed to it, and modifying the data will cause the calculations to be out of sync.  
-
-To read more about `DataColumn`, see [this page](column.md).
-
-### Specifying compression method and level
-
-After constructing `ParquetWriter` you can optionally set compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) which defaults to `Snappy`.  Unless you have specific needs to override compression, the defaults are very reasonable.
-
-For instance, to set compression to gzip/optimal:
-
-```C#
-using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
-    parquetWriter.CompressionMethod = CompressionMethod.Gzip;
-    parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
-    // create row groups and write...
-}
-```
-
-### Appending to files
-
-This lib supports pseudo appending to files, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.
+Pseudo appending to files is supported, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.
 
 The following code snippet illustrates this:
 
@@ -873,57 +436,14 @@ Note that you have to specify that you are opening `ParquetWriter` in **append**
 
 Please keep in mind that row groups are designed to hold a large amount of data (50000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
 
-### Complex types
+## Parallelism
 
-To write complex types (arrays, lists, maps, structs) read [this guide](nested_types.md).
+File streams are generally not compatible with parallel processing. You can, however, open file stream per parallel thread i.e. your `Parallel.For` should perform file opening operation. Or you can introduce a lock on file read, depends on what works better for you. I might state the obvious here, but asynchronous and parallel are not the same thing.
 
-## Reading data
-
-You can read the data by constructing an instance of [ParquetReader class](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetReader.cs) or using one of the static helper methods on the `ParquetReader` class, like `ParquetReader.OpenFromFile()`.
-
-Reading files is a multi-stage process, giving you the full flexibility on what exactly to read from it:
-
-1. Create `ParquetReader` from a source stream or open it with any utility method. Once the reader is open you can immediately access file schema and other global file options like key-value metadata and number of row groups.
-2. Open `RowGroupReader` by calling to `reader.OpenRowGroupReader(groupIndex)`. This class also exposes general row group properties like row count.
-3. Call `.Read()` on row group reader passing the `DataField` schema definition you wish to read.
-4. Returned `DataColumn` contains the column data. Important thing to note here is we automatically merge data and definition levels of the column so that `.Data` member of type `System.Array` contains actual usable column data. Note that we do not process *repetition levels* if the column is a part of a more complex structure, and you have to use them appropriately. Simple data columns do not contain *repetition levels*.
-
-It's worth noting that *repetition levels* are only used for complex data types like arrays, list and maps. Processing them automatically would add an enormous performance overhead, therefore we are leaving it up to you to decide how to use them.
-
-### Using format options
-
-When reading, Parquet.Net uses some defaults specified in [ParquetOptions.cs](https://github.com/aloneguid/parquet-dotnet/blob/master/src/Parquet/ParquetOptions.cs), however you can override them by passing to a `ParquetReader` constructor.
-
-For example, to force the reader to treat byte arrays as strings use the following code:
+Here is an example of reading a file in parallel, where a unit of parallelism is a row group:
 
 ```C#
-var options = new ParquetOptions { TreatByteArrayAsString = true };
-var reader = await ParquetReader.CreateAsync(stream, options);
-```
-
-### Metadata
-
-To read custom metadata you can access the `CustomMetadata` property on `ParquetReader`:
-
-```C#
-using (var reader = await ParquetReader.CreateAsync(ms)) {
-   Assert.Equal("value1", reader.CustomMetadata["key1"]);
-   Assert.Equal("value2", reader.CustomMetadata["key2"]);
-}
-```
-
-### Statistics
-
-You can read column statistics of a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
-
-### Parallelism
-
-File stream are generally not compatible with parallel processing. You can, however, open file stream per parallel thread i.e. your `Parallel.For` should perform file opening operation. Or you can introduce a lock on file read, depends on what works better for you. I might state the obvious here, but asynchronous and parallel are not the same thing.
-
-Here is an example of reading a file in parallel, where a unit of paralellism is a row group:
-
-```C#
-var reader = await reader.CreateAsync(path);
+var reader = await ParquetReader.CreateAsync(path);
 var count = reader.RowGroupCount;
 
 await Parallel.ForAsync(0, count,
@@ -937,6 +457,497 @@ await Parallel.ForAsync(0, count,
     }
 );
 ```
+
+## Internals
+
+### DataColumn
+
+`DataColumn` is an essential part for low-level serialization. It represents a column that has actual data and for simple records that contain atomic types (int, string etc.):
+
+```mermaid
+classDiagram
+    class DataColumn {
+      +Field Field
+      +Array DefinedData
+      +Array Data
+      +int[]? DefinitionLevels;
+      +int[]? RepetitionLevels;
+      +DataColumn(DataField field, Array definedData, int[]? definitionLevels, int[]? repetitionLevels)
+      +DataColumn(DataField field, Array data, int[]? repetitionLevels = null)
+    }
+
+```
+
+- `Field` is a schema field that defines this column that you can obtain from a schema you define.
+- `DefinedData` is raw data that is defined by `Field`'s type. If field is nullable, `DefinedData` represents non-nullable values. On the other hand, `Data` represents data as-is, including nulls. If you are reading `DataColumn` and need to access the data, `Data` is the field. To access data as it's stored in parquet file, use `DefinedData`. The names are chosen mostly due to backward compatibility reasons.
+- Going further, to access *repetition and definition levels* as they are stored in parquet file, use the corresponding `DefinitionLevels` and `RepetitionLevels` fields.
+
+### Schema
+
+Schema is defined by creating an instance of `ParquetSchema` class and passing a collection of `Field`s. There are several types of fields in schema, and the most common is `DataField`, derived from the base abstract `Field` class (just like all the rest of the field types) and simply means it declares an actual data rather than an abstraction.
+
+You can declare a `DataField` by specifying a column name, and its type in the constructor, generic form is also supported:
+
+```C#
+var field1 = new DataField("id", typeof(int));
+var field2 = new Field<int>("id");
+```
+
+There are specialised versions for `DataField` allowing to specify more precise metadata about certain parquet data type, for instance `DecimalDataField` allows to specify precision and scale other than default values.
+
+Non-data field wrap complex structures like list (`ListField`), map (`MapField`) and struct (`StructField`).
+
+Full schema type hierarchy can be expressed as:
+
+```mermaid
+classDiagram
+    Schema "1" o-- "1..*" Field
+    Field <|-- DataField
+    DataField <|-- DataField~T~
+    DataField <|-- DateTimeDataField
+    DataField <|-- DecimalDataField
+    DataField <|-- TimeSpanDataField
+    
+    Field <|-- ListField
+    Field "1" --o "1" ListField: list item
+
+    Field <|-- MapField
+    Field "1" --o "1" MapField: key field
+    Field "1" --o "1" MapField: value field
+
+    Field <|-- StructField
+    Field "1..*" --o "1" StructField: struct members
+
+
+    class Schema {
+        +List~Field~: Fields
+    }
+
+    class Field {
+        +string Name
+        +SchemaType SchemaType
+        +FieldPath Path
+    }
+
+    class DataField {
+        +Type ClrType
+        +bool IsNullable
+        +bool IsArray
+    }
+
+    class DataField~T~{
+        
+    }
+
+    class DateTimeDataField {
+        +DateTimeFormat: DateTimeFormat
+    }
+
+    class DecimalDataField {
+        +int Precision
+        +int Scale
+        +bool: ForceByteArrayEncoding
+    }
+
+    class TimeSpanDataField {
+        +TimeSpanFormat: TimeSpanFormat
+    }
+
+    class ListField {
+        +Field: Item
+    }
+
+    class MapField {
+        +Field: Key
+        +Field: Value
+    }
+
+    class StructField {
+        +List~Field~: Fields
+    }
+```
+
+#### Lists
+
+To declare a list, use `ListField` class and specify:
+
+1. The name of the list field.
+2. What data it is holding.
+
+`ListField`'s second parameter is of type `Field`, meaning you can specify **anything** as its member - a primitive `DataField` or anything else.
+
+#### Lists of primitive types
+
+To declare a list of primitive types, just specify `DataField` as a second parameter. For instance, to declare a list of integers:
+
+```c#
+new ListField("item", new DataField<int>("id"));
+```
+
+> [!WARNING]
+> Parquet format allows you to use `arrays` which can also contain a list of primitive types. Whilst supported, it is strongly discouraged due to poor compatibility with other systems. In fact, it's impossible to find anything that will write arrays instead of lists, even for primitive types.
+>
+> To declare an array, or a "repeatable field" in schema you need specify it as `IEnumerable<T>` where `T` is one of the types Parquet.Net supports. For example:
+>
+> ```csharp
+> var se = new DataField<IEnumerable<int>>("ids");
+> ```
+> You can also specify that a field is repeatable by setting `isArray` in `DataField` constructor to `true`.
+>
+> When writing to the field you can specify any value which derives from `IEnumerable<int>`, for instance
+>
+> ```C#
+> ds.Add(1, new int[] { 1, 2, 3 });
+> ```
+>
+> When reading schema back, you can check if it's repeatable by calling to `.IsArray` property.
+>
+> You should always prefer lists to arrays because:
+>
+> - Lists are more flexible - arrays can only contain a primitive type, whereas lists can contain anything.
+> - Most big data platforms just default to lists.
+> - Schema evolution is not possible with arrays.
+
+#### Lists of structs
+
+Of course a list can contain anything, but just to demonstrate it can, this is how you would declare a list of structs:
+
+```mermaid
+classDiagram
+    Root "1" o-- "1..*" MyStruct
+    
+    class Root {
+        +TopLevelId: int
+        +List~MyStruct~: Structs
+    }
+    
+    class MyStruct {
+        +Id: int
+        +Name: string
+    }
+
+
+```
+
+
+```c#
+var idField = new DataField<int>("Id");
+var nameField = new DataField<string>("Name");
+
+var schema = new ParquetSchema(
+    new DataField<int>("TopLevelId"),
+    new ListField("Structs",
+        new StructField("MyStruct",
+            idField,
+            nameField)));
+```
+
+#### Special cases
+
+- **Null Values** by default are not allowed, and need to be declared explicitly by specifying a nullable type:
+
+```C#
+new DataField<int?>("id");
+new DataField("id", typeof(int?));
+```
+
+- **Dates** are stored by default as `int96` number because of backward compatibility issues. To override date format storage you can use `DateTimeDataField` instead of `DataField<DateTime>` which allows to specify precision, for example the following example lowers precision to only write date part of the date without time.
+
+```C#
+new DateTimeDataField("date_col", DateTimeFormat.Date);
+```
+
+- **Decimal** by default uses precision 38 and scale 18, however you can set different precision and schema by using `DecimalDataField` schema element (see constructor for options).
+
+### Nested types
+
+#### Structs
+
+Structures are the easiest to understand. A structure is simply a container with extra fields i.e. table inside a table cell. From parquet's point of view, there is no difference between a struct's column and top-level column, they are absolutely identical.
+
+Structures are mostly used to logically separate entities and simplify naming for a user. To demonstrate, let's say you have the following very simple class hierarchy:
+
+```mermaid
+classDiagram
+    direction RL
+    Root "1" *-- "1" Address
+    class Root {
+        +string name
+    }
+    class Address {
+        +string line1
+        +string postcode
+    }
+```
+
+
+
+In tabular form, it can be represented like this
+
+| name     | address.line1 | address.postcode |
+| -------- | ------------- | ---------------- |
+| (column) | (column)      | (column)         |
+
+which is also identical to
+
+| name   | address                                     |
+| ------ | ------------------------------------------- |
+| Column | **line1** (column) \| **postcode** (column) |
+
+Each table still has 3 physical columns, they are just named differently.
+
+To make schema for this, we'll use `StructField` which accepts other fields as children:
+
+```C#
+var schema = new ParquetSchema(
+   new DataField<string>("name"),
+   new StructField("address",
+      new DataField<string>("line1"),
+      new DataField<string>("postcode")
+   ));
+```
+
+To write data, we use plain columns:
+
+```C#
+using var ms = new MemoryStream();
+using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+    ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+
+    await rgw.WriteColumnAsync(
+        new DataColumn(new DataField<string>("name"), new[] { "Joe" }));
+
+    await rgw.WriteColumnAsync(
+        new DataColumn(new DataField<string>("line1"), new[] { "Amazonland" }));
+
+    await rgw.WriteColumnAsync(
+        new DataColumn(new DataField<string>("postcode"), new[] { "AAABBB" }));
+}
+
+```
+
+To read back, again, the data is in plain columns:
+
+```C#
+ ms.Position = 0;
+
+using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+    using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
+
+    DataField[] dataFields = reader.Schema.GetDataFields();
+
+    DataColumn name = await rg.ReadColumnAsync(dataFields[0]);
+    DataColumn line1 = await rg.ReadColumnAsync(dataFields[1]);
+    DataColumn postcode = await rg.ReadColumnAsync(dataFields[2]);
+
+    Assert.Equal(new[] { "Joe" }, name.Data);
+    Assert.Equal(new[] { "Amazonland" }, line1.Data);
+    Assert.Equal(new[] { "AAABBB" }, postcode.Data);
+}
+```
+
+Note that the only indication that this is a part of struct is `Path` property in the read schema containing struct name:
+
+![](struct-path.png)
+
+#### Lists and Arrays
+
+Arrays *aka repeatable fields* is a basis for understanding how more complex data structures work in Parquet.
+
+`DataColumn` in Parquet can contain not just a single but multiple values. Sometimes they are called repeated fields (because the data type value repeats) or arrays. In order to create a schema for a repeatable field, let's say of type `int` you could use one of two forms:
+
+```C#
+var field = new DataField<IEnumerable<int>>("items");
+```
+
+To check if the field is repeated you can always test `.IsArray` Boolean flag.
+
+Parquet columns are flat, so in order to store an array in the array which can only keep simple elements and not other arrays, you would *flatten* them. For instance to store two elements:
+
+- `[1, 2, 3]`
+- `[4, 5]`
+
+in a flat array, it will look like `[1, 2, 3, 4, 5]`. And that's exactly how parquet stores them. Now, the problem starts when you want to read the values back. Is this `[1, 2]` and `[3, 4, 5]` or `[1]` and `[2, 3, 4, 5]`? There's no way to know without an extra information. Therefore, parquet also stores that extra information an an extra column per data column, which is called *repetition levels*. In the previous example, our array of arrays will expand into the following two columns:
+
+| #    | Data Column | Repetition Levels Column |
+| ---- | ----------- | ------------------------ |
+| 0    | 1           | 0                        |
+| 1    | 2           | 1                        |
+| 2    | 3           | 1                        |
+| 3    | 4           | 0                        |
+| 4    | 5           | 1                        |
+
+In other words - it is the level at which we have to create a new list for the current value. In other words, the repetition level can be seen as a marker of when to start a new list and at which level.
+
+To represent this in C# code:
+
+```C#
+var field = new DataField<IEnumerable<int>>("items");
+var column = new DataColumn(
+   field,
+   new int[] { 1, 2, 3, 4, 5 },
+   new int[] { 0, 1, 1, 0, 1 });
+```
+
+#### Lists
+
+Although arrays are useful, most of the systems write lists of data using `List` type. Unlike arrays, which can only contain primitive types, lists can contain anything. The most common use of lists is lists of structs.
+
+#### Lists of Structs
+
+To demonstrate, I'll come back to the beginning of this document, and slightly change the relationship. Now our `Root` class does not just contain `Address` structure, but a list of address structures:
+
+```mermaid
+classDiagram
+    direction RL
+    Root "1" *-- "*" Address : list of
+    class Root {
+        +string name
+    }
+    class Address {
+        +string line1
+        +string postcode
+    }
+```
+
+And we'd like to save the following data:
+
+```json
+[
+    {
+        "name": "Joe",
+        "addresses": [
+            {
+                "line1": "Amazonland",
+                "postcode": "AAABBB"
+            },
+            {
+                "line1": "Disneyland",
+                "postcode": "CCCDDD"
+            }
+        ]
+    },
+    {
+        "name": "Bob",
+        "addresses": [
+            {
+	            "line1": "Cryptoland",
+    	        "postcode": "EEEFFF"
+            }
+        ]
+    }
+]
+```
+
+Knowing how structs and arrays are serialized, we can flatten this hierarchy to the following form so that it can be saved to Parquet:
+
+| name | RL   | addresses.list.element.line1 | RL   | addresses.list.element.postcode | RL   |
+| ---- | ---- | ---------------------------- | ---- | ------------------------------- | ---- |
+| Joe  |      | Amazonland                   | 0    | AAABBB                          | 0    |
+| Bob  |      | Disneyland                   | 1    | CCCDDD                          | 1    |
+|      |      | Cryptoland                   | 0    | EEEFFF                          | 0    |
+
+where **RL** column indicated *repetition levels* of the column to the left.
+
+`name` does not have any repetition levels as it's a normal plain simple column.
+
+`line1` is a part of a list and it has a slightly longer name than usual. This is because of parquet [naming conventions for lists](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists). List must **always** annotate a **3-level** structure:
+
+- Outer group, which is a name of your business property (`addresses`)
+  - Middle level, always called **list** annotates repeatable field.
+    - A field always called **element** that annotates the list contents. When lists contain a primitive type, this field is that type. In our case it's a structure called **element** containing two fields - `line1` and `postcode`.
+
+If it feels complicated, it **IS**! Therefore general recommendation would be to use plain columns whenever possible. Nested types in parquet carry both mental and performance overhead 🤯
+
+Moving on, let's declare a schema for this:
+
+```C#
+var nameField = new DataField<string>("name");
+var line1Field = new DataField<string>("line1");
+var postcodeField = new DataField<string>("postcode");
+
+var schema = new ParquetSchema(
+   nameField,
+   new ListField("addresses",
+   new StructField(ListField.ElementName,
+      line1Field,
+      postcodeField)));
+
+```
+
+One thing to note - `ListField` automatically assumes there will be an internal *middle level* called **list** so it's omitted from the schema declaration.
+
+The struct is called `"element"` which is what `ListField.ElementName` constant is equal to. Theoretically you can name it anything you want, but common convention is recommended to be followed.
+
+And the final thing is to create data for those 3 columns with their repetition levels:
+
+```C#
+var nameCol = new DataColumn(nameField, new string[] { "Joe", "Bob" });
+var line1Col = new DataColumn(line1Field, new[] { "Amazonland", "Disneyland", "Cryptoland" }, new[] { 0, 1, 0 });
+var postcodeCol = new DataColumn(postcodeField, new[] { "AAABBB", "CCCDDD", "EEEFFF" }, new[] { 0, 1, 0 });
+```
+
+Congrats, you have saved your first list!
+
+You might have noticed that list schema allows you to specify any `Field` - and that's 100% correct. Lists can contain any element type, including other lists! The idea of saving lists of lists is identical to the above.
+
+For more examples or just to run the above, please refer to unit tests in this project.
+
+#### Maps
+
+Maps are stored as lists of structures, where each structure has two elements - key and value. Theoretically you don't need maps at all; it's just a hint to the programming language to deserialize it in a more convenient way.
+
+
+
+### Untyped Serializer
+
+Untyped serializer gives this library the ability to write and read data without the need to define low-level column data or define classes. This is extremely useful for use case like:
+
+- Reading data from a file where the schema is not known in advance (i.e. parquet file viewers, generic utilities).
+- Writing parquet file converters, i.e. from parquet to JSON.
+
+The main motivation points to develop untyped serializer are:
+
+- Single codebase for class serializer and untyped dictionary serializer.
+- Deserialization produces JSON-like structures in memory. These can be written back to JSON files as-is.
+- Row API is an old legacy that is somewhat buggy and very hard to evolve and fix.
+
+In this API, everything is `Dictionary<string, object>`. For a simple use-case, with the following schema:
+
+```C#
+var schema = new ParquetSchema(
+    new DataField<int>("id"),
+    new DataField<string>("city"));
+```
+
+you can write data like this:
+
+```C#
+var data = new List<Dictionary<string, object>> {
+    new Dictionary<string, object> { { "id", 1 }, { "city", "London" } },
+    new Dictionary<string, object> { { "id", 2 }, { "city", "Derby" } }
+};
+
+await ParquetSerializer.SerializeAsync(schema, data, stream);
+```
+
+For more examples, see `ParquetSerializerTests.cs` in the codebase. The documentation will evolve as this API gets more stable.
+
+## DataFrame Support
+
+[`Microsoft.Data.Analysis`](https://www.nuget.org/packages/Microsoft.Data.Analysis) is supported via additional [NuGet package](https://www.nuget.org/packages/Parquet.Net.Data.Analysis). Due to `DataFrame` being in general less functional than Parquet, only primitive (atomic) columns are supported at the moment. If `DataFrame` supports more functionality in future (see related links below), this integration can be extended. When reading and writing, this integration will ignore any columns that are not atomic (primitive). You only need to call `WriteAsync()` extension method on `DataFrame` and specify the destination stream to write it to, similarly you can use `System.IO.Stream`'s extension method to read from parquet stream into `DataFrame`
+
+```C#
+DataFrame df;
+await df.WriteAsync(stream);
+DataFrame dfr = await stream.ReadParquetAsDataFrameAsync();
+```
+
+- Original blog post "[An Introduction to DataFrame](https://devblogs.microsoft.com/dotnet/an-introduction-to-dataframe/)".
+- External GitHub Issues
+  - [DataFrame (Microsoft.Data.Analysis) Tracking Issue](https://github.com/dotnet/machinelearning/issues/6144).
+  - [DataFrame enhancements](https://github.com/dotnet/machinelearning/issues/6088).
+  - [Add parquet support for importing and exporting data to/from DataFrame](https://github.com/dotnet/machinelearning/issues/5972).
 
 ## Used by
 
