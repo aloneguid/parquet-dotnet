@@ -140,7 +140,8 @@ namespace Parquet.Schema {
 
             if(obj is not Field other) return false;
 
-            return SchemaType == other.SchemaType && Name == other.Name && Path.Equals(other.Path);
+            return SchemaType == other.SchemaType && Name == other.Name && Path.Equals(other.Path)
+                && IsNullable == other.IsNullable;
         }
 
         /// <summary>

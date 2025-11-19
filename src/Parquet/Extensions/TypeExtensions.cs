@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Parquet {
     static class TypeExtensions {
@@ -21,7 +22,7 @@ namespace Parquet {
         /// <param name="t"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        public static bool TryExtractIEnumerableType(this Type t, out Type? baseType) {
+        public static bool TryExtractIEnumerableType(this Type t, [NotNullWhen(true)] out Type? baseType) {
             if(typeof(byte[]) == t) {
                 //it's a special case to avoid confustion between byte arrays and repeatable bytes
                 baseType = null;
@@ -49,7 +50,7 @@ namespace Parquet {
             }
 
             if(ti.IsArray) {
-                baseType = ti.GetElementType();
+                baseType = ti.GetElementType()!;
                 return true;
             }
 
@@ -77,7 +78,7 @@ namespace Parquet {
                 t.GetInterfaces().Any(x => x.IsGenericType && typeof(IDictionary<,>) == x.GetGenericTypeDefinition()));
         }
 
-        public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
+        public static bool TryExtractDictionaryType(this Type t, [NotNullWhen(true)] out Type? keyType, [NotNullWhen(true)] out Type? valueType) {
             if(t.IsGenericIDictionary()) {
                 TypeInfo ti = t.GetTypeInfo();
                 keyType = ti.GenericTypeArguments[0];
