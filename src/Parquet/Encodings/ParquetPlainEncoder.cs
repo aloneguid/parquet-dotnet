@@ -13,7 +13,8 @@ using TType = Parquet.Meta.Type;
 namespace Parquet.Encodings {
 
     /// <summary>
-    /// Fast data encoder.
+    /// Fast data encoder. 
+    /// See https://github.com/aloneguid/parquet-dotnet/issues/643#issuecomment-3489932123 for future performance ideas.
     /// Experimental.
     /// </summary>
     static class ParquetPlainEncoder {
