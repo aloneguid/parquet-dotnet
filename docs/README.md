@@ -15,7 +15,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e. desktops, servers, phones, watches and so on.
 - 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
-- ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around - forces parquet to fit into .NET.
+- ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around — forces Parquet to fit into .NET.
 - 🦄**Unique Features**:
   - The only library that supports [dynamic](#writing-data) schemas.
   - Supports all parquet [types](nested_types.md), encodings and compressions.
@@ -114,7 +114,7 @@ class Event {
 Now let's generate some fake data:
 
 ```c#
-var data = Enumerable.Range(0, 1_000_000).Select(i => new Record {
+var data = Enumerable.Range(0, 1_000_000).Select(i => new Event {
     Timestamp = DateTime.UtcNow.AddSeconds(i),
     EventName = i % 2 == 0 ? "on" : "off",
     MeterValue = i 
@@ -130,23 +130,25 @@ await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 To read, simply call:
 
 ```c#
-IList<Record> data = await ParquetSerializer.DeserializeAsync<Event>("/mnt/storage/data.parquet");
+IList<Event> data = await ParquetSerializer.DeserializeAsync<Event>("/mnt/storage/data.parquet");
 ```
 
-Class serialisation is **really fast** as internally it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a tiny bit of delay when serialising a first entity, which in most cases is negligible. Once the class is serialised at least once, further operations become amazingly fast (around *x40* speed improvement comparing to reflection on relatively large amounts of data (~5 million records)).
+Class serialization is really fast as it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a small delay when serializing the first entity, which in most cases is negligible. Once the class is serialized at least once, further operations become much faster (around ~40x compared to reflection on large amounts of data (~5 million records)).
 
 > [!TIP]
-> Class serialisation philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
+ > Class serialization philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
 
 Note that classes (or structs) in general purpose programming languages represent rows, but parquet is columnar. Therefore, there are natural limitations to what data structures are supported in parquet serialization:
 
-- In order for deserializer to work, classes need to have default parameterless constructor.
+- In order for the deserializer to work, classes need to have a parameterless constructor.
 - Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writeable. This might limit your use cases if you are trying to deserialize into immutable objects, and in this case you should probably keep DTOs specifically designed for parquet format, which is still easier than using low level API.
-- Deserializer does not "overwrite" class members i.e. if you are deserializing into a list property, and default constructor already initalizes list with some values, parquet deserializer will append data to the list instead of overwriting it.
+-- The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
+- Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writable. This might limit your use cases if you are trying to deserialize into immutable objects; in this case you should probably keep DTOs specifically designed for Parquet format, which is still easier than using the low-level API.
+- The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
 
 ## Customising serialization
 
-Serialisation tries to fit into C# ecosystem like a ninja 🥷, including customisations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
+Serialization tries to fit into the C# ecosystem like a ninja 🥷, including customizations. It supports the following attributes from [`System.Text.Json.Serialization` Namespace](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization?view=net-7.0):
 
 - [`JsonPropertyName`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonpropertynameattribute?view=net-7.0) - changes mapping of column name to property name. See also [ignoring property casing](#ignoring-property-casing).
 - [`JsonIgnore`](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonignoreattribute?view=net-7.0) - ignores property when reading or writing. Alternatively, there is `[ParquetIgnore]`.
@@ -156,8 +158,8 @@ Where built-in JSON attributes are not sufficient, extra attributes are added.
 
 - `Enum` is supported by treating it as underlying type (by default it's `int`). There might be some improvements in future versions, such as mapping them to corresponding string values.
 - [`string`](https://learn.microsoft.com/en-us/dotnet/api/system.string?view=net-8.0) in .NET is a reference type, which means it can be `null`. However, Parquet specification allows types to be declared _required or optional_. To fit into .NET ecosystem as closely as possible, this library will serialize .NET strings as _optional_ by default. If you want to change this behaviour, annotate string member with`[ParquetRequired]` attribute. Parquet.Net will also expect string to be optional when deserializing from a file and you will get an exception until you add `[ParquetRequired]` attribute to the relevant class property.
-- Dates (`DateTime`) are serialized as `INT96` number, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet, however older systems such as Impala and Hive are still actively using it to represent dates. Therefore, when this library sees `INT96` type, it will automatically treat it as a date for both serialization and deserialization. If you need to rather use a normal non-legacy date type, just annotate a property with `[ParquetTimestamp]`which by default serialises date with millisecond precision. If you need to increase precision, use `[ParquetTimestamp]` attribute with an appropriate precision, like `[ParquetTimestamp(ParquetTimestampResolution.Microseconds)]` and so on. Storing dates with microsecond precision relies on .NET `DateTime` type, which can only store microseconds starting from .NET 7.
-- `TimeSpan` is serialised with millisecond precision. but you can increase it by adding `[ParquetMicroSecondsTime]` attribute.
+- Dates (`DateTime`) are serialized as `INT96` numbers, which include nanoseconds in the day. In general, `INT96` is obsolete in Parquet; however, older systems such as Impala and Hive are still actively using it to represent dates. Therefore, when this library sees an `INT96` type, it will automatically treat it as a date for both serialization and deserialization. If you prefer a non-legacy date type, annotate a property with `[ParquetTimestamp]`, which by default serializes dates with millisecond precision. If you need to increase precision, use the `[ParquetTimestamp]` attribute with an appropriate precision, like `[ParquetTimestamp(ParquetTimestampResolution.Microseconds)]`. Storing dates with microsecond precision relies on .NET `DateTime`, which can only store microseconds starting from .NET 7.
+- `TimeSpan` is serialized with millisecond precision, but you can increase it by adding the `[ParquetMicroSecondsTime]` attribute.
 - `decimal` is serialized with precision (number of digits in a number) of `38` and scale (number of digits to the right of the decimal point in a number) of `18`. If you need to use different precision/scale pair, use `[ParquetDecimal]` attribute, which allows to specify different precision and scale, i.e. `[ParquetDecimal(40, 20)]`.
 
 You can also serialize [more complex types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#nested-types) supported by the Parquet format, like lists or maps. These are called *nested types* and they can be useful for organizing your information. However, they also come with a trade-off: they make your code slower and use more CPU resources. That's why you should only use them when you really need them and not just because they look cool. Simple columns are faster and easier to work with, so stick to them whenever you can.
@@ -277,7 +279,7 @@ REQUIRED group Addresses (LIST) {
 
 ### Maps
 
-Maps are useful constructs to serialize key-value pairs where each row can have different amount of keys and they are not known beforehand. It's like duck typing in a strongly typed world. A property will be treated as a native parquet map, if it's type is of generic `IDictionary<TKey, TValue>`.
+Maps are useful constructs to serialize key-value pairs where each row can have a different number of keys and they are not known beforehand. It's like duck typing in a strongly typed world. A property will be treated as a native Parquet map if its type is the generic `IDictionary<TKey, TValue>`.
 
 ### Legacy Repeatable
 
@@ -304,14 +306,14 @@ class Primitives {
 
 Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-collection-types?pivots=dotnet-7-0), here are collections Parquet.Net currently supports:
 
-| Type                                                         | Serialization | Deserialization |
-| ------------------------------------------------------------ | ------------- | --------------- |
-| [Single-dimensional array](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/single-dimensional-arrays) `**` | ✔️             | ❌               |
-| [Multi-dimensional arrays](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/arrays/multidimensional-arrays) `*` | ❌             | ❌               |
-| [`IList<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ❌`**`           |
-| [`List<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=net-7.0) | ✔️             | ✔️               |
-| [`IDictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.idictionary-2?view=net-7.0) `**` | ❌             | ❌               |
-| [`Dictionary<TKey, TValue>`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=net-7.0) | ✔️             | ✔️               |
+| Type | Serialization | Deserialization |
+| --- | --- | --- |
+| Single-dimensional array (`T[]`) | ✔️ | ❌ |
+| Multi-dimensional arrays | ❌ | ❌ |
+| `IList<T>` | ✔️ | ❌ |
+| `List<T>` | ✔️ | ✔️ |
+| `IDictionary<TKey, TValue>` | ❌ | ❌ |
+| `Dictionary<TKey, TValue>` | ✔️ | ✔️ |
 
 `*` Technically impossible or very hard to implement.
 `**` Technically possible, but not implemented yet.
@@ -368,7 +370,7 @@ var data = Enumerable.Range(0, 1_000).Select(i => new BeforeRename {
     lowerCase = i % 2 == 0 ? "on" : "off"
 }).ToList();
 
-// serialise to memory stream
+// serialize to memory stream
 using var ms = new MemoryStream();
 await ParquetSerializer.SerializeAsync(data, ms);
 ms.Position = 0;
@@ -377,7 +379,7 @@ ms.Position = 0;
 IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
 
 // this will successfully deserialize the data, because property names are case insensitive
-IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+IList<AfterRename> data3 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
     new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
 ```
 
@@ -441,7 +443,7 @@ File streams are generally not compatible with parallel processing. You can, how
 Here is an example of reading a file in parallel, where a unit of parallelism is a row group:
 
 ```C#
-var reader = await reader.CreateAsync(path);
+var reader = await ParquetReader.CreateAsync(path);
 var count = reader.RowGroupCount;
 
 await Parallel.ForAsync(0, count,
@@ -487,8 +489,8 @@ Schema is defined by creating an instance of `ParquetSchema` class and passing a
 You can declare a `DataField` by specifying a column name, and its type in the constructor, generic form is also supported:
 
 ```C#
-var field = new DataField("id", typeof(int));
-var field = new Field<int>("id");
+var field1 = new DataField("id", typeof(int));
+var field2 = new Field<int>("id");
 ```
 
 There are specialised versions for `DataField` allowing to specify more precise metadata about certain parquet data type, for instance `DecimalDataField` allows to specify precision and scale other than default values.
@@ -837,7 +839,7 @@ And we'd like to save the following data:
 ]
 ```
 
-Knowing how structs and arrays are serialised, we can flatten this hierarchy to the following form so that it can be saved to Parquet:
+Knowing how structs and arrays are serialized, we can flatten this hierarchy to the following form so that it can be saved to Parquet:
 
 | name | RL   | addresses.list.element.line1 | RL   | addresses.list.element.postcode | RL   |
 | ---- | ---- | ---------------------------- | ---- | ------------------------------- | ---- |
@@ -893,7 +895,7 @@ For more examples or just to run the above, please refer to unit tests in this p
 
 #### Maps
 
-Maps are stored as lists of structures, where each structure has two elements - key and value. Theoretically you don't need maps at all, it's just a hint to programming language to deserialise it in a more convenient way. 
+Maps are stored as lists of structures, where each structure has two elements - key and value. Theoretically you don't need maps at all; it's just a hint to the programming language to deserialize it in a more convenient way.
 
 
 
@@ -907,7 +909,7 @@ Untyped serializer gives this library the ability to write and read data without
 The main motivation points to develop untyped serializer are:
 
 - Single codebase for class serializer and untyped dictionary serializer.
-- De-serialization produces JSON-like structures in memory. These can be written back to JSON file as is.
+- Deserialization produces JSON-like structures in memory. These can be written back to JSON files as-is.
 - Row API is an old legacy that is somewhat buggy and very hard to evolve and fix.
 
 In this API, everything is `Dictionary<string, object>`. For a simple use-case, with the following schema:
@@ -938,7 +940,7 @@ For more examples, see `ParquetSerializerTests.cs` in the codebase. The document
 ```C#
 DataFrame df;
 await df.WriteAsync(stream);
-DataFrame dfr = await fs.ReadParquetAsDataFrameAsync();
+DataFrame dfr = await stream.ReadParquetAsDataFrameAsync();
 ```
 
 - Original blog post "[An Introduction to DataFrame](https://devblogs.microsoft.com/dotnet/an-introduction-to-dataframe/)".
