@@ -32,21 +32,6 @@ namespace Parquet.Schema {
         /// </summary>
         public virtual bool IsNullable { get; internal set; } = false;
 
-        internal List<string> GetNaturalChildPath(List<string> path) {
-            if(SchemaType == SchemaType.List) {
-                // element.list.element.child
-                return path.Skip(3).ToList();
-            }
-
-            if(SchemaType == SchemaType.Map) {
-                // element.key_value.key|value
-                return path.Skip(2).ToList();
-            }
-
-            // element.child
-            return path.Skip(1).ToList();
-        }
-
         /// <summary>
         /// Max repetition level
         /// </summary>
@@ -100,17 +85,96 @@ namespace Parquet.Schema {
         /// </summary>
         internal virtual Field[] Children { get; } = Array.Empty<Field>();
 
-        internal virtual Field[] NaturalChildren {
-            get {
-                if(SchemaType == SchemaType.List) {
-                    return Children[0].Children;
-                }
+        /// <summary>
+        /// Gets <see cref="Children"/> but flattens out any structural nesting that is only there to satisfy Parquet format requirements.
+        /// </summary>
+        internal virtual Field[] LogicalChildren => Children;
 
-                return Children;
+        internal List<string> GetNaturalChildPath(List<string> path) {
+
+            switch(SchemaType) {
+
+                // data or struct - just skip current element, there is no extra nesting
+                case SchemaType.Data:
+                    return path.Skip(1).ToList();
+                case SchemaType.Struct:
+                    return path.Skip(1).ToList();
+                // list nests "list" marker and "element" marker, so skip those two, but recurse into element as there might be more complications further
+                case SchemaType.List:
+                    // element.list.element.child
+                    return path.Skip(3).ToList();
+                // map nests "key_value" marker, so skip that, but recurse into key|value as there might be more complications further
+                case SchemaType.Map:
+                    // element.key_value.key|value
+                    return path.Skip(2).ToList();
+
+                default:
+                    throw new ArgumentException($"Unsupported schema '{SchemaType}' type for getting natural child path");
             }
+
+
+            //if(SchemaType == SchemaType.List) {
+            //    // element.list.element.child
+            //    return path.Skip(3).ToList();
+            //}
+
+            //if(SchemaType == SchemaType.Map) {
+            //    // element.key_value.key|value
+            //    return path.Skip(2).ToList();
+            //}
+
         }
 
-        internal virtual bool IsAtomic => false;
+        /// <summary>
+        /// Builds path to navigate inside CLR type hierarchy, rather than native Parquet schema. Used from class serializer.
+        /// todo: If we had a reference to schema, we would not have to pass it as an argument. Theoretically it's possible to pass wrong schema here, but I hape it won't happen as it's internal. We already have a flag which can be replaced with the actual schema reference.
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <returns></returns>
+        internal IReadOnlyCollection<Field> BuildExperimentalPath(ParquetSchema schema) {
+            var result = new List<Field>();
+            IReadOnlyCollection<Field> allFields = schema.Flatten();
+
+            Field? current = this;
+            while(current != null) {
+                result.Add(current);
+                current = allFields.FirstOrDefault(f => f.Children.Contains(current));
+            };
+
+            result.Reverse();
+
+            //for(int i = 0; i < result.Count; i++) {
+            //    Field f = result[i];
+            //    if(f.SchemaType == SchemaType.List) {
+            //        // remove .list
+            //        result.RemoveAt(i + 1);
+            //    }
+            //}
+
+            return result;
+        }
+
+        internal bool IsAtomic => SchemaType == SchemaType.Data;
+
+        internal bool IsCollection =>
+            SchemaType == SchemaType.List ||
+            SchemaType == SchemaType.Map ||
+            (SchemaType == SchemaType.Data && this is DataField rdf && rdf.IsArray);
+
+        internal bool IsAtomicFieldOrCollectionItem =>
+            IsAtomic || (this is ListField lf && lf.Item.IsAtomic);
+
+        internal IReadOnlyCollection<Field> NextDotPropertyPath(IReadOnlyCollection<Field> path) {
+            if(path.Count == 0)
+                return Array.Empty<Field>();
+
+            Field field = path.First();
+            return field.SchemaType switch {
+                //SchemaType.List => path.Skip(2).ToList(),
+                _ => path.Skip(1).ToList()
+            };
+        }
+
 
         /// <summary>
         /// Rename this field. Renaming should also fix up the path in complex nested schemas.

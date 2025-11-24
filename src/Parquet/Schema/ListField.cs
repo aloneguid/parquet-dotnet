@@ -82,6 +82,8 @@ namespace Parquet.Schema {
 
         internal override Field[] Children => [Item];
 
+        internal override Field[] LogicalChildren => Item.Children;
+
         internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
@@ -124,8 +126,6 @@ namespace Parquet.Schema {
             Item = field ?? throw new ArgumentNullException(nameof(field));
             _itemAssigned = true;
         }
-
-        internal override bool IsAtomic => base.IsAtomic || Item.IsAtomic;
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) {

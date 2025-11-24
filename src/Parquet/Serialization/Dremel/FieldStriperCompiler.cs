@@ -59,13 +59,6 @@ namespace Parquet.Serialization.Dremel {
             _valuesListAddMethod = typeof(List<>).MakeGenericType(_df.ClrType).GetMethod(nameof(IList.Add))!;
         }
 
-        private static void Discover(Field field, out bool isRepeated) {
-            isRepeated =
-                field.SchemaType == SchemaType.List ||
-                field.SchemaType == SchemaType.Map ||
-                (field.SchemaType == SchemaType.Data && field is DataField rdf && rdf.IsArray);
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -134,8 +127,12 @@ namespace Parquet.Serialization.Dremel {
                 _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
         }
 
-        private Expression WhileBody(Expression element, bool isAtomic, int dl, ParameterExpression currentRlVar,
-            ParameterExpression seenFieldsVar, Field field, int rlDepth, Type elementType, List<string> path) {
+        /// <summary>
+        /// Corresponds to L6-L20 of Dremel paper Appendix A (Column-Sripting Algorithm)
+        /// </summary>
+        private Expression Decode(Expression element, Type elementType,
+            bool isAtomic, int dl, ParameterExpression currentRlVar,
+            ParameterExpression seenFieldsVar, Field field, int rlDepth, IReadOnlyCollection<Field> chainPath) {
 
             // dl is DL of current element in path, not end DataField
 
@@ -177,7 +174,7 @@ namespace Parquet.Serialization.Dremel {
                     WriteValue(valueVar, dl, chRepetitionLevelVar, isLeafVar, isAtomic),
                     isAtomic
                         ? Expression.Empty()
-                        : DissectRecord(valueVar, field, field.NaturalChildren, field.GetNaturalChildPath(path), elementType, rlDepth, chRepetitionLevelVar)
+                        : DissectRecord(valueVar, elementType, field, field.NextDotPropertyPath(chainPath), rlDepth, chRepetitionLevelVar)
                 )
 
             );
@@ -194,7 +191,7 @@ namespace Parquet.Serialization.Dremel {
         }
 
         private static int GetWriteableDL(Field f) {
-            if(f is ListField lf && lf.IsAtomic)
+            if(f is ListField lf && lf.Item.IsAtomic)
                 return lf.Item.MaxDefinitionLevel;
 
             return f.MaxDefinitionLevel;
@@ -228,13 +225,13 @@ namespace Parquet.Serialization.Dremel {
         private Expression GetClassMemberAccessorAndType(
             Type rootType,
             Expression rootVar,
-            Field? parentField,
+            SchemaType? parentSchemaType,
             Field field,
             string name,
             out Type type) {
             if(_isUntypedClass) {
 
-                if(parentField != null && parentField.SchemaType == SchemaType.Map && field.SchemaType == SchemaType.Data) {
+                if(parentSchemaType != null && parentSchemaType == SchemaType.Map && field.SchemaType == SchemaType.Data) {
                     type = GetIdealUntypedType(field);
                     return Expression.Property(rootVar, name);
                 }
@@ -277,88 +274,115 @@ namespace Parquet.Serialization.Dremel {
                 type = fi.FieldType;
                 result = Expression.Field(result, name);
             } else {
-                throw new NotSupportedException($"There is no class property of field called '{name}'.");
+                throw new NotSupportedException($"Failed to look up {field}: there is no class property of field called '{name}' in '{type}'.");
             }
 
             return result;
         }
 
         private Expression DissectRecord(
-            Expression rootVar,
-            Field? parentField,
-            Field[] levelFields,
-            List<string> path,
-            Type rootType,
-            int rlDepth,
-            ParameterExpression currentRlVar) {
+            Expression rootVar, Type rootType, Field? parentField,
+            IReadOnlyCollection<Field> schemaPath,
+            int rlDepth, ParameterExpression currentRlVar) {
 
             // walk schema, not class instance
             // this means value must be propagated down the tree, even if it's not present
 
-            string currentPathPart = path.First();
-            Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
-            if(field == null)
-                throw new NotSupportedException($"field '{currentPathPart}' not found");
-            int dl = GetWriteableDL(field);
+            Field schemaField = schemaPath.First();
+            int dl = GetWriteableDL(schemaField);
 
-            FieldStriperCompiler<TClass>.Discover(field, out bool isRepeated);
-            bool isAtomic = field.IsAtomic;
+            bool isRepeated = schemaField.IsCollection;
+            bool isAtomic = schemaField.IsAtomicFieldOrCollectionItem;
             if(isRepeated)
                 rlDepth += 1;
 
-            // while "decoder"
+            // while "decoder" (L5)
 
-            string levelPropertyName = field.ClrPropName ?? field.Name;
-            Expression levelProperty = GetClassMemberAccessorAndType(rootType, rootVar, parentField, field, levelPropertyName, out Type levelPropertyType);
-            ParameterExpression seenFieldsVar = Expression.Variable(typeof(HashSet<string>), $"seenFieldsVar_{levelPropertyName}");
-            ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{levelPropertyName}");
+            // todo: we need to build "while has more field values" loop, which in case of atomics is simple - just one value per record
+            // for collections, we need to iterate over the elements, however the body is the same
+            // what is the element type in the loop? for atomics it's the field type, for collections - the item type (child)
+
+            // --- begin: experiment
+
+            // - if it's repeated, just iterate over the collection
+            // - if it's not repeated, we can do single iteration with one element being the field
+
+            Expression currentVar;
+            Type currentVarType;
+            string nameTag = schemaField.Path.ToString();
+            if(parentField != null && parentField.SchemaType == SchemaType.List) {
+                // no need to push into collection again
+                currentVar = rootVar;
+                currentVarType = rootType;
+            } else {
+                string levelPropertyName = schemaField.ClrPropName ?? schemaField.Name;
+                currentVar = GetClassMemberAccessorAndType(rootType, rootVar,
+                    parentField?.SchemaType, schemaField, levelPropertyName, out currentVarType);
+            }
+
+            // --- end
+
+
+            //string levelPropertyName = schemaField.ClrPropName ?? schemaField.Name;
+            //Expression levelProperty = GetClassMemberAccessorAndType(rootType, rootVar,
+                //parentField?.SchemaType, schemaField, levelPropertyName, out Type levelPropertyType);
+            ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{nameTag}");
 
             Expression body;
             if(isRepeated) {
-                Type elementType = ExtractElementTypeFromEnumerableType(levelPropertyType);
-                Expression collection = levelProperty;
-                ParameterExpression element = Expression.Variable(elementType, $"element_{levelPropertyName}");
-                ParameterExpression countVar = Expression.Variable(typeof(int), $"count_{levelPropertyName}");
-                Expression elementProcessor = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, elementType, path);
-                body = elementProcessor.Loop(collection, elementType, element, countVar);
+                Type collectionElementType = ExtractElementTypeFromEnumerableType(currentVarType);
+                Expression collection = currentVar;
+                ParameterExpression elementHolder = Expression.Variable(collectionElementType, $"element_{nameTag}");
+                ParameterExpression loopCounter = Expression.Variable(typeof(int), $"count_{nameTag}");
+                Expression elementProcessor = Decode(elementHolder, collectionElementType,
+                    isAtomic, dl, currentRlVar, seenVar, schemaField, rlDepth,
+                    schemaPath);
+                body = elementProcessor.Loop(collection, collectionElementType, elementHolder, loopCounter);
 
                 // if levelProperty (collection) is null, we need extra iteration with null value (which rep and def level?)
                 // we do this iteration with non-collection condition below, so need to be done for collection as well.
                 body = Expression.Block(
-                    new[] { countVar },
-                    Expression.Assign(countVar, Expression.Constant(0)),
+                    [loopCounter],
+                    Expression.Assign(loopCounter, Expression.Constant(0)),
                     Expression.IfThenElse(
-                        Expression.Equal(levelProperty, Expression.Constant(null)),
-                        WriteMissingValue(GetNullCollectionDL(field), currentRlVar),
+                        Expression.Equal(currentVar, Expression.Constant(null)),
+                        WriteMissingValue(GetNullCollectionDL(schemaField), currentRlVar),
                         Expression.Block(
                             body,
                             // check if no elements are written and write out empty list if so
                             Expression.IfThen(
-                                Expression.Equal(countVar, Expression.Constant(0)),
-                                WriteMissingValue(GetEmptyCollectionDL(field), currentRlVar))
+                                Expression.Equal(loopCounter, Expression.Constant(0)),
+                                WriteMissingValue(GetEmptyCollectionDL(schemaField), currentRlVar))
                             )));
             } else {
-                Expression element = levelProperty;
-                body = WhileBody(element, isAtomic, dl, currentRlVar, seenVar, field, rlDepth, levelPropertyType, path);
+                body = Decode(currentVar, currentVarType,
+                    isAtomic, dl, currentRlVar, seenVar, schemaField, rlDepth, schemaPath);
             }
 
             return Expression.Block(
-                new[] { seenVar },
+                [seenVar],
                 Expression.Assign(seenVar, Expression.Constant(false)),
                 body);
         }
 
         public FieldStriper<TClass> Compile() {
 
-            ParameterExpression currentRl = Expression.Variable(typeof(int), "currentRl");
+            ParameterExpression currentRepetitionLevel = Expression.Variable(typeof(int), "currentRl");
 
-            Expression iteration = DissectRecord(_classElementVar, null, _schema.Fields.ToArray(), _df.Path.ToList(), typeof(TClass), 0, currentRl);
+            IReadOnlyCollection<Field> dataFieldPath = _df.BuildExperimentalPath(_schema);
+
+            // compile iteration to shred one class instance (it can contain multiple values)
+            Expression iteration = DissectRecord(
+                _classElementVar, typeof(TClass),
+                null,
+                dataFieldPath,
+                0, currentRepetitionLevel);
             Expression iterationLoop = iteration.Loop(_classesParam, typeof(TClass), _classElementVar);
 
             BlockExpression block = Expression.Block(
-                new[] { _valuesVar, _dlsVar, _rlsVar, _classElementVar, currentRl },
+                [_valuesVar, _dlsVar, _rlsVar, _classElementVar, currentRepetitionLevel],
 
-                Expression.Assign(currentRl, Expression.Constant(0)),
+                Expression.Assign(currentRepetitionLevel, Expression.Constant(0)),
 
                 // init 3 building blocks
                 Expression.Block(

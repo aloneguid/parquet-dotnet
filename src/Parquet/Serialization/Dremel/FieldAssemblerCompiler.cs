@@ -138,13 +138,6 @@ namespace Parquet.Serialization.Dremel {
                 Expression.Assign(_hasData, Expression.Constant(false)));
         }
 
-        private static void Discover(Field field, out bool isRepeated) {
-            isRepeated =
-                field.SchemaType == SchemaType.List ||
-                field.SchemaType == SchemaType.Map ||
-                (field.SchemaType == SchemaType.Data && field is DataField rdf && rdf.IsArray);
-        }
-
 #if DEBUG
         private static void InjectLevelDebug(string levelPropertyName,
             object value, int dataIdx,
@@ -205,7 +198,7 @@ namespace Parquet.Serialization.Dremel {
         }
 
         private static void GetReadLevels(Field f, out int dlDepth, out int rlDepth) {
-            if(f is ListField lf && lf.IsAtomic) {
+            if(f is ListField lf && lf.Item.IsAtomic) {
                 dlDepth = lf.Item.MaxDefinitionLevel;
                 rlDepth = lf.Item.MaxRepetitionLevel;
             } else {
@@ -362,17 +355,18 @@ namespace Parquet.Serialization.Dremel {
         }
 
 
-        private Expression InjectLevel(Expression rootVar, Type rootType, Field? parentField, Field[] levelFields, List<string> path) {
+        private Expression InjectLevel(Expression rootVar, Type rootType, Field? parentField, Field[] levelFields,
+            List<string> path) {
 
             string currentPathPart = path.First();
             Field? field = levelFields.FirstOrDefault(x => x.Name == currentPathPart);
             if(field == null)
-                throw new NotSupportedException($"field '{currentPathPart}' not found");
+                throw new NotSupportedException($"field '{currentPathPart}' not found in [{string.Join(", ", levelFields.Select(x => x.Name))}]");
 
             GetReadLevels(field, out int dlDepth, out int rlDepth);
 
-            Discover(field, out bool isRepeated);
-            bool isAtomic = field.IsAtomic;
+            bool isRepeated = field.IsCollection;
+            bool isAtomic = field.IsAtomicFieldOrCollectionItem;
             string levelPropertyName = field.ClrPropName ?? field.Name;
 
             ClassMember classProperty = GetClassMember(rootType, rootVar, parentField, field, levelPropertyName);   
@@ -421,7 +415,7 @@ namespace Parquet.Serialization.Dremel {
 
                         // keep traversing the tree
                         InjectLevel(collectionElementVar, levelPropertyElementType,
-                            field, field.NaturalChildren, field.GetNaturalChildPath(path))
+                            field, field.LogicalChildren, field.GetNaturalChildPath(path))
 
                         );
                 }
@@ -453,7 +447,7 @@ namespace Parquet.Serialization.Dremel {
 
                         InjectLevel(deepVar, classProperty.Type,
                             field,
-                            field.NaturalChildren,
+                            field.LogicalChildren,
                             field.GetNaturalChildPath(path)));
                 }
             }

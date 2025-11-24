@@ -475,6 +475,22 @@ namespace Parquet.Test.Serialisation {
             await Compare(data);
         }
 
+        class ListOfListsOfAtomicsPoco {
+            public int Id { get; set; }
+            public List<List<int>>? Lists { get; set; }
+
+        }
+
+        [Fact]
+        public async Task List_List_Atomics_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new ListOfListsOfAtomicsPoco {
+                Id = i,
+                Lists = Enumerable.Range(0, 2).Select(m => new List<int> { 1, 2, 3 }).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
         class ListOfDictionariesOfStructsItemPoco {
             public int Id { get; set; }
 

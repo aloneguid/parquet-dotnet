@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.Meta;
 using Parquet.Schema;
 using Parquet.Serialization;
@@ -25,6 +26,7 @@ namespace Parquet.Underfloor {
         private ParquetReader? _reader;
         private ParquetSchema? _schema;
         private FileMetaData? _meta;
+        private DataField[]? _rawDataFields;
 
         public static async Task<WorkFile> CreateAsync(string? path) {
             var wf = new WorkFile();
@@ -42,6 +44,8 @@ namespace Parquet.Underfloor {
 
                 wf.Metadata = wf._reader.Metadata;
                 wf.Schema = wf._reader.Schema;
+                wf._rawDataFields = wf._reader.Schema.DataFields;
+                wf.RawDataFieldsPaths = wf._rawDataFields.Select(df => string.Join('.', df.Path)).ToArray();
                 wf.RowGroups = wf._reader.RowGroups;
                 wf.RowGroupDisplayNames = wf.RowGroups?.Select((rg, i) => $"#{i + 1}").ToArray();
                 wf.CurrentRowGroupIndex = 0;
@@ -113,6 +117,18 @@ namespace Parquet.Underfloor {
 
         public string? SampleReadDurationDisplay { get; set; }
 
+        public DataField[]? RawDataFields => _rawDataFields;
+
+        public string[]? RawDataFieldsPaths;
+
+        public uint CurrentRawDataFieldIndex = 0;
+
+        public DataColumn? CurrentRawDataFieldData;
+
+        public ReadStatus CurrentRawDataFieldDataReadStatus { get; set; } = ReadStatus.NotStarted;
+
+        public Exception? CurrentRawDataFieldReadError = null;
+
         public async Task ReadDataSampleAsync() {
             if(_stream == null || SampleReadStatus == ReadStatus.InProgress)
                 return;
@@ -121,6 +137,7 @@ namespace Parquet.Underfloor {
                 SampleReadStatus = ReadStatus.InProgress;
 
                 DateTime start = DateTime.UtcNow;
+                _stream.Seek(0, SeekOrigin.Begin);
                 try {
                     ParquetSerializer.UntypedResult ur = await ParquetSerializer.DeserializeAsync(_stream,
                         new ParquetSerializerOptions {
@@ -138,6 +155,27 @@ namespace Parquet.Underfloor {
                     SampleReadDuration = DateTime.UtcNow - start;
                     SampleReadDurationDisplay = SampleReadDuration.ToString();
                 }
+            }
+        }
+
+        public async Task ReadRawDataFieldAsync() {
+            if(_stream == null || _rawDataFields == null)
+                return;
+
+            DataField df = _rawDataFields[CurrentRawDataFieldIndex];
+            _stream.Seek(0, SeekOrigin.Begin);
+            CurrentRawDataFieldData = null;
+            CurrentRawDataFieldDataReadStatus = ReadStatus.InProgress;
+
+            try {
+                using ParquetReader pr = await ParquetReader.CreateAsync(_stream);
+                using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
+                DataColumn dc = await rgr.ReadColumnAsync(df);
+                CurrentRawDataFieldData = dc;
+                CurrentRawDataFieldDataReadStatus = ReadStatus.Completed;
+            } catch(Exception ex) {
+                CurrentRawDataFieldReadError = ex;
+                CurrentRawDataFieldDataReadStatus = ReadStatus.Failed;
             }
         }
 
