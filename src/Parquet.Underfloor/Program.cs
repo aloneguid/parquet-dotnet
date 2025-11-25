@@ -139,7 +139,7 @@ void RenderRawSchema(List<SchemaElement> schemaElements) {
                     FieldRepetitionType.REPEATED => Emphasis.Info,
                     _ => Emphasis.None
                 };
-                Label(se.RepetitionType.ToString(), emp);
+                Label(se.RepetitionType?.ToString() ?? "", emp);
             }
             t.NextColumn();
             Label(FormatLogicalType(se.LogicalType));
@@ -469,7 +469,7 @@ void RenderRawColumnData() {
             dc.NumValues,
             (int row, int column) => {
                 if(column == 0) {
-                    Label(row.ToString());
+                    Label(row.ToString(), isEnabled: false);
                 } else if(column == 1) {
                     if(dc.Data == null) {
                         Label("NULL DATA", Emphasis.Error);
@@ -480,7 +480,7 @@ void RenderRawColumnData() {
                         if(value == null) {
                             Label("NULL", isEnabled: false);
                         } else {
-                            Label(value?.ToString() ?? "");
+                            Label(value?.ToString() ?? "", Emphasis.Primary);
                         }
                     }
                 } else if(column == 2) {
@@ -488,7 +488,7 @@ void RenderRawColumnData() {
                         if(dc.DefinitionLevels.Length <= row) {
                             Label("NO VALUE", Emphasis.Error);
                         } else {
-                            Label(dc.DefinitionLevels[row].ToString());
+                            Label(dc.DefinitionLevels[row].ToString(), Emphasis.Secondary);
                         }
                     }
                 } else if(column == 3) {

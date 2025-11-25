@@ -86,46 +86,6 @@ namespace Parquet.Schema {
         internal virtual Field[] Children { get; } = Array.Empty<Field>();
 
         /// <summary>
-        /// Gets <see cref="Children"/> but flattens out any structural nesting that is only there to satisfy Parquet format requirements.
-        /// </summary>
-        internal virtual Field[] LogicalChildren => Children;
-
-        internal List<string> GetNaturalChildPath(List<string> path) {
-
-            switch(SchemaType) {
-
-                // data or struct - just skip current element, there is no extra nesting
-                case SchemaType.Data:
-                    return path.Skip(1).ToList();
-                case SchemaType.Struct:
-                    return path.Skip(1).ToList();
-                // list nests "list" marker and "element" marker, so skip those two, but recurse into element as there might be more complications further
-                case SchemaType.List:
-                    // element.list.element.child
-                    return path.Skip(3).ToList();
-                // map nests "key_value" marker, so skip that, but recurse into key|value as there might be more complications further
-                case SchemaType.Map:
-                    // element.key_value.key|value
-                    return path.Skip(2).ToList();
-
-                default:
-                    throw new ArgumentException($"Unsupported schema '{SchemaType}' type for getting natural child path");
-            }
-
-
-            //if(SchemaType == SchemaType.List) {
-            //    // element.list.element.child
-            //    return path.Skip(3).ToList();
-            //}
-
-            //if(SchemaType == SchemaType.Map) {
-            //    // element.key_value.key|value
-            //    return path.Skip(2).ToList();
-            //}
-
-        }
-
-        /// <summary>
         /// Builds path to navigate inside CLR type hierarchy, rather than native Parquet schema. Used from class serializer.
         /// todo: If we had a reference to schema, we would not have to pass it as an argument. Theoretically it's possible to pass wrong schema here, but I hape it won't happen as it's internal. We already have a flag which can be replaced with the actual schema reference.
         /// </summary>

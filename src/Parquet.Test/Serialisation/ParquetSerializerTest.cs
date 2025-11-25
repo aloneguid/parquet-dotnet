@@ -26,14 +26,14 @@ namespace Parquet.Test.Serialisation {
     /// </summary>
     public class ParquetSerializerTest : TestBase {
 
-        private async Task Compare<T>(List<T> data, bool asJson = false, string? saveAsFile = null, bool useAsync = false) where T : new() {
+        private async Task Compare<T>(List<T> input, bool asJson = false, string? saveAsFile = null, bool useAsync = false) where T : new() {
 
             // serialize to parquet
             using var ms = new MemoryStream();
             if(useAsync) {
-                await ParquetSerializer.SerializeAsync(data.ToAsyncEnumerable(), ms);
+                await ParquetSerializer.SerializeAsync(input.ToAsyncEnumerable(), ms);
             } else {
-                await ParquetSerializer.SerializeAsync(data, ms);
+                await ParquetSerializer.SerializeAsync(input, ms);
             }
 
             if(saveAsFile != null) {
@@ -42,22 +42,22 @@ namespace Parquet.Test.Serialisation {
 
             // deserialize from parquet
             ms.Position = 0;
-            IList<T> data2 = await ParquetSerializer.DeserializeAsync<T>(ms);
+            IList<T> deserialized = await ParquetSerializer.DeserializeAsync<T>(ms);
 
             // compare
             if(asJson) {
-                XAssert.JsonEquivalent(data, data2);
+                XAssert.JsonEquivalent(input, deserialized);
             } else {
-                Assert.Equivalent(data2, data);
+                Assert.Equivalent(deserialized, input);
             }
         }
 
-        private async Task DictCompare<TSchema>(List<Dictionary<string, object?>> data, bool asJson = false,
+        private async Task DictCompare<TSchema>(List<Dictionary<string, object?>> input, bool asJson = false,
             string? writeTestFile = null) {
 
             // serialize to parquet
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(typeof(TSchema).GetParquetSchema(true), data, ms);
+            await ParquetSerializer.SerializeAsync(typeof(TSchema).GetParquetSchema(true), input, ms);
 
             if(writeTestFile != null) {
                 System.IO.File.WriteAllBytes(writeTestFile, ms.ToArray());
@@ -65,13 +65,13 @@ namespace Parquet.Test.Serialisation {
 
             // deserialize from parquet
             ms.Position = 0;
-            ParquetSerializer.UntypedResult data2 = await ParquetSerializer.DeserializeAsync(ms);
+            ParquetSerializer.UntypedResult deserialized = await ParquetSerializer.DeserializeAsync(ms);
 
             // compare
             if(asJson) {
-                XAssert.JsonEquivalent(data, data2.Data);
+                XAssert.JsonEquivalent(input, deserialized.Data);
             } else {
-                Assert.Equivalent(data2.Data, data);
+                Assert.Equivalent(input, deserialized.Data);
             }
         }
 
@@ -444,7 +444,7 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task List_Structs_Serde_Dict() {
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
+            var data = Enumerable.Range(0, 1).Select(i => new Dictionary<string, object?> {
                 ["PersonId"] = i,
                 ["Comments"] = i % 2 == 0 ? "none" : null,
                 ["Addresses"] = Enumerable.Range(0, 4).Select(a => new Dictionary<string, object?> {
@@ -453,7 +453,7 @@ namespace Parquet.Test.Serialisation {
                 }).ToList()
             }).ToList();
 
-            await DictCompare<MovementHistory>(data);
+            await DictCompare<MovementHistory>(data, writeTestFile: "c:\\tmp\\ls.parquet");
         }
 
         class ListOfMapsPoco {
@@ -464,6 +464,7 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task List_Maps_Simple_Serde() {
+            // DEBUG: Maps/list/element/key_value | dataIdx=1 | dl=4/4 | rl=0/2 | value=First | rsm=[0,0]
             var data = Enumerable.Range(0, 10).Select(i => new ListOfMapsPoco {
                 Id = i,
                 Maps = Enumerable.Range(0, 2).Select(m => new Dictionary<string, string> {

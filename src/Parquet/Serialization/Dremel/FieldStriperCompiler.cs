@@ -298,12 +298,9 @@ namespace Parquet.Serialization.Dremel {
 
             // while "decoder" (L5)
 
-            // todo: we need to build "while has more field values" loop, which in case of atomics is simple - just one value per record
-            // for collections, we need to iterate over the elements, however the body is the same
-            // what is the element type in the loop? for atomics it's the field type, for collections - the item type (child)
-
-            // --- begin: experiment
-
+            // We need to build "while has more field values" loop, which in case of atomics is simple - just one value per record, so it's not even worth looping.
+            // For collections, we need to iterate over the elements, however the body is the same as for atomics.
+            // What is the element type in the loop? for atomics it's the field type, for collections - the item type (child)
             // - if it's repeated, just iterate over the collection
             // - if it's not repeated, we can do single iteration with one element being the field
 
@@ -311,7 +308,7 @@ namespace Parquet.Serialization.Dremel {
             Type currentVarType;
             string nameTag = schemaField.Path.ToString();
             if(parentField != null && parentField.SchemaType == SchemaType.List) {
-                // no need to push into collection again
+                // no need to push into class hierarchy - we are already at collection item level
                 currentVar = rootVar;
                 currentVarType = rootType;
             } else {
@@ -320,12 +317,6 @@ namespace Parquet.Serialization.Dremel {
                     parentField?.SchemaType, schemaField, levelPropertyName, out currentVarType);
             }
 
-            // --- end
-
-
-            //string levelPropertyName = schemaField.ClrPropName ?? schemaField.Name;
-            //Expression levelProperty = GetClassMemberAccessorAndType(rootType, rootVar,
-                //parentField?.SchemaType, schemaField, levelPropertyName, out Type levelPropertyType);
             ParameterExpression seenVar = Expression.Variable(typeof(bool), $"seen_{nameTag}");
 
             Expression body;

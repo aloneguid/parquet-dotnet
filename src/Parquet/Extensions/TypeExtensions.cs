@@ -58,8 +58,9 @@ namespace Parquet {
         }
 
         public static Type ExtractElementTypeFromEnumerableType(this Type t) {
-            if(t.TryExtractIEnumerableType(out Type? iet))
+            if(t.TryExtractIEnumerableType(out Type? iet)) {
                 return iet!;
+            }
 
             throw new ArgumentException($"type {t} is not single-element generic enumerable", nameof(t));
         }

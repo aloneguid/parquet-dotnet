@@ -283,17 +283,7 @@ Maps are useful constructs to serialize key-value pairs where each row can have 
 
 ### Legacy Repeatable
 
-One of the features of Parquet files is that they can contain simple repeatable fields, also known as arrays, that can store multiple values for a single column. However, this feature is not widely supported by most of the systems that process Parquet files, and it may cause errors or compatibility issues. An example of such a file can be found in test data folder, called `legacy_primitives_collection_arrays.parquet`.  To read an array of primitive values, such as integers or booleans, from a parquet file created by another system, you might think that you can simply use a list property in your class, like this:
-
-```C#
-class Primitives {
-    public List<bool>? Booleans { get; set; }
-}
-
-IList<Primitives> data = await ParquetSerializer.DeserializeAsync<Primitives>(input);
-```
-
-However, this will not work, because this library expects a list of complex objects, not a list of primitives. It will throw an exception on an array in the parquet file. To fix this problem, you need to use the `ParquetSimpleRepeatable` attribute on the property:
+Parquet files can contain simple repeatable fields (AKA arrays) that store multiple values for a single column, which is not widely supported. To read an array of primitive values, use the `ParquetSimpleRepeatable` attribute on the property:
 
 ```C#
 class Primitives {
@@ -301,6 +291,9 @@ class Primitives {
     public List<bool>? Booleans { get; set; }
 }
 ```
+
+> [!WARNING]
+> Deserializing legacy repeatable fields incurs a massive performance penalty if arrays are large. Arrays are immutable in .NET, therefore every column value will re-create a new array of `Length + 1`, copy all the elements, and add one more.
 
 ### Supported collection types
 
