@@ -219,38 +219,68 @@ namespace Parquet.Serialization.Dremel {
                     _rsmVar.ClearArray(_rlVar)));
         }
 
-        private Expression GetCollectionElement(Expression collection, int rlDepth,
+        private Expression AddOrGetCollectionItem(
+            Expression collection, int rlDepth,
             Type collectionType, Type elementType) {
-            ParameterExpression indexVar = Expression.Variable(typeof(int), "idx");
-            ParameterExpression resultElementVar = Expression.Variable(elementType, "elm");
+
+            // realistically this method will be called only for IList<T> and IDictionary<K,V>
+
+            ParameterExpression paramIdx = Expression.Variable(typeof(int), "idx");
+            ParameterExpression paramResult = Expression.Variable(elementType, "result");
             Expression downcastedCollection = Expression.Convert(collection, collectionType);
+            ParameterExpression paramDC = Expression.Variable(collectionType, "coll");
             PropertyInfo? indexerProperty = collectionType.GetProperty("Item", [typeof(int)]);
             return Expression.Block(
-                [indexVar, resultElementVar],
+                [paramIdx, paramResult, paramDC],
 
                 // C#: index = rsm[dlDepth - 1]
-                Expression.Assign(indexVar, Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1))),
+                Expression.Assign(paramIdx, Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1))),
+                Expression.Assign(paramDC, downcastedCollection),
 
                 Expression.IfThenElse(
-                    Expression.LessThanOrEqual(downcastedCollection.CollectionCount(collectionType), indexVar),
+                    Expression.LessThanOrEqual(paramDC.CollectionCount(collectionType), paramIdx),
 
                     Expression.Block(
-                        Expression.Assign(resultElementVar, Expression.New(elementType)),
-                        downcastedCollection.CollectionAdd(collectionType, resultElementVar, elementType)),
+                        Expression.Assign(paramResult, Expression.New(elementType)),
+                        paramDC.CollectionAdd(collectionType, paramResult, elementType)),
 
-                    Expression.Assign(resultElementVar, Expression.Property(downcastedCollection, indexerProperty!, indexVar))),
+                    Expression.Assign(paramResult, Expression.Property(paramDC, indexerProperty!, paramIdx))),
 
-                resultElementVar);
+                paramResult);
         }
 
-        private static void ReplaceIDictionaryTypes(Type t, out Type dictionaryType, out Type elementType) {
-            if(!t.TryExtractDictionaryType(out Type? keyType, out Type? valueType)) {
-                throw new NotSupportedException($"{t} is not a dictionary");
+        private static Type SanitizeType(Type t, out Type elementType) {
+            // handle Dictionary<K,V>
+            if(t.TryExtractDictionaryType(out Type? keyType, out Type? valueType)) {
+                elementType = typeof(ParquetMapKV<,>).MakeGenericType(keyType!, valueType!);
+                return typeof(ParquetMap<,>).MakeGenericType(keyType!, valueType!);
             }
 
-            dictionaryType = typeof(ParquetDictionary<,>).MakeGenericType(keyType!, valueType!);
-            elementType = typeof(ParquetDictionary<,>.ParquetDictionaryElement).MakeGenericType(keyType!, valueType!);
+            //// handle IList<Dictionary<K, V>>
+            //if(t.TryExtractIListType(out Type? elementType1)) {
+            //    if(elementType1!.TryExtractDictionaryType(out Type? kType, out Type? vType)) {
+            //        Type dictType = typeof(ParquetDictionary<,>).MakeGenericType(kType!, vType!);
+            //        elementType = dictType;
+            //        return typeof(List<>).MakeGenericType(dictType);
+            //    }
+            //}
+
+            if(t.TryExtractIEnumerableType(out Type? et)) {
+                elementType = et!;
+            } else {
+                elementType = t;
+            }
+            return t;
         }
+
+        //private static void ReplaceIDictionaryTypes(Type t, out Type dictionaryType, out Type elementType) {
+        //    if(!t.TryExtractDictionaryType(out Type? keyType, out Type? valueType)) {
+        //        throw new NotSupportedException($"{t} is not a dictionary");
+        //    }
+
+        //    dictionaryType = typeof(ParquetDictionary<,>).MakeGenericType(keyType!, valueType!);
+        //    elementType = typeof(ParquetDictionary<,>.ParquetDictionaryElement).MakeGenericType(keyType!, valueType!);
+        //}
 
         private static void GetReadLevels(Field f, out int dlDepth, out int rlDepth) {
             if(f is ListField lf && lf.Item.IsAtomic) {
@@ -282,10 +312,7 @@ namespace Parquet.Serialization.Dremel {
             }
         }
 
-        record ClassMember(Expression Accessor,
-            Expression IsNull,
-            Type Type,
-            bool IsGenericDictionary);
+        record ClassMember(Expression Accessor, Expression IsNull, Type Type);
 
         private Expression CreateInstance(Type t) {
             Expression r = t.IsArray
@@ -330,7 +357,6 @@ namespace Parquet.Serialization.Dremel {
         private ClassMember GetClassMember(Type rootType, Expression rootVar, Field? parentField, Field field, string name) {
             if(_isUntypedClass) {
                 Type type = GetIdealUntypedType(field);
-                bool isGenericDictionary = field.SchemaType == SchemaType.Map;
                 Expression accessor;
                 Expression isNull;
 
@@ -346,8 +372,7 @@ namespace Parquet.Serialization.Dremel {
 
                 return new ClassMember(accessor,
                     isNull,
-                    type,
-                    isGenericDictionary);
+                    type);
 
             } else {
 
@@ -383,7 +408,8 @@ namespace Parquet.Serialization.Dremel {
 
                 if(isGenericDictionary) {
                     // Tell the pipeline we *expect* ParquetDictionary<,>
-                    ReplaceIDictionaryTypes(type, out Type expectedDictType, out _);
+                    //ReplaceIDictionaryTypes(type, out Type expectedDictType, out _);
+                    Type expectedDictType = SanitizeType(type, out _);
 
                     // Treat "null OR wrong runtime type" as uninitialized
                     BinaryExpression isNullOrWrongType =
@@ -394,16 +420,14 @@ namespace Parquet.Serialization.Dremel {
                     return new ClassMember(
                         accessor,
                         isNullOrWrongType,
-                        expectedDictType,
-                        isGenericDictionary);
+                        expectedDictType);
                 }
 
                 return new ClassMember(accessor,
                     type.IsValueType
                         ? Expression.Constant(false)
                         : Expression.Equal(accessor, Expression.Constant(null)),
-                    type,
-                    isGenericDictionary);
+                    type);
             }
         }
 
@@ -431,7 +455,7 @@ namespace Parquet.Serialization.Dremel {
             } else {
                 string levelPropertyName = schemaField.ClrPropName ?? schemaField.Name;
                 ClassMember classProperty = GetClassMember(rootType, rootVar, parentField, schemaField, levelPropertyName);
-                currentVarType = classProperty.Type;
+                currentVarType = SanitizeType(classProperty.Type, out _);
                 currentVar = classProperty.Accessor;
                 nullCheck = classProperty.IsNull;
             }
@@ -442,19 +466,16 @@ namespace Parquet.Serialization.Dremel {
 
             if(isRepeated) {
                 Expression rsmAccess = Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1));
+                currentVarType = SanitizeType(currentVarType, out Type collectionElementType);
 
-                bool isDictionary = schemaField.SchemaType == SchemaType.Map;
-                Type collectionElementType;
-                if(isDictionary) {
-                    ReplaceIDictionaryTypes(currentVarType, out Type newDictionaryType, out collectionElementType);
-                    currentVarType = newDictionaryType;
-                } else {
-                    collectionElementType = currentVarType.ExtractElementTypeFromEnumerableType();
-                }
-                // extra check
-                if(collectionElementType.IsGenericIDictionary()) {
-                    ReplaceIDictionaryTypes(collectionElementType, out collectionElementType, out _);
-                }
+                //bool isDictionary = schemaField.SchemaType == SchemaType.Map;
+                //Type collectionElementType;
+                //if(isDictionary) {
+                //    ReplaceIDictionaryTypes(currentVarType, out Type newDictionaryType, out collectionElementType);
+                //    currentVarType = newDictionaryType;
+                //} else {
+                //    collectionElementType = currentVarType.ExtractElementTypeFromEnumerableType();
+                //}
 
                 Expression leafExpr;
 
@@ -482,7 +503,7 @@ namespace Parquet.Serialization.Dremel {
                         [collectionElementVar],
 
                         Expression.Assign(collectionElementVar,
-                            GetCollectionElement(currentVar, rlDepth, currentVarType, collectionElementType)),
+                            AddOrGetCollectionItem(currentVar, rlDepth, currentVarType, collectionElementType)),
 
                         // keep traversing the tree
                         AssembleRecord(collectionElementVar, collectionElementType,

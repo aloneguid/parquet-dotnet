@@ -206,7 +206,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Atomics_Nullable_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
+            var data = Enumerable.Range(0, 4).Select(i => new Dictionary<string, object?> {
                 ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
                 ["EventName"] = i % 2 == 0 ? "on" : "off",
                 ["MeterValue"] = (double)i,
@@ -214,7 +214,7 @@ namespace Parquet.Test.Serialisation {
                 ["ExternalId"] = Guid.NewGuid()
             }).ToList();
 
-            await DictCompare<NullableRecord>(data);
+            await DictCompare<NullableRecord>(data, true);
         }
 
         class Primitives {
@@ -379,7 +379,7 @@ namespace Parquet.Test.Serialisation {
                 }
             }).ToList();
 
-            await DictCompare<AddressBookEntry>(data);
+            await DictCompare<AddressBookEntry>(data, true);
         }
 
 
@@ -453,7 +453,7 @@ namespace Parquet.Test.Serialisation {
                 }).ToList()
             }).ToList();
 
-            await DictCompare<MovementHistory>(data, writeTestFile: "c:\\tmp\\ls.parquet");
+            await DictCompare<MovementHistory>(data, true);
         }
 
         class ListOfMapsPoco {

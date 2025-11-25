@@ -100,12 +100,14 @@ namespace Parquet.Extensions {
             return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
         }
 
-        public static Expression CollectionAdd(this Expression collection, Type collectionType, Expression element, Type elementType) {
+        public static Expression CollectionAdd(
+            this Expression collection, Type collectionType,
+            Expression element, Type elementType) {
 
-            MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), new[] { elementType });
+            MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), [elementType]);
 
             if(method == null)
-                throw new NotSupportedException($"can't find {nameof(IList.Add)} method");
+                throw new NotSupportedException($"can't find list's .{nameof(IList.Add)}() method");
 
             return Expression.Call(
                 collection,

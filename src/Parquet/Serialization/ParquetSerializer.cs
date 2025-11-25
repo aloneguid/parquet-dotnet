@@ -592,7 +592,7 @@ namespace Parquet.Serialization {
                 try {
                     fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), dc);
                 } catch(Exception ex) {
-                    throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
+                    throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}'", ex);
                 }
             }
         }

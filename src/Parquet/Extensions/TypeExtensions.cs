@@ -78,6 +78,12 @@ namespace Parquet {
                 t.GetInterfaces().Any(x => x.IsGenericType && typeof(IDictionary<,>) == x.GetGenericTypeDefinition()));
         }
 
+        public static bool IsGenericIList(this Type t) {
+            return t.IsGenericType &&
+                (t.GetGenericTypeDefinition() == typeof(IList<>) ||
+                t.GetInterfaces().Any(x => x.IsGenericType && typeof(IList<>) == x.GetGenericTypeDefinition()));
+        }
+
         public static bool TryExtractDictionaryType(this Type t, out Type? keyType, out Type? valueType) {
             if(t.IsGenericIDictionary()) {
                 TypeInfo ti = t.GetTypeInfo();
@@ -87,6 +93,16 @@ namespace Parquet {
             }
 
             keyType = valueType = null;
+            return false;
+        }
+
+        public static bool TryExtractIListType(this Type t, out Type? elementType) {
+            if(t.IsGenericIList()) {
+                TypeInfo ti = t.GetTypeInfo();
+                elementType = ti.GenericTypeArguments[0];
+                return true;
+            }
+            elementType = null;
             return false;
         }
 
