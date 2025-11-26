@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using Grey;
 using Parquet;
+using Parquet.Data;
 using Parquet.Meta;
 using Parquet.Schema;
 using Parquet.Serialization;
@@ -138,7 +139,7 @@ void RenderRawSchema(List<SchemaElement> schemaElements) {
                     FieldRepetitionType.REPEATED => Emphasis.Info,
                     _ => Emphasis.None
                 };
-                Label(se.RepetitionType.ToString(), emp);
+                Label(se.RepetitionType?.ToString() ?? "", emp);
             }
             t.NextColumn();
             Label(FormatLogicalType(se.LogicalType));
@@ -344,11 +345,6 @@ void RenderStatusBar() {
 
 #region [ Data ]
 
-string? cellTooltip = null;
-int cellTooltipRow = -1;
-int cellTooltipColumn = -1;
-
-
 void RenderValue(Field f, object? value) {
     if(value is null) {
         Label("NULL", isEnabled: false);
@@ -452,6 +448,70 @@ void RenderData() {
 
 #endregion
 
+#region [ Raw Column Data ]
+void RenderRawColumnData() {
+    if(fd.RawDataFieldsPaths == null || fd.RawDataFieldsPaths.Length == 0) {
+        Label("No raw data fields available.", Emphasis.Info);
+        return;
+    }
+
+    Combo("column", fd.RawDataFieldsPaths, ref fd.CurrentRawDataFieldIndex);
+    if(Button("read", Emphasis.Primary)) {
+        fd.ReadRawDataFieldAsync().Forget();
+    }
+
+    if(fd.CurrentRawDataFieldData != null) {
+        DataColumn dc = fd.CurrentRawDataFieldData;
+        Label("num values: "); SL(); Label(dc.NumValues.ToString());
+
+        BigTable("raw",
+            ["#", "Value", "Definition level", "Repetition level"],
+            dc.NumValues,
+            (int row, int column) => {
+                if(column == 0) {
+                    Label(row.ToString(), isEnabled: false);
+                } else if(column == 1) {
+                    if(dc.Data == null) {
+                        Label("NULL DATA", Emphasis.Error);
+                    } else if(dc.Data.Length <= row) {
+                        Label("NO VALUE", Emphasis.Error);
+                    } else {
+                        object? value = dc.Data.GetValue(row);
+                        if(value == null) {
+                            Label("NULL", isEnabled: false);
+                        } else {
+                            Label(value?.ToString() ?? "", Emphasis.Primary);
+                        }
+                    }
+                } else if(column == 2) {
+                    if(dc.DefinitionLevels != null) {
+                        if(dc.DefinitionLevels.Length <= row) {
+                            Label("NO VALUE", Emphasis.Error);
+                        } else {
+                            Label(dc.DefinitionLevels[row].ToString(), Emphasis.Secondary);
+                        }
+                    }
+                } else if(column == 3) {
+                    if(dc.RepetitionLevels != null) {
+                        if(dc.RepetitionLevels.Length <= row) {
+                            Label("NO VALUE", Emphasis.Error);
+                        } else {
+                            Label(dc.RepetitionLevels[row].ToString());
+                        }
+                    }
+                }
+            },
+            0, 0, alternateRowBg: true);
+    }
+
+    if(fd.CurrentRawDataFieldReadError != null) {
+        Label("Error reading raw data field.", Emphasis.Error);
+        Label(fd.CurrentRawDataFieldReadError.ToString());
+    }
+}
+
+#endregion
+
 Run(title, () => {
 
     if(fd.ErrorMessage != null) {
@@ -462,6 +522,7 @@ Run(title, () => {
         tba.TabItem("Schema", RenderSchema);
         tba.TabItem("Metadata", RenderMetadata);
         tba.TabItem("Data", RenderData);
+        tba.TabItem("Raw Data", RenderRawColumnData);
     });
 
     StatusBar(RenderStatusBar);

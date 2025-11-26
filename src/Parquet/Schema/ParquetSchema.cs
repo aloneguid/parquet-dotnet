@@ -132,9 +132,28 @@ namespace Parquet.Schema {
         /// Finds a data field by its path. If not found, throws <see cref="ArgumentException"/> exception.
         /// </summary>
         /// <param name="path"></param>
-        /// <returns></returns>
         public DataField FindDataField(string path) {
             return FindDataField(new FieldPath(path));
+        }
+
+        /// <summary>
+        /// Flattens schema fields i.e. returns all of them in a single dimensional list in no particular order.
+        /// </summary>
+        public IReadOnlyCollection<Field> Flatten() {
+            var result = new List<Field>();
+
+            void Iterate(List<Field> result, Field f) {
+                result.Add(f);
+                foreach(Field cf in f.Children) {
+                    Iterate(result, cf);
+                }
+            }
+
+            foreach(Field f in _fields) {
+                Iterate(result, f);
+            }
+
+            return result;
         }
 
         /// <summary>

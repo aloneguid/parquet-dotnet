@@ -8,7 +8,7 @@ namespace Parquet.Schema {
     /// Represents path in schema. Path is a dot-separated string, however path parts can also contain dots!
     /// Never use strings to represent path, prefer this class.
     /// </summary>
-    public sealed class FieldPath : IEquatable<FieldPath> {
+    public sealed class FieldPath : IEquatable<FieldPath>, IFormattable {
 
         private readonly List<string> _parts;
 
@@ -52,7 +52,7 @@ namespace Parquet.Schema {
         /// Convert to list
         /// </summary>
         /// <returns></returns>
-        public List<string> ToList() => new List<string>(_parts);
+        public List<string> ToList() => [.. _parts];
 
         /// <summary>
         /// Returns first part of the path, or null if path is empty
@@ -108,6 +108,17 @@ namespace Parquet.Schema {
         /// String repr
         /// </summary>
         public override string ToString() => string.Join("/", _parts);
+
+
+        /// <summary>
+        /// String representation, where format is used as separator for joining parts.
+        /// </summary>
+        public string ToString(string? format, IFormatProvider? formatProvider) {
+            if(format == null)
+                return ToString();
+
+            return string.Join(format, _parts);
+        }
 
         /// <summary>
         /// Combines two paths safely
