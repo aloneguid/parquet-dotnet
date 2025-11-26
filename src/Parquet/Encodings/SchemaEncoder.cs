@@ -47,8 +47,12 @@ namespace Parquet.Encodings {
             SchemaElement outerGroup = schema[index];
 
             bool isList = outerGroup.ConvertedType != null && outerGroup.ConvertedType == ConvertedType.LIST;
+            // According to the Parquet spec, a repeated field is an implicit list only if it is not contained by a LIST- or MAP-annotated group,
+            // nor annotated by LIST or MAP itself.
             bool isImplicitList = (parent == null || parent.ConvertedType == null) &&
-                outerGroup.RepetitionType == FieldRepetitionType.REPEATED;
+                outerGroup.RepetitionType == FieldRepetitionType.REPEATED &&
+                outerGroup.ConvertedType != ConvertedType.MAP &&
+                outerGroup.ConvertedType != ConvertedType.MAP_KEY_VALUE;
 
             if(!isList && !isImplicitList) {
                 ownedChildren = 0;
@@ -72,7 +76,7 @@ namespace Parquet.Encodings {
                     ownedChildren = 1; //next element is the list's item
                     return true;
                 } else {
-                    throw new NotSupportedException("Implicit list with multiple children are current not supported");
+                    throw new NotSupportedException("Implicit list with multiple children are currently not supported");
                 }
             }
 
