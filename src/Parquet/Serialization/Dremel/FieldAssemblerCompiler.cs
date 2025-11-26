@@ -626,7 +626,7 @@ namespace Parquet.Serialization.Dremel {
                     x.Clear();
                     if(nullCheck != null) {
                         x.Add(Expression.IfThen(
-                                nullCheck == null ? Expression.Constant(false) : nullCheck,
+                                nullCheck,
                                 Expression.Assign(currentVar, CreateInstance(currentVarType))));
                     }
                     x.Add(iteration);

@@ -128,11 +128,7 @@ namespace Parquet.Schema {
             if(path.Count == 0)
                 return Array.Empty<Field>();
 
-            Field field = path.First();
-            return field.SchemaType switch {
-                //SchemaType.List => path.Skip(2).ToList(),
-                _ => path.Skip(1).ToList()
-            };
+            return path.Skip(1).ToList();
         }
 
 
