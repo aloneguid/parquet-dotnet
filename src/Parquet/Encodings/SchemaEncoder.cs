@@ -76,7 +76,7 @@ namespace Parquet.Encodings {
                     ownedChildren = 1; //next element is the list's item
                     return true;
                 } else {
-                    throw new NotSupportedException("Implicit list with multiple children are currently not supported");
+                    throw new NotSupportedException("Implicit list with multiple children is currently not supported");
                 }
             }
 
