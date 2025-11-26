@@ -86,12 +86,12 @@ namespace Parquet.Schema {
         internal virtual Field[] Children { get; } = Array.Empty<Field>();
 
         /// <summary>
-        /// Builds path to navigate inside CLR type hierarchy, rather than native Parquet schema. Used from class serializer.
-        /// todo: If we had a reference to schema, we would not have to pass it as an argument. Theoretically it's possible to pass wrong schema here, but I hape it won't happen as it's internal. We already have a flag which can be replaced with the actual schema reference.
+        /// Builds the path to navigate inside the CLR type hierarchy, rather than the native Parquet schema.
+        /// Used internally by the class serializer to map schema fields to CLR object properties.
         /// </summary>
-        /// <param name="schema"></param>
-        /// <returns></returns>
-        internal IReadOnlyCollection<Field> BuildExperimentalPath(ParquetSchema schema) {
+        /// <param name="schema">The Parquet schema to use for path resolution.</param>
+        /// <returns>A collection of <see cref="Field"/> objects representing the CLR path.</returns>
+        internal IReadOnlyCollection<Field> BuildClrPath(ParquetSchema schema) {
             var result = new List<Field>();
             IReadOnlyCollection<Field> allFields = schema.Flatten();
 
