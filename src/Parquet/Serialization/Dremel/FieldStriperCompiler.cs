@@ -274,7 +274,7 @@ namespace Parquet.Serialization.Dremel {
                 type = fi.FieldType;
                 result = Expression.Field(result, name);
             } else {
-                throw new NotSupportedException($"Failed to look up {field}: there is no class property of field called '{name}' in '{type}'.");
+                throw new NotSupportedException($"Failed to look up {field}: class '{type}' does not contain a property or field named '{name}'.");
             }
 
             return result;
