@@ -172,6 +172,10 @@ void RenderLogicalSchemaFields(TableActions ta, IReadOnlyList<Field> fields) {
             if(f is DataField df) {
                 ta.NextColumn();
                 Label(df.ClrType.ToString());
+                if(df.IsArray) {
+                    SL();
+                    Label("[]", Emphasis.Info);
+                }
             } else {
                 ta.NextColumn();
             }
@@ -352,7 +356,24 @@ void RenderValue(Field f, object? value) {
     } else {
         switch(f.SchemaType) {
             case SchemaType.Data:
-                Label(value.ToString() ?? "");
+                if(f is DataField df) {
+                    if(df.IsArray) {
+                        var arrayData = (IEnumerable)value;
+                        int iar = 0;
+                        Label("[");
+                        foreach(object? ivalue in arrayData) {
+                            if(iar > 0) {
+                                SL(); Label(",");
+                            }
+                            SL();
+                            Label(ivalue.ToString() ?? "");
+                            iar++;
+                        }
+                        SL(); Label("]");
+                    } else {
+                        Label(value.ToString() ?? "");
+                    }
+                }
                 break;
             case SchemaType.List:
                 var lf = (ListField)f;
@@ -385,7 +406,14 @@ void RenderValue(Field f, object? value) {
 void RenderCellValue(int row, int col, Field f, object? value) {
     switch(f.SchemaType) {
         case SchemaType.Data:
-            RenderValue(f, value);
+            if(f is DataField df) {
+                if(df.IsArray) {
+                    Label(Icon.Data_array);
+                    TT(() => { RenderValue(f, value); }, ShowDelay.Immediate);
+                } else {
+                    RenderValue(f, value);
+                }
+            }
             break;
         case SchemaType.List:
             Label(Icon.Data_array);

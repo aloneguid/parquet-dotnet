@@ -248,5 +248,18 @@ namespace Parquet.Test {
             using Stream s = OpenTestFile("hyparquet.snappy.parquet");
             ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
         }
+
+        [Fact]
+        public async Task NestedGroup_681() {
+            using Stream s = OpenTestFile("issues/681_nested.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+            DataField df = r.Schema.FindDataField(new FieldPath("data_group", "nested"));
+
+            DataColumn data = await rgr.ReadColumnAsync(df);
+
+            Assert.Equal(1, data.NumValues);
+        }
     }
 }

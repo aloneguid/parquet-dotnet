@@ -3,7 +3,7 @@
     <PropertyGroup>
         <!-- Exe changed to WinExe so Windows builds don't attempt to create console window -->
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PublishAot>true</PublishAot>

@@ -39,15 +39,42 @@ namespace Parquet.Encodings {
             ref int index, out int ownedChildren,
             out ListField? field) {
 
+            // exception:
+            // A repeated field that is neither contained by a LIST- or MAP-annotated group nor annotated by LIST or MAP should be interpreted as a required list of required elements where the element type is the type of the field.
+            // It's called "implicit list" in this codebase.
+
+            SchemaElement? parent = index > 0 ? schema[index - 1] : null;
             SchemaElement outerGroup = schema[index];
 
-            if(!(outerGroup.ConvertedType != null && outerGroup.ConvertedType == ConvertedType.LIST)) {
+            bool isList = outerGroup.ConvertedType != null && outerGroup.ConvertedType == ConvertedType.LIST;
+            bool isImplicitList = (parent == null || parent.ConvertedType == null) &&
+                outerGroup.RepetitionType == FieldRepetitionType.REPEATED;
+
+            if(!isList && !isImplicitList) {
                 ownedChildren = 0;
                 field = null;
                 return false;
             }
 
-            field = ListField.CreateWithNoItem(outerGroup.Name, outerGroup.RepetitionType != FieldRepetitionType.REQUIRED);
+            bool isNullable = !isImplicitList && outerGroup.RepetitionType != FieldRepetitionType.REQUIRED;
+            field = ListField.CreateWithNoItem(outerGroup.Name, isNullable);
+
+            if(isImplicitList) {
+                if(outerGroup.NumChildren <= 0) {
+                    throw new IndexOutOfRangeException("Implicit list must have at least one child element");
+                }
+
+                field.SchemaElement = outerGroup;
+                field.GroupSchemaElement = outerGroup;  // for implicit
+                field.Path = new FieldPath(outerGroup.Name);
+                if(outerGroup.NumChildren == 1) {
+                    index += 1;
+                    ownedChildren = 1; //next element is the list's item
+                    return true;
+                } else {
+                    throw new NotSupportedException("Implicit list with multiple children are current not supported");
+                }
+            }
 
             //https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#backward-compatibility-rules
             SchemaElement midGroup = schema[index + 1];
