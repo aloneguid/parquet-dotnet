@@ -215,15 +215,10 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             // drop null keys in source data to use for comparison, because untyped deserializer won't have them
-            var dataNoNullKeys = data.Select(d => {
-                var dict = new Dictionary<string, object?>();
-                foreach(KeyValuePair<string, object?> kvp in d) {
-                    if(kvp.Value != null) {
-                        dict[kvp.Key] = kvp.Value;
-                    }
-                }
-                return dict;
-            }).ToList();
+            var dataNoNullKeys = data
+                .Select(d => d.Where(kvp => kvp.Value != null)
+                              .ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
+                .ToList();
 
             await DictCompare<NullableRecord>(dataNoNullKeys);
         }
