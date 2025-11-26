@@ -128,7 +128,7 @@ namespace Parquet.Serialization.Dremel {
         }
 
         /// <summary>
-        /// Corresponds to L6-L20 of Dremel paper Appendix A (Column-Sripting Algorithm)
+        /// Corresponds to L6-L20 of Dremel paper Appendix A (Column-Striping Algorithm)
         /// </summary>
         private Expression Decode(Expression element, Type elementType,
             bool isAtomic, int dl, ParameterExpression currentRlVar,
