@@ -562,7 +562,7 @@ namespace Parquet.Test.Schema {
                     new SchemaElement {
                         Name = "data_group",
                         RepetitionType = FieldRepetitionType.REPEATED,
-                        NumChildren = 2
+                        NumChildren = 3
                     },
 
                     new SchemaElement {
