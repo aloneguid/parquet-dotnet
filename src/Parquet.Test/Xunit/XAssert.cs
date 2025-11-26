@@ -10,7 +10,7 @@ namespace Parquet.Test.Xunit {
     public static class XAssert {
 
         private static readonly JsonSerializerOptions Options = new JsonSerializerOptions {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
         public static void JsonEquivalent(object? expected, object? actual) {

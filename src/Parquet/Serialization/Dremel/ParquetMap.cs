@@ -6,9 +6,19 @@ namespace Parquet.Serialization.Dremel;
 
 class ParquetMapKV<TKey, TValue> where TKey : notnull {
     public ParquetMap<TKey, TValue>? parent;
+    private TKey? _key;
     private TValue? _value;
 
-    public TKey? Key { get; set; }
+    public TKey? Key {
+        get => _key;
+        set {
+            _key = value;
+            if(parent != null) {
+                // unfortunately assigning default value must be done here, otherwise we can miss situation where key exists but value is null, resulting in data loss
+                parent[_key!] = default!;
+            }
+        }
+    }
 
     public TValue? Value {
         get => _value;

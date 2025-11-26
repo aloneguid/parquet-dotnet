@@ -100,7 +100,7 @@ namespace Parquet.Extensions {
             return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
         }
 
-        public static Expression CollectionAdd(
+        public static Expression IListAdd(
             this Expression collection, Type collectionType,
             Expression element, Type elementType) {
 
