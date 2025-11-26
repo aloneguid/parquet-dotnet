@@ -652,7 +652,7 @@ namespace Parquet.Serialization.Dremel {
             LabelTarget rlBreakLabel = Expression.Label();
 
             // process current value tuple (_dataVar, _dlVar, _rlVar)
-            IReadOnlyCollection<Field> dataFieldPath = _df.BuildExperimentalPath(_schema);
+            IReadOnlyCollection<Field> dataFieldPath = _df.BuildClrPath(_schema);
             Expression body =
                 AssembleRecord(_classElementVar, typeof(TClass), null, dataFieldPath);
 

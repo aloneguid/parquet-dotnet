@@ -360,7 +360,7 @@ namespace Parquet.Serialization.Dremel {
 
             ParameterExpression currentRepetitionLevel = Expression.Variable(typeof(int), "currentRl");
 
-            IReadOnlyCollection<Field> dataFieldPath = _df.BuildExperimentalPath(_schema);
+            IReadOnlyCollection<Field> dataFieldPath = _df.BuildClrPath(_schema);
 
             // compile iteration to shred one class instance (it can contain multiple values)
             Expression iteration = DissectRecord(
