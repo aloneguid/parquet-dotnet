@@ -1,9 +1,9 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 5.4.0
-  # PACKAGE_SUFFIX: '-pre.7'
-  PACKAGE_SUFFIX: ''
+  VERSION: 5.5.0
+  PACKAGE_SUFFIX: '-pre.1'
+  # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
 
 on:
