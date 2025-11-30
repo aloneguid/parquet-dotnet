@@ -17,14 +17,12 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around — forces Parquet to fit into .NET.
 - 🦄**Unique Features**:
-  - The only library that supports [dynamic](#writing-data) schemas.
-  - Supports all parquet [types](nested_types.md), encodings and compressions.
+  - The only library that supports dynamic schemas.
+  - Supports all parquet types, encodings and compressions.
   - Fully supports [C# class serialization](#serialization), for all simple and **complex** Parquet types.
-  - Provides **low-level**, [high-level](#serialization), and [untyped](untyped-serializer.md) API.
-  - Access to [file and column metadata](metadata.md).
-  - [Integration with DataFrames](dataframe.md) (`Microsoft.Data.Analysis`).
-
-[TOC]
+  - Provides **low-level**, high-level, and untyped API.
+  - Access to file and column metadata
+  - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
 ## Quick start
 
