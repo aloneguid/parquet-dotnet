@@ -24,6 +24,8 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Access to [file and column metadata](metadata.md).
   - [Integration with DataFrames](dataframe.md) (`Microsoft.Data.Analysis`).
 
+[TOC]
+
 ## Quick start
 
 Parquet is designed to handle *complex data in bulk*. It's *column-oriented* meaning that data is physically stored in **columns** rather than rows. This is very important for big data systems if you want to process only a subset of columns - reading just the right columns is extremely efficient.
