@@ -1,4 +1,7 @@
-on: push
+on:
+  push:
+    paths:
+      - 'docs/README.md'
 name: TOC Generator
 jobs:
   generateTOC:
