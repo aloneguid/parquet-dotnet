@@ -926,7 +926,7 @@ await ParquetSerializer.SerializeAsync(schema, data, stream);
 
 For more examples, see `ParquetSerializerTests.cs` in the codebase. The documentation will evolve as this API gets more stable.
 
-## DataFrame Support
+## `DataFrame` Support
 
 [`Microsoft.Data.Analysis`](https://www.nuget.org/packages/Microsoft.Data.Analysis) is supported via additional [NuGet package](https://www.nuget.org/packages/Parquet.Net.Data.Analysis). Due to `DataFrame` being in general less functional than Parquet, only primitive (atomic) columns are supported at the moment. If `DataFrame` supports more functionality in future (see related links below), this integration can be extended. When reading and writing, this integration will ignore any columns that are not atomic (primitive). You only need to call `WriteAsync()` extension method on `DataFrame` and specify the destination stream to write it to, similarly you can use `System.IO.Stream`'s extension method to read from parquet stream into `DataFrame`
 
