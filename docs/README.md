@@ -10,7 +10,7 @@
 
 Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.Net has you covered.
 
-## Features at a glance
+# Features at a glance
 
 - 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e. desktops, servers, phones, watches and so on.
 - 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's often even faster than native C++ implementations.
@@ -24,11 +24,10 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Access to file and column metadata
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
-# Table of contents
+# Table of Contents
 
 <!-- TOC depthfrom:2 -->
 
-- [Features at a glance](#features-at-a-glance)
 - [Quick start](#quick-start)
     - [Low level API](#low-level-api)
     - [High level API](#high-level-api)
