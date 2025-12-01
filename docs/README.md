@@ -24,6 +24,8 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Access to file and column metadata
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
+# Table of contents
+
 <!-- TOC depthfrom:2 -->
 
 - [Features at a glance](#features-at-a-glance)
