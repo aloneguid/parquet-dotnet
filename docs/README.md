@@ -24,8 +24,44 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Access to file and column metadata
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
-<!-- START doctoc -->
-<!-- END doctoc -->
+<!-- TOC depthfrom:2 -->
+
+- [Features at a glance](#features-at-a-glance)
+- [Quick start](#quick-start)
+    - [Low level API](#low-level-api)
+    - [High level API](#high-level-api)
+- [Customising serialization](#customising-serialization)
+    - [Structures](#structures)
+    - [Lists](#lists)
+    - [Maps](#maps)
+    - [Legacy Repeatable](#legacy-repeatable)
+    - [Supported collection types](#supported-collection-types)
+    - [Appending to files](#appending-to-files)
+    - [Specifying row group size](#specifying-row-group-size)
+    - [Ignoring property casing](#ignoring-property-casing)
+- [Extra options](#extra-options)
+- [Appending to files](#appending-to-files)
+- [Parallelism](#parallelism)
+- [Internals](#internals)
+    - [DataColumn](#datacolumn)
+    - [Schema](#schema)
+        - [Lists](#lists)
+        - [Lists of primitive types](#lists-of-primitive-types)
+        - [Lists of structs](#lists-of-structs)
+        - [Special cases](#special-cases)
+    - [Nested types](#nested-types)
+        - [Structs](#structs)
+        - [Lists and Arrays](#lists-and-arrays)
+        - [Lists](#lists)
+        - [Lists of Structs](#lists-of-structs)
+        - [Maps](#maps)
+    - [Untyped Serializer](#untyped-serializer)
+- [DataFrame Support](#dataframe-support)
+- [Used by](#used-by)
+- [Contributing](#contributing)
+- [Special thanks](#special-thanks)
+
+<!-- /TOC -->
 
 ## Quick start
 
