@@ -12,6 +12,9 @@ if(args.Length == 1) {
         case "progression":
             VersionedBenchmark.Run();
             break;
+        case "taxi":
+            BenchmarkRunner.Run<TaxiCsvToParquetBenchmark>();
+            break;
     }
 } else {
     await new DataTypes().NullableInts();
