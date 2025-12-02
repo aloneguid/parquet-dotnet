@@ -1,6 +1,7 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-using System.Linq;
+using System;
 using System.Collections.Generic;
+using Parquet.Encryption;
 using Parquet.Meta.Proto;
 namespace Parquet.Meta {
     /// <summary>
@@ -3184,6 +3185,7 @@ namespace Parquet.Meta {
         /// </summary>
         public byte[]? FooterSigningKeyMetadata { get; set; }
 
+        internal EncryptionBase? Decrypter { get; set; }
 
         internal void Write(ThriftCompactProtocolWriter proto) {
             proto.StructBegin();
@@ -3334,5 +3336,18 @@ namespace Parquet.Meta {
         }
     }
 
+    public enum ParquetModules {
+        //From: https://github.com/apache/parquet-format/blob/master/Encryption.md#442-aad-suffix
+        Footer = 0,
+        ColumnMetaData = 1,
+        Data_Page = 2,
+        Dictionary_Page = 3,
+        Data_PageHeader = 4,
+        Dictionary_PageHeader = 5,
+        ColumnIndex = 6,
+        OffsetIndex = 7,
+        BloomFilter_Header = 8,
+        BloomFilter_Bitset = 9
+    }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using Interop.Inspector;
 
 namespace Parquet.Test.Integration {
     public class IntegrationBase : TestBase {

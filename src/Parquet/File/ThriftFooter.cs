@@ -8,6 +8,7 @@ using Parquet.Encodings;
 using Parquet.Schema;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
+using Parquet.Encryption;
 
 namespace Parquet.File {
     class ThriftFooter {
@@ -18,7 +19,7 @@ namespace Parquet.File {
 
         internal ThriftFooter() {
             _fileMeta = new FileMetaData();
-            _tree= new ThriftSchemaTree();
+            _tree = new ThriftSchemaTree();
         }
 
         public ThriftFooter(FileMetaData fileMeta) {
@@ -63,7 +64,7 @@ namespace Parquet.File {
                     return;
 
                 _fileMeta.KeyValueMetadata = value
-                   .Select(kvp => new KeyValue{ Key = kvp.Key, Value = kvp.Value })
+                   .Select(kvp => new KeyValue { Key = kvp.Key, Value = kvp.Value })
                    .ToList();
             }
             get {
@@ -126,7 +127,18 @@ namespace Parquet.File {
             var rg = new RowGroup();
             _fileMeta.RowGroups ??= new List<RowGroup>();
             _fileMeta.RowGroups.Add(rg);
+
+            // NEW: assign ordinal (short)
+            rg.Ordinal = (short)(_fileMeta.RowGroups.Count - 1);
+
             return rg;
+        }
+
+        internal short GetRowGroupOrdinal(RowGroup rg) {
+            if(!rg.Ordinal.HasValue) {
+                throw new InvalidOperationException("RowGroup ordinal is missing.");
+            }
+            return rg.Ordinal.Value;
         }
 
         public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
@@ -158,7 +170,7 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable) => 
+        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable) =>
             new PageHeader {
                 Type = PageType.DATA_PAGE,
                 DataPageHeader = new DataPageHeader {
@@ -173,16 +185,21 @@ namespace Parquet.File {
             };
 
         public PageHeader CreateDictionaryPage(int numValues) {
-            var ph = new PageHeader { 
+            var ph = new PageHeader {
                 Type = PageType.DICTIONARY_PAGE,
                 DictionaryPageHeader = new DictionaryPageHeader {
                     Encoding = Encoding.PLAIN_DICTIONARY,
                     NumValues = numValues
-                }};
+                }
+            };
             return ph;
         }
 
-#region [ Conversion to Model Schema ]
+        public EncryptionBase? Decrypter => _fileMeta.Decrypter;
+
+        public EncryptionBase? Encrypter { get; set; }
+
+        #region [ Conversion to Model Schema ]
 
         public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
             int si = 0;
@@ -201,8 +218,10 @@ namespace Parquet.File {
                     throw new InvalidOperationException($"cannot decode schema for field {_fileMeta.Schema[si]}");
 
                 List<string> npath = path?.ToList() ?? new List<string>();
-                if(se.Path != null) npath.AddRange(se.Path.ToList());
-                else npath.Add(se.Name);
+                if(se.Path != null)
+                    npath.AddRange(se.Path.ToList());
+                else
+                    npath.Add(se.Name);
                 se.Path = new FieldPath(npath);
 
                 if(ownedChildCount > 0) {
@@ -217,9 +236,9 @@ namespace Parquet.File {
             }
         }
 
-#endregion
+        #endregion
 
-#region [ Convertion from Model Schema ]
+        #region [ Convertion from Model Schema ]
 
         public FileMetaData CreateThriftSchema(ParquetSchema schema) {
             var meta = new FileMetaData();
@@ -242,12 +261,12 @@ namespace Parquet.File {
             return root;
         }
 
-#endregion
+        #endregion
 
-#region [ Helpers ]
+        #region [ Helpers ]
 
         class ThriftSchemaTree {
-            readonly Dictionary<SchemaElement, Node?> _memoizedFindResults = 
+            readonly Dictionary<SchemaElement, Node?> _memoizedFindResults =
                 new Dictionary<SchemaElement, Node?>(new ReferenceEqualityComparer<SchemaElement>());
 
             public class Node {
@@ -296,7 +315,8 @@ namespace Parquet.File {
             }
 
             public Node? Find(FieldPath path) {
-                if(path.Length == 0) return null;
+                if(path.Length == 0)
+                    return null;
                 return Find(root, path);
             }
 
@@ -328,6 +348,16 @@ namespace Parquet.File {
             }
         }
 
-#endregion
+        public void SetPlaintextFooterAlgorithm(Meta.EncryptionAlgorithm alg) {
+            if(alg == null)
+                throw new ArgumentNullException(nameof(alg));
+            _fileMeta.EncryptionAlgorithm = alg;
+        }
+
+        public void SetFooterSigningKeyMetadata(byte[]? metadata) {
+            _fileMeta.FooterSigningKeyMetadata = metadata;
+        }
+
+        #endregion
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using Xunit;
-using System.Threading.Tasks;
 using Parquet.Schema;
 
 namespace Parquet.Test {

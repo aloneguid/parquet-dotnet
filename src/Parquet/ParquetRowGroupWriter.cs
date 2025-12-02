@@ -25,7 +25,8 @@ namespace Parquet {
         private readonly CompressionMethod _compressionMethod;
         private readonly CompressionLevel _compressionLevel;
         private readonly ParquetOptions _formatOptions;
-        private readonly RowGroup _owGroup;
+        private readonly RowGroup _rowGroup;
+        private short _rowGroupOrdinal;
         private readonly SchemaElement[] _thschema;
         private int _colIdx;
 
@@ -42,8 +43,10 @@ namespace Parquet {
             _compressionLevel = compressionLevel;
             _formatOptions = formatOptions;
 
-            _owGroup = _footer.AddRowGroup();
-            _owGroup.Columns = new List<ColumnChunk>();
+            _rowGroup = _footer.AddRowGroup();
+            _rowGroup.Columns = new List<ColumnChunk>();
+            _rowGroupOrdinal = _rowGroup.Ordinal
+                ?? throw new InvalidOperationException("RowGroup ordinal was not set by footer.");
             _thschema = _footer.GetWriteableSchema();
         }
 
@@ -66,7 +69,8 @@ namespace Parquet {
         /// <param name="column"></param>
         /// <param name="customMetadata">If specified, adds custom column chunk metadata</param>
         /// <param name="cancellationToken"></param>
-        public async Task WriteColumnAsync(DataColumn column,
+        public async Task WriteColumnAsync(
+            DataColumn column,
             Dictionary<string, string>? customMetadata,
             CancellationToken cancellationToken = default) {
             if(column == null)
@@ -91,24 +95,33 @@ namespace Parquet {
                     "You may have called WriteColumnAsync more times than there are columns in the schema.");
             }
 
+            // Get the expected schema element and advance the schema index once
             SchemaElement tse = _thschema[_colIdx];
-            if(!column.Field.Equals(tse)) {
+            if(!column.Field.Equals(tse))
                 throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{column.Field.Name}'", nameof(column));
-            }
-            _colIdx += 1;
+            _colIdx++;
 
             FieldPath path = _footer.GetPath(tse);
 
-            var writer = new DataColumnWriter(_stream, _footer, tse,
-               _compressionMethod,
-               _formatOptions,
-               _compressionLevel,
-               customMetadata);
+            short columnOrdinal = (short)_rowGroup.Columns.Count;
+            this._rowGroupOrdinal = _footer.GetRowGroupOrdinal(_rowGroup);
+
+            var writer = new DataColumnWriter(
+                _stream,
+                _footer,
+                tse,
+                _compressionMethod,
+                _formatOptions,
+                _compressionLevel,
+                customMetadata,
+                _rowGroupOrdinal,
+                columnOrdinal
+            );
 
             ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
-            _owGroup.Columns.Add(chunk);
-
+            _rowGroup.Columns.Add(chunk);
         }
+
 
         /// <summary>
         /// Call to indicate that all columns have been written, to validate completeness.
@@ -130,12 +143,12 @@ namespace Parquet {
         /// </summary>
         public void Dispose() {
             //row count is known only after at least one column is written
-            _owGroup.NumRows = RowCount ?? 0;
+            _rowGroup.NumRows = RowCount ?? 0;
 
             //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
             //luckily ColumnChunk already contains sizes of page+header in it's meta
-            _owGroup.TotalCompressedSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalCompressedSize);
-            _owGroup.TotalByteSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalUncompressedSize);
+            _rowGroup.TotalCompressedSize = _rowGroup.Columns.Sum(c => c.MetaData?.TotalCompressedSize ?? 0);
+            _rowGroup.TotalByteSize = _rowGroup.Columns.Sum(c => c.MetaData?.TotalUncompressedSize ?? 0);
         }
     }
 }

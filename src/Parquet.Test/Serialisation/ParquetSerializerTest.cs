@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Apache.Arrow;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;

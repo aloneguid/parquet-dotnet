@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Parquet.Schema;
+﻿using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Dremel;
 using Parquet.Test.Serialisation.Paper;

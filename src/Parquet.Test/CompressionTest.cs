@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 

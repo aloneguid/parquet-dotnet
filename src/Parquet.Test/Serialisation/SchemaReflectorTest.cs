@@ -131,8 +131,7 @@ namespace Parquet.Test.Serialisation {
             Assert.False(extraProp.IsArray);
         }
 
-        class AliasedPocoChild
-        {
+        class AliasedPocoChild {
             [JsonPropertyName("ChildID")]
             public int _id { get; set; }
         }
@@ -177,7 +176,7 @@ namespace Parquet.Test.Serialisation {
 
             Assert.Equal(new ParquetSchema(
                 new ListField("IntList", new DataField<int>("element")),
-                new DataField<int[]>("LegacyIntList")),
+                new DataField<int[]>("LegacyIntList", true)),
                 schema);
 
 			// check repetition and definition levels
@@ -394,7 +393,7 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetTimestamp(useLogicalTimestamp: true, isAdjustedToUTC: false)]
             public DateTime LogicalLocalTimestampDate { get; set; }
-            
+
             [ParquetTimestamp(useLogicalTimestamp: true)]
             public DateTime LogicalUtcTimestampDate { get; set; }
 
@@ -402,12 +401,12 @@ namespace Parquet.Test.Serialisation {
             public DateTime? NullableTimestampDate { get; set; }
 
             public TimeSpan DefaultTime { get; set; }
-            
+
             public TimeSpan? NullableTimeSpan { get; set; }
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
-            
+
 #if NET6_0_OR_GREATER
             public DateOnly ImpalaDateOnly { get; set; }
 
@@ -467,7 +466,7 @@ namespace Parquet.Test.Serialisation {
             Assert.False(((DateTimeDataField)df).IsAdjustedToUTC);
             Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
         }
-        
+
         [Fact]
         public void Type_DateTime_LogicalUtcTimestamp() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -495,7 +494,7 @@ namespace Parquet.Test.Serialisation {
             Assert.True(df is TimeSpanDataField);
             Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
         }
-        
+
         [Fact]
         public void Type_TimeSpan_Nullable() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -526,7 +525,7 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(typeof(DateOnly), df.ClrType);
             Assert.False(df.IsNullable);
         }
-        
+
         [Fact]
         public void Type_TimeOnly_Default() {
             ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -695,7 +694,7 @@ namespace Parquet.Test.Serialisation {
             public int Id { get; set; }
 
             public DefaultEnum DE { get; set; }
- 
+
             // Nullable Enum
             public DefaultEnum? NE { get; set; }
 

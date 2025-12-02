@@ -11,6 +11,7 @@ using Parquet.Encodings;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
 using Parquet.Extensions;
+using System.Collections.Generic;
 
 namespace Parquet.File {
 
@@ -25,6 +26,7 @@ namespace Parquet.File {
         private readonly ThriftFooter _footer;
         private readonly ParquetOptions _options;
         private readonly DataColumnStatistics? _stats;
+        private readonly RowGroup _rowGroup;
 
         internal DataColumnReader(
            DataField dataField,
@@ -32,13 +34,15 @@ namespace Parquet.File {
            ColumnChunk thriftColumnChunk,
            DataColumnStatistics? stats,
            ThriftFooter footer,
-           ParquetOptions? parquetOptions) {
+           ParquetOptions? parquetOptions,
+           RowGroup rowGroup) {
             _dataField = dataField ?? throw new ArgumentNullException(nameof(dataField));
             _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
             _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
             _stats = stats;
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
+            _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
 
             dataField.EnsureAttachedToSchema(nameof(dataField));
 
@@ -64,33 +68,187 @@ namespace Parquet.File {
             int definedValuesCount = totalValuesInChunk;
             if(_stats?.NullCount != null)
                 definedValuesCount -= (int)_stats.NullCount.Value;
+
             using var pc = new PackedColumn(_dataField, totalValuesInChunk, definedValuesCount);
-            long fileOffset = GetFileOffset();
+
+            // seek to first page (dict or data)
+            long fileOffset = GetFileOffset(out bool isDictionaryPageOffset);
             _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-            while(pc.ValuesRead < totalValuesInChunk) {
-                PageHeader ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
+            // NEW: only treat this column as encrypted when the chunk *has* CryptoMetadata
+            bool useEncryption = _thriftColumnChunk.CryptoMetadata is not null;
 
-                switch(ph.Type) {
-                    case PageType.DICTIONARY_PAGE:
-                        await ReadDictionaryPage(ph, pc);
-                        break;
-                    case PageType.DATA_PAGE:
-                        await ReadDataPageV1Async(ph, pc);
-                        break;
-                    case PageType.DATA_PAGE_V2:
-                        await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
-                        break;
-                    default:
-                        throw new NotSupportedException($"can't read page type {ph.Type}");
+            short pageOrdinal = 0;
+            short columnOrdinal = (short)_rowGroup.Columns.IndexOf(_thriftColumnChunk);
+            if(columnOrdinal < 0)
+                throw new InvalidDataException("Could not determine column ordinal");
+
+            while(pc.ValuesRead < totalValuesInChunk) {
+                if(useEncryption) {
+
+                    // Dictionary (encrypted) if positioned there
+                    if(isDictionaryPageOffset) {
+                        byte[] dictHdr = _footer.Decrypter!.DecryptDictionaryPageHeader(
+                            new ThriftCompactProtocolReader(_inputStream),
+                            _rowGroup.Ordinal!.Value, columnOrdinal);
+
+                        using(var ms = new MemoryStream(dictHdr)) {
+                            var hdrReader = new ThriftCompactProtocolReader(ms);
+                            var ph = PageHeader.Read(hdrReader);
+
+                            byte[] dictBody = _footer.Decrypter.DecryptDictionaryPage(
+                                new ThriftCompactProtocolReader(_inputStream),
+                                _rowGroup.Ordinal!.Value, columnOrdinal);
+
+                            ReadDictionaryPageFromBuffer(ph, dictBody, pc);
+                        }
+
+                        isDictionaryPageOffset = false;
+                        continue;
+                    }
+
+                    // Footer-key encrypted column
+                    if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHFOOTERKEY != null) {
+                        if(_footer.Decrypter is null)
+                            throw new InvalidDataException(
+                                "This file contains encrypted columns, but no footer key/decrypter is available. " +
+                                "Provide ParquetOptions.FooterEncryptionKey (and AAD prefix if required).");
+                        // header (GCM)
+                        byte[] hdr = _footer.Decrypter!.DecryptDataPageHeader(
+                            new ThriftCompactProtocolReader(_inputStream),
+                            _rowGroup.Ordinal!.Value, columnOrdinal, pageOrdinal);
+
+                        using var ms = new MemoryStream(hdr);
+                        var hdrReader = new ThriftCompactProtocolReader(ms);
+                        var ph = PageHeader.Read(hdrReader);
+
+                        // body (algo depends on profile; decrypter handles it)
+                        byte[] body = _footer.Decrypter.DecryptDataPage(
+                            new ThriftCompactProtocolReader(_inputStream),
+                            _rowGroup.Ordinal!.Value, columnOrdinal, pageOrdinal);
+
+                        if(ph.Type == PageType.DATA_PAGE)
+                            ReadDataPageV1FromBuffer(ph, body, pc);
+                        else if(ph.Type == PageType.DATA_PAGE_V2)
+                            ReadDataPageV2FromBuffer(ph, body, pc, totalValuesInChunk);
+                        else if(ph.Type == PageType.DICTIONARY_PAGE)
+                            ReadDictionaryPageFromBuffer(ph, body, pc);
+                        else
+                            throw new InvalidDataException($"Unsupported page type '{ph.Type}'");
+
+                        pageOrdinal++;
+                    } else if(_thriftColumnChunk.CryptoMetadata?.ENCRYPTIONWITHCOLUMNKEY != null) {
+                        EncryptionWithColumnKey ck = _thriftColumnChunk.CryptoMetadata.ENCRYPTIONWITHCOLUMNKEY;
+                        string? keyString = _options.ColumnKeyResolver?.Invoke(ck.PathInSchema, ck.KeyMetadata);
+
+                        if(string.IsNullOrWhiteSpace(keyString))
+                            throw new InvalidDataException(
+                                $"Column key is required to read encrypted column '{string.Join(".", ck.PathInSchema)}'.");
+
+                        byte[] columnKey = Encryption.EncryptionBase.ParseKeyString(keyString!);
+
+                        // Temporarily swap the decrypter key for this column
+                        byte[]? originalKey = _footer.Decrypter!.FooterEncryptionKey;
+                        _footer.Decrypter.FooterEncryptionKey = columnKey;
+                        try {
+                            // Dictionary page header/body (GCM)
+                            if(isDictionaryPageOffset) {
+                                byte[] dictHdr = _footer.Decrypter!.DecryptDictionaryPageHeader(
+                                    new ThriftCompactProtocolReader(_inputStream),
+                                    _rowGroup.Ordinal!.Value, columnOrdinal);
+
+                                using var ms = new MemoryStream(dictHdr);
+                                var hdrReader2 = new ThriftCompactProtocolReader(ms);
+                                var ph = PageHeader.Read(hdrReader2);
+
+                                byte[] dictBody = _footer.Decrypter.DecryptDictionaryPage(
+                                    new ThriftCompactProtocolReader(_inputStream),
+                                    _rowGroup.Ordinal!.Value, columnOrdinal);
+
+                                ReadDictionaryPageFromBuffer(ph, dictBody, pc);
+                                isDictionaryPageOffset = false;
+                            }
+
+                            // Data pages loop (same as footer-key path, but using the swapped key)
+                            // header (GCM)
+                            byte[] hdr = _footer.Decrypter!.DecryptDataPageHeader(
+                                new ThriftCompactProtocolReader(_inputStream),
+                                _rowGroup.Ordinal!.Value, columnOrdinal, pageOrdinal);
+
+                            using var msHdr = new MemoryStream(hdr);
+                            var hdrReader = new ThriftCompactProtocolReader(msHdr);
+                            var ph2 = PageHeader.Read(hdrReader);
+
+                            // body
+                            byte[] body = _footer.Decrypter.DecryptDataPage(
+                                new ThriftCompactProtocolReader(_inputStream),
+                                _rowGroup.Ordinal!.Value, columnOrdinal, pageOrdinal);
+
+                            if(ph2.Type == PageType.DATA_PAGE)
+                                ReadDataPageV1FromBuffer(ph2, body, pc);
+                            else if(ph2.Type == PageType.DATA_PAGE_V2)
+                                ReadDataPageV2FromBuffer(ph2, body, pc, totalValuesInChunk);
+                            else if(ph2.Type == PageType.DICTIONARY_PAGE)
+                                ReadDictionaryPageFromBuffer(ph2, body, pc);
+                            else
+                                throw new InvalidDataException($"Unsupported page type '{ph2.Type}'");
+
+                            pageOrdinal++;
+                        } finally {
+                            _footer.Decrypter!.FooterEncryptionKey = originalKey!;
+                        }
+                    } else {
+                        // Shouldn't happen because useEncryption implies CryptoMetadata != null,
+                        // but keep a defensive fallback to plaintext.
+                        var plainReader = new ThriftCompactProtocolReader(_inputStream);
+                        PageHeader ph = PageHeader.Read(plainReader);
+
+                        switch(ph.Type) {
+                            case PageType.DICTIONARY_PAGE:
+                                await ReadDictionaryPage(ph, pc);
+                                break;
+                            case PageType.DATA_PAGE:
+                                await ReadDataPageV1Async(ph, pc);
+                                break;
+                            case PageType.DATA_PAGE_V2:
+                                await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
+                                break;
+                            default:
+                                throw new NotSupportedException($"can't read page type {ph.Type}");
+                        }
+                    }
+                } else {
+                    // Plaintext column (either plaintext file, or encrypted file with plaintext columns)
+                    var protoReader = new ThriftCompactProtocolReader(_inputStream);
+                    PageHeader ph = PageHeader.Read(protoReader);
+
+                    switch(ph.Type) {
+                        case PageType.DICTIONARY_PAGE:
+                            await ReadDictionaryPage(ph, pc);
+                            break;
+                        case PageType.DATA_PAGE:
+                            await ReadDataPageV1Async(ph, pc);
+                            break;
+                        case PageType.DATA_PAGE_V2:
+                            await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
+                            break;
+                        default:
+                            throw new NotSupportedException($"can't read page type {ph.Type}");
+                    }
                 }
             }
 
-            // all the data is available here!
+            // all data ready
             DataColumn column = pc.Unpack();
             if(_stats != null)
                 column.Statistics = _stats;
             return column;
+        }
+
+        private static Span<byte> AsMutableSpan(ReadOnlySpan<byte> src, out byte[] rented) {
+            rented = ArrayPool<byte>.Shared.Rent(src.Length);
+            src.CopyTo(rented);
+            return rented.AsSpan(0, src.Length);
         }
 
         private async Task<IronCompress.IronCompressResult> ReadPageDataAsync(PageHeader ph) {
@@ -148,15 +306,18 @@ namespace Parquet.File {
             pc.AssignDictionary(dictionary);
         }
 
-        private long GetFileOffset() =>
-            // get the minimum offset, we'll just read pages in sequence as DictionaryPageOffset/Data_page_offset are not reliable
-            new[]
-                {
-                    _thriftColumnChunk.MetaData?.DictionaryPageOffset ?? 0,
-                    _thriftColumnChunk.MetaData!.DataPageOffset
-                }
-                .Where(e => e != 0)
-                .Min();
+        private long GetFileOffset(out bool isDictionaryPageOffset) {
+            //https://stackoverflow.com/a/55226688/1458738
+            long dictionaryPageOffset = _thriftColumnChunk.MetaData?.DictionaryPageOffset ?? 0;
+            long firstDataPageOffset = _thriftColumnChunk.MetaData!.DataPageOffset;
+            if(dictionaryPageOffset > 0 && dictionaryPageOffset < firstDataPageOffset) {
+                // if there's a dictionary and it's before the first data page, start from there
+                isDictionaryPageOffset = true;
+                return dictionaryPageOffset;
+            }
+            isDictionaryPageOffset = false;
+            return firstDataPageOffset;
+        }
 
         private async Task ReadDataPageV1Async(PageHeader ph, PackedColumn pc) {
             using IronCompress.IronCompressResult bytes = await ReadPageDataAsync(ph);
@@ -259,93 +420,127 @@ namespace Parquet.File {
             return RleBitpackedHybridEncoder.Decode(s, bitWidth, length, out usedLength, dest, pageSize);
         }
 
-        private void ReadColumn(Span<byte> src,
-            Encoding encoding, long totalValuesInChunk, int totalValuesInPage,
-            PackedColumn pc) {
-
-            //dictionary encoding uses RLE to encode data
-
-            switch(encoding) {
-                case Encoding.PLAIN: { // 0
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        ParquetPlainEncoder.Decode(plainData,
-                            offset,
-                            totalValuesInPage,
-                            _schemaElement!, src, out int read);
-                        pc.MarkUsefulPlainData(read);
-                    }
-                    break;
-
-                case Encoding.PLAIN_DICTIONARY: // 2  // values are still encoded in RLE
-                case Encoding.RLE_DICTIONARY: { // 8
-                        Span<int> span = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
-                        int indexCount = ReadRleDictionary(src, totalValuesInPage, span);
-                        pc.MarkUsefulDictionaryIndexes(indexCount);
-                        pc.Checkpoint();
-                    }
-                    break;
-
-                case Encoding.RLE: { // 3
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        if(_dataField.ClrType == typeof(bool)) {
-                            // for boolean values, we need to read into temporary int buffer and convert to booleans.
-                            // todo: we can optimise this by implementing boolean RLE decoder
-
-                            int[] tmp = new int[plainData.Length];
-                            int read = RleBitpackedHybridEncoder.Decode(src,
-                                _schemaElement!.TypeLength ?? 0,
-                                src.Length, out int usedLength, tmp.AsSpan(offset), totalValuesInPage);
-
-                            // copy back to bool array
-                            bool[] tgt = (bool[])plainData;
-                            for(int i = 0; i < read; i++) {
-                                tgt[i + offset] = tmp[i] == 1;
-                            }
-
+        private void ReadColumn(
+            ReadOnlySpan<byte> src,
+            Encoding encoding,
+            long totalValuesInChunk,
+            int totalValuesInPage,
+            PackedColumn pc
+        ) {
+            // Bridge to APIs that require Span<byte>
+            Span<byte> spanSrc = AsMutableSpan(src, out byte[] rented);
+            try {
+                switch(encoding) {
+                    case Encoding.PLAIN: // 0
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            ParquetPlainEncoder.Decode(
+                                plainData,
+                                offset,
+                                totalValuesInPage,
+                                _schemaElement!,
+                                spanSrc,
+                                out int read);
                             pc.MarkUsefulPlainData(read);
-                            pc.Checkpoint();
-
-                        } else {
-                            Span<int> span = ((int[])plainData).AsSpan(offset);
-                            int read = RleBitpackedHybridEncoder.Decode(src,
-                                _schemaElement!.TypeLength ?? 0,
-                                src.Length, out int usedLength, span, totalValuesInPage);
-                            pc.MarkUsefulPlainData(read);
-                            pc.Checkpoint();
+                            break;
                         }
-                    }
-                    break;
 
-                case Encoding.DELTA_BINARY_PACKED: {// 5
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        int read = DeltaBinaryPackedEncoder.Decode(src, plainData, offset, totalValuesInPage, out _);
-                        pc.MarkUsefulPlainData(read);
-                    }
-                    break;
+                    case Encoding.PLAIN_DICTIONARY: // 2
+                    case Encoding.RLE_DICTIONARY:   // 8
+                    {
+                            Span<int> idxDest = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
+                            int indexCount = ReadRleDictionary(spanSrc, totalValuesInPage, idxDest);
+                            pc.MarkUsefulDictionaryIndexes(indexCount);
+                            pc.Checkpoint();
+                            break;
+                        }
 
-                case Encoding.DELTA_LENGTH_BYTE_ARRAY: {  // 6
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        int read = DeltaLengthByteArrayEncoder.Decode(src, plainData, offset, totalValuesInPage);
-                        pc.MarkUsefulPlainData(read);
-                    }
-                    break;
+                    case Encoding.RLE: // 3
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
 
-                case Encoding.DELTA_BYTE_ARRAY: {         // 7
-                        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-                        int read = DeltaByteArrayEncoder.Decode(src, plainData, offset, totalValuesInPage);
-                        pc.MarkUsefulPlainData(read);
-                    }
-                    break;
+                            if(_dataField.ClrType == typeof(bool)) {
+                                // Decode to temp int[] then map to bool[]
+                                int[] tmp = new int[plainData.Length];
+                                int read = RleBitpackedHybridEncoder.Decode(
+                                    spanSrc,
+                                    _schemaElement!.TypeLength ?? 0,
+                                    spanSrc.Length,
+                                    out int _,
+                                    tmp.AsSpan(offset),
+                                    totalValuesInPage);
 
-                case Encoding.BYTE_STREAM_SPLIT: {       // 9
+                                bool[] tgt = (bool[])plainData;
+                                for(int i = 0; i < read; i++)
+                                    tgt[i + offset] = tmp[i] == 1;
+
+                                pc.MarkUsefulPlainData(read);
+                                pc.Checkpoint();
+                            } else {
+                                Span<int> dest = ((int[])plainData).AsSpan(offset);
+                                int read = RleBitpackedHybridEncoder.Decode(
+                                    spanSrc,
+                                    _schemaElement!.TypeLength ?? 0,
+                                    spanSrc.Length,
+                                    out int _,
+                                    dest,
+                                    totalValuesInPage);
+
+                                pc.MarkUsefulPlainData(read);
+                                pc.Checkpoint();
+                            }
+                            break;
+                        }
+
+                    case Encoding.DELTA_BINARY_PACKED: // 5
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            int read = DeltaBinaryPackedEncoder.Decode(
+                                spanSrc,
+                                plainData,
+                                offset,
+                                totalValuesInPage,
+                                out _);
+                            pc.MarkUsefulPlainData(read);
+                            break;
+                        }
+
+                    case Encoding.DELTA_LENGTH_BYTE_ARRAY: // 6
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            int read = DeltaLengthByteArrayEncoder.Decode(
+                                spanSrc,
+                                plainData,
+                                offset,
+                                totalValuesInPage);
+                            pc.MarkUsefulPlainData(read);
+                            break;
+                        }
+
+                    case Encoding.DELTA_BYTE_ARRAY: // 7
+                    {
+                            Array plainData = pc.GetPlainDataToReadInto(out int offset);
+                            int read = DeltaByteArrayEncoder.Decode(
+                                spanSrc,
+                                plainData,
+                                offset,
+                                totalValuesInPage);
+                            pc.MarkUsefulPlainData(read);
+                            break;
+                        }
+
+                  case Encoding.BYTE_STREAM_SPLIT: {       // 9
                         Array plainData = pc.GetPlainDataToReadInto(out int offset);
                         int read = ByteStreamSplitEncoder.DecodeByteStreamSplit(src, plainData, offset, totalValuesInPage);
                         pc.MarkUsefulPlainData(read);
                     }
                     break;
-                case Encoding.BIT_PACKED:                // 4 (deprecated)
-                default:
-                    throw new ParquetException($"encoding {encoding} is not supported.");
+                    case Encoding.BIT_PACKED:        // 4 (deprecated)
+                    default:
+                        throw new ParquetException($"encoding {encoding} is not supported.");
+                }
+            } finally {
+                ArrayPool<byte>.Shared.Return(rented);
             }
         }
 
@@ -370,5 +565,116 @@ namespace Parquet.File {
 
             return destOffset - start;
         }
+
+        private static IronCompress.IronCompressResult DecompressWholePageFromBuffer(
+            ReadOnlySpan<byte> pageBytes, int uncompressedSize, CompressionCodec codec) {
+            if(codec == CompressionCodec.UNCOMPRESSED) {
+                // mimic your ReadPageDataAsync contract using a rented buffer
+                byte[] rented = ArrayPool<byte>.Shared.Rent(pageBytes.Length);
+                pageBytes.CopyTo(rented);
+                return new IronCompress.IronCompressResult(
+                    rented, Codec.Snappy, false, pageBytes.Length, ArrayPool<byte>.Shared);
+            }
+
+            return Compressor.Decompress(
+                (CompressionMethod)(int)codec, pageBytes, uncompressedSize);
+        }
+
+        private void ReadDictionaryPageFromBuffer(PageHeader ph, ReadOnlySpan<byte> pageBytes, PackedColumn pc) {
+            if(pc.HasDictionary)
+                throw new InvalidOperationException("dictionary already read");
+
+            using IronCompress.IronCompressResult bytes =
+                DecompressWholePageFromBuffer(pageBytes, ph.UncompressedPageSize, _thriftColumnChunk.MetaData!.Codec);
+
+            Array dictionary = _dataField.CreateArray(ph.DictionaryPageHeader!.NumValues);
+            ParquetPlainEncoder.Decode(dictionary, 0, ph.DictionaryPageHeader.NumValues,
+                _schemaElement!, bytes.AsSpan(), out _);
+
+            pc.AssignDictionary(dictionary);
+        }
+
+        private void ReadDataPageV1FromBuffer(PageHeader ph, ReadOnlySpan<byte> pageBytes, PackedColumn pc) {
+            using IronCompress.IronCompressResult bytes =
+                DecompressWholePageFromBuffer(pageBytes, ph.UncompressedPageSize, _thriftColumnChunk.MetaData!.Codec);
+
+            if(ph.DataPageHeader == null)
+                throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+
+            int used = 0;
+            int allValues = (int)_thriftColumnChunk.MetaData!.NumValues;
+            int pageValues = ph.DataPageHeader.NumValues;
+
+            if(_dataField.MaxRepetitionLevel > 0) {
+                int n = ReadLevels(bytes.AsSpan(), _dataField.MaxRepetitionLevel,
+                    pc.GetWriteableRepetitionLevelSpan(), pageValues, null, out int u);
+                pc.MarkRepetitionLevels(n);
+                used += u;
+            }
+
+            int defNulls = 0;
+            if(_dataField.MaxDefinitionLevel > 0) {
+                int n = ReadLevels(bytes.AsSpan().Slice(used), _dataField.MaxDefinitionLevel,
+                    pc.GetWriteableDefinitionLevelSpan(), pageValues, null, out int u);
+                used += u;
+                defNulls = pc.MarkDefinitionLevels(n, _dataField.MaxDefinitionLevel);
+            }
+
+            int dataCount = pageValues - defNulls;
+            ReadColumn(bytes.AsSpan().Slice(used), ph.DataPageHeader.Encoding, allValues, dataCount, pc);
+        }
+
+        private void ReadDataPageV2FromBuffer(PageHeader ph, ReadOnlySpan<byte> pageBytes, PackedColumn pc, long maxValues) {
+            if(ph.DataPageHeaderV2 == null)
+                throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+
+            int used = 0;
+
+            if(_dataField.MaxRepetitionLevel > 0) {
+                int n = ReadLevels(pageBytes.ToArray(),
+                    _dataField.MaxRepetitionLevel, pc.GetWriteableRepetitionLevelSpan(),
+                    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.RepetitionLevelsByteLength, out int u);
+                used += u;
+                pc.MarkRepetitionLevels(n);
+            }
+
+            if(_dataField.MaxDefinitionLevel > 0) {
+                int n = ReadLevels(pageBytes.Slice(used).ToArray(),
+                    _dataField.MaxDefinitionLevel, pc.GetWriteableDefinitionLevelSpan(),
+                    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.DefinitionLevelsByteLength, out int u);
+                used += u;
+                pc.MarkDefinitionLevels(n);
+            }
+
+            int maxRead = ph.DataPageHeaderV2.NumValues - ph.DataPageHeaderV2.NumNulls;
+
+            bool notCompressed =
+                (!(ph.DataPageHeaderV2.IsCompressed ?? false)) ||
+                _thriftColumnChunk.MetaData!.Codec == CompressionCodec.UNCOMPRESSED;
+
+            if(notCompressed) {
+                ReadColumn(pageBytes.Slice(used).ToArray(), ph.DataPageHeaderV2.Encoding, maxValues, maxRead, pc);
+                return;
+            }
+
+            int dataSize = ph.CompressedPageSize
+                - ph.DataPageHeaderV2.RepetitionLevelsByteLength
+                - ph.DataPageHeaderV2.DefinitionLevelsByteLength;
+
+            int decompSize = ph.UncompressedPageSize
+                - ph.DataPageHeaderV2.RepetitionLevelsByteLength
+                - ph.DataPageHeaderV2.DefinitionLevelsByteLength;
+
+            ColumnMetaData meta = _thriftColumnChunk.MetaData
+                ?? throw new InvalidDataException("ColumnChunk.MetaData is missing");
+
+            using IronCompress.IronCompressResult decomp = Compressor.Decompress(
+                (CompressionMethod)(int)meta.Codec,
+                pageBytes.Slice(used, dataSize),
+                decompSize);
+
+            ReadColumn(decomp.AsSpan(), ph.DataPageHeaderV2.Encoding, maxValues, maxRead, pc);
+        }
+
     }
 }

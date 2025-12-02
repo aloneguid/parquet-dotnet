@@ -12,11 +12,13 @@
         <DocumentationFile>bin\Debug\$(TargetFramework)\Parquet.xml</DocumentationFile>
         <DebugType>full</DebugType>
         <DebugSymbols>true</DebugSymbols>
-        <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone xbox</PackageTags>
+        <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone
+            xbox</PackageTags>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
 
-        <!-- Sign with a fake no password signature for convenience. Note this is not a proof of anything.-->
+        <!-- Sign with a fake no password signature for convenience. Note this is not a proof of
+        anything.-->
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
 
@@ -39,7 +41,8 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>
+            $(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
@@ -47,7 +50,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\NetBox.cs" Link="NetBox.cs" />
+        <Compile Include="..\NetBox.cs" Link="NetBox.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -72,64 +75,63 @@
         <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
     </ItemGroup>
 
-
     <ItemGroup>
         <None Include="..\..\docs\README.md">
-          <Pack>True</Pack>
-          <PackagePath>\</PackagePath>
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
         </None>
         <None Include="..\icon.png">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
         <None Update="Encodings\BitPackedEncoder.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>BitPackedEncoder.cs</LastGenOutput>
         </None>
         <None Update="Encodings\DeltaBinaryPackedEncoder.Variations.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>DeltaBinaryPackedEncoder.Variations.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>DeltaBinaryPackedEncoder.Variations.cs</LastGenOutput>
         </None>
         <None Update="Encodings\RleBitpackedHybridEncoder.Variations.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>RleBitpackedHybridEncoder.Variations.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>RleBitpackedHybridEncoder.Variations.cs</LastGenOutput>
         </None>
         <None Update="Extensions\UntypedArrayExtensions.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>UntypedArrayExtensions.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>UntypedArrayExtensions.cs</LastGenOutput>
         </None>
     </ItemGroup>
 
     <ItemGroup>
-      <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Encodings\BitPackedEncoder.Precompiled.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>BitPackedEncoder.Precompiled.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Encodings\DeltaBinaryPackedEncoder.Variations.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Encodings\RleBitpackedHybridEncoder.Variations.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>RleBitpackedHybridEncoder.Variations.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Extensions\UntypedArrayExtensions.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Encodings\BitPackedEncoder.cs">
-        <AutoGen>True</AutoGen>
-        <DesignTime>True</DesignTime>
-        <DependentUpon>BitPackedEncoder.tt</DependentUpon>
-      </Compile>
+        <Compile Update="Encodings\BitPackedEncoder.Precompiled.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>BitPackedEncoder.Precompiled.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Encodings\DeltaBinaryPackedEncoder.Variations.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>DeltaBinaryPackedEncoder.Variations.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Encodings\RleBitpackedHybridEncoder.Variations.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>RleBitpackedHybridEncoder.Variations.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Extensions\UntypedArrayExtensions.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Encodings\BitPackedEncoder.cs">
+            <AutoGen>True</AutoGen>
+            <DesignTime>True</DesignTime>
+            <DependentUpon>BitPackedEncoder.tt</DependentUpon>
+        </Compile>
     </ItemGroup>
 
 </Project>

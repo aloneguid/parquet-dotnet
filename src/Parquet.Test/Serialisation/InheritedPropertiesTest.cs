@@ -1,11 +1,3 @@
-using System.Threading.Tasks;
-using System.IO;
-using Parquet.Data;
-using Parquet.Schema;
-using Parquet.Serialization;
-using Xunit;
-using System;
-
 namespace Parquet.Test.Serialisation {
     public class InheritedPropertiesTest : TestBase {
         private InheritedClass[] GenerateRecordsToSerialize() {
