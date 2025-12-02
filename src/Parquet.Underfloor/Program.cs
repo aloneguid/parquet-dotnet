@@ -269,7 +269,7 @@ void RenderMetadata() {
 
     // row grops and so on
     if(fd.RowGroups != null) {
-        Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec"], ta => {
+        Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec", "Encodings"], ta => {
             int idx = 0;
             foreach(IParquetRowGroupReader rg in fd.RowGroups) {
                 ta.BeginRow();
@@ -301,6 +301,9 @@ void RenderMetadata() {
                             Label(cc.MetaData?.TotalCompressedSize.ToFileSizeUiString() ?? "");
                             ta.NextColumn();
                             Label(cc.MetaData?.Codec.ToString() ?? "");
+                            ta.NextColumn();
+                            if(cc.MetaData != null) 
+                                Label(string.Join(", ", cc.MetaData.Encodings));
 
                             idx1++;    
                         }
