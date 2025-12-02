@@ -17,7 +17,7 @@ namespace Parquet.Test.Types {
     public class EndToEndTypeTest : TestBase {
 
         [Theory, TestBase.TypeTestData]
-        public async Task Type_writes_and_reads_end_to_end(TypeTestInstance input) {
+        public async Task Type_writes_and_reads_end_to_end(TTI input) {
 
             object actual = await WriteReadSingle(input.Field, input.ExpectedValue);
 

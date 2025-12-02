@@ -73,6 +73,8 @@ namespace Parquet.Serialization {
 
             public ParquetTimestampAttribute? TimestampAttribute => _mi.GetCustomAttribute<ParquetTimestampAttribute>();
 
+            public ParquetTimeSpanAttribute? TimeSpanAttribute => _mi.GetCustomAttribute<ParquetTimeSpanAttribute>();
+
             public ParquetMicroSecondsTimeAttribute? MicroSecondsTimeAttribute => _mi.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>();
 
             public ParquetDecimalAttribute? DecimalAttribute => _mi.GetCustomAttribute<ParquetDecimalAttribute>();
@@ -153,11 +155,14 @@ namespace Parquet.Serialization {
                     unit: tsa?.Resolution.Convert(),
                     isNullable: t == typeof(DateTime?), null, propertyName);
             } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
+                ParquetTimeSpanAttribute? tsa = member?.TimeSpanAttribute;
                 r = new TimeSpanDataField(name,
                     member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
-                    t == typeof(TimeSpan?), null, propertyName);
+                    t == typeof(TimeSpan?), null, propertyName) {
+                    IsAdjustedToUTC = tsa == null ? true : tsa.IsAdjustedToUTC
+                };
 #if NET6_0_OR_GREATER
             } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
                 r = new TimeOnlyDataField(name,
