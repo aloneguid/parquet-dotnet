@@ -283,7 +283,8 @@ namespace Parquet.Test.Encodings {
             Array des = Array.CreateInstance(type, 0);
             int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
 
-            Assert.Equal(0, des.Length);
+            // Assert that the decoded array is empty as expected
+            Assert.Empty(des);
         }
 
         [Theory]

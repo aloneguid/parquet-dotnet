@@ -369,7 +369,9 @@ namespace Parquet.Test.Integration {
 
             // Flip one byte somewhere in the middle (very basic tamper)
             byte[] tampered = (byte[])file.Clone();
-            for(int i = 100; i < tampered.Length; i++) { tampered[i] ^= 0x01; break; }
+            if (tampered.Length > 100) {
+                tampered[100] ^= 0x01;
+            }
 
             await Assert.ThrowsAnyAsync<Exception>(async () => {
                 using ParquetReader r = await ParquetReader.CreateAsync(new MemoryStream(tampered, false),

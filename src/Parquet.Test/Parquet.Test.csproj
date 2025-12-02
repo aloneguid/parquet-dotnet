@@ -19,7 +19,6 @@
     <ItemGroup>
         <PackageReference Include="DuckDB.NET.Data.Full" Version="1.4.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
         <PackageReference Include="System.ValueTuple" Version="4.6.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="xunit" Version="2.9.3" />
