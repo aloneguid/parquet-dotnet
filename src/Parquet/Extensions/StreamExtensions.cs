@@ -16,14 +16,12 @@ namespace Parquet.Extensions {
         }
 
         public static int ReadInt32(this Stream s) {
-            byte[] tmp = new byte[sizeof(int)];
-            s.Read(tmp, 0, sizeof(int));
+            byte[] tmp = s.ReadBytesExactly(sizeof(int));
             return BitConverter.ToInt32(tmp, 0);
         }
 
         public static async Task<int> ReadInt32Async(this Stream s) {
-            byte[] tmp = new byte[sizeof(int)];
-            await s.ReadAsync(tmp, 0, sizeof(int));
+            byte[] tmp = await s.ReadBytesExactlyAsync(sizeof(int));
             return BitConverter.ToInt32(tmp, 0);
         }
 
@@ -38,8 +36,7 @@ namespace Parquet.Extensions {
         }
 
         public static long ReadInt64(this Stream s) {
-            byte[] tmp = new byte[sizeof(long)];
-            s.Read(tmp, 0, sizeof(long));
+            byte[] tmp = s.ReadBytesExactly(sizeof(long));
             return BitConverter.ToInt64(tmp, 0);
         }
 

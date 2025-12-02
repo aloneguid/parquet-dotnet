@@ -512,6 +512,76 @@ namespace Parquet.Test.Schema {
             }
         }
 
+        /// <summary>
+        /// Tests the following fact from specs:
+        ///  A repeated field that is neither contained by a LIST- or MAP-annotated group nor annotated by LIST or MAP should be interpreted as a required list of required elements where the element type is the type of the field.
+        /// </summary>
+        [Fact]
+        public void Decode_list_implicit_one() {
+            ParquetSchema schema = ThriftFooter.Parse(
+
+                // repeated field, not annotated with anything at all
+                new SchemaElement {
+                    Name = "data_group",
+                    RepetitionType = FieldRepetitionType.REPEATED,
+                    NumChildren = 1
+                },
+
+                new SchemaElement {
+                    Name = "nested",
+                    RepetitionType = FieldRepetitionType.REQUIRED,
+                    Type = TT.BYTE_ARRAY
+                });
+
+            // "nested" should come out with RL: 1, DL: 1
+
+            Field f = schema[0];
+
+            // container is a list
+            Assert.Equal(SchemaType.List, f.SchemaType);
+
+            // check it has a single element - required string
+            if(f is ListField lf) {
+                Assert.Equal("data_group", lf.Name);
+                Assert.Equal("nested", lf.Item.Name);
+                Assert.Equal(1, lf.Item.MaxRepetitionLevel);
+                Assert.Equal(1, lf.Item.MaxDefinitionLevel);
+            } else {
+                Assert.Fail("list expected");
+            }
+        }
+
+        [Fact]
+        public void Decode_list_implicit_many() {
+
+            Assert.Throws<NotSupportedException>(() => {
+
+                ParquetSchema schema = ThriftFooter.Parse(
+
+                    // repeated field, not annotated with anything at all
+                    new SchemaElement {
+                        Name = "data_group",
+                        RepetitionType = FieldRepetitionType.REPEATED,
+                        NumChildren = 3
+                    },
+
+                    new SchemaElement {
+                        Name = "nested1",
+                        RepetitionType = FieldRepetitionType.REQUIRED,
+                        Type = TT.BYTE_ARRAY
+                    },
+                    new SchemaElement {
+                        Name = "nested2",
+                        RepetitionType = FieldRepetitionType.REQUIRED,
+                        Type = TT.INT32
+                    },
+                    new SchemaElement {
+                        Name = "nested3",
+                        RepetitionType = FieldRepetitionType.REQUIRED,
+                        Type = TT.BOOLEAN
+                    });
+            });
+        }
 
         [Fact]
         public void Augment_changes_name_and_path() {

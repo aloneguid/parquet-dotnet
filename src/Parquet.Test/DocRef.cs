@@ -30,13 +30,28 @@ namespace Parquet.Test {
                 (DataField)schema[0],
                 Enumerable.Range(0, 1_000_000).Select(i => DateTime.UtcNow.AddSeconds(i)).ToArray());
 
+            column1 = new DataColumn(
+                (DataField)schema[0],
+                new[] { 
+                    new DateTime(2025, 11, 18, 22, 07, 00),
+                    new DateTime(2025, 11, 18, 22, 08, 00),
+                    new DateTime(2025, 11, 18, 22, 09, 00)});
+
             var column2 = new DataColumn(
                 (DataField)schema[1],
                 Enumerable.Range(0, 1_000_000).Select(i => i % 2 == 0 ? "on" : "off").ToArray());
 
+            column2 = new DataColumn(
+                (DataField)schema[1],
+                new[] { "start", "stop", "pause" });
+
             var column3 = new DataColumn(
                 (DataField)schema[2],
                 Enumerable.Range(0, 1_000_000).Select(i => (double)i).ToArray());
+
+            column3 = new DataColumn(
+                (DataField)schema[2],
+                new[] { 12.34, 56.78, 90.12 });
 
             System.IO.File.Delete("c:\\tmp\\data3.parquet");
 
@@ -52,6 +67,7 @@ namespace Parquet.Test {
 
             using(Stream fs = System.IO.File.OpenRead("c:\\tmp\\data3.parquet")) {
                 using(ParquetReader reader = await ParquetReader.CreateAsync(fs)) {
+
                     for(int i = 0; i < reader.RowGroupCount; i++) { 
                         using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
                             

@@ -36,8 +36,8 @@ namespace Parquet.Schema {
             set {
                 Path = value + new FieldPath(Name);
 
-                foreach(Field field in _fields)
-                    field.PathPrefix = Path;
+                foreach(Field tfield in _fields)
+                    tfield.PathPrefix = Path;
             }
         }
 

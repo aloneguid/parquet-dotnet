@@ -50,6 +50,8 @@ namespace Parquet.Serialization {
                     throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
                 }
             }
+
+            rg.CompleteValidate();
         }
 
         private static async Task SerializeRowGroupAsync(ParquetWriter writer,
@@ -70,6 +72,8 @@ namespace Parquet.Serialization {
                     throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
                 }
             }
+
+            rg.CompleteValidate();
         }
 
         /// <summary>
@@ -123,6 +127,50 @@ namespace Parquet.Serialization {
                     }
                 } else {
                     await SerializeRowGroupAsync<T>(writer, striper, objectInstances, cancellationToken);
+                }
+            }
+
+            return striper.Schema;
+        }
+
+        /// <summary>
+        /// Serialize from an IAsyncEnumerable
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="objectInstances"></param>
+        /// <param name="destination"></param>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        public static async Task<ParquetSchema> SerializeAsync<T>(IAsyncEnumerable<T> objectInstances, Stream destination,
+            ParquetSerializerOptions? options = null,
+            CancellationToken cancellationToken = default) {
+
+            object boxedStriper = _typeToStriper.GetOrAdd(typeof(T), _ => new Striper<T>(typeof(T).GetParquetSchema(false)));
+            var striper = (Striper<T>)boxedStriper;
+
+            bool append = options != null && options.Append;
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
+                options?.ParquetOptions,
+                append, cancellationToken)) {
+
+                if(options != null) {
+                    writer.CompressionMethod = options.CompressionMethod;
+                    writer.CompressionLevel = options.CompressionLevel;
+                }
+
+                if(options?.RowGroupSize != null) {
+                    int rgs = options.RowGroupSize.Value;
+                    if(rgs < 1)
+                        throw new InvalidOperationException($"row group size must be a positive number, but passed {rgs}");
+                    await foreach(T[] chunk in objectInstances.Chunk(rgs).WithCancellation(cancellationToken)) {
+                        await SerializeRowGroupAsync<T>(writer, striper, chunk, cancellationToken);
+                    }
+                } else {
+                    // Without row group size, we need to materialize all items at once
+                    List<T> allItems = await objectInstances.ToListAsync(cancellationToken);
+                    await SerializeRowGroupAsync<T>(writer, striper, allItems, cancellationToken);
                 }
             }
 
@@ -544,7 +592,7 @@ namespace Parquet.Serialization {
                 try {
                     fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), dc);
                 } catch(Exception ex) {
-                    throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}', pseudo code: ['{fasm.IterationExpression.GetPseudoCode()}']", ex);
+                    throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}'", ex);
                 }
             }
         }

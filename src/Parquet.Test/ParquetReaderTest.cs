@@ -281,6 +281,18 @@ namespace Parquet.Test {
             }
         }
 
+        [Theory]
+        [InlineData("641_rle_pagesize_oob.parquet")]
+        public async Task ParquetReader_RLE_PageSize_NotOutOfBounds(string parquetFile) {
+            //In this file the RLE decoding needs to stop when it runs out of items, not when it runs out of input bytes.
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+
+                Assert.Single(reader.RowGroups);
+                DataColumn[] data = await reader.ReadEntireRowGroupAsync(0);
+                Assert.NotEmpty(data);
+            }
+        }
+
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }

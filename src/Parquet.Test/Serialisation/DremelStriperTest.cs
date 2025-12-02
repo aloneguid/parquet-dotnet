@@ -49,13 +49,13 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(3, lForw.MaxDefinitionLevel);
 
             // Name.Language.Code
-            Field nlCode = schema[2].NaturalChildren[0].NaturalChildren[0];
+            Field nlCode = schema[2].Children[0].Children[0].Children[0].Children[0];
             Assert.Equal(new FieldPath("Name", "list", "element", "Language", "list", "element", "Code"), nlCode.Path);
             Assert.Equal(2, nlCode.MaxRepetitionLevel);
             Assert.Equal(7, nlCode.MaxDefinitionLevel);
 
             // Name.Language.Country
-            Field nlCountry = schema[2].NaturalChildren[0].NaturalChildren[1];
+            Field nlCountry = schema[2].Children[0].Children[0].Children[0].Children[1];
             Assert.Equal(new FieldPath("Name", "list", "element", "Language", "list", "element", "Country"), nlCountry.Path);
             Assert.Equal(2, nlCountry.MaxRepetitionLevel);
             Assert.Equal(7, nlCountry.MaxDefinitionLevel);
