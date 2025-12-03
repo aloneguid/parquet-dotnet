@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.File;
@@ -129,8 +132,6 @@ namespace Parquet.Schema {
                 return definedData;
             }
         }
-
-        internal override bool IsAtomic => true;
 
         internal bool IsDeltaEncodable => DeltaBinaryPackedEncoder.IsSupported(ClrType);
 

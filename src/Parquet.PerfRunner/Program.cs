@@ -2,6 +2,7 @@
 
 using BenchmarkDotNet.Running;
 using Parquet;
+using Parquet.PerfRunner;
 using Parquet.PerfRunner.Benchmarks;
 
 if(args.Length == 1) {
@@ -12,7 +13,10 @@ if(args.Length == 1) {
         case "progression":
             VersionedBenchmark.Run();
             break;
+        case "twosamples":
+            break;
     }
 } else {
     await new DataTypes().NullableInts();
+    //await SampleGenerator.GenerateFiles();
 }

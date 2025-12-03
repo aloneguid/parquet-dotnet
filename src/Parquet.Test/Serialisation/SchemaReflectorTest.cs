@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Attributes;
@@ -181,11 +179,20 @@ namespace Parquet.Test.Serialisation {
                 new ListField("IntList", new DataField<int>("element")),
                 new DataField<int[]>("LegacyIntList")),
                 schema);
-        }
+
+			// check repetition and definition levels
+			ListField intListField = (ListField)schema[0];
+			Assert.Equal(1, intListField.MaxRepetitionLevel);
+			Assert.Equal(2, intListField.MaxDefinitionLevel);
+
+			DataField intListElementField = (DataField)intListField.Item;
+			Assert.Equal(1, intListElementField.MaxRepetitionLevel);
+			Assert.Equal(2, intListElementField.MaxDefinitionLevel);
+		}
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
-        class IgnoredPoco {
+		class IgnoredPoco {
 
             public int NotIgnored { get; set; }
 
@@ -340,6 +347,41 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(2, df.MaxDefinitionLevel);
         }
 
+        class ListOfDictionariesPoco {
+            public int Id { get; set; }
+            public List<Dictionary<string, int>>? Maps { get; set; }
+        }
+
+        [Fact]
+        public void ListOfDictionaries() {
+            ParquetSchema schema = typeof(ListOfDictionariesPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("Id"),
+                new ListField("Maps",
+                    new MapField("element",
+                        new DataField<string>("key", false),
+                        new DataField<int>("value")))), schema);
+        }
+
+        class ListOfDictionariesOfStructsPoco {
+            public int Id { get; set; }
+            public List<Dictionary<string, StructMemberPoco>>? Maps { get; set; }
+        }
+
+        [Fact]
+        public void ListOfDictionariesOfStructs() {
+            ParquetSchema schema = typeof(ListOfDictionariesOfStructsPoco).GetParquetSchema(true);
+
+            Assert.Equal(new ParquetSchema(
+                new DataField<int>("Id"),
+                new ListField("Maps",
+                    new MapField("element",
+                        new DataField<string>("key", false),
+                        new StructField("value",
+                            new DataField<string>("FirstName"),
+                            new DataField<string>("LastName"))))), schema);
+        }
 
         class DatesPoco {
 
@@ -365,7 +407,10 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
-            
+
+            [ParquetTimeSpan(IsAdjustedToUTC = false)]
+            public TimeSpan LogicalLocalTimeSpan { get; set; }
+
 #if NET6_0_OR_GREATER
             public DateOnly ImpalaDateOnly { get; set; }
 
@@ -471,6 +516,24 @@ namespace Parquet.Test.Serialisation {
             DataField df = s.FindDataField(nameof(DatesPoco.MicroTime));
             Assert.True(df is TimeSpanDataField);
             Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void Type_TimeSpan_LogicalLocalTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.LogicalLocalTimeSpan));
+            Assert.True(df is TimeSpanDataField);
+            Assert.False(((TimeSpanDataField)df).IsAdjustedToUTC);
+        }
+
+        [Fact]
+        public void Type_TimeSpan_LogicalUtcTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableTimeSpan));
+            Assert.True(df is TimeSpanDataField);
+            Assert.True(((TimeSpanDataField)df).IsAdjustedToUTC);
         }
 
 #if NET6_0_OR_GREATER
@@ -726,5 +789,89 @@ namespace Parquet.Test.Serialisation {
             var idField = (DataField)sf.Children[0];
             Assert.Equal(typeof(int), idField.ClrType);
         }
+
+        class ClassWithReadOnlyMember {
+            public readonly string ROS;
+            public readonly int ROI;
+
+            public ClassWithReadOnlyMember(string ros, int roi) {
+                ROS = ros;
+                ROI = roi;
+            }
+        }
+
+        readonly struct StructWithReadOnlyMember {
+            public readonly string ROS;
+            public readonly int ROI;
+
+            public StructWithReadOnlyMember(string ros, int roi) {
+                ROS = ros;
+                ROI = roi;
+            }
+        }
+
+        class ReadOnlyContainer {
+            public readonly ClassWithReadOnlyMember RCM;
+            public readonly StructWithReadOnlyMember RSM;
+			public readonly ClassWithReadOnlyMember[] RCMs;
+			public readonly StructWithReadOnlyMember[] RSMs;
+
+			public ReadOnlyContainer(ClassWithReadOnlyMember rcm, StructWithReadOnlyMember rsm,
+				ClassWithReadOnlyMember[] rcms, StructWithReadOnlyMember[] rsms) {
+                RCM = rcm;
+                RSM = rsm;
+                RCMs = rcms;
+                RSMs = rsms;
+            }
+        }
+
+        [Fact]
+        public void TestClassWithReadOnlyMember() {
+			ParquetSchema schema = typeof(ReadOnlyContainer).GetParquetSchema(false);
+            Assert.Equal(4, schema.Fields.Count);
+
+            // check definition levels for both members and their children
+            StructField classField = (StructField)schema[0];
+            StructField structField = (StructField)schema[1];
+
+			// class can be nullable, whereas struct cannot, therefore difference in definition levels
+			Assert.Equal(1, classField.MaxDefinitionLevel);
+            Assert.Equal(0, structField.MaxDefinitionLevel);
+
+			DataField classROS = (DataField)classField.Children[0];
+			DataField classROI = (DataField)classField.Children[1];
+			DataField structROS = (DataField)structField.Children[0];
+			DataField structROI = (DataField)structField.Children[1];
+			Assert.Equal(2, classROS.MaxDefinitionLevel);
+			Assert.Equal(1, classROI.MaxDefinitionLevel);
+			Assert.Equal(1, structROS.MaxDefinitionLevel);
+			Assert.Equal(0, structROI.MaxDefinitionLevel);
+
+			// --- lists of structs and classes ---
+
+			ListField classListField = (ListField)schema[2];
+			ListField structListField = (ListField)schema[3];
+			// 2 is standard preamble
+			Assert.Equal(2, classListField.MaxDefinitionLevel);
+			Assert.Equal(2, structListField.MaxDefinitionLevel);
+
+			// check list element
+			StructField classListElement = (StructField)classListField.Item;
+			StructField structListElement = (StructField)structListField.Item;
+			Assert.Equal(3, classListElement.MaxDefinitionLevel);
+			Assert.Equal(2, structListElement.MaxDefinitionLevel);
+
+			// check children of list element (struct)
+			DataField classListElementROS = (DataField)classListElement.Children[0];
+			DataField classListElementROI = (DataField)classListElement.Children[1];
+			DataField structListElementROS = (DataField)structListElement.Children[0];
+			DataField structListElementROI = (DataField)structListElement.Children[1];
+
+			Assert.Equal(4, classListElementROS.MaxDefinitionLevel);
+			Assert.Equal(3, classListElementROI.MaxDefinitionLevel);
+
+			Assert.Equal(3, structListElementROS.MaxDefinitionLevel);
+			Assert.Equal(2, structListElementROI.MaxDefinitionLevel);
+		}
     }
 }

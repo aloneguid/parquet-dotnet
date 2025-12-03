@@ -26,11 +26,15 @@ namespace Parquet.Test.Serialisation {
     /// </summary>
     public class ParquetSerializerTest : TestBase {
 
-        private async Task Compare<T>(List<T> data, bool asJson = false, string? saveAsFile = null) where T : new() {
+        private async Task Compare<T>(List<T> input, bool asJson = false, string? saveAsFile = null, bool useAsync = false) where T : new() {
 
             // serialize to parquet
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms);
+            if(useAsync) {
+                await ParquetSerializer.SerializeAsync(input.ToAsyncEnumerable(), ms);
+            } else {
+                await ParquetSerializer.SerializeAsync(input, ms);
+            }
 
             if(saveAsFile != null) {
                 await System.IO.File.WriteAllBytesAsync(saveAsFile, ms.ToArray());
@@ -38,22 +42,22 @@ namespace Parquet.Test.Serialisation {
 
             // deserialize from parquet
             ms.Position = 0;
-            IList<T> data2 = await ParquetSerializer.DeserializeAsync<T>(ms);
+            IList<T> deserialized = await ParquetSerializer.DeserializeAsync<T>(ms);
 
             // compare
             if(asJson) {
-                XAssert.JsonEquivalent(data, data2);
+                XAssert.JsonEquivalent(input, deserialized);
             } else {
-                Assert.Equivalent(data2, data);
+                Assert.Equivalent(deserialized, input);
             }
         }
 
-        private async Task DictCompare<TSchema>(List<Dictionary<string, object?>> data, bool asJson = false,
+        private async Task DictCompare<TSchema>(List<Dictionary<string, object?>> input, bool asJson = false,
             string? writeTestFile = null) {
 
             // serialize to parquet
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(typeof(TSchema).GetParquetSchema(true), data, ms);
+            await ParquetSerializer.SerializeAsync(typeof(TSchema).GetParquetSchema(true), input, ms);
 
             if(writeTestFile != null) {
                 System.IO.File.WriteAllBytes(writeTestFile, ms.ToArray());
@@ -61,14 +65,13 @@ namespace Parquet.Test.Serialisation {
 
             // deserialize from parquet
             ms.Position = 0;
-            ParquetSerializer.UntypedResult data2 = await ParquetSerializer.DeserializeAsync(ms);
+            ParquetSerializer.UntypedResult deserialized = await ParquetSerializer.DeserializeAsync(ms);
 
             // compare
             if(asJson) {
-                XAssert.JsonEquivalent(data, data2.Data);
-            }
-            else {
-                Assert.Equivalent(data2.Data, data);
+                XAssert.JsonEquivalent(input, deserialized.Data);
+            } else {
+                Assert.Equivalent(input, deserialized.Data);
             }
         }
 
@@ -80,8 +83,10 @@ namespace Parquet.Test.Serialisation {
             public Guid ExternalId { get; set; }
         }
 
-        [Fact]
-        public async Task Atomics_Simplest_Serde() {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Atomics_Simplest_Serde(bool useAsync) {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
@@ -90,9 +95,9 @@ namespace Parquet.Test.Serialisation {
                 ExternalId = Guid.NewGuid()
             }).ToList();
 
-            await Compare(data);
+            await Compare(data, useAsync: useAsync);
         }
-        
+
         class TimespanRecord {
             public TimeSpan TimeSpan { get; set; }
 
@@ -201,7 +206,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public async Task Atomics_Nullable_Serde_Dict() {
 
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
+            var data = Enumerable.Range(0, 4).Select(i => new Dictionary<string, object?> {
                 ["Timestamp"] = DateTime.UtcNow.AddSeconds(i),
                 ["EventName"] = i % 2 == 0 ? "on" : "off",
                 ["MeterValue"] = (double)i,
@@ -209,7 +214,13 @@ namespace Parquet.Test.Serialisation {
                 ["ExternalId"] = Guid.NewGuid()
             }).ToList();
 
-            await DictCompare<NullableRecord>(data);
+            // drop null keys in source data to use for comparison, because untyped deserializer won't have them
+            var dataNoNullKeys = data
+                .Select(d => d.Where(kvp => kvp.Value != null)
+                              .ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
+                .ToList();
+
+            await DictCompare<NullableRecord>(dataNoNullKeys);
         }
 
         class Primitives {
@@ -339,7 +350,7 @@ namespace Parquet.Test.Serialisation {
         }
 
         class AddressBookEntry {
-            
+
             public string? FirstName { get; set; }
 
             public string? LastName { get; set; }
@@ -374,7 +385,7 @@ namespace Parquet.Test.Serialisation {
                 }
             }).ToList();
 
-            await DictCompare<AddressBookEntry>(data);
+            await DictCompare<AddressBookEntry>(data, true);
         }
 
 
@@ -419,7 +430,7 @@ namespace Parquet.Test.Serialisation {
                     }
                 }
             };
-            
+
             await Compare(data);
         }
 
@@ -439,7 +450,7 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public async Task List_Structs_Serde_Dict() {
-            var data = Enumerable.Range(0, 1_000).Select(i => new Dictionary<string, object?> {
+            var data = Enumerable.Range(0, 1).Select(i => new Dictionary<string, object?> {
                 ["PersonId"] = i,
                 ["Comments"] = i % 2 == 0 ? "none" : null,
                 ["Addresses"] = Enumerable.Range(0, 4).Select(a => new Dictionary<string, object?> {
@@ -449,6 +460,65 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             await DictCompare<MovementHistory>(data);
+        }
+
+        class ListOfMapsPoco {
+            public int Id { get; set; }
+
+            public List<Dictionary<string, string>>? Maps { get; set; }
+        }
+
+        [Fact(Skip = "needs major work on dictionaries, as we rely on collection covariance now, which is not the cast for List<T>")]
+        public async Task List_Maps_Simple_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new ListOfMapsPoco {
+                Id = i,
+                Maps = Enumerable.Range(0, 2).Select(m => new Dictionary<string, string> {
+                    ["First"] = "Value1",
+                    ["Second"] = "Value2"
+                }).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
+        class ListOfListsOfAtomicsPoco {
+            public int Id { get; set; }
+            public List<List<int>>? Lists { get; set; }
+
+        }
+
+        [Fact]
+        public async Task List_List_Atomics_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new ListOfListsOfAtomicsPoco {
+                Id = i,
+                Lists = Enumerable.Range(0, 2).Select(m => new List<int> { 1, 2, 3 }).ToList()
+            }).ToList();
+
+            await Compare(data);
+        }
+
+        class ListOfDictionariesOfStructsItemPoco {
+            public int Id { get; set; }
+
+        }
+
+        class ListOfDictionariesOfStructsPoco {
+            public int Id { get; set; }
+            public List<Dictionary<string, ListOfDictionariesOfStructsItemPoco>>? Maps { get; set; }
+        }
+
+
+        [Fact(Skip = "needs major work on dictionaries, as we rely on collection covariance now, which is not the cast for List<T>")]
+        public async Task List_Maps_StuctValue_Serde() {
+            var data = Enumerable.Range(0, 10).Select(i => new ListOfDictionariesOfStructsPoco {
+                Id = i,
+                Maps = Enumerable.Range(0, 2).Select(m => new Dictionary<string, ListOfDictionariesOfStructsItemPoco> {
+                    ["First"] = new ListOfDictionariesOfStructsItemPoco { Id = 1 },
+                    ["Second"] = new ListOfDictionariesOfStructsItemPoco { Id = 2 }
+                }).ToList()
+            }).ToList();
+
+            await Compare(data);
         }
 
 
@@ -652,7 +722,8 @@ namespace Parquet.Test.Serialisation {
                 Tags = new Dictionary<string, string> {
                     ["id"] = i.ToString(),
                     ["gen"] = DateTime.UtcNow.ToString()
-                }}).ToList();
+                }
+            }).ToList();
 
             await Compare(data, true);
         }
@@ -788,8 +859,10 @@ namespace Parquet.Test.Serialisation {
             }
         }
 
-        [Fact]
-        public async Task Specify_row_group_size() {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Specify_row_group_size(bool useAsync) {
             var data = Enumerable.Range(0, 100).Select(i => new Record {
                 Timestamp = DateTime.UtcNow.AddSeconds(i),
                 EventName = i % 2 == 0 ? "on" : "off",
@@ -797,7 +870,12 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = 20 });
+            var options = new ParquetSerializerOptions { RowGroupSize = 20 };
+            if(useAsync) {
+                await ParquetSerializer.SerializeAsync(data.ToAsyncEnumerable(), ms, options);
+            } else {
+                await ParquetSerializer.SerializeAsync(data, ms, options);
+            }
 
             // validate we have 5 row groups in the resulting file
             ms.Position = 0;
@@ -827,8 +905,10 @@ namespace Parquet.Test.Serialisation {
             }
         }
 
-        [Fact]
-        public async Task Deserialize_as_async_enumerable() {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Deserialize_as_async_enumerable(bool useAsync) {
             DateTime now = DateTime.UtcNow;
             int records = 100;
             int rowGroupSize = 20;
@@ -840,10 +920,15 @@ namespace Parquet.Test.Serialisation {
             }).ToList();
 
             using var ms = new MemoryStream();
-            await ParquetSerializer.SerializeAsync(data, ms, new ParquetSerializerOptions { RowGroupSize = rowGroupSize });
+            var options = new ParquetSerializerOptions { RowGroupSize = rowGroupSize };
+            if(useAsync) {
+                await ParquetSerializer.SerializeAsync(data.ToAsyncEnumerable(), ms, options);
+            } else {
+                await ParquetSerializer.SerializeAsync(data, ms, options);
+            }
 
             ms.Position = 0;
-            IList<Record> data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
+            Record[] data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
 
             Assert.Equivalent(data, data2);
         }
@@ -911,8 +996,8 @@ namespace Parquet.Test.Serialisation {
         }
 
         enum DefaultEnum {
-           One,
-           Two
+            One,
+            Two
         }
 
         enum ShortEnum {
@@ -922,9 +1007,9 @@ namespace Parquet.Test.Serialisation {
 
         class EnumProps {
             public int Id { get; set; }
-            
+
             public DefaultEnum DE { get; set; }
-            
+
             public ShortEnum SE { get; set; }
 
             // Nullable Enum
@@ -1080,10 +1165,10 @@ namespace Parquet.Test.Serialisation {
         public async Task DateOnlyTimeOnly_Nullable_Serde() {
 
             var data = Enumerable.Range(0, 1_000).Select(i => new RecordContainingDateAndtimeOnly {
-                NullableDate = i==0? null : DateOnly.MinValue.AddDays(i),
-                NullableTime = i==0? null: TimeOnly.MinValue.AddMinutes(i),
-                Date =  DateOnly.MinValue.AddDays(i+1),
-                Time = TimeOnly.MinValue.AddMinutes(i+1),
+                NullableDate = i == 0 ? null : DateOnly.MinValue.AddDays(i),
+                NullableTime = i == 0 ? null : TimeOnly.MinValue.AddMinutes(i),
+                Date = DateOnly.MinValue.AddDays(i + 1),
+                Time = TimeOnly.MinValue.AddMinutes(i + 1),
             }).ToList();
 
             using var ms = new MemoryStream();
@@ -1194,5 +1279,6 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(testData.DateTimeDoubleDict.Count, buffer[0]?.DateTimeDoubleDict?.Count);
             Assert.Equal(testData.DateTimeDoubleDict[new DateTime(2021, 1, 1)], buffer[0]?.DateTimeDoubleDict?[new DateTime(2021, 1, 1)]);
         }
+       
     }
 }

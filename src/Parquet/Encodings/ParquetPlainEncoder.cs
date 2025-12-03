@@ -13,7 +13,8 @@ using TType = Parquet.Meta.Type;
 namespace Parquet.Encodings {
 
     /// <summary>
-    /// Fast data encoder.
+    /// Fast data encoder. 
+    /// See https://github.com/aloneguid/parquet-dotnet/issues/643#issuecomment-3489932123 for future performance ideas.
     /// Experimental.
     /// </summary>
     static class ParquetPlainEncoder {
@@ -439,7 +440,7 @@ namespace Parquet.Encodings {
         #endregion
 
         public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
-            int targetLength = (data.Length / 8) + 1;
+            int targetLength = (data.Length + 7) / 8;
             byte[] buffer = ArrayPool<byte>.Shared.Rent(targetLength);
 
             int n = 0;
