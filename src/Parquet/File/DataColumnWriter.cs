@@ -146,6 +146,9 @@ namespace Parquet.File {
             // data page
             using(MemoryStream ms = _rmsMgr.GetStream()) {
                 Array data = pc.GetPlainData(out int offset, out int count);
+                if(bloom != null) {
+                    BloomAddValues(bloom, data, offset, count, _schemaElement);
+                }
                 bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
                
                 // data page Num_values also does include NULLs
@@ -164,10 +167,6 @@ namespace Parquet.File {
                     ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                     RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
                 } else {
-                    Array data = pc.GetPlainData(out int offset, out int count);
-                    if(bloom != null) {
-                        BloomAddValues(bloom, data, offset, count, _schemaElement);
-                    }
                     if(deltaEncode) {
                         DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
                         chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
