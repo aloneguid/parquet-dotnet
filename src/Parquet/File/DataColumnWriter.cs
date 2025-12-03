@@ -70,34 +70,49 @@ namespace Parquet.File {
         }
 
         private async Task CompressAndWriteAsync(
-            PageHeader ph, MemoryStream data,
+            PageHeader ph, MemoryStream uncompressedData,
             ColumnSizes cs,
             CancellationToken cancellationToken) {
 
-            using IronCompress.IronCompressResult compressedData = _compressionMethod == CompressionMethod.None
-                ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
-                : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
+            bool compressPhysically = _compressionMethod != CompressionMethod.None;
 
-            ph.UncompressedPageSize = (int)data.Length;
-            ph.CompressedPageSize = compressedData.AsSpan().Length;
+            MemoryStream compressedData = compressPhysically
+                ? _rmsMgr.GetStream()
+                : uncompressedData;
 
-            //write the header in
-            using MemoryStream headerMs = _rmsMgr.GetStream();
-            ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
-            int headerSize = (int)headerMs.Length;
-            headerMs.Position = 0;
-            _stream.Flush();
+            try {
+                if(compressPhysically) {
+                    uncompressedData.Seek(0, SeekOrigin.Begin);
+                    await Compressor.Instance.Compress(_compressionMethod, _compressionLevel, uncompressedData, compressedData);
+                }
 
-            await headerMs.CopyToAsync(_stream);
+                ph.UncompressedPageSize = (int)uncompressedData.Length;
+                ph.CompressedPageSize = (int)compressedData.Length;
 
-            // write data
-            _stream.WriteSpan(compressedData);
+                //write the header in
+                using(MemoryStream headerMs = _rmsMgr.GetStream()) {
+                    ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
+                    int headerSize = (int)headerMs.Length;
+                    headerMs.Position = 0;
+                    _stream.Flush();
 
-            cs.CompressedSize += headerSize;
-            cs.UncompressedSize += headerSize;
+                    // write header
+                    await headerMs.CopyToAsync(_stream);
 
-            cs.CompressedSize += ph.CompressedPageSize;
-            cs.UncompressedSize += ph.UncompressedPageSize;
+                    cs.CompressedSize += headerSize;
+                    cs.UncompressedSize += headerSize;
+                }
+
+                // write data
+                compressedData.Seek(0, SeekOrigin.Begin);
+                await compressedData.CopyToAsync(_stream);
+
+                cs.CompressedSize += ph.CompressedPageSize;
+                cs.UncompressedSize += ph.UncompressedPageSize;
+            } finally {
+                if(compressPhysically)
+                    compressedData.Dispose();
+            }
         }
 
         private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
