@@ -38,7 +38,7 @@ namespace Parquet.Test.Integration {
             // Time-like CLR types
             [typeof(TimeSpan)] = "TIME",
             [typeof(Interval)] = "INTERVAL",
-#if !NETCOREAPP3_1
+#if !NETCOREAPP3_1 && !NETFRAMEWORK
             [typeof(DateOnly)] = "DATE",
 #endif
 #if NET6_0_OR_GREATER
@@ -61,9 +61,11 @@ namespace Parquet.Test.Integration {
                 };
             }
 
+#if NET6_0_OR_GREATER
             if(field is TimeSpanDataField || field is TimeOnlyDataField) {
                 return "TIME";
             }
+#endif
 
             // Fallback to CLR type mapping
             if(_duckDbTypeMap.TryGetValue(field.ClrType, out string? mapped)) {

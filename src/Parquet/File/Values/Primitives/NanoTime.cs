@@ -13,7 +13,7 @@ namespace Parquet.File.Values.Primitives {
         }
 
         public NanoTime(Span<byte> span) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
             byte[] data = span.ToArray();
             _timeOfDayNanos = BitConverter.ToInt64(data, 0);
             _julianDay = BitConverter.ToInt32(data, sizeof(long));

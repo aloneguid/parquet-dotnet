@@ -25,14 +25,14 @@ namespace Parquet.Extensions {
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         public override int Read(Span<byte> buffer) => throw new NotImplementedException();
 #endif
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             => throw new NotImplementedException();
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
 #endif
@@ -44,7 +44,7 @@ namespace Parquet.Extensions {
             _written += count;
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         public override void Write(ReadOnlySpan<byte> buffer) {
             _baseStream.Write(buffer);
             _written += buffer.Length;
@@ -56,7 +56,7 @@ namespace Parquet.Extensions {
             _written += count;
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
             await _baseStream.WriteAsync(buffer, cancellationToken);
             _written += buffer.Length;
@@ -68,7 +68,7 @@ namespace Parquet.Extensions {
             _baseStream.WriteByte(value);
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         public override void CopyTo(Stream destination, int bufferSize) => throw new NotImplementedException();
 #endif
 
@@ -107,7 +107,7 @@ namespace Parquet.Extensions {
             if(disposing)                 _baseStream.Dispose();
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         public override async ValueTask DisposeAsync() {
             await base.DisposeAsync();
             await _baseStream.DisposeAsync();

@@ -960,7 +960,10 @@ namespace Parquet.Test.Serialisation {
                 new() { String = "c", Nullable = "z" },
             };
 
-            await using Stream stream = OpenTestFile("required-strings.parquet");
+#if !NETFRAMEWORK
+            await
+#endif
+            using Stream stream = OpenTestFile("required-strings.parquet");
             IList<StringRequiredAndNot> actual = await ParquetSerializer.DeserializeAsync<StringRequiredAndNot>(stream);
 
             Assert.Equivalent(expected, actual);

@@ -4,8 +4,8 @@
     <PropertyGroup>
         <IsPackable>false</IsPackable>
         <LangVersion>latest</LangVersion>
-        <TargetFrameworks>net10.0</TargetFrameworks>
-
+        <TargetFrameworks>net10.0;net472</TargetFrameworks>
+        <LangVersion Condition="'$(TargetFramework)' == 'net472'">preview</LangVersion>
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
         <Nullable>enable</Nullable>

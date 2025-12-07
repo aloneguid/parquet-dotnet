@@ -72,7 +72,7 @@ namespace Parquet.Utils {
 
             // the first file will be taken as is
             Stream src = _inputStreams[0];
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
             await src.CopyToAsync(destination);
 #else
             await src.CopyToAsync(destination, cancellationToken);

@@ -1117,7 +1117,7 @@ namespace Parquet.Encodings {
                 int length = tse.TypeLength.Value;
 
                 for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
                     data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
 #else
                     data[i] = E.GetString(source.Slice(spanIdx, length));
@@ -1130,7 +1130,7 @@ namespace Parquet.Encodings {
                 for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
                     int length = source.ReadInt32(spanIdx);
                     spanIdx += sizeof(int);
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
                 data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
 #else
                     data[i] = E.GetString(source.Slice(spanIdx, length));
@@ -1155,7 +1155,7 @@ namespace Parquet.Encodings {
         #region [ .NET differences ]
 
         private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
             byte[] tmp = bytes.ToArray();
             destination.Write(tmp, 0, tmp.Length);
 #else
@@ -1164,7 +1164,7 @@ namespace Parquet.Encodings {
         }
 
         private static int Read(Stream source, Span<byte> bytes) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
             byte[] tmp = new byte[bytes.Length];
             int read = 0;
             while(read < tmp.Length) {

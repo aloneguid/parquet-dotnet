@@ -16,7 +16,7 @@ namespace System {
         }
 
         public static long ReadInt64(this Span<byte> span, int offset) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
             return BitConverter.ToInt64(span.Slice(offset, sizeof(long)).ToArray(), 0);
 #else
             return BitConverter.ToInt64(span.Slice(offset, sizeof(long)));

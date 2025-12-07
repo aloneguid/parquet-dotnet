@@ -8,7 +8,7 @@ namespace Parquet.Extensions {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteSpan(this Stream s, Span<byte> span) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETFRAMEWORK
             s.Write(span.ToArray(), 0, span.Length);
 #else
             s.Write(span);
