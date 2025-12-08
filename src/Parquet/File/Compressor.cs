@@ -62,6 +62,7 @@ class IronCompressStreamCompressor : IStreamCompressor {
     }
 }
 
+
 static class Compressor {
     public static IStreamCompressor Instance { get; } = new IronCompressStreamCompressor();
 }
