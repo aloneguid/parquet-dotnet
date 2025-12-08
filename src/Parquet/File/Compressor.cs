@@ -113,6 +113,7 @@ class DefaultCompressor : ICompressor {
         source.Position = 0;
         using (var gzip = new GZipStream(ms, level, leaveOpen: true)) {
             await source.CopyToAsync(gzip);
+            await source.FlushAsync();
         }
         int len = (int)ms.Length;
         var owner = MemoryOwner<byte>.Allocate(len);
@@ -124,23 +125,14 @@ class DefaultCompressor : ICompressor {
 
     private async ValueTask<IMemoryOwner<byte>> GzipDecompress(Stream source, int destinationLength) {
         var owner = MemoryOwner<byte>.Allocate(destinationLength);
-        using var gzip = new GZipStream(source, CompressionMode.Decompress, leaveOpen: true);
-
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(81920);
-        try {
-            int totalRead = 0;
-            while(totalRead < destinationLength) {
-                int toRead = Math.Min(buffer.Length, destinationLength - totalRead);
-                int read = await gzip.ReadAsync(buffer, 0, toRead);
-                if(read == 0) break;
-                new ReadOnlySpan<byte>(buffer, 0, read).CopyTo(owner.Span.Slice(totalRead, read));
-                totalRead += read;
-            }
+		int copied = 0;
+        using(var gzip = new GZipStream(source, CompressionMode.Decompress, leaveOpen: true)) {
+            copied = await gzip.CopyToAsync(owner.Memory);
         }
-        finally {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-
+		if(copied < destinationLength) {
+			// IMPORTANT: .Slice() transfers ownership, so owner does not need to be disposed
+			owner = owner.Slice(0, copied); 
+		}
         return owner;
     }
 

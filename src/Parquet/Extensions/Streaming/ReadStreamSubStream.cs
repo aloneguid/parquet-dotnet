@@ -27,7 +27,7 @@ class ReadStreamSubStream : Stream {
 
     public override bool CanRead => _baseStream.CanRead;
     public override bool CanSeek => _baseStream.CanSeek;
-    public override bool CanWrite => _baseStream.CanWrite;
+    public override bool CanWrite => false;
     public override long Length => _length;
 
     public override long Position {
@@ -60,20 +60,8 @@ class ReadStreamSubStream : Stream {
         return read;
     }
 
-    public override void Write(byte[] buffer, int offset, int count) {
-        if(buffer == null)
-            throw new ArgumentNullException(nameof(buffer));
-        if(offset < 0 || count < 0 || offset + count > buffer.Length)
-            throw new ArgumentOutOfRangeException("Invalid offset/count.");
-
-        long remaining = _length - _position;
-        if(count > remaining)
-            throw new IOException("Write exceeds substream length limit.");
-
-        _baseStream.Position = _start + _position;
-        _baseStream.Write(buffer, offset, count);
-        _position += count;
-    }
+    public override void Write(byte[] buffer, int offset, int count) =>
+        throw new NotSupportedException("Substream is read-only.");
 
     public override long Seek(long offset, SeekOrigin origin) {
         long newPos;

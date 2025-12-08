@@ -45,6 +45,8 @@ namespace Parquet.PerfRunner.Benchmarks {
                 Enumerable.Range(0, DataSize).Select(i => i % 4 == 0 ? (int?)null : i).ToArray(),
                 null);
             _intsMs = await MakeFile(_intsSchema, _ints);
+
+            Console.WriteLine($"parquet version: {Parquet.Globals.Version}");
         }
 
         private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
