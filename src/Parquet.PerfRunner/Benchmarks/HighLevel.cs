@@ -22,7 +22,8 @@ namespace Parquet.PerfRunner.Benchmarks {
         private MemoryStream? _intsMs;
         private const string ComparedVersion = "5.4.0";
 
-        public CompressionMethod CM { get; set; } = CompressionMethod.Snappy;
+        [Params(CompressionMethod.None, CompressionMethod.Snappy)]
+        public CompressionMethod CM { get; set; }
 
         private class Config : ManualConfig {
             public Config() {
