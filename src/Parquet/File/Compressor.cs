@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
-using IronCompress;
 using K4os.Compression.LZ4;
 using Parquet.Extensions;
 using Snappier;
@@ -27,54 +26,7 @@ interface ICompressor {
     ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength);
 }
 
-/// <summary>
-/// To be migrated off in future.
-/// </summary>
-class IronCompressStreamCompressor : ICompressor {
-
-    private static readonly Iron _iron = new();
-
-    public async ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source) {
-        byte[] sourceBytes = source.ToArray();
-        using IronCompressResult result = _iron.Compress(ToCodec(method), sourceBytes, compressionLevel: level);
-        MemoryOwner<byte> memoryOwner = MemoryOwner<byte>.Allocate((int)result.Length);
-        result.AsSpan().CopyTo(memoryOwner.Span);
-        return memoryOwner;
-    }
-
-    private static Codec ToCodec(CompressionMethod method) {
-        switch(method) {
-            case CompressionMethod.Snappy:
-                return Codec.Snappy;
-            case CompressionMethod.Gzip:
-                return Codec.Gzip;
-            case CompressionMethod.Lzo:
-                return Codec.LZO;
-            case CompressionMethod.Brotli:
-                return Codec.Brotli;
-            case CompressionMethod.LZ4:
-                return Codec.LZ4;
-            case CompressionMethod.Zstd:
-                return Codec.Zstd;
-            case CompressionMethod.Lz4Raw:
-                return Codec.LZ4;
-            default:
-                throw new NotSupportedException($"{method} not supported");
-        }
-    }
-
-    public async ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength) {
-        // temporary: decompress with IronCompress first, then wrap into MemoryStream
-        using IronCompressResult result = _iron.Decompress(ToCodec(method), source.ToByteArray(), destinationLength);
-        var r = MemoryOwner<byte>.Allocate((int)result.Length);
-        result.AsSpan().CopyTo(r.Span);
-        return r;
-    }
-}
-
 class DefaultCompressor : ICompressor {
-
-    private readonly IronCompressStreamCompressor _fallback = new IronCompressStreamCompressor();
 
     // "None" (no compression) as conversion helper
 
@@ -136,23 +88,6 @@ class DefaultCompressor : ICompressor {
 			owner = owner.Slice(0, copied); 
 		}
         return owner;
-    }
-
-    private async ValueTask<IMemoryOwner<byte>> GzipDecompress1(Stream source, int destinationLength) {
-        var ms = new MemoryStream();
-        await source.CopyToAsync(ms);
-
-        ms.Position = 0;
-        IMemoryOwner<byte> r0 = await GzipDecompress(ms, destinationLength);
-
-        ms.Position = 0;
-        IMemoryOwner<byte> r1 = await _fallback.Decompress(CompressionMethod.Gzip, ms, destinationLength);
-
-        if(!r0.Memory.Span.SequenceEqual(r1.Memory.Span)) {
-            throw new InvalidOperationException("Gzip decompression outputs do not match");
-        }
-
-        return r0;
     }
 
     // "LZO" compression
@@ -286,7 +221,7 @@ class DefaultCompressor : ICompressor {
 			case CompressionMethod.Lz4Raw:
 				return await Lz4Compress(source, level);
 			default:
-                return await _fallback.CompressAsync(method, level, source);
+                throw new NotSupportedException($"Compression method {method} is not supported.");
         }
     }
 
@@ -312,7 +247,7 @@ class DefaultCompressor : ICompressor {
 			case CompressionMethod.Lz4Raw:
 				return await Lz4Decompress(source, destinationLength);
 			default:
-                return await _fallback.Decompress(method, source, destinationLength);
+                throw new NotSupportedException($"Compression method {method} is not supported.");
         }
 
     }
