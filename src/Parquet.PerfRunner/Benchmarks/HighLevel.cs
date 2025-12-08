@@ -59,32 +59,35 @@ namespace Parquet.PerfRunner.Benchmarks {
             return ms;
         }
 
-        private async Task Run(ParquetSchema schema, DataColumn c) {
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
+        private async Task<MemoryStream> Run(ParquetSchema schema, DataColumn c) {
+            var r = new MemoryStream();
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, r)) {
                 writer.CompressionMethod = CM;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                     await groupWriter.WriteColumnAsync(c);
                 }
             }
+            return r;
         }
 
-        private async Task Run(DataColumn c, MemoryStream ms) {
+        private async Task<MemoryStream> Run(DataColumn c, MemoryStream ms) {
             ms.Position = 0;
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
                 DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
                 Console.WriteLine($"read {columns.Length} columns");
             }
             ms.Position = 0;
+            return ms;
         }
 
         [Benchmark]
-        public Task WriteNullableInts() {
+        public Task<MemoryStream> WriteNullableInts() {
             return Run(_intsSchema, _ints!);
         }
 
         [Benchmark]
-        public Task ReadNullableInts() {
+        public Task<MemoryStream> ReadNullableInts() {
             return Run(_ints!, _intsMs!);
         }
 

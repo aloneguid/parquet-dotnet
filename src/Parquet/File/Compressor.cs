@@ -75,15 +75,7 @@ class DefaultCompressor : ICompressor {
 
     private readonly IronCompressStreamCompressor _fallback = new IronCompressStreamCompressor();
 
-    private async ValueTask<IMemoryOwner<byte>> SnappyCompress(MemoryStream source) {
-        ReadOnlySpan<byte> src = source.GetBuffer().AsSpan(0, (int)source.Length);
-        return Snappy.CompressToMemory(src);
-    }
-
-    private async ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
-        byte[] compressed = source.ToByteArray()!;
-        return Snappy.DecompressToMemory(compressed);
-    }
+    // "None" (no compression) as conversion helper
 
     private async ValueTask<IMemoryOwner<byte>> NoneCompress(MemoryStream source) {
         var r = MemoryOwner<byte>.Allocate((int)source.Length);
@@ -99,6 +91,57 @@ class DefaultCompressor : ICompressor {
 
     }
 
+    // "Snappy" compression
+
+    private async ValueTask<IMemoryOwner<byte>> SnappyCompress(MemoryStream source) {
+        ReadOnlySpan<byte> src = source.GetBuffer().AsSpan(0, (int)source.Length);
+        return Snappy.CompressToMemory(src);
+    }
+
+    private async ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
+        byte[] compressed = source.ToByteArray()!;
+        return Snappy.DecompressToMemory(compressed);
+    }
+
+    // "Gzip" compression
+
+    private async ValueTask<IMemoryOwner<byte>> GzipCompress(MemoryStream source, CompressionLevel level) {
+        // Compress into an in-memory stream and copy into MemoryOwner without extra temporary arrays
+        using var ms = new MemoryStream();
+        source.Position = 0;
+        using (var gzip = new GZipStream(ms, level, leaveOpen: true)) {
+            await source.CopyToAsync(gzip);
+        }
+        int len = (int)ms.Length;
+        var owner = MemoryOwner<byte>.Allocate(len);
+        // Use underlying buffer to copy bytes to owner
+        byte[] buf = ms.GetBuffer();
+        new ReadOnlySpan<byte>(buf, 0, len).CopyTo(owner.Span);
+        return owner;
+    }
+
+    private async ValueTask<IMemoryOwner<byte>> GzipDecompress(Stream source, int destinationLength) {
+        var owner = MemoryOwner<byte>.Allocate(destinationLength);
+        using var gzip = new GZipStream(source, CompressionMode.Decompress, leaveOpen: true);
+
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(81920);
+        try {
+            int totalRead = 0;
+            while(totalRead < destinationLength) {
+                int toRead = Math.Min(buffer.Length, destinationLength - totalRead);
+                int read = await gzip.ReadAsync(buffer, 0, toRead);
+                if(read == 0) break;
+                new ReadOnlySpan<byte>(buffer, 0, read).CopyTo(owner.Span.Slice(totalRead, read));
+                totalRead += read;
+            }
+        }
+        finally {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+
+        return owner;
+    }
+
     public async ValueTask<IMemoryOwner<byte>> CompressAsync(
         CompressionMethod method, CompressionLevel level, MemoryStream source) {
         switch(method) {
@@ -106,6 +149,8 @@ class DefaultCompressor : ICompressor {
                 return await NoneCompress(source);
             case CompressionMethod.Snappy:
                 return await SnappyCompress(source);
+            case CompressionMethod.Gzip:
+                return await GzipCompress(source, level);
             default:
                 return await _fallback.CompressAsync(method, level, source);
         }
@@ -118,6 +163,8 @@ class DefaultCompressor : ICompressor {
                 return await NoneDecompress(source, destinationLength);
             case CompressionMethod.Snappy:
                 return await SnappyDecompress(source);
+            case CompressionMethod.Gzip:
+                return await GzipDecompress(source, destinationLength);
             default:
                 return await _fallback.Decompress(method, source, destinationLength);
         }
