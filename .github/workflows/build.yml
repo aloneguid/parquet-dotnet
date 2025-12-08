@@ -76,7 +76,7 @@ jobs:
         dotnet-version: 10.0.x
     - name: Run Benchmarks
       run: |
-        dotnet run src/Parquet.PerfRunner -c release -- highLevel
+        dotnet run src/Parquet.PerfRunner/Parquet.PerfRunner.csproj -c release -- highLevel
 
   build:
 
