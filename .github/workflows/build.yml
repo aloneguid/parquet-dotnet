@@ -67,7 +67,17 @@ jobs:
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: macos-latest
+            name: MacOS ARM64
+      fail-fast: false
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
