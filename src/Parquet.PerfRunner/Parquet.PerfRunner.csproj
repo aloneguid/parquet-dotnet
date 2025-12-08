@@ -15,8 +15,14 @@
         <PackageReference Include="ParquetSharp" Version="21.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
+    <!-- normally, reference project directly -->
+    <ItemGroup Condition="'$(ParquetVersion)' == ''">
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
+    </ItemGroup>
+
+    <!-- for perf testing specific Parquet versions -->
+    <ItemGroup Condition="'$(ParquetVersion)' != ''">
+        <PackageReference Include="ParquetSharp" Version="$(ParquetVersion)" />
     </ItemGroup>
 
 </Project>

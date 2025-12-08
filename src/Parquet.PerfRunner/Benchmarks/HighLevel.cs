@@ -17,15 +17,23 @@ namespace Parquet.PerfRunner.Benchmarks {
     [JsonExporterAttribute.Full]
     public class HighLevel {
 
-        private const int DataSize = 1000000;
+        private const int DataSize = 10000000;
         private readonly ParquetSchema _intsSchema = new ParquetSchema(new DataField<int?>("i"));
         private DataColumn? _ints;
         private MemoryStream? _intsMs;
+        private const string ComparedVersion = "5.4.0";
+
 
         private class Config : ManualConfig {
             public Config() {
-                AddJob(Job.MediumRun.WithId("1"));
-                AddJob(Job.MediumRun.WithId("2"));
+
+                // https://benchmarkdotnet.org/articles/samples/IntroNuGet.html
+
+                AddJob(Job.MediumRun
+                    .WithId("local"));
+                AddJob(Job.MediumRun
+                    .WithId(ComparedVersion)
+                    .WithMsBuildArguments($"/p:ParquetVersion={ComparedVersion}"));
             }
         }
 
