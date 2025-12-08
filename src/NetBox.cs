@@ -1911,6 +1911,10 @@ namespace System {
         public static byte[]? ToByteArray(this Stream? stream) {
             if(stream == null)
                 return null;
+
+            if(stream is MemoryStream xms)
+                return xms.ToArray();
+
             using(var ms = new MemoryStream()) {
                 stream.CopyTo(ms);
                 return ms.ToArray();

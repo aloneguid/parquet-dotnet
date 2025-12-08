@@ -9,6 +9,7 @@ using Parquet.Schema;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Extensions;
+using Parquet.Extensions.Streaming;
 
 namespace Parquet {
     /// <summary>

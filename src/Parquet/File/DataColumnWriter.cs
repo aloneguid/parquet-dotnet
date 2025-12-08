@@ -83,7 +83,7 @@ namespace Parquet.File {
             try {
                 if(compressPhysically) {
                     uncompressedData.Seek(0, SeekOrigin.Begin);
-                    await Compressor.Instance.Compress(_compressionMethod, _compressionLevel, uncompressedData, compressedData);
+                    await Compressor.Instance.CompressAsync(_compressionMethod, _compressionLevel, uncompressedData, compressedData);
                 }
 
                 ph.UncompressedPageSize = (int)uncompressedData.Length;
