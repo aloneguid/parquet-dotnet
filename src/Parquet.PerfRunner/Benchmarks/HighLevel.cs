@@ -31,7 +31,8 @@ namespace Parquet.PerfRunner.Benchmarks {
                 // https://benchmarkdotnet.org/articles/samples/IntroNuGet.html
 
                 AddJob(Job.MediumRun
-                    .WithId("local"));
+                    .WithId("local")
+                    .WithMsBuildArguments($"/p:ParquetVersion="));
                 AddJob(Job.MediumRun
                     .WithId(ComparedVersion)
                     .WithMsBuildArguments($"/p:ParquetVersion={ComparedVersion}"));

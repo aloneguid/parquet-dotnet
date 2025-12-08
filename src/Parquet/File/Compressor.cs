@@ -125,7 +125,10 @@ class DefaultCompressor : ICompressor {
     private async ValueTask<IMemoryOwner<byte>> GzipDecompress(Stream source, int destinationLength) {
         var owner = MemoryOwner<byte>.Allocate(destinationLength);
 		int copied = 0;
-        using(var gzip = new GZipStream(source, CompressionMode.Decompress, leaveOpen: true)) {
+        using var ms = new MemoryStream();
+        await source.CopyToAsync(ms);
+        ms.Position = 0;
+        using(var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true)) {
             copied = await gzip.CopyToAsync(owner.Memory);
         }
 		if(copied < destinationLength) {
@@ -135,9 +138,26 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-	// "LZO" compression
+    private async ValueTask<IMemoryOwner<byte>> GzipDecompress1(Stream source, int destinationLength) {
+        var ms = new MemoryStream();
+        await source.CopyToAsync(ms);
 
-	private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
+        ms.Position = 0;
+        IMemoryOwner<byte> r0 = await GzipDecompress(ms, destinationLength);
+
+        ms.Position = 0;
+        IMemoryOwner<byte> r1 = await _fallback.Decompress(CompressionMethod.Gzip, ms, destinationLength);
+
+        if(!r0.Memory.Span.SequenceEqual(r1.Memory.Span)) {
+            throw new InvalidOperationException("Gzip decompression outputs do not match");
+        }
+
+        return r0;
+    }
+
+    // "LZO" compression
+
+    private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
 		throw new NotImplementedException("LZO compression is not implemented yet.");
 	}
 
