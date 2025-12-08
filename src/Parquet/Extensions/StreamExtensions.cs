@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
 using Parquet.Extensions.Streaming;
 
 namespace Parquet.Extensions {
@@ -101,6 +102,15 @@ namespace Parquet.Extensions {
                 copied += bytesRead;
             }
             return copied;
+#else
+            throw new NotImplementedException();
+#endif
+        }
+
+        public static async ValueTask CopyToAsync(this Memory<byte> source, Stream destination,
+            CancellationToken token = default) {
+#if !NETSTANDARD2_0
+            await destination.WriteAsync(source);
 #else
             throw new NotImplementedException();
 #endif

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
-using IronCompress;
 using Microsoft.IO;
 using Parquet.Data;
 using Parquet.Encodings;
@@ -13,7 +12,6 @@ using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
 using Parquet.Schema;
-using static Microsoft.IO.RecyclableMemoryStreamManager;
 
 namespace Parquet.File {
 
@@ -28,6 +26,7 @@ namespace Parquet.File {
         private readonly ThriftFooter _footer;
         private readonly ParquetOptions _options;
         private readonly DataColumnStatistics? _stats;
+        private readonly CompressionMethod _compressionMethod;
         private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
 
         internal DataColumnReader(
@@ -41,6 +40,7 @@ namespace Parquet.File {
             _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
             _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
             _stats = stats;
+            _compressionMethod = (CompressionMethod)(int)(thriftColumnChunk.MetaData?.Codec ?? CompressionCodec.UNCOMPRESSED);
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
 
@@ -103,44 +103,24 @@ namespace Parquet.File {
             return column;
         }
 
-        private async ValueTask<MemoryOwner<byte>> ReadPageDataAsync(PageHeader ph) {
-
-            // decoding needs entire data page in memory, so we read it all at once from the source stream
-
+        private async ValueTask<IMemoryOwner<byte>> ReadPageDataAsync(PageHeader ph) {
             Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize);
-            try {
-                MemoryOwner<byte> r = MemoryOwner<byte>.Allocate(ph.UncompressedPageSize);
-                try {
-                    if(_thriftColumnChunk.MetaData!.Codec != CompressionCodec.UNCOMPRESSED) {
-                        src = Compressor.Instance.Decompress(
-                            (CompressionMethod)(int)_thriftColumnChunk.MetaData.Codec,
-                            src,
-                            ph.UncompressedPageSize);
-                    }
-                    await src.CopyToAsync(r.Memory);
-                } catch {
-                    r.Dispose();
-                    throw;
-                }
-
-                return r;
-            } finally {
-                src.Dispose();
-            }
+            return await Compressor.Instance.Decompress(_compressionMethod, src, ph.UncompressedPageSize);
         }
+
         private async ValueTask ReadDictionaryPage(PageHeader ph, PackedColumn pc) {
 
             if(pc.HasDictionary)
                 throw new InvalidOperationException("dictionary already read");
 
             //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
-            using MemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+            using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
 
             // Dictionary should not contains null values
             Array dictionary = _dataField.CreateArray(ph.DictionaryPageHeader!.NumValues);
 
             ParquetPlainEncoder.Decode(dictionary, 0, ph.DictionaryPageHeader.NumValues,
-                   _schemaElement!, bytes.Span, out int dictionaryOffset);
+                   _schemaElement!, bytes.Memory.Span, out int dictionaryOffset);
 
             pc.AssignDictionary(dictionary);
         }
@@ -156,7 +136,7 @@ namespace Parquet.File {
                 .Min();
 
         private async Task ReadDataPageV1Async(PageHeader ph, PackedColumn pc) {
-            using MemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+            using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
 
             if(ph.DataPageHeader == null) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
@@ -170,7 +150,7 @@ namespace Parquet.File {
                 //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
 
                 int levelsRead = ReadLevels(
-                    bytes.Span, _dataField.MaxRepetitionLevel,
+                    bytes.Memory.Span, _dataField.MaxRepetitionLevel,
                     pc.GetWriteableRepetitionLevelSpan(),
                     pageValueCount, null, out int usedLength);
                 pc.MarkRepetitionLevels(levelsRead);
@@ -180,7 +160,7 @@ namespace Parquet.File {
             int defNulls = 0;
             if(_dataField.MaxDefinitionLevel > 0) {
                 int levelsRead = ReadLevels(
-                    bytes.Span.Slice(dataUsed), _dataField.MaxDefinitionLevel,
+                    bytes.Memory.Span.Slice(dataUsed), _dataField.MaxDefinitionLevel,
                     pc.GetWriteableDefinitionLevelSpan(),
                     pageValueCount, null, out int usedLength);
                 dataUsed += usedLength;
@@ -191,7 +171,7 @@ namespace Parquet.File {
             int dataElementCount = pageValueCount - defNulls;
 
             ReadColumn(
-                bytes.Span.Slice(dataUsed),
+                bytes.Memory.Span.Slice(dataUsed),
                 ph.DataPageHeader.Encoding,
                 allValueCount, dataElementCount,
                 pc);
@@ -239,16 +219,13 @@ namespace Parquet.File {
                                    ph.DataPageHeaderV2.DefinitionLevelsByteLength;
 
 
-            using MemoryOwner<byte> decompressedDataMemory = MemoryOwner<byte>.Allocate(decompressedSize);
             // decompress into rented memory
-            using(Stream src = Compressor.Instance.Decompress(
-                (CompressionMethod)(int)_thriftColumnChunk.MetaData.Codec,
-                           pageMemory.Memory.Sub(dataUsed, pageMemory.Length - dataUsed),
-                           ph.UncompressedPageSize)) {
-                await src.CopyToAsync(decompressedDataMemory.Memory);
-            }
+            using IMemoryOwner<byte> decompressedDataMemory = await Compressor.Instance.Decompress(
+                _compressionMethod,
+                pageMemory.Memory.Sub(dataUsed, pageMemory.Length - dataUsed),
+                ph.UncompressedPageSize);
 
-            ReadColumn(decompressedDataMemory.Span,
+            ReadColumn(decompressedDataMemory.Memory.Span,
                 ph.DataPageHeaderV2.Encoding,
                 maxValues, maxReadCount,
                 pc);
