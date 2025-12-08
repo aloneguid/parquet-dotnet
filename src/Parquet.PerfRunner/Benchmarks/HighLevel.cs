@@ -68,9 +68,23 @@ namespace Parquet.PerfRunner.Benchmarks {
             }
         }
 
+        private async Task Run(DataColumn c, MemoryStream ms) {
+            ms.Position = 0;
+            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+                Console.WriteLine($"read {columns.Length} columns");
+            }
+            ms.Position = 0;
+        }
+
         [Benchmark]
         public Task WriteNullableInts() {
             return Run(_intsSchema, _ints!);
+        }
+
+        [Benchmark]
+        public Task ReadNullableInts() {
+            return Run(_ints!, _intsMs!);
         }
 
         public static void Run() {
