@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Parquet.Data;
 using Parquet.Schema;
@@ -12,6 +13,8 @@ namespace Parquet.PerfRunner.Benchmarks {
     /// High level numbers to track progress over time. These can be pushed to reporting database, therefore keep stable.
     /// </summary>
     [Config(typeof(Config))]
+    [MemoryDiagnoser]
+    [JsonExporterAttribute.Full]
     public class HighLevel {
 
         private const int DataSize = 1000000;
@@ -21,7 +24,8 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         private class Config : ManualConfig {
             public Config() {
-                AddDiagnoser(MemoryDiagnoser.Default);
+                AddJob(Job.MediumRun.WithId("1"));
+                AddJob(Job.MediumRun.WithId("2"));
             }
         }
 
