@@ -20,7 +20,9 @@ namespace Parquet.PerfRunner.Benchmarks {
         private readonly ParquetSchema _intsSchema = new ParquetSchema(new DataField<int?>("i"));
         private DataColumn? _ints;
         private MemoryStream? _intsMs;
-        private const string ComparedVersion = "5.4.0";
+        private static readonly string[] TargetVersions = [
+            "",
+            "5.4.0"];
 
         [Params(CompressionMethod.None, CompressionMethod.Snappy)]
         public CompressionMethod CM { get; set; }
@@ -30,12 +32,11 @@ namespace Parquet.PerfRunner.Benchmarks {
 
                 // https://benchmarkdotnet.org/articles/samples/IntroNuGet.html
 
-                AddJob(Job.MediumRun
-                    .WithId("local")
-                    .WithMsBuildArguments($"/p:ParquetVersion="));
-                AddJob(Job.MediumRun
-                    .WithId(ComparedVersion)
-                    .WithMsBuildArguments($"/p:ParquetVersion={ComparedVersion}"));
+                foreach(string v in TargetVersions) {
+                    AddJob(Job.MediumRun
+                        .WithId(string.IsNullOrEmpty(v) ? "local" : v)
+                        .WithMsBuildArguments($"/p:ParquetVersion={v}"));
+                }
             }
         }
 
