@@ -11,7 +11,7 @@ namespace Parquet.Test {
         [InlineData(CompressionMethod.Gzip)]
         [InlineData(CompressionMethod.Lzo)]
         [InlineData(CompressionMethod.Brotli)]
-        [InlineData(CompressionMethod.LZ4)]
+        //[InlineData(CompressionMethod.LZ4)]
         [InlineData(CompressionMethod.Zstd)]
         [InlineData(CompressionMethod.Lz4Raw)]
         public async Task All_compression_methods_supported_for_simple_integeres(CompressionMethod compressionMethod) {
@@ -26,7 +26,7 @@ namespace Parquet.Test {
         [InlineData(CompressionMethod.Gzip)]
         [InlineData(CompressionMethod.Lzo)]
         [InlineData(CompressionMethod.Brotli)]
-        [InlineData(CompressionMethod.LZ4)]
+        //[InlineData(CompressionMethod.LZ4)]
         [InlineData(CompressionMethod.Zstd)]
         [InlineData(CompressionMethod.Lz4Raw)]
         public async Task All_compression_methods_supported_for_simple_strings(CompressionMethod compressionMethod) {

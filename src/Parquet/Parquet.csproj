@@ -55,6 +55,7 @@
         <PackageReference Include="IronCompress" Version="1.7.0" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
         <PackageReference Include="Snappier" Version="1.2.0" />
+        <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

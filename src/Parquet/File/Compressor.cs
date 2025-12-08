@@ -73,6 +73,8 @@ class IronCompressStreamCompressor : ICompressor {
 
 class DefaultCompressor : ICompressor {
 
+    const string LZ4Message = "LZ4 is not supported, because it's an undocumented deprecated compression algorithm. Consider using a different compression method.";
+
     private readonly IronCompressStreamCompressor _fallback = new IronCompressStreamCompressor();
 
     // "None" (no compression) as conversion helper
@@ -148,7 +150,7 @@ class DefaultCompressor : ICompressor {
     private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
         using var ms = new MemoryStream();
         source.Position = 0;
-        using (var brotli = new BrotliStream(ms, level, leaveOpen: true)) {
+        using (BrotliStream? brotli = new BrotliStream(ms, level, leaveOpen: true)) {
             await source.CopyToAsync(brotli);
         }
         int len = (int)ms.Length;
@@ -181,6 +183,36 @@ class DefaultCompressor : ICompressor {
     }
 #endif
 
+    // "Zstd" compression
+
+    private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
+        int zLevel = level switch {
+            CompressionLevel.Optimal => 3,
+            CompressionLevel.Fastest => 1,
+            CompressionLevel.NoCompression => 1,
+#if NET6_0_OR_GREATER
+            CompressionLevel.SmallestSize => 19,
+#endif
+            _ => 0
+        };
+
+        using var compressor = new ZstdSharp.Compressor(zLevel);
+        ReadOnlySpan<byte> data = source.GetBuffer().AsSpan(0, (int)source.Length);
+        Span<byte> compressed = compressor.Wrap(data);
+        var owner = MemoryOwner<byte>.Allocate(compressed.Length);
+        compressed.CopyTo(owner.Span);
+        return owner;
+    }
+
+    public async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
+        using var decompressor = new ZstdSharp.Decompressor();
+        byte[] compressed = source.ToByteArray()!;
+        Span<byte> decompressed = decompressor.Unwrap(compressed, destinationLength);
+        var owner = MemoryOwner<byte>.Allocate(decompressed.Length);
+        decompressed.CopyTo(owner.Span);
+        return owner;
+    }
+
     public async ValueTask<IMemoryOwner<byte>> CompressAsync(
         CompressionMethod method, CompressionLevel level, MemoryStream source) {
         switch(method) {
@@ -191,13 +223,17 @@ class DefaultCompressor : ICompressor {
             case CompressionMethod.Gzip:
                 return await GzipCompress(source, level);
             // lzo: todo
+            // see https://github.com/zivillian/lzo.net
 #if !NETSTANDARD2_0
             case CompressionMethod.Brotli:
                 return await BrotliCompress(source, level);
 #endif
-            // lz4: todo
-            // zstd: todo
+            case CompressionMethod.LZ4:
+                throw new NotSupportedException(LZ4Message);
+            case CompressionMethod.Zstd:
+                return await ZstdCompress(source, level);
             // lz4raw: todo
+            // see https://lz4.org/
             default:
                 return await _fallback.CompressAsync(method, level, source);
         }
@@ -216,6 +252,10 @@ class DefaultCompressor : ICompressor {
             case CompressionMethod.Brotli:
                 return await BrotliDecompress(source, destinationLength);
 #endif
+            case CompressionMethod.LZ4:
+                throw new NotSupportedException(LZ4Message);
+            case CompressionMethod.Zstd:
+                return await ZstdDecompress(source, destinationLength);
             default:
                 return await _fallback.Decompress(method, source, destinationLength);
         }
