@@ -5,7 +5,6 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Parquet.Data;
 using Parquet.Schema;
-using static Parquet.PerfRunner.Benchmarks.VersionedBenchmark;
 
 namespace Parquet.PerfRunner.Benchmarks {
 
@@ -23,6 +22,8 @@ namespace Parquet.PerfRunner.Benchmarks {
         private MemoryStream? _intsMs;
         private const string ComparedVersion = "5.4.0";
 
+        [Params(CompressionMethod.None, CompressionMethod.Snappy, CompressionMethod.Gzip)]
+        public CompressionMethod CompressionMethod => CompressionMethod.None;
 
         private class Config : ManualConfig {
             public Config() {
@@ -49,7 +50,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
             var ms = new MemoryStream();
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                writer.CompressionMethod = CompressionMethod.None;
+                writer.CompressionMethod = CompressionMethod;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                     await groupWriter.WriteColumnAsync(c);
@@ -60,7 +61,7 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         private async Task Run(ParquetSchema schema, DataColumn c) {
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
-                writer.CompressionMethod = CompressionMethod.None;
+                writer.CompressionMethod = CompressionMethod;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                     await groupWriter.WriteColumnAsync(c);
