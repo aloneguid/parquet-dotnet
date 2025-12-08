@@ -142,6 +142,45 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
+    // "Brotli" compression
+
+#if !NETSTANDARD2_0
+    private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
+        using var ms = new MemoryStream();
+        source.Position = 0;
+        using (var brotli = new BrotliStream(ms, level, leaveOpen: true)) {
+            await source.CopyToAsync(brotli);
+        }
+        int len = (int)ms.Length;
+        var owner = MemoryOwner<byte>.Allocate(len);
+        byte[] buf = ms.GetBuffer();
+        new ReadOnlySpan<byte>(buf, 0, len).CopyTo(owner.Span);
+        return owner;
+    }
+
+    private async ValueTask<IMemoryOwner<byte>> BrotliDecompress(Stream source, int destinationLength) {
+        var owner = MemoryOwner<byte>.Allocate(destinationLength);
+        using var brotli = new BrotliStream(source, CompressionMode.Decompress, leaveOpen: true);
+
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(81920);
+        try {
+            int totalRead = 0;
+            while(totalRead < destinationLength) {
+                int toRead = Math.Min(buffer.Length, destinationLength - totalRead);
+                int read = await brotli.ReadAsync(buffer, 0, toRead);
+                if(read == 0) break;
+                new ReadOnlySpan<byte>(buffer, 0, read).CopyTo(owner.Span.Slice(totalRead, read));
+                totalRead += read;
+            }
+        }
+        finally {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+
+        return owner;
+    }
+#endif
+
     public async ValueTask<IMemoryOwner<byte>> CompressAsync(
         CompressionMethod method, CompressionLevel level, MemoryStream source) {
         switch(method) {
@@ -151,6 +190,14 @@ class DefaultCompressor : ICompressor {
                 return await SnappyCompress(source);
             case CompressionMethod.Gzip:
                 return await GzipCompress(source, level);
+            // lzo: todo
+#if !NETSTANDARD2_0
+            case CompressionMethod.Brotli:
+                return await BrotliCompress(source, level);
+#endif
+            // lz4: todo
+            // zstd: todo
+            // lz4raw: todo
             default:
                 return await _fallback.CompressAsync(method, level, source);
         }
@@ -165,6 +212,10 @@ class DefaultCompressor : ICompressor {
                 return await SnappyDecompress(source);
             case CompressionMethod.Gzip:
                 return await GzipDecompress(source, destinationLength);
+#if !NETSTANDARD2_0
+            case CompressionMethod.Brotli:
+                return await BrotliDecompress(source, destinationLength);
+#endif
             default:
                 return await _fallback.Decompress(method, source, destinationLength);
         }
