@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
 using IronCompress;
+using K4os.Compression.LZ4;
 using Parquet.Extensions;
 using Snappier;
 
@@ -73,8 +74,6 @@ class IronCompressStreamCompressor : ICompressor {
 
 class DefaultCompressor : ICompressor {
 
-    const string LZ4Message = "LZ4 is not supported, because it's an undocumented deprecated compression algorithm. Consider using a different compression method.";
-
     private readonly IronCompressStreamCompressor _fallback = new IronCompressStreamCompressor();
 
     // "None" (no compression) as conversion helper
@@ -136,10 +135,20 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    // "Brotli" compression
+	// "LZO" compression
+
+	private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
+		throw new NotImplementedException("LZO compression is not implemented yet.");
+	}
+
+	private async ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
+		throw new NotImplementedException("LZO decompression is not implemented yet.");
+	}
+
+	// "Brotli" compression
 
 #if !NETSTANDARD2_0
-    private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
+	private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
         using var ms = new MemoryStream();
         source.Position = 0;
         using (BrotliStream? brotli = new BrotliStream(ms, level, leaveOpen: true)) {
@@ -205,7 +214,37 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    public async ValueTask<IMemoryOwner<byte>> CompressAsync(
+	// "LZ4" compression
+
+	private async ValueTask<IMemoryOwner<byte>> Lz4Compress(MemoryStream source, CompressionLevel level) {
+		LZ4Level lz4Level = level switch {
+			CompressionLevel.Optimal => LZ4Level.L11_OPT,
+			CompressionLevel.Fastest => LZ4Level.L00_FAST,
+			CompressionLevel.NoCompression => LZ4Level.L00_FAST,
+#if NET6_0_OR_GREATER
+			CompressionLevel.SmallestSize => LZ4Level.L12_MAX,
+#endif
+			_ => LZ4Level.L09_HC
+		};
+
+		ReadOnlySpan<byte> data = source.GetBuffer().AsSpan(0, (int)source.Length);
+		int maxCompressedSize = LZ4Codec.MaximumOutputSize(data.Length);
+		var owner = MemoryOwner<byte>.Allocate(maxCompressedSize);
+		int compressedSize = LZ4Codec.Encode(
+			data,
+			owner.Span,
+			level: lz4Level);
+		return owner.Slice(0, compressedSize);
+	}
+
+	private async ValueTask<IMemoryOwner<byte>> Lz4Decompress(Stream source, int destinationLength) {
+		byte[] compressed = source.ToByteArray()!;
+		var owner = MemoryOwner<byte>.Allocate(destinationLength);
+		LZ4Codec.Decode(compressed, owner.Span);
+		return owner;
+	}
+
+	public async ValueTask<IMemoryOwner<byte>> CompressAsync(
         CompressionMethod method, CompressionLevel level, MemoryStream source) {
         switch(method) {
             case CompressionMethod.None:
@@ -214,19 +253,19 @@ class DefaultCompressor : ICompressor {
                 return await SnappyCompress(source);
             case CompressionMethod.Gzip:
                 return await GzipCompress(source, level);
-            // lzo: todo
-            // see https://github.com/zivillian/lzo.net
+			case CompressionMethod.Lzo:
+				return await LzoCompress(source, level);
 #if !NETSTANDARD2_0
-            case CompressionMethod.Brotli:
+			case CompressionMethod.Brotli:
                 return await BrotliCompress(source, level);
 #endif
             case CompressionMethod.LZ4:
-                throw new NotSupportedException(LZ4Message);
-            case CompressionMethod.Zstd:
+                return await Lz4Compress(source, level);
+			case CompressionMethod.Zstd:
                 return await ZstdCompress(source, level);
-            // lz4raw: todo
-            // see https://lz4.org/
-            default:
+			case CompressionMethod.Lz4Raw:
+				return await Lz4Compress(source, level);
+			default:
                 return await _fallback.CompressAsync(method, level, source);
         }
     }
@@ -240,15 +279,19 @@ class DefaultCompressor : ICompressor {
                 return await SnappyDecompress(source);
             case CompressionMethod.Gzip:
                 return await GzipDecompress(source, destinationLength);
+			case CompressionMethod.Lzo:
+				return await LzoDecompress(source, destinationLength);
 #if !NETSTANDARD2_0
-            case CompressionMethod.Brotli:
+			case CompressionMethod.Brotli:
                 return await BrotliDecompress(source, destinationLength);
 #endif
             case CompressionMethod.LZ4:
-                throw new NotSupportedException(LZ4Message);
-            case CompressionMethod.Zstd:
+                return await Lz4Decompress(source, destinationLength);
+			case CompressionMethod.Zstd:
                 return await ZstdDecompress(source, destinationLength);
-            default:
+			case CompressionMethod.Lz4Raw:
+				return await Lz4Decompress(source, destinationLength);
+			default:
                 return await _fallback.Decompress(method, source, destinationLength);
         }
 
