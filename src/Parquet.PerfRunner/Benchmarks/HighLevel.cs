@@ -22,6 +22,8 @@ namespace Parquet.PerfRunner.Benchmarks {
         private MemoryStream? _intsMs;
         private const string ComparedVersion = "5.4.0";
 
+        public CompressionMethod CM { get; set; } = CompressionMethod.Snappy;
+
         private class Config : ManualConfig {
             public Config() {
 
@@ -47,7 +49,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
             var ms = new MemoryStream();
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                writer.CompressionMethod = CompressionMethod.Snappy;
+                writer.CompressionMethod = CM;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                     await groupWriter.WriteColumnAsync(c);
@@ -58,7 +60,7 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         private async Task Run(ParquetSchema schema, DataColumn c) {
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
-                writer.CompressionMethod = CompressionMethod.Snappy;
+                writer.CompressionMethod = CM;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                     await groupWriter.WriteColumnAsync(c);

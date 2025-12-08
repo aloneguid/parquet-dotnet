@@ -99,7 +99,8 @@ class DefaultCompressor : ICompressor {
 
     }
 
-    public async ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source) {
+    public async ValueTask<IMemoryOwner<byte>> CompressAsync(
+        CompressionMethod method, CompressionLevel level, MemoryStream source) {
         switch(method) {
             case CompressionMethod.None:
                 return await NoneCompress(source);
@@ -109,7 +110,9 @@ class DefaultCompressor : ICompressor {
                 return await _fallback.CompressAsync(method, level, source);
         }
     }
-    public async ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength) {
+
+    public async ValueTask<IMemoryOwner<byte>> Decompress(
+        CompressionMethod method, Stream source, int destinationLength) {
         switch(method) {
             case CompressionMethod.None:
                 return await NoneDecompress(source, destinationLength);
