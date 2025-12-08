@@ -1,19 +1,29 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Running;
 using Parquet.Data;
 using Parquet.Schema;
+using static Parquet.PerfRunner.Benchmarks.VersionedBenchmark;
 
 namespace Parquet.PerfRunner.Benchmarks {
 
     /// <summary>
     /// High level numbers to track progress over time. These can be pushed to reporting database, therefore keep stable.
     /// </summary>
+    [Config(typeof(Config))]
     public class HighLevel {
 
         private const int DataSize = 1000000;
         private readonly ParquetSchema _intsSchema = new ParquetSchema(new DataField<int?>("i"));
         private DataColumn? _ints;
         private MemoryStream? _intsMs;
+
+        private class Config : ManualConfig {
+            public Config() {
+                AddDiagnoser(MemoryDiagnoser.Default);
+            }
+        }
 
 
         [GlobalSetup]
