@@ -78,7 +78,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         private async Task<MemoryStream> Run(DataColumn c, MemoryStream ms) {
             ms.Position = 0;
             using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+                await reader.ReadEntireRowGroupAsync();
             }
             ms.Position = 0;
             return ms;
