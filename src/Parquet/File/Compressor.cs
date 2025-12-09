@@ -11,7 +11,7 @@ using Snappier;
 namespace Parquet.File; 
 
 /// <summary>
-/// Data compression interface. Unforunately it's practically impossible to perform streaming in parquet pages.
+/// Data compression interface. Unfortunately it's practically impossible to perform streaming in parquet pages.
 /// </summary>
 interface ICompressor {
 
