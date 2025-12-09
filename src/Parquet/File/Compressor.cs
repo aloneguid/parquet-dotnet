@@ -17,12 +17,12 @@ interface ICompressor {
 
     /// <summary>
     /// Compresses data from the source stream using the specified compression method and level.
-    /// Returns an <see cref="IMemoryOwner{byte}"/> containing the compressed data.
+    /// Returns an <see cref="IMemoryOwner{T}"/> containing the compressed data.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source);
 
     /// <summary>
-    /// Decompresses data from the source stream and returns the decompressed data in an <see cref="IMemoryOwner{byte}"/>.
+    /// Decompresses data from the source stream and returns the decompressed data in an <see cref="IMemoryOwner{T}"/>.
     /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed by this method.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength);
@@ -32,43 +32,30 @@ class DefaultCompressor : ICompressor {
 
     // "None" (no compression) as conversion helper
 
-    /// <summary>
-    /// No compression: simply copies the source MemoryStream to a new memory owner synchronously.
-    /// </summary>
-    private IMemoryOwner<byte> NoneCompress(MemoryStream source) {
+    private async ValueTask<IMemoryOwner<byte>> NoneCompress(MemoryStream source) {
         var r = MemoryOwner<byte>.Allocate((int)source.Length);
         source.Position = 0;
-        source.CopyTo(r.AsStream());
+        await source.CopyToAsync(r.Memory);
         return r;
     }
 
-    /// <summary>
-    /// No decompression: simply copies the source Stream to a new memory owner synchronously.
-    /// </summary>
-    private IMemoryOwner<byte> NoneDecompress(Stream source, int destinationLength) {
+    private async ValueTask<IMemoryOwner<byte>> NoneDecompress(Stream source, int destinationLength) {
         var r = MemoryOwner<byte>.Allocate(destinationLength);
-        source.CopyTo(r.AsStream());
+        await source.CopyToAsync(r.Memory);
         return r;
+
     }
 
     // "Snappy" compression
 
-    /// <summary>
-    /// Compresses the source stream using Snappy compression.
-    /// </summary>
-    private ValueTask<IMemoryOwner<byte>> SnappyCompress(MemoryStream source) {
+    private async ValueTask<IMemoryOwner<byte>> SnappyCompress(MemoryStream source) {
         ReadOnlySpan<byte> src = source.GetBuffer().AsSpan(0, (int)source.Length);
-        // Snappy.CompressToMemory is synchronous; wrap result in ValueTask for interface consistency.
-        return ValueTask.FromResult(Snappy.CompressToMemory(src));
+        return Snappy.CompressToMemory(src);
     }
 
-    /// <summary>
-    /// Decompresses the source stream using Snappy decompression.
-    /// </summary>
-    private ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
+    private async ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
         byte[] compressed = source.ToByteArray()!;
-        // Snappy.DecompressToMemory is synchronous; wrap result in ValueTask for interface consistency.
-        return ValueTask.FromResult(Snappy.DecompressToMemory(compressed));
+        return Snappy.DecompressToMemory(compressed);
     }
 
     // "Gzip" compression
@@ -107,24 +94,18 @@ class DefaultCompressor : ICompressor {
 
     // "LZO" compression
 
-    /// <summary>
-    /// LZO compression is not implemented yet.
-    /// </summary>
-    private ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
-        return ValueTask.FromException<IMemoryOwner<byte>>(new NotImplementedException("LZO compression is not implemented yet."));
+    private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
+        throw new NotImplementedException("LZO compression is not implemented yet.");
     }
 
-    /// <summary>
-    /// LZO decompression is not implemented yet.
-    /// </summary>
-    private ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
-        return ValueTask.FromException<IMemoryOwner<byte>>(new NotImplementedException("LZO decompression is not implemented yet."));
+    private async ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
+        throw new NotImplementedException("LZO decompression is not implemented yet.");
     }
 
-	// "Brotli" compression
+    // "Brotli" compression
 
 #if !NETSTANDARD2_0
-	private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
+    private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
         using var ms = new MemoryStream();
         source.Position = 0;
         using (BrotliStream? brotli = new BrotliStream(ms, level, leaveOpen: true)) {
