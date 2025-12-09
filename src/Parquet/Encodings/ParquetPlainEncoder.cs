@@ -137,76 +137,76 @@ namespace Parquet.Encodings {
         }
 
         public static void Decode(
-            Array data, int offset, int count,
+            Array dest, int offset, int count,
             SchemaElement tse,
             Span<byte> source,
             out int elementsRead) {
 
-            int rem = data.Length - offset;
+            int rem = dest.Length - offset;
             if(count > rem)
                 count = rem;
 
-            System.Type t = data.GetType();
+            System.Type t = dest.GetType();
 
             if(t == typeof(bool[])) {
-                elementsRead = Decode(source, ((bool[])data).AsSpan(offset, count));
+                elementsRead = Decode(source, ((bool[])dest).AsSpan(offset, count));
             } else if(t == typeof(byte[])) {
-                elementsRead = Decode(source, ((byte[])data).AsSpan(offset, count));
+                elementsRead = Decode(source, ((byte[])dest).AsSpan(offset, count));
             } else if(t == typeof(sbyte[])) {
-                elementsRead = Decode(source, ((sbyte[])data).AsSpan(offset, count));
+                elementsRead = Decode(source, ((sbyte[])dest).AsSpan(offset, count));
             } else if(t == typeof(short[])) {
-                elementsRead = Decode(source, ((short[])data).AsSpan(offset, count));
+                elementsRead = Decode(source, ((short[])dest).AsSpan(offset, count));
             } else if(t == typeof(ushort[])) {
-                elementsRead = Decode(source, ((ushort[])data).AsSpan(offset, count));
+                elementsRead = Decode(source, ((ushort[])dest).AsSpan(offset, count));
             } else if(t == typeof(int[])) {
-                Span<int> span = ((int[])data).AsSpan(offset, count);
+                Span<int> span = ((int[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(uint[])) {
-                Span<uint> span = ((uint[])data).AsSpan(offset, count);
+                Span<uint> span = ((uint[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(long[])) {
-                Span<long> span = ((long[])data).AsSpan(offset, count);
+                Span<long> span = ((long[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(ulong[])) {
-                Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
+                Span<ulong> span = ((ulong[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(BigInteger[])) {
-                Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
+                Span<BigInteger> span = ((BigInteger[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(decimal[])) {
-                Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
+                Span<decimal> span = ((decimal[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else if(t == typeof(double[])) {
-                Span<double> span = ((double[])data).AsSpan(offset, count);
+                Span<double> span = ((double[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(float[])) {
-                Span<float> span = ((float[])data).AsSpan(offset, count);
+                Span<float> span = ((float[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(byte[][])) {
-                Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
+                Span<byte[]> span = ((byte[][])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else if(t == typeof(DateTime[])) {
-                Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
+                Span<DateTime> span = ((DateTime[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
 #if NET6_0_OR_GREATER
             } else if(t == typeof(DateOnly[])) {
-                Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
+                Span<DateOnly> span = ((DateOnly[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else if(t == typeof(TimeOnly[])) {
-                Span<TimeOnly> span = ((TimeOnly[])data).AsSpan(offset, count);
+                Span<TimeOnly> span = ((TimeOnly[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
 #endif
             } else if(t == typeof(TimeSpan[])) {
-                Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
+                Span<TimeSpan> span = ((TimeSpan[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else if(t == typeof(Interval[])) {
-                Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
+                Span<Interval> span = ((Interval[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span);
             } else if(t == typeof(string[])) {
-                Span<string> span = ((string[])data).AsSpan(offset, count);
+                Span<string> span = ((string[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else if(t == typeof(Guid[])) {
-                Span<Guid> span = ((Guid[])data).AsSpan(offset, count);
+                Span<Guid> span = ((Guid[])dest).AsSpan(offset, count);
                 elementsRead = Decode(source, span, tse);
             } else {
                 elementsRead = 0;

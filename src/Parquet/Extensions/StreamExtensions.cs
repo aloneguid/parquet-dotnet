@@ -1,7 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
+using Parquet.Extensions.Streaming;
 
 namespace Parquet.Extensions {
     static class StreamExtensions {
@@ -55,6 +58,12 @@ namespace Parquet.Extensions {
             return tmp;
         }
 
+        public static ReadStreamSubStream Sub(this Stream s, long start, long length) =>
+            new ReadStreamSubStream(s, start, length);
+
+        public static ReadSpanSubStream Sub(this Memory<byte> memory, long start, long length) =>
+            new ReadSpanSubStream(memory.Slice((int)start, (int)length));
+
         public static async Task<byte[]> ReadBytesExactlyAsync(this Stream s, int count) {
             byte[] tmp = new byte[count];
 #if NET7_0_OR_GREATER
@@ -73,6 +82,39 @@ namespace Parquet.Extensions {
 #endif
 
             return tmp;
+        }
+
+        /// <summary>
+        /// Copies data from stream to memory destination until either the destination is full or the stream ends.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <returns>Number of bytes copied</returns>
+        public static async ValueTask<int> CopyToAsync(this Stream s, Memory<byte> destination, CancellationToken token = default) {
+#if !NETSTANDARD2_0
+            int remaining = destination.Length;
+            int copied = 0;
+            while(remaining > 0) {
+                int bytesRead = await s.ReadAsync(destination.Slice(copied), token);
+                if(bytesRead == 0)
+                    break;
+                copied += bytesRead;
+                remaining -= bytesRead;
+            }
+            return copied;
+#else
+            throw new NotImplementedException();
+#endif
+        }
+
+        public static async ValueTask CopyToAsync(this Memory<byte> source, Stream destination,
+            CancellationToken token = default) {
+#if !NETSTANDARD2_0
+            await destination.WriteAsync(source);
+#else
+            throw new NotImplementedException();
+#endif
         }
     }
 }
