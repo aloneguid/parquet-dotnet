@@ -46,14 +46,22 @@ class DefaultCompressor : ICompressor {
 
     // "Snappy" compression
 
-    private async ValueTask<IMemoryOwner<byte>> SnappyCompress(MemoryStream source) {
+    /// <summary>
+    /// Compresses the source stream using Snappy compression.
+    /// </summary>
+    private ValueTask<IMemoryOwner<byte>> SnappyCompress(MemoryStream source) {
         ReadOnlySpan<byte> src = source.GetBuffer().AsSpan(0, (int)source.Length);
-        return Snappy.CompressToMemory(src);
+        // Snappy.CompressToMemory is synchronous; wrap result in ValueTask for interface consistency.
+        return ValueTask.FromResult(Snappy.CompressToMemory(src));
     }
 
-    private async ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
+    /// <summary>
+    /// Decompresses the source stream using Snappy decompression.
+    /// </summary>
+    private ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
         byte[] compressed = source.ToByteArray()!;
-        return Snappy.DecompressToMemory(compressed);
+        // Snappy.DecompressToMemory is synchronous; wrap result in ValueTask for interface consistency.
+        return ValueTask.FromResult(Snappy.DecompressToMemory(compressed));
     }
 
     // "Gzip" compression
