@@ -75,7 +75,7 @@ class DataColumnWriter {
         CancellationToken cancellationToken) {
 
         int uncompressedLength = (int)uncompressedData.Length;
-        IMemoryOwner<byte> pageData = await Compressor.Instance.CompressAsync(
+        using IMemoryOwner<byte> pageData = await Compressor.Instance.CompressAsync(
             _compressionMethod, _compressionLevel, uncompressedData);
         int compressedLength = pageData.Memory.Length;
 
