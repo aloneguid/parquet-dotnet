@@ -16,7 +16,8 @@ namespace Parquet.File;
 interface ICompressor {
 
     /// <summary>
-    /// Compresses data from source stream into destination stream and return number of bytes written to destination.
+    /// Compresses data from the source stream using the specified compression method and level.
+    /// Returns an <see cref="IMemoryOwner{byte}"/> containing the compressed data.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source);
 
