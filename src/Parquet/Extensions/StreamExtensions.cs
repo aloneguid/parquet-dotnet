@@ -100,6 +100,7 @@ namespace Parquet.Extensions {
                 if(bytesRead == 0)
                     break;
                 copied += bytesRead;
+                remaining -= bytesRead;
             }
             return copied;
 #else

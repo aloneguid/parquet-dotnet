@@ -33,7 +33,7 @@ namespace Parquet.PerfRunner.Benchmarks {
                 // https://benchmarkdotnet.org/articles/samples/IntroNuGet.html
 
                 foreach(string v in TargetVersions) {
-                    AddJob(Job.MediumRun
+                    AddJob(Job.ShortRun
                         .WithId(string.IsNullOrEmpty(v) ? "local" : v)
                         .WithMsBuildArguments($"/p:ParquetVersion={v}"));
                 }
