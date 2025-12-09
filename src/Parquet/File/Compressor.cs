@@ -107,13 +107,19 @@ class DefaultCompressor : ICompressor {
 
     // "LZO" compression
 
-    private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
-        throw new NotImplementedException("LZO compression is not implemented yet.");
+    /// <summary>
+    /// LZO compression is not implemented yet.
+    /// </summary>
+    private ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
+        return ValueTask.FromException<IMemoryOwner<byte>>(new NotImplementedException("LZO compression is not implemented yet."));
     }
 
-	private async ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
-		throw new NotImplementedException("LZO decompression is not implemented yet.");
-	}
+    /// <summary>
+    /// LZO decompression is not implemented yet.
+    /// </summary>
+    private ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
+        return ValueTask.FromException<IMemoryOwner<byte>>(new NotImplementedException("LZO decompression is not implemented yet."));
+    }
 
 	// "Brotli" compression
 
@@ -212,7 +218,7 @@ class DefaultCompressor : ICompressor {
 		var owner = MemoryOwner<byte>.Allocate(destinationLength);
 		LZ4Codec.Decode(compressed, owner.Span);
 		return owner;
-	}
+    }
 
 	public async ValueTask<IMemoryOwner<byte>> CompressAsync(
         CompressionMethod method, CompressionLevel level, MemoryStream source) {
