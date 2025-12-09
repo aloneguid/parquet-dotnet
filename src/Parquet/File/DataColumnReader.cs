@@ -48,11 +48,9 @@ namespace Parquet.File {
 
             _schemaElement = _footer.GetSchemaElement(_thriftColumnChunk);
 
-            if(parquetOptions != null) {
-                _rmsMgr.Settings.MaximumSmallPoolFreeBytes = parquetOptions.MaximumSmallPoolFreeBytes;
-                _rmsMgr.Settings.MaximumLargePoolFreeBytes = parquetOptions.MaximumLargePoolFreeBytes;
-            }
-
+            // parquetOptions is guaranteed non-null due to earlier null check.
+            _rmsMgr.Settings.MaximumSmallPoolFreeBytes = parquetOptions.MaximumSmallPoolFreeBytes;
+            _rmsMgr.Settings.MaximumLargePoolFreeBytes = parquetOptions.MaximumLargePoolFreeBytes;
         }
 
         /// <summary>
