@@ -16,8 +16,7 @@ class ReadStreamSubStream : Stream {
             throw new ArgumentException("Base stream must support seeking.");
         if(start < 0 || length < 0)
             throw new ArgumentOutOfRangeException("Start and length must be non-negative.");
-        if(start + length > baseStream.Length)
-            throw new ArgumentException("Substream range exceeds base stream length.");
+        // Removed check for start + length > baseStream.Length to allow for streams that may grow or are not fully written yet.
 
         _baseStream = baseStream;
         _start = start;
