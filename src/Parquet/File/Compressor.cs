@@ -79,7 +79,7 @@ class DefaultCompressor : ICompressor {
         source.Position = 0;
         using (var gzip = new GZipStream(ms, level, leaveOpen: true)) {
             await source.CopyToAsync(gzip);
-            await source.FlushAsync();
+            await gzip.FlushAsync();
         }
         int len = (int)ms.Length;
         var owner = MemoryOwner<byte>.Allocate(len);
@@ -91,7 +91,7 @@ class DefaultCompressor : ICompressor {
 
     private async ValueTask<IMemoryOwner<byte>> GzipDecompress(Stream source, int destinationLength) {
         var owner = MemoryOwner<byte>.Allocate(destinationLength);
-		int copied = 0;
+        int copied = 0;
         using var ms = new MemoryStream();
         await source.CopyToAsync(ms);
         ms.Position = 0;
@@ -108,8 +108,8 @@ class DefaultCompressor : ICompressor {
     // "LZO" compression
 
     private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
-		throw new NotImplementedException("LZO compression is not implemented yet.");
-	}
+        throw new NotImplementedException("LZO compression is not implemented yet.");
+    }
 
 	private async ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
 		throw new NotImplementedException("LZO decompression is not implemented yet.");
