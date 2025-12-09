@@ -12,10 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="..\NetBox.cs" Link="NetBox.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
+        <PackageReference Include="ByteSize" Version="2.1.2" />
         <PackageReference Include="GreyMatter" Version="0.0.0-pre.36" />
     </ItemGroup>
 

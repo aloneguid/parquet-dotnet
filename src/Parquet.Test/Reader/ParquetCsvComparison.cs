@@ -1,9 +1,10 @@
-﻿using NetBox.FileFormats.Csv;
+﻿using CsvHelper;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -133,19 +134,20 @@ namespace Parquet.Test.Reader {
 
             string[]? columnNames = null;
 
-            using(Stream fs = OpenTestFile(name)) {
-                var reader = new CsvReader(fs, Encoding.UTF8);
+            using(StreamReader fs = OpenTestFileReader(name)) {
+                var reader = new CsvReader(fs, CultureInfo.InvariantCulture);
+
+                reader.Read();
+                columnNames = Enumerable.Range(0, reader.ColumnCount).Select(i => reader.GetField(i)).ToArray();
 
                 //header
-                columnNames = reader.ReadNextRow();
                 columns.AddRange(columnNames!.Select(n => new List<string>()));
 
                 //values
-                string[]? values;
-                while((values = reader.ReadNextRow()) != null) {
-                    for(int i = 0; i < values.Length; i++) {
+                while(reader.Read()) {
+                    for(int i = 0; i < reader.ColumnCount; i++) {
                         List<string> column = columns[i];
-                        column.Add(values[i]);
+                        column.Add(reader.GetField(i)!);
                     }
                 }
             }

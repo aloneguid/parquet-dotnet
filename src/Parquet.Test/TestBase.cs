@@ -11,6 +11,7 @@ using System.Text;
 using Parquet.File.Values.Primitives;
 using System.Reflection;
 using Xunit.Sdk;
+using Parquet.Test.Util;
 
 namespace Parquet.Test;
 
@@ -118,6 +119,10 @@ public class TestBase {
 
     protected Stream OpenTestFile(string name) {
         return F.OpenRead("./data/" + name);
+    }
+
+    protected StreamReader OpenTestFileReader(string name) {
+        return new StreamReader("./data/" + name);
     }
 
     protected async Task<DataColumn?> WriteReadSingleColumn(DataColumn dataColumn) {

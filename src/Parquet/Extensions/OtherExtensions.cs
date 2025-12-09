@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Parquet.Schema;
@@ -11,7 +12,7 @@ namespace Parquet {
         private const long UnixEpochMicroseconds = 62_135_596_800_000_000L;
         
 #if NET7_0_OR_GREATER
-        private static long UnixEpochNanoseconds = UnixEpoch.Ticks * TimeSpan.NanosecondsPerTick;
+        private static readonly long UnixEpochNanoseconds = UnixEpoch.Ticks * TimeSpan.NanosecondsPerTick;
 #endif
 
         public static DateTimeOffset FromUnixMilliseconds(this long unixMilliseconds) {
@@ -93,5 +94,37 @@ namespace Parquet {
         public static Exception NotImplemented(string reason) {
             return new NotImplementedException($"{reason} is not yet implemented, and we are fully aware of it. From here you can either raise an issue on GitHub, or implemented it and raise a PR.");
         }
+
+        #region [ byte[] ]
+
+        public static string ToHexString(this byte[] bytes) {
+#if NET5_0_OR_GREATER
+            return Convert.ToHexString(bytes);
+#else
+            return BitConverter.ToString(bytes).Replace("-", "");
+#endif
+        }
+
+        #endregion
+
+        #region [ Stream ]
+
+        /// <summary>
+        /// Reads all stream in memory and returns as byte array
+        /// </summary>
+        public static byte[]? ToByteArray(this Stream? stream) {
+            if(stream == null)
+                return null;
+
+            if(stream is MemoryStream ms1)
+                return ms1.ToArray();
+
+            using(var ms = new MemoryStream()) {
+                stream.CopyTo(ms);
+                return ms.ToArray();
+            }
+        }
+
+        #endregion
     }
 }
