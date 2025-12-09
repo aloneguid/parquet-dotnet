@@ -22,7 +22,8 @@ interface ICompressor {
     ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source);
 
     /// <summary>
-    /// Wrap source stream into a decompression stream, which also becomes an owner of the source stream.
+    /// Decompresses data from the source stream and returns the decompressed data in an <see cref="IMemoryOwner{byte}"/>.
+    /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed by this method.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength);
 }
@@ -31,18 +32,23 @@ class DefaultCompressor : ICompressor {
 
     // "None" (no compression) as conversion helper
 
-    private async ValueTask<IMemoryOwner<byte>> NoneCompress(MemoryStream source) {
+    /// <summary>
+    /// No compression: simply copies the source MemoryStream to a new memory owner synchronously.
+    /// </summary>
+    private IMemoryOwner<byte> NoneCompress(MemoryStream source) {
         var r = MemoryOwner<byte>.Allocate((int)source.Length);
         source.Position = 0;
-        await source.CopyToAsync(r.Memory);
+        source.CopyTo(r.AsStream());
         return r;
     }
 
-    private async ValueTask<IMemoryOwner<byte>> NoneDecompress(Stream source, int destinationLength) {
+    /// <summary>
+    /// No decompression: simply copies the source Stream to a new memory owner synchronously.
+    /// </summary>
+    private IMemoryOwner<byte> NoneDecompress(Stream source, int destinationLength) {
         var r = MemoryOwner<byte>.Allocate(destinationLength);
-        await source.CopyToAsync(r.Memory);
+        source.CopyTo(r.AsStream());
         return r;
-
     }
 
     // "Snappy" compression
