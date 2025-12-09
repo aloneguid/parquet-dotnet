@@ -8,10 +8,11 @@ using K4os.Compression.LZ4;
 using Parquet.Extensions;
 using Snappier;
 
-namespace Parquet.File; 
+namespace Parquet.File;
 
 /// <summary>
 /// Data compression interface. Unfortunately it's practically impossible to perform streaming in parquet pages.
+/// When this interface is stable for some time, it will allow public exposure and "Bring Your Own Compressor" plugins, but not right now.
 /// </summary>
 interface ICompressor {
 

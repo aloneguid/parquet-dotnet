@@ -10,6 +10,7 @@
 - Handle edge cases and write clear exception handling.
 - For libraries or external dependencies, mention their usage and purpose in comments.
 - Do not throw any exceptions in `Dispose()` methods.
+- Make sure public member of the library have XML documentation comments, unless the containing type is private or internal.
 
 ## Compatibility
 - Ensure compatibility with .NET Standard 2.0 and 2.1.
