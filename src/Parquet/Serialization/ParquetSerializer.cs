@@ -133,16 +133,11 @@ namespace Parquet.Serialization {
             return striper.Schema;
         }
 
+#if NET10_0_OR_GREATER
+
         /// <summary>
-        /// Serialize from an IAsyncEnumerable
+        /// Serialize from an <see cref="IAsyncEnumerable{T}"/>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="objectInstances"></param>
-        /// <param name="destination"></param>
-        /// <param name="options"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        /// <exception cref="ApplicationException"></exception>
         public static async Task<ParquetSchema> SerializeAsync<T>(IAsyncEnumerable<T> objectInstances, Stream destination,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default) {
@@ -176,6 +171,8 @@ namespace Parquet.Serialization {
 
             return striper.Schema;
         }
+
+#endif
 
         /// <summary>
         /// Experimental object serialisation

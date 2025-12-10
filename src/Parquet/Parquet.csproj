@@ -47,8 +47,12 @@
 
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
-        <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
+    </ItemGroup>
+
+    <!-- Compression libraries -->
+    <ItemGroup>
+        <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
         <PackageReference Include="Snappier" Version="1.2.0" />
         <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
     </ItemGroup>
@@ -58,18 +62,11 @@
         <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
         <PackageReference Include="System.Text.Json" Version="10.0.0" />
         <PackageReference Include="Nullable" Version="1.3.1" />
-        <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
         <PackageReference Include="System.Text.Json" Version="10.0.0" />
-        <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
     </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
-    </ItemGroup>
-
 
     <ItemGroup>
         <None Include="..\..\docs\README.md">
