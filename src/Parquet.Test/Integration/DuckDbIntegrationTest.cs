@@ -91,7 +91,7 @@ namespace Parquet.Test.Integration {
         }
 
         [Theory, TypeTestData(DuckDb = true)]
-        public async Task DuckDbGeneratedFileReads(TypeTestInstance input) {
+        public async Task DuckDbGeneratedFileReads(TTI input) {
             string tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".parquet");
 
             try {

@@ -1,16 +1,13 @@
-﻿using NetBox.IO;
-using Parquet.Data;
+﻿using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Xunit;
-using NetBox.Generator;
 using System.Linq;
 using System.Threading.Tasks;
 using Path = System.IO.Path;
-using System.Threading;
-using Parquet.Schema;
+using Parquet.Test.Util;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {

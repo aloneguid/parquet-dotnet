@@ -25,4 +25,7 @@ switch(benchName) {
     case "self-compare-taxi":
         BenchmarkRunner.Run<SelfComparisonBenchmark>();
         break;
+    case "highLevel":
+        HighLevel.Run();
+        break;
 }

@@ -2,7 +2,7 @@
 
 env:
   VERSION: 5.5.0
-  PACKAGE_SUFFIX: '-pre.1'
+  PACKAGE_SUFFIX: '-pre.2'
   # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
 
@@ -64,6 +64,30 @@ jobs:
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch != ''
       run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
+
+  benchmark:
+    name: ⚖️ High-Level Benchmarks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: macos-latest
+            name: MacOS ARM64
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Run Benchmarks
+      run: |
+        dotnet run -c release -- highLevel
+      working-directory: src/Parquet.PerfRunner
 
   build:
 

@@ -407,7 +407,10 @@ namespace Parquet.Test.Serialisation {
 
             [ParquetMicroSecondsTime]
             public TimeSpan MicroTime { get; set; }
-            
+
+            [ParquetTimeSpan(IsAdjustedToUTC = false)]
+            public TimeSpan LogicalLocalTimeSpan { get; set; }
+
 #if NET6_0_OR_GREATER
             public DateOnly ImpalaDateOnly { get; set; }
 
@@ -513,6 +516,24 @@ namespace Parquet.Test.Serialisation {
             DataField df = s.FindDataField(nameof(DatesPoco.MicroTime));
             Assert.True(df is TimeSpanDataField);
             Assert.Equal(TimeSpanFormat.MicroSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
+        }
+
+        [Fact]
+        public void Type_TimeSpan_LogicalLocalTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.LogicalLocalTimeSpan));
+            Assert.True(df is TimeSpanDataField);
+            Assert.False(((TimeSpanDataField)df).IsAdjustedToUTC);
+        }
+
+        [Fact]
+        public void Type_TimeSpan_LogicalUtcTimestamp() {
+            ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
+
+            DataField df = s.FindDataField(nameof(DatesPoco.NullableTimeSpan));
+            Assert.True(df is TimeSpanDataField);
+            Assert.True(((TimeSpanDataField)df).IsAdjustedToUTC);
         }
 
 #if NET6_0_OR_GREATER

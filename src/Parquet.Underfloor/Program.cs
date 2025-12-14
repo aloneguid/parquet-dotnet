@@ -8,6 +8,8 @@ using Parquet.Serialization;
 using Parquet.Underfloor;
 using static Grey.App;
 
+#pragma warning disable CS4014
+
 // global state
 WorkFile fd = await WorkFile.CreateAsync(null);
 
@@ -37,7 +39,7 @@ async Task LoadAsync(string path) {
 }
 
 void LoadFromFile(string path) {
-    LoadAsync(path).Forget();
+    LoadAsync(path);
 }
 
 if(args.Length == 0) {
@@ -269,7 +271,7 @@ void RenderMetadata() {
 
     // row grops and so on
     if(fd.RowGroups != null) {
-        Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec"], ta => {
+        Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec", "Encodings"], ta => {
             int idx = 0;
             foreach(IParquetRowGroupReader rg in fd.RowGroups) {
                 ta.BeginRow();
@@ -279,9 +281,9 @@ void RenderMetadata() {
                     ta.NextColumn();
                     Label(rg.RowGroup.FileOffset?.ToString() ?? "");
                     ta.NextColumn();
-                    Label(rg.RowGroup.TotalByteSize.ToFileSizeUiString());
+                    Label(rg.RowGroup.TotalByteSize.UISize());
                     ta.NextColumn();
-                    Label((rg.RowGroup.TotalCompressedSize ?? 0).ToFileSizeUiString());
+                    Label((rg.RowGroup.TotalCompressedSize ?? 0).UISize());
 
                     if(isOpen) {
                         int idx1 = 0;
@@ -296,11 +298,14 @@ void RenderMetadata() {
                             ta.NextColumn();
                             Label(cc.FileOffset == 0 ? "" : cc.FileOffset.ToString());
                             ta.NextColumn();
-                            Label(cc.MetaData?.TotalUncompressedSize.ToFileSizeUiString() ?? "");
+                            Label(cc.MetaData?.TotalUncompressedSize.UISize() ?? "");
                             ta.NextColumn();
-                            Label(cc.MetaData?.TotalCompressedSize.ToFileSizeUiString() ?? "");
+                            Label(cc.MetaData?.TotalCompressedSize.UISize() ?? "");
                             ta.NextColumn();
                             Label(cc.MetaData?.Codec.ToString() ?? "");
+                            ta.NextColumn();
+                            if(cc.MetaData != null) 
+                                Label(string.Join(", ", cc.MetaData.Encodings));
 
                             idx1++;    
                         }
@@ -443,7 +448,7 @@ void RenderData() {
     }
 
     if(fd.SampleReadStatus == ReadStatus.NotStarted) {
-        fd.ReadDataSampleAsync().Forget();
+        fd.ReadDataSampleAsync();
         return;
     }
 
@@ -485,7 +490,7 @@ void RenderRawColumnData() {
 
     Combo("column", fd.RawDataFieldsPaths, ref fd.CurrentRawDataFieldIndex);
     if(Button("read", Emphasis.Primary)) {
-        fd.ReadRawDataFieldAsync().Forget();
+        fd.ReadRawDataFieldAsync();
     }
 
     if(fd.CurrentRawDataFieldData != null) {
@@ -557,3 +562,5 @@ Run(title, () => {
 
     return true;
 }, isScrollable: false);
+
+#pragma warning restore CS4014
