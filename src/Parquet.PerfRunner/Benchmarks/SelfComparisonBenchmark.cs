@@ -17,7 +17,7 @@ public class SelfComparisonBenchmark {
             AddJob(baseJob);
             AddJob(baseJob
                 .WithId("Parquet.Net 5.4.0")
-                .WithMsBuildArguments("/p:ParquetNuGetVersion=5.4.0"));
+                .WithMsBuildArguments("/p:ParquetVersion=5.4.0"));
         }
     }
 
