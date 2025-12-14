@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
-using BenchmarkDotNet.Running;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -18,22 +12,55 @@ namespace Parquet.PerfRunner.Benchmarks {
     [MemoryDiagnoser]
     [RPlotExporter]
     public class VersionedBenchmark {
-
-        public static void Run() {
-            BenchmarkRunner.Run<VersionedBenchmark>();
-        }
-
         public class NuConfig : ManualConfig {
             public NuConfig() {
                 Job baseJob = Job.ShortRun;
 
-                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.2.3"));
-                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.0"));
-                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.3.2"));
-                //AddJob(baseJob.WithNuGet("Parquet.Net", "4.4.1"));
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.5.0"));
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.9.1"));
-                AddJob(baseJob.WithNuGet("Parquet.Net", "4.12.0"));
+                //AddJob(CreatePackageJob(baseJob, "4.2.3"));
+                //AddJob(CreatePackageJob(baseJob, "4.3.0"));
+                //AddJob(CreatePackageJob(baseJob, "4.3.2"));
+                //AddJob(CreatePackageJob(baseJob, "4.4.1"));
+                AddJob(CreatePackageJob(baseJob, "4.5.0"));
+                AddJob(CreatePackageJob(baseJob, "4.9.1"));
+                AddJob(CreatePackageJob(baseJob, "4.12.0"));
+                AddJob(CreatePackageJob(baseJob, "4.13.0"));
+                AddJob(CreatePackageJob(baseJob, "4.14.0"));
+                AddJob(CreatePackageJob(baseJob, "4.15.0"));
+                AddJob(CreatePackageJob(baseJob, "4.16.0"));
+                AddJob(CreatePackageJob(baseJob, "4.16.1"));
+                AddJob(CreatePackageJob(baseJob, "4.16.2"));
+                AddJob(CreatePackageJob(baseJob, "4.16.3"));
+                AddJob(CreatePackageJob(baseJob, "4.16.4"));
+                AddJob(CreatePackageJob(baseJob, "4.17.0"));
+                AddJob(CreatePackageJob(baseJob, "4.18.0"));
+                AddJob(CreatePackageJob(baseJob, "4.18.1"));
+                AddJob(CreatePackageJob(baseJob, "4.19.0"));
+                AddJob(CreatePackageJob(baseJob, "4.20.0"));
+                AddJob(CreatePackageJob(baseJob, "4.20.1"));
+                AddJob(CreatePackageJob(baseJob, "4.22.0"));
+                AddJob(CreatePackageJob(baseJob, "4.22.1"));
+                AddJob(CreatePackageJob(baseJob, "4.23.0"));
+                AddJob(CreatePackageJob(baseJob, "4.23.1"));
+                AddJob(CreatePackageJob(baseJob, "4.23.2"));
+                AddJob(CreatePackageJob(baseJob, "4.23.3"));
+                AddJob(CreatePackageJob(baseJob, "4.23.4"));
+                AddJob(CreatePackageJob(baseJob, "4.23.5"));
+                AddJob(CreatePackageJob(baseJob, "4.24.0"));
+                AddJob(CreatePackageJob(baseJob, "4.25.0"));
+                AddJob(CreatePackageJob(baseJob, "5.0.0"));
+                AddJob(CreatePackageJob(baseJob, "5.0.1"));
+                AddJob(CreatePackageJob(baseJob, "5.0.2"));
+                AddJob(CreatePackageJob(baseJob, "5.1.0"));
+                AddJob(CreatePackageJob(baseJob, "5.1.1"));
+                AddJob(CreatePackageJob(baseJob, "5.2.0"));
+                AddJob(CreatePackageJob(baseJob, "5.3.0"));
+                AddJob(CreatePackageJob(baseJob, "5.4.0"));
+            }
+
+            private static Job CreatePackageJob(Job baseJob, string version) {
+                return baseJob
+                    .WithId($"Parquet.Net {version}")
+                    .WithMsBuildArguments($"/p:ParquetNuGetVersion={version}");
             }
         }
 
@@ -53,8 +80,14 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         #endregion
 
+        [Params(LogicalEncoding.Plain, LogicalEncoding.RleDictionary, LogicalEncoding.DeltaBinaryPacked)]
+        public LogicalEncoding LogicalEncoding { get; set; }
+
+        ParquetOptions _options = null!;
+
         [GlobalSetup]
         public async Task Setup() {
+            _options = LogicalEncoding.CreateOptions();
             _ints = new DataColumn(_intsSchema.GetDataFields()[0],
                 Enumerable.Range(0, DataSize).Select(i => i % 4 == 0 ? (int?)null : i).ToArray(),
                 null);
@@ -94,7 +127,7 @@ namespace Parquet.PerfRunner.Benchmarks {
 
         private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
             var ms = new MemoryStream();
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, _options)) {
                 writer.CompressionMethod = CompressionMethod.None;
                 // create a new row group in the file
                 using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
