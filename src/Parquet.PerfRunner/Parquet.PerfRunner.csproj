@@ -8,6 +8,8 @@
         <LangVersion>latest</LangVersion>
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+        <!-- When set, allows benchmarks to force a specific Parquet.Net NuGet version via msbuild arguments. -->
+        <ParquetNuGetVersion Condition="'$(ParquetNuGetVersion)' == ''"></ParquetNuGetVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,7 +17,11 @@
         <PackageReference Include="ParquetSharp" Version="21.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(ParquetNuGetVersion)' != ''">
+        <PackageReference Include="Parquet.Net" Version="$(ParquetNuGetVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(ParquetNuGetVersion)' == ''">
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
     </ItemGroup>
 

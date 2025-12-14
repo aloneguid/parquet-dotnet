@@ -28,13 +28,13 @@ namespace Parquet.PerfRunner.Benchmarks {
         public DataTypes() {
             //_ints = new DataColumn(new DataField<int>("c"), Enumerable.Range(0, DataSize).ToArray());
 
-            _nullableInts = new DataColumn(_nullableIntsSchema.DataFields[0],
+            _nullableInts = new DataColumn(_nullableIntsSchema.GetDataFields()[0],
                 Enumerable
                     .Range(0, DataSize)
                     .Select(i => i % 4 == 0 ? (int?)null : i)
                     .ToArray());
 
-            _nullableDecimals = new DataColumn(_nullableDecimalsSchema.DataFields[0],
+            _nullableDecimals = new DataColumn(_nullableDecimalsSchema.GetDataFields()[0],
                 Enumerable
                     .Range(0, DataSize)
                     .Select(i => i % 4 == 0 ? (decimal?)null : (decimal)i)

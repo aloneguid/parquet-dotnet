@@ -26,14 +26,12 @@ namespace Parquet.PerfRunner.Benchmarks {
         private Array? _ar;
 
         [GlobalSetup]
-        public Task SetupAsync() {
+        public void Setup() {
             _schema = new ParquetSchema(new DataField("test", DataType!));
             _ar = CreateTestData(DataType);
-            _c = new DataColumn(_schema.DataFields[0], _ar);
+            _c = new DataColumn(_schema.GetDataFields()[0], _ar);
 
             _psc = new Column(DataType!, "test");
-
-            return Task.CompletedTask;
         }
 
         [Benchmark]

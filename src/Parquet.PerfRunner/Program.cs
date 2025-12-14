@@ -1,21 +1,30 @@
 ﻿// for performance tests only
 
+using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Parquet;
 using Parquet.PerfRunner.Benchmarks;
 
-if(args.Length == 1) {
-    switch(args[0]) {
-        case "write":
-            BenchmarkRunner.Run<WriteBenchmark>();
-            break;
-        case "progression":
-            VersionedBenchmark.Run();
-            break;
-        case "taxi":
-            BenchmarkRunner.Run<TaxiCsvToParquetBenchmark>();
-            break;
-    }
+bool haveArgs = args.Length > 0;
+string benchName;
+if(!haveArgs) {
+    Console.WriteLine("Enter the benchmark name to run:");
+    benchName = Console.ReadLine()!;
 } else {
-    await new DataTypes().NullableInts();
+    benchName = args[0];
+}
+
+switch(benchName) {
+    case "write":
+        BenchmarkRunner.Run<WriteBenchmark>();
+        break;
+    case "progression":
+        BenchmarkRunner.Run<VersionedBenchmark>();
+        break;
+    case "sharp-compare-taxi":
+        BenchmarkRunner.Run<ParquetSharpComparisonBenchmark>();
+        break;
+    case "self-compare-taxi":
+        BenchmarkRunner.Run<SelfComparisonBenchmark>();
+        break;
 }
