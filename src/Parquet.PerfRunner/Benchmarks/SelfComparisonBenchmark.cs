@@ -1,18 +1,27 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
 using Parquet.Data;
 using Parquet.Meta;
 using Parquet.PerfRunner.Taxis;
-using ParquetSharp;
-using ParquetSharp.IO;
-using IOFile = System.IO.File;
 using ParquetWriterNet = Parquet.ParquetWriter;
 
 namespace Parquet.PerfRunner.Benchmarks;
 
+[Config(typeof(NuConfig))]
 [MemoryDiagnoser]
 [MarkdownExporter]
-[ShortRunJob]
 public class SelfComparisonBenchmark {
+    public class NuConfig : ManualConfig {
+        public NuConfig() {
+            Job baseJob = Job.ShortRun.WithId("Parquet.Net (local)");
+            AddJob(baseJob);
+            AddJob(baseJob
+                .WithId("Parquet.Net 5.4.0")
+                .WithMsBuildArguments("/p:ParquetNuGetVersion=5.4.0"));
+        }
+    }
+
     [Params("tripdata", "tripdata-large")]
     public string Dataset { get; set; } = "tripdata";
 
