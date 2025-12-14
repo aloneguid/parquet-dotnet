@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Parquet.PerfRunner;
+﻿namespace Parquet.PerfRunner;
 
 /// <summary>
 /// Allow to easily control the logical encoding used in benchmarks.

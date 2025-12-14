@@ -1,12 +1,18 @@
 using Parquet.Data;
 using Parquet.Schema;
-using ParquetSharp;
-using RowGroupWriter = ParquetSharp.RowGroupWriter;
-using ParquetWriterNet = Parquet.ParquetWriter;
 
 namespace Parquet.PerfRunner.Taxis;
 
-sealed record TaxiSchema(TaxiSchemaKind Kind, ParquetSchema Schema, DataColumn[] Columns)  {
+sealed class TaxiSchema {
+
+    public ParquetSchema Schema { get; }
+    public DataColumn[] Columns { get; }
+
+    private TaxiSchema(ParquetSchema schema, DataColumn[] columns) {
+        Schema = schema;
+        Columns = columns;
+    }
+
     public static TaxiSchema Full(TaxiDataset dataset) {
         ParquetSchema schema = new(
             new DataField<int?>("VendorID"),
@@ -52,7 +58,7 @@ sealed record TaxiSchema(TaxiSchemaKind Kind, ParquetSchema Schema, DataColumn[]
             new DataColumn(dataFields[18], dataset.Airport_fee)
         ];
 
-        return new TaxiSchema(TaxiSchemaKind.Full, schema, columns);
+        return new TaxiSchema(schema, columns);
     }
 
     public static TaxiSchema Small(TaxiDataset dataset) {
@@ -74,42 +80,6 @@ sealed record TaxiSchema(TaxiSchemaKind Kind, ParquetSchema Schema, DataColumn[]
             new DataColumn(dataFields[5], dataset.fare_amount)
         ];
 
-        return new TaxiSchema(TaxiSchemaKind.Small, schema, columns);
-    }
-
-    public void WriteParquetSharp(RowGroupWriter rowGroup, TaxiDataset dataset) {
-        static void WriteColumn<T>(RowGroupWriter groupWriter, T[] data) {
-            using LogicalColumnWriter<T> columnWriter = groupWriter.NextColumn().LogicalWriter<T>();
-            columnWriter.WriteBatch(data);
-        }
-
-        if(Kind == TaxiSchemaKind.Small) {
-            WriteColumn(rowGroup, dataset.VendorID);
-            WriteColumn(rowGroup, dataset.passenger_count);
-            WriteColumn(rowGroup, dataset.trip_distance);
-            WriteColumn(rowGroup, dataset.RatecodeID);
-            WriteColumn(rowGroup, dataset.payment_type);
-            WriteColumn(rowGroup, dataset.fare_amount);
-        } else {
-            WriteColumn(rowGroup, dataset.VendorID);
-            WriteColumn(rowGroup, dataset.tpep_pickup_datetime);
-            WriteColumn(rowGroup, dataset.tpep_dropoff_datetime);
-            WriteColumn(rowGroup, dataset.passenger_count);
-            WriteColumn(rowGroup, dataset.trip_distance);
-            WriteColumn(rowGroup, dataset.RatecodeID);
-            WriteColumn(rowGroup, dataset.store_and_fwd_flag);
-            WriteColumn(rowGroup, dataset.PULocationID);
-            WriteColumn(rowGroup, dataset.DOLocationID);
-            WriteColumn(rowGroup, dataset.payment_type);
-            WriteColumn(rowGroup, dataset.fare_amount);
-            WriteColumn(rowGroup, dataset.extra);
-            WriteColumn(rowGroup, dataset.mta_tax);
-            WriteColumn(rowGroup, dataset.tip_amount);
-            WriteColumn(rowGroup, dataset.tolls_amount);
-            WriteColumn(rowGroup, dataset.improvement_surcharge);
-            WriteColumn(rowGroup, dataset.total_amount);
-            WriteColumn(rowGroup, dataset.congestion_surcharge);
-            WriteColumn(rowGroup, dataset.Airport_fee);
-        }
+        return new TaxiSchema(schema, columns);
     }
 }

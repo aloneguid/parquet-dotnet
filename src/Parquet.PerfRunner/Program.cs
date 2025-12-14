@@ -1,8 +1,6 @@
 ﻿// for performance tests only
 
-using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
-using Parquet;
 using Parquet.PerfRunner.Benchmarks;
 
 bool haveArgs = args.Length > 0;

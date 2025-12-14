@@ -2,7 +2,6 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using Parquet.Data;
-using Parquet.Meta;
 using Parquet.PerfRunner.Taxis;
 using ParquetWriterNet = Parquet.ParquetWriter;
 

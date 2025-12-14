@@ -1,11 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using Parquet.Data;
-using Parquet.Meta;
 using Parquet.PerfRunner.Taxis;
 using ParquetSharp;
 using ParquetSharp.IO;
 using IOFile = System.IO.File;
-using ParquetSharpEncoding = ParquetSharp.Encoding;
 using ParquetWriterNet = Parquet.ParquetWriter;
 
 namespace Parquet.PerfRunner.Benchmarks;
@@ -64,8 +62,6 @@ public class ParquetSharpComparisonBenchmark {
     [Benchmark(Description = "Parquet.Net -> Disk")]
     public async Task ParquetNetToDiskAsync() {
         string path = Path.Combine(Path.GetTempPath(), GetFileName("parquetnet"));
-        if(Path.Exists(path))
-            IOFile.Delete(path);
 
         try {
             await using FileStream output = IOFile.Create(path);
@@ -77,7 +73,7 @@ public class ParquetSharpComparisonBenchmark {
                 await rowGroup.WriteColumnAsync(column);
             }
         } finally {
-            //IOFile.Delete(path);
+            IOFile.Delete(path);
         }
     }
 
@@ -88,26 +84,25 @@ public class ParquetSharpComparisonBenchmark {
         using var writer = new ParquetFileWriter(managedOutput, _parquetSharpSchema.Columns, _parquetSharpOptions);
         using RowGroupWriter rowGroup = writer.AppendRowGroup();
 
-        _parquetNetSchema.WriteParquetSharp(rowGroup, _dataset);
+        _parquetSharpSchema.Write(rowGroup, _dataset);
         writer.Close();
     }
 
     [Benchmark(Description = "ParquetSharp -> Disk")]
     public void ParquetSharpToDisk() {
         string path = Path.Combine(Path.GetTempPath(), GetFileName("parquetsharp"));
-        if(Path.Exists(path))
-            IOFile.Delete(path);
+
         try {
             using FileStream output = IOFile.Create(path);
             using var managedOutput = new ManagedOutputStream(output);
             using var writer = new ParquetFileWriter(managedOutput, _parquetSharpSchema.Columns, _parquetSharpOptions);
             using RowGroupWriter rowGroup = writer.AppendRowGroup();
 
-            _parquetNetSchema.WriteParquetSharp(rowGroup, _dataset);
+            _parquetSharpSchema.Write(rowGroup, _dataset);
 
             writer.Close();
         } finally {
-            //IOFile.Delete(path);
+            IOFile.Delete(path);
         }
     }
 }
