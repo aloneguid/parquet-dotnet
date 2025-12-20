@@ -13,7 +13,6 @@ namespace Parquet.PerfRunner.Benchmarks {
     /// </summary>
     [Config(typeof(Config))]
     [MemoryDiagnoser]
-    [JsonExporterAttribute.Full]
     public class HighLevel {
 
         private const int DataSize = 10000000;
