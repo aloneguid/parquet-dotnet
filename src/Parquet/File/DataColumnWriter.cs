@@ -48,6 +48,10 @@ class DataColumnWriter {
         CancellationToken cancellationToken = default) {
         long startPos = _stream.Position;
 
+        ColumnMetrics metrics = await WriteColumnAsync(
+            column, _schemaElement,
+            cancellationToken);
+
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
         ColumnChunk chunk = _footer.CreateColumnChunk(
             _compressionMethod, startPos, _schemaElement.Type!.Value, fullPath, column.NumValues,
@@ -55,9 +59,6 @@ class DataColumnWriter {
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
-        ColumnMetrics metrics = await WriteColumnAsync(
-            chunk, column, _schemaElement,
-            cancellationToken);
         chunk.MetaData.Encodings = metrics.GetUsedEncodings();
 
         //generate stats for column chunk
@@ -128,7 +129,7 @@ class DataColumnWriter {
         cs.UncompressedSize += ph.UncompressedPageSize;
     }
 
-    private async Task<ColumnMetrics> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
+    private async Task<ColumnMetrics> WriteColumnAsync(DataColumn column,
        SchemaElement tse,
        CancellationToken cancellationToken = default) {
 
