@@ -80,7 +80,7 @@ public class TestBase {
         new TTI("timestamp local kind", new DateTimeDataField("timestamp local kind", DateTimeFormat.Timestamp, false), new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local)),
         // don't want any excess info in the offset INT32 doesn't contain or care about this data 
         new TTI("dateDate", new DateTimeDataField("dateDate", DateTimeFormat.Date), DateTime.UtcNow.RoundToDay()),
-#if !NETCOREAPP3_1
+#if NET6_0_OR_GREATER
         new TTI("dateOnly", new DataField<DateOnly>("dateOnly"), DateOnly.FromDateTime(DateTime.UtcNow)),
 #endif
         new TTI("interval", new DataField<Interval>("interval"), new Interval(3, 2, 1)),
@@ -171,7 +171,7 @@ public class TestBase {
         byte[] data;
 
         var options = new ParquetOptions();
-#if !NETCOREAPP3_1
+#if NET6_0_OR_GREATER
         if(value is DateOnly)
             options.UseDateOnlyTypeForDates = true;
 #endif
