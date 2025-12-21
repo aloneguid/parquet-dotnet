@@ -3,8 +3,8 @@
 
     <PropertyGroup>
         <IsPackable>false</IsPackable>
-        <LangVersion>latest</LangVersion>
-        <TargetFrameworks>net10.0</TargetFrameworks>
+        <LangVersion>preview</LangVersion>
+        <TargetFrameworks>net10.0;net472</TargetFrameworks>
 
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
@@ -32,6 +32,11 @@
 
     <ItemGroup Condition="('$(TargetFramework)' == 'net7.0') or ('$(TargetFramework)' == 'net8.0')">
         <PackageReference Include="System.IO.Pipelines" Version="9.0.10" />
+    </ItemGroup>
+
+    <ItemGroup Condition="('$(TargetFramework)' == 'net472')">
+        <PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.4.1" GeneratePathProperty="true" />
+        <None Include="$(PkgDuckDB_NET_Bindings_Full)/runtimes/win-x64/native/duckdb.dll" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
     <ItemGroup>

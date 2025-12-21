@@ -20,7 +20,10 @@ namespace Parquet.Test {
         [InlineData("fixedlenbytearray.parquet")]
         [InlineData("fixedlenbytearray.v2.parquet")]
         public async Task FixedLenByteArray_dictionary(string parquetFile) {
-            await using Stream s = OpenTestFile(parquetFile);
+#if NET21_OR_GREATER
+            await
+#endif
+            using Stream s = OpenTestFile(parquetFile);
             using ParquetReader r = await ParquetReader.CreateAsync(s);
             
             DataColumn[] columns = await r.ReadEntireRowGroupAsync();

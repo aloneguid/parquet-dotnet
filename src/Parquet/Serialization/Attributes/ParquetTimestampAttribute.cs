@@ -1,8 +1,8 @@
 ﻿using System;
+
+namespace Parquet.Serialization.Attributes;
+
 using Parquet.Schema;
-
-namespace Parquet.Serialization.Attributes; 
-
 
 /// <summary>
 /// Resolution of Parquet timestamp
