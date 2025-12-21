@@ -16,10 +16,10 @@ namespace Parquet.Encodings {
         private static int MakeStrings(Span<byte> s, Span<int> lengths, string[] dest, int destOffset) {
             int made = 0;
             foreach(int len in lengths) {
-#if NETSTANDARD2_0
-                dest[destOffset++] = E.GetString(s.Slice(0, len).ToArray());
-#else
+#if NETSTANDARD2_1_OR_GREATER
                 dest[destOffset++] = E.GetString(s.Slice(0, len));
+#else
+                dest[destOffset++] = E.GetString(s.Slice(0, len).ToArray());
 #endif
                 s = s.Slice(len);
                 made++;
