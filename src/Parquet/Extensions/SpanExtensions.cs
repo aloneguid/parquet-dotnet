@@ -18,10 +18,10 @@ internal static class SpanExtensions {
     }
 
     public static long ReadInt64(this Span<byte> span, int offset) {
-#if NETSTANDARD2_0
-        return BitConverter.ToInt64(span.Slice(offset, sizeof(long)).ToArray(), 0);
-#else
+#if NETSTANDARD2_1_OR_GREATER
         return BitConverter.ToInt64(span.Slice(offset, sizeof(long)));
+#else
+        return BitConverter.ToInt64(span.Slice(offset, sizeof(long)).ToArray(), 0);
 #endif
     }
 

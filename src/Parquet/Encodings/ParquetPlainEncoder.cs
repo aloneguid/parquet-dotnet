@@ -1201,10 +1201,10 @@ static class ParquetPlainEncoder {
             int length = tse.TypeLength.Value;
 
             for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
-#if NETSTANDARD2_0
-                data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
-#else
+#if NETSTANDARD2_1_OR_GREATER
                 data[i] = E.GetString(source.Slice(spanIdx, length));
+#else
+                data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
 #endif
                 spanIdx += length;
             }
@@ -1214,10 +1214,10 @@ static class ParquetPlainEncoder {
             for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
                 int length = source.ReadInt32(spanIdx);
                 spanIdx += sizeof(int);
-#if NETSTANDARD2_0
-            data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
-#else
+#if NETSTANDARD2_1_OR_GREATER
                 data[i] = E.GetString(source.Slice(spanIdx, length));
+#else
+                data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
 #endif
                 spanIdx += length;
             }
@@ -1239,16 +1239,24 @@ static class ParquetPlainEncoder {
     #region [ .NET differences ]
 
     private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
+        destination.Write(bytes);
+#else
         byte[] tmp = bytes.ToArray();
         destination.Write(tmp, 0, tmp.Length);
-#else
-        destination.Write(bytes);
 #endif
     }
 
     private static int Read(Stream source, Span<byte> bytes) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
+        int read = 0;
+        while(read < bytes.Length) {
+            int r0 = source.Read(bytes.Slice(read));
+            if(r0 == 0)
+                break;
+            read += r0;
+        }
+#else
         byte[] tmp = new byte[bytes.Length];
         int read = 0;
         while(read < tmp.Length) {
@@ -1258,17 +1266,8 @@ static class ParquetPlainEncoder {
             read += r0;
         }
         tmp.CopyTo(bytes);
-        return read;
-#else
-        int read = 0;
-        while(read < bytes.Length) {
-            int r0 = source.Read(bytes.Slice(read));
-            if(r0 == 0)
-                break;
-            read += r0;
-        }
-        return read;
 #endif
+        return read;
     }
 
     #endregion

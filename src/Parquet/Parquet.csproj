@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net10.0;net8.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net8.0;netstandard2.1;netstandard2.0;net472</TargetFrameworks>
         <Company></Company>
         <PackageId>Parquet.Net</PackageId>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -12,7 +12,7 @@
         <DebugType>full</DebugType>
         <DebugSymbols>true</DebugSymbols>
         <PackageTags>apache parquet dotnet core net c# f# windows linux macos ios android xboxone xbox</PackageTags>
-        <LangVersion>latest</LangVersion>
+        <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
 
         <!-- Sign with a fake no password signature for convenience. Note this is not a proof of anything.-->
@@ -66,6 +66,12 @@
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
         <PackageReference Include="System.Text.Json" Version="10.0.1" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+        <PackageReference Include="System.Net.Http" Version="4.3.4" />
+        <PackageReference Include="System.Text.Json" Version="10.0.0" />
+        <PackageReference Include="Nullable" Version="1.3.1" />
     </ItemGroup>
 
     <ItemGroup>

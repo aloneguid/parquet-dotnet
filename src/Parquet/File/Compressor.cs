@@ -105,7 +105,7 @@ class DefaultCompressor : ICompressor {
 
     // "Brotli" compression
 
-#if !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
     private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
         using var ms = new MemoryStream();
         source.Position = 0;
@@ -213,7 +213,7 @@ class DefaultCompressor : ICompressor {
                 return await GzipCompress(source, level);
 			case CompressionMethod.Lzo:
 				return await LzoCompress(source, level);
-#if !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
 			case CompressionMethod.Brotli:
                 return await BrotliCompress(source, level);
 #endif
@@ -239,7 +239,7 @@ class DefaultCompressor : ICompressor {
                 return await GzipDecompress(source, destinationLength);
 			case CompressionMethod.Lzo:
 				return await LzoDecompress(source, destinationLength);
-#if !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
 			case CompressionMethod.Brotli:
                 return await BrotliDecompress(source, destinationLength);
 #endif
