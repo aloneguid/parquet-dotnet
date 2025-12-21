@@ -34,6 +34,11 @@
         <PackageReference Include="System.IO.Pipelines" Version="9.0.10" />
     </ItemGroup>
 
+    <ItemGroup Condition="('$(TargetFramework)' == 'net472')">
+        <PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.4.1" GeneratePathProperty="true" />
+        <None Include="$(PkgDuckDB_NET_Bindings_Full)/runtimes/win-x64/native/duckdb.dll" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\Parquet.Data.Analysis\Parquet.Data.Analysis.csproj" />
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
