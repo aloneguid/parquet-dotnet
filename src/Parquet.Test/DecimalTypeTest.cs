@@ -19,7 +19,11 @@ namespace Parquet.Test {
             const int precision = 1;
             const int scale = -1;
             ArgumentException ex = Assert.Throws<ArgumentException>(() => new DecimalDataField("field-name", precision, scale));
+#if NETFRAMEWORK
+            Assert.Equal("scale must be zero or a positive integer\r\nParameter name: scale", ex.Message);
+#else
             Assert.Equal("scale must be zero or a positive integer (Parameter 'scale')", ex.Message);
+#endif
         }
 
         [Fact]
@@ -27,7 +31,11 @@ namespace Parquet.Test {
             const int precision = 0;
             const int scale = 1;
             ArgumentException ex = Assert.Throws<ArgumentException>(() => new DecimalDataField("field-name", precision, scale));
+#if NETFRAMEWORK
+            Assert.Equal("precision is required and must be a non-zero positive integer\r\nParameter name: precision", ex.Message);
+#else
             Assert.Equal("precision is required and must be a non-zero positive integer (Parameter 'precision')", ex.Message);
+#endif
         }
 
         [Fact]
@@ -35,7 +43,11 @@ namespace Parquet.Test {
             const int precision = 3;
             const int scale = 4;
             ArgumentException ex = Assert.Throws<ArgumentException>(() => new DecimalDataField("field-name", precision, scale));
+#if NETFRAMEWORK
+            Assert.Equal("scale must be less than or equal to the precision\r\nParameter name: scale", ex.Message);
+#else
             Assert.Equal("scale must be less than or equal to the precision (Parameter 'scale')", ex.Message);
+#endif
         }
     }
 }
