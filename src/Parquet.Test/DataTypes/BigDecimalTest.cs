@@ -1,7 +1,8 @@
-﻿using Parquet.File.Values.Primitives;
+﻿using Parquet.Data;
+using Parquet.File.Values.Primitives;
 using Xunit;
 
-namespace Parquet.Test.File.Values.Primitives {
+namespace Parquet.Test.DataTypes {
     public class BigDecimalTest {
         [Fact]
         public void Valid_but_massive_bigdecimal() {

@@ -261,5 +261,12 @@ namespace Parquet.Test {
 
             Assert.Equal(1, data.NumValues);
         }
+
+        [Fact]
+        public async Task BigDecimal() {
+            using Stream s = OpenTestFile("bigdecimal.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+        }
     }
 }
