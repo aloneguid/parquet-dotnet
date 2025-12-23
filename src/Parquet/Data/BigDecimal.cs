@@ -37,7 +37,7 @@ public struct BigDecimal {
     public BigDecimal(BigInteger unscaledValue, int precision, int scale) {
         UnscaledValue = unscaledValue;
         if(scale > precision)
-            throw new ArgumentOutOfRangeException($"scale ({scale}) cannot be larger than precision ({precision}).");
+            throw new ArgumentOutOfRangeException(nameof(scale), $"scale ({scale}) cannot be larger than precision ({precision}).");
         Precision = precision;
         Scale = scale;
     }
