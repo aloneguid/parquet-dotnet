@@ -22,6 +22,7 @@ namespace Parquet.Encodings {
             typeof(float),
             typeof(double),
             typeof(decimal),
+            typeof(BigDecimal),
             typeof(BigInteger),
             typeof(DateTime),
 #if NET6_0_OR_GREATER
@@ -223,7 +224,7 @@ namespace Parquet.Encodings {
 #else
                     ConvertedType.DATE => typeof(DateTime),
 #endif
-                    ConvertedType.DECIMAL => typeof(decimal),
+                    ConvertedType.DECIMAL => options.DecimalType,
 #if NET6_0_OR_GREATER
                     ConvertedType.TIME_MILLIS => options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan),
 #else
@@ -244,7 +245,7 @@ namespace Parquet.Encodings {
 #endif
                     ConvertedType.TIMESTAMP_MICROS => typeof(DateTime),
                     ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
-                    ConvertedType.DECIMAL => typeof(decimal),
+                    ConvertedType.DECIMAL => options.DecimalType,
                     _ => typeof(long)
                 },
                 Type.INT64 => typeof(long),
@@ -256,13 +257,13 @@ namespace Parquet.Encodings {
 
                 Type.BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
                     ConvertedType.UTF8 => typeof(string),
-                    ConvertedType.DECIMAL => typeof(decimal),
+                    ConvertedType.DECIMAL => options.DecimalType,
                     _ => typeof(byte[])
                 },
                 Type.BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
 
                 Type.FIXED_LEN_BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
-                    ConvertedType.DECIMAL => typeof(decimal),
+                    ConvertedType.DECIMAL => options.DecimalType,
                     ConvertedType.INTERVAL => typeof(Interval),
                     _ => typeof(byte[])
                 },
@@ -279,8 +280,8 @@ namespace Parquet.Encodings {
 
             if(st == typeof(DateTime)) {
                 df = GetDateTimeDataField(se);
-            } else if(st == typeof(decimal)) {
-                df = GetDecimalDataField(se);
+            } else if(st == options.DecimalType) {
+                df = GetDecimalDataField(se, options.DecimalType);
             } else {
                 // successful field built
                 df = new DataField(se.Name, st);
@@ -293,10 +294,11 @@ namespace Parquet.Encodings {
             return true;
         }
 
-        private static DataField GetDecimalDataField(SchemaElement se) =>
+        private static DataField GetDecimalDataField(SchemaElement se, SType clrType) =>
             new DecimalDataField(se.Name,
                 se.Precision.GetValueOrDefault(DecimalFormatDefaults.DefaultPrecision),
-                se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : DecimalFormatDefaults.DefaultScale));
+                se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : DecimalFormatDefaults.DefaultScale),
+                clrType: clrType);
 
         private static DataField GetDateTimeDataField(SchemaElement se) {
             if(se.LogicalType is not null)
@@ -322,7 +324,7 @@ namespace Parquet.Encodings {
             return new DateTimeDataField(se.Name, DateTimeFormat.Impala);
         }
 
-        private static void Encode(ListField listField, SchemaElement parent, IList<SchemaElement> container) {
+        private static void Encode(ListField listField, SchemaElement parent, IList<SchemaElement> container, ParquetOptions options) {
             parent.NumChildren = (parent.NumChildren ?? 0) + 1;
 
             //add list container
@@ -343,10 +345,10 @@ namespace Parquet.Encodings {
             container.Add(list);
 
             //add the list item as well
-            Encode(listField.Item, list, container);
+            Encode(listField.Item, list, container, options);
         }
 
-        private static void Encode(MapField mapField, SchemaElement parent, IList<SchemaElement> container) {
+        private static void Encode(MapField mapField, SchemaElement parent, IList<SchemaElement> container, ParquetOptions options) {
             parent.NumChildren = (parent.NumChildren ?? 0) + 1;
 
             //add the root container where map begins
@@ -368,9 +370,9 @@ namespace Parquet.Encodings {
             container.Add(keyValue);
 
             //now add the key and value separately
-            Encode(mapField.Key, keyValue, container);
+            Encode(mapField.Key, keyValue, container, options);
             SchemaElement tseKey = container[container.Count - 1];
-            Encode(mapField.Value, keyValue, container);
+            Encode(mapField.Value, keyValue, container, options);
             SchemaElement tseValue = container[container.Count - 1];
 
             //fixes for weirdness in RLs
@@ -380,7 +382,7 @@ namespace Parquet.Encodings {
                 tseValue.RepetitionType = FieldRepetitionType.OPTIONAL;
         }
 
-        private static void Encode(StructField structField, SchemaElement parent, IList<SchemaElement> container) {
+        private static void Encode(StructField structField, SchemaElement parent, IList<SchemaElement> container, ParquetOptions options) {
             var tseStruct = new SchemaElement {
                 Name = structField.Name,
                 RepetitionType = structField.IsNullable ? FieldRepetitionType.OPTIONAL : FieldRepetitionType.REQUIRED
@@ -390,11 +392,11 @@ namespace Parquet.Encodings {
             parent.NumChildren = (parent.NumChildren ?? 0) + 1;
 
             foreach(Field memberField in structField.Fields) {
-                Encode(memberField, tseStruct, container);
+                Encode(memberField, tseStruct, container, options);
             }
         }
 
-        public static SchemaElement Encode(DataField field) {
+        public static SchemaElement Encode(DataField field, ParquetOptions options) {
             SType st = field.ClrType;
             var tse = new SchemaElement { Name = field.Name };
 
@@ -629,9 +631,9 @@ namespace Parquet.Encodings {
             return tse;
         }
 
-        public static void Encode(Field field, SchemaElement parent, IList<SchemaElement> container) {
+        public static void Encode(Field field, SchemaElement parent, IList<SchemaElement> container, ParquetOptions options) {
             if(field.SchemaType == SchemaType.Data && field is DataField dataField) {
-                SchemaElement tse = Encode(dataField);
+                SchemaElement tse = Encode(dataField, options);
 
                 bool isList = container.Count > 1 && container[container.Count - 2].ConvertedType == ConvertedType.LIST;
 
@@ -641,11 +643,11 @@ namespace Parquet.Encodings {
                 container.Add(tse);
                 parent.NumChildren = (parent.NumChildren ?? 0) + 1;
             } else if(field.SchemaType == SchemaType.List && field is ListField listField) {
-                Encode(listField, parent, container);
+                Encode(listField, parent, container, options);
             } else if(field.SchemaType == SchemaType.Map && field is MapField mapField) {
-                Encode(mapField, parent, container);
+                Encode(mapField, parent, container, options);
             } else if(field.SchemaType == SchemaType.Struct && field is StructField structField) {
-                Encode(structField, parent, container);
+                Encode(structField, parent, container, options);
             } else {
                 throw new InvalidOperationException($"unable to encode {field}");
             }

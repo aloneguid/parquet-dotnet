@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Xunit;
 
-namespace Parquet.Test.File.Values.Primitives {
+namespace Parquet.Test.DataTypes {
     public class NanoTimeTest {
         [Theory]
         [InlineData(637566187511234567)] // 2021-05-14T17:52:31.1234567+00:00 - Works before fix

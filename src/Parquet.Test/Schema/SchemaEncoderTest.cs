@@ -13,7 +13,7 @@ namespace Parquet.Test.Schema {
         [InlineData(29, 6)]
         public void Encode_decimal(int precision, int scale) {
             var f38 = new DecimalDataField("d", precision, scale);
-            Meta.SchemaElement se = SchemaEncoder.Encode(f38);
+            Meta.SchemaElement se = SchemaEncoder.Encode(f38, new ParquetOptions());
 
             int i = 0;
             Field f = SchemaEncoder.Decode(new List<Meta.SchemaElement> { se }, new ParquetOptions(), ref i, out _)!;
@@ -26,7 +26,7 @@ namespace Parquet.Test.Schema {
         [Fact]
         public void Encode_uuid() {
             var uuid = new DataField<Guid>("u");
-            Meta.SchemaElement se = SchemaEncoder.Encode(uuid);
+            Meta.SchemaElement se = SchemaEncoder.Encode(uuid, new ParquetOptions());
 
             int i = 0;
             Field f = SchemaEncoder.Decode(new List<Meta.SchemaElement> { se }, new ParquetOptions(), ref i, out _)!;
@@ -56,7 +56,7 @@ namespace Parquet.Test.Schema {
             // CLASS
             var root = new SchemaElement { Name = "root" };
             var lst = new List<SchemaElement>();
-            SchemaEncoder.Encode(schema[1], root, lst);
+            SchemaEncoder.Encode(schema[1], root, lst, new ParquetOptions());
 
             Assert.Equal(FieldRepetitionType.OPTIONAL, lst[0].RepetitionType);  // LIST
             Assert.Equal(FieldRepetitionType.REPEATED, lst[1].RepetitionType);  // thumb
@@ -65,7 +65,7 @@ namespace Parquet.Test.Schema {
             // STRUCT
             root = new SchemaElement { Name = "root" };
             lst = new List<SchemaElement>();
-            SchemaEncoder.Encode(schema[2], root, lst);
+            SchemaEncoder.Encode(schema[2], root, lst, new ParquetOptions());
 
             Assert.Equal(FieldRepetitionType.OPTIONAL, lst[0].RepetitionType);  // LIST
             Assert.Equal(FieldRepetitionType.REPEATED, lst[1].RepetitionType);  // thumb

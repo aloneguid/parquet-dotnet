@@ -122,7 +122,7 @@ string FormatLogicalType(LogicalType? lt) {
 
 void RenderRawSchema(List<SchemaElement> schemaElements) {
     Table("schema",
-    ["name", "num children", "type", "type length", "repetition", "logical type", "converted type", "scale", "precision", "field id"],
+    ["name", "num children", "type", "type length", "repetition", "logical type", "converted type", "precision", "scale", "field id"],
     t => {
         foreach(SchemaElement se in schemaElements) {
             t.BeginRow();
@@ -148,9 +148,9 @@ void RenderRawSchema(List<SchemaElement> schemaElements) {
             t.NextColumn();
             Label(se.ConvertedType?.ToString() ?? "");
             t.NextColumn();
-            Label(se.Scale?.ToString() ?? "");
-            t.NextColumn();
             Label(se.Precision?.ToString() ?? "");
+            t.NextColumn();
+            Label(se.Scale?.ToString() ?? "");
             t.NextColumn();
             Label(se.FieldId?.ToString() ?? "");
         }

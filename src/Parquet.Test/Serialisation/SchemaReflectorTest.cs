@@ -607,14 +607,16 @@ namespace Parquet.Test.Serialisation {
             [ParquetDecimal(40, 20)]
             public decimal With_40_20 { get; set; }
 
-            public decimal? NullableDecimal { get; set; }
+            public decimal? DefaultNullable { get; set; }
         }
 
         [Fact]
-        public void Type_Decimal() {
+        public void Type_Decimal_Default() {
             ParquetSchema s = typeof(DecimalPoco).GetParquetSchema(true);
 
             Assert.True(s.DataFields[0] is DecimalDataField);
+            DecimalDataField ddf = (DecimalDataField)s.DataFields[0];
+
             Assert.Equal(38, ((DecimalDataField)s.DataFields[0]).Precision);
             Assert.Equal(18, ((DecimalDataField)s.DataFields[0]).Scale);
             Assert.False(s.DataFields[0].IsNullable);
@@ -633,7 +635,7 @@ namespace Parquet.Test.Serialisation {
         [Fact]
         public void Type_Decimal_Nullable() {
             ParquetSchema schema = typeof(DecimalPoco).GetParquetSchema(true);
-            DataField df = schema.FindDataField("NullableDecimal");
+            DataField df = schema.FindDataField("DefaultNullable");
             Assert.True(df.IsNullable);
         }
 

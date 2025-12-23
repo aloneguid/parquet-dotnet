@@ -38,12 +38,12 @@ namespace Parquet.File {
             }).CreateModelSchema(new ParquetOptions());
         }
 
-        public ThriftFooter(ParquetSchema schema, long totalRowCount) {
+        public ThriftFooter(ParquetSchema schema, long totalRowCount, ParquetOptions options) {
             if(schema == null) {
                 throw new ArgumentNullException(nameof(schema));
             }
 
-            _fileMeta = CreateThriftSchema(schema);
+            _fileMeta = CreateThriftSchema(schema, options);
             _fileMeta.NumRows = totalRowCount;
 
 
@@ -221,7 +221,7 @@ namespace Parquet.File {
 
 #region [ Convertion from Model Schema ]
 
-        public FileMetaData CreateThriftSchema(ParquetSchema schema) {
+        public FileMetaData CreateThriftSchema(ParquetSchema schema, ParquetOptions options) {
             var meta = new FileMetaData();
             meta.Version = 1;
             meta.Schema = new List<SchemaElement>();
@@ -229,7 +229,7 @@ namespace Parquet.File {
 
             SchemaElement root = ThriftFooter.AddRoot(meta.Schema);
             foreach(Field se in schema.Fields) {
-                SchemaEncoder.Encode(se, root, meta.Schema);
+                SchemaEncoder.Encode(se, root, meta.Schema, options);
             }
 
             return meta;

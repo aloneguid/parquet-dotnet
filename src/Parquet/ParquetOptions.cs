@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using Parquet.Data;
 
 namespace Parquet {
     /// <summary>
@@ -91,5 +92,12 @@ namespace Parquet {
         /// Defaults to 64MB.
         /// </summary>
         public int MaximumLargePoolFreeBytes { get; set; } = 64 * 1024 * 1024;
+
+        /// <summary>
+        /// When true, decimals will be read and written as <see cref="BigDecimal"/> instead of <see cref="decimal"/>. This is required if you are working with truly large decimals.
+        /// </summary>
+        public bool UseBigDecimal { get; set; } = false;
+
+        internal Type DecimalType => UseBigDecimal ? typeof(BigDecimal) : typeof(decimal);
     }
 }
