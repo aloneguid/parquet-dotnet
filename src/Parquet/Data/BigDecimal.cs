@@ -7,7 +7,7 @@ namespace Parquet.Data;
 
 /// <summary>
 /// A class that encapsulates decimal that goes out of range of .NET's <see cref="System.Decimal"/>.
-/// It does not implement any math and should only be treated as a container for a very large decimal value. Big decimal math is out of scope of this projct.
+/// It does not implement any math and should only be treated as a container for a very large decimal value. Big decimal math is out of scope of this project.
 /// See https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal.
 /// </summary>
 public struct BigDecimal {
