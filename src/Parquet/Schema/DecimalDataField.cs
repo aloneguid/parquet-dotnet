@@ -30,7 +30,7 @@ namespace Parquet.Schema {
         /// <param name="isNullable"></param>
         /// <param name="isArray"></param>
         /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
-        /// <param name="clrType"></param>
+        /// <param name="clrType">Optional CLR type to use for this field. When not specified, defaults to <see cref="System.Decimal"/>. Can be set to <see cref="Data.BigDecimal"/> for decimals that exceed the range of <see cref="System.Decimal"/>.</param>
         public DecimalDataField(string name,
             int precision, int scale = 0,
             bool forceByteArrayEncoding = false,
