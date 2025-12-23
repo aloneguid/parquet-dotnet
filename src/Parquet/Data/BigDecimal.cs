@@ -58,16 +58,17 @@ public struct BigDecimal {
             throw new ArgumentNullException(nameof(precision), "precision is required");
         if(scale == null)
             scale = 0;
-        BigInteger scaledTruncated = new BigInteger(d);  // truncates, does not round
+
         BigInteger scaleMultiplier = BigInteger.Pow(10, scale.Value);
-        BigInteger unscaled = scaledTruncated + new BigInteger((d - (decimal)scaledTruncated) * (decimal)scaleMultiplier);
-        return new BigDecimal(unscaled, precision.Value, scale.Value);
+        BigInteger bscaled = new BigInteger(d);
+        decimal scaled = d - (decimal)bscaled;
+        decimal unscaled = scaled * (decimal)scaleMultiplier;
+        BigInteger unscaledBig = (bscaled * scaleMultiplier) + new BigInteger(unscaled);
+        return new BigDecimal(unscaledBig, precision.Value, scale.Value);
     }
 
     internal static decimal ToSystemDecimal(byte[] data, SchemaElement tse) {
-        if((tse.Precision ?? 0) > 28)
-            throw new NotSupportedException($"Cannot convert to {typeof(decimal)} as precision {tse.Precision} is larger than 28. You can decode large decimals to {typeof(BigDecimal)} struct by setting {nameof(ParquetOptions)}.{nameof(ParquetOptions.UseBigDecimal)} to true.");
-
+        data = Enumerable.Reverse(data).ToArray();
         BigInteger scaleMultiplier = BigInteger.Pow(10, tse.Scale ?? 0);
         var unscaled = new BigInteger(data);
         decimal ipScaled = (decimal)BigInteger.DivRem(unscaled, scaleMultiplier, out BigInteger fpUnscaled);
@@ -203,5 +204,17 @@ public struct BigDecimal {
 
         result = Enumerable.Reverse(result).ToArray();
         return result;
+    }
+
+    /// <summary>
+    /// String representation
+    /// </summary>
+    public override string ToString() {
+        if(Scale == 0)
+            return UnscaledValue.ToString();
+        BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
+        BigInteger ipScaled = BigInteger.DivRem(UnscaledValue, scaleMultiplier, out BigInteger fpUnscaled);
+        string fpStr = fpUnscaled.ToString().PadLeft(Scale, '0');
+        return $"{ipScaled}.{fpStr}";
     }
 }

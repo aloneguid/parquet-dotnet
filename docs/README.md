@@ -421,6 +421,7 @@ IList<AfterRename> data3 = await ParquetSerializer.DeserializeAsync<AfterRename>
 - **Compression** can be selected after constructing `ParquetWriter`, where compression method `CompressionMethod` and/or compression level ([`CompressionLevel`](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.compressionlevel?view=net-7.0)) can be set. They default to `Snappy`, which is very reasonable.
 - **Metadata** reading and writing is supported on both parquet reader and writer.
 - **Statistics** can be read on a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
+- You can find other useful options in `ParquetOptions` class that can always be supplied to reader, writer, and serializer.
 
 ## Appending to files
 

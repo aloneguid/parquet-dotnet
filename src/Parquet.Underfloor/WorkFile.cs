@@ -149,7 +149,8 @@ class WorkFile : IAsyncDisposable {
                 ParquetSerializer.UntypedResult ur = await ParquetSerializer.DeserializeAsync(_stream,
                     new ParquetSerializerOptions {
                         ParquetOptions = new ParquetOptions {
-                            TreatByteArrayAsString = true
+                            TreatByteArrayAsString = true,
+                            UseBigDecimal = true
                         }
                     });
 
