@@ -263,10 +263,20 @@ namespace Parquet.Test {
         }
 
         [Fact]
-        public async Task BigDecimal() {
+        public async Task BigDecimalDefaultOptions() {
             using Stream s = OpenTestFile("bigdecimal.parquet");
             using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await Assert.ThrowsAsync<ParquetException>(() => r.ReadEntireRowGroupAsync());
+        }
+
+        [Fact]
+        public async Task BigDecimalWithUseBigDecimalsOptionOn() {
+            using Stream s = OpenTestFile("bigdecimal.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s, new ParquetOptions {
+                UseBigDecimal = true
+            });
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
         }
+
     }
 }

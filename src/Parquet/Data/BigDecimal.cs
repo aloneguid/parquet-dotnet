@@ -6,58 +6,75 @@ using Parquet.Meta;
 namespace Parquet.Data; 
 
 /// <summary>
-/// A class that encapsulates BigDecimal like the java class.
+/// A class that encapsulates decimal that goes out of range of .NET's <see cref="System.Decimal"/>.
+/// It does not implement any math and should only be treated as a container for a very large decimal value. Big decimal math is out of scope of this projct.
 /// See https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal.
 /// </summary>
-struct BigDecimal {
-    /// <summary>
-    /// Contains a Decimal value that is the big integer
-    /// </summary>
-    public decimal DecimalValue { get; set; }
-
-    public BigInteger UnscaledValue { get; set; }
+public struct BigDecimal {
 
     /// <summary>
-    /// The scale of the decimal value
+    /// Raw value read as is
     /// </summary>
-    public int Scale { get; set; }
+    public BigInteger UnscaledValue { get; }
 
     /// <summary>
-    /// The precision of the decimal value
+    /// The precision of the decimal value (the total number of significant digits in the number, both before and after the decimal point)
     /// </summary>
-    public int Precision { get; set; }
+    public int Precision { get; }
 
-    public BigDecimal(byte[] data, SchemaElement schema, bool isReversed = false) {
+    /// <summary>
+    /// The scale of the decimal value (the number of digits tot he right of the decimal point i.e. the fractional part)
+    /// </summary>
+    public int Scale { get; }
+
+    /// <summary>
+    /// Construct big decimal
+    /// </summary>
+    /// <param name="unscaledValue"></param>
+    /// <param name="precision"></param>
+    /// <param name="scale"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public BigDecimal(BigInteger unscaledValue, int precision, int scale) {
+        UnscaledValue = unscaledValue;
+        if(scale > precision)
+            throw new ArgumentOutOfRangeException($"scale ({scale}) cannot be larger than precision ({precision}).");
+        Precision = precision;
+        Scale = scale;
+    }
+
+    internal BigDecimal(byte[] data, SchemaElement schema, bool isReversed = false) {
         if(!isReversed) data = Enumerable.Reverse(data).ToArray();
 
         UnscaledValue = new BigInteger(data);
         Precision = schema.Precision!.Value;
         Scale = schema.Scale ?? 0;
-
-        BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
-        decimal ipScaled = (decimal)BigInteger.DivRem(UnscaledValue, scaleMultiplier, out BigInteger fpUnscaled);
-        decimal fpScaled = (decimal)fpUnscaled / (decimal)scaleMultiplier;
-
-        DecimalValue = ipScaled + fpScaled;
-    }
-
-    public BigDecimal(decimal d, int precision, int scale) {
-        DecimalValue = d;
-        Precision = precision;
-        Scale = scale;
-
-        BigInteger scaleMultiplier = BigInteger.Pow(10, scale);
-        BigInteger bscaled = new BigInteger(d);
-        decimal scaled = d - (decimal)bscaled;
-        decimal unscaled = scaled * (decimal)scaleMultiplier;
-        UnscaledValue = (bscaled * scaleMultiplier) + new BigInteger(unscaled);
     }
 
     /// <summary>
-    /// Converts a BigDecimal to a decimal
+    /// Creates a new instance of <see cref="BigDecimal"/> from a <see cref="System.Decimal"/>.
     /// </summary>
-    /// <param name="bd">The BigDecimal value</param>
-    public static implicit operator decimal(BigDecimal bd) => bd.DecimalValue;
+    public static BigDecimal FromDecimal(decimal d, int? precision, int? scale) {
+        if(precision == null)
+            throw new ArgumentNullException(nameof(precision), "precision is required");
+        if(scale == null)
+            scale = 0;
+        BigInteger scaledTruncated = new BigInteger(d);  // truncates, does not round
+        BigInteger scaleMultiplier = BigInteger.Pow(10, scale.Value);
+        BigInteger unscaled = scaledTruncated + new BigInteger((d - (decimal)scaledTruncated) * (decimal)scaleMultiplier);
+        return new BigDecimal(unscaled, precision.Value, scale.Value);
+    }
+
+    internal static decimal ToSystemDecimal(byte[] data, SchemaElement tse) {
+        if((tse.Precision ?? 0) > 28)
+            throw new NotSupportedException($"Cannot convert to {typeof(decimal)} as precision {tse.Precision} is larger than 28. You can decode large decimals to {typeof(BigDecimal)} struct by setting {nameof(ParquetOptions)}.{nameof(ParquetOptions.UseBigDecimal)} to true.");
+
+        BigInteger scaleMultiplier = BigInteger.Pow(10, tse.Scale ?? 0);
+        var unscaled = new BigInteger(data);
+        decimal ipScaled = (decimal)BigInteger.DivRem(unscaled, scaleMultiplier, out BigInteger fpUnscaled);
+        decimal fpScaled = (decimal)fpUnscaled / (decimal)scaleMultiplier;
+
+        return ipScaled + fpScaled;
+    }
 
     /// <summary>
     /// Gets buffer size enough to be able to hold the decimal number of a specific precision
@@ -153,7 +170,7 @@ struct BigDecimal {
         return new byte[size];
     }
 
-    public byte[] GetBytes() {
+    internal byte[] GetBytes() {
         /*
          * Java: https://docs.oracle.com/javase/7/docs/api/java/math/BigInteger.html#toByteArray()
          * 
