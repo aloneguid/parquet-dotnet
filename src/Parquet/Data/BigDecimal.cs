@@ -23,7 +23,7 @@ public struct BigDecimal {
     public int Precision { get; }
 
     /// <summary>
-    /// The scale of the decimal value (the number of digits tot he right of the decimal point i.e. the fractional part)
+    /// The scale of the decimal value (the number of digits to the right of the decimal point i.e. the fractional part)
     /// </summary>
     public int Scale { get; }
 
