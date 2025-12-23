@@ -19,7 +19,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - 🦄**Unique Features**:
   - The only library that supports dynamic schemas.
   - Supports all parquet types, encodings and compressions.
-  - Fully supports [C# class serialization](#serialization), for all simple and **complex** Parquet types.
+  - Fully supports [C# class serialization](#high-level-api), for all simple and **complex** Parquet types.
   - Provides **low-level**, high-level, and untyped API.
   - Access to file and column metadata
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
