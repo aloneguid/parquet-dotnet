@@ -210,11 +210,27 @@ public struct BigDecimal {
     /// String representation
     /// </summary>
     public override string ToString() {
+        // When scale is zero, this is a plain integer value.
         if(Scale == 0)
             return UnscaledValue.ToString();
+
+        // Use absolute value for splitting into integer and fractional parts to avoid
+        // negative remainders, which would otherwise break zero-padding logic.
         BigInteger scaleMultiplier = BigInteger.Pow(10, Scale);
-        BigInteger ipScaled = BigInteger.DivRem(UnscaledValue, scaleMultiplier, out BigInteger fpUnscaled);
-        string fpStr = fpUnscaled.ToString().PadLeft(Scale, '0');
-        return $"{ipScaled}.{fpStr}";
+        BigInteger sign = UnscaledValue.Sign;
+        BigInteger absUnscaled = BigInteger.Abs(UnscaledValue);
+
+        BigInteger ipAbs = BigInteger.DivRem(absUnscaled, scaleMultiplier, out BigInteger fpAbs);
+        string fpStr = fpAbs.ToString().PadLeft(Scale, '0');
+
+        string result = $"{ipAbs}.{fpStr}";
+
+        // Apply the sign to the combined value. This ensures exactly one leading minus
+        // sign for negative numbers (including cases like -0.00123).
+        if(sign < 0 && (ipAbs != 0 || fpAbs != 0)) {
+            result = "-" + result;
+        }
+
+        return result;
     }
 }
