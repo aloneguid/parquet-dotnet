@@ -757,7 +757,6 @@ namespace Parquet.Encodings {
                         if(tl == 0)
                             return 0;
 
-                        byte[] chunk = new byte[tl];
                         int i = 0;
                         for(int offset = 0; offset + tl <= source.Length && i < data.Length; offset += tl, i++) {
                             data[i] = new BigDecimal(source.Slice(offset, tl).ToArray(), tse);
