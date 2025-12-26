@@ -54,17 +54,17 @@ class DataColumnWriter {
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
-        ColumnMetrics columnThings = await WriteColumnAsync(
+        ColumnMetrics metrics = await WriteColumnAsync(
             chunk, column, _schemaElement,
             cancellationToken);
-        chunk.MetaData.Encodings = columnThings.GetUsedEncodings();
+        chunk.MetaData.Encodings = metrics.GetUsedEncodings();
 
         //generate stats for column chunk
         chunk.MetaData.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
         //the following counters must include both data size and header size
-        chunk.MetaData.TotalCompressedSize = columnThings.CompressedSize;
-        chunk.MetaData.TotalUncompressedSize = columnThings.UncompressedSize;
+        chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
+        chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
 
         return chunk;
     }
