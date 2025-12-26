@@ -54,7 +54,7 @@ class DataColumnWriter {
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
-        ColumnThings columnThings = await WriteColumnAsync(
+        ColumnMetrics columnThings = await WriteColumnAsync(
             chunk, column, _schemaElement,
             cancellationToken);
         chunk.MetaData.Encodings = columnThings.GetUsedEncodings();
@@ -69,10 +69,10 @@ class DataColumnWriter {
         return chunk;
     }
 
-    class ColumnThings {
+    class ColumnMetrics {
         public int CompressedSize;
         public int UncompressedSize;
-        public List<PageHeader> Pages = new();
+        public readonly List<PageHeader> Pages = new();
 
         public List<Encoding> GetUsedEncodings() {
             var r = new HashSet<Encoding>();
@@ -82,6 +82,8 @@ class DataColumnWriter {
                 }
                 if(page.DataPageHeader != null) {
                     r.Add(page.DataPageHeader.Encoding);
+                    r.Add(page.DataPageHeader.DefinitionLevelEncoding);
+                    r.Add(page.DataPageHeader.RepetitionLevelEncoding);
                 }
                 if(page.DataPageHeaderV2 != null) {
                     r.Add(page.DataPageHeaderV2.Encoding);
@@ -93,7 +95,7 @@ class DataColumnWriter {
 
     private async Task CompressAndWriteAsync(
         PageHeader ph, MemoryStream uncompressedData,
-        ColumnThings cs,
+        ColumnMetrics cs,
         CancellationToken cancellationToken) {
 
         int uncompressedLength = (int)uncompressedData.Length;
@@ -125,13 +127,13 @@ class DataColumnWriter {
         cs.UncompressedSize += ph.UncompressedPageSize;
     }
 
-    private async Task<ColumnThings> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
+    private async Task<ColumnMetrics> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
        SchemaElement tse,
        CancellationToken cancellationToken = default) {
 
         column.Field.EnsureAttachedToSchema(nameof(column));
 
-        var r = new ColumnThings();
+        var r = new ColumnMetrics();
 
         /*
          * Page header must preceeed actual data (compressed or not) however it contains both
