@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IO;
@@ -50,28 +51,51 @@ class DataColumnWriter {
         ColumnChunk chunk = _footer.CreateColumnChunk(
             _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
             _keyValueMetadata);
+        if(chunk.MetaData == null)
+            throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
-        ColumnSizes columnSizes = await WriteColumnAsync(
+        ColumnMetrics metrics = await WriteColumnAsync(
             chunk, column, _schemaElement,
             cancellationToken);
+        chunk.MetaData.Encodings = metrics.GetUsedEncodings();
+
         //generate stats for column chunk
-        chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
+        chunk.MetaData.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
         //the following counters must include both data size and header size
-        chunk.MetaData.TotalCompressedSize = columnSizes.CompressedSize;
-        chunk.MetaData.TotalUncompressedSize = columnSizes.UncompressedSize;
+        chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
+        chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
 
         return chunk;
     }
 
-    class ColumnSizes {
+    class ColumnMetrics {
         public int CompressedSize;
         public int UncompressedSize;
+        public readonly List<PageHeader> Pages = new();
+
+        public List<Encoding> GetUsedEncodings() {
+            var r = new HashSet<Encoding>();
+            foreach(PageHeader page in Pages) {
+                if(page.DictionaryPageHeader != null) {
+                    r.Add(page.DictionaryPageHeader.Encoding);
+                }
+                if(page.DataPageHeader != null) {
+                    r.Add(page.DataPageHeader.Encoding);
+                    r.Add(page.DataPageHeader.DefinitionLevelEncoding);
+                    r.Add(page.DataPageHeader.RepetitionLevelEncoding);
+                }
+                if(page.DataPageHeaderV2 != null) {
+                    r.Add(page.DataPageHeaderV2.Encoding);
+                }
+            }
+            return r.ToList();
+        }
     }
 
     private async Task CompressAndWriteAsync(
         PageHeader ph, MemoryStream uncompressedData,
-        ColumnSizes cs,
+        ColumnMetrics cs,
         CancellationToken cancellationToken) {
 
         int uncompressedLength = (int)uncompressedData.Length;
@@ -103,13 +127,13 @@ class DataColumnWriter {
         cs.UncompressedSize += ph.UncompressedPageSize;
     }
 
-    private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
+    private async Task<ColumnMetrics> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
        SchemaElement tse,
        CancellationToken cancellationToken = default) {
 
         column.Field.EnsureAttachedToSchema(nameof(column));
 
-        var r = new ColumnSizes();
+        var r = new ColumnMetrics();
 
         /*
          * Page header must preceeed actual data (compressed or not) however it contains both
@@ -122,7 +146,8 @@ class DataColumnWriter {
 
         // dictionary page
         if(pc.HasDictionary) {
-            PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
+            PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length, out _);
+            r.Pages.Add(ph);
             using MemoryStream ms = _rmsMgr.GetStream();
             ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
                    tse,
@@ -137,7 +162,8 @@ class DataColumnWriter {
             bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
            
             // data page Num_values also does include NULLs
-            PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode);
+            PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, out DataPageHeader dph);
+            r.Pages.Add(ph);
             if(pc.HasRepetitionLevels) {
                 WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
             }
@@ -154,13 +180,12 @@ class DataColumnWriter {
             } else {                
                 if(deltaEncode) {
                     DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
-                    chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
                 } else {
                     ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
                 }
             }
 
-            ph.DataPageHeader!.Statistics = column.Statistics.ToThriftStatistics(tse);
+            dph.Statistics = column.Statistics.ToThriftStatistics(tse);
             await CompressAndWriteAsync(ph, ms, r, cancellationToken);
         }
 

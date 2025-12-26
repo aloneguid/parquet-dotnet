@@ -364,7 +364,7 @@ namespace Parquet.Test {
                 ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
                 Meta.ColumnChunk? cc = rgr.GetMetadata(id);
                 Assert.NotNull(cc);
-                Assert.Equal(Parquet.Meta.Encoding.DELTA_BINARY_PACKED, cc.MetaData!.Encodings[2]);
+                Assert.Contains(Parquet.Meta.Encoding.DELTA_BINARY_PACKED, cc.MetaData!.Encodings);
             }
         }
 
@@ -387,7 +387,7 @@ namespace Parquet.Test {
                 ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
                 Meta.ColumnChunk? cc = rgr.GetMetadata(id);
                 Assert.NotNull(cc);
-                Assert.Equal(Parquet.Meta.Encoding.PLAIN, cc.MetaData!.Encodings[2]);
+                Assert.Contains(Parquet.Meta.Encoding.PLAIN, cc.MetaData!.Encodings);
             }
         }
 
