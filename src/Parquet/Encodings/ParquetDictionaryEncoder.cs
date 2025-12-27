@@ -6,6 +6,25 @@ using System.Linq;
 
 namespace Parquet.Encodings {
     static class ParquetDictionaryEncoder {
+        private sealed class DateTimeKindComparer : IEqualityComparer<DateTime> {
+            public static readonly DateTimeKindComparer Instance = new DateTimeKindComparer();
+
+            public bool Equals(DateTime x, DateTime y) {
+                int xKind = ((int)x.Kind) >> 1;
+                int yKind = ((int)y.Kind) >> 1;
+                return x.Ticks == y.Ticks && xKind == yKind;
+            }
+
+            public int GetHashCode(DateTime obj) {
+                unchecked {
+                    int kind = ((int)obj.Kind) >> 1;
+                    int hash = 17;
+                    hash = (hash * 31) + obj.Ticks.GetHashCode();
+                    hash = (hash * 31) + kind;
+                    return hash;
+                }
+            }
+        }
 
         public static bool TryExtractDictionary(Type elementType,
             Array data, int offset, int count,
@@ -24,7 +43,7 @@ namespace Parquet.Encodings {
                 return EncodeStrings(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
             }
             if(elementType == typeof(DateTime)) {
-                return Encode<DateTime>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<DateTime>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, DateTimeKindComparer.Instance);
             }
             if(elementType == typeof(decimal)) {
                 return Encode<decimal>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
@@ -110,13 +129,15 @@ namespace Parquet.Encodings {
             int count,
             [NotNullWhen(true)] ref Array? dictionaryArray,
             [NotNullWhen(true)] ref int[]? rentedIndexes,
-            double threshold) where T : notnull {
+            double threshold,
+            IEqualityComparer<T>? equalityComparer = null) where T : notnull {
             var src = (T[])data;
 
             //TODO: calculate some more statistics beyond uniquness like run lengths, index size and index bitwidth to determine if there is value
             //in dictionary encoding this data vs PLAIN encoding
             //e.g. Dictionary encoding for byte values could be worse than plain even with 50% uniqueness depending on run lengths and value spread
-            Dictionary<T, (int Count, int MaxRunLength, int Index)> distinctSet = Distinct(src, offset, count, EqualityComparer<T>.Default);
+            IEqualityComparer<T> comparer = equalityComparer ?? EqualityComparer<T>.Default;
+            Dictionary<T, (int Count, int MaxRunLength, int Index)> distinctSet = Distinct(src, offset, count, comparer);
             double uniquenessFactor = distinctSet.Count / (double)count;
             if(uniquenessFactor > threshold)
                 return false;
@@ -131,12 +152,12 @@ namespace Parquet.Encodings {
             return true;
         }
 
-        private static Dictionary<T, (int Count, int MaxRunLength, int Index)> Distinct<T>(T[] values, int offset, int count, EqualityComparer<T> equalityComparer)
+        private static Dictionary<T, (int Count, int MaxRunLength, int Index)> Distinct<T>(T[] values, int offset, int count, IEqualityComparer<T> equalityComparer)
            where T : notnull {
             if(values.Length == 0) {
                 return new(0);
             }
-            var dict = new Dictionary<T, (int Count, int MaxRunLength, int Index)>(values.Length);
+            var dict = new Dictionary<T, (int Count, int MaxRunLength, int Index)>(values.Length, equalityComparer);
             T previous = values[offset];
             int runLength = 1;
             int index = 0;

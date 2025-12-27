@@ -77,7 +77,7 @@ class NanoTime {
         long timeOfDayTicks = nanoTime._timeOfDayNanos / 100;
 
         var result = new DateTime(Year, Month, Day,
-           0, 0, 0, DateTimeKind.Utc);
+           0, 0, 0, DateTimeKind.Unspecified);
         result = result.AddTicks(timeOfDayTicks);
 
         return result;

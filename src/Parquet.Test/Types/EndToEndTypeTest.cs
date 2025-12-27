@@ -33,11 +33,18 @@ namespace Parquet.Test.Types {
                 equal = dtActual.Equals(dtExpected);
             } else if(actual.GetType() == typeof(DateTime)) {
                 var dtActual = (DateTime)actual;
-                Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
                 var dtExpected = (DateTime)input.ExpectedValue!;
                 dtExpected = dtExpected.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(dtExpected, DateTimeKind.Utc) // assumes value is UTC
                     : dtExpected.ToUniversalTime();
+                bool isInt96 = input.Field is not DateTimeDataField ||
+                    input.Field is DateTimeDataField { DateTimeFormat: DateTimeFormat.Impala };
+                if(isInt96) {
+                    Assert.Equal(DateTimeKind.Unspecified, dtActual.Kind);
+                    dtExpected = DateTime.SpecifyKind(dtExpected, DateTimeKind.Unspecified);
+                } else {
+                    Assert.Equal(DateTimeKind.Utc, dtActual.Kind);
+                }
                 equal = dtActual.Equals(dtExpected);
             } else {
                 equal = actual.Equals(input.ExpectedValue);
