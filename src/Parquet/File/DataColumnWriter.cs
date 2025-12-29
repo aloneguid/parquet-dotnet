@@ -13,7 +13,7 @@ using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
 
-namespace Parquet.File; 
+namespace Parquet.File;
 class DataColumnWriter {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
@@ -52,47 +52,15 @@ class DataColumnWriter {
             column, _schemaElement,
             cancellationToken);
 
+        //generate stats for column chunk
+        Statistics statistics = column.Statistics.ToThriftStatistics(_schemaElement);
+
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
         ColumnChunk chunk = _footer.CreateColumnChunk(
             _compressionMethod, startPos, _schemaElement.Type!.Value, fullPath, column.NumValues,
-            _keyValueMetadata);
-        if(chunk.MetaData == null)
-            throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
-
-        chunk.MetaData.Encodings = metrics.GetUsedEncodings();
-
-        //generate stats for column chunk
-        chunk.MetaData.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
-
-        //the following counters must include both data size and header size
-        chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
-        chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
-
+            _keyValueMetadata, statistics, metrics);
+      
         return chunk;
-    }
-
-    class ColumnMetrics {
-        public int CompressedSize;
-        public int UncompressedSize;
-        public readonly List<PageHeader> Pages = new();
-
-        public List<Encoding> GetUsedEncodings() {
-            var r = new HashSet<Encoding>();
-            foreach(PageHeader page in Pages) {
-                if(page.DictionaryPageHeader != null) {
-                    r.Add(page.DictionaryPageHeader.Encoding);
-                }
-                if(page.DataPageHeader != null) {
-                    r.Add(page.DataPageHeader.Encoding);
-                    r.Add(page.DataPageHeader.DefinitionLevelEncoding);
-                    r.Add(page.DataPageHeader.RepetitionLevelEncoding);
-                }
-                if(page.DataPageHeaderV2 != null) {
-                    r.Add(page.DataPageHeaderV2.Encoding);
-                }
-            }
-            return r.ToList();
-        }
     }
 
     private async Task CompressAndWriteAsync(
