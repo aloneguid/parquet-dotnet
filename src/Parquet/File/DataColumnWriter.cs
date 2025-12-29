@@ -14,6 +14,7 @@ using Parquet.Meta;
 using Parquet.Schema;
 
 namespace Parquet.File;
+
 class DataColumnWriter {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
@@ -59,11 +60,11 @@ class DataColumnWriter {
         ColumnChunk chunk = _footer.CreateColumnChunk(
             _compressionMethod, startPos, _schemaElement.Type!.Value, fullPath, column.NumValues,
             _keyValueMetadata, statistics, metrics);
-      
+
         return chunk;
     }
 
-    private async Task CompressAndWriteAsync(
+    private async Task<(int, int)> CompressAndWriteAsync(
         PageHeader ph, MemoryStream uncompressedData,
         ColumnMetrics cs,
         CancellationToken cancellationToken) {
@@ -76,25 +77,24 @@ class DataColumnWriter {
         ph.UncompressedPageSize = uncompressedLength;
         ph.CompressedPageSize = compressedLength;
 
+        int headerSize;
+
         //write the header in
         using(MemoryStream headerMs = _rmsMgr.GetStream()) {
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
-            int headerSize = (int)headerMs.Length;
+            headerSize = (int)headerMs.Length;
             headerMs.Position = 0;
             _stream.Flush();
 
             // write header
             await headerMs.CopyToAsync(_stream);
 
-            cs.CompressedSize += headerSize;
-            cs.UncompressedSize += headerSize;
         }
 
         // write data
         await pageData.Memory.CopyToAsync(_stream);
 
-        cs.CompressedSize += ph.CompressedPageSize;
-        cs.UncompressedSize += ph.UncompressedPageSize;
+        return (ph.CompressedPageSize + headerSize, ph.UncompressedPageSize + headerSize);
     }
 
     private async Task<ColumnMetrics> WriteColumnAsync(DataColumn column,
@@ -117,23 +117,24 @@ class DataColumnWriter {
         // dictionary page
         if(pc.HasDictionary) {
             PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length, out _);
-            r.Pages.Add(ph);
+            r = r.WithAddedPage(ph);
             using MemoryStream ms = _rmsMgr.GetStream();
             ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
                    tse,
                    ms, column.Statistics);
 
-            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+            (int, int) sizes = await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+            r = r.WithAddedSizes(sizes);
         }
 
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
             Array data = pc.GetPlainData(out int offset, out int count);
             bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
-           
+
             // data page Num_values also does include NULLs
             PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, out DataPageHeader dph);
-            r.Pages.Add(ph);
+            r = r.WithAddedPage(ph);
             if(pc.HasRepetitionLevels) {
                 WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
             }
@@ -147,7 +148,7 @@ class DataColumnWriter {
                 int bitWidth = pc.Dictionary!.Length.GetBitWidth();
                 ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
                 RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-            } else {                
+            } else {
                 if(deltaEncode) {
                     DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
                 } else {
@@ -156,7 +157,8 @@ class DataColumnWriter {
             }
 
             dph.Statistics = column.Statistics.ToThriftStatistics(tse);
-            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+            (int, int) sizes = await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+            r = r.WithAddedSizes(sizes);
         }
 
         return r;
