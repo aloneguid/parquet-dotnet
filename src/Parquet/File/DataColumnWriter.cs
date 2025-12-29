@@ -57,7 +57,7 @@ class DataColumnWriter {
         Statistics statistics = column.Statistics.ToThriftStatistics(_schemaElement);
 
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
-        ColumnChunk chunk = _footer.CreateColumnChunk(
+        ColumnChunk chunk = ThriftFooter.CreateColumnChunk(
             _compressionMethod, startPos, _schemaElement.Type!.Value, fullPath, column.NumValues,
             _keyValueMetadata, statistics, metrics);
 

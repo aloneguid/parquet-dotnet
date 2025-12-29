@@ -129,7 +129,7 @@ namespace Parquet.File {
             return rg;
         }
 
-        public ColumnChunk CreateColumnChunk(CompressionMethod compression, long startPos,
+        public static ColumnChunk CreateColumnChunk(CompressionMethod compression, long startPos,
             Parquet.Meta.Type columnType, FieldPath path, int valuesCount,
             Dictionary<string, string>? keyValueMetadata, Statistics statistics, ColumnMetrics metrics) {
             CompressionCodec codec = (CompressionCodec)(int)compression;
