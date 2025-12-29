@@ -46,10 +46,11 @@ class DataColumnWriter {
     public async Task<ColumnChunk> WriteAsync(
         FieldPath fullPath, DataColumn column,
         CancellationToken cancellationToken = default) {
+        long startPos = _stream.Position;
 
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
         ColumnChunk chunk = _footer.CreateColumnChunk(
-            _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
+            _compressionMethod, startPos, _schemaElement.Type!.Value, fullPath, column.NumValues,
             _keyValueMetadata);
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");

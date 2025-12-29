@@ -129,13 +129,12 @@ namespace Parquet.File {
             return rg;
         }
 
-        public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
+        public ColumnChunk CreateColumnChunk(CompressionMethod compression, long startPos,
             Parquet.Meta.Type columnType, FieldPath path, int valuesCount,
             Dictionary<string, string>? keyValueMetadata) {
             CompressionCodec codec = (CompressionCodec)(int)compression;
 
             var chunk = new ColumnChunk();
-            long startPos = output.Position;
             chunk.FileOffset = startPos;
             chunk.MetaData = new ColumnMetaData();
             chunk.MetaData.NumValues = valuesCount;
