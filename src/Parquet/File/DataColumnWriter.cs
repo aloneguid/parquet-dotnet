@@ -45,13 +45,13 @@ class DataColumnWriter {
         return chunk;
     }
 
-    private static async Task<(int, int)> CompressAndWriteAsync(Stream stream,
-        PageHeader ph, MemoryStream uncompressedData,
-        ColumnMetrics cs, CompressionMethod compressionMethod, CompressionLevel compressionLevel,
+    readonly record struct CompressResult((int, int) ColumnSizes, MemoryStream HeaderMs, IMemoryOwner<byte> PageData);
+
+    private static async Task<CompressResult> CompressAsync(PageHeader ph, MemoryStream uncompressedData, CompressionMethod compressionMethod, CompressionLevel compressionLevel,
         CancellationToken cancellationToken) {
 
         int uncompressedLength = (int)uncompressedData.Length;
-        using IMemoryOwner<byte> pageData = await Compressor.Instance.CompressAsync(
+        IMemoryOwner<byte> pageData = await Compressor.Instance.CompressAsync(
             compressionMethod, compressionLevel, uncompressedData);
         int compressedLength = pageData.Memory.Length;
 
@@ -61,22 +61,21 @@ class DataColumnWriter {
         int headerSize;
 
         //write the header in
-        using(MemoryStream headerMs = _rmsMgr.GetStream()) {
-            ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
-            headerSize = (int)headerMs.Length;
-            headerMs.Position = 0;
-            stream.Flush();
+        MemoryStream headerMs = _rmsMgr.GetStream();
+        ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
+        headerSize = (int)headerMs.Length;
+        headerMs.Position = 0;
 
-            // write header
-            await headerMs.CopyToAsync(stream);
-
-        }
-
-        // write data
-        await pageData.Memory.CopyToAsync(stream);
-
-        return (ph.CompressedPageSize + headerSize, ph.UncompressedPageSize + headerSize);
+        return new((ph.CompressedPageSize + headerSize, ph.UncompressedPageSize + headerSize), headerMs, pageData);
     }
+
+    private static async Task WriteAsync(Stream stream, CompressResult compressResult) {
+        stream.Flush();
+
+        await compressResult.HeaderMs.CopyToAsync(stream);
+        await compressResult.PageData.Memory.CopyToAsync(stream);
+    }
+
 
     private static async Task<ColumnMetrics> WriteColumnAsync(Stream stream,
         DataColumn column,
@@ -97,57 +96,81 @@ class DataColumnWriter {
         pc.Pack(options.UseDictionaryEncoding, options.DictionaryEncodingThreshold);
 
         // dictionary page
-        if(pc.HasDictionary) {
-            PageHeader ph = ThriftFooter.CreateDictionaryPage(pc.Dictionary!.Length, out _);
-            r = r.WithAddedPage(ph);
-            using MemoryStream ms = _rmsMgr.GetStream();
-            ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
-                   tse,
-                   ms, column.Statistics);
-
-            (int, int) sizes = await CompressAndWriteAsync(stream, ph, ms, r, compressionMethod, compressionLevel, cancellationToken);
-            r = r.WithAddedSizes(sizes);
-        }
-
-        // data page
-        using(MemoryStream ms = _rmsMgr.GetStream()) {
-            Array data = pc.GetPlainData(out int offset, out int count);
-            bool deltaEncode = column.IsDeltaEncodable && options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
-
-
-            if(pc.HasRepetitionLevels) {
-                WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
-            }
-            if(pc.HasDefinitionLevels) {
-                WriteLevels(ms, pc.DefinitionLevels!, column.DefinitionLevels!.Length, column.Field.MaxDefinitionLevel);
-            }
-
+        (CompressResult dictCompressResult, MemoryStream ms)? dictWriteState = null;
+        try {
+            // dictionary page
             if(pc.HasDictionary) {
-                // dictionary indexes are always encoded with RLE
-                int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
-                int bitWidth = pc.Dictionary!.Length.GetBitWidth();
-                ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
-                RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-            } else {
-                if(deltaEncode) {
-                    DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
-                } else {
-                    ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
-                }
+                PageHeader ph = ThriftFooter.CreateDictionaryPage(pc.Dictionary!.Length, out _);
+                r = r.WithAddedPage(ph);
+                MemoryStream ms = _rmsMgr.GetStream();
+                ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
+                       tse,
+                       ms, column.Statistics);
+
+                CompressResult result = await CompressAsync(ph, ms, compressionMethod, compressionLevel, cancellationToken);
+                r = r.WithAddedSizes(result.ColumnSizes);
+                dictWriteState = (result, ms);
             }
 
-            Statistics statistics = column.Statistics.ToThriftStatistics(tse);
+            // data page
+            using(MemoryStream ms = _rmsMgr.GetStream()) {
+                Array data = pc.GetPlainData(out int offset, out int count);
+                bool deltaEncode = column.IsDeltaEncodable && options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
 
-            // data page Num_values also does include NULLs
-            PageHeader ph = ThriftFooter.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, statistics);
-            r = r.WithAddedPage(ph);
 
-            (int, int) sizes = await CompressAndWriteAsync(stream, ph, ms, r, compressionMethod, compressionLevel, cancellationToken);
-            r = r.WithAddedSizes(sizes);
+                if(pc.HasRepetitionLevels) {
+                    WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
+                }
+                if(pc.HasDefinitionLevels) {
+                    WriteLevels(ms, pc.DefinitionLevels!, column.DefinitionLevels!.Length, column.Field.MaxDefinitionLevel);
+                }
+
+                if(pc.HasDictionary) {
+                    // dictionary indexes are always encoded with RLE
+                    int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
+                    int bitWidth = pc.Dictionary!.Length.GetBitWidth();
+                    ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
+                    RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
+                } else {
+                    if(deltaEncode) {
+                        DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
+                    } else {
+                        ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
+                    }
+                }
+
+                Statistics statistics = column.Statistics.ToThriftStatistics(tse);
+
+                // data page Num_values also does include NULLs
+                PageHeader ph = ThriftFooter.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, statistics);
+                r = r.WithAddedPage(ph);
+
+                CompressResult result = await CompressAsync(ph, ms, compressionMethod, compressionLevel, cancellationToken);
+                r = r.WithAddedSizes(result.ColumnSizes);
+                using IMemoryOwner<byte> _ = result.PageData;
+                using MemoryStream _1 = result.HeaderMs;
+
+
+                // from this point on, we are back to writing on the stream
+                if(dictWriteState.HasValue) {
+                    await WriteAsync(stream, dictWriteState.Value.dictCompressResult);
+                }
+
+                await WriteAsync(stream, result);
+            }
+
+        } finally { // sadly need to cleanup manually due to the optional lifetime.
+            if(dictWriteState.HasValue) {
+                (CompressResult dictCompressResult, MemoryStream ms) = dictWriteState.Value;
+                ms.Dispose();
+                dictCompressResult.PageData.Dispose();
+                dictCompressResult.HeaderMs.Dispose();
+            }
         }
 
         return r;
     }
+
 
     private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
         int bitWidth = maxValue.GetBitWidth();
