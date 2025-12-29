@@ -132,9 +132,7 @@ class DataColumnWriter {
             Array data = pc.GetPlainData(out int offset, out int count);
             bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
 
-            // data page Num_values also does include NULLs
-            PageHeader ph = ThriftFooter.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, out DataPageHeader dph);
-            r = r.WithAddedPage(ph);
+           
             if(pc.HasRepetitionLevels) {
                 WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
             }
@@ -156,7 +154,12 @@ class DataColumnWriter {
                 }
             }
 
-            dph.Statistics = column.Statistics.ToThriftStatistics(tse);
+            Statistics statistics = column.Statistics.ToThriftStatistics(tse);
+
+            // data page Num_values also does include NULLs
+            PageHeader ph = ThriftFooter.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, statistics);
+            r = r.WithAddedPage(ph);
+
             (int, int) sizes = await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             r = r.WithAddedSizes(sizes);
         }
