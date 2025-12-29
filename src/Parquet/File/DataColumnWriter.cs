@@ -26,13 +26,14 @@ class DataColumnWriter {
        ParquetOptions options,
        CompressionLevel compressionLevel,
        Dictionary<string, string>? keyValueMetadata,
-        CancellationToken cancellationToken = default) {
+       OrderedCommitGate orderedCommitGate,
+       CancellationToken cancellationToken = default) {
         long startPos = stream.Position;
 
         _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
         _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
 
-        ColumnMetrics metrics = await WriteColumnAsync(stream, column, schemaElement, options, compressionMethod, compressionLevel, cancellationToken);
+        ColumnMetrics metrics = await WriteColumnAsync(stream, column, schemaElement, options, compressionMethod, compressionLevel, orderedCommitGate, cancellationToken);
 
         //generate stats for column chunk
         Statistics statistics = column.Statistics.ToThriftStatistics(schemaElement);
@@ -80,7 +81,10 @@ class DataColumnWriter {
     private static async Task<ColumnMetrics> WriteColumnAsync(Stream stream,
         DataColumn column,
        SchemaElement tse, ParquetOptions options, CompressionMethod compressionMethod, CompressionLevel compressionLevel,
-       CancellationToken cancellationToken = default) {
+OrderedCommitGate orderedCommitGate, CancellationToken cancellationToken = default) {
+
+        OrderedCommitGate.Token commitToken = orderedCommitGate.QueueForCommit();
+        await Task.Yield();
 
         column.Field.EnsureAttachedToSchema(nameof(column));
 
@@ -150,6 +154,7 @@ class DataColumnWriter {
                 using IMemoryOwner<byte> _ = result.PageData;
                 using MemoryStream _1 = result.HeaderMs;
 
+                await orderedCommitGate.WaitForCommit(commitToken);
 
                 // from this point on, we are back to writing on the stream
                 if(dictWriteState.HasValue) {
@@ -166,6 +171,8 @@ class DataColumnWriter {
                 dictCompressResult.PageData.Dispose();
                 dictCompressResult.HeaderMs.Dispose();
             }
+
+            orderedCommitGate.CommitDone(commitToken);
         }
 
         return r;
