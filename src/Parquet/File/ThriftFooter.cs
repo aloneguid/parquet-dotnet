@@ -160,7 +160,7 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable, out DataPageHeader dph) {
+        public static PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable, out DataPageHeader dph) {
             dph = new DataPageHeader {
                 Encoding = isDictionary
                         ? Encoding.PLAIN_DICTIONARY
@@ -177,7 +177,7 @@ namespace Parquet.File {
             };
         }
 
-        public PageHeader CreateDictionaryPage(int numValues, out DictionaryPageHeader dph) {
+        public static PageHeader CreateDictionaryPage(int numValues, out DictionaryPageHeader dph) {
             dph = new DictionaryPageHeader {
                 Encoding = Encoding.PLAIN_DICTIONARY,
                 NumValues = numValues
