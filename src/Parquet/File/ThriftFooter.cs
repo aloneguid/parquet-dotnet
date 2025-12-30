@@ -129,13 +129,12 @@ namespace Parquet.File {
             return rg;
         }
 
-        public ColumnChunk CreateColumnChunk(CompressionMethod compression, System.IO.Stream output,
+        public static ColumnChunk CreateColumnChunk(CompressionMethod compression, long startPos,
             Parquet.Meta.Type columnType, FieldPath path, int valuesCount,
-            Dictionary<string, string>? keyValueMetadata) {
+            Dictionary<string, string>? keyValueMetadata, Statistics statistics, ColumnMetrics metrics) {
             CompressionCodec codec = (CompressionCodec)(int)compression;
 
             var chunk = new ColumnChunk();
-            long startPos = output.Position;
             chunk.FileOffset = startPos;
             chunk.MetaData = new ColumnMetaData();
             chunk.MetaData.NumValues = valuesCount;
@@ -143,7 +142,15 @@ namespace Parquet.File {
             chunk.MetaData.Codec = codec;
             chunk.MetaData.DataPageOffset = startPos;
             chunk.MetaData.PathInSchema = path.ToList();
-            chunk.MetaData.Statistics = new Statistics();
+            chunk.MetaData.Statistics = statistics;
+
+            chunk.MetaData.Encodings = metrics.GetUsedEncodings();
+
+            //the following counters must include both data size and header size
+            chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
+            chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
+
+
             if(keyValueMetadata != null && keyValueMetadata.Count > 0) {
                 chunk.MetaData.KeyValueMetadata = keyValueMetadata
                     .Select(kv => new KeyValue { Key = kv.Key, Value = kv.Value })
@@ -153,15 +160,15 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable, out DataPageHeader dph) {
-            dph = new DataPageHeader {
+        public static PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable, Statistics statistics) {
+            var dph = new DataPageHeader {
                 Encoding = isDictionary
                         ? Encoding.PLAIN_DICTIONARY
                         : isDeltaEncodable ? Encoding.DELTA_BINARY_PACKED : Encoding.PLAIN,
                 DefinitionLevelEncoding = Encoding.RLE,
                 RepetitionLevelEncoding = Encoding.RLE,
                 NumValues = valueCount,
-                Statistics = new Statistics()
+                Statistics = statistics
             };
 
             return new PageHeader {
@@ -170,7 +177,7 @@ namespace Parquet.File {
             };
         }
 
-        public PageHeader CreateDictionaryPage(int numValues, out DictionaryPageHeader dph) {
+        public static PageHeader CreateDictionaryPage(int numValues, out DictionaryPageHeader dph) {
             dph = new DictionaryPageHeader {
                 Encoding = Encoding.PLAIN_DICTIONARY,
                 NumValues = numValues

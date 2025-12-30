@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Parquet.Schema;
 using System.Linq;
+using System.Threading;
 
 namespace Parquet.Test {
     public class ParquetWriterTest : TestBase {
@@ -130,6 +131,39 @@ namespace Parquet.Test {
         }
 #endif
 
+
+        [Fact]
+        public async Task Write_columns_in_parallel() {
+            const int rowCount = 2_000_000;
+            var random = new Random(8675309);
+            DataField<int>[] fields = new[] {
+                new DataField<int>("c0"),
+                new DataField<int>("c1"),
+                new DataField<int>("c2"),
+                new DataField<int>("c3"),
+                new DataField<int>("c4")
+            };
+            var schema = new ParquetSchema(fields);
+            var ms = new MemoryStream();
+
+            int[][] values = new int[fields.Length][];
+            for(int i = 0; i < fields.Length; i++) {
+                int[] data = new int[rowCount];
+                for(int j = 0; j < data.Length; j++) {
+                    data[j] = random.Next();
+                }
+                values[i] = data;
+            }
+
+            using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms);
+            using ParquetRowGroupWriter rg = writer.CreateRowGroup();
+            var writeTasks = new Task[fields.Length];
+            for(int i = 0; i < fields.Length; i++) {
+                var column = new DataColumn(fields[i], values[i]);
+                writeTasks[i] = rg.WriteColumnAsync(column);
+            }
+            await Task.WhenAll(writeTasks);
+        }
 
         [Fact]
         public async Task Append_to_file_reads_all_data() {

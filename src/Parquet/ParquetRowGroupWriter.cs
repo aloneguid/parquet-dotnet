@@ -27,6 +27,7 @@ namespace Parquet {
         private readonly ParquetOptions _formatOptions;
         private readonly RowGroup _owGroup;
         private readonly SchemaElement[] _thschema;
+        private readonly OrderedCommitGate _orderedCommitGate = new();
         private int _colIdx;
 
         internal ParquetRowGroupWriter(ParquetSchema schema,
@@ -99,13 +100,7 @@ namespace Parquet {
 
             FieldPath path = _footer.GetPath(tse);
 
-            var writer = new DataColumnWriter(_stream, _footer, tse,
-               _compressionMethod,
-               _formatOptions,
-               _compressionLevel,
-               customMetadata);
-
-            ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
+            ColumnChunk chunk = await DataColumnWriter.WriteAsync(path, column, _stream, tse, _compressionMethod, _formatOptions, _compressionLevel, customMetadata, _orderedCommitGate, cancellationToken);
             _owGroup.Columns.Add(chunk);
 
         }
