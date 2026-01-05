@@ -183,8 +183,6 @@ Note that classes (or structs) in general purpose programming languages represen
 - In order for the deserializer to work, classes need to have a parameterless constructor.
 - Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writeable. This might limit your use cases if you are trying to deserialize into immutable objects, and in this case you should probably keep DTOs specifically designed for parquet format, which is still easier than using low level API.
 - The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
-- Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writable. This might limit your use cases if you are trying to deserialize into immutable objects; in this case you should probably keep DTOs specifically designed for Parquet format, which is still easier than using the low-level API.
-- The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
 - While you can serialize `struct`, deserialization is only supported to `class` due to internal optimisation requirements.
 
 ## Customising serialization
