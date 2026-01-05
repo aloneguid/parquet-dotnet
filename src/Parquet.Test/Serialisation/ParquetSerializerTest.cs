@@ -1192,8 +1192,6 @@ public class ParquetSerializerTest : TestBase {
     [Fact]
     public async Task Class_With_Nullable_Struct() {
 
-        ParquetSchema schema = typeof(ClassWithNullableCustomStruct).GetParquetSchema(true);
-
         var data = new List<ClassWithNullableCustomStruct> {
             new ClassWithNullableCustomStruct() {
                 NullableStruct = null
