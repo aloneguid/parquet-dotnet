@@ -794,7 +794,7 @@ public class SchemaReflectorTest : TestBase {
         Assert.False(sf.IsNullable, "struct cannot be optional");
 
         // check the struct field
-        Assert.Single(sf.Children);
+        Assert.Equal(2, sf.Children.Length);
         var idField = (DataField)sf.Children[0];
         Assert.Equal(typeof(int), idField.ClrType);
     }
@@ -814,7 +814,7 @@ public class SchemaReflectorTest : TestBase {
         Assert.True(sf.IsNullable, "struct must be nullable");
 
         // check the struct field
-        Assert.Single(sf.Children);
+        Assert.Equal(2, sf.Children.Length);
         var idField = (DataField)sf.Children[0];
         Assert.Equal(typeof(int), idField.ClrType);
     }
