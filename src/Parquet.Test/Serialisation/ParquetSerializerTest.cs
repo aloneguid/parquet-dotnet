@@ -406,7 +406,7 @@ public class ParquetSerializerTest : TestBase {
         }).ToList();
 
         using var ms = new MemoryStream();
-        ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
+        await ParquetSerializer.SerializeAsync(data, ms);
 
         // Address.Country/City must be RL: 0, DL: 0 as Address is null
 
