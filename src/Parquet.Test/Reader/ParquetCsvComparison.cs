@@ -133,16 +133,16 @@ public class ParquetCsvComparison : TestBase {
     private DataColumn[] ReadCsv(string name) {
         var columns = new List<List<string>>();
 
-        string[]? columnNames = null;
+        string[] columnNames;
 
         using(StreamReader fs = OpenTestFileReader(name)) {
             var reader = new CsvReader(fs, CultureInfo.InvariantCulture);
 
             reader.Read();
-            columnNames = Enumerable.Range(0, reader.ColumnCount).Select(i => reader.GetField(i)).ToArray();
+            columnNames = Enumerable.Range(0, reader.ColumnCount).Select(i => reader.GetField(i)!).ToArray();
 
             //header
-            columns.AddRange(columnNames!.Select(n => new List<string>()));
+            columns.AddRange(columnNames.Select(n => new List<string>()));
 
             //values
             while(reader.Read()) {
