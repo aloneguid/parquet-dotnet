@@ -1220,7 +1220,7 @@ public class ParquetSerializerTest : TestBase {
     }
 
     /// <summary>
-    /// This shoudl throw InvalidCastException as the raw Int64 is being cast to Int32
+    /// This should throw InvalidCastException as the raw Int64 is being cast to Int32
     /// </summary>
     /// <returns></returns>
     [Fact]
