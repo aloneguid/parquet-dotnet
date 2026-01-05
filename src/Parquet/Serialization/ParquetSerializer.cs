@@ -243,7 +243,7 @@ namespace Parquet.Serialization {
             int rowGroupIndex,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
@@ -269,7 +269,7 @@ namespace Parquet.Serialization {
         /// <exception cref="ArgumentException"></exception>
         public static async Task DeserializeAsync<T>(Stream source, int rowGroupIndex, IList<T> result, 
             ParquetSerializerOptions? options = null, CancellationToken cancellationToken = default,
-            bool resultsAlreadyAllocated = false) where T : new() {
+            bool resultsAlreadyAllocated = false) where T : class, new() {
 
             using ParquetReader reader =
                 await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
@@ -290,7 +290,7 @@ namespace Parquet.Serialization {
         /// <typeparam name="T"></typeparam>
         public static async Task DeserializeAsync<T>(ParquetReader reader, int rowGroupIndex, IList<T> result,
             CancellationToken cancellationToken = default, bool resultsAlreadyAllocated = false,
-            ParquetSerializerOptions? options = null) where T : new() {
+            ParquetSerializerOptions? options = null) where T : class, new() {
             Assembler<T> asm = GetAssembler<T>();
             await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken, 
                 resultsAlreadyAllocated);
@@ -309,7 +309,7 @@ namespace Parquet.Serialization {
             int rowGroupIndex,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
             using FileStream fs = System.IO.File.OpenRead(filePath);
             return await DeserializeAsync<T>(fs, rowGroupIndex, options, cancellationToken);
         }
@@ -326,7 +326,7 @@ namespace Parquet.Serialization {
         public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
 
             Assembler<T> asm = GetAssembler<T>();
 
@@ -354,7 +354,7 @@ namespace Parquet.Serialization {
         public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
             ParquetSerializerOptions? options = null,
             CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
             using FileStream fs = System.IO.File.OpenRead(filePath);
             return await DeserializeAsync<T>(fs, options, cancellationToken);
         }
@@ -396,7 +396,7 @@ namespace Parquet.Serialization {
         public static async IAsyncEnumerable<T> DeserializeAllAsync<T>(Stream source,
             ParquetSerializerOptions? options = null,
             [EnumeratorCancellation]CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
 
             Assembler<T> asm = GetAssembler<T>();
 
@@ -427,7 +427,7 @@ namespace Parquet.Serialization {
         public static async IAsyncEnumerable<IList<T>> DeserializeAllByGroupsAsync<T>(Stream source,
             ParquetSerializerOptions? options = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
             Assembler<T> asm = GetAssembler<T>();
 
             using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
@@ -454,7 +454,7 @@ namespace Parquet.Serialization {
         public static async Task<IList<T>> DeserializeAsync<T>(ParquetRowGroupReader rowGroupReader,
             ParquetSchema schema,
             CancellationToken cancellationToken = default)
-            where T : new() {
+            where T : class, new() {
             List<T> result = GetList<T>(rowGroupReader.RowGroup.NumRows);
 
             await DeserializeRowGroupAsync(rowGroupReader, schema, result, cancellationToken);
@@ -477,7 +477,7 @@ namespace Parquet.Serialization {
             ICollection<T> result,
             CancellationToken cancellationToken = default,
             bool resultsAlreadyAllocated = false,
-            ParquetSerializerOptions? options = null) where T : new() {
+            ParquetSerializerOptions? options = null) where T : class, new() {
             Assembler<T> asm = GetAssembler<T>();
             
             await DeserializeRowGroupAsync(rowGroupReader, schema, asm, result, options, cancellationToken, resultsAlreadyAllocated);
@@ -495,7 +495,7 @@ namespace Parquet.Serialization {
 
         private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi, Assembler<T> asm,
             ICollection<T> result, ParquetSerializerOptions? options, CancellationToken cancellationToken, bool resultsAlreadyAllocated = false)
-            where T : new() {
+            where T : class, new() {
 
             using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
@@ -557,7 +557,7 @@ namespace Parquet.Serialization {
             ICollection<T> result,
             ParquetSerializerOptions? options,
             CancellationToken cancellationToken = default,
-            bool resultsAlreadyAllocated = false) where T : new() {
+            bool resultsAlreadyAllocated = false) where T : class, new() {
 
             // add more empty class instances to the result
             int prevRowCount = result.Count;

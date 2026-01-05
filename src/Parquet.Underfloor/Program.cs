@@ -348,6 +348,7 @@ void RenderStatusBar() {
     SBI(Icon.Table_rows, fd.RowGroupCountDisplay, "number of row groups");
     SBI(Icon.View_column, fd.ColumnCountDisplay, "number of columns");
     SBI(Icon.Numbers, fd.VersionDisplay, "format version");
+    SBI(Icon.Timelapse, fd.SampleReadDurationDisplay, "data sample read duration");
 }
 
 #endregion
@@ -440,12 +441,6 @@ void RenderCellValue(int row, int col, Field f, object? value) {
 void RenderData() {
     if(fd.Metadata == null || fd.Columns == null || fd.ColumnsDisplay == null || fd.Schema == null)
         return;
-
-    if(fd.SampleReadStatus != ReadStatus.Completed) {
-        Label(fd.SampleReadStatus.ToString(), Emphasis.Info);
-    } else {
-        Label(fd.SampleReadDurationDisplay ?? "");
-    }
 
     if(fd.SampleReadStatus == ReadStatus.NotStarted) {
         fd.ReadDataSampleAsync();

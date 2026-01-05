@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Apache.Arrow;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
@@ -26,7 +24,8 @@ namespace Parquet.Test.Serialisation;
 /// </summary>
 public class ParquetSerializerTest : TestBase {
 
-    private async Task Compare<T>(List<T> input, bool asJson = false, string? saveAsFile = null, bool useAsync = false) where T : new() {
+    private async Task Compare<T>(List<T> input, bool asJson = false, string? saveAsFile = null, bool useAsync = false)
+        where T : class, new() {
 
         // serialize to parquet
         using var ms = new MemoryStream();
@@ -138,23 +137,6 @@ public class ParquetSerializerTest : TestBase {
     public async Task Atomics_SimplestWithFields_Serde() {
 
         var data = Enumerable.Range(0, 1_000).Select(i => new RecordWithFields {
-            IdProp = i,
-            IdField = i
-        }).ToList();
-
-        await Compare(data);
-    }
-
-    struct ClrStructWithFields {
-        public int IdProp { get; set; }
-
-        public int IdField;
-    }
-
-    [Fact]
-    public async Task Atomics_SimplestClrStructWithFields_Serde() {
-
-        var data = Enumerable.Range(0, 1_000).Select(i => new ClrStructWithFields {
             IdProp = i,
             IdField = i
         }).ToList();
