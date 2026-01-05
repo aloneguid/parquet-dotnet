@@ -142,7 +142,7 @@ namespace Parquet.Test.Integration {
                 Assert.Equal(1, Convert.ToInt32(idCol.Data.GetValue(0)));
 
                 DataColumn valCol = await rg.ReadColumnAsync(dfs[1]);
-                Assert.Equal(1, valCol.Data.Length);
+                Assert.Single(valCol.Data);
 
                 object? actual = valCol.Data.GetValue(0);
                 if(input.ExpectedValue is null) {
