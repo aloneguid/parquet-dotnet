@@ -744,13 +744,37 @@ namespace Parquet.Test.Serialisation {
 
         struct SimpleClrStruct {
             public int Id { get; set; }
+
+            public int IdField;
         }
 
         [Fact]
         public void ClrStruct_IsSupported() {
             ParquetSchema schema = typeof(SimpleClrStruct).GetParquetSchema(true);
-            Assert.Single(schema.Fields);
+            Assert.Equal(2, schema.Fields.Count);
             Assert.Equal(typeof(int), schema.DataFields[0].ClrType);
+        }
+
+        [Fact]
+        public void ClrStruct_RWProperty_IsSupported() {
+            ParquetSchema schema = typeof(SimpleClrStruct).GetParquetSchema(false);
+            Assert.Equal(2, schema.Fields.Count);
+            Assert.Equal(typeof(int), schema.DataFields[0].ClrType);
+
+            schema = typeof(SimpleClrStruct).GetParquetSchema(true);
+            Assert.Equal(2, schema.Fields.Count);
+            Assert.Equal(typeof(int), schema.DataFields[0].ClrType);
+        }
+
+        [Fact]
+        public void ClrStruct_FWField_IsSupported() {
+            ParquetSchema schema = typeof(SimpleClrStruct).GetParquetSchema(false);
+            Assert.Equal(2, schema.Fields.Count);
+            Assert.Equal(typeof(int), schema.DataFields[1].ClrType);
+
+            schema = typeof(SimpleClrStruct).GetParquetSchema(true);
+            Assert.Equal(2, schema.Fields.Count);
+            Assert.Equal(typeof(int), schema.DataFields[1].ClrType);
         }
 
         class StructWithClrStruct {
