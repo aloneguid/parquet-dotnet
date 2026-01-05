@@ -14,13 +14,13 @@ class NanoTime {
     }
 
     public NanoTime(Span<byte> span) {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
+        _timeOfDayNanos = BitConverter.ToInt64(span.Slice(0, sizeof(long)));
+        _julianDay = BitConverter.ToInt32(span.Slice(sizeof(long)));
+#else
         byte[] data = span.ToArray();
         _timeOfDayNanos = BitConverter.ToInt64(data, 0);
         _julianDay = BitConverter.ToInt32(data, sizeof(long));
-#else
-        _timeOfDayNanos = BitConverter.ToInt64(span.Slice(0, sizeof(long)));
-        _julianDay = BitConverter.ToInt32(span.Slice(sizeof(long)));
 #endif
     }
 
