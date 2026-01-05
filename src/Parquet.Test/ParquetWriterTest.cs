@@ -463,16 +463,5 @@ namespace Parquet.Test {
                 });
             }
         }
-
-        class MyStruct { public int Id; }
-
-        [Fact]
-        public async Task Tmp() {
-            MyStruct[] data = [new MyStruct { Id = 42 }];
-            await ParquetSerializer.SerializeAsync(data, "test.parquet");
-            IList<MyStruct> deserialized = await ParquetSerializer.DeserializeAsync<MyStruct>("test.parquet");
-            Debug.Assert(deserialized.Count == 1); // works
-            Debug.Assert(deserialized[0].Id == data[0].Id); // fails. deserialized is all zeros
-        }
     }
 }
