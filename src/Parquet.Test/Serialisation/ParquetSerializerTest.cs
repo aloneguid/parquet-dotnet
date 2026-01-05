@@ -166,7 +166,7 @@ public class ParquetSerializerTest : TestBase {
         }).ToList();
 
         using var ms = new MemoryStream();
-        ParquetSchema schema = await ParquetSerializer.SerializeAsync(data, ms);
+        await ParquetSerializer.SerializeAsync(data, ms);
 
         ms.Position = 0;
         IList<RecordWithNewField> data2 = await ParquetSerializer.DeserializeAsync<RecordWithNewField>(
