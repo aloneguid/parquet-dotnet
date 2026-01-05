@@ -176,15 +176,14 @@ IList<Event> data = await ParquetSerializer.DeserializeAsync<Event>("/mnt/storag
 Class serialization is really fast as it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a small delay when serializing the first entity, which in most cases is negligible. Once the class is serialized at least once, further operations become much faster (around ~40x compared to reflection on large amounts of data (~5 million records)).
 
 > [!TIP]
- > Class serialization philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
+> Class serialization philosophy is based on the idea that we don't need to reinvent the wheel when it comes to converting objects to and from JSON. Instead of creating our own custom serializers and deserializers, we can leverage the existing JSON infrastructure that .NET provides. This way, we can save time and effort, and also make our code more consistent and compatible with other .NET applications that use JSON.
 
 Note that classes (or structs) in general purpose programming languages represent rows, but parquet is columnar. Therefore, there are natural limitations to what data structures are supported in parquet serialization:
 
 - In order for the deserializer to work, classes need to have a parameterless constructor.
 - Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writeable. This might limit your use cases if you are trying to deserialize into immutable objects, and in this case you should probably keep DTOs specifically designed for parquet format, which is still easier than using low level API.
--- The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
-- Both properties and fields are supported, and naturally when serializing those need to be readable, and when deserializing they need to be writable. This might limit your use cases if you are trying to deserialize into immutable objects; in this case you should probably keep DTOs specifically designed for Parquet format, which is still easier than using the low-level API.
 - The deserializer does not "overwrite" class members; i.e. if you are deserializing into a list property and the default constructor already initializes the list with some values, the Parquet deserializer will append data to the list instead of overwriting it.
+- While you can serialize `struct`, deserialization is only supported to `class` due to internal optimisation requirements.
 
 ## Customising serialization
 
@@ -1004,9 +1003,7 @@ DataFrame dfr = await stream.ReadParquetAsDataFrameAsync();
 
 ## Contributing
 
-Any contributions are welcome, in any form. Documentation, code, tests, or anything else.
-
-If you happen to get interested in parquet development, there are some [interesting links](parquet-getting-started.md). The first important thing you can do is simply star ⭐ this project.
+Any contributions are welcome, in any form. Documentation, code, tests, or anything else. The first important thing you can do is simply star ⭐ this project.
 
 ## Special thanks
 
@@ -1015,6 +1012,5 @@ Without these tools development would be really painful.
 - [Visual Studio Community](https://visualstudio.microsoft.com/vs/community/) - free IDE from Microsoft. The best in class C# and C++ development tool. It's worth using Windows just because Visual Studio exists there.
 - [JetBrains Rider](https://www.jetbrains.com/rider/) - for their cross-platform C# IDE, which has some great features.
 - [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
-- [LINQPad](https://www.linqpad.net/) - extremely powerful C# REPL with unique visualisation features, IL decompiler, expression tree visualiser, benchmarking, charting and so on. Again it's worth having Windows just for this tool. Please support the author and purchase it.
 - [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.
 - **You** starring ⭐ this project!

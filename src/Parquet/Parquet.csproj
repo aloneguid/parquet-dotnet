@@ -53,8 +53,8 @@
     <!-- Compression libraries -->
     <ItemGroup>
         <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
-        <PackageReference Include="Snappier" Version="1.2.0" />
-        <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
+        <PackageReference Include="Snappier" Version="1.3.0" />
+        <PackageReference Include="ZstdSharp.Port" Version="0.8.7" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

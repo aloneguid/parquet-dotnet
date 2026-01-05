@@ -188,6 +188,7 @@ csharp_style_prefer_switch_expression = true:suggestion
 csharp_style_prefer_pattern_matching = true:silent
 csharp_style_prefer_not_pattern = true:suggestion
 csharp_style_prefer_extended_property_pattern = true:suggestion
+csharp_style_namespace_declarations = file_scoped:warning
 
 # private members should have underscore
 dotnet_naming_rule.private_members_with_underscore.symbols  = private_fields

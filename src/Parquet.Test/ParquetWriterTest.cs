@@ -1,11 +1,13 @@
 ﻿using System;
-using Parquet.Data;
-using System.IO;
-using Xunit;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Parquet.Schema;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Parquet.Data;
+using Parquet.Schema;
+using Parquet.Serialization;
+using Xunit;
 
 namespace Parquet.Test {
     public class ParquetWriterTest : TestBase {
