@@ -12,7 +12,6 @@ using Parquet.File.Values.Primitives;
 using Parquet.Schema;
 using Parquet.Test.Util;
 using Xunit.Sdk;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using F = System.IO.File;
 
 namespace Parquet.Test;
