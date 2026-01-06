@@ -539,6 +539,7 @@ classDiagram
     DataField <|-- DataField~T~
     DataField <|-- DateTimeDataField
     DataField <|-- DecimalDataField
+    DecimalDataField <|-- BigDecimalDataField
     DataField <|-- TimeSpanDataField
     
     Field <|-- ListField
@@ -577,6 +578,12 @@ classDiagram
     }
 
     class DecimalDataField {
+        +int Precision
+        +int Scale
+        +bool: ForceByteArrayEncoding
+    }
+    
+    class BigDecimalDataField {
         +int Precision
         +int Scale
         +bool: ForceByteArrayEncoding

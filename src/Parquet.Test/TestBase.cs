@@ -1,17 +1,18 @@
 ﻿using System;
-using System.IO;
-using Parquet.Data;
-using System.Linq;
-using F = System.IO.File;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Parquet.Extensions;
-using Parquet.Schema;
-using System.Text;
-using Parquet.File.Values.Primitives;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Reflection;
-using Xunit.Sdk;
+using System.Text;
+using System.Threading.Tasks;
+using Parquet.Data;
+using Parquet.Extensions;
+using Parquet.File.Values.Primitives;
+using Parquet.Schema;
 using Parquet.Test.Util;
+using Xunit.Sdk;
+using F = System.IO.File;
 
 namespace Parquet.Test;
 
@@ -54,6 +55,11 @@ public class TestBase {
         new TTI("fixed byte array decimal", new DecimalDataField("decFixedByteArray", 48, 12), 34434.5m, DuckDbSupported: false),
         new TTI("negative decimal", new DecimalDataField("decMinus", 10, 2, true), -1m),
         new TTI("scale zero", new DecimalDataField("v", 10, 0, true), 10.0m),
+        new TTI("really big decimal", new DecimalDataField("decReallyBig", 38, 2, clrType: typeof(BigDecimal)),
+            new BigDecimal(BigInteger.Parse("12345678901234567890123456789012345678"), 38, 2), DuckDbSupported: false),
+        new TTI("really big bigdecimal", new BigDecimalDataField("decReallyBig", 38, 2),
+    new BigDecimal(BigInteger.Parse("12345678901234567890123456789012345678"), 38, 2), DuckDbSupported: false),
+
 
         //loses precision slightly, i.e.
         //Expected: 2017-07-13T10:58:44.3767154+00:00
