@@ -160,7 +160,7 @@ static class SchemaEncoder {
         }
 
         index++;
-        ownedChildren = container.NumChildren ?? 0; //make then owned to receive in .Assign()
+        ownedChildren = container.NumChildren ?? 0; //make them owned to receive in .Assign()
         field = StructField.CreateWithNoElements(container.Name);
         field.IsNullable = container.RepetitionType != FieldRepetitionType.REQUIRED;
         field.SchemaElement = container;
@@ -182,8 +182,6 @@ static class SchemaEncoder {
         ref int index, out int ownedChildCount) {
 
         SchemaElement se = schema[index];
-        bool isNullable = se.RepetitionType != FieldRepetitionType.REQUIRED;
-        bool isArray = se.RepetitionType == FieldRepetitionType.REPEATED;
         Field? f = null;
         ownedChildCount = 0;
 
