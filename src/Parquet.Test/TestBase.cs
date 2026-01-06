@@ -58,6 +58,9 @@ public class TestBase {
         new TTI("scale zero", new DecimalDataField("v", 10, 0, true), 10.0m),
         new TTI("really big decimal", new DecimalDataField("decReallyBig", 38, 2, clrType: typeof(BigDecimal)),
             new BigDecimal(BigInteger.Parse("12345678901234567890123456789012345678"), 38, 2), DuckDbSupported: false),
+        new TTI("really big bigdecimal", new BigDecimalDataField("decReallyBig", 38, 2),
+    new BigDecimal(BigInteger.Parse("12345678901234567890123456789012345678"), 38, 2), DuckDbSupported: false),
+
 
         //loses precision slightly, i.e.
         //Expected: 2017-07-13T10:58:44.3767154+00:00
