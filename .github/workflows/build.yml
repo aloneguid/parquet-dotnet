@@ -73,10 +73,13 @@ jobs:
         include:
           - os: ubuntu-latest
             name: Linux x64
+            short-name: linux
           - os: windows-latest
             name: Windows x64
+            short-name: windows
           - os: macos-latest
             name: MacOS ARM64
+            short-name: macos
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
@@ -88,11 +91,15 @@ jobs:
       run: |
         dotnet run -c release -- highLevel
       working-directory: src/Parquet.PerfRunner
+    - name: Collect CSV file
+      run: |
+        mkdir -p benchmark-results
+        cp src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/results/*.csv benchmark-results/${{ matrix.short-name }}-results.csv
     - name: Upload Benchmark Results
       uses: actions/upload-artifact@v4
       with:
-        name: benchmark-results-${{ matrix.name }}
-        path: src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/results/*
+        name: benchmark-results-${{ matrix.short-name }}
+        path: benchmark-results/*
 
   build:
 
