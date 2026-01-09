@@ -88,6 +88,11 @@ jobs:
       run: |
         dotnet run -c release -- highLevel
       working-directory: src/Parquet.PerfRunner
+    - name: Upload Benchmark Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results-${{ matrix.name }}
+        path: src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/results/*
 
   build:
 
