@@ -57,18 +57,11 @@ jobs:
     - name: Install dotnet-trx global tool
       run: dotnet tool install -g dotnet-trx
 
-    # only run this step if matrix.runtime is empty
     - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch == ''
+      continue-on-error: true
+      if: always()
       run: |
         dotnet test src/Parquet.slnx -c release --logger trx
-        trx --output
-
-    # only run this step if matrix.arch is not empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch != ''
-      run: |
-        dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }} --logger trx
         trx --output
 
   benchmark:
