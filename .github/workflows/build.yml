@@ -32,9 +32,6 @@ jobs:
             name: Linux x64
           - os: windows-latest
             name: Windows x64
-          - os: windows-latest
-            name: Windows x86
-            runtime: win-x86
           - os: macos-latest
             name: MacOS ARM64
       fail-fast: false
@@ -61,10 +58,13 @@ jobs:
       env:
         CI: "true"
       continue-on-error: true
+      run: dotnet test src/Parquet.slnx -c release --logger trx
+      
+    - name: 'process test results'
+      env:
+        CI: "true"
       if: always()
-      run: |
-        dotnet test src/Parquet.slnx -c release --logger trx
-        trx --output --verbosity verbose
+      run: trx --output --verbosity normal
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
