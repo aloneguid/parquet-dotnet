@@ -101,6 +101,22 @@ jobs:
         name: benchmark-results-${{ matrix.short-name }}
         path: benchmark-results/*
 
+
+  benchmark-post:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    steps:
+
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: benchmark-results-*
+        path: bench
+        merge-multiple: true
+
+    - name: debug
+      run: ls -R
+      working-directory: .
+
   build:
 
     runs-on: 'ubuntu-latest'
