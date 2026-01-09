@@ -57,7 +57,9 @@ jobs:
     - name: Install dotnet-trx global tool
       run: dotnet tool install -g dotnet-trx
 
-    - name: 'test on ${{ matrix.runtime }}'
+    - name: 'test on ${{ matrix.name }}'
+      env:
+        CI: "true"
       continue-on-error: true
       if: always()
       run: |
