@@ -1,5 +1,9 @@
 ﻿name: 'Build'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 env:
   VERSION: 5.5.0
   PACKAGE_SUFFIX: '-pre.6'
@@ -59,12 +63,15 @@ jobs:
         CI: "true"
       continue-on-error: true
       run: dotnet test src/Parquet.slnx -c release --logger trx
-      
+
     - name: 'process test results'
       env:
         CI: "true"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: always()
-      run: trx --output --verbosity normal
+      run: |
+        trx --output --verbosity normal \
+          --comment
 
   benchmark:
     name: ⚖️ High-Level Benchmarks

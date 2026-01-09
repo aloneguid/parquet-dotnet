@@ -19,6 +19,11 @@ namespace Parquet.Test {
 
     public class DocTest {
 
+        [Fact]
+        public void FailMe() {
+            Assert.Fail("simulated failure");
+        }
+
         //[Fact]
         public async Task Write3() {
             var schema = new ParquetSchema(
