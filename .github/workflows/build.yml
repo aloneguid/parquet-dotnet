@@ -94,7 +94,7 @@ jobs:
     - name: Collect CSV file
       run: |
         mkdir -p benchmark-results
-        cp src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/results/*.csv benchmark-results/${{ matrix.short-name }}-results.csv
+        cp src/Parquet.PerfRunner/BenchmarkDotNet.Artifacts/results/*.csv benchmark-results/${{ matrix.short-name }}.csv
     - name: Upload Benchmark Results
       uses: actions/upload-artifact@v4
       with:
@@ -105,8 +105,10 @@ jobs:
   benchmark-post:
     runs-on: ubuntu-latest
     needs: benchmark
+    name: '📊 Process Benchmark Results'
     steps:
 
+    - uses: actions/checkout@v4
     - uses: actions/download-artifact@v4
       with:
         pattern: benchmark-results-*
@@ -116,6 +118,14 @@ jobs:
     - name: debug
       run: ls -R
       working-directory: .
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    # - name: Invoke reporting script
+    #   run: dotnet run scripts/bench.cs
 
   build:
 
