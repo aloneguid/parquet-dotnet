@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/scripts/">
+    <File Path="../scripts/thriftgen.cs" />
     <File Path="../scripts/thriftgen.ps1" />
   </Folder>
   <Folder Name="/Solution Items/">
