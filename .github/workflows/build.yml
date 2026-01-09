@@ -62,7 +62,7 @@ jobs:
       if: always()
       run: |
         dotnet test src/Parquet.slnx -c release --logger trx
-        trx --output
+        trx --output --verbosity verbose
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
