@@ -60,7 +60,9 @@ jobs:
     # only run this step if matrix.runtime is empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch == ''
-      run: dotnet test src/Parquet.slnx -c release
+      run: |
+        dotnet test src/Parquet.slnx -c release --logger trx
+        trx --output
 
     # only run this step if matrix.arch is not empty
     - name: 'test on ${{ matrix.runtime }}'
