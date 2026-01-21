@@ -38,12 +38,12 @@ namespace Parquet.File {
             }).CreateModelSchema(new ParquetOptions());
         }
 
-        public ThriftFooter(ParquetSchema schema, long totalRowCount) {
+        public ThriftFooter(ParquetSchema schema, long totalRowCount, ParquetOptions options) {
             if(schema == null) {
                 throw new ArgumentNullException(nameof(schema));
             }
 
-            _fileMeta = CreateThriftSchema(schema);
+            _fileMeta = CreateThriftSchema(schema, options);
             _fileMeta.NumRows = totalRowCount;
 
 
@@ -142,13 +142,8 @@ namespace Parquet.File {
             chunk.MetaData.Type = columnType;
             chunk.MetaData.Codec = codec;
             chunk.MetaData.DataPageOffset = startPos;
-            chunk.MetaData.Encodings = new List<Encoding> {
-                Encoding.RLE,
-                Encoding.BIT_PACKED,
-                Encoding.PLAIN
-            };
-            chunk.MetaData!.PathInSchema = path.ToList();
-            chunk.MetaData!.Statistics = new Statistics();
+            chunk.MetaData.PathInSchema = path.ToList();
+            chunk.MetaData.Statistics = new Statistics();
             if(keyValueMetadata != null && keyValueMetadata.Count > 0) {
                 chunk.MetaData.KeyValueMetadata = keyValueMetadata
                     .Select(kv => new KeyValue { Key = kv.Key, Value = kv.Value })
@@ -158,27 +153,32 @@ namespace Parquet.File {
             return chunk;
         }
 
-        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable) => 
-            new PageHeader {
-                Type = PageType.DATA_PAGE,
-                DataPageHeader = new DataPageHeader {
-                    Encoding = isDictionary
+        public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable, out DataPageHeader dph) {
+            dph = new DataPageHeader {
+                Encoding = isDictionary
                         ? Encoding.PLAIN_DICTIONARY
                         : isDeltaEncodable ? Encoding.DELTA_BINARY_PACKED : Encoding.PLAIN,
-                    DefinitionLevelEncoding = Encoding.RLE,
-                    RepetitionLevelEncoding = Encoding.RLE,
-                    NumValues = valueCount,
-                    Statistics = new Statistics()
-                }
+                DefinitionLevelEncoding = Encoding.RLE,
+                RepetitionLevelEncoding = Encoding.RLE,
+                NumValues = valueCount,
+                Statistics = new Statistics()
             };
 
-        public PageHeader CreateDictionaryPage(int numValues) {
-            var ph = new PageHeader { 
+            return new PageHeader {
+                Type = PageType.DATA_PAGE,
+                DataPageHeader = dph
+            };
+        }
+
+        public PageHeader CreateDictionaryPage(int numValues, out DictionaryPageHeader dph) {
+            dph = new DictionaryPageHeader {
+                Encoding = Encoding.PLAIN_DICTIONARY,
+                NumValues = numValues
+            };
+            var ph = new PageHeader {
                 Type = PageType.DICTIONARY_PAGE,
-                DictionaryPageHeader = new DictionaryPageHeader {
-                    Encoding = Encoding.PLAIN_DICTIONARY,
-                    NumValues = numValues
-                }};
+                DictionaryPageHeader = dph
+            };
             return ph;
         }
 
@@ -221,7 +221,7 @@ namespace Parquet.File {
 
 #region [ Convertion from Model Schema ]
 
-        public FileMetaData CreateThriftSchema(ParquetSchema schema) {
+        public FileMetaData CreateThriftSchema(ParquetSchema schema, ParquetOptions options) {
             var meta = new FileMetaData();
             meta.Version = 1;
             meta.Schema = new List<SchemaElement>();
@@ -229,7 +229,7 @@ namespace Parquet.File {
 
             SchemaElement root = ThriftFooter.AddRoot(meta.Schema);
             foreach(Field se in schema.Fields) {
-                SchemaEncoder.Encode(se, root, meta.Schema);
+                SchemaEncoder.Encode(se, root, meta.Schema, options);
             }
 
             return meta;

@@ -20,11 +20,10 @@ namespace Parquet.Test {
         [InlineData("fixedlenbytearray.parquet")]
         [InlineData("fixedlenbytearray.v2.parquet")]
         public async Task FixedLenByteArray_dictionary(string parquetFile) {
-            using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
-                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
-                }
-            }
+            await using Stream s = OpenTestFile(parquetFile);
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            
+            DataColumn[] columns = await r.ReadEntireRowGroupAsync();
         }
 
         [Theory]
@@ -224,7 +223,7 @@ namespace Parquet.Test {
             
             //DECIMAL(9, 5)
             DataColumn decimal_p9_s5 = cols[5];
-            var data = (decimal?[])decimal_p9_s5.Data;
+            decimal?[] data = (decimal?[])decimal_p9_s5.Data;
             Assert.Equal(1.02232M, data[7]);
             Assert.Equal(-27.427M, data[344]);
 
@@ -243,5 +242,41 @@ namespace Parquet.Test {
             Assert.Single(cols);
             Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
         }
+
+        [Fact]
+        public async Task HyparquetCompressed() {
+            using Stream s = OpenTestFile("hyparquet.snappy.parquet");
+            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
+        }
+
+        [Fact]
+        public async Task NestedGroup_681() {
+            using Stream s = OpenTestFile("issues/681_nested.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+            DataField df = r.Schema.FindDataField(new FieldPath("data_group", "nested"));
+
+            DataColumn data = await rgr.ReadColumnAsync(df);
+
+            Assert.Equal(1, data.NumValues);
+        }
+
+        [Fact]
+        public async Task BigDecimalDefaultOptions() {
+            using Stream s = OpenTestFile("bigdecimal.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await Assert.ThrowsAsync<OverflowException>(() => r.ReadEntireRowGroupAsync());
+        }
+
+        [Fact]
+        public async Task BigDecimalWithUseBigDecimalsOptionOn() {
+            using Stream s = OpenTestFile("bigdecimal.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s, new ParquetOptions {
+                UseBigDecimal = true
+            });
+            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+        }
+
     }
 }

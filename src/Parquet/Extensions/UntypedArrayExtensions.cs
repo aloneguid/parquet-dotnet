@@ -6,6 +6,7 @@ namespace Parquet.Extensions {
 
     using System;
     using System.Numerics;
+    using Parquet.Data;
     using Parquet.File.Values.Primitives;
 
     static class UntypedArrayExtensions {
@@ -45,6 +46,9 @@ namespace Parquet.Extensions {
             }
             if(t == typeof(BigInteger?)) {
                 return CalculateNullCount((BigInteger?[])array, offset, count);
+            }
+            if(t == typeof(BigDecimal?)) {
+                return CalculateNullCount((BigDecimal?[])array, offset, count);
             }
             if(t == typeof(float?)) {
                 return CalculateNullCount((float?[])array, offset, count);
@@ -166,6 +170,15 @@ namespace Parquet.Extensions {
             return r;
         }
         private static int CalculateNullCount(BigInteger?[] array, int offset, int count) {
+            int r = 0;
+            for(int i = offset; i < count; i++) {
+                if(array[i] == null) {
+                    r++;
+                }
+            }
+            return r;
+        }
+        private static int CalculateNullCount(BigDecimal?[] array, int offset, int count) {
             int r = 0;
             for(int i = offset; i < count; i++) {
                 if(array[i] == null) {
@@ -362,6 +375,13 @@ namespace Parquet.Extensions {
                 PackNullsTypeFast((BigInteger?[])array,
                     offset, count,
                     (BigInteger[])packedData,
+                    dest, fillerValue);
+                return;
+            }
+            if(t == typeof(BigDecimal?)) {
+                PackNullsTypeFast((BigDecimal?[])array,
+                    offset, count,
+                    (BigDecimal[])packedData,
                     dest, fillerValue);
                 return;
             }
@@ -634,6 +654,25 @@ namespace Parquet.Extensions {
                 else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (BigInteger)value;
+                }
+            }
+        }
+
+        private static void PackNullsTypeFast(BigDecimal?[] array,
+            int offset, int count,
+            BigDecimal[] packedArray,
+            Span<int> dest,
+            int fillerValue) {
+
+            for(int i = offset, y = 0, ir = 0; i < (offset + count); i++, y++) {
+                BigDecimal? value = array[i];
+
+                if(value == null) {
+                    dest[y] = fillerValue - 1;
+                }
+                else {
+                    dest[y] = fillerValue;
+                    packedArray[ir++] = (BigDecimal)value;
                 }
             }
         }
@@ -922,6 +961,12 @@ namespace Parquet.Extensions {
                 (BigInteger?[])result);
             return;
         }
+        if(t == typeof(BigDecimal)) {
+            UnpackNullsTypeFast((BigDecimal[])array,
+                flags, fillFlag,
+                (BigDecimal?[])result);
+            return;
+        }
         if(t == typeof(float)) {
             UnpackNullsTypeFast((float[])array,
                 flags, fillFlag,
@@ -1123,6 +1168,20 @@ namespace Parquet.Extensions {
     private static void UnpackNullsTypeFast(BigInteger[] array,
         Span<int> flags, int fillFlag,
         BigInteger?[] result) {
+
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
+            }
+        }
+    }
+
+    private static void UnpackNullsTypeFast(BigDecimal[] array,
+        Span<int> flags, int fillFlag,
+        BigDecimal?[] result) {
 
         int iarray = 0;
         for(int i = 0; i < flags.Length; i++) {
@@ -1351,6 +1410,11 @@ namespace Parquet.Extensions {
                 indexes, (BigInteger[])result, resultOffset, resultCount);
             return;
         }
+        if(t == typeof(BigDecimal)) {
+            ExplodeTypeFast((BigDecimal[])dictionary,
+                indexes, (BigDecimal[])result, resultOffset, resultCount);
+            return;
+        }
         if(t == typeof(float)) {
             ExplodeTypeFast((float[])dictionary,
                 indexes, (float[])result, resultOffset, resultCount);
@@ -1540,6 +1604,20 @@ namespace Parquet.Extensions {
     private static void ExplodeTypeFast(BigInteger[] dictionary,
         Span<int> indexes,
         BigInteger[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
+            }
+        }
+    }
+
+    private static void ExplodeTypeFast(BigDecimal[] dictionary,
+        Span<int> indexes,
+        BigDecimal[] result, int resultOffset, int resultCount) {
 
         for(int i = 0; i < resultCount; i++) {
             int index = indexes[i];

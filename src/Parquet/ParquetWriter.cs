@@ -9,6 +9,7 @@ using Parquet.Schema;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Extensions;
+using Parquet.Extensions.Streaming;
 
 namespace Parquet {
     /// <summary>
@@ -104,7 +105,7 @@ namespace Parquet {
                 await GoBeforeFooterAsync();
             } else {
                 if(_footer == null) {
-                    _footer = new ThriftFooter(_schema, 0 /* todo: don't forget to set the total row count at the end!!! */);
+                    _footer = new ThriftFooter(_schema, 0 /* todo: don't forget to set the total row count at the end!!! */, _formatOptions);
 
                     //file starts with magic
                     await WriteMagicAsync();

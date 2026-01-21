@@ -32,21 +32,6 @@ namespace Parquet.Schema {
         /// </summary>
         public virtual bool IsNullable { get; internal set; } = false;
 
-        internal List<string> GetNaturalChildPath(List<string> path) {
-            if(SchemaType == SchemaType.List) {
-                // element.list.element.child
-                return path.Skip(3).ToList();
-            }
-
-            if(SchemaType == SchemaType.Map) {
-                // element.key_value.key|value
-                return path.Skip(2).ToList();
-            }
-
-            // element.child
-            return path.Skip(1).ToList();
-        }
-
         /// <summary>
         /// Max repetition level
         /// </summary>
@@ -100,17 +85,52 @@ namespace Parquet.Schema {
         /// </summary>
         internal virtual Field[] Children { get; } = Array.Empty<Field>();
 
-        internal virtual Field[] NaturalChildren {
-            get {
-                if(SchemaType == SchemaType.List) {
-                    return Children[0].Children;
-                }
+        /// <summary>
+        /// Builds the path to navigate inside the CLR type hierarchy, rather than the native Parquet schema.
+        /// Used internally by the class serializer to map schema fields to CLR object properties.
+        /// </summary>
+        /// <param name="schema">The Parquet schema to use for path resolution.</param>
+        /// <returns>A collection of <see cref="Field"/> objects representing the CLR path.</returns>
+        internal IReadOnlyCollection<Field> BuildClrPath(ParquetSchema schema) {
+            var result = new List<Field>();
+            IReadOnlyCollection<Field> allFields = schema.Flatten();
 
-                return Children;
-            }
+            Field? current = this;
+            while(current != null) {
+                result.Add(current);
+                current = allFields.FirstOrDefault(f => f.Children.Contains(current));
+            };
+
+            result.Reverse();
+
+            //for(int i = 0; i < result.Count; i++) {
+            //    Field f = result[i];
+            //    if(f.SchemaType == SchemaType.List) {
+            //        // remove .list
+            //        result.RemoveAt(i + 1);
+            //    }
+            //}
+
+            return result;
         }
 
-        internal virtual bool IsAtomic => false;
+        internal bool IsAtomic => SchemaType == SchemaType.Data;
+
+        internal bool IsCollection =>
+            SchemaType == SchemaType.List ||
+            SchemaType == SchemaType.Map ||
+            (SchemaType == SchemaType.Data && this is DataField rdf && rdf.IsArray);
+
+        internal bool IsAtomicFieldOrCollectionItem =>
+            IsAtomic || (this is ListField lf && lf.Item.IsAtomic);
+
+        internal IReadOnlyCollection<Field> NextDotPropertyPath(IReadOnlyCollection<Field> path) {
+            if(path.Count == 0)
+                return Array.Empty<Field>();
+
+            return path.Skip(1).ToList();
+        }
+
 
         /// <summary>
         /// Rename this field. Renaming should also fix up the path in complex nested schemas.

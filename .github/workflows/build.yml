@@ -1,23 +1,23 @@
 ﻿name: 'Build'
 
 env:
-  VERSION: 5.3.0
-  PACKAGE_SUFFIX: '-pre.1'
+  VERSION: 5.5.0
+  PACKAGE_SUFFIX: '-pre.6'
   # PACKAGE_SUFFIX: ''
   ASM_VERSION: 5.0.0
-  DOC_INSTANCE: wrs/pq
-  DOC_ARTIFACT: webHelpPQ2-all.zip
-  DOC_ALGOLIA_ARTIFACT: algolia-indexes-PQ.zip
-  DOC_DOCKER_VERSION: 241.15989
 
 on:
   push:
     branches:
     - master
+    paths-ignore:
+    - 'docs/**'
 
   pull_request:
     branches:
     - master
+    paths-ignore:
+    - 'docs/**'
 
   workflow_dispatch:
 
@@ -47,6 +47,7 @@ jobs:
           6.0.x
           8.0.x
           9.0.x
+          10.0.x
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
@@ -57,12 +58,36 @@ jobs:
     # only run this step if matrix.runtime is empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch == ''
-      run: dotnet test src/Parquet.sln -c release
+      run: dotnet test src/Parquet.slnx -c release
 
     # only run this step if matrix.arch is not empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch != ''
-      run: dotnet test src/Parquet.sln -c release -r ${{ matrix.runtime }}
+      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
+
+  benchmark:
+    name: ⚖️ High-Level Benchmarks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux x64
+          - os: windows-latest
+            name: Windows x64
+          - os: macos-latest
+            name: MacOS ARM64
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Run Benchmarks
+      run: |
+        dotnet run -c release -- highLevel
+      working-directory: src/Parquet.PerfRunner
 
   build:
 
@@ -81,12 +106,13 @@ jobs:
           6.0.x
           8.0.x
           9.0.x
+          10.0.x
 
     - name: Build Library
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.sln -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.slnx -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
 
     - name: collect artifacts
       run: |
@@ -100,35 +126,6 @@ jobs:
       with:
         name: bin
         path: artifacts/*
-
-  wrs:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    name: '📃 Writerside docs'
-    permissions:
-      id-token: write
-      pages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Build Writerside docs
-        uses: JetBrains/writerside-github-action@v4
-        with:
-          instance: ${{ env.DOC_INSTANCE }}
-          artifact: ${{ env.DOC_INSTANCE }}
-          docker-version: ${{ env.DOC_DOCKER_VERSION }}
-
-      - name: 🤐 Unzip artifact
-        run: unzip -O UTF-8 artifacts/${{ env.DOC_ARTIFACT }} -d dir
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - name: Upload artifact to GH Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dir
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 
   release:
     name: '🕋 Release library'

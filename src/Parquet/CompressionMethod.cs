@@ -1,6 +1,6 @@
 ﻿namespace Parquet {
     /// <summary>
-    /// Parquet compression method
+    /// Parquet compression method. See https://github.com/apache/parquet-format/blob/master/Compression.md
     /// </summary>
     public enum CompressionMethod {
         /// <summary>

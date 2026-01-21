@@ -28,10 +28,10 @@ namespace Parquet.Test.Types {
                     new DataColumn((DataField)schema[0], new[] { "Joe" }));
 
                 await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[1].NaturalChildren[0], new[] { "Amazonland" }));
+                    new DataColumn((DataField)schema[1].Children[0], new[] { "Amazonland" }));
 
                 await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[1].NaturalChildren[1], new[] { "AAABBB" }));
+                    new DataColumn((DataField)schema[1].Children[1], new[] { "AAABBB" }));
             }
 
             ms.Position = 0;

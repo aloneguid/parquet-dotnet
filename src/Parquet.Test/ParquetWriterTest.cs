@@ -1,11 +1,13 @@
 ﻿using System;
-using Parquet.Data;
-using System.IO;
-using Xunit;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Parquet.Schema;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Parquet.Data;
+using Parquet.Schema;
+using Parquet.Serialization;
+using Xunit;
 
 namespace Parquet.Test {
     public class ParquetWriterTest : TestBase {
@@ -16,9 +18,13 @@ namespace Parquet.Test {
             using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
 
                 using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
+                    // Try to write second column first - should throw ArgumentException
                     await Assert.ThrowsAsync<ArgumentException>(async () => {
                         await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 1 }));
                     });
+                    // Now write columns in correct order to satisfy the validation
+                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 }));
+                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 1 }));
                 }
             }
         }
@@ -360,7 +366,7 @@ namespace Parquet.Test {
                 ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
                 Meta.ColumnChunk? cc = rgr.GetMetadata(id);
                 Assert.NotNull(cc);
-                Assert.Equal(Parquet.Meta.Encoding.DELTA_BINARY_PACKED, cc.MetaData!.Encodings[2]);
+                Assert.Contains(Parquet.Meta.Encoding.DELTA_BINARY_PACKED, cc.MetaData!.Encodings);
             }
         }
 
@@ -383,7 +389,78 @@ namespace Parquet.Test {
                 ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
                 Meta.ColumnChunk? cc = rgr.GetMetadata(id);
                 Assert.NotNull(cc);
-                Assert.Equal(Parquet.Meta.Encoding.PLAIN, cc.MetaData!.Encodings[2]);
+                Assert.Contains(Parquet.Meta.Encoding.PLAIN, cc.MetaData!.Encodings);
+            }
+        }
+
+        [Fact]
+        public async Task Cannot_write_more_columns_than_schema() {
+            var schema = new ParquetSchema(new DataField<int>("id"));
+
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                    using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
+                        // Write the first column successfully
+                        await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 }));
+
+                        // Attempting to write the same column again (exceeding schema) should throw
+                        await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 2 }));
+                    }
+                });
+            }
+        }
+
+        [Fact]
+        public async Task Must_write_all_columns_from_schema() {
+            var schema = new ParquetSchema(new DataField<int>("id"), new DataField<int>("value"));
+
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
+                Assert.Throws<InvalidOperationException>(() => {
+                    using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
+                        // Write only the first column, missing the second one
+                        gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 })).Wait();
+                        // "Dispose" will not throw since v5.4.0
+                        gw.CompleteValidate();
+                    }
+                });
+            }
+        }
+
+        [Fact]
+        public async Task All_row_groups_must_have_same_columns() {
+            var schema = new ParquetSchema(new DataField<int>("id"), new DataField<int>("value"));
+
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
+                // First row group - write all columns correctly
+                using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
+                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 }));
+                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 100 }));
+                }
+
+                // Second row group - attempt to write only one column
+                Assert.Throws<InvalidOperationException>(() => {
+                    using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
+                        gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 2 })).Wait();
+                        // "Dispose" will not throw since v5.4.0
+                        gw.CompleteValidate();
+                    }
+                });
+            }
+        }
+
+        [Fact]
+        public async Task All_columns_must_have_same_row_count() {
+            var schema = new ParquetSchema(new DataField<int>("id"), new DataField<int>("value"));
+
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                    using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
+                        // First column has 3 rows
+                        await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1, 2, 3 }));
+                        // Second column has 2 rows - should throw
+                        await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 100, 200 }));
+                    }
+                });
             }
         }
     }

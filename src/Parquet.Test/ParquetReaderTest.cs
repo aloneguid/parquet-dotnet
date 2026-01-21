@@ -1,16 +1,13 @@
-﻿using NetBox.IO;
-using Parquet.Data;
+﻿using Parquet.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Xunit;
-using NetBox.Generator;
 using System.Linq;
 using System.Threading.Tasks;
 using Path = System.IO.Path;
-using System.Threading;
-using Parquet.Schema;
+using Parquet.Test.Util;
 
 namespace Parquet.Test {
     public class ParquetReaderTest : TestBase {
@@ -282,7 +279,19 @@ namespace Parquet.Test {
                 Assert.Equal(927861, rowGroup.RowCount);
             }
         }
-        
+
+        [Theory]
+        [InlineData("641_rle_pagesize_oob.parquet")]
+        public async Task ParquetReader_RLE_PageSize_NotOutOfBounds(string parquetFile) {
+            //In this file the RLE decoding needs to stop when it runs out of items, not when it runs out of input bytes.
+            using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+
+                Assert.Single(reader.RowGroups);
+                DataColumn[] data = await reader.ReadEntireRowGroupAsync(0);
+                Assert.NotEmpty(data);
+            }
+        }
+
         class ReadableNonSeekableStream : DelegatedStream {
             public ReadableNonSeekableStream(Stream master) : base(master) {
             }

@@ -6,14 +6,14 @@ using System.Reflection;
 
 namespace Parquet.Extensions {
     static class ExpressionExtensions {
-        public static Expression Loop(this Expression iteration,
+        public static Expression Loop(this Expression iterationBody,
             Expression collection,
-            Type elementType,
-            ParameterExpression element,
-            ParameterExpression? countVar = null) {
+            Type collectionElementType,
+            ParameterExpression elementHolder,
+            ParameterExpression? loopCounterHolder = null) {
 
-            Type enumeratorGenericType = typeof(IEnumerator<>).MakeGenericType(elementType);
-            Type enumerableGenericType = typeof(IEnumerable<>).MakeGenericType(elementType);
+            Type enumeratorGenericType = typeof(IEnumerator<>).MakeGenericType(collectionElementType);
+            Type enumerableGenericType = typeof(IEnumerable<>).MakeGenericType(collectionElementType);
 
             ParameterExpression enumeratorVar = Expression.Variable(enumeratorGenericType);
             MethodCallExpression getEnumeratorCall = Expression.Call(collection,
@@ -34,20 +34,20 @@ namespace Parquet.Extensions {
                         //new[] { classElementVar },
 
                         // get class element into loopVar
-                        Expression.Assign(element, Expression.Property(enumeratorVar, nameof(IEnumerator.Current))),
+                        Expression.Assign(elementHolder, Expression.Property(enumeratorVar, nameof(IEnumerator.Current))),
 
-                        iteration,
+                        iterationBody,
                         
-                        countVar == null
+                        loopCounterHolder == null
                             ? Expression.Empty()
-                            : Expression.PostIncrementAssign(countVar)),
+                            : Expression.PostIncrementAssign(loopCounterHolder)),
 
                     // if false
                     Expression.Break(loopBreakLabel)
                     ), loopBreakLabel);
 
             return Expression.Block(
-                new[] { enumeratorVar, element },
+                new[] { enumeratorVar, elementHolder },
 
                 // get enumerator from class collection
                 Expression.Assign(enumeratorVar, getEnumeratorCall),
@@ -100,12 +100,14 @@ namespace Parquet.Extensions {
             return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
         }
 
-        public static Expression CollectionAdd(this Expression collection, Type collectionType, Expression element, Type elementType) {
+        public static Expression IListAdd(
+            this Expression collection, Type collectionType,
+            Expression element, Type elementType) {
 
-            MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), new[] { elementType });
+            MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), [elementType]);
 
             if(method == null)
-                throw new NotSupportedException($"can't find {nameof(IList.Add)} method");
+                throw new NotSupportedException($"can't find list's .{nameof(IList.Add)}() method");
 
             return Expression.Call(
                 collection,

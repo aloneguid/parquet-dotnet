@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using NetBox.IO;
 using Parquet.Data;
 using Parquet.Schema;
+using Parquet.Test.Util;
 using Xunit;
 
 namespace Parquet.Test {

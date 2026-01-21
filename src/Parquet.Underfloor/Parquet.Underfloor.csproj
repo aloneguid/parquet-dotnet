@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <!-- Exe changed to WinExe so Windows builds don't attempt to create console window -->
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PublishAot>true</PublishAot>
@@ -11,11 +12,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="..\NetBox.cs" Link="NetBox.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="GreyMatter" Version="0.0.0-pre.20" />
+        <PackageReference Include="ByteSize" Version="2.1.2" />
+        <PackageReference Include="GreyMatter" Version="0.0.0-pre.36" />
     </ItemGroup>
 
     <ItemGroup>
