@@ -101,18 +101,9 @@ namespace Parquet.Schema {
         }
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            MaxRepetitionLevel = parentRepetitionLevel;
-            if(IsArray)
-                MaxRepetitionLevel++;
-
-            MaxDefinitionLevel = parentDefinitionLevel;
-
+            MaxRepetitionLevel = parentRepetitionLevel + (IsArray ? 1 : 0);
             // can't be both array and nullable
-            if(IsArray)
-                MaxDefinitionLevel++;
-            else if(IsNullable)
-                MaxDefinitionLevel++;
-
+            MaxDefinitionLevel = parentDefinitionLevel + (IsArray || IsNullable ? 1 : 0);
             IsAttachedToSchema = true;
         }
 

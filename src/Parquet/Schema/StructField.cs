@@ -52,9 +52,7 @@ namespace Parquet.Schema {
             //struct is a container, it doesn't have any repetition levels
 
             MaxRepetitionLevel = parentRepetitionLevel;
-            MaxDefinitionLevel = parentDefinitionLevel;
-            if(IsNullable)
-                MaxDefinitionLevel++;
+            MaxDefinitionLevel = parentDefinitionLevel + (IsNullable ? 1 : 0);
 
             foreach(Field f in Fields) {
                 f.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);

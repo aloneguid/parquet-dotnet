@@ -85,28 +85,25 @@ namespace Parquet.Schema {
         internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-
-            MaxDefinitionLevel = parentDefinitionLevel;
-            MaxRepetitionLevel = parentRepetitionLevel;
-
             if(SchemaElement != null) {
                 // building from file
-                if(IsNullable)
-                    MaxDefinitionLevel += 1;
+                
+                bool repetitionIsOptionalOrRequired =
+                    GroupSchemaElement?.RepetitionType is FieldRepetitionType.OPTIONAL or FieldRepetitionType.REQUIRED;
+                
+                MaxDefinitionLevel = parentDefinitionLevel
+                                     + (IsNullable ? 1 : 0)
+                                     + (repetitionIsOptionalOrRequired ? 1 : 0);
 
-                if(GroupSchemaElement != null) {
-                    if(GroupSchemaElement.RepetitionType != FieldRepetitionType.REQUIRED)
-                        MaxDefinitionLevel += 1;
-
-                    MaxRepetitionLevel += 1;
-                }
+                MaxRepetitionLevel = parentRepetitionLevel + (GroupSchemaElement != null ? 1 : 0);
             } else {
                 // probably building manually, or via class reflection
-                if(IsNullable)
-                    MaxDefinitionLevel += 1;
 
-                MaxDefinitionLevel += 1;    // assuming optional group
-                MaxRepetitionLevel += 1;    // assuming non-legacy lists, which have repeated group
+                // assuming optional group
+                MaxDefinitionLevel = parentDefinitionLevel + 1 + (IsNullable ? 1 : 0);
+                
+                // assuming non-legacy lists, which have repeated group
+                MaxRepetitionLevel = parentRepetitionLevel + 1;
             }
 
             //push to child item
