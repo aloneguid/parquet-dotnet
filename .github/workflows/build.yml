@@ -69,11 +69,9 @@ jobs:
       if: always()
       uses: dorny/test-reporter@v2.5.0
       with:
-        artifact: test-results-${{ matrix.runtime }}
         name: test-results-${{ matrix.runtime }}
         path: "**/*-results.trx"
         reporter: dotnet-trx
-        fail-on-error: true
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
