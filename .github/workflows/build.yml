@@ -58,12 +58,21 @@ jobs:
     # only run this step if matrix.runtime is empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch == ''
-      run: dotnet test src/Parquet.slnx -c release
+      run: dotnet test src/Parquet.slnx -c release --logger "trx;LogFileName=test-results.trx"
 
     # only run this step if matrix.arch is not empty
     - name: 'test on ${{ matrix.runtime }}'
       if: matrix.arch != ''
-      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
+      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }} --logger "trx;LogFileName=test-results.trx"
+
+    - name: 'test report on ${{ matrix.runtime }}'
+      if: always()
+      uses: dorny/test-reporter@v2.5.0
+      with:
+        name: test-results-${{ matrix.runtime }}
+        path: "**/*-results.trx"
+        reporter: dotnet-trx
+        fail-on-error: true
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
