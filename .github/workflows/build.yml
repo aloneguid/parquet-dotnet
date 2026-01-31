@@ -56,20 +56,20 @@ jobs:
       run: pip install pyarrow pandas
 
     # only run this step if matrix.runtime is empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch == ''
+    - name: 'test on ${{ matrix.name }}'
+      if: matrix.runtime == ''
       run: dotnet test src/Parquet.slnx -c release --logger "trx;LogFileName=test-results.trx"
 
     # only run this step if matrix.arch is not empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch != ''
+    - name: 'test on ${{ matrix.name }} with runtime ${{ matrix.runtime }}'
+      if: matrix.runtime != ''
       run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }} --logger "trx;LogFileName=test-results.trx"
 
-    - name: 'test report on ${{ matrix.runtime }}'
+    - name: 'test report on ${{ matrix.name }}'
       if: always()
       uses: dorny/test-reporter@v2.5.0
       with:
-        name: test-results-${{ matrix.runtime }}
+        name: test-results-${{ matrix.name }}
         path: "**/*-results.trx"
         reporter: dotnet-trx
 
