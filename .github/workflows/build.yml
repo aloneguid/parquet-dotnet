@@ -67,7 +67,7 @@ jobs:
 
     - name: 'test report on ${{ matrix.name }}'
       if: ${{ !cancelled() }}
-      uses: dorny/test-reporter@v2.5.0
+      uses: dorny/test-reporter@v2
       with:
         name: test-results-${{ matrix.name }}
         path: "**/*-results.trx"
