@@ -83,13 +83,13 @@ namespace Parquet.Schema {
 
         internal SchemaElement ? GroupSchemaElement { get; set; } = null;
 
+        internal bool IsRepetitionOptionalOrRepeated =>
+            GroupSchemaElement?.RepetitionType is FieldRepetitionType.OPTIONAL or FieldRepetitionType.REPEATED;
+
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
-            bool repetitionIsNullOrOptionalOrRequired =
-                GroupSchemaElement?.RepetitionType is null or FieldRepetitionType.OPTIONAL or FieldRepetitionType.REQUIRED;
-                
             MaxDefinitionLevel = parentDefinitionLevel
                                  + (IsNullable ? 1 : 0)
-                                 + (repetitionIsNullOrOptionalOrRequired ? 1 : 0);
+                                 + (IsRepetitionOptionalOrRepeated ? 1 : 0);
 
             MaxRepetitionLevel = parentRepetitionLevel + 1; // because map is actually a list of key-values
 

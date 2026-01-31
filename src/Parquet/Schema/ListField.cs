@@ -84,16 +84,16 @@ namespace Parquet.Schema {
 
         internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
+        internal bool IsRepetitionOptionalOrRepeated =>
+            GroupSchemaElement?.RepetitionType is FieldRepetitionType.OPTIONAL or FieldRepetitionType.REPEATED;
+        
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
             if(SchemaElement != null) {
                 // building from file
                 
-                bool repetitionIsOptionalOrRequired =
-                    GroupSchemaElement?.RepetitionType is FieldRepetitionType.OPTIONAL or FieldRepetitionType.REQUIRED;
-                
                 MaxDefinitionLevel = parentDefinitionLevel
                                      + (IsNullable ? 1 : 0)
-                                     + (repetitionIsOptionalOrRequired ? 1 : 0);
+                                     + (IsRepetitionOptionalOrRepeated ? 1 : 0);
 
                 MaxRepetitionLevel = parentRepetitionLevel + (GroupSchemaElement != null ? 1 : 0);
             } else {
