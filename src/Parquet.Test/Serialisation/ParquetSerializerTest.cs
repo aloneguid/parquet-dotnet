@@ -29,11 +29,12 @@ public class ParquetSerializerTest : TestBase {
 
         // serialize to parquet
         using var ms = new MemoryStream();
-        if(useAsync) {
+#if NET10_0_OR_GREATER
+        if(useAsync)
             await ParquetSerializer.SerializeAsync(input.ToAsyncEnumerable(), ms);
-        } else {
+        else
+#endif
             await ParquetSerializer.SerializeAsync(input, ms);
-        }
 
         if(saveAsFile != null) {
             await System.IO.File.WriteAllBytesAsync(saveAsFile, ms.ToArray());
@@ -870,11 +871,12 @@ public class ParquetSerializerTest : TestBase {
 
         using var ms = new MemoryStream();
         var options = new ParquetSerializerOptions { RowGroupSize = 20 };
-        if(useAsync) {
+#if NET10_0_OR_GREATER
+        if(useAsync)
             await ParquetSerializer.SerializeAsync(data.ToAsyncEnumerable(), ms, options);
-        } else {
+        else
+#endif
             await ParquetSerializer.SerializeAsync(data, ms, options);
-        }
 
         // validate we have 5 row groups in the resulting file
         ms.Position = 0;
@@ -920,11 +922,12 @@ public class ParquetSerializerTest : TestBase {
 
         using var ms = new MemoryStream();
         var options = new ParquetSerializerOptions { RowGroupSize = rowGroupSize };
-        if(useAsync) {
+#if NET10_0_OR_GREATER
+        if(useAsync)
             await ParquetSerializer.SerializeAsync(data.ToAsyncEnumerable(), ms, options);
-        } else {
+        else
+#endif
             await ParquetSerializer.SerializeAsync(data, ms, options);
-        }
 
         ms.Position = 0;
         Record[] data2 = await ParquetSerializer.DeserializeAllAsync<Record>(ms).ToArrayAsync();
@@ -959,7 +962,10 @@ public class ParquetSerializerTest : TestBase {
             new() { String = "c", Nullable = "z" },
         };
 
-        await using Stream stream = OpenTestFile("required-strings.parquet");
+#if NET21_OR_GREATER
+        await
+#endif
+        using Stream stream = OpenTestFile("required-strings.parquet");
         IList<StringRequiredAndNot> actual = await ParquetSerializer.DeserializeAsync<StringRequiredAndNot>(stream);
 
         Assert.Equivalent(expected, actual);

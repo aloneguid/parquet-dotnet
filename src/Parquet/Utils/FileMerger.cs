@@ -72,10 +72,10 @@ namespace Parquet.Utils {
 
             // the first file will be taken as is
             Stream src = _inputStreams[0];
-#if NETSTANDARD2_0
-            await src.CopyToAsync(destination);
-#else
+#if NETSTANDARD2_1_OR_GREATER
             await src.CopyToAsync(destination, cancellationToken);
+#else
+            await src.CopyToAsync(destination);
 #endif
 
             // get the schema from the first file, it will be used to validate the rest of the files

@@ -7,7 +7,7 @@ namespace Parquet.Extensions;
 
 static class PolyfillExtensions {
 
-#if NETSTANDARD2_0 || NETSTANDARD2_1
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETFRAMEWORK
 
     #region [ Chunk ]
 

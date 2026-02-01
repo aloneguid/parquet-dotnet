@@ -121,7 +121,10 @@ public class ParquetCsvComparison : TestBase {
 
     private async Task<(DataColumn[] Columns, IReadOnlyList<Field> Fields)> ReadParquetAsync(string name,
         bool treatByteArrayAsString) {
-        await using Stream s = OpenTestFile(name);
+#if NET21_OR_GREATER
+        await
+#endif
+        using Stream s = OpenTestFile(name);
         var parquetOptions = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
         using ParquetReader pr = await ParquetReader.CreateAsync(s, parquetOptions);
         using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
