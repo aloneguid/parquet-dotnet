@@ -31,6 +31,7 @@ public class ParquetSerializerTest : IntegrationBase {
     [Fact]
     public async Task SimpleMapReadsWithParquetMr() {
         XAssert.SkipMacOS("Not supported on macOS");
+        XAssert.SkipWindowsX86("Not supported on Windows x86");
         
         var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
             Id = i,
