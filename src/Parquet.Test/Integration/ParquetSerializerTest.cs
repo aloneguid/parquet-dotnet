@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Parquet.Serialization;
+using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 
@@ -30,8 +30,7 @@ public class ParquetSerializerTest : IntegrationBase {
 
     [Fact]
     public async Task SimpleMapReadsWithParquetMr() {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            Assert.Skip("Not supported on macOS");
+        XAssert.SkipMacOS("Not supported on macOS");
         
         var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
             Id = i,
@@ -52,8 +51,7 @@ public class ParquetSerializerTest : IntegrationBase {
 
     [Fact]
     public async Task SimpleMapReadsWithPyArrow() {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            Assert.Skip("Not supported on macOS");
+        XAssert.SkipMacOS("Not supported on macOS");
 
         var data = Enumerable.Range(0, 10).Select(i => new IdWithTags {
             Id = i,

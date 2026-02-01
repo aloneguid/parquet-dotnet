@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
+using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 using Path = System.IO.Path;
@@ -30,13 +30,8 @@ namespace Parquet.Test.Integration {
 
         [Fact]
         public async Task DateTime_Default() {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                Assert.Skip("Not supported on macOS");
-            
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
-               RuntimeInformation.OSArchitecture == Architecture.X86) {
-                Assert.Skip("Not supported on Windows x86");
-            }
+            XAssert.SkipMacOS("Not supported on macOS");
+            XAssert.SkipWindowsX86("Not supported on Windows x86");
 
             var schema = new ParquetSchema(new DataField<DateTime>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { new DateTime(2023, 04, 25, 1, 2, 3) });
@@ -46,13 +41,8 @@ namespace Parquet.Test.Integration {
 
         [Fact]
         public async Task Timestamp_Default() {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                Assert.Skip("Not supported on macOS");
-            
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
-               RuntimeInformation.OSArchitecture == Architecture.X86) {
-                Assert.Skip("Not supported on Windows x86");
-            }
+            XAssert.SkipMacOS("Not supported on macOS");
+            XAssert.SkipWindowsX86("Not supported on Windows x86");
 
             var schema = new ParquetSchema(new DataField<TimeSpan>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { TimeSpan.FromHours(7) });

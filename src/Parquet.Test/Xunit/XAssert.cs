@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit;
@@ -24,6 +25,19 @@ namespace Parquet.Test.Xunit {
             string actualLines = string.Join(Environment.NewLine, actual.Select(d => JsonSerializer.Serialize(d, Options)));
 
             Assert.Equal(jsonLinesExpected, actualLines);
+        }
+
+        public static void SkipMacOS(string reason) {
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX)){
+                Assert.Skip(reason);
+            }
+        }
+        
+        public static void SkipWindowsX86(string reason) {
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+               RuntimeInformation.ProcessArchitecture == Architecture.X86) {
+                Assert.Skip(reason);
+            }
         }
     }
 }

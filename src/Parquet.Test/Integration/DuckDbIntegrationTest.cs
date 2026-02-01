@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using DuckDB.NET.Data;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
+using Parquet.Test.Xunit;
 using Xunit;
 
 namespace Parquet.Test.Integration {
@@ -93,21 +91,15 @@ namespace Parquet.Test.Integration {
 
         [Fact]
         public async Task DuckDbWorks() {
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
-               RuntimeInformation.OSArchitecture == Architecture.X86) {
-                Assert.Skip("DuckDb is not supported on Windows x86");
-            }
-
+            XAssert.SkipWindowsX86("DuckDb is not supported on Windows x86");
+            
             await using var conn = new DuckDBConnection("DataSource=:memory:");
             await conn.OpenAsync(TestContext.Current.CancellationToken);
         }
         
         [Theory, TypeTestData(DuckDb = true)]
         public async Task DuckDbGeneratedFileReads(TTI input) {
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
-               RuntimeInformation.OSArchitecture == Architecture.X86) {
-                Assert.Skip("DuckDb is not supported on Windows x86");
-            }
+            XAssert.SkipWindowsX86("DuckDb is not supported on Windows x86");
 
             string tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".parquet");
 
