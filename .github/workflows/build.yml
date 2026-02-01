@@ -10,6 +10,7 @@ on:
   push:
     branches:
     - master
+    - feature/**
     paths-ignore:
     - 'docs/**'
 
@@ -39,8 +40,32 @@ jobs:
             name: MacOS ARM64
       fail-fast: false
     steps:
+    
+    # Workaround for win-x86 see: https://github.com/actions/setup-dotnet/issues/72#issuecomment-2722269405
+    # This must be done before the normal setup-dotnet action to ensure DOTNET_ROOT refers to the 64-bit installation
+    - name: Setup .NET x86
+      if: matrix.runtime == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      env:
+        PROCESSOR_ARCHITECTURE: x86
+        DOTNET_INSTALL_DIR: C:\Program Files (x86)\dotnet
+      with:
+        dotnet-version: |
+          6.0.x
+          8.0.x
+          9.0.x
+          10.0.x
+  
+    # Copy DOTNET_ROOT from the above step to DOTNET_ROOT(x86), the next step will overwrite DOTNET_ROOT to refer to the 64-bit installation
+    - name: Set DOTNET_ROOT(x86)
+      if: matrix.runtime == 'win-x86'
+      shell: pwsh
+      run: |
+        echo "DOTNET_ROOT(x86)=${env:DOTNET_ROOT}" | Out-File -FilePath $env:GITHUB_ENV -Append
+
     - uses: actions/checkout@v4
     - name: Setup .NET
+      if: matrix.runtime != 'win-x86'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
@@ -48,22 +73,32 @@ jobs:
           8.0.x
           9.0.x
           10.0.x
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10' 
+        python-version: '3.10'
+  
     - name: Install Python dependencies
       run: pip install pyarrow pandas
 
     # only run this step if matrix.runtime is empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch == ''
-      run: dotnet test src/Parquet.slnx -c release
+    - name: 'test on ${{ matrix.name }}'
+      if: matrix.runtime == ''
+      run: dotnet test src/Parquet.slnx -c release --logger "trx;LogFileName=test-results.trx"
 
     # only run this step if matrix.arch is not empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch != ''
-      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
+    - name: 'test on ${{ matrix.name }} with runtime ${{ matrix.runtime }}'
+      if: matrix.runtime != ''
+      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }} --logger "trx;LogFileName=test-results.trx"
+
+    - name: 'test report on ${{ matrix.name }}'
+      if: ${{ !cancelled() }}
+      uses: dorny/test-reporter@v2
+      with:
+        name: test-results-${{ matrix.name }}
+        path: "**/*-results.trx"
+        reporter: dotnet-trx
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
