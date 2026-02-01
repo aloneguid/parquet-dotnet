@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -31,16 +32,22 @@ namespace Parquet.Test.Integration {
             return json ?? string.Empty;
         }
 
-        [NonMacOSFact]
+        [Fact]
         public async Task DateTime_Default() {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Assert.Skip("Not supported on macOS");
+            
             var schema = new ParquetSchema(new DataField<DateTime>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { new DateTime(2023, 04, 25, 1, 2, 3) });
             string json = await ReadWithPQT(schema, dc);
             Assert.Equal("{\"qtype\":\"AK4X1GIDAACciSUA\"}", json);
         }
 
-        [NonMacOSFact]
+        [Fact]
         public async Task Timestamp_Default() {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Assert.Skip("Not supported on macOS");
+            
             var schema = new ParquetSchema(new DataField<TimeSpan>("qtype"));
             var dc = new DataColumn(schema.DataFields.First(), new[] { TimeSpan.FromHours(7) });
             string json = await ReadWithPQT(schema, dc);

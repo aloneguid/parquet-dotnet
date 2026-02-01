@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Threading;
-using Xunit.Sdk;
+using Xunit.v3;
 
 /// <summary>
 /// Apply this attribute to your test method to replace the
@@ -45,12 +45,12 @@ public class UseCultureAttribute : BeforeAfterTestAttribute {
     /// <summary>
     /// Gets the culture.
     /// </summary>
-    public CultureInfo Culture { get { return culture.Value; } }
+    public CultureInfo Culture => culture.Value;
 
     /// <summary>
     /// Gets the UI culture.
     /// </summary>
-    public CultureInfo UICulture { get { return uiCulture.Value; } }
+    public CultureInfo UICulture => uiCulture.Value;
 
     /// <summary>
     /// Stores the current <see cref="Thread.CurrentPrincipal" />
@@ -58,7 +58,9 @@ public class UseCultureAttribute : BeforeAfterTestAttribute {
     /// and replaces them with the new cultures defined in the constructor.
     /// </summary>
     /// <param name="methodUnderTest">The method under test</param>
-    public override void Before(MethodInfo methodUnderTest) {
+    /// <param name="test"></param>
+    /// 
+    public override void Before(MethodInfo methodUnderTest, IXunitTest test) {
         originalCulture = Thread.CurrentThread.CurrentCulture;
         originalUICulture = Thread.CurrentThread.CurrentUICulture;
 
@@ -74,7 +76,8 @@ public class UseCultureAttribute : BeforeAfterTestAttribute {
     /// <see cref="CultureInfo.CurrentUICulture" /> to <see cref="Thread.CurrentPrincipal" />
     /// </summary>
     /// <param name="methodUnderTest">The method under test</param>
-    public override void After(MethodInfo methodUnderTest) {
+    /// <param name="test"></param>
+    public override void After(MethodInfo methodUnderTest, IXunitTest test) {
         if(originalCulture != null)
             Thread.CurrentThread.CurrentCulture = originalCulture;
         if(originalUICulture != null)
