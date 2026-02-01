@@ -5,9 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Parquet.Serialization;
-using Parquet.Test.Xunit;
 using Xunit;
-using DuckDB.NET.Data;
 using F = System.IO.File;
 
 namespace Parquet.Test.Integration; 
@@ -74,11 +72,5 @@ public class ParquetSerializerTest : IntegrationBase {
         Assert.NotNull(arrowCat);
         Assert.Contains("id", arrowCat);
         Assert.Contains("gen", arrowCat);
-    }
-
-    [Fact]
-    public async Task DuckDbWorks() {
-        using var conn = new DuckDBConnection("DataSource=:memory:");
-        await conn.OpenAsync();
     }
 }

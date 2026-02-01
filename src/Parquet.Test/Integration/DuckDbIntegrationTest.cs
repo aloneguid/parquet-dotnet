@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DuckDB.NET.Data;
@@ -90,20 +91,36 @@ namespace Parquet.Test.Integration {
             return value;
         }
 
+        [Fact]
+        public async Task DuckDbWorks() {
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+               RuntimeInformation.OSArchitecture == Architecture.X86) {
+                Assert.Skip("DuckDb is not supported on Windows x86");
+            }
+
+            await using var conn = new DuckDBConnection("DataSource=:memory:");
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
+        }
+        
         [Theory, TypeTestData(DuckDb = true)]
         public async Task DuckDbGeneratedFileReads(TTI input) {
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+               RuntimeInformation.OSArchitecture == Architecture.X86) {
+                Assert.Skip("DuckDb is not supported on Windows x86");
+            }
+
             string tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".parquet");
 
             try {
                 using var conn = new DuckDBConnection("DataSource=:memory:");
-                await conn.OpenAsync();
+                await conn.OpenAsync(TestContext.Current.CancellationToken);
 
                 string sqlType = GetDuckDbSqlType(input.Field);
 
                 // create table
                 using(DuckDBCommand cmd = conn.CreateCommand()) {
                     cmd.CommandText = $"CREATE TABLE t (id INTEGER, val {sqlType});";
-                    await cmd.ExecuteNonQueryAsync();
+                    await cmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
                 }
 
                 // insert row
@@ -121,27 +138,27 @@ namespace Parquet.Test.Integration {
                     System.Data.Common.DbParameter p2 = insertCmd.CreateParameter();
                     p2.Value = ConvertToDuckDbParameterValue(input.ExpectedValue) ?? (object?)DBNull.Value;
                     insertCmd.Parameters.Add(p2);
-                    await insertCmd.ExecuteNonQueryAsync();
+                    await insertCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
                 }
 
                 // copy to parquet
                 using(DuckDBCommand copyCmd = conn.CreateCommand()) {
                     copyCmd.CommandText = $"COPY t TO '{tmp.Replace("'", "''")}' (FORMAT 'parquet');";
-                    await copyCmd.ExecuteNonQueryAsync();
+                    await copyCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
                 }
 
                 // read with ParquetReader
                 using FileStream fs = System.IO.File.OpenRead(tmp);
-                using ParquetReader reader = await ParquetReader.CreateAsync(fs);
+                using ParquetReader reader = await ParquetReader.CreateAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
                 Assert.Equal(1, reader.RowGroupCount);
                 DataField[] dfs = reader.Schema.GetDataFields();
                 Assert.Equal(2, dfs.Length);
 
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
-                DataColumn idCol = await rg.ReadColumnAsync(dfs[0]);
+                DataColumn idCol = await rg.ReadColumnAsync(dfs[0], TestContext.Current.CancellationToken);
                 Assert.Equal(1, Convert.ToInt32(idCol.Data.GetValue(0)));
 
-                DataColumn valCol = await rg.ReadColumnAsync(dfs[1]);
+                DataColumn valCol = await rg.ReadColumnAsync(dfs[1], TestContext.Current.CancellationToken);
                 Assert.Single(valCol.Data);
 
                 object? actual = valCol.Data.GetValue(0);
