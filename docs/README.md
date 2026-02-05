@@ -1004,7 +1004,7 @@ DataFrame dfr = await stream.ReadParquetAsDataFrameAsync();
 - [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
 - [Personal Data Warehouse - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)](https://github.com/BlazorData-Net/PersonalDataWarehouse).
 - [FastBCP - Export to parquet files in parallel from Oracle, SQL Server, MySQL, PostgreSQL, ODBC, Teradata, Netezza, SAP HANA, ClickHouse in one command line (Windows & Linux)](https://www.arpe.io/fastbcp/).
-
+- [Parquet.FSharp](https://github.com/rob-earwaker/parquet-fsharp) - Extension of Parquet.Net that adds first-class support for F# types such as records, options, lists and discriminated unions.
 
 *...raise a PR to appear here...*
 
