@@ -11,20 +11,22 @@ using Snappier;
 namespace Parquet.File;
 
 /// <summary>
-/// Data compression interface. Unfortunately it's practically impossible to perform streaming in parquet pages.
-/// When this interface is stable for some time, it will allow public exposure and "Bring Your Own Compressor" plugins, but not right now.
+/// Data compression interface. Unfortunately it's practically impossible to perform streaming in parquet pages. When
+/// this interface is stable for some time, it will allow public exposure and "Bring Your Own Compressor" plugins, but
+/// not right now.
 /// </summary>
 interface ICompressor {
 
     /// <summary>
-    /// Compresses data from the source stream using the specified compression method and level.
-    /// Returns an <see cref="IMemoryOwner{T}"/> containing the compressed data.
+    /// Compresses data from the source stream using the specified compression method and level. Returns an
+    /// <see cref="IMemoryOwner{T}"/> containing the compressed data.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source);
 
     /// <summary>
     /// Decompresses data from the source stream and returns the decompressed data in an <see cref="IMemoryOwner{T}"/>.
-    /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed by this method.
+    /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed
+    /// by this method.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength);
 }
@@ -96,11 +98,11 @@ class DefaultCompressor : ICompressor {
     // "LZO" compression
 
     private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
-        throw new NotImplementedException("LZO compression is not implemented yet.");
+        throw new NotImplementedException();
     }
 
     private async ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
-        throw new NotImplementedException("LZO decompression is not implemented yet.");
+        throw new NotImplementedException();
     }
 
     // "Brotli" compression
@@ -142,7 +144,7 @@ class DefaultCompressor : ICompressor {
     }
 #endif
 
-    // "Zstd" compression
+    // "Zstd" compression. Requires ZstdSharp NuGet package, but should come in .NET 11: https://github.com/dotnet/runtime/issues/59591
 
     private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
         int zLevel = level switch {
@@ -172,9 +174,9 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-	// "LZ4" compression
+    // "LZ4" compression, requires K4os.Compression.LZ4 NuGet package
 
-	private async ValueTask<IMemoryOwner<byte>> Lz4Compress(MemoryStream source, CompressionLevel level) {
+    private async ValueTask<IMemoryOwner<byte>> Lz4Compress(MemoryStream source, CompressionLevel level) {
 		LZ4Level lz4Level = level switch {
 			CompressionLevel.Optimal => LZ4Level.L11_OPT,
 			CompressionLevel.Fastest => LZ4Level.L00_FAST,
@@ -256,7 +258,16 @@ class DefaultCompressor : ICompressor {
     }
 }
 
-
+/// <summary>
+/// Compressor entry point.
+/// </summary>
 static class Compressor {
+    /// <summary>
+    /// Gets the default instance of the compressor to use for compression and decompression operations.
+    /// </summary>
+    /// <remarks>
+    /// This property provides a shared, thread-safe compressor instance that can be used throughout the application.
+    /// Use this instance when a custom compressor is not required.
+    /// </remarks>
     public static ICompressor Instance { get; } = new DefaultCompressor();
 }
