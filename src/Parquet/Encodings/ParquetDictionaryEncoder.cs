@@ -11,7 +11,8 @@ namespace Parquet.Encodings {
             Array data, int offset, int count,
             [NotNullWhen(true)] out Array? dictionaryArray,
             [NotNullWhen(true)] out int[]? rentedIndexes,
-            double threshold = 0.8) {
+            double threshold = 0.8,
+            int sampleSize = 0) {
             dictionaryArray = null;
             rentedIndexes = null;
 
@@ -21,40 +22,40 @@ namespace Parquet.Encodings {
             if(elementType == typeof(string)) {
                 //Initially at least we will leave the existing string dictionary code path intact as there are some
                 //string specific optimizations in place.
-                return EncodeStrings(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return EncodeStrings(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(DateTime)) {
-                return Encode<DateTime>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<DateTime>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(decimal)) {
-                return Encode<decimal>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<decimal>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(byte)) {
-                return Encode<byte>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<byte>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(short)) {
-                return Encode<short>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<short>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(ushort)) {
-                return Encode<ushort>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<ushort>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(int)) {
-                return Encode<int>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<int>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(uint)) {
-                return Encode<uint>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<uint>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(long)) {
-                return Encode<long>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<long>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(ulong)) {
-                return Encode<ulong>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<ulong>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(float)) {
-                return Encode<float>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<float>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             if(elementType == typeof(double)) {
-                return Encode<double>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold);
+                return Encode<double>(data, offset, count, ref dictionaryArray, ref rentedIndexes, threshold, sampleSize);
             }
             return false;
         }
@@ -63,9 +64,20 @@ namespace Parquet.Encodings {
             int count,
             [NotNullWhen(true)] ref Array? dictionaryArray,
             [NotNullWhen(true)] ref int[]? rentedIndexes,
-            double threshold) {
+            double threshold,
+            int sampleSize) {
 
             string[] src = (string[])data;
+
+            // Adaptive sampling: check a small sample before doing the expensive full-data scan.
+            // If the sample already exceeds the threshold, skip dictionary encoding entirely.
+            if(sampleSize > 0 && count > sampleSize) {
+                HashSet<string> sampleDistinct = Distinct(src, offset, sampleSize);
+                double sampleFactor = sampleDistinct.Count / (double)sampleSize;
+                if(sampleFactor > threshold)
+                    return false;
+            }
+
             HashSet<string> distinctSet = Distinct(src, offset, count);
             double factor = distinctSet.Count / (double)count;
             if(factor > threshold)
@@ -96,7 +108,7 @@ namespace Parquet.Encodings {
             var hs = new HashSet<string>(StringComparer.Ordinal);
 #else
             // pre-allocation is a tiny performance boost
-            var hs = new HashSet<string>(strings.Length, StringComparer.Ordinal);
+            var hs = new HashSet<string>(count, StringComparer.Ordinal);
 #endif
 
             for(int i = offset; i < offset + count; i++)
@@ -110,8 +122,19 @@ namespace Parquet.Encodings {
             int count,
             [NotNullWhen(true)] ref Array? dictionaryArray,
             [NotNullWhen(true)] ref int[]? rentedIndexes,
-            double threshold) where T : notnull {
+            double threshold,
+            int sampleSize) where T : notnull {
             var src = (T[])data;
+
+            // Adaptive sampling: check a small sample before doing the expensive full-data scan.
+            // If the sample already exceeds the threshold, skip dictionary encoding entirely.
+            if(sampleSize > 0 && count > sampleSize) {
+                Dictionary<T, (int Count, int MaxRunLength, int Index)> sampleDistinct =
+                    Distinct(src, offset, sampleSize, EqualityComparer<T>.Default);
+                double sampleFactor = sampleDistinct.Count / (double)sampleSize;
+                if(sampleFactor > threshold)
+                    return false;
+            }
 
             //TODO: calculate some more statistics beyond uniquness like run lengths, index size and index bitwidth to determine if there is value
             //in dictionary encoding this data vs PLAIN encoding
@@ -136,7 +159,7 @@ namespace Parquet.Encodings {
             if(values.Length == 0) {
                 return new(0);
             }
-            var dict = new Dictionary<T, (int Count, int MaxRunLength, int Index)>(values.Length);
+            var dict = new Dictionary<T, (int Count, int MaxRunLength, int Index)>(count);
             T previous = values[offset];
             int runLength = 1;
             int index = 0;
