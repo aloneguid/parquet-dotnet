@@ -205,16 +205,25 @@ class WritingColumn<T> : IDisposable where T : struct {
         if(typeof(T) != typeof(ReadOnlyMemory<char>))
             return;
 
-        // only encode columns specified in options
+        // Resolve per-column dictionary encoding override
         string path = Field.Path.ToString();
-        if(!options.DictionaryEncodedColumns.Contains(path))
+        bool useDictionary;
+        if(options.ColumnDictionaryEncodings != null &&
+           options.ColumnDictionaryEncodings.TryGetValue(path, out bool columnOverride)) {
+            useDictionary = columnOverride;
+        } else {
+            useDictionary = options.DictionaryEncodedColumns.Contains(path);
+        }
+
+        if(!useDictionary)
             return;
 
         // cast ReadOnlyMemory<T> to ReadOnlyMemory<ReadOnlyMemory<char>>
         ReadOnlySpan<ReadOnlyMemory<char>> stringsSpan = Values.AsSpan<T, ReadOnlyMemory<char>>();
         if(ParquetDictionaryEncoder.TryExtractDictionary(stringsSpan, options.DictionaryEncodingThreshold,
             out IMemoryOwner<ReadOnlyMemory<char>>? dictionaryOwner,
-            out _dictionaryIndexes)) {
+            out _dictionaryIndexes,
+            options.DictionaryEncodingSampleSize)) {
             // case memory back to ReadOnlyMemory<T>
             _dictionary = dictionaryOwner as IMemoryOwner<T>;
             if(_dictionary == null) {
