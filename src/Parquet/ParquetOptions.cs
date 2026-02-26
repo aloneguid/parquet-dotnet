@@ -68,6 +68,17 @@ public class ParquetOptions {
     public double DictionaryEncodingThreshold { get; set; } = 0.8;
 
     /// <summary>
+    /// Number of values to sample before attempting full dictionary encoding.
+    /// When the column has more values than this limit, a quick uniqueness check is performed
+    /// on the first <c>DictionaryEncodingSampleSize</c> values. If the sample exceeds
+    /// <see cref="DictionaryEncodingThreshold"/>, dictionary encoding is skipped entirely,
+    /// avoiding the expensive full-data scan.
+    /// Set to 0 to disable sampling and always scan the full column.
+    /// Default is 0 (disabled - full column scan, preserving pre-existing behavior).
+    /// </summary>
+    public int DictionaryEncodingSampleSize { get; set; } = 0;
+
+    /// <summary>
     /// This option is passed to the <see cref="Microsoft.IO.RecyclableMemoryStreamManager"/>, which keeps a pool of
     /// streams in memory for reuse. By default when this option is unset, the RecyclableStreamManager will keep an
     /// unbounded amount of memory, which is "indistinguishable from a memory leak" per their documentation. This does
