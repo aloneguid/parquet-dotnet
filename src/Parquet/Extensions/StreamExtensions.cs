@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -104,7 +105,28 @@ namespace Parquet.Extensions {
             }
             return copied;
 #else
-            throw new NotImplementedException();
+            int remaining = destination.Length;
+            int copied = 0;
+
+            if(remaining == 0)
+                return copied;
+
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(Math.Min(remaining, 81920));
+            try {
+                while(remaining > 0) {
+                    int bytesRead = await s.ReadAsync(buffer, 0, Math.Min(buffer.Length, remaining), token);
+                    if(bytesRead == 0)
+                        break;
+
+                    buffer.AsSpan(0, bytesRead).CopyTo(destination.Span.Slice(copied, bytesRead));
+                    copied += bytesRead;
+                    remaining -= bytesRead;
+                }
+            } finally {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+
+            return copied;
 #endif
         }
 
@@ -113,7 +135,11 @@ namespace Parquet.Extensions {
 #if !NETSTANDARD2_0
             await destination.WriteAsync(source);
 #else
-            throw new NotImplementedException();
+            if(source.Length == 0)
+                return;
+
+            byte[] buffer = source.ToArray();
+            await destination.WriteAsync(buffer, 0, buffer.Length, token);
 #endif
         }
     }
