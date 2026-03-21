@@ -208,10 +208,11 @@ static class SchemaEncoder {
         if(se.Type == null)
             return false;
 
+        ConvertedType? convertedType = TryDetermineConvertedType(se);
         SType? st = se.Type switch {
             Type.BOOLEAN => typeof(bool),
 
-            Type.INT32 when se.ConvertedType != null => se.ConvertedType switch {
+            Type.INT32 when se.ConvertedType != null => convertedType switch {
                 ConvertedType.INT_8 => typeof(sbyte),
                 ConvertedType.UINT_8 => typeof(byte),
                 ConvertedType.INT_16 => typeof(short),
@@ -234,7 +235,7 @@ static class SchemaEncoder {
             },
             Type.INT32 => typeof(int),
             Type.INT64 when se.LogicalType?.TIMESTAMP != null => typeof(DateTime),
-            Type.INT64 when se.ConvertedType != null => se.ConvertedType switch {
+            Type.INT64 when convertedType != null => convertedType switch {
                 ConvertedType.INT_64 => typeof(long),
                 ConvertedType.UINT_64 => typeof(ulong),
 #if NET6_0_OR_GREATER
@@ -254,14 +255,14 @@ static class SchemaEncoder {
             Type.FLOAT => typeof(float),
             Type.DOUBLE => typeof(double),
 
-            Type.BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
+            Type.BYTE_ARRAY when convertedType != null => convertedType switch {
                 ConvertedType.UTF8 => typeof(string),
                 ConvertedType.DECIMAL => options.DecimalType,
                 _ => typeof(byte[])
             },
             Type.BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
 
-            Type.FIXED_LEN_BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
+            Type.FIXED_LEN_BYTE_ARRAY when convertedType != null => convertedType switch {
                 ConvertedType.DECIMAL => options.DecimalType,
                 ConvertedType.INTERVAL => typeof(Interval),
                 _ => typeof(byte[])
@@ -293,6 +294,22 @@ static class SchemaEncoder {
         return true;
     }
 
+    private static ConvertedType? TryDetermineConvertedType(SchemaElement se) {
+        if(se.ConvertedType is not null) {
+            return se.ConvertedType;
+        } else if(se.LogicalType?.TIME?.Unit.MILLIS is not null) {
+            return ConvertedType.TIME_MILLIS;
+        } else if(se.LogicalType?.TIME?.Unit.MICROS is not null) {
+            return ConvertedType.TIME_MICROS;
+        } else if(se.LogicalType?.TIMESTAMP?.Unit.MILLIS is not null) {
+            return ConvertedType.TIMESTAMP_MILLIS;
+        } else if(se.LogicalType?.TIMESTAMP?.Unit.MICROS is not null) {
+            return ConvertedType.TIMESTAMP_MICROS;
+        } else {
+            return null;
+        }
+    }
+
     private static DataField GetDecimalDataField(SchemaElement se, SType clrType) =>
         new DecimalDataField(se.Name,
             se.Precision.GetValueOrDefault(DecimalFormatDefaults.DefaultPrecision),
@@ -303,7 +320,7 @@ static class SchemaEncoder {
         if(se.LogicalType is not null)
             if(se.LogicalType.TIMESTAMP is not null)
                 return new DateTimeDataField(se.Name, DateTimeFormat.Timestamp, isAdjustedToUTC: se.LogicalType.TIMESTAMP.IsAdjustedToUTC, unit: se.LogicalType.TIMESTAMP.Unit.Convert());
-        
+
         switch(se.ConvertedType) {
             case ConvertedType.TIMESTAMP_MILLIS:
                 if(se.Type == Type.INT64)
@@ -399,7 +416,7 @@ static class SchemaEncoder {
         SType st = field.ClrType;
         var tse = new SchemaElement { Name = field.Name };
 
-        if( field.FieldId != -1 ) { 
+        if(field.FieldId != -1) {
             tse.FieldId = field.FieldId;
         }
 
@@ -508,7 +525,8 @@ static class SchemaEncoder {
                         break;
                     case DateTimeFormat.Timestamp:
                         tse.Type = Type.INT64;
-                        tse.LogicalType = new LogicalType { TIMESTAMP = new TimestampType {
+                        tse.LogicalType = new LogicalType {
+                            TIMESTAMP = new TimestampType {
                                 IsAdjustedToUTC = dfDateTime.IsAdjustedToUTC,
                                 Unit = dfDateTime.Unit switch {
                                     DateTimeTimeUnit.Millis => new TimeUnit {
@@ -538,7 +556,7 @@ static class SchemaEncoder {
             tse.Type = Type.INT32;
             tse.LogicalType = new LogicalType { DATE = new DateType() };
             tse.ConvertedType = ConvertedType.DATE;
-        } else if (st == typeof(TimeOnly)) {
+        } else if(st == typeof(TimeOnly)) {
             // TimeOnly
             if(field is TimeOnlyDataField dfTime) {
                 switch(dfTime.TimeSpanFormat) {
