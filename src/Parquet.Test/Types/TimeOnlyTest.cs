@@ -8,7 +8,7 @@ namespace Parquet.Test.Types;
 
 public class TimeOnlyTest : TestBase {
     [Fact]
-    public async Task List_of_elements_with_some_items_empty_reads_file() {
+    public async Task Time_only_field_created_with_pyarrow_v22() {
         using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("time_only_pyarrow_v22.parquet"));
         using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
 
