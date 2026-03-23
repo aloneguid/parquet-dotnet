@@ -5,6 +5,7 @@
   <Folder Name="/Solution Items/">
     <File Path="../.editorconfig" />
     <File Path="../docs/README.md" />
+    <File Path="../docs/release-notes.md" />
   </Folder>
   <Folder Name="/Solution Items/.github/">
     <File Path="../.github/CONTRIBUTING.md" />
@@ -12,16 +13,6 @@
   </Folder>
   <Folder Name="/Solution Items/.github/workflows/">
     <File Path="../.github/workflows/build.yml" />
-  </Folder>
-  <Folder Name="/Solution Items/rn/">
-    <File Path="../docs/rn/5.0.2.md" />
-    <File Path="../docs/rn/5.1.0.md" />
-    <File Path="../docs/rn/5.1.1.md" />
-    <File Path="../docs/rn/5.2.0.md" />
-    <File Path="../docs/rn/5.3.0.md" />
-    <File Path="../docs/rn/5.4.0.md" />
-    <File Path="../docs/rn/5.5.0.md" />
-    <File Path="../docs/rn/previous.md" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="Parquet.PerfRunner/Parquet.PerfRunner.csproj" />

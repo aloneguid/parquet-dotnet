@@ -1,10 +1,10 @@
 ﻿name: 'Build'
 
-env:
-  VERSION: 5.5.0
-  # PACKAGE_SUFFIX: '-pre.6'
-  PACKAGE_SUFFIX: ''
-  ASM_VERSION: 5.0.0
+# env:
+  # VERSION: 5.5.1
+  # PACKAGE_SUFFIX: '-pre.1'
+  # PACKAGE_SUFFIX: ''
+  # ASM_VERSION: 5.0.0
 
 on:
   push:
@@ -32,9 +32,6 @@ jobs:
             name: Linux x64
           - os: windows-latest
             name: Windows x64
-          - os: windows-latest
-            name: Windows x86
-            runtime: win-x86
           - os: macos-latest
             name: MacOS ARM64
       fail-fast: false
@@ -55,15 +52,8 @@ jobs:
     - name: Install Python dependencies
       run: pip install pyarrow pandas
 
-    # only run this step if matrix.runtime is empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch == ''
+    - name: 'test'
       run: dotnet test src/Parquet.slnx -c release
-
-    # only run this step if matrix.arch is not empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch != ''
-      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
@@ -96,8 +86,10 @@ jobs:
 
     steps:
     - run: |
+        echo "VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')" >> $GITHUB_ENV
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
+        echo VERSION: ${{ env.VERSION }}
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
