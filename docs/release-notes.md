@@ -1,6 +1,6 @@
 # 5.6.0-pre.1
 
-blah
+- chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
 
 # 5.5.0
 
