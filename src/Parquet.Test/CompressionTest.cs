@@ -41,4 +41,20 @@ public class CompressionTest : TestBase {
         object actual = await WriteReadSingle(new DataField<string>("id"), value, compressionMethod);
         Assert.Equal("five", actual);
     }
+
+    [Fact]
+    public async Task Zstd_decompression_succeeds_when_parquet_metadata_has_incorrect_uncompressed_page_size() {
+        // This file has a Zstd-compressed column whose UncompressedPageSize in the Parquet metadata
+        // is incorrect (8 instead of the actual 1024 bytes). The library must ignore the metadata hint
+        // and rely solely on the size embedded in the Zstd frame header.
+        using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("special/zstd-invalid-length.parquet"));
+        using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
+
+        DataField[] fields = reader.Schema.GetDataFields();
+        DataColumn column1 = await groupReader.ReadColumnAsync(fields[0]);
+        DataColumn column2 = await groupReader.ReadColumnAsync(fields[1]);
+
+        Assert.NotNull(column1.Data);
+        Assert.NotNull(column2.Data);
+    }
 }
