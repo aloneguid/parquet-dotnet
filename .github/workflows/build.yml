@@ -1,11 +1,5 @@
 ﻿name: 'Build'
 
-env:
-  VERSION: 5.5.0
-  # PACKAGE_SUFFIX: '-pre.6'
-  PACKAGE_SUFFIX: ''
-  ASM_VERSION: 5.0.0
-
 on:
   push:
     branches:
@@ -32,9 +26,6 @@ jobs:
             name: Linux x64
           - os: windows-latest
             name: Windows x64
-          - os: windows-latest
-            name: Windows x86
-            runtime: win-x86
           - os: macos-latest
             name: MacOS ARM64
       fail-fast: false
@@ -55,15 +46,8 @@ jobs:
     - name: Install Python dependencies
       run: pip install pyarrow pandas
 
-    # only run this step if matrix.runtime is empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch == ''
+    - name: 'test'
       run: dotnet test src/Parquet.slnx -c release
-
-    # only run this step if matrix.arch is not empty
-    - name: 'test on ${{ matrix.runtime }}'
-      if: matrix.arch != ''
-      run: dotnet test src/Parquet.slnx -c release -r ${{ matrix.runtime }}
 
   benchmark:
     name: ⚖️ High-Level Benchmarks
@@ -95,10 +79,28 @@ jobs:
     name: '🏛️ Build NuGet'
 
     steps:
-    - run: |
+
+    - uses: actions/checkout@v4
+  
+    # note that >>$GITHUB_ENV only exposes the variable to the next steps, not the current one, so we need to echo it here for the current step
+    - name: create variables
+      run: |
+        VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')
+        VERSION_MAJOR=$(echo $VERSION | cut -d. -f1).0.0
+        VERSION_NO_SUFFIX=$(echo $VERSION | cut -d- -f1)
+
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
+        echo "VERSION_NO_SUFFIX=$VERSION_NO_SUFFIX" >> $GITHUB_ENV
+
+    - name: print variables
+      run: |
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
-    - uses: actions/checkout@v4
+        echo VERSION: ${{ env.VERSION }}
+        echo VERSION_MAJOR: ${{ env.VERSION_MAJOR }}
+        echo VERSION_NO_SUFFIX: ${{ env.VERSION_NO_SUFFIX }}
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -112,14 +114,15 @@ jobs:
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.slnx -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.slnx -c release /p:Version=$VERSION /p:FileVersion=$VERSION_NO_SUFFIX.0 /p:AssemblyVersion=$VERSION_MAJOR.0
 
     - name: collect artifacts
       run: |
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
         cp src/Parquet.Data.Analysis/bin/Release/*.nupkg artifacts/
-        cp docs/rn/${{ env.VERSION }}.md artifacts/release-notes.md
+        grep -m 2 -B 1000 '^# ' docs/release-notes.md | tail -n +3 | head -n -2 > artifacts/release-notes.md
+        echo $VERSION > artifacts/version.txt
 
     - uses: actions/upload-artifact@v4
       name: upload artifacts
@@ -164,14 +167,17 @@ jobs:
           name: bin
           path: bin
 
+      - name: Restore version from file
+        run: echo "VERSION=$(cat bin/version.txt | xargs)" >> "$GITHUB_ENV"
+
       - name: 🔍 view artifacts to be used
         run: ls -R
         working-directory: .
 
       # https://github.com/softprops/action-gh-release
       - name: 📢 Create release
-        uses: softprops/action-gh-release@v1
-        if: ${{ !env.PACKAGE_SUFFIX }}
+        uses: softprops/action-gh-release@v2
+        if: ${{ !contains(env.VERSION, '-') }}
         with:
           tag_name: ${{ env.VERSION }}
           name: ${{ env.VERSION }}
