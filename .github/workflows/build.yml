@@ -87,7 +87,7 @@ jobs:
       run: |
         VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')
         VERSION_MAJOR=$(echo $VERSION | cut -d. -f1).0.0.0
-        VERSION_NO_SUFFIX=$(echo $VERSION | cut -d- -f1)
+        VERSION_NO_SUFFIX=$(echo $VERSION | cut -d- -f1).0
 
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
@@ -98,7 +98,7 @@ jobs:
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
         echo VERSION: ${{ env.VERSION }}
-        echo ASM_VERSION: ${{ env.ASM_VERSION }}
+        echo VERSION_NO_SUFFIX: ${{ env.ASM_VERSION }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -121,7 +121,7 @@ jobs:
         cp src/Parquet/bin/Release/*.nupkg artifacts/
         cp src/Parquet.Data.Analysis/bin/Release/*.nupkg artifacts/
         grep -m 2 -B 1000 '^# ' docs/release-notes.md | tail -n +3 | head -n -2 > artifacts/release-notes.md
-        $VERSION > artifacts/version.txt
+        echo $VERSION > artifacts/version.txt
 
     - uses: actions/upload-artifact@v4
       name: upload artifacts
