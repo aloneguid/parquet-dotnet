@@ -90,13 +90,19 @@ jobs:
   
     # note that >>$GITHUB_ENV only exposes the variable to the next steps, not the current one, so we need to echo it here for the current step
     - run: |
-        echo "VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')" >> $GITHUB_ENV
-        echo "ASM_VERSION=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_ENV
+        VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')
+        VERSION_MAJOR=$(echo $VERSION | cut -d. -f1)
+        ASM_VERSION=$VERSION_MAJOR.0.0
+
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
+        echo "ASM_VERSION=$ASM_VERSION" >> $GITHUB_ENV
 
     - run: |
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
         echo VERSION: ${{ env.VERSION }}
+        echo ASM_VERSION: ${{ env.ASM_VERSION }}
 
 
     - name: Setup .NET
