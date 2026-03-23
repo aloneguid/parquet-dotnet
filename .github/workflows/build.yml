@@ -86,8 +86,8 @@ jobs:
     - name: create variables
       run: |
         VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')
-        VERSION_MAJOR=$(echo $VERSION | cut -d. -f1).0.0.0
-        VERSION_NO_SUFFIX=$(echo $VERSION | cut -d- -f1).0
+        VERSION_MAJOR=$(echo $VERSION | cut -d. -f1).0.0
+        VERSION_NO_SUFFIX=$(echo $VERSION | cut -d- -f1)
 
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
@@ -113,7 +113,7 @@ jobs:
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.slnx -c release /p:Version=$VERSION /p:FileVersion=$VERSION_NO_SUFFIX /p:AssemblyVersion=$VERSION_MAJOR
+        dotnet build src/Parquet.slnx -c release /p:Version=$VERSION /p:FileVersion=$VERSION_NO_SUFFIX.0 /p:AssemblyVersion=$VERSION_MAJOR.0
 
     - name: collect artifacts
       run: |
