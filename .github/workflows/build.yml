@@ -1,11 +1,5 @@
 ﻿name: 'Build'
 
-# env:
-  # VERSION: 5.5.1
-  # PACKAGE_SUFFIX: '-pre.1'
-  # PACKAGE_SUFFIX: ''
-  # ASM_VERSION: 5.0.0
-
 on:
   push:
     branches:
@@ -89,21 +83,22 @@ jobs:
     - uses: actions/checkout@v4
   
     # note that >>$GITHUB_ENV only exposes the variable to the next steps, not the current one, so we need to echo it here for the current step
-    - run: |
+    - name: create variables
+      run: |
         VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')
-        VERSION_MAJOR=$(echo $VERSION | cut -d. -f1)
-        ASM_VERSION=$VERSION_MAJOR.0.0
+        VERSION_MAJOR=$(echo $VERSION | cut -d. -f1).0.0.0
+        VERSION_NO_SUFFIX=$(echo $VERSION | cut -d- -f1)
 
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
-        echo "ASM_VERSION=$ASM_VERSION" >> $GITHUB_ENV
+        echo "VERSION_NO_SUFFIX=$VERSION_NO_SUFFIX" >> $GITHUB_ENV
 
-    - run: |
+    - name: print variables
+      run: |
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
         echo VERSION: ${{ env.VERSION }}
         echo ASM_VERSION: ${{ env.ASM_VERSION }}
-
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -118,7 +113,7 @@ jobs:
       run: |
         envsubst < src/Parquet/Globals.cs > g.tmp && mv g.tmp src/Parquet/Globals.cs
         cat src/Parquet/Globals.cs
-        dotnet build src/Parquet.slnx -c release /p:Version=${{ env.VERSION }}${{ env.PACKAGE_SUFFIX }} /p:FileVersion=$VERSION /p:AssemblyVersion=$ASM_VERSION
+        dotnet build src/Parquet.slnx -c release /p:Version=$VERSION /p:FileVersion=$VERSION_NO_SUFFIX /p:AssemblyVersion=$VERSION_MAJOR
 
     - name: collect artifacts
       run: |
