@@ -165,10 +165,13 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    public async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
+    private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source) {
         using var decompressor = new ZstdSharp.Decompressor();
         byte[] compressed = source.ToByteArray()!;
-        Span<byte> decompressed = decompressor.Unwrap(compressed, destinationLength);
+        // Do not pass destinationLength as maxDecompressedSize — some Parquet files report an incorrect
+        // UncompressedPageSize in their metadata. Instead, let ZstdSharp read the actual content size
+        // that is embedded in the Zstd frame header, which is always accurate.
+        Span<byte> decompressed = decompressor.Unwrap(compressed);
         var owner = MemoryOwner<byte>.Allocate(decompressed.Length);
         decompressed.CopyTo(owner.Span);
         return owner;
@@ -248,7 +251,7 @@ class DefaultCompressor : ICompressor {
             case CompressionMethod.LZ4:
                 return await Lz4Decompress(source, destinationLength);
 			case CompressionMethod.Zstd:
-                return await ZstdDecompress(source, destinationLength);
+                return await ZstdDecompress(source);
 			case CompressionMethod.Lz4Raw:
 				return await Lz4Decompress(source, destinationLength);
 			default:
