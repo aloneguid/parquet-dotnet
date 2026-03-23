@@ -910,7 +910,11 @@ static class ParquetPlainEncoder {
                         destination.Write(raw, 0, raw.Length);
                     }
                 } else {
-                    throw new ArgumentException("invalid type");
+                    throw new ArgumentException(
+                        $"Unsupported {nameof(DateTime)} encoding for schema element. " +
+                        $"Type={tse.Type}, ConvertedType={tse.ConvertedType}, " +
+                        $"HasLogicalTimestamp={tse.LogicalType?.TIMESTAMP is not null}",
+                        nameof(tse));
                 }
                 break;
             case TType.INT96:
