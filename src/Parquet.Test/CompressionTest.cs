@@ -47,7 +47,7 @@ public class CompressionTest : TestBase {
         // This file has a Zstd-compressed column whose UncompressedPageSize in the Parquet metadata
         // is incorrect (8 instead of the actual 1024 bytes). The library must ignore the metadata hint
         // and rely solely on the size embedded in the Zstd frame header.
-        using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("decompression-error.parquet"));
+        using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("special/zstd-invalid-length.parquet"));
         using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
 
         DataField[] fields = reader.Schema.GetDataFields();
