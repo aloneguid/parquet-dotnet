@@ -120,7 +120,8 @@ jobs:
         mkdir artifacts
         cp src/Parquet/bin/Release/*.nupkg artifacts/
         cp src/Parquet.Data.Analysis/bin/Release/*.nupkg artifacts/
-        cp docs/rn/${{ env.VERSION }}.md artifacts/release-notes.md
+        grep -m 2 -B 1000 '^# ' docs/release-notes.md | tail -n +3 | head -n -2 > artifacts/release-notes.md
+        $VERSION > artifacts/version.txt
 
     - uses: actions/upload-artifact@v4
       name: upload artifacts
