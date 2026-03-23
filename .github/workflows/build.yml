@@ -89,10 +89,10 @@ jobs:
     - uses: actions/checkout@v4
   
     - run: |
-      echo "VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')" >> $GITHUB_ENV
-      echo head_ref: ${{ github.head_ref }}
-      echo run id: ${{ github.run_id }}
-      echo VERSION: ${{ env.VERSION }}
+        echo "VERSION=$(cat docs/release-notes.md | head -n 1 | xargs | tr -d ' \#')" >> $GITHUB_ENV
+        echo head_ref: ${{ github.head_ref }}
+        echo run id: ${{ github.run_id }}
+        echo VERSION: ${{ env.VERSION }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
