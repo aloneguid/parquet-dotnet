@@ -98,7 +98,8 @@ jobs:
         echo head_ref: ${{ github.head_ref }}
         echo run id: ${{ github.run_id }}
         echo VERSION: ${{ env.VERSION }}
-        echo VERSION_NO_SUFFIX: ${{ env.ASM_VERSION }}
+        echo VERSION_MAJOR: ${{ env.VERSION_MAJOR }}
+        echo VERSION_NO_SUFFIX: ${{ env.VERSION_NO_SUFFIX }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
