@@ -26,10 +26,8 @@ static class SchemaEncoder {
         typeof(BigDecimal),
         typeof(BigInteger),
         typeof(DateTime),
-#if NET6_0_OR_GREATER
         typeof(DateOnly),
         typeof(TimeOnly),
-#endif
         typeof(TimeSpan),
         typeof(Interval),
         typeof(byte[]),
@@ -48,13 +46,12 @@ static class SchemaEncoder {
         SchemaElement? parent = index > 0 ? schema[index - 1] : null;
         SchemaElement outerGroup = schema[index];
 
-        bool isList = outerGroup.ConvertedType != null && outerGroup.ConvertedType == ConvertedType.LIST;
+        bool isList = outerGroup.IsList();
         // According to the Parquet spec, a repeated field is an implicit list only if it is not contained by a LIST- or MAP-annotated group,
         // nor annotated by LIST or MAP itself.
         bool isImplicitList = (parent == null || parent.ConvertedType == null) &&
             outerGroup.RepetitionType == FieldRepetitionType.REPEATED &&
-            outerGroup.ConvertedType != ConvertedType.MAP &&
-            outerGroup.ConvertedType != ConvertedType.MAP_KEY_VALUE;
+            !outerGroup.IsMap();
 
         if(!isList && !isImplicitList) {
             ownedChildren = 0;
@@ -118,9 +115,7 @@ static class SchemaEncoder {
         out MapField? field) {
 
         SchemaElement root = schema[index];
-        bool isMap = root.ConvertedType != null &&
-            (root.ConvertedType == ConvertedType.MAP || root.ConvertedType == ConvertedType.MAP_KEY_VALUE);
-        if(!isMap) {
+        if(!root.IsMap()) {
             ownedChildren = 0;
             field = null;
             return false;
@@ -202,88 +197,154 @@ static class SchemaEncoder {
         return f;
     }
 
+    /// <summary>
+    /// See https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
+    /// </summary>
+    private static SType? GetSystemType(SchemaElement se, ParquetOptions options) {
+
+        // not set for non-leaf nodes (map, list etc.)
+        if(se.Type == null)
+            return null;
+
+        // try to get the type base on annotation first
+
+        // ---- strings
+
+        if(se.LogicalType?.STRING != null ||
+            se.LogicalType?.ENUM != null ||
+            se.ConvertedType == ConvertedType.UTF8) {
+            return typeof(string);
+        }
+
+        // --- numeric types
+
+        if(se.LogicalType?.INTEGER != null) {
+            IntType intType = se.LogicalType.INTEGER;
+            switch(intType.BitWidth) {
+                case 8:
+                    return intType.IsSigned ? typeof(sbyte) : typeof(byte);
+                case 16:
+                    return intType.IsSigned ? typeof(short) : typeof(ushort);
+                case 32:
+                    return intType.IsSigned ? typeof(int) : typeof(uint);
+                case 64:
+                    return intType.IsSigned ? typeof(long) : typeof(ulong);
+            }
+        }
+
+        // legacy types
+        if(se.ConvertedType == ConvertedType.INT_8)
+            return typeof(sbyte);
+        else if(se.ConvertedType == ConvertedType.UINT_8)
+            return typeof(byte);
+        else if(se.ConvertedType == ConvertedType.INT_16)
+            return typeof(short);
+        else if(se.ConvertedType == ConvertedType.UINT_16)
+            return typeof(ushort);
+        else if(se.ConvertedType == ConvertedType.INT_32)
+            return typeof(int);
+        else if(se.ConvertedType == ConvertedType.UINT_32)
+            return typeof(uint);
+        else if(se.ConvertedType == ConvertedType.INT_64)
+            return typeof(long);
+        else if(se.ConvertedType == ConvertedType.UINT_64)
+            return typeof(ulong);
+
+        // --- decimal types
+
+        if(se.LogicalType?.DECIMAL != null || se.ConvertedType == ConvertedType.DECIMAL) {
+            return options.DecimalType;
+        }
+
+        // --- float16
+
+        if(se.LogicalType?.FLOAT16 != null) {
+            return typeof(System.Half);
+        }
+
+        // --- temporal types
+
+        // date
+        if(se.LogicalType?.DATE != null || se.ConvertedType == ConvertedType.DATE) {
+            return options.UseDateOnlyTypeForDates ? typeof(DateOnly) : typeof(DateTime);
+        }
+
+        // time
+        if(se.LogicalType?.TIME != null) {
+            TimeType timeType = se.LogicalType.TIME;
+            if(timeType.Unit.MILLIS != null ) {
+                return options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan);
+            }
+            if(timeType.Unit.MICROS != null) {
+                return options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) :  typeof(TimeSpan);
+            }
+            if(timeType.Unit.NANOS != null) {
+                return typeof(DateTime);
+            }
+        }
+
+        if(se.ConvertedType == ConvertedType.TIME_MICROS) {
+            return options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan);
+        }
+        if(se.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
+            return typeof(DateTime);
+        }
+        if(se.ConvertedType == ConvertedType.TIMESTAMP_MILLIS) {
+            return typeof(DateTime);
+        }
+
+        // timestamp
+        if(se.LogicalType?.TIMESTAMP != null) {
+            return typeof(DateTime);
+        }
+        if(se.ConvertedType == ConvertedType.INTERVAL) {
+            return typeof(Interval);
+        }
+
+        // if we are still here, try physical types
+        switch(se.Type) {
+            case Type.BOOLEAN:
+                return typeof(bool);
+            case Type.INT32:
+                return typeof(int);
+            case Type.INT64:
+                return typeof(long);
+            case Type.INT96:
+                return options.TreatBigIntegersAsDates ? typeof(DateTime) : typeof(BigInteger);
+            case Type.FLOAT:
+                return typeof(float);
+            case Type.DOUBLE:
+                return typeof(double);
+            case Type.BYTE_ARRAY:
+                return options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]);
+            case Type.FIXED_LEN_BYTE_ARRAY:
+                if(se.LogicalType?.UUID != null)
+                    return typeof(Guid);
+                if(se.LogicalType?.DECIMAL != null || se.ConvertedType == ConvertedType.DECIMAL)
+                    return options.DecimalType;
+                return typeof(byte[]);
+        }
+
+        return null;
+    }
+
     private static bool TryBuildDataField(SchemaElement se, ParquetOptions options, out DataField? df) {
         df = null;
 
         if(se.Type == null)
             return false;
 
-        SType? st = se.Type switch {
-            Type.BOOLEAN => typeof(bool),
+        SType? systemType = GetSystemType(se, options);
+        if(systemType == null)
+            throw new NotSupportedException($"unsupported type {se.Type}");
 
-            Type.INT32 when se.ConvertedType != null => se.ConvertedType switch {
-                ConvertedType.INT_8 => typeof(sbyte),
-                ConvertedType.UINT_8 => typeof(byte),
-                ConvertedType.INT_16 => typeof(short),
-                ConvertedType.UINT_16 => typeof(ushort),
-                ConvertedType.INT_32 => typeof(int),
-                ConvertedType.UINT_32 => typeof(uint),
-#if NET6_0_OR_GREATER
-                ConvertedType.DATE => options.UseDateOnlyTypeForDates ? typeof(DateOnly) : typeof(DateTime),
-#else
-                ConvertedType.DATE => typeof(DateTime),
-#endif
-                ConvertedType.DECIMAL => options.DecimalType,
-#if NET6_0_OR_GREATER
-                ConvertedType.TIME_MILLIS => options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan),
-#else
-                ConvertedType.TIME_MILLIS => typeof(TimeSpan),
-#endif
-                ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
-                _ => typeof(int)
-            },
-            Type.INT32 => typeof(int),
-            Type.INT64 when se.LogicalType?.TIMESTAMP != null => typeof(DateTime),
-            Type.INT64 when se.ConvertedType != null => se.ConvertedType switch {
-                ConvertedType.INT_64 => typeof(long),
-                ConvertedType.UINT_64 => typeof(ulong),
-#if NET6_0_OR_GREATER
-                ConvertedType.TIME_MICROS => options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan),
-#else
-                ConvertedType.TIME_MICROS => typeof(TimeSpan),
-#endif
-                ConvertedType.TIMESTAMP_MICROS => typeof(DateTime),
-                ConvertedType.TIMESTAMP_MILLIS => typeof(DateTime),
-                ConvertedType.DECIMAL => options.DecimalType,
-                _ => typeof(long)
-            },
-            Type.INT64 => typeof(long),
-
-            Type.INT96 when options.TreatBigIntegersAsDates => typeof(DateTime),
-            Type.INT96 => typeof(BigInteger),
-            Type.FLOAT => typeof(float),
-            Type.DOUBLE => typeof(double),
-
-            Type.BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
-                ConvertedType.UTF8 => typeof(string),
-                ConvertedType.DECIMAL => options.DecimalType,
-                _ => typeof(byte[])
-            },
-            Type.BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
-
-            Type.FIXED_LEN_BYTE_ARRAY when se.ConvertedType != null => se.ConvertedType switch {
-                ConvertedType.DECIMAL => options.DecimalType,
-                ConvertedType.INTERVAL => typeof(Interval),
-                _ => typeof(byte[])
-            },
-
-            Type.FIXED_LEN_BYTE_ARRAY when se.TypeLength == 16 && se.LogicalType?.UUID != null => typeof(Guid),
-
-            Type.FIXED_LEN_BYTE_ARRAY => options.TreatByteArrayAsString ? typeof(string) : typeof(byte[]),
-
-            _ => null
-        };
-
-        if(st == null)
-            return false;
-
-        if(st == typeof(DateTime)) {
+        if(systemType == typeof(DateTime)) {
             df = GetDateTimeDataField(se);
-        } else if(st == options.DecimalType) {
+        } else if(systemType == options.DecimalType) {
             df = GetDecimalDataField(se, options.DecimalType);
         } else {
             // successful field built
-            df = new DataField(se.Name, st);
+            df = new DataField(se.Name, systemType);
         }
         bool isNullable = se.RepetitionType != FieldRepetitionType.REQUIRED;
         bool isArray = se.RepetitionType == FieldRepetitionType.REPEATED;

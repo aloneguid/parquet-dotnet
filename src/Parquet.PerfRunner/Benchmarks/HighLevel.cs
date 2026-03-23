@@ -21,7 +21,7 @@ public class HighLevel {
     private MemoryStream? _intsMs;
     private static readonly string[] TargetVersions = [
         "",
-        "5.4.0"];
+        "5.5.0"];
 
     [Params(CompressionMethod.None, CompressionMethod.Snappy)]
     public CompressionMethod CM { get; set; }

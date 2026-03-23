@@ -278,5 +278,20 @@ namespace Parquet.Test {
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
         }
 
+        [Fact]
+        public async Task PyArrow22() {
+            using Stream s = OpenTestFile("special/pyarrow_v22.parquet");
+            using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+            using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
+
+            Assert.Equal(4626, groupReader.RowCount);
+            DataField[] fs = r.Schema.GetDataFields();
+            Assert.Equal(2, fs.Length);
+
+            DataColumn timeData = await groupReader.ReadColumnAsync(fs[1]);
+            Assert.Equal(TimeSpan.FromTicks(215720000000), timeData.Data.GetValue(0));
+        }
+
     }
 }

@@ -1,5 +1,6 @@
-# 5.6.0-pre.1
+# 5.6.0-pre.2
 
+- BREAKING CHANGE: To enable further evolution, like Span's, direct memory access, SIMD support and so on, I am dropping support for .NET Standard. The minimum supported version of .NET is .NET 8. Supporting anything lower would require a lot of effort which I can't give you.
 - chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
 
 # 5.5.0
