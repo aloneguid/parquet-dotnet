@@ -364,23 +364,16 @@ static class SchemaEncoder {
         if(se.LogicalType is not null)
             if(se.LogicalType.TIMESTAMP is not null)
                 return new DateTimeDataField(se.Name, DateTimeFormat.Timestamp, isAdjustedToUTC: se.LogicalType.TIMESTAMP.IsAdjustedToUTC, unit: se.LogicalType.TIMESTAMP.Unit.Convert());
-        
-        switch(se.ConvertedType) {
-            case ConvertedType.TIMESTAMP_MILLIS:
-                if(se.Type == Type.INT64)
-                    return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
-                break;
-#if NET7_0_OR_GREATER
-            case ConvertedType.TIMESTAMP_MICROS:
-                if(se.Type == Type.INT64)
-                    return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTimeMicros);
-                break;
-#endif
-            case ConvertedType.DATE:
-                if(se.Type == Type.INT32)
-                    return new DateTimeDataField(se.Name, DateTimeFormat.Date);
-                break;
-        }
+
+        if(se.IsTimestampMillis())
+            return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTime);
+
+        if(se.IsTimestampMicros())
+            return new DateTimeDataField(se.Name, DateTimeFormat.DateAndTimeMicros);
+
+        if(se.IsDate())
+            return new DateTimeDataField(se.Name, DateTimeFormat.Date);
+
         return new DateTimeDataField(se.Name, DateTimeFormat.Impala);
     }
 
@@ -557,12 +550,10 @@ static class SchemaEncoder {
                         tse.Type = Type.INT64;
                         tse.ConvertedType = ConvertedType.TIMESTAMP_MILLIS;
                         break;
-#if NET7_0_OR_GREATER
                     case DateTimeFormat.DateAndTimeMicros:
                         tse.Type = Type.INT64;
                         tse.ConvertedType = ConvertedType.TIMESTAMP_MICROS;
                         break;
-#endif
                     case DateTimeFormat.Date:
                         tse.Type = Type.INT32;
                         tse.ConvertedType = ConvertedType.DATE;
@@ -695,7 +686,7 @@ static class SchemaEncoder {
         if(field.SchemaType == SchemaType.Data && field is DataField dataField) {
             SchemaElement tse = Encode(dataField, options);
 
-            bool isList = container.Count > 1 && container[container.Count - 2].ConvertedType == ConvertedType.LIST;
+            bool isList = container.Count > 1 && container[container.Count - 2].IsList();
 
             tse.RepetitionType = dataField.IsArray && !isList
                ? FieldRepetitionType.REPEATED

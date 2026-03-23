@@ -322,7 +322,7 @@ static class ParquetPlainEncoder {
             else
                 result = null;
             return true;
-        } else if(tse.ConvertedType == ConvertedType.DECIMAL) {
+        } else if(tse.IsDecimal()) {
             result = TryDecodeDecimal(value, tse);
             return true;
         } else if(tse.Type == TType.DOUBLE) {
@@ -332,7 +332,7 @@ static class ParquetPlainEncoder {
             result = BitConverter.ToSingle(value, 0);
             return true;
         } else if(tse.Type == TType.BYTE_ARRAY)
-            if(tse.ConvertedType != null && tse.ConvertedType == ConvertedType.UTF8) {
+            if(tse.IsString()) {
                 result = E.GetString(value);
                 return true;
             } else {
@@ -885,7 +885,6 @@ static class ParquetPlainEncoder {
                             long unixTime = element.ToUnixMilliseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
                             destination.Write(raw, 0, raw.Length);    
-#if NET7_0_OR_GREATER
                         } else if (tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
                             long unixTime = element.ToUtc().ToUnixMicroseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
@@ -894,27 +893,24 @@ static class ParquetPlainEncoder {
                             long unixTime = element.ToUtc().ToUnixNanoseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
                             destination.Write(raw, 0, raw.Length);
-#endif
                         } else {
                             throw new ParquetException($"Unexpected TimeUnit: {tse.LogicalType.TIMESTAMP.Unit}");
                         }
                     }
-                } else if(tse.ConvertedType == ConvertedType.TIMESTAMP_MILLIS) {
+                } else if(tse.IsTimestampMillis()) {
                     foreach(DateTime element in data) {
                         long unixTime = element.ToUtc().ToUnixMilliseconds();
                         byte[] raw = BitConverter.GetBytes(unixTime);
                         destination.Write(raw, 0, raw.Length);
                     }
-#if NET7_0_OR_GREATER
-                } else if(tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
+                } else if(tse.IsTimestampMicros()) {
                     foreach(DateTime element in data) {
                         long unixTime = element.ToUtc().ToUnixMicroseconds();
                         byte[] raw = BitConverter.GetBytes(unixTime);
                         destination.Write(raw, 0, raw.Length);
                     }
-#endif
                 } else {
-                    throw new ArgumentException($"invalid converted type: {tse.ConvertedType}");
+                    throw new ArgumentException("invalid type");
                 }
                 break;
             case TType.INT96:
@@ -997,7 +993,7 @@ static class ParquetPlainEncoder {
                                 throw new ParquetException($"Unexpected TimeUnit: {tse.LogicalType.TIMESTAMP.Unit}");
                             }
                         }
-                    } else if(tse.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
+                    } else if(tse.IsTimestampMicros()) {
                         for(int i = 0; i < longsRead; i++) {
                             long lv = longs[i];
                             long microseconds = lv % 1000;
