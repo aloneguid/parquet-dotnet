@@ -167,14 +167,17 @@ jobs:
           name: bin
           path: bin
 
+      - name: Restore version from file
+        run: echo "VERSION=$(cat bin/version.txt | xargs)" >> "$GITHUB_ENV"
+
       - name: 🔍 view artifacts to be used
         run: ls -R
         working-directory: .
 
       # https://github.com/softprops/action-gh-release
       - name: 📢 Create release
-        uses: softprops/action-gh-release@v1
-        if: ${{ !env.PACKAGE_SUFFIX }}
+        uses: softprops/action-gh-release@v2
+        if: ${{ !contains(env.VERSION, '-') }}
         with:
           tag_name: ${{ env.VERSION }}
           name: ${{ env.VERSION }}
