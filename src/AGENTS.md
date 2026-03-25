@@ -1,5 +1,3 @@
-# C# Development
-
 ## C# Instructions
 - Always use the latest version C#, currently C# 14 features.
 - Write clear and concise comments for each public member of the Parquet library.
@@ -13,7 +11,6 @@
 - Make sure public member of the library have XML documentation comments, unless the containing type is private or internal.
 
 ## Compatibility
-- Ensure compatibility with .NET Standard 2.0 and 2.1.
 - Always use modern .NET 10 features, and polyfill for older frameworks when necessary using compiler directives.
 
 ## Formatting

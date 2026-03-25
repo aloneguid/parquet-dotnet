@@ -1276,5 +1276,26 @@ public class ParquetSerializerTest : TestBase {
         Assert.Equal(testData.DateTimeDoubleDict.Count, buffer[0]?.DateTimeDoubleDict?.Count);
         Assert.Equal(testData.DateTimeDoubleDict[new DateTime(2021, 1, 1)], buffer[0]?.DateTimeDoubleDict?[new DateTime(2021, 1, 1)]);
     }
-   
+
+    [Fact]
+    public async Task EmptyFileHandling() {
+        // create an empty parquet file (i.e. with no row groups)
+        var ms = new MemoryStream();
+        await ParquetSerializer.SerializeAsync<Record>(new List<Record>(), ms);
+
+        // make sure we can read from it without error, and get an empty list back
+        ms.Position = 0;
+        IList<Record> data = await ParquetSerializer.DeserializeAsync<Record>(ms);
+        Assert.Empty(data);
+
+        // try with DeserializeAllAsync too
+        ms.Position = 0;
+        int count = 0;
+        await foreach(Record record in ParquetSerializer.DeserializeAllAsync<Record>(ms)) {
+            // just iterate through all records
+            count += 1;
+        }
+        Assert.Equal(count, data.Count);
+    }
+
 }
