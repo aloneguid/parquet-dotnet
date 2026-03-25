@@ -6,10 +6,14 @@
     <File Path="../.editorconfig" />
     <File Path="../docs/README.md" />
     <File Path="../docs/release-notes.md" />
+    <File Path="AGENTS.md" />
   </Folder>
   <Folder Name="/Solution Items/.github/">
     <File Path="../.github/CONTRIBUTING.md" />
-    <File Path="../.github/copilot-instructions.md" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/ISSUE_TEMPLATE/">
+    <File Path="../.github/ISSUE_TEMPLATE/bug.yml" />
+    <File Path="../.github/ISSUE_TEMPLATE/general.yml" />
   </Folder>
   <Folder Name="/Solution Items/.github/workflows/">
     <File Path="../.github/workflows/build.yml" />
