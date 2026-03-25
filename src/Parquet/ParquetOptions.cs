@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using Parquet.Data;
 
@@ -51,6 +52,29 @@ namespace Parquet {
         /// Uniqueness factor needs to be less or equal than this threshold.
         /// </summary>
         public double DictionaryEncodingThreshold { get; set; } = 0.8;
+
+        /// <summary>
+        /// Per-column dictionary encoding overrides. When set, columns whose path (using "/" separator)
+        /// matches a key in this dictionary will use the specified value instead of the global
+        /// <see cref="UseDictionaryEncoding"/> setting. For example, <c>{ "Name" : true, "Address/City" : false }</c>
+        /// forces dictionary encoding on for the "Name" column and off for the nested "City" column,
+        /// regardless of the global setting.
+        /// Similar to PyArrow's <c>column_encoding</c> parameter.
+        /// This dictionary must not be modified after being assigned to a <see cref="ParquetOptions"/> instance
+        /// that is in use by a writer.
+        /// </summary>
+        public IReadOnlyDictionary<string, bool>? ColumnDictionaryEncodings { get; set; }
+
+        /// <summary>
+        /// Number of values to sample before attempting full dictionary encoding.
+        /// When the column has more values than this limit, a quick uniqueness check is performed
+        /// on the first <c>DictionaryEncodingSampleSize</c> values. If the sample exceeds
+        /// <see cref="DictionaryEncodingThreshold"/>, dictionary encoding is skipped entirely,
+        /// avoiding the expensive full-data scan.
+        /// Set to 0 to disable sampling and always scan the full column.
+        /// Default is 0 (disabled - full column scan, preserving pre-existing behavior).
+        /// </summary>
+        public int DictionaryEncodingSampleSize { get; set; } = 0;
 
         /// <summary>
         /// When set, the default encoding for INT32 and INT64 is <see cref="Parquet.Meta.Encoding.DELTA_BINARY_PACKED"/>, otherwise

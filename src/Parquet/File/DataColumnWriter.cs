@@ -55,7 +55,7 @@ class DataColumnWriter {
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
         ColumnMetrics metrics = await WriteColumnAsync(
-            chunk, column, _schemaElement,
+            chunk, column, _schemaElement, fullPath,
             cancellationToken);
         chunk.MetaData.Encodings = metrics.GetUsedEncodings();
 
@@ -128,7 +128,7 @@ class DataColumnWriter {
     }
 
     private async Task<ColumnMetrics> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
-       SchemaElement tse,
+       SchemaElement tse, FieldPath fullPath,
        CancellationToken cancellationToken = default) {
 
         column.Field.EnsureAttachedToSchema(nameof(column));
@@ -141,8 +141,16 @@ class DataColumnWriter {
          * the write efficiency.
          */
 
+        // Resolve per-column dictionary encoding override
+        string columnPath = fullPath.ToString();
+        bool useDictionary = _options.UseDictionaryEncoding;
+        if(_options.ColumnDictionaryEncodings != null &&
+           _options.ColumnDictionaryEncodings.TryGetValue(columnPath, out bool columnOverride)) {
+            useDictionary = columnOverride;
+        }
+
         using var pc = new PackedColumn(column);
-        pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
+        pc.Pack(useDictionary, _options.DictionaryEncodingThreshold, _options.DictionaryEncodingSampleSize);
 
         // dictionary page
         if(pc.HasDictionary) {

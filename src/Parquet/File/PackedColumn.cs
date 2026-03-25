@@ -150,7 +150,7 @@ namespace Parquet.File {
         /// <summary>
         /// Sets statistics: null count
         /// </summary>
-        public void Pack(bool useDictionaryEncoding, double dictionaryThreshold) {
+        public void Pack(bool useDictionaryEncoding, double dictionaryThreshold, int sampleSize = 0) {
 
             if(_column == null)
                 throw new NullReferenceException();
@@ -162,7 +162,7 @@ namespace Parquet.File {
                 !_column.Field.IsArray &&
                 ParquetDictionaryEncoder.TryExtractDictionary(_column.Field.ClrType,
                     _definedData!, 0, _definedDataCount,
-                    out _dictionary, out _dictionaryIndexes, dictionaryThreshold)) {
+                    out _dictionary, out _dictionaryIndexes, dictionaryThreshold, sampleSize)) {
 
                 // if dictionary is successfully extracted, plainData is invalid
                 _definedData = Array.Empty<string>();
