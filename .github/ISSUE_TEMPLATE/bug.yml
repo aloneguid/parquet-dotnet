@@ -21,23 +21,20 @@ body:
       placeholder: ex. .NET 10
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: os
     attributes:
-      label: OS
-      description: Which OS is this affecting?
-      placeholder: ex. Ubuntu Linux
-    validations:
-      required: true
-  - type: dropdown
-    id: os-arch
-    attributes:
-      label: OS Architecture
-      description: OS Architecture
+      label: OS and Architecture
+      description: Which OS and architecture is this affecting?
       options:
-        - 32 bit
-        - 64 bit
-        - ARM 64
+        - Windows (64-bit)
+        - Windows (32-bit)
+        - Windows (ARM 64)
+        - macOS (Intel 64-bit)
+        - macOS (Apple Silicon)
+        - Linux (64-bit)
+        - Linux (32-bit)
+        - Linux (ARM 64)
         - Other (please specify)
     validations:
       required: true
