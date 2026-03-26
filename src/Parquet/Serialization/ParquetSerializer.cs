@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
-using Parquet.Extensions;
 using Parquet.Schema;
 using Parquet.Serialization.Dremel;
 using Type = System.Type;
@@ -27,10 +26,8 @@ public static class ParquetSerializer {
     private static readonly ConcurrentDictionary<Type, object> _typeToAssembler = new();
     private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToAssembler = new();
     private static readonly Dictionary<Type, HashSet<Type>> AllowedDeserializerConversions = new() {
-#if NET6_0_OR_GREATER
         { typeof(DateOnly), new HashSet<Type>{ typeof(DateTime) } },
         { typeof(TimeOnly), new HashSet<Type>{ typeof(TimeSpan) } },
-#endif
     };
 
     private static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, Striper<T> striper,

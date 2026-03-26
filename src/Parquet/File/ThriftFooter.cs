@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Encodings;
-using Parquet.Schema;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
+using Parquet.Schema;
 
 namespace Parquet.File {
     class ThriftFooter {
@@ -247,6 +248,14 @@ namespace Parquet.File {
 #region [ Helpers ]
 
         class ThriftSchemaTree {
+
+            sealed class ReferenceEqualityComparer<T> : IEqualityComparer<T> where T : class {
+                public static IEqualityComparer<T> Default { get; } = new ReferenceEqualityComparer<T>();
+
+                public bool Equals(T? x, T? y) => ReferenceEquals(x, y);
+                public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
+            }
+
             readonly Dictionary<SchemaElement, Node?> _memoizedFindResults = 
                 new Dictionary<SchemaElement, Node?>(new ReferenceEqualityComparer<SchemaElement>());
 

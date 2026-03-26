@@ -928,7 +928,9 @@ static class ParquetPlainEncoder {
 
     public static void Encode(ReadOnlySpan<Guid> data, Stream destination) {
         foreach(Guid element in data) {
-            byte[] b = element.ToBigEndianByteArray();
+            // Since .NET 8 there's a built-in support for big-endian encoding
+            // see https://learn.microsoft.com/en-us/dotnet/api/system.guid.tobytearray?view=net-8.0
+            byte[] b = element.ToByteArray(true);
             destination.Write(b, 0, b.Length);
         }
     }
@@ -1325,7 +1327,7 @@ static class ParquetPlainEncoder {
 
         int i = 0;
         for(int offset = 0; offset + 16 <= source.Length && i < data.Length; offset += 16, i++) {
-            data[i] = ((ReadOnlySpan<byte>)source.Slice(offset, 16)).ToGuidFromBigEndian();
+            data[i] = new Guid(((ReadOnlySpan<byte>)source.Slice(offset, 16)), true);
         }
         return i;
     }

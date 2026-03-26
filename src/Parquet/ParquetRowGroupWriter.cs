@@ -4,12 +4,14 @@ using System.Data.Common;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
+using SType = System.Type;
 using FieldPath = Parquet.Schema.FieldPath;
 
 namespace Parquet; 
@@ -111,8 +113,9 @@ public class ParquetRowGroupWriter : IDisposable
 
     }
 
+
     /// <summary>
-    /// Experimental, without the need for DataColumn.
+    /// XP
     /// </summary>
     public async Task WriteAsync<T>(DataField field,
         ReadOnlyMemory<T> values,

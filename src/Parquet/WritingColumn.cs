@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -12,7 +13,9 @@ class WritingColumn<T> : IDisposable {
     private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
 
     private readonly ReadOnlyMemory<T> _values;
-    private object? _packedValues = null;
+    private object? _nonNullValues = null;
+    private int _nonNullValueCount;
+    private bool _ownsNonNullValues = false;
     private int[]? _definitionLevels = null;
     private readonly ReadOnlyMemory<int>? _repetitionLevels;
 
@@ -67,11 +70,22 @@ class WritingColumn<T> : IDisposable {
 
     public DataField Field { get; }
 
+    /// <summary>
+    /// Returns <see cref="ReadOnlyMemory{T}"/> where T is the underlying non-nullable type.
+    /// </summary>
     public object PackedValuesReadOnlyMemory {
         get {
-            if(_packedValues == null)
+            if(_nonNullValues == null)
                 throw new InvalidOperationException("Packed values are not ready yet");
-            return _packedValues;
+
+            if(_ownsNonNullValues) {
+                // _nonNullValues is Array type with elements of type T (non-null).
+                // we need to case it to ROM<T>
+                Type elementType = Field.ClrType;
+                return elementType.CreateReadOnlyMemory((Array)_nonNullValues, 0, _nonNullValueCount);
+            }
+
+            return _nonNullValues;
         }
     }
 
@@ -81,7 +95,8 @@ class WritingColumn<T> : IDisposable {
                 throw new InvalidOperationException("This column doesn't have definition levels");
             if(_definitionLevels == null)
                 throw new InvalidOperationException("Definition levels are not ready yet");
-            return _definitionLevels;
+
+            return _definitionLevels.AsSpan(0, _values.Length);
         }
     }
 
@@ -90,17 +105,66 @@ class WritingColumn<T> : IDisposable {
 
     private void ForkToDataAndDefinitionLevels() {
         if(Field.MaxDefinitionLevel == 0) {
-            _packedValues = _values;
+            _nonNullValues = _values;
             _definitionLevels = null;
             return;
         }
 
-        // if we are here, the values are nullable, so we have to pack them
+        // If we are here, the values are nullable, so we have to pack them.
+        // Even if no values have nulls in them, we still need to move nullable values to nun-nullable types. That's not just for pedantic reasons, but it greatly helps encoding and compression.
+        _definitionLevels = IntPool.Rent(_values.Length);
+        int nullCount = FillDefinionsAndCountNulls(_values.Span);
+
+        _nonNullValueCount = _values.Length - nullCount;
+        _nonNullValues = Field.ClrType.RentArrayFromPool(_nonNullValueCount);
+        _ownsNonNullValues = true;
+
+        //
 
         throw new NotImplementedException();
     }
 
-    public void Dispose() {
+    /// <summary>
+    /// Values should be packed into non-nullable _nonNullValues and definition levels.
+    /// </summary>
+    private void Pack() {
+        for(int iV = 0, iNNV = 0; iV < _values.Length; iV++) {
+            bool isNull = _definitionLevels![iV] != Field.MaxDefinitionLevel;
+            if(!isNull) {
+                ((Array)_nonNullValues).set
+            }
+        }
+    }
 
+    private int FillDefinionsAndCountNulls(ReadOnlySpan<T> span) {
+        if(_definitionLevels == null)
+            throw new InvalidOperationException("Definition levels buffer is not allocated");
+
+        int defIdx = 0;
+        int count = 0;
+        EqualityComparer<T> comp = EqualityComparer<T>.Default;
+        int vMissing = Field.MaxDefinitionLevel - 1;
+        int vPresent = Field.MaxDefinitionLevel;
+        foreach(T t in span) {
+            if(comp.Equals(t, default(T))) {
+                _definitionLevels[defIdx++] = vMissing;
+                count++;
+            } else {
+                _definitionLevels[defIdx++] = vPresent;
+            }
+        }
+        return count;
+    }
+
+    public void Dispose() {
+        if(_definitionLevels != null) {
+            IntPool.Return(_definitionLevels);
+            _definitionLevels = null;
+        }
+
+        if(_nonNullValues != null && _ownsNonNullValues) {
+            ((Array)_nonNullValues).ReturnArrayToPool();
+            _nonNullValues = null;
+        }
     }
 }
