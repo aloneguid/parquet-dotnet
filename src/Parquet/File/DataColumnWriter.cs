@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -61,6 +62,32 @@ class DataColumnWriter {
 
         //generate stats for column chunk
         chunk.MetaData.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
+
+        //the following counters must include both data size and header size
+        chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
+        chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
+
+        return chunk;
+    }
+
+    public async Task<ColumnChunk> WriteAsync<T>(
+        FieldPath fullPath,
+        WritingColumn<T> wc,
+        CancellationToken cancellationToken) {
+        // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
+        ColumnChunk chunk = _footer.CreateColumnChunk(
+            _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, wc.NumValues,
+            _keyValueMetadata);
+        if(chunk.MetaData == null)
+            throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
+
+        ColumnMetrics metrics = await WriteAsync(
+            chunk, wc, _schemaElement,
+            cancellationToken);
+        chunk.MetaData.Encodings = metrics.GetUsedEncodings();
+
+        //generate stats for column chunk
+        chunk.MetaData.Statistics = wc.Statistics.ToThriftStatistics(_schemaElement);
 
         //the following counters must include both data size and header size
         chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
@@ -186,6 +213,35 @@ class DataColumnWriter {
             }
 
             dph.Statistics = column.Statistics.ToThriftStatistics(tse);
+            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+        }
+
+        return r;
+    }
+
+    private async Task<ColumnMetrics> WriteAsync<T>(ColumnChunk chunk,
+        WritingColumn<T> wc,
+        SchemaElement tse,
+        CancellationToken cancellationToken = default) {
+
+        wc.Field.EnsureAttachedToSchema(nameof(wc.Field));
+
+        var r = new ColumnMetrics();
+
+        // data page
+        using(MemoryStream ms = _rmsMgr.GetStream()) {
+            bool deltaEncode = false;
+
+            // data page Num_values also does include NULLs
+            PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, out DataPageHeader dph);
+            r.Pages.Add(ph);
+
+            ParquetPlainEncoder.EncodeMemory(wc.PackedValuesReadOnlyMemory,
+                ms,
+                tse,
+                wc.HasDictionary ? null : wc.Statistics);
+
+            dph.Statistics = wc.Statistics.ToThriftStatistics(tse);
             await CompressAndWriteAsync(ph, ms, r, cancellationToken);
         }
 

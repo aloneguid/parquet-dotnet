@@ -23,6 +23,102 @@ static class ParquetPlainEncoder {
     private static readonly byte[] ZeroInt32 = BitConverter.GetBytes(0);
     private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
+    /// <summary>
+    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migrattion from legacy .NET.
+    /// </summary>
+    /// <param name="sourceSpan">Reference to <see cref="ReadOnlyMemory{T}"/> passed as an object, due to unclarity of what the T will be.</param>
+    /// <param name="destination">Where do we write this to?</param>
+    /// <param name="tse"></param>
+    /// <param name="stats"></param>
+    public static void EncodeMemory(object sourceSpan, Stream destination,
+        SchemaElement tse,
+        DataColumnStatistics? stats = null) {
+        if(sourceSpan is ReadOnlyMemory<bool> boolMemory) {
+            Encode(boolMemory.Span, destination);
+        } else if(sourceSpan is ReadOnlyMemory<byte> byteMemory) {
+            Encode(byteMemory.Span, destination, tse);
+            if(stats != null)
+                FillStats(byteMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<sbyte> sbyteMemory) {
+            Encode(sbyteMemory.Span, destination);
+            if(stats != null)
+                FillStats(sbyteMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<short> shortMemory) {
+            Encode(shortMemory.Span, destination);
+            if(stats != null)
+                FillStats(shortMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<ushort> ushortMemory) {
+            Encode(ushortMemory.Span, destination);
+            if(stats != null)
+                FillStats(ushortMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<int> intMemory) {
+            Encode(intMemory.Span, destination);
+            if(stats != null)
+                FillStats(intMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<uint> uintMemory) {
+            Encode(uintMemory.Span, destination);
+            if(stats != null)
+                FillStats(uintMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<long> longMemory) {
+            Encode(longMemory.Span, destination);
+            if(stats != null)
+                FillStats(longMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<ulong> ulongMemory) {
+            Encode(ulongMemory.Span, destination);
+            if(stats != null)
+                FillStats(ulongMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<BigInteger> bigIntMemory) {
+            Encode(bigIntMemory.Span, destination);
+            if(stats != null)
+                FillStats(bigIntMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<decimal> decimalMemory) {
+            Encode(decimalMemory.Span, destination, tse);
+            if(stats != null)
+                FillStats(decimalMemory.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<BigDecimal> bigDecimalMem) {
+            Encode(bigDecimalMem.Span, destination, tse);
+            if(stats != null)
+                FillStats(bigDecimalMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<double> doubleMem) {
+            Encode(doubleMem.Span, destination);
+            if(stats != null)
+                FillStats(doubleMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<float> floatMem) {
+            Encode(floatMem.Span, destination);
+            if(stats != null)
+                FillStats(floatMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<byte[]> byteArrMem) {
+            Encode(byteArrMem.Span, destination);
+        } else if(sourceSpan is ReadOnlyMemory<DateTime> dateTimeMem) {
+            Encode(dateTimeMem.Span, destination, tse);
+            if(stats != null)
+                FillStats(dateTimeMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<DateOnly> dateOnlyMem) {
+            Encode(dateOnlyMem.Span, destination, tse);
+            if(stats != null)
+                FillStats(dateOnlyMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<TimeOnly> timeOnlyMem) {
+            Encode(timeOnlyMem.Span, destination, tse);
+            if(stats != null)
+                FillStats(timeOnlyMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<TimeSpan> timeSpanMem) {
+            Encode(timeSpanMem.Span, destination, tse);
+            if(stats != null)
+                FillStats(timeSpanMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<Interval> intervalMem) {
+            Encode(intervalMem.Span, destination);
+            // no stats for intervals
+        } else if(sourceSpan is ReadOnlyMemory<string> stringMem) {
+            Encode(stringMem.Span, destination);
+            if(stats != null)
+                FillStats(stringMem.Span, stats);
+        } else if(sourceSpan is ReadOnlyMemory<Guid> guidMem) {
+            Encode(guidMem.Span, destination);
+        } else {
+            throw new NotSupportedException($"no PLAIN encoder exists for {sourceSpan.GetType()}");
+        }
+    }
+
     public static void Encode(
         Array data, int offset, int count,
         SchemaElement tse,
@@ -107,7 +203,6 @@ static class ParquetPlainEncoder {
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-#if NET6_0_OR_GREATER
         } else if(t == typeof(DateOnly[])) {
             Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
             Encode(span, destination, tse);
@@ -118,7 +213,6 @@ static class ParquetPlainEncoder {
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-#endif
         } else if(t == typeof(TimeSpan[])) {
             Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
             Encode(span, destination, tse);
