@@ -30,92 +30,120 @@ static class ParquetPlainEncoder {
     /// <param name="destination">Where do we write this to?</param>
     /// <param name="tse"></param>
     /// <param name="stats"></param>
-    public static void EncodeMemory(object sourceSpan, Stream destination,
+    public static void Encode<T>(ReadOnlySpan<T> sourceSpan, Stream destination,
         SchemaElement tse,
-        DataColumnStatistics? stats = null) {
-        if(sourceSpan is ReadOnlyMemory<bool> boolMemory) {
-            Encode(boolMemory.Span, destination);
-        } else if(sourceSpan is ReadOnlyMemory<byte> byteMemory) {
-            Encode(byteMemory.Span, destination, tse);
+        DataColumnStatistics? stats = null) where T : struct {
+
+        static ReadOnlySpan<TTo> AsSpan<TTo>(ReadOnlySpan<T> span) where TTo : struct {
+            ref T sourceRef = ref MemoryMarshal.GetReference(span);
+            ref TTo targetRef = ref Unsafe.As<T, TTo>(ref sourceRef);
+            return MemoryMarshal.CreateReadOnlySpan(ref targetRef, span.Length);
+        }
+
+        System.Type t = typeof(T);
+
+        if(t == typeof(bool)) {
+            ReadOnlySpan<bool> span = AsSpan<bool>(sourceSpan);
+            Encode(span, destination);
+            // no stats for bools
+        } else if(t == typeof(byte)) {
+            ReadOnlySpan<byte> span = AsSpan<byte>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(byteMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<sbyte> sbyteMemory) {
-            Encode(sbyteMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(sbyte)) {
+            ReadOnlySpan<sbyte> span = AsSpan<sbyte>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(sbyteMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<short> shortMemory) {
-            Encode(shortMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(short)) {
+            ReadOnlySpan<short> span = AsSpan<short>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(shortMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<ushort> ushortMemory) {
-            Encode(ushortMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(ushort)) {
+            ReadOnlySpan<ushort> span = AsSpan<ushort>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(ushortMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<int> intMemory) {
-            Encode(intMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(int)) {
+            ReadOnlySpan<int> span = AsSpan<int>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(intMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<uint> uintMemory) {
-            Encode(uintMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(uint)) {
+            ReadOnlySpan<uint> span = AsSpan<uint>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(uintMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<long> longMemory) {
-            Encode(longMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(long)) {
+            ReadOnlySpan<long> span = AsSpan<long>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(longMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<ulong> ulongMemory) {
-            Encode(ulongMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(ulong)) {
+            ReadOnlySpan<ulong> span = AsSpan<ulong>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(ulongMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<BigInteger> bigIntMemory) {
-            Encode(bigIntMemory.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(BigInteger)) {
+            ReadOnlySpan<BigInteger> span = AsSpan<BigInteger>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(bigIntMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<decimal> decimalMemory) {
-            Encode(decimalMemory.Span, destination, tse);
+                FillStats(span, stats);
+        } else if(t == typeof(decimal)) {
+            ReadOnlySpan<decimal> span = AsSpan<decimal>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(decimalMemory.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<BigDecimal> bigDecimalMem) {
-            Encode(bigDecimalMem.Span, destination, tse);
+                FillStats(span, stats);
+        } else if(t == typeof(BigDecimal)) {
+            ReadOnlySpan<BigDecimal> span = AsSpan<BigDecimal>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(bigDecimalMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<double> doubleMem) {
-            Encode(doubleMem.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(double)) {
+            ReadOnlySpan<double> span = AsSpan<double>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(doubleMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<float> floatMem) {
-            Encode(floatMem.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(float)) {
+            ReadOnlySpan<float> span = AsSpan<float>(sourceSpan);
+            Encode(span, destination);
             if(stats != null)
-                FillStats(floatMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<byte[]> byteArrMem) {
-            Encode(byteArrMem.Span, destination);
-        } else if(sourceSpan is ReadOnlyMemory<DateTime> dateTimeMem) {
-            Encode(dateTimeMem.Span, destination, tse);
+                FillStats(span, stats);
+        } else if(t == typeof(DateTime)) {
+            ReadOnlySpan<DateTime> span = AsSpan<DateTime>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(dateTimeMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<DateOnly> dateOnlyMem) {
-            Encode(dateOnlyMem.Span, destination, tse);
+                FillStats(span, stats);
+        } else if(t == typeof(DateOnly)) {
+            ReadOnlySpan<DateOnly> span = AsSpan<DateOnly>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(dateOnlyMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<TimeOnly> timeOnlyMem) {
-            Encode(timeOnlyMem.Span, destination, tse);
+                FillStats(span, stats);
+        } else if(t == typeof(TimeOnly)) {
+            ReadOnlySpan<TimeOnly> span = AsSpan<TimeOnly>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(timeOnlyMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<TimeSpan> timeSpanMem) {
-            Encode(timeSpanMem.Span, destination, tse);
+                FillStats(span, stats);
+        } else if(t == typeof(TimeSpan)) {
+            ReadOnlySpan<TimeSpan> span = AsSpan<TimeSpan>(sourceSpan);
+            Encode(span, destination, tse);
             if(stats != null)
-                FillStats(timeSpanMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<Interval> intervalMem) {
-            Encode(intervalMem.Span, destination);
-            // no stats for intervals
-        } else if(sourceSpan is ReadOnlyMemory<string> stringMem) {
-            Encode(stringMem.Span, destination);
-            if(stats != null)
-                FillStats(stringMem.Span, stats);
-        } else if(sourceSpan is ReadOnlyMemory<Guid> guidMem) {
-            Encode(guidMem.Span, destination);
+                FillStats(span, stats);
+        } else if(t == typeof(Interval)) {
+            ReadOnlySpan<Interval> span = AsSpan<Interval>(sourceSpan);
+            Encode(span, destination);
+            // no stats, maybe todo
+        } else if(t == typeof(ReadOnlyMemory<char>)) {
+            ReadOnlySpan<ReadOnlyMemory<char>> span = AsSpan<ReadOnlyMemory<char>>(sourceSpan);
+            Encode(span, destination);
+            // todo: minmax
+        } else if(t == typeof(Guid)) {
+            ReadOnlySpan<Guid> span = AsSpan<Guid>(sourceSpan);
+            Encode(span, destination);
         } else {
-            throw new NotSupportedException($"no PLAIN encoder exists for {sourceSpan.GetType()}");
+            throw new NotSupportedException($"no PLAIN encoder exists for {typeof(T)}");
         }
     }
 
@@ -1283,6 +1311,50 @@ static class ParquetPlainEncoder {
         }
     }
 
+    public static void Encode(ReadOnlySpan<ReadOnlyMemory<char>> data, Stream destination) {
+
+        // rent a buffer large enough not to reallocate often and not call stream write often
+        byte[] rb = BytePool.Rent(1024 * 10);
+        int rbOffset = 0;
+        try {
+
+            foreach(ReadOnlyMemory<char> s in data) {
+                int len = s.IsEmpty ? 0 : E.GetByteCount(s.Span);
+                int minLen = len + sizeof(int);
+                int rem = rb.Length - rbOffset;
+
+                // check we have enough space left
+                if(rem < minLen) {
+                    destination.Write(rb, 0, rbOffset); // dump current buffer
+                    rbOffset = 0;
+
+                    // do we need to reallocate for more space?
+                    if(minLen > rb.Length) {
+                        BytePool.Return(rb);
+                        rb = BytePool.Rent(minLen);
+                    }
+                }
+
+                // write our data
+                if(len == 0)
+                    Array.Copy(ZeroInt32, 0, rb, rbOffset, ZeroInt32.Length);
+                else
+                    Array.Copy(BitConverter.GetBytes(len), 0, rb, rbOffset, sizeof(int));
+                rbOffset += sizeof(int);
+                if(len > 0) {
+                    E.GetBytes(s.Span, rb.AsSpan(rbOffset));
+                    rbOffset += len;
+                }
+            }
+
+            if(rbOffset > 0)
+                destination.Write(rb, 0, rbOffset);
+
+        } finally {
+            BytePool.Return(rb);
+        }
+    }
+
     public static int Decode(Span<byte> source, Span<string> data, SchemaElement tse) {
         //int remLength = (int)(source.Length - source.Position);
 
@@ -1464,7 +1536,6 @@ static class ParquetPlainEncoder {
         stats.MaxValue = max;
     }
 
-#if NET6_0_OR_GREATER
     public static void FillStats(ReadOnlySpan<DateOnly> data, DataColumnStatistics stats) {
         data.MinMax(out DateOnly min, out DateOnly max);
         stats.MinValue = min;
@@ -1476,7 +1547,6 @@ static class ParquetPlainEncoder {
         stats.MinValue = min;
         stats.MaxValue = max;
     }
-#endif
 
     public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {
         data.MinMax(out TimeSpan min, out TimeSpan max);

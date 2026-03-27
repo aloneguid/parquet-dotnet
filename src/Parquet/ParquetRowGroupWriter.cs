@@ -113,6 +113,38 @@ public class ParquetRowGroupWriter : IDisposable
 
     }
 
+    /// <summary>
+    /// XP
+    /// </summary>
+    public async Task WriteAsync(DataField field,
+        IEnumerable<string> values,
+        ReadOnlyMemory<int>? repetitionLevels = null,
+        Dictionary<string, string>? customMetadata = null,
+        CancellationToken cancellationToken = default) {
+
+
+        if(field.IsNullable) {
+            ReadOnlyMemory<char>?[] nullableValues = values.Select(v => v == null ? (ReadOnlyMemory<char>?)null : v.AsMemory()).ToArray();
+            await WriteAsync<ReadOnlyMemory<char>>(field, nullableValues.AsMemory(), repetitionLevels, customMetadata, cancellationToken);
+        } else {
+            // todo: validate that no strings are null
+            ReadOnlyMemory<char>[] nonNullValues = values.Select(v => v.AsMemory()).ToArray();
+            await WriteAsync<ReadOnlyMemory<char>>(field, nonNullValues.AsMemory(), repetitionLevels, customMetadata, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// XP
+    /// </summary>
+    public async Task WriteAsync<T>(DataField field,
+        ReadOnlyMemory<T?> values,
+        ReadOnlyMemory<int>? repetitionLevels = null,
+        Dictionary<string, string>? customMetadata = null,
+        CancellationToken cancellationToken = default) where T : struct {
+        
+        using WritingColumn<T> wc = WritingColumn<T>.NewWritingColumn(field, values, repetitionLevels);
+        await WriteAsyncInternal(field, wc, customMetadata, cancellationToken);
+    }
 
     /// <summary>
     /// XP
@@ -121,7 +153,20 @@ public class ParquetRowGroupWriter : IDisposable
         ReadOnlyMemory<T> values,
         ReadOnlyMemory<int>? repetitionLevels = null,
         Dictionary<string, string>? customMetadata = null,
-        CancellationToken cancellationToken = default) {
+        CancellationToken cancellationToken = default) where T : struct {
+
+        using WritingColumn<T> wc = WritingColumn<T>.NewWritingColumn(field, values, repetitionLevels);
+        await WriteAsyncInternal(field, wc, customMetadata, cancellationToken);
+    }
+
+
+    /// <summary>
+    /// XP
+    /// </summary>
+    private async Task WriteAsyncInternal<T>(DataField field,
+        WritingColumn<T> wc,
+        Dictionary<string, string>? customMetadata,
+        CancellationToken cancellationToken) where T : struct {
 
         if(field == null)
             throw new ArgumentNullException(nameof(field));
@@ -145,8 +190,6 @@ public class ParquetRowGroupWriter : IDisposable
            _formatOptions,
            _compressionLevel,
            customMetadata);
-
-        using var wc = new WritingColumn<T>(field, values, repetitionLevels);
 
         if(RowCount == null) {
             RowCount = wc.CalculateRowCount();

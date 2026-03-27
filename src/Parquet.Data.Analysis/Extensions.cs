@@ -84,49 +84,49 @@ public static class AnalysisExtensions {
     private static async Task WriteAsync(DataField field, DataFrameColumn col, ParquetRowGroupWriter rgw) {
         if(col.DataType == typeof(bool)) {
             Memory<bool?> mo = ((PrimitiveDataFrameColumn<bool>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<bool?>(field, mo);
+            await rgw.WriteAsync<bool>(field, mo);
         } else if(col.DataType == typeof(int)) {
             Memory<int?> mo = ((PrimitiveDataFrameColumn<int>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<int?>(field, mo);
+            await rgw.WriteAsync<int>(field, mo);
         } else if(col.DataType == typeof(uint)) {
             Memory<uint?> mo = ((PrimitiveDataFrameColumn<uint>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<uint?>(field, mo);
+            await rgw.WriteAsync<uint>(field, mo);
         } else if(col.DataType == typeof(long)) {
             Memory<long?> mo = ((PrimitiveDataFrameColumn<long>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<long?>(field, mo);
+            await rgw.WriteAsync<long>(field, mo);
         } else if(col.DataType == typeof(ulong)) {
             Memory<ulong?> mo = ((PrimitiveDataFrameColumn<ulong>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<ulong?>(field, mo);
+            await rgw.WriteAsync<ulong>(field, mo);
         } else if(col.DataType == typeof(byte)) {
             Memory<byte?> mo = ((PrimitiveDataFrameColumn<byte>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<byte?>(field, mo);
+            await rgw.WriteAsync<byte>(field, mo);
         } else if(col.DataType == typeof(sbyte)) {
             Memory<sbyte?> mo = ((PrimitiveDataFrameColumn<sbyte>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<sbyte?>(field, mo);
+            await rgw.WriteAsync<sbyte>(field, mo);
         } else if(col.DataType == typeof(short)) {
             Memory<short?> mo = ((PrimitiveDataFrameColumn<short>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<short?>(field, mo);
+            await rgw.WriteAsync<short>(field, mo);
         } else if(col.DataType == typeof(ushort)) {
             Memory<ushort?> mo = ((PrimitiveDataFrameColumn<ushort>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<ushort?>(field, mo);
+            await rgw.WriteAsync<ushort>(field, mo);
         } else if(col.DataType == typeof(DateTime)) {
             Memory<DateTime?> mo = ((PrimitiveDataFrameColumn<DateTime>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<DateTime?>(field, mo);
+            await rgw.WriteAsync<DateTime>(field, mo);
         } else if(col.DataType == typeof(TimeSpan)) {
             Memory<TimeSpan?> mo = ((PrimitiveDataFrameColumn<TimeSpan>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<TimeSpan?>(field, mo);
+            await rgw.WriteAsync<TimeSpan>(field, mo);
         } else if(col.DataType == typeof(decimal)) {
             Memory<decimal?> mo = ((PrimitiveDataFrameColumn<decimal>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<decimal?>(field, mo);
+            await rgw.WriteAsync<decimal>(field, mo);
         } else if(col.DataType == typeof(float)) {
             Memory<float?> mo = ((PrimitiveDataFrameColumn<float>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<float?>(field, mo);
+            await rgw.WriteAsync<float>(field, mo);
         } else if(col.DataType == typeof(double)) {
             Memory<double?> mo = ((PrimitiveDataFrameColumn<double>)col).ToArray().AsMemory();
-            await rgw.WriteAsync<double?>(field, mo);
+            await rgw.WriteAsync<double>(field, mo);
         } else if(col.DataType == typeof(string)) {
-            Memory<string?> mo = ((StringDataFrameColumn)col).ToArray().AsMemory();
-            await rgw.WriteAsync<string?>(field, mo);
+            string[] mo = ((StringDataFrameColumn)col).ToArray();
+            await rgw.WriteAsync(field, mo);
         } else {
             throw new NotSupportedException($"unsupported column type {col.DataType}");
         }

@@ -73,7 +73,7 @@ class DataColumnWriter {
     public async Task<ColumnChunk> WriteAsync<T>(
         FieldPath fullPath,
         WritingColumn<T> wc,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken) where T : struct {
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
         ColumnChunk chunk = _footer.CreateColumnChunk(
             _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, wc.NumValues,
@@ -222,7 +222,7 @@ class DataColumnWriter {
     private async Task<ColumnMetrics> WriteAsync<T>(ColumnChunk chunk,
         WritingColumn<T> wc,
         SchemaElement tse,
-        CancellationToken cancellationToken = default) {
+        CancellationToken cancellationToken) where T : struct {
 
         wc.Field.EnsureAttachedToSchema(nameof(wc.Field));
 
@@ -236,7 +236,14 @@ class DataColumnWriter {
             PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, out DataPageHeader dph);
             r.Pages.Add(ph);
 
-            ParquetPlainEncoder.EncodeMemory(wc.PackedValuesReadOnlyMemory,
+            if(wc.HasRepetitionLevels) {
+                WriteLevels(ms, wc.RepetitionLevels!, wc.Field.MaxRepetitionLevel);
+            }
+            if(wc.HasDefinitionLevels) {
+                WriteLevels(ms, wc.DefinitionLevels!, wc.Field.MaxDefinitionLevel);
+            }
+
+            ParquetPlainEncoder.Encode(wc.Values,
                 ms,
                 tse,
                 wc.HasDictionary ? null : wc.Statistics);
@@ -251,5 +258,10 @@ class DataColumnWriter {
     private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
         int bitWidth = maxValue.GetBitWidth();
         RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
+    }
+
+    private static void WriteLevels(Stream s, ReadOnlySpan<int> levels, int maxValue) {
+        int bitWidth = maxValue.GetBitWidth();
+        RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels);
     }
 }

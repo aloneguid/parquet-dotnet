@@ -4,7 +4,7 @@ using System;
 namespace Parquet.Encodings;
 
 static partial class RleBitpackedHybridEncoder {
-    private static void Encode0(byte[] s, ref int consumed, Span<int> data) {
+    private static void Encode0(byte[] s, ref int consumed, ReadOnlySpan<int> data) {
 
         //chunk identical values and write
         int lastValue = 0;
@@ -28,7 +28,7 @@ static partial class RleBitpackedHybridEncoder {
             WriteRle0(s, ref consumed, chunkCount, lastValue);
     }
 
-    private static void Encode1(byte[] s, ref int consumed, Span<int> data) {
+    private static void Encode1(byte[] s, ref int consumed, ReadOnlySpan<int> data) {
 
         //chunk identical values and write
         int lastValue = 0;
@@ -52,7 +52,7 @@ static partial class RleBitpackedHybridEncoder {
             WriteRle1(s, ref consumed, chunkCount, lastValue);
     }
 
-    private static void Encode2(byte[] s, ref int consumed, Span<int> data) {
+    private static void Encode2(byte[] s, ref int consumed, ReadOnlySpan<int> data) {
 
         //chunk identical values and write
         int lastValue = 0;
@@ -76,7 +76,7 @@ static partial class RleBitpackedHybridEncoder {
             WriteRle2(s, ref consumed, chunkCount, lastValue);
     }
 
-    private static void Encode3(byte[] s, ref int consumed, Span<int> data) {
+    private static void Encode3(byte[] s, ref int consumed, ReadOnlySpan<int> data) {
 
         //chunk identical values and write
         int lastValue = 0;
@@ -100,7 +100,7 @@ static partial class RleBitpackedHybridEncoder {
             WriteRle3(s, ref consumed, chunkCount, lastValue);
     }
 
-    private static void Encode4(byte[] s, ref int consumed, Span<int> data) {
+    private static void Encode4(byte[] s, ref int consumed, ReadOnlySpan<int> data) {
 
         //chunk identical values and write
         int lastValue = 0;

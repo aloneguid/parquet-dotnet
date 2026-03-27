@@ -9,49 +9,97 @@ namespace Parquet;
 /// <summary>
 /// Column that's being written. This class holds required data parts, including allocation of any extra buffers (they will be disposed of when this class is disposed).
 /// </summary>
-class WritingColumn<T> : IDisposable {
+class WritingColumn<T> : IDisposable where T : struct {
     private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
+    private static readonly ArrayPool<T> TPool = ArrayPool<T>.Shared;
 
-    private readonly ReadOnlyMemory<T> _values;
-    private object? _nonNullValues = null;
-    private int _nonNullValueCount;
-    private bool _ownsNonNullValues = false;
-    private int[]? _definitionLevels = null;
-    private readonly ReadOnlyMemory<int>? _repetitionLevels;
+    private readonly T[]? _valuesBase;              // if values are owned, this is the array from pool, otherwise null. Only here to return it to pool if we own it.
+    private readonly ReadOnlyMemory<T> _values;     // may be owned
+    private readonly int[]? _definitionLevels;      // always owned
+    private readonly ReadOnlyMemory<int>? _repetitionLevels;    // never owned
 
+    public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T> values, ReadOnlyMemory<int>? repetitionLevels) {
+        Validate(field, repetitionLevels);
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="field"></param>
-    /// <param name="values">When writing nullable field, the values should be of the nullable type. Definition levels will be calculated internally.</param>
-    /// <param name="repetitionLevels"></param>
-    /// <exception cref="ArgumentNullException"></exception>
-    public WritingColumn(DataField field,
-        ReadOnlyMemory<T> values,
-        ReadOnlyMemory<int>? repetitionLevels) {
+        return new WritingColumn<T>(field, values.Length, values, null, null, repetitionLevels);
+    }
 
+    public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T?> nullableValues, ReadOnlyMemory<int>? repetitionLevels) {
+
+        Validate(field, repetitionLevels);
+
+        // Calculate number of nulls beforehand in a separate cycle in order to consume some memory (we know how much to allocate after that).
+        // We can also build definition levels in the same cycle.
+        int[] definitionLevels = IntPool.Rent(nullableValues.Length);
+        Span<int> span = definitionLevels.AsSpan(0, nullableValues.Length);
+        int nullCount = FillDefinionsAndCountNulls(field, nullableValues.Span, ref span);
+
+        // fill non-nulls
+        int valueCount = nullableValues.Length - nullCount;
+        T[] values = TPool.Rent(valueCount);
+        FillNonNullValues(nullableValues.Span, values);
+
+        return new WritingColumn<T>(field, nullableValues.Length, values, values, definitionLevels, repetitionLevels);
+    }
+
+    private static int FillDefinionsAndCountNulls(DataField df, ReadOnlySpan<T?> span, ref Span<int> definitionLevels) {
+        int defIdx = 0;
+        int count = 0;
+        int vMissing = df.MaxDefinitionLevel - 1;
+        int vPresent = df.MaxDefinitionLevel;
+        foreach(T? t in span) {
+            if(t == null) {
+                definitionLevels[defIdx++] = vMissing;
+                count++;
+            } else {
+                definitionLevels[defIdx++] = vPresent;
+            }
+        }
+        return count;
+    }
+
+    private static void FillNonNullValues(ReadOnlySpan<T?> nullableValues, Span<T> values) {
+        int valIdx = 0;
+        foreach(T? t in nullableValues) {
+            if(t != null) {
+                values[valIdx++] = t.GetValueOrDefault();
+            }
+        }
+    }
+
+    private static void Validate(DataField field, ReadOnlyMemory<int>? repetitionLevels) {
         if(field is null)
             throw new ArgumentNullException(nameof(field));
         field.EnsureAttachedToSchema(nameof(field));
 
-        if(field.ClrNullableIfHasNullsType != typeof(T)) {
-            throw new ArgumentException($"expected values of type {field.ClrNullableIfHasNullsType} but passed {typeof(T)}", nameof(values));
-        }
+        //if(field.ClrType != typeof(T)) {
+        //    throw new ArgumentException($"expected values of type {field.ClrType} but passed {typeof(T)}");
+        //}
 
         if(field.MaxRepetitionLevel > 0) {
             if(repetitionLevels == null)
                 throw new ArgumentException($"repetition levels are required for this field (RL={field.MaxRepetitionLevel})", nameof(repetitionLevels));
         }
 
-        Field = field;
-        _values = values;
-        _repetitionLevels = repetitionLevels;
-
-        ForkToDataAndDefinitionLevels();
     }
 
-    public int NumValues => _values.Length;
+    private WritingColumn(DataField field,
+        int numValues,
+        ReadOnlyMemory<T> values, T[]? valuesBase,
+        int[]? definitionLevels,
+        ReadOnlyMemory<int>? repetitionLevels) {
+
+        NumValues = numValues;
+        Field = field;
+        _values = values;
+        _valuesBase = valuesBase;
+        _definitionLevels = definitionLevels;
+        _repetitionLevels = repetitionLevels;
+    }
+
+    public int NumValues { get; }
+
+    public ReadOnlySpan<T> Values => _values.Span;
 
     public bool HasDictionary => false;
 
@@ -70,26 +118,17 @@ class WritingColumn<T> : IDisposable {
 
     public DataField Field { get; }
 
-    /// <summary>
-    /// Returns <see cref="ReadOnlyMemory{T}"/> where T is the underlying non-nullable type.
-    /// </summary>
-    public object PackedValuesReadOnlyMemory {
+    public ReadOnlySpan<int> RepetitionLevels {
         get {
-            if(_nonNullValues == null)
-                throw new InvalidOperationException("Packed values are not ready yet");
-
-            if(_ownsNonNullValues) {
-                // _nonNullValues is Array type with elements of type T (non-null).
-                // we need to case it to ROM<T>
-                Type elementType = Field.ClrType;
-                return elementType.CreateReadOnlyMemory((Array)_nonNullValues, 0, _nonNullValueCount);
-            }
-
-            return _nonNullValues;
+            if(!HasRepetitionLevels)
+                throw new InvalidOperationException("This column doesn't have repetition levels");
+            if(_repetitionLevels == null)
+                throw new InvalidOperationException("Repetition levels are not ready yet");
+            return _repetitionLevels.Value.Span;
         }
     }
 
-    public Span<int> DefinitionLevels {
+    public ReadOnlySpan<int> DefinitionLevels {
         get {
             if(!HasDefinitionLevels)
                 throw new InvalidOperationException("This column doesn't have definition levels");
@@ -103,68 +142,14 @@ class WritingColumn<T> : IDisposable {
     public DataColumnStatistics Statistics { get; internal set; } =
         new DataColumnStatistics(null, null, null, null);
 
-    private void ForkToDataAndDefinitionLevels() {
-        if(Field.MaxDefinitionLevel == 0) {
-            _nonNullValues = _values;
-            _definitionLevels = null;
-            return;
-        }
-
-        // If we are here, the values are nullable, so we have to pack them.
-        // Even if no values have nulls in them, we still need to move nullable values to nun-nullable types. That's not just for pedantic reasons, but it greatly helps encoding and compression.
-        _definitionLevels = IntPool.Rent(_values.Length);
-        int nullCount = FillDefinionsAndCountNulls(_values.Span);
-
-        _nonNullValueCount = _values.Length - nullCount;
-        _nonNullValues = Field.ClrType.RentArrayFromPool(_nonNullValueCount);
-        _ownsNonNullValues = true;
-
-        //
-
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Values should be packed into non-nullable _nonNullValues and definition levels.
-    /// </summary>
-    private void Pack() {
-        for(int iV = 0, iNNV = 0; iV < _values.Length; iV++) {
-            bool isNull = _definitionLevels![iV] != Field.MaxDefinitionLevel;
-            if(!isNull) {
-                ((Array)_nonNullValues).set
-            }
-        }
-    }
-
-    private int FillDefinionsAndCountNulls(ReadOnlySpan<T> span) {
-        if(_definitionLevels == null)
-            throw new InvalidOperationException("Definition levels buffer is not allocated");
-
-        int defIdx = 0;
-        int count = 0;
-        EqualityComparer<T> comp = EqualityComparer<T>.Default;
-        int vMissing = Field.MaxDefinitionLevel - 1;
-        int vPresent = Field.MaxDefinitionLevel;
-        foreach(T t in span) {
-            if(comp.Equals(t, default(T))) {
-                _definitionLevels[defIdx++] = vMissing;
-                count++;
-            } else {
-                _definitionLevels[defIdx++] = vPresent;
-            }
-        }
-        return count;
-    }
-
     public void Dispose() {
         if(_definitionLevels != null) {
             IntPool.Return(_definitionLevels);
-            _definitionLevels = null;
         }
 
-        if(_nonNullValues != null && _ownsNonNullValues) {
-            ((Array)_nonNullValues).ReturnArrayToPool();
-            _nonNullValues = null;
+        if(_valuesBase !=null) {
+            TPool.Return(_valuesBase);
         }
+
     }
 }

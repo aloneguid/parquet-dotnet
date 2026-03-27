@@ -8,7 +8,7 @@ namespace Parquet.Encodings;
 
 static partial class RleBitpackedHybridEncoder {
 <# for(int i = 0; i <= 4; i++) { #>
-    private static void Encode<#= i #>(byte[] s, ref int consumed, Span<int> data) {
+    private static void Encode<#= i #>(byte[] s, ref int consumed, ReadOnlySpan<int> data) {
 
         //chunk identical values and write
         int lastValue = 0;

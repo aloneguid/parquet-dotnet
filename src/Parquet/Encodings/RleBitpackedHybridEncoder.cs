@@ -16,7 +16,7 @@ static partial class RleBitpackedHybridEncoder {
     /// Writes to target stream without jumping around, therefore can be used in forward-only stream.
     /// Before writing actual data, writes out int32 value indicating total data binary length.
     /// </summary>
-    public static void EncodeWithLength(Stream s, int bitWidth, Span<int> data) {
+    public static void EncodeWithLength(Stream s, int bitWidth, ReadOnlySpan<int> data) {
 
         int length = Encode(data, bitWidth, out byte[]? rentedBuffer);
         if(rentedBuffer == null)
@@ -29,7 +29,7 @@ static partial class RleBitpackedHybridEncoder {
         }
     }
 
-    public static void Encode(Stream dest, Span<int> data, int bitWidth) {
+    public static void Encode(Stream dest, ReadOnlySpan<int> data, int bitWidth) {
         int length = Encode(data, bitWidth, out byte[]? rentedBuffer);
         if(rentedBuffer == null)
             return;
@@ -40,7 +40,7 @@ static partial class RleBitpackedHybridEncoder {
         }
     }
 
-    public static int Encode(Span<int> data, int bitWidth, out byte[]? rentedBuffer) {
+    public static int Encode(ReadOnlySpan<int> data, int bitWidth, out byte[]? rentedBuffer) {
 
         //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
 
