@@ -13,13 +13,16 @@ public class RepeatableFieldsTest : TestBase {
         // arrange 
         var schema = new ParquetSchema(new DataField<IEnumerable<int>>("items"));
 
+        int[] values = [1, 2, 3, 4, 5];
+        int[] repetitionLevels = [0, 1, 1, 0, 1];
+
         var column = new DataColumn(
            schema.GetDataFields()[0],
-           new int[] { 1, 2, 3, 4, 5 },
-           new int[] { 0, 1, 1, 0, 1 });
+           values,
+           repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn(column.Field, column.Data, column.RepetitionLevels);
+        DataColumn? rc = await WriteReadSingleColumn(column.Field, values, repetitionLevels);
 
         // assert
         Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc!.Data);

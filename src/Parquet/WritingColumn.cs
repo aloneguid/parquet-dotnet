@@ -72,9 +72,13 @@ class WritingColumn<T> : IDisposable where T : struct {
             throw new ArgumentNullException(nameof(field));
         field.EnsureAttachedToSchema(nameof(field));
 
-        //if(field.ClrType != typeof(T)) {
-        //    throw new ArgumentException($"expected values of type {field.ClrType} but passed {typeof(T)}");
-        //}
+        bool typeCompatible =
+            field.ClrType == typeof(T) ||
+            (field.ClrType == typeof(string) && typeof(T) == typeof(ReadOnlyMemory<char>));
+
+        if(!typeCompatible) {
+            throw new ArgumentException($"expected values of type {field.ClrType} but passed {typeof(T)}");
+        }
 
         if(field.MaxRepetitionLevel > 0) {
             if(repetitionLevels == null)

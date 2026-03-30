@@ -4,12 +4,15 @@
 
 - To enable further evolution of this library, like using Spans, direct memory access, SIMD support and so on, I am dropping support for .NET Standard and older .NET versions. The minimum supported version of .NET is .NET 8. Supporting anything lower would require a lot of effort which I can't give you.
 - `ParquetRowGroupWriter` only supports `IAsyncDisposable` now, so you should use `await using` instead of `using` when writing row groups. This is because some of the operations during writing are asynchronous and it would be a shame to not take advantage of that. Previously, `IDisposable` was supported as well, but that would occassionally cause write deadlocks.
+- `ParquetRowGroupWriter` now accepts `ReadOnlyMemory<T>` instead of untyped `DataColumn` (which is now removed). This solves old dangling issue with inflexible memory useage, as users of the low-level API had to unnecessarily allocate memory just to write a column, often resuling in making large redundant copies.
 
 ## Other changes
 
 - feat: parquet decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
 - fix: Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
 - chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
+- chore: DuckDB integration tests removed, they turned out to be pretty much useless.
+- chore: 
 
 # 5.5.0
 

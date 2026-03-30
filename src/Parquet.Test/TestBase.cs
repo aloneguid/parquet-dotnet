@@ -171,9 +171,7 @@ public class TestBase {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
                 Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);
                 dataArray.SetValue(value, 0);
-                var column = new DataColumn(field, dataArray);
-
-                await rg.WriteColumnAsync(column);
+                await rg.WriteAsyncV1(field, dataArray);
             }
 
             data = ms.ToArray();

@@ -22,16 +22,13 @@ namespace Parquet.Test.Types {
 
             using var ms = new MemoryStream();
             await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+                using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
-                await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[0], new[] { "Joe" }));
+                await rgw.WriteAsync(schema.DataFields[0], new[] { "Joe" });
 
-                await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[1].Children[0], new[] { "Amazonland" }));
+                await rgw.WriteAsync(schema.DataFields[1], new[] { "Amazonland" });
 
-                await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[1].Children[1], new[] { "AAABBB" }));
+                await rgw.WriteAsync(schema.DataFields[2], new[] { "AAABBB" });
             }
 
             ms.Position = 0;
