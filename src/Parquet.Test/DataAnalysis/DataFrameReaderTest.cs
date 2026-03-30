@@ -111,7 +111,7 @@ public class DataFrameReaderTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
             using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
-            await rgw.WriteAsync<ReadOnlyMemory<char>>(field, data.Select(x => x.AsReadOnlyMemory()).ToArray());
+            await rgw.WriteAsync<ReadOnlyMemory<char>>(field, data.Select(x => x.AsNullableReadOnlyMemory()).ToArray());
         }
 
         await AssertRoundtripDataFrameCore(ms, field.Name, typeof(string));

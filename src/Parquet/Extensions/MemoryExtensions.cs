@@ -21,18 +21,25 @@ internal static class MemoryExtensions {
         return BitConverter.ToInt64(span.Slice(offset, sizeof(long)));
     }
 
-    public static ReadOnlyMemory<char>? AsReadOnlyMemory(this string? s) {
+    public static ReadOnlyMemory<char>? AsNullableReadOnlyMemory(this string? s) {
         if(s == null)
             return null;
         return s.AsMemory();
     }
 
-    public static ReadOnlyMemory<byte>? AsReadOnlyMemory(this byte[]? b) {
+    public static ReadOnlyMemory<char> AsReadOnlyMemory(this string s) {
+        return s.AsMemory();
+    }
+
+    public static ReadOnlyMemory<byte>? AsNullableReadOnlyMemory(this byte[]? b) {
         if(b == null)
             return null;
         return b.AsMemory();
     }
 
+    public static ReadOnlyMemory<byte> AsReadOnlyMemory(this byte[] b) {
+        return b.AsMemory();
+    }
 
     // All of these could be replaced with generic math, but we don't have access to it due to supporting older than .NET 6
 

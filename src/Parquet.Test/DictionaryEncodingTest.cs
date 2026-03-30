@@ -41,7 +41,7 @@ public class DictionaryEncodingTest : TestBase {
 
         await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: new ParquetOptions() { UseDictionaryEncoding = true })) {
             using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
-            await groupWriter.WriteAsync<ReadOnlyMemory<char>>(dataField, data.Select(x => x.AsReadOnlyMemory()).ToArray());
+            await groupWriter.WriteAsync<ReadOnlyMemory<char>>(dataField, data.Select(x => x.AsNullableReadOnlyMemory()).ToArray());
         }
 
         await using ParquetReader parquetReader = await ParquetReader.CreateAsync(stream);

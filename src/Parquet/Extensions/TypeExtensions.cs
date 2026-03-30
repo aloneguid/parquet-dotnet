@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Parquet;
@@ -108,6 +105,24 @@ static class TypeExtensions {
         }
         elementType = null;
         return false;
+    }
+
+    /// <summary>
+    /// Checks if this type is a generic <see cref="List{T}"/> (not just any <see cref="IEnumerable{T}"/> or <see cref="IList{T}"/>, but specifically <see cref="List{T}"/>).
+    /// </summary>
+    /// <param name="t"></param>
+    /// <param name="elementType">Generic list's element type, if this is a generic list.</param>
+    /// <returns></returns>
+    public static bool IsGenericList(this Type t, out Type elementType) {
+        bool isList = t.IsGenericType && t.GetGenericTypeDefinition() == typeof(List<>);
+        if(!isList) {
+            elementType = typeof(void);
+            return false;
+        }
+
+        TypeInfo ti = t.GetTypeInfo();
+        elementType = ti.GenericTypeArguments[0];
+        return true;
     }
 
     public static bool IsNullable(this IList list) {

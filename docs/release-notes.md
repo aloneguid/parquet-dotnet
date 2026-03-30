@@ -7,13 +7,20 @@
 - `ParquetRowGroupWriter` now accepts `ReadOnlyMemory<T>` instead of untyped `DataColumn` (which is now removed). This solves old dangling issue with inflexible memory useage, as users of the low-level API had to unnecessarily allocate memory just to write a column, often resuling in making large redundant copies.
 - `Utils` namespace removed, which used to provide a sub-par implementations of FileMerger and FlatFileConverter. Shout if you need them, as I can add more efficient versions of these utilities in the future, here or in a separate package.
 
+## Bug fixes
+
+- Decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
+- Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
+
+## Performance
+
+- Serializer uses significantly less memory when serializing large collections.
+
 ## Other changes
 
-- feat: parquet decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
-- fix: Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
-- chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
-- chore: DuckDB integration tests removed, they turned out to be pretty much useless.
-- chore: Some tests made much cleaner and more manageable by removing Theory and replacing it with Facts, when Theory validation had too many edge cases and actually made tests less maintainable.
+- Greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
+- DuckDB integration tests removed, they turned out to be pretty much useless.
+- Some tests made much cleaner and more manageable by removing Theory and replacing it with Facts, when Theory validation had too many edge cases and actually made tests less maintainable.
 
 # 5.5.0
 

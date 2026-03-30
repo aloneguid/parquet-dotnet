@@ -63,7 +63,7 @@ public class ParquetRowGroupWriter : IDisposable
     /// <param name="column"></param>
     /// <param name="customMetadata">If specified, adds custom column chunk metadata</param>
     /// <param name="cancellationToken"></param>
-    public async Task WriteColumnAsync(DataColumn column,
+    private async Task WriteColumnAsync_TOMIGRATE(DataColumn column,
         Dictionary<string, string>? customMetadata,
         CancellationToken cancellationToken = default) {
         if(column == null)
@@ -158,7 +158,7 @@ public class ParquetRowGroupWriter : IDisposable
     /// </summary>
     public async Task WriteAsync(DataField field, IEnumerable<string?> values,
         ReadOnlyMemory<int>? repetitionLevels = null) {
-        ReadOnlyMemory<ReadOnlyMemory<char>?> memValues = values.Select(s => s.AsReadOnlyMemory()).ToArray();
+        ReadOnlyMemory<ReadOnlyMemory<char>?> memValues = values.Select(s => s.AsNullableReadOnlyMemory()).ToArray();
         await WriteAsync(field, memValues, repetitionLevels);
     }
 
@@ -167,7 +167,7 @@ public class ParquetRowGroupWriter : IDisposable
     /// </summary>
     public async Task WriteAsync(DataField field, IEnumerable<byte[]?> values,
         ReadOnlyMemory<int>? repetitionLevels = null) {
-        ReadOnlyMemory<ReadOnlyMemory<byte>?> memValues = values.Select(b => b.AsReadOnlyMemory()).ToArray();
+        ReadOnlyMemory<ReadOnlyMemory<byte>?> memValues = values.Select(b => b.AsNullableReadOnlyMemory()).ToArray();
         await WriteAsync(field, memValues, repetitionLevels);
     }
 
@@ -198,6 +198,15 @@ public class ParquetRowGroupWriter : IDisposable
 
         using WritingColumn<T> wc = WritingColumn<T>.NewWritingColumn(field, values, repetitionLevels);
         await WriteAsyncInternal(field, wc, customMetadata, cancellationToken);
+    }
+
+    internal async Task WriteAsyncAllParts<T>(DataField field,
+        ReadOnlyMemory<T> values,
+        ReadOnlyMemory<int>? definitionValues,
+        ReadOnlyMemory<int>? repetitionLevels,
+        CancellationToken cancellationToken) where T : struct {
+        using WritingColumn<T> wc = WritingColumn<T>.NewWritingColumn(field, values, definitionValues, repetitionLevels);
+        await WriteAsyncInternal(field, wc, null, cancellationToken);
     }
 
 

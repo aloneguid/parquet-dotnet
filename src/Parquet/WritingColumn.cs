@@ -14,13 +14,14 @@ class WritingColumn<T> : IDisposable where T : struct {
 
     private readonly T[]? _valuesBase;              // if values are owned, this is the array from pool, otherwise null. Only here to return it to pool if we own it.
     private readonly ReadOnlyMemory<T> _values;     // may be owned
-    private readonly int[]? _definitionLevels;      // always owned
-    private readonly ReadOnlyMemory<int>? _repetitionLevels;    // never owned
+    private readonly int[]? _definitionLevelsBase;  // if definition levels are owned, this is the array from pool, otherwise null. Only here to return it to pool if we own it.
+    private readonly ReadOnlyMemory<int>? _definitionLevels;      // may be owned
+    private readonly ReadOnlyMemory<int>? _repetitionLevels;      // never owned
 
     public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T> values, ReadOnlyMemory<int>? repetitionLevels) {
         Validate(field, repetitionLevels);
 
-        return new WritingColumn<T>(field, values.Length, values, null, null, repetitionLevels);
+        return new WritingColumn<T>(field, values.Length, values, null, null, null, repetitionLevels);
     }
 
     public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T?> nullableValues, ReadOnlyMemory<int>? repetitionLevels) {
@@ -38,7 +39,14 @@ class WritingColumn<T> : IDisposable where T : struct {
         T[] values = TPool.Rent(valueCount);
         FillNonNullValues(nullableValues.Span, values);
 
-        return new WritingColumn<T>(field, nullableValues.Length, values, values, definitionLevels, repetitionLevels);
+        return new WritingColumn<T>(field, nullableValues.Length, values, values, definitionLevels, definitionLevels, repetitionLevels);
+    }
+
+    public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T> values, ReadOnlyMemory<int>? definitionLevels, ReadOnlyMemory<int>? repetitionLevels) {
+        Validate(field, repetitionLevels);
+        return new WritingColumn<T>(field,
+            definitionLevels?.Length ?? values.Length,
+            values, null, definitionLevels, null, repetitionLevels);
     }
 
     private static int FillDefinionsAndCountNulls(DataField df, ReadOnlySpan<T?> span, ref Span<int> definitionLevels) {
@@ -90,7 +98,7 @@ class WritingColumn<T> : IDisposable where T : struct {
     private WritingColumn(DataField field,
         int numValues,
         ReadOnlyMemory<T> values, T[]? valuesBase,
-        int[]? definitionLevels,
+        ReadOnlyMemory<int>? definitionLevels, int[]? definitionLevelsBase,
         ReadOnlyMemory<int>? repetitionLevels) {
 
         NumValues = numValues;
@@ -98,15 +106,17 @@ class WritingColumn<T> : IDisposable where T : struct {
         _values = values;
         _valuesBase = valuesBase;
         _definitionLevels = definitionLevels;
+        _definitionLevelsBase = definitionLevelsBase;
         _repetitionLevels = repetitionLevels;
 
         if(field.IsArray && _definitionLevels == null) {
             // special use case for legacy arrays
-            _definitionLevels = IntPool.Rent(numValues);
+            _definitionLevelsBase = IntPool.Rent(numValues);
+            _definitionLevels = _definitionLevelsBase.AsMemory(0, numValues);
             // fill all levels with MaxDefinitionLevel quickly
             int maxDefLevel = field.MaxDefinitionLevel;
             for(int i = 0; i < numValues; i++) {
-                _definitionLevels[i] = maxDefLevel;
+                _definitionLevelsBase[i] = maxDefLevel;
             }
         }
 
@@ -157,7 +167,7 @@ class WritingColumn<T> : IDisposable where T : struct {
             if(_definitionLevels == null)
                 throw new InvalidOperationException("Definition levels are not ready yet");
 
-            return _definitionLevels.AsSpan(0, NumValues);
+            return _definitionLevels.Value.Span;
         }
     }
 
@@ -169,8 +179,8 @@ class WritingColumn<T> : IDisposable where T : struct {
     }
 
     public void Dispose() {
-        if(_definitionLevels != null) {
-            IntPool.Return(_definitionLevels);
+        if(_definitionLevelsBase != null) {
+            IntPool.Return(_definitionLevelsBase);
         }
 
         if(_valuesBase !=null) {
