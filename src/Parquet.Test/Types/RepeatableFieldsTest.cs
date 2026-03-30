@@ -33,33 +33,38 @@ public class RepeatableFieldsTest : TestBase {
     public async Task Nullable_repeated_field_write_read() {
         // arrange 
         var schema = new ParquetSchema(new DataField<IEnumerable<int?>>("items"));
+
+        int?[] values = [1, 2, null, 4, 5];
+        int[] repetitionLevels = [0, 1, 1, 0, 1];
+
         var column = new DataColumn(
-           schema.GetDataFields()[0],
-           new int?[] { 1, 2, null, 4, 5 },
-           new int[] { 0, 1, 1, 0, 1 });
+           schema.DataFields[0],
+           values, repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn(column.Field, column.Data);
+        DataColumn? rc = await WriteReadSingleColumn(column.Field, values, repetitionLevels);
 
         // assert
-        Assert.Equal(new int?[] { 1, 2, null, 4, 5 }, rc!.Data);
-        Assert.Equal(new int[] { 0, 1, 1, 0, 1 }, rc!.RepetitionLevels);
+        Assert.Equal(values, rc!.Data);
+        Assert.Equal(repetitionLevels, rc!.RepetitionLevels);
     }
 
     [Fact]
     public async Task Nullable1_repeated_field_write_read() {
         // arrange 
         var schema = new ParquetSchema(new DataField<IEnumerable<int>>("items") { IsNullable = true });
+        int?[] values = { 1, 2, 3, 4, 5 };
+        int[] repetitionLevels = { 0, 1, 1, 0, 1 };
         var column = new DataColumn(
            schema.GetDataFields()[0],
-           new int?[] { 1, 2, 3, 4, 5 },
-           new int[] { 0, 1, 1, 0, 1 });
+           values,
+           repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn(column.Field, column.Data);
+        DataColumn? rc = await WriteReadSingleColumn(column.Field, values, repetitionLevels);
 
         // assert
-        Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc!.Data);
-        Assert.Equal(new int[] { 0, 1, 1, 0, 1 }, rc!.RepetitionLevels);
+        Assert.Equal(values, rc!.Data);
+        Assert.Equal(repetitionLevels, rc!.RepetitionLevels);
     }
 }

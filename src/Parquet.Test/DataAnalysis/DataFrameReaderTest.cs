@@ -96,11 +96,11 @@ public class DataFrameReaderTest : TestBase {
         //write
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 5, 6 }));
+                await rg.WriteAsync<int>(id, new[] { 5, 6 });
             }
         }
 

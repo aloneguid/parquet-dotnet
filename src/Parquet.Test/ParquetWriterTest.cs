@@ -20,7 +20,7 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1, 2, 3 }));
+                await rg.WriteAsync<int>(id, new int[] { 1, 2, 3 });
             }
         }
 
@@ -64,7 +64,7 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteAsyncV1(id, (Array)new int[] { 1, 2, 3 });
+                await rg.WriteAsync<int>(id, new int[] { 1, 2, 3 });
             }
         }
 
@@ -87,7 +87,7 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(name), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteAsyncV1(name, (Array)input);
+                await rg.WriteAsync(name, input);
             }
         }
 
@@ -112,11 +112,11 @@ public class ParquetWriterTest : TestBase {
             using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
                 // Try to write second column first - should throw ArgumentException
                 await Assert.ThrowsAsync<ArgumentException>(async () => {
-                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 1 }));
+                    await gw.WriteAsync<int>((DataField<int>)schema[1], new int[] { 1 });
                 });
                 // Now write columns in correct order to satisfy the validation
-                await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 }));
-                await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 1 }));
+                await gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 1 });
+                await gw.WriteAsync<int>((DataField<int>)schema[1], new int[] { 1 });
             }
         }
     }
@@ -129,15 +129,15 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1 }));
+                await rg.WriteAsync<int>(id, new int[] { 1 });
             }
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 2 }));
+                await rg.WriteAsync<int>(id, new int[] { 2 });
             }
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3 }));
+                await rg.WriteAsync<int>(id, new int[] { 3 });
             }
 
         }
@@ -205,15 +205,15 @@ public class ParquetWriterTest : TestBase {
         // actual writing now that the reader is set up
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ws)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1 }));
+                await rg.WriteAsync<int>(id, new int[] { 1 });
             }
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 2 }));
+                await rg.WriteAsync<int>(id, new int[] { 2 });
             }
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3 }));
+                await rg.WriteAsync<int>(id, new int[] { 3 });
             }
         }
         ws.Dispose();
@@ -231,7 +231,7 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 1, 2 }));
+                await rg.WriteAsync<int>(id, new int[] { 1, 2 });
             }
         }
 
@@ -239,7 +239,7 @@ public class ParquetWriterTest : TestBase {
         ms.Position = 0;
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms, append: true)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new int[] { 3, 4 }));
+                await rg.WriteAsync<int>(id, new int[] { 3, 4 });
             }
         }
 
@@ -274,7 +274,7 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, input));
+                await rg.WriteAsync<int>(id, (int?[])input);
             }
         }
 
@@ -297,7 +297,7 @@ public class ParquetWriterTest : TestBase {
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteAsyncV1(id, input);
+                await rg.WriteAsync<int>(id, (int?[])input);
                 rg.CompleteValidate();
             }
         }
@@ -321,7 +321,7 @@ public class ParquetWriterTest : TestBase {
         //write
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
         }
 
@@ -343,11 +343,11 @@ public class ParquetWriterTest : TestBase {
         //write
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 5, 6 }));
+                await rg.WriteAsync<int>(id, new[] { 5, 6 });
             }
         }
 
@@ -378,7 +378,7 @@ public class ParquetWriterTest : TestBase {
             };
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
         }
 
@@ -397,7 +397,8 @@ public class ParquetWriterTest : TestBase {
         //write
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }),
+                await rg.WriteAsync<int>(id, new int[] { 1, 2, 3, 4 },
+                    null,
                     new Dictionary<string, string> {
                         ["key1"] = "value1",
                         ["key2"] = "value2"
@@ -430,7 +431,7 @@ public class ParquetWriterTest : TestBase {
             var strData = new DataColumn(str, strings.ToArray());
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(strData);
+                await rg.WriteAsync(str, strings.ToArray());
             }
         }
 
@@ -453,7 +454,7 @@ public class ParquetWriterTest : TestBase {
             var strData = new DataColumn(str, strings.ToArray());
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(strData);
+                await rg.WriteAsync(str, strings.ToArray());
             }
         }
 
@@ -470,7 +471,7 @@ public class ParquetWriterTest : TestBase {
         //write
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
         }
 
@@ -493,7 +494,7 @@ public class ParquetWriterTest : TestBase {
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms,
             new ParquetOptions { UseDeltaBinaryPackedEncoding = false })) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteColumnAsync(new DataColumn(id, new[] { 1, 2, 3, 4 }));
+                await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
         }
 
@@ -515,10 +516,10 @@ public class ParquetWriterTest : TestBase {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
                     // Write the first column successfully
-                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 }));
+                    await gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 1 });
 
                     // Attempting to write the same column again (exceeding schema) should throw
-                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 2 }));
+                    await gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 2 });
                 }
             });
         }
@@ -532,7 +533,7 @@ public class ParquetWriterTest : TestBase {
             Assert.Throws<InvalidOperationException>(() => {
                 using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
                     // Write only the first column, missing the second one
-                    gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 })).Wait();
+                    gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 1 }).Wait();
                     // "Dispose" will not throw since v5.4.0
                     gw.CompleteValidate();
                 }
@@ -547,14 +548,14 @@ public class ParquetWriterTest : TestBase {
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, new MemoryStream())) {
             // First row group - write all columns correctly
             using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
-                await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1 }));
-                await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 100 }));
+                await gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 1 });
+                await gw.WriteAsync<int>((DataField<int>)schema[1], new int[] { 100 });
             }
 
             // Second row group - attempt to write only one column
             Assert.Throws<InvalidOperationException>(() => {
                 using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
-                    gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 2 })).Wait();
+                    gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 2 }).Wait();
                     // "Dispose" will not throw since v5.4.0
                     gw.CompleteValidate();
                 }
@@ -570,9 +571,9 @@ public class ParquetWriterTest : TestBase {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 using(ParquetRowGroupWriter gw = writer.CreateRowGroup()) {
                     // First column has 3 rows
-                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[0], new int[] { 1, 2, 3 }));
+                    await gw.WriteAsync<int>((DataField<int>)schema[0], new int[] { 1, 2, 3 });
                     // Second column has 2 rows - should throw
-                    await gw.WriteColumnAsync(new DataColumn((DataField)schema[1], new int[] { 100, 200 }));
+                    await gw.WriteAsync<int>((DataField<int>)schema[1], new int[] { 100, 200 });
                 }
             });
         }

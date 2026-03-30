@@ -71,7 +71,7 @@ public class EndToEndTypeTest : TestBase {
         using(var ms = new MemoryStream()) {
             await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
-                await rg.WriteAsync(field, new[] { value });
+                await rg.WriteAsync(field, [value]);
             }
             data = ms.ToArray();
         }
@@ -95,7 +95,7 @@ public class EndToEndTypeTest : TestBase {
         using(var ms = new MemoryStream()) {
             await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
-                await rg.WriteColumnAsync(new DataColumn(field, new[] { value }));
+                await rg.WriteAsync(field, [(ReadOnlyMemory<byte>)value.AsMemory()]);
             }
             data = ms.ToArray();
         }

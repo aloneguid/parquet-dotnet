@@ -217,6 +217,23 @@ public class ParquetRowGroupWriter : IDisposable
     /// <summary>
     /// XP
     /// </summary>
+    public async Task WriteAsync(DataField field,
+        IEnumerable<ReadOnlyMemory<byte>> values,
+        ReadOnlyMemory<int>? repetitionLevels = null,
+        Dictionary<string, string>? customMetadata = null,
+        CancellationToken cancellationToken = default) {
+
+        if(field.IsNullable) {
+            throw new ArgumentException("todo");
+        }
+
+        ReadOnlyMemory<byte>[] nonNullValues = values.ToArray();
+        await WriteAsync<ReadOnlyMemory<byte>>(field, nonNullValues.AsMemory(), repetitionLevels, customMetadata, cancellationToken);
+    }
+
+    /// <summary>
+    /// XP
+    /// </summary>
     public async Task WriteAsync<T>(DataField field,
         ReadOnlyMemory<T?> values,
         ReadOnlyMemory<int>? repetitionLevels = null,

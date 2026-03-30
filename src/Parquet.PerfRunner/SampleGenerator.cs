@@ -30,7 +30,7 @@ static class SampleGenerator {
         using var fs = new FileStream("sample-pqnet.parquet", FileMode.Create, FileAccess.Write);
         await using ParquetWriter pw = await ParquetWriter.CreateAsync(schema, fs);
         using(ParquetRowGroupWriter rgw = pw.CreateRowGroup()) {
-            await rgw.WriteColumnAsync(new DataColumn(schema.DataFields[0], data));
+            await rgw.WriteAsync<int>(schema.DataFields[0], data);
         }
     }
 

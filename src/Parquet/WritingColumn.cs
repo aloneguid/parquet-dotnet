@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -100,9 +99,22 @@ class WritingColumn<T> : IDisposable where T : struct {
         _definitionLevels = definitionLevels;
         _repetitionLevels = repetitionLevels;
 
+        if(field.IsArray && _definitionLevels == null) {
+            // special use case for legacy arrays
+            _definitionLevels = IntPool.Rent(numValues);
+            // fill all levels with MaxDefinitionLevel quickly
+            int maxDefLevel = field.MaxDefinitionLevel;
+            for(int i = 0; i < numValues; i++) {
+                _definitionLevels[i] = maxDefLevel;
+            }
+        }
+
         Statistics.NullCount = numValues - values.Length;
     }
 
+    /// <summary>
+    /// Total number of values in this column. If column is nullable, this includes nulls. If column is repeated, this includes all values in all repetitions.
+    /// </summary>
     public int NumValues { get; }
 
     public ReadOnlySpan<T> Values => _values.Span;
@@ -122,6 +134,9 @@ class WritingColumn<T> : IDisposable where T : struct {
         return NumValues;
     }
 
+    /// <summary>
+    /// The schema field associated with this column.
+    /// </summary>
     public DataField Field { get; }
 
     public ReadOnlySpan<int> RepetitionLevels {
