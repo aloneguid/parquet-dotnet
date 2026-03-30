@@ -73,7 +73,8 @@ class WritingColumn<T> : IDisposable where T : struct {
 
         bool typeCompatible =
             field.ClrType == typeof(T) ||
-            (field.ClrType == typeof(string) && typeof(T) == typeof(ReadOnlyMemory<char>));
+            (field.ClrType == typeof(string) && typeof(T) == typeof(ReadOnlyMemory<char>)) ||
+            (field.ClrType == typeof(byte[]) && typeof(T) == typeof(ReadOnlyMemory<byte>));
 
         if(!typeCompatible) {
             throw new ArgumentException($"expected values of type {field.ClrType} but passed {typeof(T)}");

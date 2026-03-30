@@ -33,7 +33,7 @@ namespace Parquet.Test.Types {
 
             ms.Position = 0;
 
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
 
                 DataField[] dataFields = reader.Schema.GetDataFields();

@@ -22,7 +22,7 @@ public class RepeatableFieldsTest : TestBase {
            repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn(column.Field, values, repetitionLevels);
+        DataColumn? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
 
         // assert
         Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc!.Data);
@@ -42,7 +42,7 @@ public class RepeatableFieldsTest : TestBase {
            values, repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn(column.Field, values, repetitionLevels);
+        DataColumn? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
 
         // assert
         Assert.Equal(values, rc!.Data);
@@ -61,7 +61,7 @@ public class RepeatableFieldsTest : TestBase {
            repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn(column.Field, values, repetitionLevels);
+        DataColumn? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
 
         // assert
         Assert.Equal(values, rc!.Data);

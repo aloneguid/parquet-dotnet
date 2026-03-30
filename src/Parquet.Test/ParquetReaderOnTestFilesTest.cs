@@ -21,7 +21,7 @@ namespace Parquet.Test {
         [InlineData("fixedlenbytearray.v2.parquet")]
         public async Task FixedLenByteArray_dictionary(string parquetFile) {
             await using Stream s = OpenTestFile(parquetFile);
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             
             DataColumn[] columns = await r.ReadEntireRowGroupAsync();
         }
@@ -32,7 +32,7 @@ namespace Parquet.Test {
         public async Task Datetypes_all(string parquetFile) {
             DateTime offset, offset2;
             using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
                     offset = (DateTime)(columns[1].Data.GetValue(0)!);
@@ -50,7 +50,7 @@ namespace Parquet.Test {
         public async Task DateTime_FromOtherSystem(string parquetFile) {
             DateTime? offset;
             using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
 
                     DataColumn? as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
@@ -64,7 +64,7 @@ namespace Parquet.Test {
 
         private async Task OptionalValues_WithoutStatistics(string parquetFile) {
             using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
                     DataColumn? id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
                     DataColumn? value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
@@ -84,7 +84,7 @@ namespace Parquet.Test {
         [InlineData("issue-164.v2.parquet")]
         public async Task Issue164(string parquetFile) {
             using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
                     DataColumn[] columns = await r.ReadEntireRowGroupAsync();
                     DataColumn id_col = columns[0];
                     DataColumn cls_value_8 = columns[9];
@@ -99,7 +99,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task ByteArrayDecimal() {
             using Stream s = OpenTestFile("byte_array_decimal.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
             ParquetSchema schema = r.Schema;
             Assert.Equal("value", schema[0].Name);
@@ -116,7 +116,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task Read_delta_binary_packed() {
             using Stream s = OpenTestFile("delta_binary_packed.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
             ParquetSchema schema = r.Schema;
 
@@ -132,7 +132,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task Read_legacy_list() {
             using Stream s = OpenTestFile("special/legacy-list.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
 
             Assert.Equal(3, cols.Length);
@@ -170,7 +170,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task FixedLenByteArrayWithDictTest() {
             using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
 
             Assert.Equal(10, cols.Length);
@@ -190,7 +190,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task GuidEndianTest() {
             using Stream s = OpenTestFile("cetas4.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
 
             Assert.Single(cols);
@@ -201,7 +201,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task ThriftProtocolBreakingChangeJune2024() {
             using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
 
             Assert.Equal(55, cols.Length);
@@ -216,7 +216,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task DecimalsWithNoDefinedScale() {
             using Stream s = OpenTestFile("decimals_with_precision_but_no_scale.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
 
             Assert.Equal(8, cols.Length);
@@ -237,7 +237,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task DuckDbRLE_637() {
             using Stream s = OpenTestFile("issues/637-duckdb.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
             Assert.Single(cols);
             Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
@@ -252,7 +252,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task NestedGroup_681() {
             using Stream s = OpenTestFile("issues/681_nested.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
 
             DataField df = r.Schema.FindDataField(new FieldPath("data_group", "nested"));
@@ -265,14 +265,14 @@ namespace Parquet.Test {
         [Fact]
         public async Task BigDecimalDefaultOptions() {
             using Stream s = OpenTestFile("bigdecimal.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
             await Assert.ThrowsAsync<OverflowException>(() => r.ReadEntireRowGroupAsync());
         }
 
         [Fact]
         public async Task BigDecimalWithUseBigDecimalsOptionOn() {
             using Stream s = OpenTestFile("bigdecimal.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s, new ParquetOptions {
+            await using ParquetReader r = await ParquetReader.CreateAsync(s, new ParquetOptions {
                 UseBigDecimal = true
             });
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
@@ -281,7 +281,7 @@ namespace Parquet.Test {
         [Fact]
         public async Task PyArrow22() {
             using Stream s = OpenTestFile("special/pyarrow_v22.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+            await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
             using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
 

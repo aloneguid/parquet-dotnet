@@ -41,7 +41,8 @@ namespace Parquet.PerfRunner.Benchmarks {
             using var ms = new MemoryStream();
             await using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms);
             using(ParquetRowGroupWriter rgw = pw.CreateRowGroup()) {
-                await rgw.WriteColumnAsync(_c!);
+                //await rgw.WriteColumnAsync(_c!);
+                throw new NotImplementedException();
             }
         }
 

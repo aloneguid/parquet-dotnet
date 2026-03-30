@@ -241,7 +241,7 @@ public static class ParquetSerializer {
         CancellationToken cancellationToken = default)
         where T : class, new() {
 
-        using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
         Assembler<T> asm = GetAssembler<T>();
 
@@ -267,7 +267,7 @@ public static class ParquetSerializer {
         ParquetSerializerOptions? options = null, CancellationToken cancellationToken = default,
         bool resultsAlreadyAllocated = false) where T : class, new() {
 
-        using ParquetReader reader =
+        await using ParquetReader reader =
             await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
         await DeserializeAsync(reader, rowGroupIndex, result, cancellationToken, resultsAlreadyAllocated);
@@ -326,7 +326,7 @@ public static class ParquetSerializer {
 
         Assembler<T> asm = GetAssembler<T>();
 
-        using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
         long? requestedCapacity = reader.Metadata?.RowGroups.Sum(x => x.NumRows);
         List<T> result = GetList<T>(requestedCapacity);
@@ -371,7 +371,7 @@ public static class ParquetSerializer {
 
         var result = new List<Dictionary<string, object>>();
 
-        using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
         ParquetSchema schema = reader.Schema;
         Assembler<Dictionary<string, object>> asm = GetAssembler(schema);
         for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
@@ -396,7 +396,7 @@ public static class ParquetSerializer {
 
         Assembler<T> asm = GetAssembler<T>();
 
-        using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
         long? requestedCapacity = reader.Metadata?.RowGroups.Max(x => x.NumRows);
         List<T> result = GetList<T>(requestedCapacity);
@@ -426,7 +426,7 @@ public static class ParquetSerializer {
         where T : class, new() {
         Assembler<T> asm = GetAssembler<T>();
 
-        using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
 
         for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
             ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(rgi);

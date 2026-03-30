@@ -30,7 +30,7 @@ public class EndToEndTypeTest : TestBase {
 
         using(var ms = new MemoryStream(data)) {
             ms.Position = 0;
-            using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
             DataColumn column = await rowGroupReader.ReadColumnAsync(field);
             return (T)column.Data.GetValue(0)!;
@@ -54,7 +54,7 @@ public class EndToEndTypeTest : TestBase {
 
         using(var ms = new MemoryStream(data)) {
             ms.Position = 0;
-            using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
             DataColumn column = await rowGroupReader.ReadColumnAsync(field);
             object? raw = column.Data.GetValue(0);
@@ -78,7 +78,7 @@ public class EndToEndTypeTest : TestBase {
 
         using(var ms = new MemoryStream(data)) {
             ms.Position = 0;
-            using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
             DataColumn column = await rowGroupReader.ReadColumnAsync(field);
             return (string?)column.Data.GetValue(0);
@@ -95,14 +95,14 @@ public class EndToEndTypeTest : TestBase {
         using(var ms = new MemoryStream()) {
             await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();
-                await rg.WriteAsync(field, [(ReadOnlyMemory<byte>)value.AsMemory()]);
+                await rg.WriteAsync(field, [value]);
             }
             data = ms.ToArray();
         }
 
         using(var ms = new MemoryStream(data)) {
             ms.Position = 0;
-            using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
             DataColumn column = await rowGroupReader.ReadColumnAsync(field);
             return (byte[]?)column.Data.GetValue(0);

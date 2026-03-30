@@ -19,7 +19,7 @@ public class PrimitiveTypesTest : TestBase {
             data[i] = true;
         }
 
-        DataColumn? read = await WriteReadSingleColumn(id, data);
+        DataColumn? read = await WriteReadSingleColumn<bool>(id, data);
 
         for(int i = 0; i < count; i++) {
             Assert.True((bool)read!.Data.GetValue(i)!, $"got FALSE at position {i}");
@@ -37,7 +37,7 @@ public class PrimitiveTypesTest : TestBase {
             data[i] = uint.MaxValue - i;
         }
 
-        DataColumn? read = await WriteReadSingleColumn(schema.GetDataFields()[0], data);
+        DataColumn? read = await WriteReadSingleColumn<uint>(schema.GetDataFields()[0], data);
         for(uint i = 0; i < count; i++) {
             uint result = (uint)read!.Data.GetValue(i)!;
             Assert.Equal(uint.MaxValue - i, result);
@@ -54,7 +54,7 @@ public class PrimitiveTypesTest : TestBase {
             data[i] = ulong.MaxValue - i;
         }
 
-        DataColumn? read = await WriteReadSingleColumn(schema.GetDataFields()[0], data);
+        DataColumn? read = await WriteReadSingleColumn<ulong>(schema.GetDataFields()[0], data);
         for(uint i = 0; i < count; i++) {
             ulong result = (ulong)read!.Data.GetValue(i)!;
             Assert.Equal(ulong.MaxValue - i, result);

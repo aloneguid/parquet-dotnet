@@ -1,8 +1,4 @@
-﻿using System.Buffers;
-using System.Collections.Concurrent;
-using System.Linq.Expressions;
-using System.Numerics;
-using System.Reflection;
+﻿using System.Numerics;
 using Parquet.Data;
 
 namespace System;
@@ -24,6 +20,19 @@ internal static class MemoryExtensions {
     public static long ReadInt64(this Span<byte> span, int offset) {
         return BitConverter.ToInt64(span.Slice(offset, sizeof(long)));
     }
+
+    public static ReadOnlyMemory<char>? AsReadOnlyMemory(this string? s) {
+        if(s == null)
+            return null;
+        return s.AsMemory();
+    }
+
+    public static ReadOnlyMemory<byte>? AsReadOnlyMemory(this byte[]? b) {
+        if(b == null)
+            return null;
+        return b.AsMemory();
+    }
+
 
     // All of these could be replaced with generic math, but we don't have access to it due to supporting older than .NET 6
 
@@ -258,83 +267,4 @@ internal static class MemoryExtensions {
         }
         source.Slice(0, copyLength).CopyTo(target);
     }
-
-    #region [ Untyped array pool helpers ]
-
-    private static readonly ConcurrentDictionary<Type, Func<int, Array>> Renters = new();
-    private static readonly ConcurrentDictionary<Type, Action<Array, bool>> Returners = new();
-
-    private static Array RentTyped<T>(int minimumLength) {
-        return ArrayPool<T>.Shared.Rent(minimumLength);
-    }
-
-    private static void ReturnTyped<T>(Array array, bool clearArray) {
-        ArrayPool<T>.Shared.Return((T[])array, clearArray);
-    }
-
-    private static Func<int, Array> CreateRenter(Type elementType) {
-        MethodInfo method = typeof(TypeExtensions)
-            .GetMethod(nameof(RentTyped), BindingFlags.NonPublic | BindingFlags.Static)!
-            .MakeGenericMethod(elementType);
-
-        return (Func<int, Array>)Delegate.CreateDelegate(typeof(Func<int, Array>), method);
-    }
-
-    private static Action<Array, bool> CreateReturner(Type elementType) {
-        MethodInfo method = typeof(TypeExtensions)
-            .GetMethod(nameof(ReturnTyped), BindingFlags.NonPublic | BindingFlags.Static)!
-            .MakeGenericMethod(elementType);
-
-        return (Action<Array, bool>)Delegate.CreateDelegate(typeof(Action<Array, bool>), method);
-    }
-
-    public static Array RentArrayFromPool(this Type elementType, int minimumLength) {
-        if(elementType is null)
-            throw new ArgumentNullException(nameof(elementType));
-        if(minimumLength < 0)
-            throw new ArgumentOutOfRangeException(nameof(minimumLength));
-
-        Func<int, Array> renter = Renters.GetOrAdd(elementType, CreateRenter);
-        return renter(minimumLength);
-    }
-
-    public static void ReturnArrayToPool(this Array array, bool clearArray = false) {
-        if(array is null)
-            throw new ArgumentNullException(nameof(array));
-
-        Type? elementType = array.GetType().GetElementType();
-        if(elementType is null)
-            throw new ArgumentException("Array element type could not be resolved.", nameof(array));
-
-        Action<Array, bool> returner = Returners.GetOrAdd(elementType, CreateReturner);
-        returner(array, clearArray);
-    }
-
-    #endregion
-
-    #region [ Untyped ReadOnlyMemory<T> factories ]
-
-    private static readonly ConcurrentDictionary<Type, Func<Array, int, int, object>> _romSliceFactories = new();
-
-    public static object CreateReadOnlyMemory(this Type elementType, Array array, int start, int length) {
-        return _romSliceFactories.GetOrAdd(elementType, BuildRomSliceFactory)(array, start, length);
-    }
-
-    private static Func<Array, int, int, object> BuildRomSliceFactory(Type elementType) {
-        Type arrayType = elementType.MakeArrayType();
-        Type romType = typeof(ReadOnlyMemory<>).MakeGenericType(elementType);
-        ConstructorInfo ctor = romType.GetConstructor(new[] { arrayType, typeof(int), typeof(int) })!;
-
-        ParameterExpression arrParam = Expression.Parameter(typeof(Array), "arr");
-        ParameterExpression startParam = Expression.Parameter(typeof(int), "start");
-        ParameterExpression lengthParam = Expression.Parameter(typeof(int), "length");
-
-        UnaryExpression body = Expression.Convert(
-            Expression.New(ctor, Expression.Convert(arrParam, arrayType), startParam, lengthParam),
-            typeof(object));
-
-        return Expression.Lambda<Func<Array, int, int, object>>(body, arrParam, startParam, lengthParam).Compile();
-    }
-
-    #endregion
 }

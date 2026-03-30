@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -40,10 +41,10 @@ public class DictionaryEncodingTest : TestBase {
 
         await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: new ParquetOptions() { UseDictionaryEncoding = true })) {
             using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
-            await groupWriter.WriteAsync(dataField, data);
+            await groupWriter.WriteAsync<ReadOnlyMemory<char>>(dataField, data.Select(x => x.AsReadOnlyMemory()).ToArray());
         }
 
-        using ParquetReader parquetReader = await ParquetReader.CreateAsync(stream);
+        await using ParquetReader parquetReader = await ParquetReader.CreateAsync(stream);
         using ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(0);
         Data.DataColumn dataColumn = await groupReader.ReadColumnAsync(dataField);
 
@@ -53,7 +54,7 @@ public class DictionaryEncodingTest : TestBase {
     [Fact]
     public async Task ReadStringDictionaryGeneratedBySpark() {
         using Stream fs = OpenTestFile("string_dictionary_by_spark.parquet");
-        using ParquetReader reader = await ParquetReader.CreateAsync(fs);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(fs);
 
         DataColumn[] cols = await reader.ReadEntireRowGroupAsync(0);
         Assert.Single(cols);

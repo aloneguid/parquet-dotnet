@@ -60,12 +60,13 @@ internal class DataTypes {
             writer.CompressionMethod = CompressionMethod.None;
             // create a new row group in the file
             using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
-                await groupWriter.WriteColumnAsync(c);
+                //await groupWriter.WriteColumnAsync(c);
+                throw new NotImplementedException();
             }
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 await rg.ReadColumnAsync(c.Field);
             }

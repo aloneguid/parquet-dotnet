@@ -25,7 +25,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(1, reader.RowGroupCount);
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(3, rg.RowCount);
@@ -47,7 +47,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(1, reader.RowGroupCount);
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(3, rg.RowCount);
@@ -69,7 +69,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(1, reader.RowGroupCount);
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(3, rg.RowCount);
@@ -92,7 +92,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(1, reader.RowGroupCount);
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(input.Length, rg.RowCount);
@@ -144,7 +144,7 @@ public class ParquetWriterTest : TestBase {
 
         //read the file back and validate
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(3, reader.RowGroupCount);
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -179,7 +179,7 @@ public class ParquetWriterTest : TestBase {
             //ParquetReader, unlike the writer, does need to be seekable
             var ms = new MemoryStream();
             await pipe.Reader.AsStream().CopyToAsync(ms);
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
                 Assert.Equal(3, reader.RowGroupCount);
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -245,7 +245,7 @@ public class ParquetWriterTest : TestBase {
 
         //check that this file now contains two row groups and all the data is valid
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(2, reader.RowGroupCount);
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -279,7 +279,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(1, reader.RowGroupCount);
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -303,7 +303,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(1, reader.RowGroupCount);
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -326,7 +326,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         //read back
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(4, reader.Metadata!.NumRows);
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -352,7 +352,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         //read back
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(6, reader.Metadata!.NumRows);
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
@@ -383,7 +383,7 @@ public class ParquetWriterTest : TestBase {
         }
 
         //read back
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal("value1", reader.CustomMetadata["key1"]);
             Assert.Equal("value2", reader.CustomMetadata["key2"]);
         }
@@ -408,7 +408,7 @@ public class ParquetWriterTest : TestBase {
 
         //read back
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
             Dictionary<string, string> kv = rgr.GetCustomMetadata(id);
             Assert.Equal(2, kv.Count);
@@ -477,7 +477,7 @@ public class ParquetWriterTest : TestBase {
 
         //read back
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
             Meta.ColumnChunk? cc = rgr.GetMetadata(id);
             Assert.NotNull(cc);
@@ -500,7 +500,7 @@ public class ParquetWriterTest : TestBase {
 
         //read back
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
             Meta.ColumnChunk? cc = rgr.GetMetadata(id);
             Assert.NotNull(cc);

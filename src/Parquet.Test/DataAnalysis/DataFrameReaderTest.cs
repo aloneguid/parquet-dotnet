@@ -12,60 +12,127 @@ namespace Parquet.Test.DataAnalysis;
 
 public class DataFrameReaderTest : TestBase {
 
-    [Theory]
-    [InlineData(typeof(short), (short)1, (short)2)]
-    [InlineData(typeof(short?), null, (short)2)]
-    [InlineData(typeof(int), 1, 2)]
-    [InlineData(typeof(int?), null, 2)]
-    [InlineData(typeof(bool), true, false)]
-    [InlineData(typeof(bool?), true, null)]
-    [InlineData(typeof(long), 1L, 2L)]
-    [InlineData(typeof(long?), 1L, 2L)]
-    [InlineData(typeof(ulong), 1UL, 2UL)]
-    [InlineData(typeof(ulong?), 1UL, 2UL)]
-    [InlineData(typeof(string), "1", "2")]
-    [InlineData(typeof(string), null, "2")]
-    public async Task Roundtrip_all_types(Type t, object? el1, object? el2) {
+    [Fact]
+    public async Task Roundtrip_short() {
+        await RoundtripAllTypesCore((short)1, (short)2);
+    }
 
-        // arrange
+    [Fact]
+    public async Task Roundtrip_nullable_short_with_null() {
+        await RoundtripAllTypesNullableCore<short>(null, (short)2);
+    }
+
+    [Fact]
+    public async Task Roundtrip_int() {
+        await RoundtripAllTypesCore(1, 2);
+    }
+
+    [Fact]
+    public async Task Roundtrip_nullable_int_with_null() {
+        await RoundtripAllTypesNullableCore<int>(null, 2);
+    }
+
+    [Fact]
+    public async Task Roundtrip_bool() {
+        await RoundtripAllTypesCore(true, false);
+    }
+
+    [Fact]
+    public async Task Roundtrip_nullable_bool_with_null() {
+        await RoundtripAllTypesNullableCore<bool>(true, null);
+    }
+
+    [Fact]
+    public async Task Roundtrip_long() {
+        await RoundtripAllTypesCore(1L, 2L);
+    }
+
+    [Fact]
+    public async Task Roundtrip_nullable_long() {
+        await RoundtripAllTypesNullableCore<long>(1L, 2L);
+    }
+
+    [Fact]
+    public async Task Roundtrip_ulong() {
+        await RoundtripAllTypesCore(1UL, 2UL);
+    }
+
+    [Fact]
+    public async Task Roundtrip_nullable_ulong() {
+        await RoundtripAllTypesNullableCore<ulong>(1UL, 2UL);
+    }
+
+    [Fact]
+    public async Task Roundtrip_string() {
+        await RoundtripStringCore("1", "2");
+    }
+
+    [Fact]
+    public async Task Roundtrip_string_with_null() {
+        await RoundtripStringCore(null, "2");
+    }
+
+    private async Task RoundtripAllTypesCore<T>(T el1, T el2) where T : struct {
         using var ms = new MemoryStream();
-        var data = Array.CreateInstance(t, 2);
-        data.SetValue(el1, 0);
-        data.SetValue(el2, 1);
+        T[] data = [el1, el2];
 
+        var field = new DataField(typeof(T).Name, typeof(T));
+        var schema = new ParquetSchema(field);
 
-        // make schema
-        var schema = new ParquetSchema(new DataField(t.Name, t));
-
-        // make data
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
             using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
-
-            var dc = new DataColumn(schema.DataFields[0], data);
-
-            await rgw.WriteColumnAsync(dc);
+            await rgw.WriteAsync<T>(field, data.AsMemory());
         }
 
-        // read as DataFrame
+        await AssertRoundtripDataFrameCore(ms, field.Name, typeof(T));
+    }
+
+    private async Task RoundtripAllTypesNullableCore<T>(T? el1, T? el2) where T : struct {
+        using var ms = new MemoryStream();
+        T?[] data = [el1, el2];
+
+        var field = new DataField(typeof(T?).Name, typeof(T?));
+        var schema = new ParquetSchema(field);
+
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+            await rgw.WriteAsync<T>(field, data.AsMemory());
+        }
+
+        await AssertRoundtripDataFrameCore(ms, field.Name, typeof(T?));
+    }
+
+    private async Task RoundtripStringCore(string? el1, string? el2) {
+        using var ms = new MemoryStream();
+        string?[] data = [el1, el2];
+
+        var field = new DataField(typeof(string).Name, typeof(string));
+        var schema = new ParquetSchema(field);
+
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+            await rgw.WriteAsync<ReadOnlyMemory<char>>(field, data.Select(x => x.AsReadOnlyMemory()).ToArray());
+        }
+
+        await AssertRoundtripDataFrameCore(ms, field.Name, typeof(string));
+    }
+
+    private static async Task AssertRoundtripDataFrameCore(Stream ms, string fieldName, Type type) {
         ms.Position = 0;
         DataFrame df = await ms.ReadParquetAsDataFrameAsync();
 
-        Assert.Equal(data, df.Rows.Select(r => r[0]).ToArray());
-
-        // write DataFrame to file
         using var ms1 = new MemoryStream();
         await df.WriteAsync(ms1);
 
-        // validate both are the same
         ms1.Position = 0;
         DataFrame df1 = await ms1.ReadParquetAsDataFrameAsync();
 
-        if(t == typeof(long)) {
+        if(type == typeof(long)) {
             // Int64 is a special case in DataFrame
             // see https://github.com/aloneguid/parquet-dotnet/issues/343 for more info
-            df1.Columns.GetInt64Column(t.Name);
-        } else if (t == typeof(ulong)) {
-            df1.Columns.GetUInt64Column(t.Name);
+            df1.Columns.GetInt64Column(fieldName);
+        } else if(type == typeof(ulong)) {
+            df1.Columns.GetUInt64Column(fieldName);
         }
 
         Assert.Equal(df.Columns.Count, df1.Columns.Count);

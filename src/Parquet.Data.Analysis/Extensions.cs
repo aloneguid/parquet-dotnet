@@ -25,7 +25,7 @@ public static class AnalysisExtensions {
     /// <returns></returns>
     public static async Task<DataFrame> ReadParquetAsDataFrameAsync(
         this Stream inputStream, CancellationToken cancellationToken = default) {
-        using ParquetReader reader = await ParquetReader.CreateAsync(inputStream, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(inputStream, cancellationToken: cancellationToken);
 
         var dfcs = new List<DataFrameColumn>();
         //var readableFields = reader.Schema.DataFields.Where(df => df.MaxRepetitionLevel == 0).ToList();
@@ -126,7 +126,10 @@ public static class AnalysisExtensions {
             await rgw.WriteAsync<double>(field, mo);
         } else if(col.DataType == typeof(string)) {
             string[] mo = ((StringDataFrameColumn)col).ToArray();
-            await rgw.WriteAsync(field, mo, null, null, CancellationToken.None);
+            ReadOnlyMemory<char>?[] roms = mo
+                .Select(x => x == null ? null : (ReadOnlyMemory<char>?)x.AsMemory())
+                .ToArray();
+            await rgw.WriteAsync<ReadOnlyMemory<char>>(field, roms);
         } else {
             throw new NotSupportedException($"unsupported column type {col.DataType}");
         }

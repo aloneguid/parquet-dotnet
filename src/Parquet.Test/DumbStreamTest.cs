@@ -26,7 +26,7 @@ public class DumbStreamTest {
         int fileSize = (int)memoryFileStream.Length;
         using MemoryStream memoryStreamCopy = new(memoryFileStream.GetBuffer(), 0, fileSize);
         using DumbStream bufferedStream = new(memoryStreamCopy);
-        using ParquetReader parquetReader = await ParquetReader.CreateAsync(bufferedStream);
+        await using ParquetReader parquetReader = await ParquetReader.CreateAsync(bufferedStream);
         for(int iterations = 0; iterations < 100; iterations++) {
             using ParquetRowGroupReader rowGroupReader = parquetReader.OpenRowGroupReader(0);
             await rowGroupReader.ReadColumnAsync(field);

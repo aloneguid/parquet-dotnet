@@ -392,7 +392,7 @@ namespace Parquet.Test.Schema {
         [InlineData("legacy-list-onearray.v2.parquet")]
         public async Task BackwardCompat_list_with_one_array(string parquetFile) {
             using(Stream input = OpenTestFile(parquetFile))
-            using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
+            await using(ParquetReader reader = await ParquetReader.CreateAsync(input)) {
                 ParquetSchema schema = reader.Schema;
 
                 //validate schema
@@ -431,7 +431,7 @@ namespace Parquet.Test.Schema {
             }
 
             ms.Position = 0;
-            using ParquetReader parquetReader = await ParquetReader.CreateAsync(ms);
+            await using ParquetReader parquetReader = await ParquetReader.CreateAsync(ms);
             DataField[] dataFields = parquetReader.Schema.GetDataFields();
             for(int i = 0; i < parquetReader.RowGroupCount; i++)
                 using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i)) {
@@ -455,7 +455,7 @@ namespace Parquet.Test.Schema {
                 await groupWriter.WriteAsync<DateTime>(field, values);
             }
 
-            using(ParquetReader parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
+            await using(ParquetReader parquetReader = await ParquetReader.CreateAsync(memoryStream)) {
                 parquetReader.Schema.Fields.ToString();
 
                 Assert.Single(schema.Fields);

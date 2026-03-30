@@ -844,7 +844,7 @@ public class ParquetSerializerTest : TestBase {
                 tempPath,
                 new ParquetSerializerOptions { Append = true });
 
-            using ParquetReader reader = await ParquetReader.CreateAsync(tempPath);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(tempPath);
 
             using(ParquetRowGroupReader reader0 = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(1, reader0.RowCount);
@@ -878,7 +878,7 @@ public class ParquetSerializerTest : TestBase {
 
         // validate we have 5 row groups in the resulting file
         ms.Position = 0;
-        using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
         Assert.Equal(5, reader.RowGroupCount);
     }
 
@@ -1267,7 +1267,7 @@ public class ParquetSerializerTest : TestBase {
         }
         ms.Position = 0;
 
-        using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
         ParquetSchema schema = reader.Schema;
         using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
         var buffer = new List<ClassWithPreinitializedDict>();

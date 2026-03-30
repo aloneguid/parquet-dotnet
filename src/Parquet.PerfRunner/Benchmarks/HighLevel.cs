@@ -56,7 +56,8 @@ public class HighLevel {
             writer.CompressionMethod = CM;
             // create a new row group in the file
             using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
-                await groupWriter.WriteColumnAsync(c);
+                //await groupWriter.WriteColumnAsync(c);
+                throw new NotImplementedException();
             }
         }
         return ms;
@@ -68,7 +69,8 @@ public class HighLevel {
             writer.CompressionMethod = CM;
             // create a new row group in the file
             using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
-                await groupWriter.WriteColumnAsync(c);
+                //await groupWriter.WriteColumnAsync(c);
+                throw new NotImplementedException();
             }
         }
         return r;
@@ -76,7 +78,7 @@ public class HighLevel {
 
     private async Task<MemoryStream> Run(DataColumn c, MemoryStream ms) {
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             await reader.ReadEntireRowGroupAsync();
         }
         ms.Position = 0;

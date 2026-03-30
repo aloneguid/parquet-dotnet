@@ -41,7 +41,7 @@ public class ListTest : TestBase {
         DataColumn dcNames;
         DataColumn dcLine1;
         DataColumn dcPostcode;
-        using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
             using ParquetRowGroupReader gr = r.OpenRowGroupReader(0);
             dcNames = await gr.ReadColumnAsync(nameField);
             dcLine1 = await gr.ReadColumnAsync(line1Field);
@@ -68,7 +68,7 @@ public class ListTest : TestBase {
          - 4: []
          */
 
-        using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("list_empty_alt.parquet")))
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("list_empty_alt.parquet")))
 
         using(ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0)) {
             Assert.Equal(4, groupReader.RowCount);

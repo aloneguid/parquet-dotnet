@@ -54,7 +54,7 @@ namespace Parquet.Test.Encodings {
              * 256 records, two columns value and fvalue
              * Each row value is index * 1.5.
              */
-            using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
             Assert.Equal(1, reader.RowGroupCount);
             IParquetRowGroupReader row = reader.OpenRowGroupReader(0);
 
@@ -78,7 +78,7 @@ namespace Parquet.Test.Encodings {
             /*
              * 5 records, column named floats with values [1.1, null, 3.3, null, 5.5]
              */
-            using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
+            await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
             Assert.Equal(1, reader.RowGroupCount);
             IParquetRowGroupReader row = reader.OpenRowGroupReader(0);
 

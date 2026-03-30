@@ -18,11 +18,11 @@ public class TestBase {
         return new StreamReader("./data/" + name);
     }
 
-    protected async Task<DataColumn?> WriteReadSingleColumn(DataField df, Array data, int[]? repetitionLevels = null) {
+    protected async Task<DataColumn?> WriteReadSingleColumn<T>(DataField df, ReadOnlyMemory<T> values, int[]? repetitionLevels = null) where T : struct {
         using var ms = new MemoryStream();
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(df), ms)) {
             using ParquetRowGroupWriter rg = writer.CreateRowGroup();
-            await rg.WriteAsyncV1(df, data, repetitionLevels);
+            await rg.WriteAsync(df, values, repetitionLevels);
             rg.CompleteValidate();
         }
 
@@ -33,7 +33,7 @@ public class TestBase {
         //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
 
         // read first gow group and first column
-        using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
         if(reader.RowGroupCount == 0)
             return null;
         ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
@@ -41,43 +41,30 @@ public class TestBase {
         return await rgReader.ReadColumnAsync(df);
     }
 
-    protected async Task<object> WriteReadSingle(DataField field, object? value, CompressionMethod compressionMethod = CompressionMethod.None) {
-        //for sanity, use disconnected streams
-        byte[] data;
-
-        var options = new ParquetOptions();
-        if(value is DateOnly)
-            options.UseDateOnlyTypeForDates = true;
-
-        using(var ms = new MemoryStream()) {
-            // write single value
-
-            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms, options)) {
-                writer.CompressionMethod = compressionMethod;
-
-                using ParquetRowGroupWriter rg = writer.CreateRowGroup();
-                Array dataArray = Array.CreateInstance(field.ClrNullableIfHasNullsType, 1);
-                dataArray.SetValue(value, 0);
-                await rg.WriteAsyncV1(field, dataArray);
-            }
-
-            data = ms.ToArray();
+    protected async Task<DataColumn?> WriteReadSingleColumn<T>(DataField df, ReadOnlyMemory<T?> values, int[]? repetitionLevels = null) where T : struct {
+        using var ms = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(df), ms)) {
+            using ParquetRowGroupWriter rg = writer.CreateRowGroup();
+            await rg.WriteAsync(df, values, repetitionLevels);
+            rg.CompleteValidate();
         }
 
-        using(var ms = new MemoryStream(data)) {
-            // read back single value
+        // write with built-in extension method
+        ms.Position = 0;
 
-            ms.Position = 0;
-            using ParquetReader reader = await ParquetReader.CreateAsync(ms);
-            using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
-            DataColumn column = await rowGroupReader.ReadColumnAsync(field);
+        //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
 
-            return column.Data.GetValue(0)!;
-        }
+        // read first gow group and first column
+        await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+        if(reader.RowGroupCount == 0)
+            return null;
+        ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
+
+        return await rgReader.ReadColumnAsync(df);
     }
 
     protected async Task<List<DataColumn>> ReadColumns(Stream s) {
-        using ParquetReader reader = await ParquetReader.CreateAsync(s);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(s);
         using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
         var r = new List<DataColumn>();
         foreach(DataField df in reader.Schema.DataFields) {

@@ -123,7 +123,7 @@ public class ParquetCsvComparison : TestBase {
         bool treatByteArrayAsString) {
         await using Stream s = OpenTestFile(name);
         var parquetOptions = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
-        using ParquetReader pr = await ParquetReader.CreateAsync(s, parquetOptions);
+        await using ParquetReader pr = await ParquetReader.CreateAsync(s, parquetOptions);
         using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
         return (await pr.Schema.GetDataFields()
             .Select(df => rgr.ReadColumnAsync(df))

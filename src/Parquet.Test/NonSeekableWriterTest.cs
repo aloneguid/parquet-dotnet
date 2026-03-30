@@ -31,7 +31,7 @@ public class NonSeekableWriterTest {
         }
 
         ms.Position = 0;
-        using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             Assert.Equal(2, reader.RowGroupCount);
 
             using(ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0)) {

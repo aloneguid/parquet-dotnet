@@ -61,16 +61,6 @@ public class ParquetRowGroupWriter : IDisposable
     /// file schema.
     /// </summary>
     /// <param name="column"></param>
-    /// <param name="cancellationToken"></param>
-    public Task WriteColumnAsync(DataColumn column, CancellationToken cancellationToken = default) {
-        return WriteColumnAsync(column, null, cancellationToken);
-    }
-
-    /// <summary>
-    /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the
-    /// file schema.
-    /// </summary>
-    /// <param name="column"></param>
     /// <param name="customMetadata">If specified, adds custom column chunk metadata</param>
     /// <param name="cancellationToken"></param>
     public async Task WriteColumnAsync(DataColumn column,
@@ -117,39 +107,6 @@ public class ParquetRowGroupWriter : IDisposable
 
     }
 
-    /// <summary>
-    /// Backward compatible array based write method, will be removed in future. Use generic methods instead.
-    /// </summary>
-    public async Task WriteAsyncV1(DataField field, Array values, int[]? repetitiionLevels = null) {
-        ArgumentNullException.ThrowIfNull(field);
-        ArgumentNullException.ThrowIfNull(values);
-
-        ReadOnlyMemory<int>? repetitionLevels = repetitiionLevels is null ? null : repetitiionLevels.AsMemory();
-
-        if(field.ClrType == typeof(string)) {
-            if(values is not string[] stringValues)
-                throw new ArgumentException($"expected values of type {GetExpectedArrayType(field)} but passed {values.GetType()}", nameof(values));
-
-            await WriteAsync(field, stringValues, repetitionLevels);
-            return;
-        }
-
-        if(field.ClrType == typeof(byte[])) {
-            throw new NotSupportedException("binary columns are not supported by this write overload; use WriteColumnAsync instead.");
-        }
-
-        try {
-            Task writeTask = (Task)WriteStructArrayAsyncMethod
-                .MakeGenericMethod(field.ClrType)
-                .Invoke(this, new object?[] { field, values, repetitionLevels })!;
-
-            await writeTask;
-        } catch(TargetInvocationException ex) when(ex.InnerException != null) {
-            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-            throw;
-        }
-    }
-
     private Task WriteStructArrayAsync<T>(DataField field, Array values, ReadOnlyMemory<int>? repetitionLevels) where T : struct {
         if(field.IsNullable) {
             if(values is T?[] nullableValues) {
@@ -194,42 +151,28 @@ public class ParquetRowGroupWriter : IDisposable
         return elementType.MakeArrayType();
     }
 
+    #region [ Helper methods ]
+
     /// <summary>
-    /// XP
+    /// todo
     /// </summary>
-    public async Task WriteAsync(DataField field,
-        IEnumerable<string> values,
-        ReadOnlyMemory<int>? repetitionLevels = null,
-        Dictionary<string, string>? customMetadata = null,
-        CancellationToken cancellationToken = default) {
-
-
-        if(field.IsNullable) {
-            ReadOnlyMemory<char>?[] nullableValues = values.Select(v => v == null ? (ReadOnlyMemory<char>?)null : v.AsMemory()).ToArray();
-            await WriteAsync<ReadOnlyMemory<char>>(field, nullableValues.AsMemory(), repetitionLevels, customMetadata, cancellationToken);
-        } else {
-            // todo: validate that no strings are null
-            ReadOnlyMemory<char>[] nonNullValues = values.Select(v => v.AsMemory()).ToArray();
-            await WriteAsync<ReadOnlyMemory<char>>(field, nonNullValues.AsMemory(), repetitionLevels, customMetadata, cancellationToken);
-        }
+    public async Task WriteAsync(DataField field, IEnumerable<string?> values,
+        ReadOnlyMemory<int>? repetitionLevels = null) {
+        ReadOnlyMemory<ReadOnlyMemory<char>?> memValues = values.Select(s => s.AsReadOnlyMemory()).ToArray();
+        await WriteAsync(field, memValues, repetitionLevels);
     }
 
     /// <summary>
-    /// XP
+    /// todo
     /// </summary>
-    public async Task WriteAsync(DataField field,
-        IEnumerable<ReadOnlyMemory<byte>> values,
-        ReadOnlyMemory<int>? repetitionLevels = null,
-        Dictionary<string, string>? customMetadata = null,
-        CancellationToken cancellationToken = default) {
-
-        if(field.IsNullable) {
-            throw new ArgumentException("todo");
-        }
-
-        ReadOnlyMemory<byte>[] nonNullValues = values.ToArray();
-        await WriteAsync<ReadOnlyMemory<byte>>(field, nonNullValues.AsMemory(), repetitionLevels, customMetadata, cancellationToken);
+    public async Task WriteAsync(DataField field, IEnumerable<byte[]?> values,
+        ReadOnlyMemory<int>? repetitionLevels = null) {
+        ReadOnlyMemory<ReadOnlyMemory<byte>?> memValues = values.Select(b => b.AsReadOnlyMemory()).ToArray();
+        await WriteAsync(field, memValues, repetitionLevels);
     }
+
+
+    #endregion
 
     /// <summary>
     /// XP

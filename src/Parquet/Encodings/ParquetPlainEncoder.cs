@@ -139,6 +139,9 @@ static class ParquetPlainEncoder {
             ReadOnlySpan<ReadOnlyMemory<char>> span = AsSpan<ReadOnlyMemory<char>>(sourceSpan);
             Encode(span, destination);
             // todo: minmax
+        } else if(t == typeof(ReadOnlyMemory<byte>)) {
+            ReadOnlySpan<ReadOnlyMemory<byte>> span = AsSpan<ReadOnlyMemory<byte>>(sourceSpan);
+            Encode(span, destination);
         } else if(t == typeof(Guid)) {
             ReadOnlySpan<Guid> span = AsSpan<Guid>(sourceSpan);
             Encode(span, destination);
@@ -951,6 +954,14 @@ static class ParquetPlainEncoder {
             byte[] l = BitConverter.GetBytes(element.Length);
             destination.Write(l, 0, l.Length);
             destination.Write(element, 0, element.Length);
+        }
+    }
+
+    public static void Encode(ReadOnlySpan<ReadOnlyMemory<byte>> data, Stream destination) {
+        foreach(ReadOnlyMemory<byte> element in data) {
+            byte[] l = BitConverter.GetBytes(element.Length);
+            destination.Write(l, 0, l.Length);
+            destination.Write(element.Span);
         }
     }
 

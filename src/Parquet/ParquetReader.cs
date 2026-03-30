@@ -13,7 +13,7 @@ namespace Parquet;
 /// <summary>
 /// Implements Apache Parquet format reader, experimental version for next major release.
 /// </summary>
-public class ParquetReader : ParquetActor, IDisposable {
+public class ParquetReader : ParquetActor, IAsyncDisposable {
     private readonly Stream _input;
     private FileMetaData? _meta;
     private ThriftFooter _thriftFooter;
@@ -95,7 +95,7 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// Opens file at specified path to read schema and return
     /// </summary>
     public static async Task<ParquetSchema> ReadSchemaAsync(string filePath) {
-        using ParquetReader reader = await CreateAsync(filePath);
+        await using ParquetReader reader = await CreateAsync(filePath);
         return reader.Schema;
     }
 
@@ -103,7 +103,7 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// Reads file stream and returns
     /// </summary>
     public static async Task<ParquetSchema> ReadSchemaAsync(Stream parquetStream) {
-        using ParquetReader reader = await CreateAsync(parquetStream);
+        await using ParquetReader reader = await CreateAsync(parquetStream);
         return reader.Schema;
     }
 
@@ -181,9 +181,10 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public void Dispose() {
+    public ValueTask DisposeAsync() {
         if(!_leaveStreamOpen) {
             _input.Dispose();
         }
+        return ValueTask.CompletedTask;
     }
 }

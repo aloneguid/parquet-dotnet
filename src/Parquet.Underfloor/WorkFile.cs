@@ -176,7 +176,7 @@ class WorkFile : IAsyncDisposable {
         CurrentRawDataFieldDataReadStatus = ReadStatus.InProgress;
 
         try {
-            using ParquetReader pr = await ParquetReader.CreateAsync(_stream);
+            await using ParquetReader pr = await ParquetReader.CreateAsync(_stream);
             using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
             DataColumn dc = await rgr.ReadColumnAsync(df);
             CurrentRawDataFieldData = dc;
