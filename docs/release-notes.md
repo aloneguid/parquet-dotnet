@@ -12,7 +12,7 @@
 - fix: Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
 - chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
 - chore: DuckDB integration tests removed, they turned out to be pretty much useless.
-- chore: 
+- chore: Some tests made much cleaner and more manageable by removing Theory and replacing it with Facts, when Theory validation had too many edge cases and actually made tests less maintainable.
 
 # 5.5.0
 

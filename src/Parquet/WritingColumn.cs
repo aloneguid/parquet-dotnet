@@ -99,6 +99,8 @@ class WritingColumn<T> : IDisposable where T : struct {
         _valuesBase = valuesBase;
         _definitionLevels = definitionLevels;
         _repetitionLevels = repetitionLevels;
+
+        Statistics.NullCount = numValues - values.Length;
     }
 
     public int NumValues { get; }
