@@ -17,7 +17,7 @@ namespace Parquet.Test {
                new DataField<int>("id"),
                new DataField<string>("nonsense"));
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, forwardOnly)) {
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, forwardOnly)) {
                 using(ParquetRowGroupWriter rgw = writer.CreateRowGroup()) {
                     await rgw.WriteColumnAsync(new DataColumn((DataField)schema[0], new[] { 1 }));
                     await rgw.WriteColumnAsync(new DataColumn((DataField)schema[1], new[] { "1" }));

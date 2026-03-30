@@ -65,7 +65,7 @@ public static class AnalysisExtensions {
         var schema = new ParquetSchema(
             df.Columns.Select(col => new DataField(col.Name, col.DataType.GetNullable())));
 
-        using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, outputStream, cancellationToken: cancellationToken);
+        await using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, outputStream, cancellationToken: cancellationToken);
         using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
         int i = 0;
@@ -126,7 +126,7 @@ public static class AnalysisExtensions {
             await rgw.WriteAsync<double>(field, mo);
         } else if(col.DataType == typeof(string)) {
             string[] mo = ((StringDataFrameColumn)col).ToArray();
-            await rgw.WriteAsync(field, mo);
+            await rgw.WriteAsync(field, mo, null, null, CancellationToken.None);
         } else {
             throw new NotSupportedException($"unsupported column type {col.DataType}");
         }

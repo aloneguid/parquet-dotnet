@@ -8,6 +8,41 @@ namespace Parquet.Encodings;
 
 static class ParquetDictionaryEncoder {
 
+
+    public static bool TryEncode(ReadOnlySpan<ReadOnlyMemory<char>> values, double threshold) {
+
+        HashSet<ReadOnlyMemory<char>> uniques = Distinct(values);
+
+        if(uniques.Count / (double)values.Length < threshold) {
+            return false;
+        }
+
+        // only now do we actually create the dictionary and indexes as it's a more expensive operation than just counting uniques
+
+        return true;
+    }
+
+    private static HashSet<ReadOnlyMemory<char>> Distinct(ReadOnlySpan<ReadOnlyMemory<char>> values) {
+        var hs = new HashSet<ReadOnlyMemory<char>>(values.Length, ReadOnlyMemoryCharOrdinalComparer.Instance);
+        for(int i = 0; i < values.Length; i++)
+            hs.Add(values[i]);
+        return hs;
+    }
+
+    private sealed class ReadOnlyMemoryCharOrdinalComparer : IEqualityComparer<ReadOnlyMemory<char>> {
+        public static readonly ReadOnlyMemoryCharOrdinalComparer Instance = new ReadOnlyMemoryCharOrdinalComparer();
+
+        public bool Equals(ReadOnlyMemory<char> x, ReadOnlyMemory<char> y) {
+            return x.Span.SequenceEqual(y.Span);
+        }
+
+        public int GetHashCode(ReadOnlyMemory<char> obj) {
+            return string.GetHashCode(obj.Span, StringComparison.Ordinal);
+        }
+    }
+
+    // --- all legacy below ---
+
     public static bool TryExtractDictionary(Type elementType,
         Array data, int offset, int count,
         [NotNullWhen(true)] out Array? dictionaryArray,
@@ -89,16 +124,11 @@ static class ParquetDictionaryEncoder {
 
         /*
          * Use "Ordinal" comparison as it's the fastest (13 times faster than invariant).
-         * .NET standard 2.0 does not have pre-allocated hash version which give a tiny performance boost.
          * Interestingly, hashcode based hash for strings is slower.
          */
 
-#if NETSTANDARD2_0
-        var hs = new HashSet<string>(StringComparer.Ordinal);
-#else
         // pre-allocation is a tiny performance boost
         var hs = new HashSet<string>(strings.Length, StringComparer.Ordinal);
-#endif
 
         for(int i = offset; i < offset + count; i++)
             hs.Add(strings[i]);

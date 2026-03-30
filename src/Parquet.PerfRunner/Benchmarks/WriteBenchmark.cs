@@ -39,7 +39,7 @@ namespace Parquet.PerfRunner.Benchmarks {
         [Benchmark]
         public async Task ParquetNet() {
             using var ms = new MemoryStream();
-            using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms);
+            await using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms);
             using(ParquetRowGroupWriter rgw = pw.CreateRowGroup()) {
                 await rgw.WriteColumnAsync(_c!);
             }

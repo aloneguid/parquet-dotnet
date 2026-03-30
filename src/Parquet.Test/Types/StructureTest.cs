@@ -21,7 +21,7 @@ namespace Parquet.Test.Types {
                ));
 
             using var ms = new MemoryStream();
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
                 await rgw.WriteColumnAsync(

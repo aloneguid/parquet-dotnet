@@ -131,10 +131,16 @@ public class TestBase {
         return new StreamReader("./data/" + name);
     }
 
-    protected async Task<DataColumn?> WriteReadSingleColumn(DataColumn dataColumn) {
+    protected async Task<DataColumn?> WriteReadSingleColumn(DataField df, Array data, int[]? repetitionLevels = null) {
         using var ms = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(df), ms)) {
+            using ParquetRowGroupWriter rg = writer.CreateRowGroup();
+            await rg.WriteAsyncV1(df, data, repetitionLevels);
+            rg.CompleteValidate();
+        }
+
+
         // write with built-in extension method
-        await ms.WriteSingleRowGroupParquetFileAsync(new ParquetSchema(dataColumn.Field), dataColumn);
         ms.Position = 0;
 
         //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
@@ -145,25 +151,7 @@ public class TestBase {
             return null;
         ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
-        return await rgReader.ReadColumnAsync(dataColumn.Field);
-    }
-
-    protected async Task<Tuple<DataColumn[], ParquetSchema>> WriteReadSingleRowGroup(
-        ParquetSchema schema, DataColumn[] columns) {
-        ParquetSchema readSchema;
-        using var ms = new MemoryStream();
-        await ms.WriteSingleRowGroupParquetFileAsync(schema, columns);
-        ms.Position = 0;
-
-        //System.IO.File.WriteAllBytes("c:\\tmp\\1.parquet", ms.ToArray());
-
-        using ParquetReader reader = await ParquetReader.CreateAsync(ms);
-        readSchema = reader.Schema;
-
-        using ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
-        return Tuple.Create(await columns.Select(c =>
-           rgReader.ReadColumnAsync(c.Field))
-           .SequentialWhenAll(), readSchema);
+        return await rgReader.ReadColumnAsync(df);
     }
 
     protected async Task<object> WriteReadSingle(DataField field, object? value, CompressionMethod compressionMethod = CompressionMethod.None) {
@@ -171,15 +159,13 @@ public class TestBase {
         byte[] data;
 
         var options = new ParquetOptions();
-#if !NETCOREAPP3_1
         if(value is DateOnly)
             options.UseDateOnlyTypeForDates = true;
-#endif
 
         using(var ms = new MemoryStream()) {
             // write single value
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms, options)) {
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms, options)) {
                 writer.CompressionMethod = compressionMethod;
 
                 using ParquetRowGroupWriter rg = writer.CreateRowGroup();

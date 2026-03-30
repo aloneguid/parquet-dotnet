@@ -16,7 +16,7 @@ namespace Parquet;
 /// <summary>
 /// Implements Apache Parquet format writer
 /// </summary>
-public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable {
+public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     private ThriftFooter? _footer;
     private readonly ParquetSchema _schema;
     private readonly ParquetOptions _formatOptions;
@@ -31,11 +31,7 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
     /// <summary>
     /// Level of compression
     /// </summary>
-#if NET6_0_OR_GREATER
     public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
-#else
-    public CompressionLevel CompressionLevel = CompressionLevel.Optimal;
-#endif
 
     private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false)
        : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
@@ -137,22 +133,6 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
             //update row count (on append add row count to existing metadata)
             _footer!.Add(_openedWriters.Sum(w => w.RowCount ?? 0));
         }
-    }
-
-    /// <summary>
-    /// Disposes the writer and writes the file footer.
-    /// </summary>
-    public void Dispose() {
-
-        DisposeCore();
-
-        if(_footer == null)
-            return;
-
-        long size = _footer.Write(Stream);
-        Stream.WriteInt32((int)size); // metadata size: 4 bytes
-        WriteMagic();                 // end magic:     4 bytes
-        Stream.Flush();
     }
 
     /// <summary>

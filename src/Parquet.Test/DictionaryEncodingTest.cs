@@ -38,7 +38,7 @@ namespace Parquet.Test {
 
             using var stream = new MemoryStream();
 
-            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: new ParquetOptions() { UseDictionaryEncoding = true })) {
+            await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: new ParquetOptions() { UseDictionaryEncoding = true })) {
                 using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
                 await groupWriter.WriteColumnAsync(new DataColumn(dataField, data));
             }

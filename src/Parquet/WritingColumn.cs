@@ -135,12 +135,16 @@ class WritingColumn<T> : IDisposable where T : struct {
             if(_definitionLevels == null)
                 throw new InvalidOperationException("Definition levels are not ready yet");
 
-            return _definitionLevels.AsSpan(0, _values.Length);
+            return _definitionLevels.AsSpan(0, NumValues);
         }
     }
 
     public DataColumnStatistics Statistics { get; internal set; } =
         new DataColumnStatistics(null, null, null, null);
+
+    public void Pack(bool useDictionaryEncoding, double dictionaryThreshold) {
+
+    }
 
     public void Dispose() {
         if(_definitionLevels != null) {

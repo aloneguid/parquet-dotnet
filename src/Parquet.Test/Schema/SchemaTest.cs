@@ -420,7 +420,7 @@ namespace Parquet.Test.Schema {
 
             // the writer used to create structure type under "root" (https://github.com/aloneguid/parquet-dotnet/issues/143)
             var ms = new MemoryStream();
-            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms))
+            await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms))
             using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup())
                 foreach(DataColumn column in columns)
                     await groupWriter.WriteColumnAsync(column);
@@ -442,7 +442,7 @@ namespace Parquet.Test.Schema {
 
             using var memoryStream = new MemoryStream();
 
-            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream))
+            await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryStream))
             using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
                 var dataColumn = new DataColumn(field, new List<DateTime?>() { DateTime.Now }.ToArray());
                 await groupWriter.WriteColumnAsync(dataColumn);

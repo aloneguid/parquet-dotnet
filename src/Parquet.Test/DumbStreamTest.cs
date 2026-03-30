@@ -14,7 +14,7 @@ namespace Parquet.Test {
             ParquetSchema schema = new(field);
 
             using MemoryStream memoryFileStream = new();
-            using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryFileStream)) {
+            await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, memoryFileStream)) {
                 using ParquetRowGroupWriter rowGroupWriter = parquetWriter.CreateRowGroup();
                 DateTime[] data = new DateTime[10000];
                 for(int i = 0; i < 10000; i++)

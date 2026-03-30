@@ -56,7 +56,7 @@ internal class DataTypes {
     private async Task Run(DataColumn c) {
         using var ms = new MemoryStream();
 
-        using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(c.Field), ms)) {
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(c.Field), ms)) {
             writer.CompressionMethod = CompressionMethod.None;
             // create a new row group in the file
             using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {

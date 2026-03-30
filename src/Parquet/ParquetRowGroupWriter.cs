@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
@@ -22,6 +23,9 @@ namespace Parquet;
 public class ParquetRowGroupWriter : IDisposable
 #pragma warning restore CA1063 // Implement IDisposable Correctly
 {
+    private static readonly MethodInfo WriteStructArrayAsyncMethod = typeof(ParquetRowGroupWriter)
+        .GetMethod(nameof(WriteStructArrayAsync), BindingFlags.Instance | BindingFlags.NonPublic)!;
+
     private readonly ParquetSchema _schema;
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
@@ -111,6 +115,83 @@ public class ParquetRowGroupWriter : IDisposable
         ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
         _owGroup.Columns.Add(chunk);
 
+    }
+
+    /// <summary>
+    /// Backward compatible array based write method, will be removed in future. Use generic methods instead.
+    /// </summary>
+    public async Task WriteAsyncV1(DataField field, Array values, int[]? repetitiionLevels = null) {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(values);
+
+        ReadOnlyMemory<int>? repetitionLevels = repetitiionLevels is null ? null : repetitiionLevels.AsMemory();
+
+        if(field.ClrType == typeof(string)) {
+            if(values is not string[] stringValues)
+                throw new ArgumentException($"expected values of type {GetExpectedArrayType(field)} but passed {values.GetType()}", nameof(values));
+
+            await WriteAsync(field, stringValues, repetitionLevels);
+            return;
+        }
+
+        if(field.ClrType == typeof(byte[])) {
+            throw new NotSupportedException("binary columns are not supported by this write overload; use WriteColumnAsync instead.");
+        }
+
+        try {
+            Task writeTask = (Task)WriteStructArrayAsyncMethod
+                .MakeGenericMethod(field.ClrType)
+                .Invoke(this, new object?[] { field, values, repetitionLevels })!;
+
+            await writeTask;
+        } catch(TargetInvocationException ex) when(ex.InnerException != null) {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw;
+        }
+    }
+
+    private Task WriteStructArrayAsync<T>(DataField field, Array values, ReadOnlyMemory<int>? repetitionLevels) where T : struct {
+        if(field.IsNullable) {
+            if(values is T?[] nullableValues) {
+                return WriteAsync<T>(field, nullableValues.AsMemory(), repetitionLevels);
+            }
+
+            if(values is T[] nonNullableValues) {
+                var promotedValues = new T?[nonNullableValues.Length];
+                for(int i = 0; i < nonNullableValues.Length; i++) {
+                    promotedValues[i] = nonNullableValues[i];
+                }
+
+                return WriteAsync<T>(field, promotedValues.AsMemory(), repetitionLevels);
+            }
+        } else {
+            if(values is T[] nonNullableValues) {
+                return WriteAsync<T>(field, nonNullableValues.AsMemory(), repetitionLevels);
+            }
+
+            if(values is T?[] nullableValues) {
+                var materializedValues = new T[nullableValues.Length];
+                for(int i = 0; i < nullableValues.Length; i++) {
+                    T? value = nullableValues[i];
+                    if(!value.HasValue)
+                        throw new ArgumentException($"column '{field.Name}' is not nullable but values contain nulls", nameof(values));
+
+                    materializedValues[i] = value.Value;
+                }
+
+                return WriteAsync<T>(field, materializedValues.AsMemory(), repetitionLevels);
+            }
+        }
+
+        throw new ArgumentException($"expected values of type {GetExpectedArrayType(field)} but passed {values.GetType()}", nameof(values));
+    }
+
+    private static SType GetExpectedArrayType(DataField field) {
+        SType elementType = field.IsNullable && field.ClrType.IsValueType
+            ? typeof(Nullable<>).MakeGenericType(field.ClrType)
+            : field.ClrType;
+
+        return elementType.MakeArrayType();
     }
 
     /// <summary>

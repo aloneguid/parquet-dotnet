@@ -20,7 +20,7 @@ namespace Parquet.Test.Integration {
                 F.Delete(testFileName);
 
             using(Stream s = F.OpenWrite(testFileName)) {
-                using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, s)) {
+                await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, s)) {
                     using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
                     await rgw.WriteColumnAsync(dc);

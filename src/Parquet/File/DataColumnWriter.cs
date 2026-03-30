@@ -228,6 +228,14 @@ class DataColumnWriter {
 
         var r = new ColumnMetrics();
 
+        /*
+         * Page header must preceeed actual data (compressed or not) however it contains both
+         * the uncompressed and compressed data size which we don't know! This somehow limits
+         * the write efficiency.
+         */
+
+        // todo: dictionary write
+
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
             bool deltaEncode = false;

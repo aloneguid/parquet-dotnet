@@ -56,7 +56,7 @@ namespace Parquet.Test {
             System.IO.File.Delete("c:\\tmp\\data3.parquet");
 
             using(Stream fs = System.IO.File.OpenWrite("c:\\tmp\\data3.parquet")) {
-                using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs)) {
+                await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs)) {
                     using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                         await groupWriter.WriteColumnAsync(column1);
                         await groupWriter.WriteColumnAsync(column2);
@@ -133,7 +133,7 @@ namespace Parquet.Test {
                new string[] { "London", "Derby" });
 
             using(Stream fileStream = System.IO.File.OpenWrite("c:\\test.parquet")) {
-                using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
+                await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream)) {
                     parquetWriter.CompressionMethod = CompressionMethod.Gzip;
                     parquetWriter.CompressionLevel = System.IO.Compression.CompressionLevel.Optimal;
                     // create a new row group in the file
@@ -150,7 +150,7 @@ namespace Parquet.Test {
             var schema = new ParquetSchema(new DataField<int>("id"));
             var ms = new MemoryStream();
 
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 1, 2 }));
                 }
@@ -158,7 +158,7 @@ namespace Parquet.Test {
 
             //append to this file. Note that you cannot append to existing row group, therefore create a new one
             ms.Position = 0;    // this is to rewind our memory stream, no need to do it in real code.
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, append: true)) {
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, append: true)) {
                 using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                     await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 3, 4 }));
                 }
@@ -187,7 +187,7 @@ namespace Parquet.Test {
             var schema = new ParquetSchema(new DataField<int>("id"));
 
             //write
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
                 writer.CustomMetadata = new Dictionary<string, string> {
                     ["key1"] = "value1",
                     ["key2"] = "value2"

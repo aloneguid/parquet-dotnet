@@ -1262,7 +1262,7 @@ public class ParquetSerializerTest : TestBase {
             }
         };
 
-        using(ParquetWriter writer = await ParquetWriter.CreateAsync(typeof(ClassWithPreinitializedDict).GetParquetSchema(true), ms)) {
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(typeof(ClassWithPreinitializedDict).GetParquetSchema(true), ms)) {
             await ParquetSerializer.SerializeRowGroupAsync(writer, new[] { testData }, default);
         }
         ms.Position = 0;
