@@ -124,59 +124,6 @@ static partial class DeltaBinaryPackedEncoder {
         }
     }
 
-    /// <summary>
-    /// Encodes the provided data using a delta encoding scheme and writes it to the given destination stream.
-    /// Optionally, collects statistics about the encoded data if the 'stats' parameter is provided.
-    /// </summary>
-    /// <param name="data">The input array to be encoded.</param>
-    /// <param name="offset"></param>
-    /// <param name="count"></param>
-    /// <param name="destination">The stream where the encoded data will be written.</param>
-    /// <param name="stats">Optional parameter to collect statistics about the encoded data (can be null).</param>
-    /// <exception cref="NotSupportedException"></exception>
-    public static void Encode(Array data, int offset, int count, Stream destination, DataColumnStatistics? stats = null) {
-        System.Type t = data.GetType();
-
-        // Native types - no conversion needed
-        if (t == typeof(int[])) {
-            EncodeInt(((int[])data).AsSpan(offset, count), destination, 1024, 32);
-            if (stats != null)
-                ParquetPlainEncoder.FillStats(((int[])data).AsSpan(offset, count), stats);
-        }
-        else if (t == typeof(long[])) {
-            EncodeLong(((long[])data).AsSpan(offset, count), destination, 1024, 32);
-            if (stats != null)
-                ParquetPlainEncoder.FillStats(((long[])data).AsSpan(offset, count), stats);
-        }
-        // Direct encoding for all supported types
-        else if (t == typeof(short[])) {
-            EncodeShort(((short[])data).AsSpan(offset, count), destination, 1024, 32);
-            if (stats != null)
-                ParquetPlainEncoder.FillStats(((short[])data).AsSpan(offset, count), stats);
-        }
-        else if (t == typeof(ushort[])) {
-            EncodeUshort(((ushort[])data).AsSpan(offset, count), destination, 1024, 32);
-            if (stats != null)
-                ParquetPlainEncoder.FillStats(((ushort[])data).AsSpan(offset, count), stats);
-        }
-        else if (t == typeof(uint[])) {
-            EncodeUint(((uint[])data).AsSpan(offset, count), destination, 1024, 32);
-            if (stats != null)
-                ParquetPlainEncoder.FillStats(((uint[])data).AsSpan(offset, count), stats);
-        }
-        else if (t == typeof(ulong[])) {
-            if (!CanEncodeULongArray((ulong[])data, offset, count)) {
-                throw new NotSupportedException($"ulong values exceed long.MaxValue range and cannot be encoded with {Encoding.DELTA_BINARY_PACKED}. Use plain encoding instead.");
-            }
-            EncodeUlong(((ulong[])data).AsSpan(offset, count), destination, 1024, 32);
-            if (stats != null)
-                ParquetPlainEncoder.FillStats(((ulong[])data).AsSpan(offset, count), stats);
-        }
-        else {
-            throw new NotSupportedException($"type {t} is not supported in {Encoding.DELTA_BINARY_PACKED}");
-        }
-    }
-
     public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount, out int consumedBytes) {
         if (s.Length == 0 && valueCount == 0) {
             consumedBytes = 0;

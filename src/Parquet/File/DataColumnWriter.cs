@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IO;
-using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Parquet.File; 
 class DataColumnWriter {
@@ -129,71 +126,6 @@ class DataColumnWriter {
         cs.UncompressedSize += ph.UncompressedPageSize;
     }
 
-    private async Task<ColumnMetrics> WriteColumnAsync_MIGRATE(ColumnChunk chunk, DataColumn column,
-       SchemaElement tse,
-       CancellationToken cancellationToken = default) {
-
-        column.Field.EnsureAttachedToSchema(nameof(column));
-
-        var r = new ColumnMetrics();
-
-        /*
-         * Page header must preceeed actual data (compressed or not) however it contains both
-         * the uncompressed and compressed data size which we don't know! This somehow limits
-         * the write efficiency.
-         */
-
-        using var pc = new PackedColumn(column);
-        //pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
-
-        // dictionary page
-        if(pc.HasDictionary) {
-            PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length, out _);
-            r.Pages.Add(ph);
-            using MemoryStream ms = _rmsMgr.GetStream();
-            ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
-                   tse,
-                   ms, column.Statistics);
-
-            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
-        }
-
-        // data page
-        using(MemoryStream ms = _rmsMgr.GetStream()) {
-            Array data = pc.GetPlainData(out int offset, out int count);
-            bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
-           
-            // data page Num_values also does include NULLs
-            PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, out DataPageHeader dph);
-            r.Pages.Add(ph);
-            if(pc.HasRepetitionLevels) {
-                WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
-            }
-            if(pc.HasDefinitionLevels) {
-                WriteLevels(ms, pc.DefinitionLevels!, column.DefinitionLevels!.Length, column.Field.MaxDefinitionLevel);
-            }
-
-            if(pc.HasDictionary) {
-                // dictionary indexes are always encoded with RLE
-                int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
-                int bitWidth = pc.Dictionary!.Length.GetBitWidth();
-                ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
-                RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-            } else {                
-                if(deltaEncode) {
-                    DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
-                } else {
-                    ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
-                }
-            }
-
-            dph.Statistics = column.Statistics.ToThriftStatistics(tse);
-            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
-        }
-
-        return r;
-    }
-
     private async Task<ColumnMetrics> WriteAsync<T>(ColumnChunk chunk,
         WritingColumn<T> wc,
         SchemaElement tse,
@@ -255,11 +187,6 @@ class DataColumnWriter {
         }
 
         return r;
-    }
-
-    private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
-        int bitWidth = maxValue.GetBitWidth();
-        RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
     }
 
     private static void WriteLevels(Stream s, ReadOnlySpan<int> levels, int maxValue) {

@@ -32,19 +32,8 @@ class PackedColumn : IDisposable {
     private int _definitionOffset = 0;
     private bool _areDefinitionsPooled;
 
-    private Array _definedData;
+    private readonly Array _definedData;
     private int _definedDataCount;
-
-    private readonly DataColumn? _column;
-
-    public PackedColumn(DataColumn column) {
-        _field = column.Field;
-        _column = column;
-        _definitionLevels = column.DefinitionLevels;
-        _repetitionLevels = column.RepetitionLevels;
-        _definedData = column.DefinedData;
-        _definedDataCount = column.DefinedData.Length;
-    }
 
     public PackedColumn(DataField df, int totalCount, int approxDefinedCount) {
         _field = df;
@@ -54,20 +43,11 @@ class PackedColumn : IDisposable {
 
     public bool HasDictionary => _dictionary != null;
 
-    public Array? Dictionary => _dictionary;
-
-    public bool HasRepetitionLevels => _repetitionLevels != null;
-
     public int[]? RepetitionLevels => _repetitionLevels;
 
     public bool HasDefinitionLevels => _definitionLevels != null;
 
     public int[]? DefinitionLevels => _definitionLevels;
-
-    public int[]? GetDictionaryIndexes(out int length) {
-        length = (int)(_column!.NumValues - (_column.Statistics.NullCount ?? 0));
-        return _dictionaryIndexes;
-    }
 
     public Span<int> AllocateOrGetDictionaryIndexes(int max) {
 
@@ -122,14 +102,6 @@ class PackedColumn : IDisposable {
         return nullCount;
     }
 
-    public int DefinitionsRead => _definitionOffset;
-
-    public Array GetPlainData(out int offset, out int count) {
-        offset = 0;
-        count = _definedDataCount;
-        return _definedData;
-    }
-
     public Array GetPlainDataToReadInto(out int offset) {
         offset = _definedDataCount;
         return _definedData;
@@ -146,33 +118,6 @@ class PackedColumn : IDisposable {
     public int ValuesRead => HasDefinitionLevels 
         ? _definitionOffset 
         : (_dictionaryIndexes != null ? _dictionaryIndexesOffset : _definedDataCount);
-
-    /// <summary>
-    /// Sets statistics: null count
-    /// </summary>
-    public void Pack(bool useDictionaryEncoding, double dictionaryThreshold) {
-
-        if(_column == null)
-            throw new NullReferenceException();
-
-        // try to extract dictionary
-
-        if(useDictionaryEncoding && 
-            // for some reason some readers do NOT understand dictionary-encoded arrays, but lists or plain columns are just fine
-            !_column.Field.IsArray &&
-            ParquetDictionaryEncoder.TryExtractDictionary(_column.Field.ClrType,
-                _definedData!, 0, _definedDataCount,
-                out _dictionary, out _dictionaryIndexes, dictionaryThreshold)) {
-
-            // if dictionary is successfully extracted, plainData is invalid
-            _definedData = Array.Empty<string>();
-            _definedDataCount = 0;
-
-            _column.Statistics.DistinctCount = _dictionary!.Length;
-
-            // note that dictionary indexes are pooled!
-        }
-    }
 
     public void Checkpoint() {
 

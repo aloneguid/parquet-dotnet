@@ -9,63 +9,6 @@ namespace Parquet.Encodings;
 
 static class ParquetDictionaryEncoder {
 
-    public static bool TryExtractDictionary<T>(ReadOnlySpan<T> values, double threshold,
-
-        [NotNullWhen(true)]
-        out IMemoryOwner<T>? dictionary,
-
-        [NotNullWhen(true)]
-        out IMemoryOwner<int>? indexes) where T : struct {
-
-        dictionary = null;
-        indexes = null;
-
-        int count = values.Length;
-        if(count == 0) {
-            return false;
-        }
-
-        // Calculate max allowed distinct values based on threshold
-        int maxDistinct = (int)(count * threshold);
-
-        // Dictionary to track unique values and their indices
-        var valueToIndex = new Dictionary<T, int>(count);
-
-        // Rent memory for indexes
-        var indexesOwner = MemoryOwner<int>.Allocate(count);
-        Span<int> indexesSpan = indexesOwner.Span;
-
-        // Single pass: build dictionary and indexes simultaneously, exit early if threshold exceeded
-        for(int i = 0; i < count; i++) {
-            T value = values[i];
-
-            if(!valueToIndex.TryGetValue(value, out int index)) {
-                // New unique value - check threshold before adding
-                if(valueToIndex.Count >= maxDistinct) {
-                    indexesOwner.Dispose();
-                    return false;
-                }
-
-                index = valueToIndex.Count;
-                valueToIndex[value] = index;
-            }
-
-            indexesSpan[i] = index;
-        }
-
-        // Build dictionary array from unique values
-        var dictionaryOwner = MemoryOwner<T>.Allocate(valueToIndex.Count);
-        Span<T> dictionarySpan = dictionaryOwner.Span;
-
-        foreach(KeyValuePair<T, int> kvp in valueToIndex) {
-            dictionarySpan[kvp.Value] = kvp.Key;
-        }
-
-        dictionary = dictionaryOwner;
-        indexes = indexesOwner;
-        return true;
-    }
-
     public static bool TryExtractDictionary(ReadOnlySpan<ReadOnlyMemory<char>> strings, double threshold,
 
         [NotNullWhen(true)]

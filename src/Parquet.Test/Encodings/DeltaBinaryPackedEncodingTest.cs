@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Parquet.Encodings;
@@ -51,7 +50,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         int[] input = new[] { 7, 5, 3, 1, -2, 3, 4, -5, };
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
 
         int[] des = new int[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -65,7 +64,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         int[] input = new[] { int.MaxValue, int.MaxValue - 5, int.MaxValue - 3, int.MaxValue - 1, int.MaxValue - 3, int.MaxValue - 4, };
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
 
         int[] des = new int[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -79,7 +78,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         int[] input = new[] { int.MinValue, int.MinValue + 5, int.MinValue + 3, int.MinValue + 1, int.MinValue + 3, int.MinValue + 4, };
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
 
         int[] des = new int[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -92,7 +91,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         int[] input = Enumerable.Range(1, total).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
 
         int[] des = new int[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -105,7 +104,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         long[] input = new[] { 7L, 5L, 3L, 1L, -2L, 3L, 4L, -5L, };
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
 
         long[] des = new long[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -119,7 +118,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         long[] input = new[] { long.MaxValue, long.MaxValue - 5, long.MaxValue - 3, long.MaxValue - 1, long.MaxValue - 3, long.MaxValue - 4, };
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
 
         long[] des = new long[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -133,7 +132,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         long[] input = new[] { long.MinValue, long.MinValue + 5, long.MinValue + 3, long.MinValue + 1, long.MinValue + 3, long.MinValue + 4, };
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
 
         long[] des = new long[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -148,7 +147,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         long[] input = Enumerable.Range(1, total).Select(i => (long)i).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
 
         long[] des = new long[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -178,7 +177,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         int[] input = Enumerable.Range(0, total).Select(i => r.Next(int.MinValue, int.MaxValue)).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
 
         int[] des = new int[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -214,7 +213,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         }).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
 
         long[] des = new long[input.Length];
         long i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
@@ -224,21 +223,53 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
 
     #region Integer Compatible Types Tests
 
+    [Fact]
+    public void EncodeAndDecodeInt16() {
+        short[] input = [7, 5, 3, 1, -2, 3, 4, -5];
 
-    public static IEnumerable<object[]> NewIntegerTypeBasicTestData => new List<object[]> {
-        new object[] { new short[] { 7, 5, 3, 1, -2, 3, 4, -5 } },
-        new object[] { new ushort[] { 7, 5, 3, 1, 2, 3, 4, 5 } },
-        new object[] { new uint[] { 7u, 5u, 3u, 1u, 2u, 3u, 4u, 5u } },
-        new object[] { new ulong[] { 7ul, 5ul, 3ul, 1ul, 2ul, 3ul, 4ul, 5ul } }
-    };
-
-    [Theory]
-    [MemberData(nameof(NewIntegerTypeBasicTestData))]
-    public void EncodeAndDecodeNewIntegerTypes(Array input) {
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<short>(input, ms);
 
-        Array des = Array.CreateInstance(input.GetType().GetElementType()!, input.Length);
+        short[] des = new short[input.Length];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+        Assert.Equal(input, des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt16() {
+        ushort[] input = [7, 5, 3, 1, 2, 3, 4, 5];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ushort>(input, ms);
+
+        ushort[] des = new ushort[input.Length];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+        Assert.Equal(input, des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt32() {
+        uint[] input = [7u, 5u, 3u, 1u, 2u, 3u, 4u, 5u];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<uint>(input, ms);
+
+        uint[] des = new uint[input.Length];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+        Assert.Equal(input, des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt64() {
+        ulong[] input = [7ul, 5ul, 3ul, 1ul, 2ul, 3ul, 4ul, 5ul];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ulong>(input, ms);
+
+        ulong[] des = new ulong[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
 
         Assert.Equal(input, des);
@@ -248,75 +279,212 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
 
     #region Edge Case Tests
 
+    [Fact]
+    public void EncodeAndDecodeInt16_EdgeCases() {
+        short[] input = [short.MinValue, short.MaxValue, short.MinValue, short.MaxValue];
 
-    public static IEnumerable<object[]> NewIntegerTypeEdgeCaseTestData => new List<object[]> {
-        new object[] { new short[] { short.MinValue, short.MaxValue, short.MinValue, short.MaxValue } },
-        new object[] { new ushort[] { ushort.MinValue, ushort.MaxValue, ushort.MinValue, ushort.MaxValue } },
-        new object[] { new uint[] { uint.MinValue, uint.MaxValue, uint.MinValue, uint.MaxValue } },
-        new object[] { new ulong[] { 0ul, (ulong)long.MaxValue, 100ul, 1000ul } }
-    };
-
-    [Theory]
-    [MemberData(nameof(NewIntegerTypeEdgeCaseTestData))]
-    public void EncodeAndDecodeNewIntegerTypes_EdgeCases(Array input) {
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<short>(input, ms);
 
-        Array des = Array.CreateInstance(input.GetType().GetElementType()!, input.Length);
+        short[] des = new short[input.Length];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
 
         Assert.Equal(input, des);
     }
 
-    [Theory]
-    [InlineData(typeof(short))]
-    [InlineData(typeof(ushort))]
-    [InlineData(typeof(int))]
-    [InlineData(typeof(uint))]
-    [InlineData(typeof(long))]
-    [InlineData(typeof(ulong))]
-    public void EncodeAndDecodeEmptyArray(Type type) {
-        Array emptyInput = Array.CreateInstance(type, 0);
+    [Fact]
+    public void EncodeAndDecodeUInt16_EdgeCases() {
+        ushort[] input = [ushort.MinValue, ushort.MaxValue, ushort.MinValue, ushort.MaxValue];
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(emptyInput, 0, 0, ms);
+        DeltaBinaryPackedEncoder.Encode<ushort>(input, ms);
 
-        Array des = Array.CreateInstance(type, 0);
+        ushort[] des = new ushort[input.Length];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+        Assert.Equal(input, des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt32_EdgeCases() {
+        uint[] input = [uint.MinValue, uint.MaxValue, uint.MinValue, uint.MaxValue];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<uint>(input, ms);
+
+        uint[] des = new uint[input.Length];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+        Assert.Equal(input, des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt64_EdgeCases() {
+        ulong[] input = [0ul, (ulong)long.MaxValue, 100ul, 1000ul];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ulong>(input, ms);
+
+        ulong[] des = new ulong[input.Length];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int b);
+
+        Assert.Equal(input, des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt16_Empty() {
+        short[] input = [];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<short>(input, ms);
+
+        short[] des = [];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
 
         Assert.Empty(des);
     }
 
-    [Theory]
-    [InlineData(typeof(short))]
-    [InlineData(typeof(ushort))]
-    [InlineData(typeof(int))]
-    [InlineData(typeof(uint))]
-    [InlineData(typeof(long))]
-    [InlineData(typeof(ulong))]
-    public void EncodeAndDecodeSingleElement(Type type) {
-        Array singleInput = Array.CreateInstance(type, 1);
-
-        if(type == typeof(short))
-            ((short[])singleInput)[0] = -1000;
-        else if(type == typeof(ushort))
-            ((ushort[])singleInput)[0] = 1000;
-        else if(type == typeof(int))
-            ((int[])singleInput)[0] = -100000;
-        else if(type == typeof(uint))
-            ((uint[])singleInput)[0] = 100000u;
-        else if(type == typeof(long))
-            ((long[])singleInput)[0] = -1000000L;
-        else if(type == typeof(ulong))
-            ((ulong[])singleInput)[0] = 1000000ul;
+    [Fact]
+    public void EncodeAndDecodeUInt16_Empty() {
+        ushort[] input = [];
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(singleInput, 0, 1, ms);
+        DeltaBinaryPackedEncoder.Encode<ushort>(input, ms);
 
-        Array des = Array.CreateInstance(type, 1);
+        ushort[] des = [];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
+
+        Assert.Empty(des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt32_Empty() {
+        int[] input = [];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
+
+        int[] des = [];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
+
+        Assert.Empty(des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt32_Empty() {
+        uint[] input = [];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<uint>(input, ms);
+
+        uint[] des = [];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
+
+        Assert.Empty(des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt64_Empty() {
+        long[] input = [];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
+
+        long[] des = [];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
+
+        Assert.Empty(des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt64_Empty() {
+        ulong[] input = [];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ulong>(input, ms);
+
+        ulong[] des = [];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 0, out int b);
+
+        Assert.Empty(des);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt16_SingleElement() {
+        short[] input = [-1000];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<short>(input, ms);
+
+        short[] des = new short[1];
         int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 1, out int b);
 
-        Assert.Equal(singleInput.GetValue(0), des.GetValue(0));
+        Assert.Equal(input[0], des[0]);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt16_SingleElement() {
+        ushort[] input = [1000];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ushort>(input, ms);
+
+        ushort[] des = new ushort[1];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 1, out int b);
+
+        Assert.Equal(input[0], des[0]);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt32_SingleElement() {
+        int[] input = [-100000];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
+
+        int[] des = new int[1];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 1, out int b);
+
+        Assert.Equal(input[0], des[0]);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt32_SingleElement() {
+        uint[] input = [100000u];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<uint>(input, ms);
+
+        uint[] des = new uint[1];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 1, out int b);
+
+        Assert.Equal(input[0], des[0]);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt64_SingleElement() {
+        long[] input = [-1000000L];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
+
+        long[] des = new long[1];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 1, out int b);
+
+        Assert.Equal(input[0], des[0]);
+    }
+
+    [Fact]
+    public void EncodeAndDecodeUInt64_SingleElement() {
+        ulong[] input = [1000000ul];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ulong>(input, ms);
+
+        ulong[] des = new ulong[1];
+        int i = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, 1, out int b);
+
+        Assert.Equal(input[0], des[0]);
     }
 
     #endregion
@@ -325,28 +493,42 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
 
     [Fact]
     public void EncodeUInt64_ExceedsInt64Max_ShouldThrowNotSupportedException() {
-        ulong[] input = new ulong[] { ulong.MaxValue, (ulong)long.MaxValue + 1, ulong.MaxValue - 1 };
+        ulong[] input = [ulong.MaxValue, (ulong)long.MaxValue + 1, ulong.MaxValue - 1];
 
         using var ms = new MemoryStream();
 
         Assert.Throws<NotSupportedException>(() =>
-            DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms));
+            DeltaBinaryPackedEncoder.Encode<ulong>(input, ms));
     }
 
-    public static IEnumerable<object[]> UInt64CanEncodeTestData => new List<object[]> {
-        new object[] { new ulong[] { ulong.MaxValue }, false, "ExceedsInt64Max" },
-        new object[] { new ulong[] { 0ul, (ulong)long.MaxValue, 100ul }, true, "WithinInt64Range" },
-        new object[] { new ulong[] { 0ul, (ulong)long.MaxValue, ulong.MaxValue }, false, "MixedRange" },
-        new object[] { new ulong[0], true, "EmptyArray" },
-        new object[] { new ulong[] { (ulong)long.MaxValue + 1 }, false, "SingleElementExceedsMax" }
-    };
+    [Fact]
+    public void CanEncode_UInt64_ExceedsInt64Max_ReturnsFalse() {
+        ulong[] input = [ulong.MaxValue];
+        Assert.False(DeltaBinaryPackedEncoder.CanEncode<ulong>(input));
+    }
 
-    [Theory]
-    [MemberData(nameof(UInt64CanEncodeTestData))]
-    public void CanEncode_UInt64_VariousScenarios(ulong[] input, bool expectedResult, string scenario) {
-        bool canEncode = DeltaBinaryPackedEncoder.CanEncode(input, 0, input.Length);
+    [Fact]
+    public void CanEncode_UInt64_WithinInt64Range_ReturnsTrue() {
+        ulong[] input = [0ul, (ulong)long.MaxValue, 100ul];
+        Assert.True(DeltaBinaryPackedEncoder.CanEncode<ulong>(input));
+    }
 
-        Assert.Equal(expectedResult, canEncode);
+    [Fact]
+    public void CanEncode_UInt64_MixedRange_ReturnsFalse() {
+        ulong[] input = [0ul, (ulong)long.MaxValue, ulong.MaxValue];
+        Assert.False(DeltaBinaryPackedEncoder.CanEncode<ulong>(input));
+    }
+
+    [Fact]
+    public void CanEncode_UInt64_EmptySpan_ReturnsFalse() {
+        ReadOnlySpan<ulong> input = [];
+        Assert.False(DeltaBinaryPackedEncoder.CanEncode<ulong>(input));
+    }
+
+    [Fact]
+    public void CanEncode_UInt64_SingleElementExceedsMax_ReturnsFalse() {
+        ulong[] input = [(ulong)long.MaxValue + 1];
+        Assert.False(DeltaBinaryPackedEncoder.CanEncode<ulong>(input));
     }
 
     #endregion
@@ -361,7 +543,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         ushort[] input = Enumerable.Range(0, count).Select(i => (ushort)(i % 65536)).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<ushort>(input, ms);
 
         ushort[] des = new ushort[input.Length];
         int decoded = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int _);
@@ -377,7 +559,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         uint[] input = Enumerable.Range(0, count).Select(i => (uint)i).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<uint>(input, ms);
 
         uint[] des = new uint[input.Length];
         int decoded = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int _);
@@ -393,7 +575,7 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
         ulong[] input = Enumerable.Range(0, count).Select(i => (ulong)i).ToArray();
 
         using var ms = new MemoryStream();
-        DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
+        DeltaBinaryPackedEncoder.Encode<ulong>(input, ms);
 
         ulong[] des = new ulong[input.Length];
         int decoded = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, 0, input.Length, out int _);
@@ -403,63 +585,87 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
     }
 
     [Fact]
-    public void CompressionRatio_TestAllTypes() {
+    public void CompressionRatio_Int16_Sequential() {
         int count = 10000;
+        short[] input = Enumerable.Range(0, count).Select(i => (short)(i % 32768)).ToArray();
 
-        // Test sequential data compression for each type
-        Type[] types = new[] {
-            typeof(short), typeof(ushort),
-            typeof(int), typeof(uint), typeof(long), typeof(ulong)
-        };
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<short>(input, ms);
 
-        foreach(Type type in types) {
-            Array input = CreateSequentialArray(type, count);
+        int originalSize = sizeof(short) * count;
+        int encodedSize = (int)ms.Length;
 
-            using var ms = new MemoryStream();
-            DeltaBinaryPackedEncoder.Encode(input, 0, input.Length, ms);
-
-            int originalSize = GetTypeSize(type) * count;
-            int encodedSize = (int)ms.Length;
-
-            Assert.True(encodedSize < originalSize, $"Type {type.Name}: encoded size ({encodedSize}) should be less than original size ({originalSize})");
-
-        }
+        Assert.True(encodedSize < originalSize, $"Encoded size ({encodedSize}) should be less than original size ({originalSize})");
     }
 
-    private static Array CreateSequentialArray(Type type, int count) {
-        Array array = Array.CreateInstance(type, count);
+    [Fact]
+    public void CompressionRatio_UInt16_Sequential() {
+        int count = 10000;
+        ushort[] input = Enumerable.Range(0, count).Select(i => (ushort)(i % 65536)).ToArray();
 
-        if(type == typeof(short)) {
-            for(int i = 0; i < count; i++)
-                ((short[])array)[i] = (short)(i % 32768);
-        } else if(type == typeof(ushort)) {
-            for(int i = 0; i < count; i++)
-                ((ushort[])array)[i] = (ushort)(i % 65536);
-        } else if(type == typeof(int)) {
-            for(int i = 0; i < count; i++)
-                ((int[])array)[i] = i;
-        } else if(type == typeof(uint)) {
-            for(int i = 0; i < count; i++)
-                ((uint[])array)[i] = (uint)i;
-        } else if(type == typeof(long)) {
-            for(int i = 0; i < count; i++)
-                ((long[])array)[i] = i;
-        } else if(type == typeof(ulong)) {
-            for(int i = 0; i < count; i++)
-                ((ulong[])array)[i] = (ulong)i;
-        }
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ushort>(input, ms);
 
-        return array;
+        int originalSize = sizeof(ushort) * count;
+        int encodedSize = (int)ms.Length;
+
+        Assert.True(encodedSize < originalSize, $"Encoded size ({encodedSize}) should be less than original size ({originalSize})");
     }
 
-    private static int GetTypeSize(Type type) {
-        if(type == typeof(short) || type == typeof(ushort))
-            return 2;
-        if(type == typeof(int) || type == typeof(uint))
-            return 4;
-        if(type == typeof(long) || type == typeof(ulong))
-            return 8;
-        throw new ArgumentException($"Unsupported type: {type}");
+    [Fact]
+    public void CompressionRatio_Int32_Sequential() {
+        int count = 10000;
+        int[] input = Enumerable.Range(0, count).ToArray();
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<int>(input, ms);
+
+        int originalSize = sizeof(int) * count;
+        int encodedSize = (int)ms.Length;
+
+        Assert.True(encodedSize < originalSize, $"Encoded size ({encodedSize}) should be less than original size ({originalSize})");
+    }
+
+    [Fact]
+    public void CompressionRatio_UInt32_Sequential() {
+        int count = 10000;
+        uint[] input = Enumerable.Range(0, count).Select(i => (uint)i).ToArray();
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<uint>(input, ms);
+
+        int originalSize = sizeof(uint) * count;
+        int encodedSize = (int)ms.Length;
+
+        Assert.True(encodedSize < originalSize, $"Encoded size ({encodedSize}) should be less than original size ({originalSize})");
+    }
+
+    [Fact]
+    public void CompressionRatio_Int64_Sequential() {
+        int count = 10000;
+        long[] input = Enumerable.Range(0, count).Select(i => (long)i).ToArray();
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<long>(input, ms);
+
+        int originalSize = sizeof(long) * count;
+        int encodedSize = (int)ms.Length;
+
+        Assert.True(encodedSize < originalSize, $"Encoded size ({encodedSize}) should be less than original size ({originalSize})");
+    }
+
+    [Fact]
+    public void CompressionRatio_UInt64_Sequential() {
+        int count = 10000;
+        ulong[] input = Enumerable.Range(0, count).Select(i => (ulong)i).ToArray();
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode<ulong>(input, ms);
+
+        int originalSize = sizeof(ulong) * count;
+        int encodedSize = (int)ms.Length;
+
+        Assert.True(encodedSize < originalSize, $"Encoded size ({encodedSize}) should be less than original size ({originalSize})");
     }
 
     #endregion
