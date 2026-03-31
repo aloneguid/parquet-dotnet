@@ -134,8 +134,7 @@ public class SchemaReflectorTest : TestBase {
         Assert.False(extraProp.IsArray);
     }
 
-    class AliasedPocoChild
-    {
+    class AliasedPocoChild {
         [JsonPropertyName("ChildID")]
         public int _id { get; set; }
     }
@@ -183,19 +182,17 @@ public class SchemaReflectorTest : TestBase {
             new DataField<int[]>("LegacyIntList")),
             schema);
 
-			// check repetition and definition levels
-			ListField intListField = (ListField)schema[0];
-			Assert.Equal(1, intListField.MaxRepetitionLevel);
-			Assert.Equal(2, intListField.MaxDefinitionLevel);
+        // check repetition and definition levels
+        ListField intListField = (ListField)schema[0];
+        Assert.Equal(1, intListField.MaxRepetitionLevel);
+        Assert.Equal(2, intListField.MaxDefinitionLevel);
 
-			DataField intListElementField = (DataField)intListField.Item;
-			Assert.Equal(1, intListElementField.MaxRepetitionLevel);
-			Assert.Equal(2, intListElementField.MaxDefinitionLevel);
-		}
+        DataField intListElementField = (DataField)intListField.Item;
+        Assert.Equal(1, intListElementField.MaxRepetitionLevel);
+        Assert.Equal(2, intListElementField.MaxDefinitionLevel);
+    }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
-		class IgnoredPoco {
+    class IgnoredPoco {
 
         public int NotIgnored { get; set; }
 
@@ -208,8 +205,6 @@ public class SchemaReflectorTest : TestBase {
         [ParquetIgnore]
         public int Ignored3 { get; set; }
     }
-#pragma warning restore CS0618 // Type or member is obsolete
-
 
     [Fact]
     public void IgnoredProperties() {
@@ -397,7 +392,7 @@ public class SchemaReflectorTest : TestBase {
 
         [ParquetTimestamp(useLogicalTimestamp: true, isAdjustedToUTC: false)]
         public DateTime LogicalLocalTimestampDate { get; set; }
-        
+
         [ParquetTimestamp(useLogicalTimestamp: true)]
         public DateTime LogicalUtcTimestampDate { get; set; }
 
@@ -405,7 +400,7 @@ public class SchemaReflectorTest : TestBase {
         public DateTime? NullableTimestampDate { get; set; }
 
         public TimeSpan DefaultTime { get; set; }
-        
+
         public TimeSpan? NullableTimeSpan { get; set; }
 
         [ParquetMicroSecondsTime]
@@ -473,7 +468,7 @@ public class SchemaReflectorTest : TestBase {
         Assert.False(((DateTimeDataField)df).IsAdjustedToUTC);
         Assert.Equal(DateTimeFormat.Timestamp, ((DateTimeDataField)df).DateTimeFormat);
     }
-    
+
     [Fact]
     public void Type_DateTime_LogicalUtcTimestamp() {
         ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -501,7 +496,7 @@ public class SchemaReflectorTest : TestBase {
         Assert.True(df is TimeSpanDataField);
         Assert.Equal(TimeSpanFormat.MilliSeconds, ((TimeSpanDataField)df).TimeSpanFormat);
     }
-    
+
     [Fact]
     public void Type_TimeSpan_Nullable() {
         ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -550,7 +545,7 @@ public class SchemaReflectorTest : TestBase {
         Assert.Equal(typeof(DateOnly), df.ClrType);
         Assert.False(df.IsNullable);
     }
-    
+
     [Fact]
     public void Type_TimeOnly_Default() {
         ParquetSchema s = typeof(DatesPoco).GetParquetSchema(true);
@@ -842,11 +837,11 @@ public class SchemaReflectorTest : TestBase {
     class ReadOnlyContainer {
         public readonly ClassWithReadOnlyMember RCM;
         public readonly StructWithReadOnlyMember RSM;
-			public readonly ClassWithReadOnlyMember[] RCMs;
-			public readonly StructWithReadOnlyMember[] RSMs;
+        public readonly ClassWithReadOnlyMember[] RCMs;
+        public readonly StructWithReadOnlyMember[] RSMs;
 
-			public ReadOnlyContainer(ClassWithReadOnlyMember rcm, StructWithReadOnlyMember rsm,
-				ClassWithReadOnlyMember[] rcms, StructWithReadOnlyMember[] rsms) {
+        public ReadOnlyContainer(ClassWithReadOnlyMember rcm, StructWithReadOnlyMember rsm,
+            ClassWithReadOnlyMember[] rcms, StructWithReadOnlyMember[] rsms) {
             RCM = rcm;
             RSM = rsm;
             RCMs = rcms;
@@ -856,52 +851,52 @@ public class SchemaReflectorTest : TestBase {
 
     [Fact]
     public void TestClassWithReadOnlyMember() {
-			ParquetSchema schema = typeof(ReadOnlyContainer).GetParquetSchema(false);
+        ParquetSchema schema = typeof(ReadOnlyContainer).GetParquetSchema(false);
         Assert.Equal(4, schema.Fields.Count);
 
         // check definition levels for both members and their children
         StructField classField = (StructField)schema[0];
         StructField structField = (StructField)schema[1];
 
-			// class can be nullable, whereas struct cannot, therefore difference in definition levels
-			Assert.Equal(1, classField.MaxDefinitionLevel);
+        // class can be nullable, whereas struct cannot, therefore difference in definition levels
+        Assert.Equal(1, classField.MaxDefinitionLevel);
         Assert.Equal(0, structField.MaxDefinitionLevel);
 
-			DataField classROS = (DataField)classField.Children[0];
-			DataField classROI = (DataField)classField.Children[1];
-			DataField structROS = (DataField)structField.Children[0];
-			DataField structROI = (DataField)structField.Children[1];
-			Assert.Equal(2, classROS.MaxDefinitionLevel);
-			Assert.Equal(1, classROI.MaxDefinitionLevel);
-			Assert.Equal(1, structROS.MaxDefinitionLevel);
-			Assert.Equal(0, structROI.MaxDefinitionLevel);
+        DataField classROS = (DataField)classField.Children[0];
+        DataField classROI = (DataField)classField.Children[1];
+        DataField structROS = (DataField)structField.Children[0];
+        DataField structROI = (DataField)structField.Children[1];
+        Assert.Equal(2, classROS.MaxDefinitionLevel);
+        Assert.Equal(1, classROI.MaxDefinitionLevel);
+        Assert.Equal(1, structROS.MaxDefinitionLevel);
+        Assert.Equal(0, structROI.MaxDefinitionLevel);
 
-			// --- lists of structs and classes ---
+        // --- lists of structs and classes ---
 
-			ListField classListField = (ListField)schema[2];
-			ListField structListField = (ListField)schema[3];
-			// 2 is standard preamble
-			Assert.Equal(2, classListField.MaxDefinitionLevel);
-			Assert.Equal(2, structListField.MaxDefinitionLevel);
+        ListField classListField = (ListField)schema[2];
+        ListField structListField = (ListField)schema[3];
+        // 2 is standard preamble
+        Assert.Equal(2, classListField.MaxDefinitionLevel);
+        Assert.Equal(2, structListField.MaxDefinitionLevel);
 
-			// check list element
-			StructField classListElement = (StructField)classListField.Item;
-			StructField structListElement = (StructField)structListField.Item;
-			Assert.Equal(3, classListElement.MaxDefinitionLevel);
-			Assert.Equal(2, structListElement.MaxDefinitionLevel);
+        // check list element
+        StructField classListElement = (StructField)classListField.Item;
+        StructField structListElement = (StructField)structListField.Item;
+        Assert.Equal(3, classListElement.MaxDefinitionLevel);
+        Assert.Equal(2, structListElement.MaxDefinitionLevel);
 
-			// check children of list element (struct)
-			DataField classListElementROS = (DataField)classListElement.Children[0];
-			DataField classListElementROI = (DataField)classListElement.Children[1];
-			DataField structListElementROS = (DataField)structListElement.Children[0];
-			DataField structListElementROI = (DataField)structListElement.Children[1];
+        // check children of list element (struct)
+        DataField classListElementROS = (DataField)classListElement.Children[0];
+        DataField classListElementROI = (DataField)classListElement.Children[1];
+        DataField structListElementROS = (DataField)structListElement.Children[0];
+        DataField structListElementROI = (DataField)structListElement.Children[1];
 
-			Assert.Equal(4, classListElementROS.MaxDefinitionLevel);
-			Assert.Equal(3, classListElementROI.MaxDefinitionLevel);
+        Assert.Equal(4, classListElementROS.MaxDefinitionLevel);
+        Assert.Equal(3, classListElementROI.MaxDefinitionLevel);
 
-			Assert.Equal(3, structListElementROS.MaxDefinitionLevel);
-			Assert.Equal(2, structListElementROI.MaxDefinitionLevel);
-		}
+        Assert.Equal(3, structListElementROS.MaxDefinitionLevel);
+        Assert.Equal(2, structListElementROI.MaxDefinitionLevel);
+    }
 }
 
 #pragma warning restore CS0649

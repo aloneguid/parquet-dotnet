@@ -7,7 +7,7 @@ namespace Parquet.Test.Serialisation;
 
 public class TestRow {
     public List<int>? Numbers { get; set; } = [];
-    public List<string?>? Words { get; set; } = [];   
+    public List<string?>? Words { get; set; } = [];
 }
 
 /// <summary>
@@ -31,17 +31,17 @@ public class AdditionalDremelStriperTests {
     public void Empty_Null_Lists_Nullable_Item() {
         FieldStriper<TestRow> striper = _striper.FieldStripers[1];
         ShreddedColumn col = striper.Stripe(striper.Field, NullEmptyListTestCases);
-        Assert.Equal(new string[] {"abc"}, col.Data);
+        Assert.Equal(new string[] { "abc" }, col.Data);
         Assert.Equal(new int[] { 0, 0, 0, 0 }, col.RepetitionLevels!);
-        Assert.Equal(new int[] { 3, 1, 2, 0}, col.DefinitionLevels!);
+        Assert.Equal(new int[] { 3, 1, 2, 0 }, col.DefinitionLevels!);
     }
 
     [Fact]
     public void Empty_Null_Lists_NonNullable_Item() {
         FieldStriper<TestRow> striper = _striper.FieldStripers[0];
         ShreddedColumn col = striper.Stripe(striper.Field, NullEmptyListTestCases);
-        Assert.Equal(new int[] {123}, col.Data);
+        Assert.Equal(new int[] { 123 }, col.Data);
         Assert.Equal(new int[] { 0, 0, 0, 0 }, col.RepetitionLevels!);
-        Assert.Equal(new int[] { 2, 1, 1, 0}, col.DefinitionLevels!);
+        Assert.Equal(new int[] { 2, 1, 1, 0 }, col.DefinitionLevels!);
     }
 }

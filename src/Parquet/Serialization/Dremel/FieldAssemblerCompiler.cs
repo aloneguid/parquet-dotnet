@@ -8,7 +8,7 @@ using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
 
-namespace Parquet.Serialization.Dremel; 
+namespace Parquet.Serialization.Dremel;
 
 class FieldAssemblerCompiler<TClass> {
 
@@ -31,7 +31,7 @@ class FieldAssemblerCompiler<TClass> {
 
     // control whether to inject debug code blocks (you might not want them in debug mode all the time)
     private readonly bool _enableDebug = (Environment.GetEnvironmentVariable("PARQUET_NET_ENABLE_DEBUG") != null)
-        || false;    
+        || false;
 #endif
 
 
@@ -221,8 +221,8 @@ class FieldAssemblerCompiler<TClass> {
     }
 
     private IEnumerable<Expression> CollectionAddNewDefaultItem(
-        Expression collection,  Type collectionType,
-        Expression element,     Type elementType) {
+        Expression collection, Type collectionType,
+        Expression element, Type elementType) {
 
 
         if(collectionType.IsGenericIList()) {
@@ -509,7 +509,7 @@ class FieldAssemblerCompiler<TClass> {
         }
 
         // ----
-        
+
         Expression iteration = Expression.Empty();
 
         if(isRepeated) {
@@ -687,7 +687,7 @@ class FieldAssemblerCompiler<TClass> {
 
     public FieldAssembler<TClass> Compile() {
         ParameterExpression classesParam = Expression.Parameter(typeof(IEnumerable<TClass>), "classes");
-        
+
         Expression iteration = InjectColumn();
 
         BlockExpression block = Expression.Block(

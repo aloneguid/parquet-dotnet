@@ -80,7 +80,8 @@ namespace Parquet.Schema {
                 return false;
 
             for(int i = 0; i < _parts.Count; i++) {
-                if(_parts[i] != other._parts[i]) return false;
+                if(_parts[i] != other._parts[i])
+                    return false;
             }
 
             return true;
@@ -99,7 +100,8 @@ namespace Parquet.Schema {
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) {
-            if(obj is not FieldPath fp) return false;
+            if(obj is not FieldPath fp)
+                return false;
 
             return Equals(fp);
         }

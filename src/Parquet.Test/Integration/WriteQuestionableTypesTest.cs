@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Test.Xunit;
 using Xunit;

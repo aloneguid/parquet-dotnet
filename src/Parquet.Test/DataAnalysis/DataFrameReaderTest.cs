@@ -1,12 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Analysis;
-using Parquet.Encodings;
 using Parquet.Schema;
 using Xunit;
-using System.Linq;
-using Parquet.Data;
 
 namespace Parquet.Test.DataAnalysis;
 

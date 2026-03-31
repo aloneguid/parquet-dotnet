@@ -14,9 +14,10 @@ namespace Parquet.Encodings;
 static class DeltaByteArrayEncoder {
 
     private static void MakeStrings(int[] prefixLenghs, string[] dest, int destOffset, int count) {
-        if(count == 0) return;
+        if(count == 0)
+            return;
         string v = dest[destOffset];
-        for(int i = 1, di = destOffset + 1; i < count; i++, di++) { 
+        for(int i = 1, di = destOffset + 1; i < count; i++, di++) {
             string vNext = v.Substring(0, prefixLenghs[i]) + dest[di];
             v = vNext;
             dest[di] = v;
@@ -24,7 +25,8 @@ static class DeltaByteArrayEncoder {
     }
 
     private static void MakeBytes(int[] prefixLenghs, byte[][] dest, int destOffset, int count) {
-        if(count == 0) return;
+        if(count == 0)
+            return;
         byte[] v = dest[destOffset];
         for(int i = 1, di = destOffset + 1; i < count; i++, di++) {
             int pl = prefixLenghs[i];
@@ -58,8 +60,7 @@ static class DeltaByteArrayEncoder {
             }
 
             return valueCount;
-        }
-        finally {
+        } finally {
             ArrayPool<int>.Shared.Return(prefixLenghs);
         }
     }

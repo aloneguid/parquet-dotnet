@@ -11,7 +11,7 @@ using Parquet.Schema;
 using Parquet.Serialization.Dremel;
 using Type = System.Type;
 
-namespace Parquet.Serialization; 
+namespace Parquet.Serialization;
 
 /// <summary>
 /// High-level object serialisation.
@@ -22,7 +22,7 @@ public static class ParquetSerializer {
     // Define a cache of compiled strippers and assemblers.
     // Strong typed serialization uses System.Type map, whereas untyped uses ParquetSchema map.
     private static readonly ConcurrentDictionary<Type, object> _typeToStriper = new();
-    private static readonly ConcurrentDictionary<ParquetSchema,  object> _schemaToStriper = new();
+    private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToStriper = new();
     private static readonly ConcurrentDictionary<Type, object> _typeToAssembler = new();
     private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToAssembler = new();
     private static readonly Dictionary<Type, HashSet<Type>> AllowedDeserializerConversions = new() {
@@ -214,8 +214,8 @@ public static class ParquetSerializer {
     public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
         ParquetSerializerOptions? options = null,
         CancellationToken cancellationToken = default) {
-        using FileStream fs = (options?.Append ?? false) 
-            ? System.IO.File.Open(filePath, FileMode.Open, FileAccess.ReadWrite) 
+        using FileStream fs = (options?.Append ?? false)
+            ? System.IO.File.Open(filePath, FileMode.Open, FileAccess.ReadWrite)
             : System.IO.File.Create(filePath);
         return await SerializeAsync(objectInstances, fs, options, cancellationToken);
     }
@@ -259,7 +259,7 @@ public static class ParquetSerializer {
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public static async Task DeserializeAsync<T>(Stream source, int rowGroupIndex, IList<T> result, 
+    public static async Task DeserializeAsync<T>(Stream source, int rowGroupIndex, IList<T> result,
         ParquetSerializerOptions? options = null, CancellationToken cancellationToken = default,
         bool resultsAlreadyAllocated = false) where T : class, new() {
 
@@ -284,7 +284,7 @@ public static class ParquetSerializer {
         CancellationToken cancellationToken = default, bool resultsAlreadyAllocated = false,
         ParquetSerializerOptions? options = null) where T : class, new() {
         Assembler<T> asm = GetAssembler<T>();
-        await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken, 
+        await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken,
             resultsAlreadyAllocated);
     }
 
@@ -387,7 +387,7 @@ public static class ParquetSerializer {
     /// <returns></returns>
     public static async IAsyncEnumerable<T> DeserializeAllAsync<T>(Stream source,
         ParquetSerializerOptions? options = null,
-        [EnumeratorCancellation]CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where T : class, new() {
 
         Assembler<T> asm = GetAssembler<T>();
@@ -400,7 +400,7 @@ public static class ParquetSerializer {
         for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
 
             await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
-            foreach (T? item in result) {
+            foreach(T? item in result) {
                 yield return item;
             }
 
@@ -471,7 +471,7 @@ public static class ParquetSerializer {
         bool resultsAlreadyAllocated = false,
         ParquetSerializerOptions? options = null) where T : class, new() {
         Assembler<T> asm = GetAssembler<T>();
-        
+
         await DeserializeRowGroupAsync(rowGroupReader, schema, asm, result, options, cancellationToken, resultsAlreadyAllocated);
     }
 
@@ -512,8 +512,8 @@ public static class ParquetSerializer {
             fileField = fileSchema.DataFields.FirstOrDefault(f => f.Path.ToString().Equals(path, StringComparison.OrdinalIgnoreCase));
         } else {
             fileField = fileSchema.DataFields.FirstOrDefault(f => f.Path.Equals(assemblerField.Path));
-        }            
-        
+        }
+
         if(fileField == null)
             return null;
 
@@ -589,10 +589,10 @@ public static class ParquetSerializer {
     private static List<T> GetList<T>(long? requestedCapacity) {
         if(requestedCapacity == null)
             return new List<T>();
-        
+
         if(requestedCapacity >= int.MaxValue)
             return new List<T>(int.MaxValue);
-        
+
         return new List<T>((int)requestedCapacity);
     }
 }

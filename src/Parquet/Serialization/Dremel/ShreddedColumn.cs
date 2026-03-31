@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Schema;
 
-namespace Parquet.Serialization.Dremel; 
+namespace Parquet.Serialization.Dremel;
 
 class ShreddedColumn {
 
@@ -83,7 +82,8 @@ class ShreddedColumn {
     }
 
     private static ReadOnlyMemory<T>? GetMemoryUnsafe<T>(List<T>? list) where T : struct {
-        if(list == null) return null;
+        if(list == null)
+            return null;
 
         Span<T> span = CollectionsMarshal.AsSpan(list);
         ref T firstElement = ref MemoryMarshal.GetReference(span);
@@ -92,7 +92,7 @@ class ShreddedColumn {
         return memory;
     }
 
-    private static ReadOnlyMemory<T>? GetMemoryUnsafe2<T>(List<T>? list) where T: struct {
+    private static ReadOnlyMemory<T>? GetMemoryUnsafe2<T>(List<T>? list) where T : struct {
         if(list == null)
             return null;
         FieldInfo? field = typeof(List<T>).GetField("_items",

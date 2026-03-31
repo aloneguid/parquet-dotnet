@@ -19,7 +19,7 @@ namespace Parquet.File {
 
         internal ThriftFooter() {
             _fileMeta = new FileMetaData();
-            _tree= new ThriftSchemaTree();
+            _tree = new ThriftSchemaTree();
         }
 
         public ThriftFooter(FileMetaData fileMeta) {
@@ -64,7 +64,7 @@ namespace Parquet.File {
                     return;
 
                 _fileMeta.KeyValueMetadata = value
-                   .Select(kvp => new KeyValue{ Key = kvp.Key, Value = kvp.Value })
+                   .Select(kvp => new KeyValue { Key = kvp.Key, Value = kvp.Value })
                    .ToList();
             }
             get {
@@ -183,7 +183,7 @@ namespace Parquet.File {
             return ph;
         }
 
-#region [ Conversion to Model Schema ]
+        #region [ Conversion to Model Schema ]
 
         public ParquetSchema CreateModelSchema(ParquetOptions formatOptions) {
             int si = 0;
@@ -202,8 +202,10 @@ namespace Parquet.File {
                     throw new InvalidOperationException($"cannot decode schema for field {_fileMeta.Schema[si]}");
 
                 List<string> npath = path?.ToList() ?? new List<string>();
-                if(se.Path != null) npath.AddRange(se.Path.ToList());
-                else npath.Add(se.Name);
+                if(se.Path != null)
+                    npath.AddRange(se.Path.ToList());
+                else
+                    npath.Add(se.Name);
                 se.Path = new FieldPath(npath);
 
                 if(ownedChildCount > 0) {
@@ -218,9 +220,9 @@ namespace Parquet.File {
             }
         }
 
-#endregion
+        #endregion
 
-#region [ Convertion from Model Schema ]
+        #region [ Convertion from Model Schema ]
 
         public FileMetaData CreateThriftSchema(ParquetSchema schema, ParquetOptions options) {
             var meta = new FileMetaData();
@@ -243,9 +245,9 @@ namespace Parquet.File {
             return root;
         }
 
-#endregion
+        #endregion
 
-#region [ Helpers ]
+        #region [ Helpers ]
 
         class ThriftSchemaTree {
 
@@ -256,7 +258,7 @@ namespace Parquet.File {
                 public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
             }
 
-            readonly Dictionary<SchemaElement, Node?> _memoizedFindResults = 
+            readonly Dictionary<SchemaElement, Node?> _memoizedFindResults =
                 new Dictionary<SchemaElement, Node?>(new ReferenceEqualityComparer<SchemaElement>());
 
             public class Node {
@@ -305,7 +307,8 @@ namespace Parquet.File {
             }
 
             public Node? Find(FieldPath path) {
-                if(path.Length == 0) return null;
+                if(path.Length == 0)
+                    return null;
                 return Find(root, path);
             }
 
@@ -337,6 +340,6 @@ namespace Parquet.File {
             }
         }
 
-#endregion
+        #endregion
     }
 }

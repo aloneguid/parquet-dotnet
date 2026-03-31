@@ -8,7 +8,7 @@ namespace Parquet.Test.Reader {
     [UseCulture("en-US")]
     // [UseCulture("da-DK")] // FAILS
     public class TestDataTest : ParquetCsvComparison {
-        
+
         /// <summary>
         /// +---+--------+-----------+------------+-------+----------+---------+----------+-------------------------+----------+---------------------+
         /// |id |bool_col|tinyint_col|smallint_col|int_col|bigint_col|float_col|double_col|date_string_col          |string_col|timestamp_col        |
@@ -315,22 +315,22 @@ namespace Parquet.Test.Reader {
 
             await CompareFilesAsync("delta_byte_array", "", "", false, types);
         }
-        
+
         [Theory]
         [InlineData("")]
         [InlineData("v2")]
         public async Task DecimalTypes(string dataPageVersion) {
-            await CompareFilesAsync("special/decimallegacy", "", dataPageVersion, true, 
+            await CompareFilesAsync("special/decimallegacy", "", dataPageVersion, true,
                 typeof(int?),
                 typeof(decimal?),
                 typeof(decimal?),
                 typeof(decimal?));
         }
-        
+
         [Theory]
         [InlineData("")]
         public async Task DecimalPrecision(string dataPageVersion) {
-            await CompareFilesAsync("types/decimal_precision", "", dataPageVersion, true, 
+            await CompareFilesAsync("types/decimal_precision", "", dataPageVersion, true,
                 typeof(decimal?),
                 typeof(decimal?));
         }

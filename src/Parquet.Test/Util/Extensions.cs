@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace Parquet.Test.Util; 
+namespace Parquet.Test.Util;
 
 static class Extensions {
     /// <summary>

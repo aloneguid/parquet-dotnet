@@ -4,7 +4,7 @@ using System.Linq;
 using Parquet.Extensions;
 using Parquet.Schema;
 
-namespace Parquet.Data; 
+namespace Parquet.Data;
 
 /// <summary>
 /// The primary low-level structure to hold data for a parquet column.

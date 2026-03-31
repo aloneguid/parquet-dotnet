@@ -1,13 +1,13 @@
-using Parquet.Data;
-using Parquet.Schema;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 using System.Text;
+using System.Threading.Tasks;
+using Parquet.Data;
+using Parquet.Schema;
 using Parquet.Serialization;
+using Xunit;
 
 namespace Parquet.Test {
     /// <summary>
@@ -22,7 +22,7 @@ namespace Parquet.Test {
         public async Task FixedLenByteArray_dictionary(string parquetFile) {
             await using Stream s = OpenTestFile(parquetFile);
             await using ParquetReader r = await ParquetReader.CreateAsync(s);
-            
+
             DataColumn[] columns = await r.ReadEntireRowGroupAsync();
         }
 
@@ -220,7 +220,7 @@ namespace Parquet.Test {
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
 
             Assert.Equal(8, cols.Length);
-            
+
             //DECIMAL(9, 5)
             DataColumn decimal_p9_s5 = cols[5];
             decimal?[] data = (decimal?[])decimal_p9_s5.Data;
@@ -240,7 +240,7 @@ namespace Parquet.Test {
             await using ParquetReader r = await ParquetReader.CreateAsync(s);
             DataColumn[] cols = await r.ReadEntireRowGroupAsync();
             Assert.Single(cols);
-            Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
+            Assert.Equal(new int?[] { 2023, 2024 }, cols[0].Data);
         }
 
         [Fact]

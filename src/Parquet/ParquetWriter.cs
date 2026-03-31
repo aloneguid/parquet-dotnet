@@ -5,13 +5,13 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Schema;
-using Parquet.File;
-using Parquet.Meta;
 using Parquet.Extensions;
 using Parquet.Extensions.Streaming;
+using Parquet.File;
+using Parquet.Meta;
+using Parquet.Schema;
 
-namespace Parquet; 
+namespace Parquet;
 
 /// <summary>
 /// Implements Apache Parquet format writer

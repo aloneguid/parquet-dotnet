@@ -12,7 +12,7 @@ using Parquet.Serialization.Attributes;
 using Parquet.Test.Xunit;
 using Xunit;
 
-namespace Parquet.Test.Serialisation; 
+namespace Parquet.Test.Serialisation;
 
 /// <summary>
 /// When writing tests for this class, please note that you must write the test

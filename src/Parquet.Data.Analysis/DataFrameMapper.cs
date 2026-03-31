@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Numerics;
 using Microsoft.Data.Analysis;
 
 namespace Parquet.Data.Analysis;
@@ -114,7 +112,7 @@ static class DataFrameMapper {
                 return new DecimalDataFrameColumn(colName, (decimal?[])dc.Data);
             }
         }
-                // special case
+        // special case
         if(dc.Field.ClrType == typeof(string)) {
             return new StringDataFrameColumn(colName, (string[])dc.Data);
         }
@@ -305,7 +303,7 @@ static class DataFrameMapper {
             }
             return;
         }
-                // special case
+        // special case
         if(dc.Field.ClrType == typeof(string)) {
             var tdfc = (StringDataFrameColumn)dfc;
             foreach(string el in (string[])dc.Data) {

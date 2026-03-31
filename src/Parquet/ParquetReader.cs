@@ -1,14 +1,14 @@
-﻿using Parquet.File;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Data;
-using System.Threading.Tasks;
 using System.Threading;
-using Parquet.Schema;
+using System.Threading.Tasks;
+using Parquet.Data;
+using Parquet.File;
 using Parquet.Meta;
+using Parquet.Schema;
 
-namespace Parquet; 
+namespace Parquet;
 
 /// <summary>
 /// Implements Apache Parquet format reader, experimental version for next major release.
@@ -147,18 +147,15 @@ public class ParquetReader : ParquetActor, IAsyncDisposable {
     /// <param name="rowGroupIndex">Index of the row group. Default to the first row group if not specified.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns></returns>
-    public async Task<DataColumn[]> ReadEntireRowGroupAsync(int rowGroupIndex = 0, CancellationToken cancellationToken = default)
-    {
+    public async Task<DataColumn[]> ReadEntireRowGroupAsync(int rowGroupIndex = 0, CancellationToken cancellationToken = default) {
         if(Schema == null)
             throw new InvalidOperationException("schema is not initialised yet");
 
         DataField[] dataFields = Schema.GetDataFields();
         DataColumn[] result = new DataColumn[dataFields.Length];
 
-        using(ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex))
-        {
-            for(int i = 0; i < dataFields.Length; i++)
-            {
+        using(ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex)) {
+            for(int i = 0; i < dataFields.Length; i++) {
                 cancellationToken.ThrowIfCancellationRequested();
                 DataColumn column = await reader.ReadColumnAsync(dataFields[i], cancellationToken);
                 result[i] = column;

@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Parquet.Extensions.Streaming; 
+namespace Parquet.Extensions.Streaming;
 
 /// <summary>
 /// A read-only <see cref="Stream"/> backed by a memory slice. This implementation is zero-copy when
@@ -45,7 +45,8 @@ class ReadSpanSubStream : Stream {
     public override long Position {
         get => _position;
         set {
-            if(value < 0 || value > Length) throw new ArgumentOutOfRangeException(nameof(value));
+            if(value < 0 || value > Length)
+                throw new ArgumentOutOfRangeException(nameof(value));
             _position = value;
         }
     }
@@ -55,11 +56,14 @@ class ReadSpanSubStream : Stream {
     }
 
     public override int Read(byte[] buffer, int offset, int count) {
-        if(buffer == null) throw new ArgumentNullException(nameof(buffer));
-        if(offset < 0 || count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException("Invalid offset/count.");
+        if(buffer == null)
+            throw new ArgumentNullException(nameof(buffer));
+        if(offset < 0 || count < 0 || offset + count > buffer.Length)
+            throw new ArgumentOutOfRangeException("Invalid offset/count.");
 
         long remaining = Length - _position;
-        if(remaining <= 0) return 0;
+        if(remaining <= 0)
+            return 0;
 
         int toRead = (int)Math.Min(count, remaining);
         _buffer.Span.Slice((int)_position, toRead).CopyTo(buffer.AsSpan(offset, toRead));
@@ -68,7 +72,8 @@ class ReadSpanSubStream : Stream {
     }
 
     public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
-        if(cancellationToken.IsCancellationRequested) return Task.FromCanceled<int>(cancellationToken);
+        if(cancellationToken.IsCancellationRequested)
+            return Task.FromCanceled<int>(cancellationToken);
         int r = Read(buffer, offset, count);
         return Task.FromResult(r);
     }
@@ -89,7 +94,8 @@ class ReadSpanSubStream : Stream {
                 throw new ArgumentException("Invalid SeekOrigin.", nameof(origin));
         }
 
-        if(newPos < 0 || newPos > Length) throw new IOException("Seek position out of range.");
+        if(newPos < 0 || newPos > Length)
+            throw new IOException("Seek position out of range.");
         _position = newPos;
         return _position;
     }
@@ -107,7 +113,8 @@ class ReadSpanSubStream : Stream {
     }
 
     public override int ReadByte() {
-        if(_position >= Length) return -1;
+        if(_position >= Length)
+            return -1;
         byte value = _buffer.Span[(int)_position];
         _position++;
         return value;

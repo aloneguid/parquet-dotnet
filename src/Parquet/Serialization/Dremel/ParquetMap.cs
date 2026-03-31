@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Parquet.Serialization.Dremel;
@@ -13,10 +12,8 @@ class ParquetMapKV<TKey, TValue> where TKey : notnull {
         get => _key;
         set {
             _key = value;
-            if(parent != null) {
-                // unfortunately assigning default value must be done here, otherwise we can miss situation where key exists but value is null, resulting in data loss
-                parent[_key!] = default!;
-            }
+            // unfortunately assigning default value must be done here, otherwise we can miss situation where key exists but value is null, resulting in data loss
+            parent?[_key!] = default!;
         }
     }
 
@@ -43,7 +40,7 @@ class ParquetMapKV<TKey, TValue> where TKey : notnull {
 /// Dictionary that allows for the values and keys to be set independently. Parquet MAP is physically stored as LIST of structs
 /// with key and value fields. .NET dictionary does not 100% map to this structure so this class is used as an intermediary.
 /// </summary>
-class ParquetMap<TKey, TValue> : 
+class ParquetMap<TKey, TValue> :
     Dictionary<TKey, TValue>, IList<ParquetMapKV<TKey, TValue>>
     where TKey : notnull {
 
@@ -68,19 +65,19 @@ class ParquetMap<TKey, TValue> :
         keysAdded++;
     }
 
-    public bool Contains(ParquetMapKV<TKey, TValue> item) => 
+    public bool Contains(ParquetMapKV<TKey, TValue> item) =>
         list?.Contains(item) ?? false;
-    public void CopyTo(ParquetMapKV<TKey, TValue>[] array, int arrayIndex) => 
+    public void CopyTo(ParquetMapKV<TKey, TValue>[] array, int arrayIndex) =>
         list?.CopyTo(array, arrayIndex);
-    public int IndexOf(ParquetMapKV<TKey, TValue> item) => 
+    public int IndexOf(ParquetMapKV<TKey, TValue> item) =>
         list?.IndexOf(item) ?? -1;
-    public void Insert(int index, ParquetMapKV<TKey, TValue> item) => 
+    public void Insert(int index, ParquetMapKV<TKey, TValue> item) =>
         list?.Insert(index, item);
-    public bool Remove(ParquetMapKV<TKey, TValue> item) => 
+    public bool Remove(ParquetMapKV<TKey, TValue> item) =>
         list?.Remove(item) ?? false;
     public void RemoveAt(int index) =>
         list?.RemoveAt(index);
-    IEnumerator<ParquetMapKV<TKey, TValue>> IEnumerable<ParquetMapKV<TKey, TValue>>.GetEnumerator() => 
+    IEnumerator<ParquetMapKV<TKey, TValue>> IEnumerable<ParquetMapKV<TKey, TValue>>.GetEnumerator() =>
         list?.GetEnumerator() ?? Enumerable.Empty<ParquetMapKV<TKey, TValue>>().GetEnumerator();
 
     #endregion

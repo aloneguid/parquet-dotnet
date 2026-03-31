@@ -1,14 +1,14 @@
-﻿using CsvHelper;
-using Parquet.Data;
-using Parquet.Extensions;
-using Parquet.Schema;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CsvHelper;
+using Parquet.Data;
+using Parquet.Extensions;
+using Parquet.Schema;
 using Xunit;
 using Type = System.Type;
 
@@ -64,16 +64,15 @@ public class ParquetCsvComparison : TestBase {
                        cv == null ||
                        (cv is string s && s == string.Empty);
 
-                    if(!isCsvNull) errors.Add($"expected null value in column {pc.Field.Name}, value #{ri}");
-                }
-                else {
+                    if(!isCsvNull)
+                        errors.Add($"expected null value in column {pc.Field.Name}, value #{ri}");
+                } else {
                     if(clrType == typeof(string)) {
                         if(((string)pv).Trim() != ((string?)cv)?.Trim()) {
                             errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
                             //errors.Add(pv.ToString());
                         }
-                    }
-                    else if(clrType == typeof(byte[])) {
+                    } else if(clrType == typeof(byte[])) {
                         byte[] pva = (byte[])pv;
                         byte[] cva = (byte[])cv!;
 
@@ -84,10 +83,9 @@ public class ParquetCsvComparison : TestBase {
                             if(pva[i] != cva[i])
                                 errors.Add($"expected {cva[i]} but was {pva[i]} in column {pc.Field.Name}, value #{ri}, array index {i}");
                         }
-                    }
-                    else {
+                    } else {
                         if(!pv.Equals(cv))
-                           errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
+                            errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
                     }
                 }
             }

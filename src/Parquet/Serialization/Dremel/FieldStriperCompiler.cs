@@ -13,7 +13,7 @@ class FieldStriperCompiler<TClass> {
 
     private static readonly MethodInfo LevelsAddMethod =
         typeof(List<int>).GetMethod(nameof(IList.Add))!;
-    private static readonly MethodInfo IDictionaryTryGetValueMethod = 
+    private static readonly MethodInfo IDictionaryTryGetValueMethod =
         typeof(IDictionary<string, object>).GetMethod("TryGetValue")!;
     private readonly MethodInfo _valuesListAddMethod;
     private readonly bool _isUntypedClass = typeof(TClass) == typeof(IDictionary<string, object>);
@@ -116,7 +116,7 @@ class FieldStriperCompiler<TClass> {
         return Expression.Block(
             _hasDls
                 ? Expression.Call(_dlsVar, LevelsAddMethod,
-                    Expression.Condition(isLeaf, Expression.Constant(dl -1), Expression.Constant(dl)))
+                    Expression.Condition(isLeaf, Expression.Constant(dl - 1), Expression.Constant(dl)))
                 : Expression.Empty(),
             _hasRls ? Expression.Call(_rlsVar, LevelsAddMethod, currentRlVar) : Expression.Empty());
 
@@ -198,11 +198,10 @@ class FieldStriperCompiler<TClass> {
         return f.MaxDefinitionLevel;
     }
 
-    private static int GetNullCollectionDL(Field f)
-    {
-        return f.MaxDefinitionLevel - 2;    
+    private static int GetNullCollectionDL(Field f) {
+        return f.MaxDefinitionLevel - 2;
     }
-    
+
     private static int GetEmptyCollectionDL(Field f) {
         return f.MaxDefinitionLevel - 1;
     }
@@ -250,7 +249,7 @@ class FieldStriperCompiler<TClass> {
             ParameterExpression retVal = Expression.Variable(typeof(object), "value");
             return Expression.Block(
                 new[] { retVal },
-                
+
                 Expression.Condition(
                     Expression.Call(rootVar, IDictionaryTryGetValueMethod, Expression.Constant(name), retVal),
                     Expression.Convert(retVal, type),
@@ -380,7 +379,7 @@ class FieldStriperCompiler<TClass> {
             Expression.Block(
                 Expression.Assign(_valuesVar, Expression.New(_valuesListType)),
                 Expression.Assign(_dlsVar, _hasDls ? Expression.New(typeof(List<int>)) : NullListOfInt),
-                Expression.Assign(_rlsVar, _hasRls ?  Expression.New(typeof(List<int>)) : NullListOfInt)),
+                Expression.Assign(_rlsVar, _hasRls ? Expression.New(typeof(List<int>)) : NullListOfInt)),
 
             iterationLoop,
 

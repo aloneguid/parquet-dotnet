@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
 using Parquet.Meta;
 
-namespace Parquet.Schema; 
+namespace Parquet.Schema;
 
 /// <summary>
 /// Element of dataset's schema
@@ -99,7 +98,8 @@ public abstract class Field {
         while(current != null) {
             result.Add(current);
             current = allFields.FirstOrDefault(f => f.Children.Contains(current));
-        };
+        }
+        ;
 
         result.Reverse();
 
@@ -158,7 +158,8 @@ public abstract class Field {
     /// </summary>
     public override bool Equals(object? obj) {
 
-        if(obj is not Field other) return false;
+        if(obj is not Field other)
+            return false;
 
         return SchemaType == other.SchemaType && Name == other.Name && Path.Equals(other.Path);
     }

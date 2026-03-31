@@ -8,7 +8,7 @@ using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 
-namespace Parquet.Test.Integration; 
+namespace Parquet.Test.Integration;
 
 public class ParquetSerializerTest : IntegrationBase {
     class IdWithTags {

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Parquet.Meta;
 
-namespace Parquet.Data; 
+namespace Parquet.Data;
 
 /// <summary>
 /// A class that encapsulates decimal that goes out of range of .NET's <see cref="System.Decimal"/>.
@@ -43,7 +43,8 @@ public struct BigDecimal {
     }
 
     internal BigDecimal(byte[] data, SchemaElement schema, bool isReversed = false) {
-        if(!isReversed) data = Enumerable.Reverse(data).ToArray();
+        if(!isReversed)
+            data = Enumerable.Reverse(data).ToArray();
 
         UnscaledValue = new BigInteger(data);
         Precision = schema.Precision!.Value;

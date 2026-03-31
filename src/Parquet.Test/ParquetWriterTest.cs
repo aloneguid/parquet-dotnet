@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
-using Parquet.Serialization;
 using Xunit;
 
 namespace Parquet.Test;
@@ -448,7 +446,7 @@ public class ParquetWriterTest : TestBase {
         var str = new DataField<string>("s");
         using var ms = new MemoryStream();
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms,
-            new ParquetOptions { UseDictionaryEncoding = false})) {
+            new ParquetOptions { UseDictionaryEncoding = false })) {
             writer.CompressionMethod = CompressionMethod.None;
             var strings = new List<string>();
             strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));

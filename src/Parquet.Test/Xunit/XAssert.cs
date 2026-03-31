@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -14,7 +13,7 @@ namespace Parquet.Test.Xunit {
         };
 
         public static void JsonEquivalent(object? expected, object? actual) {
-            
+
             string expectedJson = JsonSerializer.Serialize(expected, Options);
             string actualJson = JsonSerializer.Serialize(actual, Options);
 

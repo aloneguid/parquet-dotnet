@@ -12,7 +12,8 @@ using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
 
-namespace Parquet.File; 
+namespace Parquet.File;
+
 class DataColumnWriter {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;

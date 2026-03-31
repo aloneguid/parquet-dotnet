@@ -4,7 +4,7 @@ using System.Linq;
 using Parquet.Encodings;
 using Xunit;
 
-namespace Parquet.Test.Encodings; 
+namespace Parquet.Test.Encodings;
 
 public class DeltaBinaryPackedEncodingTest : TestBase {
 

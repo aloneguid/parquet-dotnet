@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Parquet.Serialization.Attributes; 
+namespace Parquet.Serialization.Attributes;
 
 /// <summary>
 /// Annotates a <see cref="decimal"/> property to allow customizing precision and scale

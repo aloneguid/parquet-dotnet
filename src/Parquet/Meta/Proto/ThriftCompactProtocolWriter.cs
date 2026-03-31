@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Parquet.Meta.Proto; 
+namespace Parquet.Meta.Proto;
 
 class ThriftCompactProtocolWriter {
     // Used to keep track of the last field for the current and previous structs, so we can do the delta stuff.

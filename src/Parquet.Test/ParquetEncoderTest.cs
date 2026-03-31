@@ -19,7 +19,7 @@ namespace Parquet.Test {
 
             Assert.Equal(new TimeSpan(0, 0, 1), decoded[0]);
             Assert.Equal(new TimeSpan(0, 0, 30), decoded[1]);
-            
+
 #if NET6_0_OR_GREATER
             var decodedAsTimeOnly = new TimeOnly[2];
             ParquetPlainEncoder.Decode(source.ToArray().AsSpan(), decodedAsTimeOnly.AsSpan(), new SchemaElement { Type = Meta.Type.INT64 });
@@ -30,9 +30,9 @@ namespace Parquet.Test {
 
         [Fact]
         public void DecodeOversizedSpan() {
-            var source = new MemoryStream(new byte[] { 
-                1, 0, 0, 0, 
-                2, 0, 0, 0, 
+            var source = new MemoryStream(new byte[] {
+                1, 0, 0, 0,
+                2, 0, 0, 0,
                 0 //<- bad byte of trailing data in source
             });
 
@@ -47,7 +47,7 @@ namespace Parquet.Test {
         [Fact]
         public void Decode_ByteArrays_WithEmptyArrays() {
             var source = new MemoryStream();
-            
+
             source.Write(BitConverter.GetBytes(3), 0, 4);
             source.Write([1, 2, 3], 0, 3);
             source.Write(BitConverter.GetBytes(0), 0, 4);

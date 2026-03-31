@@ -10,14 +10,12 @@ using Parquet.Meta;
 using Parquet.Schema;
 using FieldPath = Parquet.Schema.FieldPath;
 
-namespace Parquet; 
+namespace Parquet;
+
 /// <summary>
 /// Writer for Parquet row groups
 /// </summary>
-#pragma warning disable CA1063 // Implement IDisposable Correctly
-public class ParquetRowGroupWriter : IDisposable
-#pragma warning restore CA1063 // Implement IDisposable Correctly
-{
+public class ParquetRowGroupWriter : IDisposable {
     private readonly ParquetSchema _schema;
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
@@ -79,7 +77,7 @@ public class ParquetRowGroupWriter : IDisposable
         ReadOnlyMemory<int>? repetitionLevels = null,
         Dictionary<string, string>? customMetadata = null,
         CancellationToken cancellationToken = default) where T : struct {
-        
+
         using WritingColumn<T> wc = WritingColumn<T>.NewWritingColumn(field, values, repetitionLevels);
         await WriteAsyncInternal(field, wc, customMetadata, cancellationToken);
     }

@@ -4,7 +4,7 @@ using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test; 
+namespace Parquet.Test;
 
 public class CompressionTest : TestBase {
     [Theory]

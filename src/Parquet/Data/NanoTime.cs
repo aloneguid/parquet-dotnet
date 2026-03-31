@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Parquet.Data; 
+namespace Parquet.Data;
 
 class NanoTime {
     private readonly int _julianDay;
@@ -54,7 +54,7 @@ class NanoTime {
     public byte[] GetBytes() {
         byte[] b1 = BitConverter.GetBytes(_timeOfDayNanos);
         byte[] b2 = BitConverter.GetBytes(_julianDay);
-        byte[] r = new byte[b1.Length+ b2.Length];
+        byte[] r = new byte[b1.Length + b2.Length];
         b1.CopyTo(r, 0);
         b2.CopyTo(r, b1.Length);
         return r;

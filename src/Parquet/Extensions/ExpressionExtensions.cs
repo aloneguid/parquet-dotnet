@@ -38,7 +38,7 @@ static class ExpressionExtensions {
                     Expression.Assign(elementHolder, Expression.Property(enumeratorVar, nameof(IEnumerator.Current))),
 
                     iterationBody,
-                    
+
                     loopCounterHolder == null
                         ? Expression.Empty()
                         : Expression.PostIncrementAssign(loopCounterHolder)),
@@ -68,11 +68,11 @@ static class ExpressionExtensions {
             Expression.Loop(
                 Expression.IfThenElse(
                     Expression.LessThan(iVar, toVar),
-                    
+
                     Expression.Block(
                         body,
                         Expression.PostIncrementAssign(iVar)),
-                    
+
                     Expression.Break(loopBreakLabel)),
                 loopBreakLabel)
             );
@@ -85,7 +85,8 @@ static class ExpressionExtensions {
 
         Expression from = fromIndexVar ?? Expression.Constant(0);
         Expression length = Expression.Property(array, nameof(Array.Length));
-        if(fromIndexVar != null) length = Expression.Subtract(length, fromIndexVar);
+        if(fromIndexVar != null)
+            length = Expression.Subtract(length, fromIndexVar);
 
         return Expression.Call(
             typeof(Array).GetMethod(

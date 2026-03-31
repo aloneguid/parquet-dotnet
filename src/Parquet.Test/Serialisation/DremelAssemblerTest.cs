@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using Parquet.Serialization;
 using Parquet.Serialization.Dremel;
 using Parquet.Test.Serialisation.Paper;
@@ -51,7 +50,7 @@ namespace Parquet.Test.Serialisation {
             Assert.NotNull(docs[1].Links);
 
             Assert.Equal(new long[] { 20, 40, 60 }, docs[0].Links!.Forward!);
-            Assert.Equal(new long[] { 80 },         docs[1].Links!.Forward!);
+            Assert.Equal(new long[] { 80 }, docs[1].Links!.Forward!);
         }
 
         [Fact]
@@ -73,9 +72,9 @@ namespace Parquet.Test.Serialisation {
             Assert.Equal(2, docs[0].Name![0].Language!.Count);
 
             // language values
-            Assert.Equal("en-us",   docs[0].Name![0].Language![0].Code);
-            Assert.Equal("en",      docs[0].Name![0].Language![1].Code);
-            Assert.Equal("en-gb",   docs[0].Name![2].Language![0].Code);
+            Assert.Equal("en-us", docs[0].Name![0].Language![0].Code);
+            Assert.Equal("en", docs[0].Name![0].Language![1].Code);
+            Assert.Equal("en-gb", docs[0].Name![2].Language![0].Code);
         }
 
         [Fact]
@@ -117,13 +116,13 @@ namespace Parquet.Test.Serialisation {
 
         [Fact]
         public void FullReassembly() {
-            var docs = new List<Document> {  new Document(), new Document() };
+            var docs = new List<Document> { new Document(), new Document() };
 
             for(int i = 0; i < Document.RawColumns.Length; i++) {
                 try {
                     _asm.FieldAssemblers[i].Assemble(docs, Document.RawColumns[i]);
                 } catch(Exception ex) {
-                    throw new InvalidOperationException("failure on " + _asm.FieldAssemblers[i].Field, ex); 
+                    throw new InvalidOperationException("failure on " + _asm.FieldAssemblers[i].Field, ex);
                 }
             }
 

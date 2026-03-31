@@ -31,10 +31,11 @@ static partial class DeltaBinaryPackedEncoder {
     /// <param name="count">Number of elements to check</param>
     /// <returns>True if the data can be delta encoded, false otherwise</returns>
     public static bool CanEncode(Array data, int offset, int count) {
-        if (count == 0) return true;
+        if(count == 0)
+            return true;
 
         // Fast path for ulong overflow check
-        if (data.GetType() == typeof(ulong[])) {
+        if(data.GetType() == typeof(ulong[])) {
             return CanEncodeULongArray((ulong[])data, offset, count);
         }
 
@@ -57,8 +58,8 @@ static partial class DeltaBinaryPackedEncoder {
         const ulong maxValue = (ulong)long.MaxValue;
         int end = offset + count;
 
-        for (int i = offset; i < end; i++) {
-            if (data[i] > maxValue) {
+        for(int i = offset; i < end; i++) {
+            if(data[i] > maxValue) {
                 return false;
             }
         }
@@ -125,35 +126,35 @@ static partial class DeltaBinaryPackedEncoder {
     }
 
     public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount, out int consumedBytes) {
-        if (s.Length == 0 && valueCount == 0) {
+        if(s.Length == 0 && valueCount == 0) {
             consumedBytes = 0;
             return 0;
         }
 
         System.Type? elementType = dest.GetType().GetElementType();
-        if (elementType == null) {
+        if(elementType == null) {
             throw new NotSupportedException($"element type {elementType} is not supported");
         }
 
         // Native types - no conversion needed
-        if (elementType == typeof(long)) {
+        if(elementType == typeof(long)) {
             return DecodeLong(s, ((long[])dest).AsSpan(destOffset), out consumedBytes);
         }
-        if (elementType == typeof(int)) {
+        if(elementType == typeof(int)) {
             return DecodeInt(s, ((int[])dest).AsSpan(destOffset), out consumedBytes);
         }
 
         // Direct decoding for all supported types
-        if (elementType == typeof(short)) {
+        if(elementType == typeof(short)) {
             return DecodeShort(s, ((short[])dest).AsSpan(destOffset), out consumedBytes);
         }
-        if (elementType == typeof(ushort)) {
+        if(elementType == typeof(ushort)) {
             return DecodeUshort(s, ((ushort[])dest).AsSpan(destOffset), out consumedBytes);
         }
-        if (elementType == typeof(uint)) {
+        if(elementType == typeof(uint)) {
             return DecodeUint(s, ((uint[])dest).AsSpan(destOffset), out consumedBytes);
         }
-        if (elementType == typeof(ulong)) {
+        if(elementType == typeof(ulong)) {
             return DecodeUlong(s, ((ulong[])dest).AsSpan(destOffset), out consumedBytes);
         }
 

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Buffers;
-using System.Drawing;
 using Parquet.Data;
-using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.Schema;
 
-namespace Parquet.File; 
+namespace Parquet.File;
 
 /// <summary>
 /// Represents column data packed into Parquet logical parts. This is an intermediate data structure that
@@ -115,8 +113,8 @@ class PackedColumn : IDisposable {
         _dictionary = dictionary;
     }
 
-    public int ValuesRead => HasDefinitionLevels 
-        ? _definitionOffset 
+    public int ValuesRead => HasDefinitionLevels
+        ? _definitionOffset
         : (_dictionaryIndexes != null ? _dictionaryIndexesOffset : _definedDataCount);
 
     public void Checkpoint() {
@@ -145,7 +143,7 @@ class PackedColumn : IDisposable {
             dcData = _field.CreateArray(_definedDataCount);
 
             //If the arrays aren't the exact same size let's copy what fits
-            int copyAmount = _definedDataCount > _definedData.Length 
+            int copyAmount = _definedDataCount > _definedData.Length
                 ? _definedData.Length : _definedDataCount;
             Array.Copy(_definedData, dcData, copyAmount);
         } else {

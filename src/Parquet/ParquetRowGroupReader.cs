@@ -141,7 +141,8 @@ public class ParquetRowGroupReader : IDisposable, IParquetRowGroupReader {
     private DataColumnStatistics? ReadColumnStatistics(ColumnChunk cc) {
 
         Statistics? st = cc.MetaData!.Statistics;
-        if(st == null) return null;
+        if(st == null)
+            return null;
 
         SchemaElement? se = _footer.GetSchemaElement(cc) ?? throw new ArgumentException("can't find schema element", nameof(cc));
 

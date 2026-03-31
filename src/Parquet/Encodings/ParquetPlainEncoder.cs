@@ -893,12 +893,12 @@ static class ParquetPlainEncoder {
                         if(tse.LogicalType.TIMESTAMP.Unit.MILLIS is not null) {
                             long unixTime = element.ToUnixMilliseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
-                            destination.Write(raw, 0, raw.Length);    
-                        } else if (tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
+                            destination.Write(raw, 0, raw.Length);
+                        } else if(tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
                             long unixTime = element.ToUtc().ToUnixMicroseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
                             destination.Write(raw, 0, raw.Length);
-                        } else if (tse.LogicalType.TIMESTAMP.Unit.NANOS is not null) {
+                        } else if(tse.LogicalType.TIMESTAMP.Unit.NANOS is not null) {
                             long unixTime = element.ToUtc().ToUnixNanoseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
                             destination.Write(raw, 0, raw.Length);
@@ -1052,25 +1052,25 @@ static class ParquetPlainEncoder {
     public static int Decode(Span<byte> source, Span<TimeOnly> data, SchemaElement tse) {
         switch(tse.Type) {
             case TType.INT32: {
-                int i = 0;
-                int srcPos = 0;
-                while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
-                    int iv = source.ReadInt32(srcPos);
-                    srcPos += sizeof(int);
-                    data[i++] = new TimeOnly(iv * TimeSpan.TicksPerMillisecond);
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
+                        int iv = source.ReadInt32(srcPos);
+                        srcPos += sizeof(int);
+                        data[i++] = new TimeOnly(iv * TimeSpan.TicksPerMillisecond);
+                    }
+                    return i;
                 }
-                return i;
-            }
             case TType.INT64: {
-                int i = 0;
-                int srcPos = 0;
-                while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
-                    long lv = source.ReadInt64(srcPos);
-                    srcPos += sizeof(long);
-                    data[i++] = new TimeOnly(lv * 10);
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
+                        long lv = source.ReadInt64(srcPos);
+                        srcPos += sizeof(long);
+                        data[i++] = new TimeOnly(lv * 10);
+                    }
+                    return i;
                 }
-                return i;
-            }
             default:
                 throw new NotSupportedException();
         }

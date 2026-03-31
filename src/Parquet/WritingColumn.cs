@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.ObjectModel;
-using System.Runtime.InteropServices;
-using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Schema;
@@ -236,8 +233,6 @@ class WritingColumn<T> : IDisposable where T : struct {
             TPool.Return(_valuesBase);
         }
 
-        if(_dictionaryIndexes != null) {
-            _dictionaryIndexes.Dispose();
-        }
+        _dictionaryIndexes?.Dispose();
     }
 }

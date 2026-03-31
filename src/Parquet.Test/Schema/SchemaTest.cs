@@ -1,15 +1,15 @@
-﻿using Parquet.Data;
-using System;
-using Xunit;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using Parquet.Schema;
 using System.Linq;
-using TT = Parquet.Meta.Type;
-using CT = Parquet.Meta.ConvertedType;
+using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.File;
 using Parquet.Meta;
+using Parquet.Schema;
+using Xunit;
+using CT = Parquet.Meta.ConvertedType;
+using TT = Parquet.Meta.Type;
 
 namespace Parquet.Test.Schema {
     public class SchemaTest : TestBase {

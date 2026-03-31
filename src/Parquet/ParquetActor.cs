@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Extensions;
-using Parquet.File;
 
 namespace Parquet;
 
@@ -13,10 +12,7 @@ namespace Parquet;
 /// Base class for reader and writer
 /// </summary>
 public class ParquetActor {
-#pragma warning disable IDE1006
     internal static readonly byte[] MagicBytes = Encoding.ASCII.GetBytes("PAR1");
-#pragma warning restore IDE1006
-
     private readonly Stream _fileStream;
 
     internal ParquetActor(Stream? fileStream) =>
