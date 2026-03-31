@@ -125,7 +125,6 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
         }
     }
 
-    private void WriteMagic() => Stream.Write(MagicBytes, 0, MagicBytes.Length);
     private Task WriteMagicAsync() => Stream.WriteAsync(MagicBytes, 0, MagicBytes.Length);
 
     private void DisposeCore() {

@@ -421,17 +421,20 @@ public class ParquetWriterTest : TestBase {
     public async Task Dictionary_encoding_applied_for_repeated_strings() {
         var str = new DataField<string>("s");
         using var ms = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms)) {
+
+        var options = new ParquetOptions();
+        options.DictionaryEncodedColumns.Add(str.Path.ToString());
+
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms, options)) {
             writer.CompressionMethod = CompressionMethod.None;
 
             var strings = new List<string>();
             strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
             strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
             strings.AddRange(Enumerable.Repeat("The main reason behind the occurrence of this error is...", 10000));
-            var strData = new DataColumn(str, strings.ToArray());
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteAsync(str, strings.ToArray());
+                await rg.WriteAsync(str, strings);
             }
         }
 

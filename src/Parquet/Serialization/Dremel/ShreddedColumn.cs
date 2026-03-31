@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,7 +82,17 @@ class ShreddedColumn {
         return genericMethod.Invoke(null, new object?[] { baseRef })!;
     }
 
-    private static ReadOnlyMemory<T>? GetMemoryUnsafe<T>(List<T>? list) where T: struct {
+    private static ReadOnlyMemory<T>? GetMemoryUnsafe<T>(List<T>? list) where T : struct {
+        if(list == null) return null;
+
+        Span<T> span = CollectionsMarshal.AsSpan(list);
+        ref T firstElement = ref MemoryMarshal.GetReference(span);
+        T[] backingArray = Unsafe.As<StrongBox<T[]>>(list).Value!;
+        Memory<T> memory = backingArray.AsMemory(0, list.Count);
+        return memory;
+    }
+
+    private static ReadOnlyMemory<T>? GetMemoryUnsafe2<T>(List<T>? list) where T: struct {
         if(list == null)
             return null;
         FieldInfo? field = typeof(List<T>).GetField("_items",

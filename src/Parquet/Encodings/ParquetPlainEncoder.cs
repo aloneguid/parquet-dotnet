@@ -34,116 +34,110 @@ static class ParquetPlainEncoder {
         SchemaElement tse,
         DataColumnStatistics? stats = null) where T : struct {
 
-        static ReadOnlySpan<TTo> AsSpan<TTo>(ReadOnlySpan<T> span) where TTo : struct {
-            ref T sourceRef = ref MemoryMarshal.GetReference(span);
-            ref TTo targetRef = ref Unsafe.As<T, TTo>(ref sourceRef);
-            return MemoryMarshal.CreateReadOnlySpan(ref targetRef, span.Length);
-        }
-
         System.Type t = typeof(T);
 
         if(t == typeof(bool)) {
-            ReadOnlySpan<bool> span = AsSpan<bool>(sourceSpan);
+            ReadOnlySpan<bool> span = sourceSpan.AsSpan<T, bool>();
             Encode(span, destination);
             // no stats for bools
         } else if(t == typeof(byte)) {
-            ReadOnlySpan<byte> span = AsSpan<byte>(sourceSpan);
+            ReadOnlySpan<byte> span = sourceSpan.AsSpan<T, byte>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(sbyte)) {
-            ReadOnlySpan<sbyte> span = AsSpan<sbyte>(sourceSpan);
+            ReadOnlySpan<sbyte> span = sourceSpan.AsSpan<T, sbyte>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(short)) {
-            ReadOnlySpan<short> span = AsSpan<short>(sourceSpan);
+            ReadOnlySpan<short> span = sourceSpan.AsSpan<T, short>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(ushort)) {
-            ReadOnlySpan<ushort> span = AsSpan<ushort>(sourceSpan);
+            ReadOnlySpan<ushort> span = sourceSpan.AsSpan<T, ushort>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(int)) {
-            ReadOnlySpan<int> span = AsSpan<int>(sourceSpan);
+            ReadOnlySpan<int> span = sourceSpan.AsSpan<T, int>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(uint)) {
-            ReadOnlySpan<uint> span = AsSpan<uint>(sourceSpan);
+            ReadOnlySpan<uint> span = sourceSpan.AsSpan<T, uint>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(long)) {
-            ReadOnlySpan<long> span = AsSpan<long>(sourceSpan);
+            ReadOnlySpan<long> span = sourceSpan.AsSpan<T, long>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(ulong)) {
-            ReadOnlySpan<ulong> span = AsSpan<ulong>(sourceSpan);
+            ReadOnlySpan<ulong> span = sourceSpan.AsSpan<T, ulong>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(BigInteger)) {
-            ReadOnlySpan<BigInteger> span = AsSpan<BigInteger>(sourceSpan);
+            ReadOnlySpan<BigInteger> span = sourceSpan.AsSpan<T, BigInteger>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(decimal)) {
-            ReadOnlySpan<decimal> span = AsSpan<decimal>(sourceSpan);
+            ReadOnlySpan<decimal> span = sourceSpan.AsSpan<T, decimal>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(BigDecimal)) {
-            ReadOnlySpan<BigDecimal> span = AsSpan<BigDecimal>(sourceSpan);
+            ReadOnlySpan<BigDecimal> span = sourceSpan.AsSpan<T, BigDecimal>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(double)) {
-            ReadOnlySpan<double> span = AsSpan<double>(sourceSpan);
+            ReadOnlySpan<double> span = sourceSpan.AsSpan<T, double>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(float)) {
-            ReadOnlySpan<float> span = AsSpan<float>(sourceSpan);
+            ReadOnlySpan<float> span = sourceSpan.AsSpan<T, float>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(DateTime)) {
-            ReadOnlySpan<DateTime> span = AsSpan<DateTime>(sourceSpan);
+            ReadOnlySpan<DateTime> span = sourceSpan.AsSpan<T, DateTime>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(DateOnly)) {
-            ReadOnlySpan<DateOnly> span = AsSpan<DateOnly>(sourceSpan);
+            ReadOnlySpan<DateOnly> span = sourceSpan.AsSpan<T, DateOnly>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(TimeOnly)) {
-            ReadOnlySpan<TimeOnly> span = AsSpan<TimeOnly>(sourceSpan);
+            ReadOnlySpan<TimeOnly> span = sourceSpan.AsSpan<T, TimeOnly>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(TimeSpan)) {
-            ReadOnlySpan<TimeSpan> span = AsSpan<TimeSpan>(sourceSpan);
+            ReadOnlySpan<TimeSpan> span = sourceSpan.AsSpan<T, TimeSpan>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
         } else if(t == typeof(Interval)) {
-            ReadOnlySpan<Interval> span = AsSpan<Interval>(sourceSpan);
+            ReadOnlySpan<Interval> span = sourceSpan.AsSpan<T, Interval>();
             Encode(span, destination);
             // no stats, maybe todo
         } else if(t == typeof(ReadOnlyMemory<char>)) {
-            ReadOnlySpan<ReadOnlyMemory<char>> span = AsSpan<ReadOnlyMemory<char>>(sourceSpan);
+            ReadOnlySpan<ReadOnlyMemory<char>> span = sourceSpan.AsSpan<T, ReadOnlyMemory<char>>();
             Encode(span, destination);
             // todo: minmax
         } else if(t == typeof(ReadOnlyMemory<byte>)) {
-            ReadOnlySpan<ReadOnlyMemory<byte>> span = AsSpan<ReadOnlyMemory<byte>>(sourceSpan);
+            ReadOnlySpan<ReadOnlyMemory<byte>> span = sourceSpan.AsSpan<T, ReadOnlyMemory<byte>>();
             Encode(span, destination);
         } else if(t == typeof(Guid)) {
-            ReadOnlySpan<Guid> span = AsSpan<Guid>(sourceSpan);
+            ReadOnlySpan<Guid> span = sourceSpan.AsSpan<T, Guid>();
             Encode(span, destination);
         } else {
             throw new NotSupportedException($"no PLAIN encoder exists for {typeof(T)}");

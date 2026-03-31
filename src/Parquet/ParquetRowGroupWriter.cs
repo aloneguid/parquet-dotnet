@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
-using SType = System.Type;
 using FieldPath = Parquet.Schema.FieldPath;
 
 namespace Parquet; 
@@ -23,9 +18,6 @@ namespace Parquet;
 public class ParquetRowGroupWriter : IDisposable
 #pragma warning restore CA1063 // Implement IDisposable Correctly
 {
-    private static readonly MethodInfo WriteStructArrayAsyncMethod = typeof(ParquetRowGroupWriter)
-        .GetMethod(nameof(WriteStructArrayAsync), BindingFlags.Instance | BindingFlags.NonPublic)!;
-
     private readonly ParquetSchema _schema;
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
@@ -55,101 +47,6 @@ public class ParquetRowGroupWriter : IDisposable
     }
 
     internal long? RowCount { get; private set; }
-
-    /// <summary>
-    /// Writes next data column to parquet stream. Note that columns must be written in the order they are declared in the
-    /// file schema.
-    /// </summary>
-    /// <param name="column"></param>
-    /// <param name="customMetadata">If specified, adds custom column chunk metadata</param>
-    /// <param name="cancellationToken"></param>
-    private async Task WriteColumnAsync_TOMIGRATE(DataColumn column,
-        Dictionary<string, string>? customMetadata,
-        CancellationToken cancellationToken = default) {
-        if(column == null)
-            throw new ArgumentNullException(nameof(column));
-
-        if(RowCount == null) {
-            if(column.NumValues > 0 || column.Field.MaxRepetitionLevel == 0)
-                RowCount = column.CalculateRowCount();
-        } else {
-            // Validate that all columns have the same row count
-            long columnRowCount = column.CalculateRowCount();
-            if(columnRowCount != RowCount) {
-                throw new InvalidOperationException(
-                    $"Column '{column.Field.Name}' has {columnRowCount} rows, but the row group expects {RowCount} rows. " +
-                    "All columns in a row group must have the same number of rows.");
-            }
-        }
-
-        if(_colIdx >= _thschema.Length) {
-            throw new InvalidOperationException(
-                $"Cannot write column '{column.Field.Name}': all {_thschema.Length} columns from the schema have already been written. " +
-                "You may have called WriteColumnAsync more times than there are columns in the schema.");
-        }
-
-        SchemaElement tse = _thschema[_colIdx];
-        if(!column.Field.Equals(tse)) {
-            throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{column.Field.Name}'", nameof(column));
-        }
-        _colIdx += 1;
-
-        FieldPath path = _footer.GetPath(tse);
-
-        var writer = new DataColumnWriter(_stream, _footer, tse,
-           _compressionMethod,
-           _formatOptions,
-           _compressionLevel,
-           customMetadata);
-
-        ColumnChunk chunk = await writer.WriteAsync(path, column, cancellationToken);
-        _owGroup.Columns.Add(chunk);
-
-    }
-
-    private Task WriteStructArrayAsync<T>(DataField field, Array values, ReadOnlyMemory<int>? repetitionLevels) where T : struct {
-        if(field.IsNullable) {
-            if(values is T?[] nullableValues) {
-                return WriteAsync<T>(field, nullableValues.AsMemory(), repetitionLevels);
-            }
-
-            if(values is T[] nonNullableValues) {
-                var promotedValues = new T?[nonNullableValues.Length];
-                for(int i = 0; i < nonNullableValues.Length; i++) {
-                    promotedValues[i] = nonNullableValues[i];
-                }
-
-                return WriteAsync<T>(field, promotedValues.AsMemory(), repetitionLevels);
-            }
-        } else {
-            if(values is T[] nonNullableValues) {
-                return WriteAsync<T>(field, nonNullableValues.AsMemory(), repetitionLevels);
-            }
-
-            if(values is T?[] nullableValues) {
-                var materializedValues = new T[nullableValues.Length];
-                for(int i = 0; i < nullableValues.Length; i++) {
-                    T? value = nullableValues[i];
-                    if(!value.HasValue)
-                        throw new ArgumentException($"column '{field.Name}' is not nullable but values contain nulls", nameof(values));
-
-                    materializedValues[i] = value.Value;
-                }
-
-                return WriteAsync<T>(field, materializedValues.AsMemory(), repetitionLevels);
-            }
-        }
-
-        throw new ArgumentException($"expected values of type {GetExpectedArrayType(field)} but passed {values.GetType()}", nameof(values));
-    }
-
-    private static SType GetExpectedArrayType(DataField field) {
-        SType elementType = field.IsNullable && field.ClrType.IsValueType
-            ? typeof(Nullable<>).MakeGenericType(field.ClrType)
-            : field.ClrType;
-
-        return elementType.MakeArrayType();
-    }
 
     #region [ Helper methods ]
 

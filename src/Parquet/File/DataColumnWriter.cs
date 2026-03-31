@@ -13,6 +13,7 @@ using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Parquet.File; 
 class DataColumnWriter {
@@ -42,32 +43,6 @@ class DataColumnWriter {
         _options = options;
         _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
         _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
-    }
-
-    public async Task<ColumnChunk> WriteAsync(
-        FieldPath fullPath, DataColumn column,
-        CancellationToken cancellationToken = default) {
-
-        // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
-        ColumnChunk chunk = _footer.CreateColumnChunk(
-            _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
-            _keyValueMetadata);
-        if(chunk.MetaData == null)
-            throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
-
-        ColumnMetrics metrics = await WriteColumnAsync(
-            chunk, column, _schemaElement,
-            cancellationToken);
-        chunk.MetaData.Encodings = metrics.GetUsedEncodings();
-
-        //generate stats for column chunk
-        chunk.MetaData.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
-
-        //the following counters must include both data size and header size
-        chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
-        chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
-
-        return chunk;
     }
 
     public async Task<ColumnChunk> WriteAsync<T>(
@@ -154,7 +129,7 @@ class DataColumnWriter {
         cs.UncompressedSize += ph.UncompressedPageSize;
     }
 
-    private async Task<ColumnMetrics> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
+    private async Task<ColumnMetrics> WriteColumnAsync_MIGRATE(ColumnChunk chunk, DataColumn column,
        SchemaElement tse,
        CancellationToken cancellationToken = default) {
 
@@ -169,7 +144,7 @@ class DataColumnWriter {
          */
 
         using var pc = new PackedColumn(column);
-        pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
+        //pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
 
         // dictionary page
         if(pc.HasDictionary) {
@@ -225,6 +200,7 @@ class DataColumnWriter {
         CancellationToken cancellationToken) where T : struct {
 
         wc.Field.EnsureAttachedToSchema(nameof(wc.Field));
+        wc.Pack(_options);
 
         var r = new ColumnMetrics();
 
@@ -234,11 +210,18 @@ class DataColumnWriter {
          * the write efficiency.
          */
 
-        // todo: dictionary write
+        // dictionary page
+        if(wc.HasDictionary) {
+            PageHeader ph = _footer.CreateDictionaryPage(wc.Dictionary.Length, out _);
+            r.Pages.Add(ph);
+            using MemoryStream ms = _rmsMgr.GetStream();
+            ParquetPlainEncoder.Encode(wc.Dictionary, ms, tse, wc.Statistics);
+            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+        }
 
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
-            bool deltaEncode = false;
+            bool deltaEncode = wc.Field.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
 
             // data page Num_values also does include NULLs
             PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, out DataPageHeader dph);
@@ -251,10 +234,21 @@ class DataColumnWriter {
                 WriteLevels(ms, wc.DefinitionLevels!, wc.Field.MaxDefinitionLevel);
             }
 
-            ParquetPlainEncoder.Encode(wc.Values,
-                ms,
-                tse,
-                wc.HasDictionary ? null : wc.Statistics);
+            if(wc.HasDictionary) {
+                // dictionary indexes are always encoded with RLE
+                int bitWidth = wc.Dictionary.Length.GetBitWidth();  // bit width is determined by the dictionary size
+                ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
+                RleBitpackedHybridEncoder.Encode(ms, wc.DictionaryIndexes, bitWidth);
+            } else {
+                if(deltaEncode) {
+                    DeltaBinaryPackedEncoder.Encode(wc.Values, ms, wc.Statistics);
+                } else {
+                    ParquetPlainEncoder.Encode(wc.Values,
+                        ms,
+                        tse,
+                        wc.HasDictionary ? null : wc.Statistics);
+                }
+            }
 
             dph.Statistics = wc.Statistics.ToThriftStatistics(tse);
             await CompressAndWriteAsync(ph, ms, r, cancellationToken);

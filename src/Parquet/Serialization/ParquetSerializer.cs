@@ -37,13 +37,9 @@ public static class ParquetSerializer {
         using ParquetRowGroupWriter rg = writer.CreateRowGroup();
 
         foreach(FieldStriper<T> fs in striper.FieldStripers) {
-            //DataColumn dc;
             try {
                 ShreddedColumn sc = fs.Stripe(fs.Field, objectInstances);
                 await sc.CallWriteAsync(fs.Field, rg);
-                //dc = new DataColumn(fs.Field, sc.Data, sc.DefinitionLevels?.ToArray(), sc.RepetitionLevels?.ToArray());
-                //await rg.WriteColumnAsync(dc, cancellationToken);
-                //throw new NotImplementedException();
             } catch(Exception ex) {
                 throw new ApplicationException($"failed to serialise data column '{fs.Field.Path}'", ex);
             }

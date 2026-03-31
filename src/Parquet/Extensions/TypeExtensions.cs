@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Parquet;
 
@@ -215,5 +217,13 @@ static class TypeExtensions {
             return false;
 
         return IsAssignableToGenericType(baseType, genericType);
+    }
+
+    public static ReadOnlySpan<TTo> AsSpan<TFrom, TTo>(this ReadOnlySpan<TFrom> span)
+        where TTo : struct
+        where TFrom : struct {
+        ref TFrom sourceRef = ref MemoryMarshal.GetReference(span);
+        ref TTo targetRef = ref Unsafe.As<TFrom, TTo>(ref sourceRef);
+        return MemoryMarshal.CreateReadOnlySpan(ref targetRef, span.Length);
     }
 }

@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
+using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
+using Parquet.Encodings;
 using Parquet.Schema;
 
 namespace Parquet;
@@ -17,6 +21,8 @@ class WritingColumn<T> : IDisposable where T : struct {
     private readonly int[]? _definitionLevelsBase;  // if definition levels are owned, this is the array from pool, otherwise null. Only here to return it to pool if we own it.
     private readonly ReadOnlyMemory<int>? _definitionLevels;      // may be owned
     private readonly ReadOnlyMemory<int>? _repetitionLevels;      // never owned
+    private IMemoryOwner<T>? _dictionary;
+    private IMemoryOwner<int>? _dictionaryIndexes;
 
     public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T> values, ReadOnlyMemory<int>? repetitionLevels) {
         Validate(field, repetitionLevels);
@@ -130,7 +136,26 @@ class WritingColumn<T> : IDisposable where T : struct {
 
     public ReadOnlySpan<T> Values => _values.Span;
 
-    public bool HasDictionary => false;
+    public bool HasDictionary => _dictionary != null;
+
+    public Span<T> Dictionary {
+        get {
+            if(_dictionary == null) {
+                throw new InvalidOperationException("This column doesn't have a dictionary");
+            }
+            return _dictionary.Memory.Span;
+        }
+    }
+
+    public Span<int> DictionaryIndexes {
+        get {
+            if(_dictionaryIndexes == null) {
+                throw new InvalidOperationException("This column doesn't have dictionary indexes");
+            }
+
+            return _dictionaryIndexes.Memory.Span;
+        }
+    }
 
     public bool HasDefinitionLevels => Field.MaxDefinitionLevel > 0;
 
@@ -174,8 +199,32 @@ class WritingColumn<T> : IDisposable where T : struct {
     public DataColumnStatistics Statistics { get; internal set; } =
         new DataColumnStatistics(null, null, null, null);
 
-    public void Pack(bool useDictionaryEncoding, double dictionaryThreshold) {
+    public void Pack(ParquetOptions options) {
+        // for some reason some readers do NOT understand dictionary-encoded arrays, but lists or plain columns are just fine
+        if(Field.IsArray)
+            return;
 
+        // only support strings for now, this is the only type that make sense to dictionry-encode effectively
+        if(typeof(T) != typeof(ReadOnlyMemory<char>))
+            return;
+
+        // only encode columns specified in options
+        string path = Field.Path.ToString();
+        if(!options.DictionaryEncodedColumns.Contains(path))
+            return;
+
+        // cast ReadOnlyMemory<T> to ReadOnlyMemory<ReadOnlyMemory<char>>
+        ReadOnlySpan<ReadOnlyMemory<char>> stringsSpan = Values.AsSpan<T, ReadOnlyMemory<char>>();
+        if(ParquetDictionaryEncoder.TryExtractDictionary(stringsSpan, options.DictionaryEncodingThreshold,
+            out IMemoryOwner<ReadOnlyMemory<char>>? dictionaryOwner,
+            out _dictionaryIndexes)) {
+            // case memory back to ReadOnlyMemory<T>
+            _dictionary = dictionaryOwner as IMemoryOwner<T>;
+            if(_dictionary == null) {
+                dictionaryOwner.Dispose();
+                throw new InvalidOperationException("Unexpected error during dictionary encoding: could not cast dictionary to expected type");
+            }
+        }
     }
 
     public void Dispose() {
@@ -183,9 +232,12 @@ class WritingColumn<T> : IDisposable where T : struct {
             IntPool.Return(_definitionLevelsBase);
         }
 
-        if(_valuesBase !=null) {
+        if(_valuesBase != null) {
             TPool.Return(_valuesBase);
         }
 
+        if(_dictionaryIndexes != null) {
+            _dictionaryIndexes.Dispose();
+        }
     }
 }

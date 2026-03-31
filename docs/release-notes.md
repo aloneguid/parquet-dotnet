@@ -5,6 +5,7 @@
 - To enable further evolution of this library, like using Spans, direct memory access, SIMD support and so on, I am dropping support for .NET Standard and older .NET versions. The minimum supported version of .NET is .NET 8. Supporting anything lower would require a lot of effort which I can't give you.
 - `ParquetWriter` and `ParquetReader` only supports `IAsyncDisposable` now, so you should use `await using` instead of `using` when writing row groups. This is because some of the operations during writing are asynchronous and it would be a shame to not take advantage of that. Previously, `IDisposable` was supported as well, but that would occassionally cause write deadlocks.
 - `ParquetRowGroupWriter` now accepts `ReadOnlyMemory<T>` instead of untyped `DataColumn` (which is now removed). This solves old dangling issue with inflexible memory useage, as users of the low-level API had to unnecessarily allocate memory just to write a column, often resuling in making large redundant copies.
+- `ParquetOptions.UseDictionaryEncoding` is removed to avoid trying to dictionary-encode everything, which is not always the best choice. Instead, you can specify encodings for each column in `ParquetOptions.DictionaryEncodedColumns`.
 - `Utils` namespace removed, which used to provide a sub-par implementations of FileMerger and FlatFileConverter. Shout if you need them, as I can add more efficient versions of these utilities in the future, here or in a separate package.
 
 ## Bug fixes
@@ -15,6 +16,7 @@
 ## Performance
 
 - Serializer uses significantly less memory when serializing large collections.
+- Dictionary encoder will give up earlier if cardinality is too high, without iterating all values. Less memory is allocated on early exit.
 
 ## Other changes
 

@@ -3,30 +3,124 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace Parquet.Encodings;
 
 static class ParquetDictionaryEncoder {
 
+    public static bool TryExtractDictionary<T>(ReadOnlySpan<T> values, double threshold,
 
-    public static bool TryEncode(ReadOnlySpan<ReadOnlyMemory<char>> values, double threshold) {
+        [NotNullWhen(true)]
+        out IMemoryOwner<T>? dictionary,
 
-        HashSet<ReadOnlyMemory<char>> uniques = Distinct(values);
+        [NotNullWhen(true)]
+        out IMemoryOwner<int>? indexes) where T : struct {
 
-        if(uniques.Count / (double)values.Length < threshold) {
+        dictionary = null;
+        indexes = null;
+
+        int count = values.Length;
+        if(count == 0) {
             return false;
         }
 
-        // only now do we actually create the dictionary and indexes as it's a more expensive operation than just counting uniques
+        // Calculate max allowed distinct values based on threshold
+        int maxDistinct = (int)(count * threshold);
 
+        // Dictionary to track unique values and their indices
+        var valueToIndex = new Dictionary<T, int>(count);
+
+        // Rent memory for indexes
+        var indexesOwner = MemoryOwner<int>.Allocate(count);
+        Span<int> indexesSpan = indexesOwner.Span;
+
+        // Single pass: build dictionary and indexes simultaneously, exit early if threshold exceeded
+        for(int i = 0; i < count; i++) {
+            T value = values[i];
+
+            if(!valueToIndex.TryGetValue(value, out int index)) {
+                // New unique value - check threshold before adding
+                if(valueToIndex.Count >= maxDistinct) {
+                    indexesOwner.Dispose();
+                    return false;
+                }
+
+                index = valueToIndex.Count;
+                valueToIndex[value] = index;
+            }
+
+            indexesSpan[i] = index;
+        }
+
+        // Build dictionary array from unique values
+        var dictionaryOwner = MemoryOwner<T>.Allocate(valueToIndex.Count);
+        Span<T> dictionarySpan = dictionaryOwner.Span;
+
+        foreach(KeyValuePair<T, int> kvp in valueToIndex) {
+            dictionarySpan[kvp.Value] = kvp.Key;
+        }
+
+        dictionary = dictionaryOwner;
+        indexes = indexesOwner;
         return true;
     }
 
-    private static HashSet<ReadOnlyMemory<char>> Distinct(ReadOnlySpan<ReadOnlyMemory<char>> values) {
-        var hs = new HashSet<ReadOnlyMemory<char>>(values.Length, ReadOnlyMemoryCharOrdinalComparer.Instance);
-        for(int i = 0; i < values.Length; i++)
-            hs.Add(values[i]);
-        return hs;
+    public static bool TryExtractDictionary(ReadOnlySpan<ReadOnlyMemory<char>> strings, double threshold,
+
+        [NotNullWhen(true)]
+        out IMemoryOwner<ReadOnlyMemory<char>>? dictionary,
+
+        [NotNullWhen(true)]
+        out IMemoryOwner<int>? indexes) {
+
+        dictionary = null;
+        indexes = null;
+
+        int count = strings.Length;
+        if(count == 0) {
+            return false;
+        }
+
+        // Calculate max allowed distinct values based on threshold
+        int maxDistinct = (int)(count * threshold);
+
+        // Dictionary to track unique values and their indices
+        var valueToIndex = new Dictionary<ReadOnlyMemory<char>, int>(count, ReadOnlyMemoryCharOrdinalComparer.Instance);
+
+        // Rent memory for indexes
+        var indexesOwner = MemoryOwner<int>.Allocate(count);
+        Span<int> indexesSpan = indexesOwner.Span;
+
+        // Single pass: build dictionary and indexes simultaneously, exit early if threshold exceeded
+        for(int i = 0; i < count; i++) {
+            ReadOnlyMemory<char> value = strings[i];
+
+            if(!valueToIndex.TryGetValue(value, out int index)) {
+                // New unique value - check threshold before adding
+                if(valueToIndex.Count >= maxDistinct) {
+                    indexesOwner.Dispose();
+                    return false;
+                }
+
+                index = valueToIndex.Count;
+                valueToIndex[value] = index;
+            }
+
+            indexesSpan[i] = index;
+        }
+
+        // Build dictionary array from unique values
+        var dictionaryOwner = MemoryOwner<ReadOnlyMemory<char>>.Allocate(valueToIndex.Count);
+        Span<ReadOnlyMemory<char>> dictionarySpan = dictionaryOwner.Span;
+
+        foreach(KeyValuePair<ReadOnlyMemory<char>, int> kvp in valueToIndex) {
+            dictionarySpan[kvp.Value] = kvp.Key;
+        }
+
+        dictionary = dictionaryOwner;
+        indexes = indexesOwner;
+        return true;
     }
 
     private sealed class ReadOnlyMemoryCharOrdinalComparer : IEqualityComparer<ReadOnlyMemory<char>> {
