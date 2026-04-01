@@ -51,15 +51,6 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
 
-
-    <ItemGroup>
-        <Compile Update="DataFrameMapper.cs">
-            <DependentUpon>DataFrameMapper.tt</DependentUpon>
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-        </Compile>
-    </ItemGroup>
-
     <ItemGroup>
         <None Update="DataFrameMapper.tt">
             <LastGenOutput>DataFrameMapper.cs</LastGenOutput>

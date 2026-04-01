@@ -189,10 +189,11 @@ public class ParquetRowGroupReader : IDisposable, IParquetRowGroupReader {
         Span<T?> valuesSpan = values.Span;
         Span<T> nonNullSpan = nonNullMemory.Memory.Span;
         Span<int> dlSpan = definitionLevels.Memory.Span;
+        int maxDl = field.MaxDefinitionLevel;
         int nni = 0;
         for(int i = 0; i < RowCount; i++) {
-            bool isNull = dlSpan[i] == 0;
-            valuesSpan[i] = isNull ? (T?)null : nonNullSpan[nni++];
+            bool isNull = dlSpan[i] < maxDl;
+            valuesSpan[i] = isNull ? null : nonNullSpan[nni++];
         }
     }
 

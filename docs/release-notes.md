@@ -7,7 +7,7 @@
 - To enable further evolution of this library, like using Spans, direct memory access, SIMD support and so on, I am dropping support for .NET Standard and older .NET versions. The minimum supported version of .NET is .NET 8. Supporting anything lower (or Windows specific .NET, which only shares the name and not much more with THE .NET) would require a lot of effort which I can't give you.
 - `ParquetWriter` and `ParquetReader` only supports `IAsyncDisposable` now, so you should use `await using` instead of `using` when writing row groups. This is because some of the operations during writing are asynchronous and it would be a shame to not take advantage of that. Previously, `IDisposable` was supported as well, but that would occassionally cause write deadlocks.
 - `ParquetRowGroupWriter` now accepts `ReadOnlyMemory<T>` instead of untyped `DataColumn` (which is now removed). This solves old dangling issue with inflexible memory useage, as users of the low-level API had to unnecessarily allocate memory just to write a column, often resuling in making large redundant copies.
-- Same toes for `ParquetRowGroupReader`, which uses direct memory access interface instead of allocating a lot of memory via DataColumn and adding a lot of GC pressure.
+- Same goes for `ParquetRowGroupReader`, which uses direct memory access interface instead of allocating a lot of memory via DataColumn and adding a lot of GC pressure.
 - `ParquetOptions.UseDictionaryEncoding` is removed to avoid trying to dictionary-encode everything, which is not always the best choice. Instead, you can specify encodings for each column in `ParquetOptions.DictionaryEncodedColumns`.
 - `Utils` namespace removed, which used to provide a sub-par implementations of `FileMerger` and `FlatFileConverter`. Shout if you need them, as I can add more efficient versions of these utilities in the future, here or in a separate package. Both of these utilities were subobtimal and half-done, and I don't want to maintain them in the long run.
 - As with the latest V5 minor release, I have high hopes for managed .NET compression libraries maintained by the community, so there will be absolutely zero native dependencies. They were created in C++ as a separate project in the times when .NET was young and didn't have good support for such things, but now there are some great high-performance libraries available. If I have time to spend on improving compression performance, I'd rather contribute to those projects.
@@ -31,6 +31,7 @@
 - Greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
 - DuckDB integration tests removed, they turned out to be pretty much useless.
 - Some tests made much cleaner and more manageable by removing Theory and replacing it with Facts, when Theory validation had too many edge cases and actually made tests less maintainable.
+- `Parquet.Data.DataAnalysis` logic greatly simplified, T4 template removed.
 
 # 5.5.0
 
