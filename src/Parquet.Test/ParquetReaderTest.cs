@@ -276,7 +276,7 @@ public class ParquetReaderTest : TestBase {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
 
             Assert.Single(reader.RowGroups);
-            IParquetRowGroupReader rowGroup = reader.RowGroups.Single();
+            ParquetRowGroupReader rowGroup = reader.RowGroups.Single();
             Assert.Equal(927861, rowGroup.RowCount);
         }
     }

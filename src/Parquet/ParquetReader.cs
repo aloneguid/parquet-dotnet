@@ -139,7 +139,7 @@ public class ParquetReader : ParquetActor, IAsyncDisposable {
     /// <summary>
     /// Collection of row group readers, fast random access and enumeration
     /// </summary>
-    public IReadOnlyList<IParquetRowGroupReader> RowGroups => _groupReaders;
+    public IReadOnlyList<ParquetRowGroupReader> RowGroups => _groupReaders;
 
     /// <summary>
     /// Reads entire row group's data columns in one go.

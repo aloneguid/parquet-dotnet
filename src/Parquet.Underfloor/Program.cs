@@ -273,7 +273,7 @@ void RenderMetadata() {
     if(fd.RowGroups != null) {
         Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec", "Encodings"], ta => {
             int idx = 0;
-            foreach(IParquetRowGroupReader rg in fd.RowGroups) {
+            foreach(ParquetRowGroupReader rg in fd.RowGroups) {
                 ta.BeginRow();
                 TreeNode(idx.ToString(), true, false, (bool isOpen) => {
                     ta.NextColumn();

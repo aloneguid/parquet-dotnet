@@ -108,7 +108,7 @@ class WorkFile : IAsyncDisposable {
 
     public string[]? ColumnsDisplay { get; set; }
 
-    public IReadOnlyList<IParquetRowGroupReader>? RowGroups { get; set; }
+    public IReadOnlyList<ParquetRowGroupReader>? RowGroups { get; set; }
 
     public string[]? RowGroupDisplayNames;
 
