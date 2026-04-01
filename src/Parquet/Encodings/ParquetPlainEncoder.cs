@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
@@ -199,14 +200,12 @@ static class ParquetPlainEncoder {
         } else if(t == typeof(DateTime[])) {
             Span<DateTime> span = ((DateTime[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
-#if NET6_0_OR_GREATER
         } else if(t == typeof(DateOnly[])) {
             Span<DateOnly> span = ((DateOnly[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
         } else if(t == typeof(TimeOnly[])) {
             Span<TimeOnly> span = ((TimeOnly[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
-#endif
         } else if(t == typeof(TimeSpan[])) {
             Span<TimeSpan> span = ((TimeSpan[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
@@ -222,6 +221,91 @@ static class ParquetPlainEncoder {
         } else {
             elementsRead = 0;
             throw new NotSupportedException($"no PLAIN decoder exists for {t}");
+        }
+    }
+
+    /// <summary>
+    /// Generic overload for decoding directly into a Span{T} with element count control.
+    /// </summary>
+    public static void Decode<T>(
+        Span<T> dest,
+        int count,
+        SchemaElement tse,
+        Span<byte> source,
+        out int elementsRead) where T : struct {
+
+        int rem = dest.Length;
+        if(count > rem)
+            count = rem;
+
+        System.Type t = typeof(T);
+
+        if(t == typeof(bool)) {
+            Span<bool> span = dest.AsSpan<T, bool>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(byte)) {
+            Span<byte> span = dest.AsSpan<T, byte>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(sbyte)) {
+            Span<sbyte> span = dest.AsSpan<T, sbyte>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(short)) {
+            Span<short> span = dest.AsSpan<T, short>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(ushort)) {
+            Span<ushort> span = dest.AsSpan<T, ushort>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(int)) {
+            Span<int> span = dest.AsSpan<T, int>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(uint)) {
+            Span<uint> span = dest.AsSpan<T, uint>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(long)) {
+            Span<long> span = dest.AsSpan<T, long>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(ulong)) {
+            Span<ulong> span = dest.AsSpan<T, ulong>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(BigInteger)) {
+            Span<BigInteger> span = dest.AsSpan<T, BigInteger>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(decimal)) {
+            Span<decimal> span = dest.AsSpan<T, decimal>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(BigDecimal)) {
+            Span<BigDecimal> span = dest.AsSpan<T, BigDecimal>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(double)) {
+            Span<double> span = dest.AsSpan<T, double>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(float)) {
+            Span<float> span = dest.AsSpan<T, float>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(DateTime)) {
+            Span<DateTime> span = dest.AsSpan<T, DateTime>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(DateOnly)) {
+            Span<DateOnly> span = dest.AsSpan<T, DateOnly>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(TimeOnly)) {
+            Span<TimeOnly> span = dest.AsSpan<T, TimeOnly>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(TimeSpan)) {
+            Span<TimeSpan> span = dest.AsSpan<T, TimeSpan>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(Interval)) {
+            Span<Interval> span = dest.AsSpan<T, Interval>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(ReadOnlyMemory<char>)) {
+            Span<ReadOnlyMemory<char>> span = dest.AsSpan<T, ReadOnlyMemory<char>>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(Guid)) {
+            Span<Guid> span = dest.AsSpan<T, Guid>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else {
+            elementsRead = 0;
+            throw new NotSupportedException($"no PLAIN decoder exists for {typeof(T)}");
         }
     }
 
@@ -1216,6 +1300,47 @@ static class ParquetPlainEncoder {
                 int length = source.ReadInt32(spanIdx);
                 spanIdx += sizeof(int);
                 data[i] = E.GetString(source.Slice(spanIdx, length));
+                spanIdx += length;
+            }
+        }
+        return i;
+    }
+
+    public static int Decode(Span<byte> source, Span<ReadOnlyMemory<char>> data, SchemaElement tse) {
+        //int remLength = (int)(source.Length - source.Position);
+
+        if(source.Length == 0)
+            return 0;
+
+        int i = 0;
+
+        Decoder decoder = System.Text.Encoding.UTF8.GetDecoder();
+
+        if(tse.Type == TType.FIXED_LEN_BYTE_ARRAY) {
+            if(tse.TypeLength == null)
+                throw new InvalidDataException($"type length must be set for {nameof(TType.FIXED_LEN_BYTE_ARRAY)}");
+            int length = tse.TypeLength.Value;
+
+            for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
+
+                Span<byte> elementSpan = source.Slice(spanIdx, length);
+                char[] charBuffer = new char[System.Text.Encoding.UTF8.GetCharCount(elementSpan)];
+                decoder.GetChars(elementSpan, charBuffer, flush: true);
+                ReadOnlyMemory<char> charMemory = charBuffer.AsMemory();
+                data[i] = charMemory;
+                spanIdx += length;
+            }
+
+        } else {
+
+            for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
+                int length = source.ReadInt32(spanIdx);
+                spanIdx += sizeof(int);
+                Span<byte> elementSpan = source.Slice(spanIdx, length);
+                char[] charBuffer = new char[System.Text.Encoding.UTF8.GetCharCount(elementSpan)];
+                decoder.GetChars(elementSpan, charBuffer, flush: true);
+                ReadOnlyMemory<char> charMemory = charBuffer.AsMemory();
+                data[i] = charMemory;
                 spanIdx += length;
             }
         }

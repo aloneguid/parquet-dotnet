@@ -27,52 +27,9 @@ public class ParquetWriterTest : TestBase {
             Assert.Equal(1, reader.RowGroupCount);
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(3, rg.RowCount);
-                DataColumn dc = await rg.ReadColumnAsync(id);
-                Assert.Equal(new int[] { 1, 2, 3 }, dc.Data);
-            }
-        }
-    }
-
-    [Fact]
-    public async Task SimplestWriteV2() {
-        var id = new DataField<int>("id");
-        var ms = new MemoryStream();
-
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
-            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteAsync<int>(id, new int[] { 1, 2, 3 });
-            }
-        }
-
-        ms.Position = 0;
-        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-            Assert.Equal(1, reader.RowGroupCount);
-            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
-                Assert.Equal(3, rg.RowCount);
-                DataColumn dc = await rg.ReadColumnAsync(id);
-                Assert.Equal(new int[] { 1, 2, 3 }, dc.Data);
-            }
-        }
-    }
-
-    [Fact]
-    public async Task SimplestWriteV2_array_overload() {
-        var id = new DataField<int>("id");
-        var ms = new MemoryStream();
-
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
-            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-                await rg.WriteAsync<int>(id, new int[] { 1, 2, 3 });
-            }
-        }
-
-        ms.Position = 0;
-        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-            Assert.Equal(1, reader.RowGroupCount);
-            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
-                Assert.Equal(3, rg.RowCount);
-                DataColumn dc = await rg.ReadColumnAsync(id);
-                Assert.Equal(new int[] { 1, 2, 3 }, dc.Data);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal([1, 2, 3], values);
             }
         }
     }
@@ -80,7 +37,7 @@ public class ParquetWriterTest : TestBase {
     [Fact]
     public async Task Write_read_string_column_array_overload() {
         var name = new DataField<string>("name");
-        string[] input = new[] { "start", "stop", "pause" };
+        string[] input = ["start", "stop", "pause"];
         var ms = new MemoryStream();
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(name), ms)) {
@@ -94,12 +51,12 @@ public class ParquetWriterTest : TestBase {
             Assert.Equal(1, reader.RowGroupCount);
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(input.Length, rg.RowCount);
-                Assert.Equal(input, (await rg.ReadColumnAsync(name)).Data);
+                string[] values = new string[rg.RowCount];
+                await rg.ReadAsync(name, values);
+                Assert.Equal(input, values);
             }
         }
     }
-
-
 
     [Fact]
     public async Task Cannot_write_columns_in_wrong_order() {
@@ -147,20 +104,23 @@ public class ParquetWriterTest : TestBase {
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(1, rg.RowCount);
-                DataColumn dc = await rg.ReadColumnAsync(id);
-                Assert.Equal(new int[] { 1 }, dc.Data);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal([1], values);
             }
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
                 Assert.Equal(1, rg.RowCount);
-                DataColumn dc = await rg.ReadColumnAsync(id);
-                Assert.Equal(new int[] { 2 }, dc.Data);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal([2], values);
             }
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(2)) {
                 Assert.Equal(1, rg.RowCount);
-                DataColumn dc = await rg.ReadColumnAsync(id);
-                Assert.Equal(new int[] { 3 }, dc.Data);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal([3], values);
             }
         }
     }
@@ -182,20 +142,23 @@ public class ParquetWriterTest : TestBase {
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                     Assert.Equal(1, rg.RowCount);
-                    DataColumn dc = await rg.ReadColumnAsync(id);
-                    Assert.Equal(new int[] { 1 }, dc.Data);
+                    int[] values = new int[rg.RowCount];
+                    await rg.ReadAsync<int>(id, values);
+                    Assert.Equal(new int[] { 1 }, values);
                 }
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
                     Assert.Equal(1, rg.RowCount);
-                    DataColumn dc = await rg.ReadColumnAsync(id);
-                    Assert.Equal(new int[] { 2 }, dc.Data);
+                    int[] values = new int[rg.RowCount];
+                    await rg.ReadAsync<int>(id, values);
+                    Assert.Equal(new int[] { 2 }, values);
                 }
 
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(2)) {
                     Assert.Equal(1, rg.RowCount);
-                    DataColumn dc = await rg.ReadColumnAsync(id);
-                    Assert.Equal(new int[] { 3 }, dc.Data);
+                    int[] values = new int[rg.RowCount];
+                    await rg.ReadAsync<int>(id, values);
+                    Assert.Equal(new int[] { 3 }, values);
                 }
             }
         });
@@ -248,12 +211,16 @@ public class ParquetWriterTest : TestBase {
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(2, rg.RowCount);
-                Assert.Equal(new int[] { 1, 2 }, (await rg.ReadColumnAsync(id)).Data);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal(new int[] { 1, 2 }, values);
             }
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
                 Assert.Equal(2, rg.RowCount);
-                Assert.Equal(new int[] { 3, 4 }, (await rg.ReadColumnAsync(id)).Data);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal(new int[] { 3, 4 }, values);
             }
 
         }
@@ -282,7 +249,9 @@ public class ParquetWriterTest : TestBase {
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(input.Length, rg.RowCount);
-                Assert.Equal(input, (await rg.ReadColumnAsync(id)).Data);
+                int?[] values = new int?[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal(input, values);
             }
         }
     }
@@ -306,7 +275,9 @@ public class ParquetWriterTest : TestBase {
 
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(input.Length, rg.RowCount);
-                Assert.Equal(input, (await rg.ReadColumnAsync(id)).Data);
+                int?[] values = new int?[rg.RowCount];
+                await rg.ReadAsync<int>(id, values);
+                Assert.Equal(input, values);
             }
         }
     }

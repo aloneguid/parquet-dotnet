@@ -45,6 +45,42 @@ public class DeltaBinaryPackedEncodingTest : TestBase {
     #endregion
 
     [Fact]
+    public void EncodeAndDecodeInt32_WithSpanDestination() {
+
+        int[] input = [7, 5, 3, 1, -2, 3, 4, -5];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode(input, ms);
+
+        Span<int> des = new int[input.Length];
+        int read = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), des, input.Length, out int consumedBytes);
+
+        Assert.Equal(input.Length, read);
+        Assert.Equal(input, des.ToArray());
+    }
+
+    [Fact]
+    public void EncodeAndDecodeInt32_WithSpanSliceDestination() {
+
+        int[] input = [7, 5, 3, 1, -2, 3, 4, -5];
+
+        using var ms = new MemoryStream();
+        DeltaBinaryPackedEncoder.Encode(input, ms);
+
+        int[] des = [111, 222, 0, 0, 0, 0, 0, 0, 0, 0, 333, 444];
+        Span<int> target = des.AsSpan(2, input.Length);
+
+        int read = DeltaBinaryPackedEncoder.Decode(ms.ToArray(), target, input.Length, out int consumedBytes);
+
+        Assert.Equal(input.Length, read);
+        Assert.Equal(111, des[0]);
+        Assert.Equal(222, des[1]);
+        Assert.Equal(333, des[^2]);
+        Assert.Equal(444, des[^1]);
+        Assert.Equal(input, des.AsSpan(2, input.Length).ToArray());
+    }
+
+    [Fact]
     public void EncodeAndDecodeInt32() {
 
         int[] input = new[] { 7, 5, 3, 1, -2, 3, 4, -5, };

@@ -161,6 +161,34 @@ static partial class DeltaBinaryPackedEncoder {
         throw new NotSupportedException($"element type {elementType} is not supported in {Encoding.DELTA_BINARY_PACKED}");
     }
 
+    public static int Decode<T>(Span<byte> s, Span<T> dest, int valueCount, out int consumedBytes) where T : struct {
+        if(s.Length == 0 && valueCount == 0) {
+            consumedBytes = 0;
+            return 0;
+        }
+
+        if(typeof(T) == typeof(long)) {
+            return DecodeLong(s, dest.AsSpan<T, long>(), out consumedBytes);
+        }
+        if(typeof(T) == typeof(int)) {
+            return DecodeInt(s, dest.AsSpan<T, int>(), out consumedBytes);
+        }
+        if(typeof(T) == typeof(short)) {
+            return DecodeShort(s, dest.AsSpan<T, short>(), out consumedBytes);
+        }
+        if(typeof(T) == typeof(ushort)) {
+            return DecodeUshort(s, dest.AsSpan<T, ushort>(), out consumedBytes);
+        }
+        if(typeof(T) == typeof(uint)) {
+            return DecodeUint(s, dest.AsSpan<T, uint>(), out consumedBytes);
+        }
+        if(typeof(T) == typeof(ulong)) {
+            return DecodeUlong(s, dest.AsSpan<T, ulong>(), out consumedBytes);
+        }
+
+        throw new NotSupportedException($"element type {typeof(T)} is not supported in {Encoding.DELTA_BINARY_PACKED}");
+    }
+
 
     //this extension method calculates the position of the most significant bit that is set to 1 
     static int CalculateBitWidth(this Span<int> span) {

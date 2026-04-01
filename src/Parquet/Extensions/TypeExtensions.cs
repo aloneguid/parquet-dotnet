@@ -219,6 +219,17 @@ static class TypeExtensions {
         return IsAssignableToGenericType(baseType, genericType);
     }
 
+    /// <summary>
+    /// Reinterprets this span as a span of a different struct element type without copying.
+    /// </summary>
+    public static Span<TTo> AsSpan<TFrom, TTo>(this Span<TFrom> span)
+        where TTo : struct
+        where TFrom : struct {
+        ref TFrom sourceRef = ref MemoryMarshal.GetReference(span);
+        ref TTo targetRef = ref Unsafe.As<TFrom, TTo>(ref sourceRef);
+        return MemoryMarshal.CreateSpan(ref targetRef, span.Length);
+    }
+
     public static ReadOnlySpan<TTo> AsSpan<TFrom, TTo>(this ReadOnlySpan<TFrom> span)
         where TTo : struct
         where TFrom : struct {
