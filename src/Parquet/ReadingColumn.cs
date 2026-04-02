@@ -18,6 +18,7 @@ class ReadingColumn<T> : IDisposable where T : struct {
     private int _definedDataCount = 0;
     private int _dictionaryIndexesOffset = 0;
     private int _definitionOffset = 0;
+    private int _repetitionOffset = 0;
 
     public ReadingColumn(DataField field, Memory<T> values, Memory<int>? definitionLevels, Memory<int>? repetitionLevels) {
         Field = field;
@@ -37,6 +38,14 @@ class ReadingColumn<T> : IDisposable where T : struct {
             if(_definitionLevels == null)
                 throw new InvalidOperationException($"Definition levels buffer is not allocated for field '{Field.Path}'");
             return _definitionLevels.Value.Span.Slice(_definitionOffset);
+        }
+    }
+
+    public Span<int> RepetitionLevelsToReadInto {
+        get {
+            if(_repetitionLevels == null)
+                throw new InvalidOperationException($"Repetition levels buffer is not allocated for field '{Field.Path}'");
+            return _repetitionLevels.Value.Span.Slice(_repetitionOffset);
         }
     }
 
@@ -61,6 +70,12 @@ class ReadingColumn<T> : IDisposable where T : struct {
 
         _definitionOffset += count;
         return nullCount;
+    }
+
+    public void MarkRepetitionLevels(int count) {
+        if(_repetitionLevels == null)
+            throw new InvalidOperationException($"Repetition levels buffer is not allocated for field '{Field.Path}'");
+        _repetitionOffset += count;
     }
 
     public Span<int> DictionaryIndexes {

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -38,13 +39,13 @@ namespace Parquet.Test.Types {
 
                 DataField[] dataFields = reader.Schema.GetDataFields();
 
-                DataColumn name = await rg.ReadColumnAsync(dataFields[0]);
-                DataColumn line1 = await rg.ReadColumnAsync(dataFields[1]);
-                DataColumn postcode = await rg.ReadColumnAsync(dataFields[2]);
+                List<string?> names = await ReadStringColumn(reader, dataFields[0]);
+                List<string?> line1s = await ReadStringColumn(reader, dataFields[1]);
+                List<string?> postcodes = await ReadStringColumn(reader, dataFields[2]);
 
-                Assert.Equal(new[] { "Joe" }, name.Data);
-                Assert.Equal(new[] { "Amazonland" }, line1.Data);
-                Assert.Equal(new[] { "AAABBB" }, postcode.Data);
+                Assert.Equal(new[] { "Joe" }, names);
+                Assert.Equal(new[] { "Amazonland" }, line1s);
+                Assert.Equal(new[] { "AAABBB" }, postcodes);
             }
         }
     }

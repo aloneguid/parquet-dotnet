@@ -32,14 +32,36 @@ public class RawColumnData<T> : IDisposable where T : struct {
     public Span<T> Values => _values.Memory.Span;
 
     /// <summary>
-    /// 
+    /// Definition levels, if they exist. Otherwise, <see cref="InvalidOperationException"/> is thrown.
     /// </summary>
     public Span<int> DefinitionLevels {
         get {
             if(_definitionLevels == null)
                 throw new InvalidOperationException("definition levels are not present for this column");
-
             return _definitionLevels.Memory.Span;
+        }
+    }
+
+    /// <summary>
+    /// Repetition levels, if they exist. Otherwise, <see cref="InvalidOperationException"/> is thrown.
+    /// </summary>
+    public Span<int> RepetitionLevels {
+        get {
+            if(_repetitionLevels == null)
+                throw new InvalidOperationException("repetition levels are not present for this column");
+            return _repetitionLevels.Memory.Span;
+        }
+    }
+
+    internal List<string> ValuesAsStrings {
+        get {
+            if(typeof(T) != typeof(ReadOnlyMemory<char>))
+                throw new InvalidOperationException("values are not strings");
+            var r = new List<string>();
+            foreach(ReadOnlyMemory<char> v in _values.Memory.Span.AsSpan<T, ReadOnlyMemory<char>>()) {
+                r.Add(new string(v.Span));
+            }
+            return r;
         }
     }
 

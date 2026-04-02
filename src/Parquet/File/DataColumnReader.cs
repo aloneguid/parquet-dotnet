@@ -238,15 +238,12 @@ class DataColumnReader {
         int pageValueCount = ph.DataPageHeader.NumValues;
 
         if(_dataField.MaxRepetitionLevel > 0) {
-            //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
-
-            //int levelsRead = ReadLevels(
-            //    bytes.Memory.Span, _dataField.MaxRepetitionLevel,
-            //    pc.GetWriteableRepetitionLevelSpan(),
-            //    pageValueCount, null, out int usedLength);
-            //pc.MarkRepetitionLevels(levelsRead);
-            //dataUsed += usedLength;
-            throw new NotImplementedException();
+            int levelsRead = ReadLevels(
+                bytes.Memory.Span, _dataField.MaxRepetitionLevel,
+                rc.RepetitionLevelsToReadInto,
+                pageValueCount, null, out int usedLength);
+            rc.MarkRepetitionLevels(levelsRead);
+            dataUsed += usedLength;
         }
 
         int defNulls = 0;

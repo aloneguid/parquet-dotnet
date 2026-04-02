@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -20,9 +22,9 @@ public class ListTest : TestBase {
               line1Field,
               postcodeField)));
 
-        string[] nameValues = new string[] { "Joe", "Bob" };
-        string[] line1Values = new[] { "Amazonland", "Disneyland", "Cryptoland" };
-        string[] postcodeValues = new[] { "AAABBB", "CCCDDD", "EEEFFF" };
+        string[] nameValues = ["Joe", "Bob"];
+        string[] line1Values = ["Amazonland", "Disneyland", "Cryptoland"];
+        string[] postcodeValues = ["AAABBB", "CCCDDD", "EEEFFF"];
 
         // write
 
@@ -37,23 +39,23 @@ public class ListTest : TestBase {
 
         // read back
         ms.Position = 0;
-        DataColumn dcNames;
-        DataColumn dcLine1;
-        DataColumn dcPostcode;
+        RawColumnData<ReadOnlyMemory<char>> names;
+        RawColumnData<ReadOnlyMemory<char>> line1s;
+        RawColumnData<ReadOnlyMemory<char>> postcodes;
         await using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
             using ParquetRowGroupReader gr = r.OpenRowGroupReader(0);
-            dcNames = await gr.ReadColumnAsync(nameField);
-            dcLine1 = await gr.ReadColumnAsync(line1Field);
-            dcPostcode = await gr.ReadColumnAsync(postcodeField);
+            names = await gr.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(nameField);
+            line1s = await gr.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(line1Field);
+            postcodes = await gr.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(postcodeField);
         }
 
         // compare values and repetition/definition levels
-        Assert.Equal(nameValues, dcNames.Data);
-        Assert.Equal(line1Values, dcLine1.Data);
-        Assert.Equal(postcodeValues, dcPostcode.Data);
-        Assert.Equal(new int[] { 1, 1 }, dcNames.DefinitionLevels);
-        Assert.Equal(new int[] { 0, 1, 0 }, dcLine1.RepetitionLevels);
-        Assert.Equal(new int[] { 0, 1, 0 }, dcPostcode.RepetitionLevels);
+        Assert.Equal(nameValues, names.ValuesAsStrings);
+        Assert.Equal(line1Values, line1s.ValuesAsStrings);
+        Assert.Equal(postcodeValues, postcodes.ValuesAsStrings);
+        Assert.Equal([1, 1], names.DefinitionLevels);
+        Assert.Equal([0, 1, 0], line1s.RepetitionLevels);
+        Assert.Equal([0, 1, 0], postcodes.RepetitionLevels);
 
     }
 

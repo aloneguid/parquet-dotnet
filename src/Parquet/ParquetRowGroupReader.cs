@@ -51,6 +51,10 @@ public class ParquetRowGroupReader : IDisposable {
     /// <summary>
     /// Gets the number of rows in this row group, which includes null values if any.
     /// </summary>
+    /// <remarks>
+    /// If this row group contains repeated columns, the number of values in those columns may be greater than the row
+    /// count, but the row count will always reflect the number of rows, including nulls, in the source data.
+    /// </remarks>
     public long RowCount => _rowGroup.NumRows;
 
     /// <summary>
@@ -61,8 +65,8 @@ public class ParquetRowGroupReader : IDisposable {
     }
 
     /// <summary>
-    /// Reads a column from this row group. Unlike writing, columns can be read in any order.
-    /// If the column is missing, an exception will be thrown.
+    /// Reads a column from this row group. Unlike writing, columns can be read in any order. If the column is missing,
+    /// an exception will be thrown.
     /// </summary>
     public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
         ColumnChunk columnChunk = GetMetadata(field)
@@ -72,10 +76,17 @@ public class ParquetRowGroupReader : IDisposable {
         return columnReader.ReadAsync(cancellationToken);
     }
 
+    private ColumnMetaData GetColumnMetaData(DataField field) {
+        ColumnChunk columnChunk = GetMetadata(field)
+            ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+        if(columnChunk.MetaData == null)
+            throw new ParquetException($"Column chunk metadata is missing for '{field.Path}', meaning the file is most probably corrupt");
+        return columnChunk.MetaData;
+    }
+
     /// <summary>
-    /// Performs "raw" reading of a column, which returns non-nullable values and definition/repetition levels as separate buffers.
-    /// Intended for advanced use only.
-    /// todo: explain what to use instead
+    /// Performs "raw" reading of a column, which returns non-nullable values and definition/repetition levels as
+    /// separate buffers. Intended for advanced use only. todo: explain what to use instead
     /// </summary>
     public async ValueTask ReadRawAsync<T>(DataField field,
         Memory<T> values,
@@ -84,32 +95,30 @@ public class ParquetRowGroupReader : IDisposable {
         CancellationToken cancellationToken = default)
         where T : struct {
 
+        ColumnChunk columnChunk = GetMetadata(field)
+            ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+
+        long numValues = GetColumnMetaData(field).NumValues;
+
+        // If column is nullable, the buffer does not have to be as big as numValuees, it's just the upper limit.
+        // This can be slightly improved by trying to read statistics, however those can be unreliable.
+        if(values.Length < numValues)
+            throw new ArgumentException($"Values buffer is too small for field '{field.Path}' (length {values.Length} < numValues {numValues})");
+
         if(field.MaxDefinitionLevel > 0 && definitionLevels == null)
             throw new ArgumentException($"Definition levels buffer is required for field '{field.Path}' ({nameof(Field.MaxDefinitionLevel)} = {field.MaxDefinitionLevel})");
 
         if(field.MaxRepetitionLevel > 0 && repetitionLevels == null)
             throw new ArgumentException($"Repetition levels buffer is required for field '{field.Path}' ({nameof(Field.MaxRepetitionLevel)} = {field.MaxRepetitionLevel})");
 
-        if(definitionLevels != null && definitionLevels.Value.Length < RowCount)
-            throw new ArgumentException($"Definition levels buffer is too small for field '{field.Path}' (length {definitionLevels.Value.Length} < row count {RowCount})");
+        if(definitionLevels != null && definitionLevels.Value.Length < numValues)
+            throw new ArgumentException($"Definition levels buffer is too small for field '{field.Path}' (length {definitionLevels.Value.Length} < numValues {RowCount})");
 
-        if(repetitionLevels != null && repetitionLevels.Value.Length < RowCount)
-            throw new ArgumentException($"Repetition levels buffer is too small for field '{field.Path}' (length {repetitionLevels.Value.Length} < row count {RowCount})");
-
-        if(field.IsNullable) {
-            // todo: validate that buffer is big enough to hold all values (it doesn't have to be as big as row count, but it has to be big enough to hold all non-null values)
-        } else {
-            if(values.Length < RowCount)
-                throw new ArgumentException($"Values buffer is too small for field '{field.Path}' (length {values.Length} < row count {RowCount})");
-        }
-
-        ColumnChunk columnChunk = GetMetadata(field)
-            ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+        if(repetitionLevels != null && repetitionLevels.Value.Length < numValues)
+            throw new ArgumentException($"Repetition levels buffer is too small for field '{field.Path}' (length {repetitionLevels.Value.Length} < numValues {RowCount})");
 
         var columnReader = new DataColumnReader(field, _stream,
             columnChunk, ReadColumnStatistics(columnChunk), _footer, _options);
-
-        // todo: validate there's enough memory to read back
 
         using var rc = new ReadingColumn<T>(field, values, definitionLevels, repetitionLevels);
         await columnReader.ReadAsync(rc, cancellationToken);
@@ -123,9 +132,10 @@ public class ParquetRowGroupReader : IDisposable {
        where T : struct {
 
         // allocate required buffers
-        IMemoryOwner<T> values = MemoryOwner<T>.Allocate((int)RowCount);
-        IMemoryOwner<int>? definitionLevels = field.MaxDefinitionLevel > 0 ? MemoryOwner<int>.Allocate((int)RowCount) : null;
-        IMemoryOwner<int>? repetitionLevels = field.MaxRepetitionLevel > 0 ? MemoryOwner<int>.Allocate((int)RowCount) : null;
+        long numValues = GetColumnMetaData(field).NumValues;
+        IMemoryOwner<T> values = MemoryOwner<T>.Allocate((int)numValues);
+        IMemoryOwner<int>? definitionLevels = field.MaxDefinitionLevel > 0 ? MemoryOwner<int>.Allocate((int)numValues) : null;
+        IMemoryOwner<int>? repetitionLevels = field.MaxRepetitionLevel > 0 ? MemoryOwner<int>.Allocate((int)numValues) : null;
 
         await ReadRawAsync(field, values.Memory, definitionLevels?.Memory, repetitionLevels?.Memory, cancellationToken);
 
