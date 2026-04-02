@@ -32,8 +32,8 @@ public class EndToEndTypeTest : TestBase {
             ms.Position = 0;
             await using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
-            DataColumn column = await rowGroupReader.ReadColumnAsync(field);
-            return (T)column.Data.GetValue(0)!;
+            using RawColumnData<T> rcd = await rowGroupReader.ReadRawColumnDataAsync<T>(field);
+            return rcd.Values[0];
         }
     }
 
@@ -56,9 +56,8 @@ public class EndToEndTypeTest : TestBase {
             ms.Position = 0;
             await using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
-            DataColumn column = await rowGroupReader.ReadColumnAsync(field);
-            object? raw = column.Data.GetValue(0);
-            return raw is T t ? t : null;
+            using RawColumnData<T> rcd = await rowGroupReader.ReadRawColumnDataAsync<T>(field);
+            return rcd.DefinitionLevels[0] == 0 ? null : rcd.Values[0];
         }
     }
 
@@ -80,14 +79,14 @@ public class EndToEndTypeTest : TestBase {
             ms.Position = 0;
             await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
-            DataColumn column = await rowGroupReader.ReadColumnAsync(field);
-            return (string?)column.Data.GetValue(0);
+            using RawColumnData<ReadOnlyMemory<char>> rcd = await rowGroupReader.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(field);
+            return rcd.DefinitionLevels[0] == 0 ? null : rcd.Values[0].ToString();
         }
     }
 
     /// <summary>
-    /// Writes a single byte array value using WriteColumnAsync and reads it back.
-    /// Binary columns are not supported by the generic WriteAsync overloads.
+    /// Writes a single byte array value using WriteColumnAsync and reads it back. Binary columns are not supported by
+    /// the generic WriteAsync overloads.
     /// </summary>
     private static async Task<byte[]?> WriteReadSingleByteArrayAsync(DataField field, byte[] value) {
         byte[] data;
@@ -104,8 +103,8 @@ public class EndToEndTypeTest : TestBase {
             ms.Position = 0;
             await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
-            DataColumn column = await rowGroupReader.ReadColumnAsync(field);
-            return (byte[]?)column.Data.GetValue(0);
+            using RawColumnData<ReadOnlyMemory<byte>> rcd = await rowGroupReader.ReadRawColumnDataAsync<ReadOnlyMemory<byte>>(field);
+            return rcd.DefinitionLevels[0] == 0 ? null : rcd.Values[0].ToArray();
         }
     }
 

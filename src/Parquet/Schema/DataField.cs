@@ -195,8 +195,8 @@ public class DataField : Field, ICloneable {
 
     internal bool IsCompatibleWith(Type structType) {
         return structType == ClrType ||
-            (structType == typeof(ReadOnlyMemory<char>) && ClrType == typeof(string));
-
+            (structType == typeof(ReadOnlyMemory<char>) && ClrType == typeof(string)) ||
+            (structType == typeof(ReadOnlyMemory<byte>) && ClrType == typeof(byte[]));
     }
 
     /// <summary>

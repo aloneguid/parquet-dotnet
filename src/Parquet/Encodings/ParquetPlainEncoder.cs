@@ -14,9 +14,8 @@ using TType = Parquet.Meta.Type;
 namespace Parquet.Encodings;
 
 /// <summary>
-/// Fast data encoder. 
-/// See https://github.com/aloneguid/parquet-dotnet/issues/643#issuecomment-3489932123 for future performance ideas.
-/// Experimental.
+/// Fast data encoder. See https://github.com/aloneguid/parquet-dotnet/issues/643#issuecomment-3489932123 for future
+/// performance ideas. Experimental.
 /// </summary>
 static class ParquetPlainEncoder {
 
@@ -25,9 +24,12 @@ static class ParquetPlainEncoder {
     private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
     /// <summary>
-    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migrattion from legacy .NET.
+    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migrattion from legacy
+    /// .NET.
     /// </summary>
-    /// <param name="sourceSpan">Reference to <see cref="ReadOnlyMemory{T}"/> passed as an object, due to unclarity of what the T will be.</param>
+    /// <param name="sourceSpan">
+    /// Reference to <see cref="ReadOnlyMemory{T}"/> passed as an object, due to unclarity of what the T will be.
+    /// </param>
     /// <param name="destination">Where do we write this to?</param>
     /// <param name="tse"></param>
     /// <param name="stats"></param>
@@ -299,6 +301,9 @@ static class ParquetPlainEncoder {
             elementsRead = Decode(source, span.Slice(0, count));
         } else if(t == typeof(ReadOnlyMemory<char>)) {
             Span<ReadOnlyMemory<char>> span = dest.AsSpan<T, ReadOnlyMemory<char>>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(ReadOnlyMemory<byte>)) {
+            Span<ReadOnlyMemory<byte>> span = dest.AsSpan<T, ReadOnlyMemory<byte>>();
             elementsRead = Decode(source, span.Slice(0, count), tse);
         } else if(t == typeof(Guid)) {
             Span<Guid> span = dest.AsSpan<T, Guid>();
@@ -955,6 +960,35 @@ static class ParquetPlainEncoder {
                     data[read++] = el;
                 } else {
                     data[read++] = [];
+                }
+            }
+        }
+        return read;
+    }
+
+    public static int Decode(Span<byte> source, Span<ReadOnlyMemory<byte>> data, SchemaElement tse) {
+        int read = 0;
+        int sourceOffset = 0;
+
+        if(tse.Type == TType.FIXED_LEN_BYTE_ARRAY) {
+            if(tse.TypeLength == null)
+                throw new InvalidDataException($"type length must be set for {nameof(TType.FIXED_LEN_BYTE_ARRAY)}");
+            int length = tse.TypeLength.Value;
+            while(read < data.Length) {
+                ReadOnlyMemory<byte> el = source.Slice(sourceOffset, length).ToArray();
+                sourceOffset += length;
+                data[read++] = el;
+            }
+        } else {
+            while(read < data.Length) {
+                int length = source.ReadInt32(sourceOffset);
+                sourceOffset += sizeof(int);
+                if(length > 0) {
+                    ReadOnlyMemory<byte> el = source.Slice(sourceOffset, length).ToArray();
+                    sourceOffset += length;
+                    data[read++] = el;
+                } else {
+                    data[read++] = ReadOnlyMemory<byte>.Empty;
                 }
             }
         }
