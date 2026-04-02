@@ -68,7 +68,8 @@ internal class DataTypes {
         ms.Position = 0;
         await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
-                await rg.ReadColumnAsync(c.Field);
+                //await rg.ReadColumnAsync(c.Field);
+                throw new NotImplementedException();
             }
         }
     }

@@ -461,13 +461,12 @@ class DataColumnReader {
             //    }
             //    break;
 
-            //case Encoding.BYTE_STREAM_SPLIT: {       // 9
-            //        Array plainData = pc.GetPlainDataToReadInto(out int offset);
-            //        int read = ByteStreamSplitEncoder.DecodeByteStreamSplit(src, plainData, offset, totalValuesInPage);
-            //        pc.MarkUsefulPlainData(read);
-            //    }
-            //    break;
-            //case Encoding.BIT_PACKED:                // 4 (deprecated)
+            case Encoding.BYTE_STREAM_SPLIT: {       // 9
+                    int read = ByteStreamSplitEncoder.DecodeByteStreamSplit(src, rc.ValuesToReadInto, totalValuesInPage);
+                    rc.MarkValuesRead(read);
+                }
+                break;
+            case Encoding.BIT_PACKED:                // 4 (deprecated)
             default:
                 throw new ParquetException($"encoding {encoding} is not supported.");
         }

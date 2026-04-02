@@ -56,15 +56,12 @@ public class DictionaryEncodingTest : TestBase {
     public async Task ReadStringDictionaryGeneratedBySpark() {
         using Stream fs = OpenTestFile("string_dictionary_by_spark.parquet");
         await using ParquetReader reader = await ParquetReader.CreateAsync(fs);
+        List<string?> values = await ReadStringColumn(reader, reader.Schema.DataFields[0]);
 
-        DataColumn[] cols = await reader.ReadEntireRowGroupAsync(0);
-        Assert.Single(cols);
-        DataColumn c0 = cols[0];
-
-        Assert.Equal(400, c0.NumValues);
-        Assert.Equal(Enumerable.Repeat("one", 100).ToArray(), c0.AsSpan<string>(0, 100).ToArray());
-        Assert.Equal(Enumerable.Repeat("two", 100).ToArray(), c0.AsSpan<string>(100, 100).ToArray());
-        Assert.Equal(Enumerable.Repeat((string?)null, 100).ToArray(), c0.AsSpan<string>(200, 100).ToArray());
-        Assert.Equal(Enumerable.Repeat("three", 100).ToArray(), c0.AsSpan<string>(300, 100).ToArray());
+        Assert.Equal(400, values.Count);
+        Assert.Equal(Enumerable.Repeat("one", 100).ToArray(), values.Take(100));
+        Assert.Equal(Enumerable.Repeat("two", 100).ToArray(), values.Skip(100).Take(100));
+        Assert.Equal(Enumerable.Repeat((string?)null, 100).ToArray(), values.Skip(200).Take(100));
+        Assert.Equal(Enumerable.Repeat("three", 100).ToArray(), values.Skip(300).Take(100));
     }
 }

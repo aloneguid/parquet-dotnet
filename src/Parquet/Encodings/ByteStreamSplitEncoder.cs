@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Parquet.Encodings;
 
@@ -39,6 +40,62 @@ static class ByteStreamSplitEncoder {
             } else {
                 double value = BitConverter.ToDouble(tmp);
                 dDest![i] = value;
+            }
+        }
+
+        return valueCount;
+    }
+
+    public static int DecodeByteStreamSplit<T>(Span<byte> s, Span<T> dest, int valueCount) where T : struct {
+        int k;
+        bool isFloat = typeof(T) == typeof(float);
+        if(isFloat) {
+            k = 4;
+        } else if(typeof(T) == typeof(double)) {
+            k = 8;
+        } else {
+            throw new NotSupportedException(typeof(T).Name);
+        }
+
+        if(valueCount < 0) {
+            throw new ArgumentOutOfRangeException(nameof(valueCount));
+        }
+
+        if(dest.Length < valueCount) {
+            throw new ArgumentException("Destination span is too small.", nameof(dest));
+        }
+
+        if(s.Length < valueCount * k) {
+            throw new ArgumentException("Source span is too small.", nameof(s));
+        }
+
+        /*
+         * Example: Original data is three 32-bit floats and for simplicity we look at their raw representation.
+         *        Element 0      Element 1      Element 2
+         * Bytes  AA BB CC DD    00 11 22 33    A3 B4 C5 D6
+         * 
+         * After applying the transformation, the data has the following representation:
+         * Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
+         */
+
+        Span<byte> tmp = stackalloc byte[k];
+        if(isFloat) {
+            Span<float> fDest = MemoryMarshal.Cast<T, float>(dest);
+            for(int i = 0; i < valueCount; i++) {
+                for(int j = 0; j < k; j++) {
+                    tmp[j] = s[(j * valueCount) + i];
+                }
+
+                fDest[i] = BitConverter.ToSingle(tmp);
+            }
+        } else {
+            Span<double> dDest = MemoryMarshal.Cast<T, double>(dest);
+            for(int i = 0; i < valueCount; i++) {
+                for(int j = 0; j < k; j++) {
+                    tmp[j] = s[(j * valueCount) + i];
+                }
+
+                dDest[i] = BitConverter.ToDouble(tmp);
             }
         }
 

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Schema;
 using Xunit;
 
 namespace Parquet.Test.Encodings;
@@ -45,6 +46,38 @@ public class ByteStreamSplitEncoderTest : TestBase {
         }
     }
 
+    [Fact]
+    public void TestApacheExampleWithSpanDestination() {
+        float[] expected = [FromHex("AABBCCDD"), FromHex("00112233"), FromHex("A3B4C5D6")];
+        byte[] bytes = ToByteArray("AA00A3BB11B4CC22C5DD33D6");
+
+        Span<float> dest = stackalloc float[3];
+        ByteStreamSplitEncoder.DecodeByteStreamSplit(bytes, dest, 3);
+
+        for(int i = 0; i < 3; i++) {
+            Assert.Equal(expected[i], dest[i]);
+        }
+
+        static float FromHex(string hex) {
+            Span<byte> b = stackalloc byte[4];
+            for(int i = 0; i < 4; i++) {
+                b[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            }
+
+            return BitConverter.ToSingle(b);
+        }
+
+        static byte[] ToByteArray(string hex) {
+            int len = hex.Length / 2;
+            byte[] b = new byte[len];
+            for(int i = 0; i < len; i++) {
+                b[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            }
+
+            return b;
+        }
+    }
+
     [Theory]
     [InlineData("byte_stream_split_256.parquet")]
     public async Task TestFloatDoubleValues(string parquetFile) {
@@ -54,18 +87,22 @@ public class ByteStreamSplitEncoderTest : TestBase {
          */
         await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
         Assert.Equal(1, reader.RowGroupCount);
-        ParquetRowGroupReader row = reader.OpenRowGroupReader(0);
+        ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
 
-        DataColumn doubleCol = await row.ReadColumnAsync(reader.Schema.FindDataField("value"));
-        DataColumn floatCol = await row.ReadColumnAsync(reader.Schema.FindDataField("fvalue"));
-        Assert.Equal(256, doubleCol.NumValues);
-        Assert.Equal(256, floatCol.NumValues);
+        DataField doubleField = reader.Schema.FindDataField("value");
+        DataField floatField = reader.Schema.FindDataField("fvalue");
+
+        using RawColumnData<double> doubleCol = await rgr.ReadRawColumnDataAsync<double>(doubleField);
+        using RawColumnData<float> floatCol = await rgr.ReadRawColumnDataAsync<float>(floatField);
+
+        Assert.Equal(256, doubleCol.Values.Length);
+        Assert.Equal(256, floatCol.Values.Length);
 
         for(int i = 0; i < 256; i++) {
             double d = i * 1.5d;
             float f = i * 1.5f;
-            Assert.Equal(d, (double)doubleCol.Data.GetValue(i)!, 5);
-            Assert.Equal(f, (float)floatCol.Data.GetValue(i)!, 5);
+            Assert.Equal(d, (double)doubleCol.Values[i], 5);
+            Assert.Equal(f, (float)floatCol.Values[i], 5);
         }
     }
 
