@@ -120,6 +120,7 @@ class PackedColumn : IDisposable {
     public void Checkpoint() {
 
         if(_dictionaryIndexes != null && _dictionary != null) {
+
             _dictionary.ExplodeFast(
                 _dictionaryIndexes.AsSpan(0, _dictionaryIndexesOffset),
                 _definedData, _definedDataCount, _dictionaryIndexesOffset);

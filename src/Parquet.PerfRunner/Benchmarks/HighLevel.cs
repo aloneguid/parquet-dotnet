@@ -79,7 +79,7 @@ public class HighLevel {
     private async Task<MemoryStream> Run(DataColumn c, MemoryStream ms) {
         ms.Position = 0;
         await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-            await reader.ReadEntireRowGroupAsync();
+            //await reader.ReadEntireRowGroupAsync();
         }
         ms.Position = 0;
         return ms;

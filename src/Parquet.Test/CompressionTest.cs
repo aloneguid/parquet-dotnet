@@ -38,9 +38,8 @@ public class CompressionTest : TestBase {
         // read value back
         ms.Position = 0;
         await using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
-            using ParquetRowGroupReader rg = r.OpenRowGroupReader(0);
-            DataColumn column = await rg.ReadColumnAsync(schema.DataFields[0]);
-            Assert.Equal(testValue, column.Data.GetValue(0));
+            RawColumnData<int> c = await ReadColumn<int>(r, schema.DataFields[0]);
+            Assert.Equal(testValue, c.Values[0]);
         }
     }
 
@@ -53,10 +52,10 @@ public class CompressionTest : TestBase {
         using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
 
         DataField[] fields = reader.Schema.GetDataFields();
-        DataColumn column1 = await groupReader.ReadColumnAsync(fields[0]);
-        DataColumn column2 = await groupReader.ReadColumnAsync(fields[1]);
+        RawColumnData<int> column1 = await ReadColumn<int>(reader, fields[0]);
+        RawColumnData<int> column2 = await ReadColumn<int>(reader, fields[1]);
 
-        Assert.NotNull(column1.Data);
-        Assert.NotNull(column2.Data);
+        Assert.True(column1.Values.Length > 0);
+        Assert.True(column2.Values.Length > 0);
     }
 }

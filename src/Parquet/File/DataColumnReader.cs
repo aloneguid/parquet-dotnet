@@ -117,16 +117,14 @@ class DataColumnReader {
 
             switch(ph.Type) {
                 case PageType.DICTIONARY_PAGE:
-                    //await ReadDictionaryPage(ph, pc);
-                    throw new NotImplementedException();
-                    //break;
+                    await ReadDictionaryPage(ph, rc, cancellationToken);
+                    break;
                 case PageType.DATA_PAGE:
                     await ReadDataPageV1Async(ph, rc, cancellationToken);
                     break;
                 case PageType.DATA_PAGE_V2:
-                    //await ReadDataPageV2Async(ph, pc, totalValuesInChunk);
-                    throw new NotImplementedException();
-                    //break;
+                    await ReadDataPageV2Async(ph, rc, totalValuesInChunk, cancellationToken);
+                    break;
                 default:
                     throw new NotSupportedException($"can't read page type {ph.Type}");
             }
@@ -159,6 +157,21 @@ class DataColumnReader {
                _schemaElement!, bytes.Memory.Span, out int dictionaryOffset);
 
         pc.AssignDictionary(dictionary);
+    }
+
+    private async ValueTask ReadDictionaryPage<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
+
+        if(rc.HasDictionary)
+            throw new InvalidOperationException("dictionary already read");
+
+        //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
+        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+
+        // Dictionary should not contains null values
+        Span<T> dictionary = rc.AllocateDictionary(ph.DictionaryPageHeader!.NumValues);
+
+        ParquetPlainEncoder.Decode(dictionary, ph.DictionaryPageHeader.NumValues,
+               _schemaElement!, bytes.Memory.Span, out int dictionaryOffset);
     }
 
     private long GetFileOffset() =>
@@ -310,6 +323,62 @@ class DataColumnReader {
             pc);
     }
 
+    private async ValueTask ReadDataPageV2Async<T>(PageHeader ph, ReadingColumn<T> rc, long maxValues, CancellationToken cancellationToken) where T : struct {
+        if(ph.DataPageHeaderV2 == null) {
+            throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+        }
+
+        using MemoryOwner<byte> pageMemory = MemoryOwner<byte>.Allocate(ph.CompressedPageSize);
+        using(Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize)) {
+            await src.CopyToAsync(pageMemory.Memory);
+        }
+        int dataUsed = 0;
+
+        if(_dataField.MaxRepetitionLevel > 0) {
+            //todo: use rented buffers, but be aware that rented length can be more than requested so underlying logic relying on array length must be fixed too.
+            //int levelsRead = ReadLevels(pageMemory.Span,
+            //    _dataField.MaxRepetitionLevel, rc.GetWriteableRepetitionLevelSpan(),
+            //    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.RepetitionLevelsByteLength, out int usedLength);
+            //dataUsed += usedLength;
+            //rc.MarkRepetitionLevels(levelsRead);
+            throw new NotImplementedException();
+        }
+
+        if(_dataField.MaxDefinitionLevel > 0) {
+            //int levelsRead = ReadLevels(pageMemory.Span.Slice(dataUsed),
+            //    _dataField.MaxDefinitionLevel, rc.GetWriteableDefinitionLevelSpan(),
+            //    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.DefinitionLevelsByteLength, out int usedLength);
+            //dataUsed += usedLength;
+            //rc.MarkDefinitionLevels(levelsRead);
+            throw new NotImplementedException();
+        }
+
+        int maxReadCount = ph.DataPageHeaderV2.NumValues - ph.DataPageHeaderV2.NumNulls;
+
+        if(ph.DataPageHeaderV2.IsCompressed == false || _thriftColumnChunk.MetaData!.Codec == CompressionCodec.UNCOMPRESSED) {
+            ReadColumn(pageMemory.Span.Slice(dataUsed), ph.DataPageHeaderV2.Encoding, maxValues, maxReadCount, rc);
+            return;
+        }
+
+        int dataSize = ph.CompressedPageSize - ph.DataPageHeaderV2.RepetitionLevelsByteLength -
+                       ph.DataPageHeaderV2.DefinitionLevelsByteLength;
+
+        int decompressedSize = ph.UncompressedPageSize - ph.DataPageHeaderV2.RepetitionLevelsByteLength -
+                               ph.DataPageHeaderV2.DefinitionLevelsByteLength;
+
+
+        // decompress into rented memory
+        using IMemoryOwner<byte> decompressedDataMemory = await Compressor.Instance.Decompress(
+            _compressionMethod,
+            pageMemory.Memory.Sub(dataUsed, pageMemory.Length - dataUsed),
+            ph.UncompressedPageSize);
+
+        ReadColumn(decompressedDataMemory.Memory.Span,
+            ph.DataPageHeaderV2.Encoding,
+            maxValues, maxReadCount,
+            rc);
+    }
+
     private int ReadLevels(Span<byte> s, int maxLevel,
         Span<int> dest,
         int pageSize,
@@ -335,14 +404,14 @@ class DataColumnReader {
                 }
                 break;
 
-            //case Encoding.PLAIN_DICTIONARY: // 2  // values are still encoded in RLE
-            //case Encoding.RLE_DICTIONARY: { // 8
-            //        Span<int> span = pc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
-            //        int indexCount = ReadRleDictionary(src, totalValuesInPage, span);
-            //        pc.MarkUsefulDictionaryIndexes(indexCount);
-            //        pc.Checkpoint();
-            //    }
-            //    break;
+            case Encoding.PLAIN_DICTIONARY: // 2  // values are still encoded in RLE
+            case Encoding.RLE_DICTIONARY: { // 8
+                    Span<int> span = rc.AllocateOrGetDictionaryIndexes(totalValuesInPage);
+                    int indexCount = ReadRleDictionary(src, totalValuesInPage, span);
+                    rc.MarkDictionaryIndexesRead(indexCount);
+                    rc.Checkpoint();
+                }
+                break;
 
             //case Encoding.RLE: { // 3
             //        Array plainData = pc.GetPlainDataToReadInto(out int offset);

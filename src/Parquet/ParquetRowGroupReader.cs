@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
@@ -11,6 +12,7 @@ using Parquet.Encodings;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
+using SType = System.Type;
 
 namespace Parquet;
 
@@ -75,7 +77,7 @@ public class ParquetRowGroupReader : IDisposable {
     /// Intended for advanced use only.
     /// todo: explain what to use instead
     /// </summary>
-    public async ValueTask ReadAsyncRaw<T>(DataField field,
+    public async ValueTask ReadRawAsync<T>(DataField field,
         Memory<T> values,
         Memory<int>? definitionLevels,
         Memory<int>? repetitionLevels,
@@ -114,6 +116,23 @@ public class ParquetRowGroupReader : IDisposable {
     }
 
     /// <summary>
+    /// Pre-allocates column memory and reads.
+    /// </summary>
+    internal async ValueTask<RawColumnData<T>> ReadRawColumnDataAsync<T>(DataField field,
+       CancellationToken cancellationToken = default)
+       where T : struct {
+
+        // allocate required buffers
+        IMemoryOwner<T> values = MemoryOwner<T>.Allocate((int)RowCount);
+        IMemoryOwner<int>? definitionLevels = field.MaxDefinitionLevel > 0 ? MemoryOwner<int>.Allocate((int)RowCount) : null;
+        IMemoryOwner<int>? repetitionLevels = field.MaxRepetitionLevel > 0 ? MemoryOwner<int>.Allocate((int)RowCount) : null;
+
+        await ReadRawAsync(field, values.Memory, definitionLevels?.Memory, repetitionLevels?.Memory, cancellationToken);
+
+        return new RawColumnData<T>(values, definitionLevels, repetitionLevels);
+    }
+
+    /// <summary>
     /// Read non-nullable column data
     /// </summary>
     public async ValueTask ReadAsync<T>(DataField field,
@@ -121,7 +140,7 @@ public class ParquetRowGroupReader : IDisposable {
         Memory<int>? repetitionLevels = null,
         CancellationToken cancellationToken = default)
         where T : struct {
-        await ReadAsyncRaw(field, values, null, repetitionLevels, cancellationToken);
+        await ReadRawAsync(field, values, null, repetitionLevels, cancellationToken);
     }
 
     /// <summary>
@@ -138,7 +157,7 @@ public class ParquetRowGroupReader : IDisposable {
         using IMemoryOwner<int> definitionLevels = MemoryOwner<int>.Allocate((int)RowCount);
 
         // read non-null version of the column along with definition levels
-        await ReadAsyncRaw(field, nonNullMemory.Memory, definitionLevels.Memory, repetitionLevels, cancellationToken);
+        await ReadRawAsync(field, nonNullMemory.Memory, definitionLevels.Memory, repetitionLevels, cancellationToken);
 
         // reconstruct nullable values based on definition levels
         Span<T?> valuesSpan = values.Span;
@@ -163,7 +182,7 @@ public class ParquetRowGroupReader : IDisposable {
         using IMemoryOwner<int> definitionlevels = MemoryOwner<int>.Allocate(field.MaxDefinitionLevel > 0 ? (int)RowCount : 0);
         using IMemoryOwner<ReadOnlyMemory<char>> rawValues = MemoryOwner<ReadOnlyMemory<char>>.Allocate(values.Length);
 
-        await ReadAsyncRaw(field, rawValues.Memory, definitionlevels.Memory, repetitionLevels, cancellationToken);
+        await ReadRawAsync(field, rawValues.Memory, definitionlevels.Memory, repetitionLevels, cancellationToken);
 
         // convert back to strings
         Span<int> dlSpan = definitionlevels.Memory.Span;

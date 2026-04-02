@@ -28,7 +28,7 @@ public class DumbStreamTest {
         await using ParquetReader parquetReader = await ParquetReader.CreateAsync(bufferedStream);
         for(int iterations = 0; iterations < 100; iterations++) {
             using ParquetRowGroupReader rowGroupReader = parquetReader.OpenRowGroupReader(0);
-            await rowGroupReader.ReadColumnAsync(field);
+            await rowGroupReader.ReadRawColumnDataAsync<DateTime>(field);
         }
     }
 

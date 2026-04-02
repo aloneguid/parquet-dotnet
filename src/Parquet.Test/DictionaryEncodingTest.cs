@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,43 +13,43 @@ public class DictionaryEncodingTest : TestBase {
 
     [Fact]
     public async Task DictionaryEncodingTest2() {
-        string?[] data = new string?[]
-        {
-        "xxx",
-        "xxx",
-        "xxx",
-        "xxx",
-        "xxx",
-        null,
-        "yyy",
-        "yyy",
-        "yyy",
-        string.Empty,
-        "yyy",
-        "yyy",
-        null,
-        null,
-        "zzz",
-        "zzz",
-        "zzz",
-        "zzz",
-        };
+        string?[] data = [
+            "xxx",
+            "xxx",
+            "xxx",
+            "xxx",
+            "xxx",
+            null,
+            "yyy",
+            "yyy",
+            "yyy",
+            string.Empty,
+            "yyy",
+            "yyy",
+            null,
+            null,
+            "zzz",
+            "zzz",
+            "zzz",
+            "zzz"
+            ];
 
         var dataField = new DataField<string>("string");
         var parquetSchema = new ParquetSchema(dataField);
 
         using var stream = new MemoryStream();
 
-        await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: new ParquetOptions() { UseDictionaryEncoding = true })) {
+        var options = new ParquetOptions();
+        options.DictionaryEncodedColumns.Add("string");
+        await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: options)) {
             using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
             await groupWriter.WriteAsync<ReadOnlyMemory<char>>(dataField, data.Select(x => x.AsNullableReadOnlyMemory()).ToArray());
         }
 
         await using ParquetReader parquetReader = await ParquetReader.CreateAsync(stream);
-        using ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(0);
-        Data.DataColumn dataColumn = await groupReader.ReadColumnAsync(dataField);
+        List<string?> rdata = await ReadStringColumn(parquetReader, dataField);
 
-        Assert.Equal(data, dataColumn.Data);
+        Assert.Equal(data, rdata);
     }
 
     [Fact]

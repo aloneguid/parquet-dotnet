@@ -15,8 +15,7 @@ namespace Parquet.Extensions {
 
         public static int CalculateNullCountFast(this Array array, int offset, int count) {
             Type? t = array.GetType().GetElementType();
-            if(t != null && !t.IsNullable())
-                return 0;
+            if(t != null && !t.IsNullable()) return 0;
 
             if(t == typeof(bool?)) {
                 return CalculateNullCount((bool?[])array, offset, count);
@@ -78,14 +77,12 @@ namespace Parquet.Extensions {
             if(t == typeof(Guid?)) {
                 return CalculateNullCount((Guid?[])array, offset, count);
             }
-#if NET6_0_OR_GREATER
             if(t == typeof(DateOnly?)) {
                 return CalculateNullCount((DateOnly?[])array, offset, count);
             }
             if(t == typeof(TimeOnly?)) {
                 return CalculateNullCount((TimeOnly?[])array, offset, count);
             }
-#endif            
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
 
@@ -269,7 +266,6 @@ namespace Parquet.Extensions {
             }
             return r;
         }
-#if NET6_0_OR_GREATER
         private static int CalculateNullCount(DateOnly?[] array, int offset, int count) {
             int r = 0;
             for(int i = offset; i < count; i++) {
@@ -288,16 +284,15 @@ namespace Parquet.Extensions {
             }
             return r;
         }
-#endif
-        #endregion
+    #endregion
 
-        #region [ Null Packing ]
+    #region [ Null Packing ]
 
-        public static void PackNullsFast(this Array array,
-                int offset, int count,
-                Array packedData,
-                Span<int> dest,
-                int fillerValue) {
+    public static void PackNullsFast(this Array array,
+            int offset, int count,
+            Array packedData,
+            Span<int> dest,
+            int fillerValue) {
 
             Type? t = array.GetType().GetElementType();
             if(t == null)
@@ -449,8 +444,7 @@ namespace Parquet.Extensions {
                     dest, fillerValue);
                 return;
             }
-
-#if NET6_0_OR_GREATER
+ 
             if(t == typeof(DateOnly?)) {
                 PackNullsTypeFast((DateOnly?[])array,
                     offset, count,
@@ -465,7 +459,6 @@ namespace Parquet.Extensions {
                     dest, fillerValue);
                 return;
             }
-#endif
             throw new NotSupportedException($"cannot pack type {t}");
         }
 
@@ -480,7 +473,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (bool)value;
                 }
@@ -498,7 +492,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (byte)value;
                 }
@@ -516,7 +511,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (sbyte)value;
                 }
@@ -534,7 +530,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (short)value;
                 }
@@ -552,7 +549,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (ushort)value;
                 }
@@ -570,7 +568,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (int)value;
                 }
@@ -588,7 +587,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (uint)value;
                 }
@@ -606,7 +606,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (long)value;
                 }
@@ -624,7 +625,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (ulong)value;
                 }
@@ -642,7 +644,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (BigInteger)value;
                 }
@@ -660,7 +663,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (BigDecimal)value;
                 }
@@ -678,7 +682,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (float)value;
                 }
@@ -696,7 +701,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (double)value;
                 }
@@ -714,7 +720,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (decimal)value;
                 }
@@ -732,7 +739,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (DateTime)value;
                 }
@@ -750,7 +758,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (TimeSpan)value;
                 }
@@ -768,7 +777,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (Interval)value;
                 }
@@ -786,7 +796,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (string)value;
                 }
@@ -804,7 +815,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (byte[])value;
                 }
@@ -822,14 +834,14 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (Guid)value;
                 }
             }
         }
 
-#if NET6_0_OR_GREATER
         private static void PackNullsTypeFast(DateOnly?[] array,
             int offset, int count,
             DateOnly[] packedArray,
@@ -841,7 +853,8 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (DateOnly)value;
                 }
@@ -859,912 +872,904 @@ namespace Parquet.Extensions {
 
                 if(value == null) {
                     dest[y] = fillerValue - 1;
-                } else {
+                }
+                else {
                     dest[y] = fillerValue;
                     packedArray[ir++] = (TimeOnly)value;
                 }
             }
         }
 
-#endif
-        #endregion
+    #endregion
 
-        #region [ Null Unpacking ]
+    #region [ Null Unpacking ]
 
-        public static void UnpackNullsFast(this Array array,
-            Span<int> flags, int fillFlag,
-            Array result) {
+    public static void UnpackNullsFast(this Array array,
+        Span<int> flags, int fillFlag,
+        Array result) {
 
-            Type? t = array.GetType().GetElementType();
-            if(t == null)
-                throw new ArgumentException("cannot detect element type", nameof(array));
+        Type? t = array.GetType().GetElementType();
+        if(t == null)
+            throw new ArgumentException("cannot detect element type", nameof(array));
 
-
-            if(t == typeof(bool)) {
-                UnpackNullsTypeFast((bool[])array,
-                    flags, fillFlag,
-                    (bool?[])result);
-                return;
-            }
-            if(t == typeof(byte)) {
-                UnpackNullsTypeFast((byte[])array,
-                    flags, fillFlag,
-                    (byte?[])result);
-                return;
-            }
-            if(t == typeof(sbyte)) {
-                UnpackNullsTypeFast((sbyte[])array,
-                    flags, fillFlag,
-                    (sbyte?[])result);
-                return;
-            }
-            if(t == typeof(short)) {
-                UnpackNullsTypeFast((short[])array,
-                    flags, fillFlag,
-                    (short?[])result);
-                return;
-            }
-            if(t == typeof(ushort)) {
-                UnpackNullsTypeFast((ushort[])array,
-                    flags, fillFlag,
-                    (ushort?[])result);
-                return;
-            }
-            if(t == typeof(int)) {
-                UnpackNullsTypeFast((int[])array,
-                    flags, fillFlag,
-                    (int?[])result);
-                return;
-            }
-            if(t == typeof(uint)) {
-                UnpackNullsTypeFast((uint[])array,
-                    flags, fillFlag,
-                    (uint?[])result);
-                return;
-            }
-            if(t == typeof(long)) {
-                UnpackNullsTypeFast((long[])array,
-                    flags, fillFlag,
-                    (long?[])result);
-                return;
-            }
-            if(t == typeof(ulong)) {
-                UnpackNullsTypeFast((ulong[])array,
-                    flags, fillFlag,
-                    (ulong?[])result);
-                return;
-            }
-            if(t == typeof(BigInteger)) {
-                UnpackNullsTypeFast((BigInteger[])array,
-                    flags, fillFlag,
-                    (BigInteger?[])result);
-                return;
-            }
-            if(t == typeof(BigDecimal)) {
-                UnpackNullsTypeFast((BigDecimal[])array,
-                    flags, fillFlag,
-                    (BigDecimal?[])result);
-                return;
-            }
-            if(t == typeof(float)) {
-                UnpackNullsTypeFast((float[])array,
-                    flags, fillFlag,
-                    (float?[])result);
-                return;
-            }
-            if(t == typeof(double)) {
-                UnpackNullsTypeFast((double[])array,
-                    flags, fillFlag,
-                    (double?[])result);
-                return;
-            }
-            if(t == typeof(decimal)) {
-                UnpackNullsTypeFast((decimal[])array,
-                    flags, fillFlag,
-                    (decimal?[])result);
-                return;
-            }
-            if(t == typeof(DateTime)) {
-                UnpackNullsTypeFast((DateTime[])array,
-                    flags, fillFlag,
-                    (DateTime?[])result);
-                return;
-            }
-            if(t == typeof(TimeSpan)) {
-                UnpackNullsTypeFast((TimeSpan[])array,
-                    flags, fillFlag,
-                    (TimeSpan?[])result);
-                return;
-            }
-            if(t == typeof(Interval)) {
-                UnpackNullsTypeFast((Interval[])array,
-                    flags, fillFlag,
-                    (Interval?[])result);
-                return;
-            }
-            if(t == typeof(string)) {
-                UnpackNullsTypeFast((string[])array,
-                    flags, fillFlag,
-                    (string[])result);
-                return;
-            }
-            if(t == typeof(byte[])) {
-                UnpackNullsTypeFast((byte[][])array,
-                    flags, fillFlag,
-                    (byte[][])result);
-                return;
-            }
-            if(t == typeof(Guid)) {
-                UnpackNullsTypeFast((Guid[])array,
-                    flags, fillFlag,
-                    (Guid?[])result);
-                return;
-            }
-#if NET6_0_OR_GREATER
-            if(t == typeof(DateOnly)) {
-                UnpackNullsTypeFast((DateOnly[])array,
-                    flags, fillFlag,
-                    (DateOnly?[])result);
-                return;
-            }
-            if(t == typeof(TimeOnly)) {
-                UnpackNullsTypeFast((TimeOnly[])array,
-                    flags, fillFlag,
-                    (TimeOnly?[])result);
-                return;
-            }
-#endif
-            throw new NotSupportedException($"cannot pack type {t}");
-
+        
+        if(t == typeof(bool)) {
+            UnpackNullsTypeFast((bool[])array,
+                flags, fillFlag,
+                (bool?[])result);
+            return;
         }
+        if(t == typeof(byte)) {
+            UnpackNullsTypeFast((byte[])array,
+                flags, fillFlag,
+                (byte?[])result);
+            return;
+        }
+        if(t == typeof(sbyte)) {
+            UnpackNullsTypeFast((sbyte[])array,
+                flags, fillFlag,
+                (sbyte?[])result);
+            return;
+        }
+        if(t == typeof(short)) {
+            UnpackNullsTypeFast((short[])array,
+                flags, fillFlag,
+                (short?[])result);
+            return;
+        }
+        if(t == typeof(ushort)) {
+            UnpackNullsTypeFast((ushort[])array,
+                flags, fillFlag,
+                (ushort?[])result);
+            return;
+        }
+        if(t == typeof(int)) {
+            UnpackNullsTypeFast((int[])array,
+                flags, fillFlag,
+                (int?[])result);
+            return;
+        }
+        if(t == typeof(uint)) {
+            UnpackNullsTypeFast((uint[])array,
+                flags, fillFlag,
+                (uint?[])result);
+            return;
+        }
+        if(t == typeof(long)) {
+            UnpackNullsTypeFast((long[])array,
+                flags, fillFlag,
+                (long?[])result);
+            return;
+        }
+        if(t == typeof(ulong)) {
+            UnpackNullsTypeFast((ulong[])array,
+                flags, fillFlag,
+                (ulong?[])result);
+            return;
+        }
+        if(t == typeof(BigInteger)) {
+            UnpackNullsTypeFast((BigInteger[])array,
+                flags, fillFlag,
+                (BigInteger?[])result);
+            return;
+        }
+        if(t == typeof(BigDecimal)) {
+            UnpackNullsTypeFast((BigDecimal[])array,
+                flags, fillFlag,
+                (BigDecimal?[])result);
+            return;
+        }
+        if(t == typeof(float)) {
+            UnpackNullsTypeFast((float[])array,
+                flags, fillFlag,
+                (float?[])result);
+            return;
+        }
+        if(t == typeof(double)) {
+            UnpackNullsTypeFast((double[])array,
+                flags, fillFlag,
+                (double?[])result);
+            return;
+        }
+        if(t == typeof(decimal)) {
+            UnpackNullsTypeFast((decimal[])array,
+                flags, fillFlag,
+                (decimal?[])result);
+            return;
+        }
+        if(t == typeof(DateTime)) {
+            UnpackNullsTypeFast((DateTime[])array,
+                flags, fillFlag,
+                (DateTime?[])result);
+            return;
+        }
+        if(t == typeof(TimeSpan)) {
+            UnpackNullsTypeFast((TimeSpan[])array,
+                flags, fillFlag,
+                (TimeSpan?[])result);
+            return;
+        }
+        if(t == typeof(Interval)) {
+            UnpackNullsTypeFast((Interval[])array,
+                flags, fillFlag,
+                (Interval?[])result);
+            return;
+        }
+        if(t == typeof(string)) {
+            UnpackNullsTypeFast((string[])array,
+                flags, fillFlag,
+                (string[])result);
+            return;
+        }
+        if(t == typeof(byte[])) {
+            UnpackNullsTypeFast((byte[][])array,
+                flags, fillFlag,
+                (byte[][])result);
+            return;
+        }
+        if(t == typeof(Guid)) {
+            UnpackNullsTypeFast((Guid[])array,
+                flags, fillFlag,
+                (Guid?[])result);
+            return;
+        }
+        if(t == typeof(DateOnly)) {
+            UnpackNullsTypeFast((DateOnly[])array,
+                flags, fillFlag,
+                (DateOnly?[])result);
+            return;
+        }
+        if(t == typeof(TimeOnly)) {
+            UnpackNullsTypeFast((TimeOnly[])array,
+                flags, fillFlag,
+                (TimeOnly?[])result);
+            return;
+        }
+        throw new NotSupportedException($"cannot pack type {t}");
 
-        private static void UnpackNullsTypeFast(bool[] array,
-            Span<int> flags, int fillFlag,
-            bool?[] result) {
+    }
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+    private static void UnpackNullsTypeFast(bool[] array,
+        Span<int> flags, int fillFlag,
+        bool?[] result) {
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
+
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(byte[] array,
-            Span<int> flags, int fillFlag,
-            byte?[] result) {
+    private static void UnpackNullsTypeFast(byte[] array,
+        Span<int> flags, int fillFlag,
+        byte?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(sbyte[] array,
-            Span<int> flags, int fillFlag,
-            sbyte?[] result) {
+    private static void UnpackNullsTypeFast(sbyte[] array,
+        Span<int> flags, int fillFlag,
+        sbyte?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(short[] array,
-            Span<int> flags, int fillFlag,
-            short?[] result) {
+    private static void UnpackNullsTypeFast(short[] array,
+        Span<int> flags, int fillFlag,
+        short?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(ushort[] array,
-            Span<int> flags, int fillFlag,
-            ushort?[] result) {
+    private static void UnpackNullsTypeFast(ushort[] array,
+        Span<int> flags, int fillFlag,
+        ushort?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(int[] array,
-            Span<int> flags, int fillFlag,
-            int?[] result) {
+    private static void UnpackNullsTypeFast(int[] array,
+        Span<int> flags, int fillFlag,
+        int?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(uint[] array,
-            Span<int> flags, int fillFlag,
-            uint?[] result) {
+    private static void UnpackNullsTypeFast(uint[] array,
+        Span<int> flags, int fillFlag,
+        uint?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(long[] array,
-            Span<int> flags, int fillFlag,
-            long?[] result) {
+    private static void UnpackNullsTypeFast(long[] array,
+        Span<int> flags, int fillFlag,
+        long?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(ulong[] array,
-            Span<int> flags, int fillFlag,
-            ulong?[] result) {
+    private static void UnpackNullsTypeFast(ulong[] array,
+        Span<int> flags, int fillFlag,
+        ulong?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(BigInteger[] array,
-            Span<int> flags, int fillFlag,
-            BigInteger?[] result) {
+    private static void UnpackNullsTypeFast(BigInteger[] array,
+        Span<int> flags, int fillFlag,
+        BigInteger?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(BigDecimal[] array,
-            Span<int> flags, int fillFlag,
-            BigDecimal?[] result) {
+    private static void UnpackNullsTypeFast(BigDecimal[] array,
+        Span<int> flags, int fillFlag,
+        BigDecimal?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(float[] array,
-            Span<int> flags, int fillFlag,
-            float?[] result) {
+    private static void UnpackNullsTypeFast(float[] array,
+        Span<int> flags, int fillFlag,
+        float?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(double[] array,
-            Span<int> flags, int fillFlag,
-            double?[] result) {
+    private static void UnpackNullsTypeFast(double[] array,
+        Span<int> flags, int fillFlag,
+        double?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(decimal[] array,
-            Span<int> flags, int fillFlag,
-            decimal?[] result) {
+    private static void UnpackNullsTypeFast(decimal[] array,
+        Span<int> flags, int fillFlag,
+        decimal?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(DateTime[] array,
-            Span<int> flags, int fillFlag,
-            DateTime?[] result) {
+    private static void UnpackNullsTypeFast(DateTime[] array,
+        Span<int> flags, int fillFlag,
+        DateTime?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(TimeSpan[] array,
-            Span<int> flags, int fillFlag,
-            TimeSpan?[] result) {
+    private static void UnpackNullsTypeFast(TimeSpan[] array,
+        Span<int> flags, int fillFlag,
+        TimeSpan?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(Interval[] array,
-            Span<int> flags, int fillFlag,
-            Interval?[] result) {
+    private static void UnpackNullsTypeFast(Interval[] array,
+        Span<int> flags, int fillFlag,
+        Interval?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(string[] array,
-            Span<int> flags, int fillFlag,
-            string[] result) {
+    private static void UnpackNullsTypeFast(string[] array,
+        Span<int> flags, int fillFlag,
+        string[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(byte[][] array,
-            Span<int> flags, int fillFlag,
-            byte[][] result) {
+    private static void UnpackNullsTypeFast(byte[][] array,
+        Span<int> flags, int fillFlag,
+        byte[][] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(Guid[] array,
-            Span<int> flags, int fillFlag,
-            Guid?[] result) {
+    private static void UnpackNullsTypeFast(Guid[] array,
+        Span<int> flags, int fillFlag,
+        Guid?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-#if NET6_0_OR_GREATER
-        private static void UnpackNullsTypeFast(DateOnly[] array,
-            Span<int> flags, int fillFlag,
-            DateOnly?[] result) {
+    private static void UnpackNullsTypeFast(DateOnly[] array,
+        Span<int> flags, int fillFlag,
+        DateOnly?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-        private static void UnpackNullsTypeFast(TimeOnly[] array,
-            Span<int> flags, int fillFlag,
-            TimeOnly?[] result) {
+    private static void UnpackNullsTypeFast(TimeOnly[] array,
+        Span<int> flags, int fillFlag,
+        TimeOnly?[] result) {
 
-            int iarray = 0;
-            for(int i = 0; i < flags.Length; i++) {
-                int level = flags[i];
+        int iarray = 0;
+        for(int i = 0; i < flags.Length; i++) {
+            int level = flags[i];
 
-                if(level == fillFlag) {
-                    result[i] = array[iarray++];
-                }
+            if(level == fillFlag) {
+                result[i] = array[iarray++];
             }
         }
+    }
 
-#endif
-        #endregion
+    #endregion
 
-        #region [ Dictionary Explosion ]
+    #region [ Dictionary Explosion ]
 
-        public static void ExplodeFast(this Array dictionary,
-                Span<int> indexes,
-                Array result, int resultOffset, int resultCount) {
-            Type? t = dictionary.GetType().GetElementType();
-            if(t == null)
-                throw new ArgumentException("cannot detect element type", nameof(dictionary));
-
-            if(t == typeof(bool)) {
-                ExplodeTypeFast((bool[])dictionary,
-                    indexes, (bool[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(byte)) {
-                ExplodeTypeFast((byte[])dictionary,
-                    indexes, (byte[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(sbyte)) {
-                ExplodeTypeFast((sbyte[])dictionary,
-                    indexes, (sbyte[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(short)) {
-                ExplodeTypeFast((short[])dictionary,
-                    indexes, (short[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(ushort)) {
-                ExplodeTypeFast((ushort[])dictionary,
-                    indexes, (ushort[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(int)) {
-                ExplodeTypeFast((int[])dictionary,
-                    indexes, (int[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(uint)) {
-                ExplodeTypeFast((uint[])dictionary,
-                    indexes, (uint[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(long)) {
-                ExplodeTypeFast((long[])dictionary,
-                    indexes, (long[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(ulong)) {
-                ExplodeTypeFast((ulong[])dictionary,
-                    indexes, (ulong[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(BigInteger)) {
-                ExplodeTypeFast((BigInteger[])dictionary,
-                    indexes, (BigInteger[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(BigDecimal)) {
-                ExplodeTypeFast((BigDecimal[])dictionary,
-                    indexes, (BigDecimal[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(float)) {
-                ExplodeTypeFast((float[])dictionary,
-                    indexes, (float[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(double)) {
-                ExplodeTypeFast((double[])dictionary,
-                    indexes, (double[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(decimal)) {
-                ExplodeTypeFast((decimal[])dictionary,
-                    indexes, (decimal[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(DateTime)) {
-                ExplodeTypeFast((DateTime[])dictionary,
-                    indexes, (DateTime[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(TimeSpan)) {
-                ExplodeTypeFast((TimeSpan[])dictionary,
-                    indexes, (TimeSpan[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(Interval)) {
-                ExplodeTypeFast((Interval[])dictionary,
-                    indexes, (Interval[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(string)) {
-                ExplodeTypeFast((string[])dictionary,
-                    indexes, (string[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(byte[])) {
-                ExplodeTypeFast((byte[][])dictionary,
-                    indexes, (byte[][])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(Guid)) {
-                ExplodeTypeFast((Guid[])dictionary,
-                    indexes, (Guid[])result, resultOffset, resultCount);
-                return;
-            }
-#if NET6_0_OR_GREATER
-            if(t == typeof(DateOnly)) {
-                ExplodeTypeFast((DateOnly[])dictionary,
-                    indexes, (DateOnly[])result, resultOffset, resultCount);
-                return;
-            }
-            if(t == typeof(TimeOnly)) {
-                ExplodeTypeFast((TimeOnly[])dictionary,
-                    indexes, (TimeOnly[])result, resultOffset, resultCount);
-                return;
-            }
-#endif
-            throw new NotSupportedException($"cannot pack type {t}");
-        }
-
-        private static void ExplodeTypeFast(bool[] dictionary,
+    public static void ExplodeFast(this Array dictionary,
             Span<int> indexes,
-            bool[] result, int resultOffset, int resultCount) {
+            Array result, int resultOffset, int resultCount) {
+        Type? t = dictionary.GetType().GetElementType();
+        if(t == null)
+            throw new ArgumentException("cannot detect element type", nameof(dictionary));
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        if(t == typeof(bool)) {
+            ExplodeTypeFast((bool[])dictionary,
+                indexes, (bool[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(byte)) {
+            ExplodeTypeFast((byte[])dictionary,
+                indexes, (byte[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(sbyte)) {
+            ExplodeTypeFast((sbyte[])dictionary,
+                indexes, (sbyte[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(short)) {
+            ExplodeTypeFast((short[])dictionary,
+                indexes, (short[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(ushort)) {
+            ExplodeTypeFast((ushort[])dictionary,
+                indexes, (ushort[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(int)) {
+            ExplodeTypeFast((int[])dictionary,
+                indexes, (int[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(uint)) {
+            ExplodeTypeFast((uint[])dictionary,
+                indexes, (uint[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(long)) {
+            ExplodeTypeFast((long[])dictionary,
+                indexes, (long[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(ulong)) {
+            ExplodeTypeFast((ulong[])dictionary,
+                indexes, (ulong[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(BigInteger)) {
+            ExplodeTypeFast((BigInteger[])dictionary,
+                indexes, (BigInteger[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(BigDecimal)) {
+            ExplodeTypeFast((BigDecimal[])dictionary,
+                indexes, (BigDecimal[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(float)) {
+            ExplodeTypeFast((float[])dictionary,
+                indexes, (float[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(double)) {
+            ExplodeTypeFast((double[])dictionary,
+                indexes, (double[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(decimal)) {
+            ExplodeTypeFast((decimal[])dictionary,
+                indexes, (decimal[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(DateTime)) {
+            ExplodeTypeFast((DateTime[])dictionary,
+                indexes, (DateTime[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(TimeSpan)) {
+            ExplodeTypeFast((TimeSpan[])dictionary,
+                indexes, (TimeSpan[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(Interval)) {
+            ExplodeTypeFast((Interval[])dictionary,
+                indexes, (Interval[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(string)) {
+            ExplodeTypeFast((string[])dictionary,
+                indexes, (string[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(byte[])) {
+            ExplodeTypeFast((byte[][])dictionary,
+                indexes, (byte[][])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(Guid)) {
+            ExplodeTypeFast((Guid[])dictionary,
+                indexes, (Guid[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(DateOnly)) {
+            ExplodeTypeFast((DateOnly[])dictionary,
+                indexes, (DateOnly[])result, resultOffset, resultCount);
+            return;
+        }
+        if(t == typeof(TimeOnly)) {
+            ExplodeTypeFast((TimeOnly[])dictionary,
+                indexes, (TimeOnly[])result, resultOffset, resultCount);
+            return;
+        }
+        throw new NotSupportedException($"cannot pack type {t}");
+    }
+
+    private static void ExplodeTypeFast(bool[] dictionary,
+        Span<int> indexes,
+        bool[] result, int resultOffset, int resultCount) {
+
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(byte[] dictionary,
-            Span<int> indexes,
-            byte[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(byte[] dictionary,
+        Span<int> indexes,
+        byte[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(sbyte[] dictionary,
-            Span<int> indexes,
-            sbyte[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(sbyte[] dictionary,
+        Span<int> indexes,
+        sbyte[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(short[] dictionary,
-            Span<int> indexes,
-            short[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(short[] dictionary,
+        Span<int> indexes,
+        short[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(ushort[] dictionary,
-            Span<int> indexes,
-            ushort[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(ushort[] dictionary,
+        Span<int> indexes,
+        ushort[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(int[] dictionary,
-            Span<int> indexes,
-            int[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(int[] dictionary,
+        Span<int> indexes,
+        int[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(uint[] dictionary,
-            Span<int> indexes,
-            uint[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(uint[] dictionary,
+        Span<int> indexes,
+        uint[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(long[] dictionary,
-            Span<int> indexes,
-            long[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(long[] dictionary,
+        Span<int> indexes,
+        long[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(ulong[] dictionary,
-            Span<int> indexes,
-            ulong[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(ulong[] dictionary,
+        Span<int> indexes,
+        ulong[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(BigInteger[] dictionary,
-            Span<int> indexes,
-            BigInteger[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(BigInteger[] dictionary,
+        Span<int> indexes,
+        BigInteger[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(BigDecimal[] dictionary,
-            Span<int> indexes,
-            BigDecimal[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(BigDecimal[] dictionary,
+        Span<int> indexes,
+        BigDecimal[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(float[] dictionary,
-            Span<int> indexes,
-            float[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(float[] dictionary,
+        Span<int> indexes,
+        float[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(double[] dictionary,
-            Span<int> indexes,
-            double[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(double[] dictionary,
+        Span<int> indexes,
+        double[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(decimal[] dictionary,
-            Span<int> indexes,
-            decimal[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(decimal[] dictionary,
+        Span<int> indexes,
+        decimal[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(DateTime[] dictionary,
-            Span<int> indexes,
-            DateTime[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(DateTime[] dictionary,
+        Span<int> indexes,
+        DateTime[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(TimeSpan[] dictionary,
-            Span<int> indexes,
-            TimeSpan[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(TimeSpan[] dictionary,
+        Span<int> indexes,
+        TimeSpan[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(Interval[] dictionary,
-            Span<int> indexes,
-            Interval[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(Interval[] dictionary,
+        Span<int> indexes,
+        Interval[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(string[] dictionary,
-            Span<int> indexes,
-            string[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(string[] dictionary,
+        Span<int> indexes,
+        string[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(byte[][] dictionary,
-            Span<int> indexes,
-            byte[][] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(byte[][] dictionary,
+        Span<int> indexes,
+        byte[][] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(Guid[] dictionary,
-            Span<int> indexes,
-            Guid[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(Guid[] dictionary,
+        Span<int> indexes,
+        Guid[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-#if NET6_0_OR_GREATER
-        private static void ExplodeTypeFast(DateOnly[] dictionary,
-            Span<int> indexes,
-            DateOnly[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(DateOnly[] dictionary,
+        Span<int> indexes,
+        DateOnly[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-        private static void ExplodeTypeFast(TimeOnly[] dictionary,
-            Span<int> indexes,
-            TimeOnly[] result, int resultOffset, int resultCount) {
+    private static void ExplodeTypeFast(TimeOnly[] dictionary,
+        Span<int> indexes,
+        TimeOnly[] result, int resultOffset, int resultCount) {
 
-            for(int i = 0; i < resultCount; i++) {
-                int index = indexes[i];
-                if(index < dictionary.Length) {
-                    // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
-                    // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
-                    Array.Copy(dictionary, index, result, resultOffset + i, 1);
-                }
+        for(int i = 0; i < resultCount; i++) {
+            int index = indexes[i];
+            if(index < dictionary.Length) {
+                // The following is way faster than using Array.Get/SetValue as it avoids boxing (x60 slower)
+                // It's still x5 slower than native typed operation as it emits "callvirt" IL instruction
+                Array.Copy(dictionary, index, result, resultOffset + i, 1);
             }
         }
+    }
 
-#endif
-        #endregion
+    #endregion
 
     }
 }

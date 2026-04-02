@@ -73,4 +73,32 @@ public class TestBase {
         }
         return r;
     }
+
+    protected async ValueTask<RawColumnData<T>> ReadColumn<T>(ParquetReader reader, DataField df) where T : struct {
+        using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+        return await rgr.ReadRawColumnDataAsync<T>(df);
+    }
+
+    protected async ValueTask<List<string?>> ReadStringColumn(ParquetReader reader, DataField df) {
+        RawColumnData<ReadOnlyMemory<char>> col = await ReadColumn<ReadOnlyMemory<char>>(reader, df);
+        var r = new List<string?>();
+
+        if(df.IsNullable) {
+            // collapse
+            int k = 0;
+            for(int i = 0; i < col.DefinitionLevels.Length; i++) {
+                bool isNull = col.DefinitionLevels[i] == 0;
+                if(isNull) {
+                    r.Add(null);
+                } else {
+                    r.Add(new string(col.Values[k++].Span));
+                }
+            }
+        } else {
+            for(int i = 0; i < col.Values.Length; i++) {
+                r.Add(new string(col.Values[i].Span));
+            }
+        }
+        return r;
+    }
 }

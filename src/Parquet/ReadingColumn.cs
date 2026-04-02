@@ -13,9 +13,10 @@ class ReadingColumn<T> : IDisposable where T : struct {
     private readonly Memory<T> _values;
     private readonly Memory<int>? _definitionLevels;
     private readonly Memory<int>? _repetitionLevels;
+    private IMemoryOwner<T>? _dictionary;
     private IMemoryOwner<int>? _dictionaryIndexes;
     private int _definedDataCount = 0;
-    private readonly int _dictionaryIndexesOffset = 0;
+    private int _dictionaryIndexesOffset = 0;
     private int _definitionOffset = 0;
 
     public ReadingColumn(DataField field, Memory<T> values, Memory<int>? definitionLevels, Memory<int>? repetitionLevels) {
@@ -72,7 +73,53 @@ class ReadingColumn<T> : IDisposable where T : struct {
         }
     }
 
-    public void Dispose() {
+    public bool HasDictionary => _dictionary != null;
 
+    public Span<T> AllocateDictionary(int count) {
+        if(_dictionary != null)
+            throw new InvalidOperationException($"Dictionary is already allocated for field '{Field.Path}'");
+
+        _dictionary = MemoryOwner<T>.Allocate(count);
+        return _dictionary.Memory.Span;
+    }
+
+    public Span<int> AllocateOrGetDictionaryIndexes(int max) {
+        if(_dictionaryIndexes == null) {
+            _dictionaryIndexes = MemoryOwner<int>.Allocate(max);
+        }
+        return _dictionaryIndexes.Memory.Span.Slice(_dictionaryIndexesOffset);
+    }
+
+    public void MarkDictionaryIndexesRead(int count) {
+        _dictionaryIndexesOffset += count;
+    }
+
+    public void Checkpoint() {
+
+        if(_dictionaryIndexes != null && _dictionary != null) {
+            // explode dictionary and indexes into values memory
+            int valueCount = _dictionaryIndexesOffset;
+            Span<int> indexes = _dictionaryIndexes.Memory.Span.Slice(0, _dictionaryIndexesOffset);
+            Span<T> dictionary = _dictionary.Memory.Span;
+
+            for(int i = 0; i < valueCount; i++) {
+                int index = indexes[i];
+                _values.Span[_definedDataCount + i] = dictionary[index];
+            }
+            _definedDataCount = valueCount;
+
+            // cleanup
+            _dictionary.Dispose();
+            _dictionary = null;
+            _dictionaryIndexes.Dispose();
+            _dictionaryIndexes = null;
+            _dictionaryIndexesOffset = 0;
+        }
+    }
+
+
+    public void Dispose() {
+        _dictionary?.Dispose();
+        _dictionaryIndexes?.Dispose();
     }
 }

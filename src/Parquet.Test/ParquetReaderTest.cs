@@ -43,7 +43,10 @@ public class ParquetReaderTest : TestBase {
     [InlineData("map_simple.v2.parquet")]
     public async Task Read_simple_map(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+
             DataColumn[] data = await reader.ReadEntireRowGroupAsync();
+
+            //List<string?> strings = await ReadStringColumn(reader, reader.Schema.DataFields[0]);
 
             Assert.Equal(new int?[] { 1 }, data[0].Data);
             Assert.Equal(new int[] { 1, 2, 3 }, data[1].Data);
