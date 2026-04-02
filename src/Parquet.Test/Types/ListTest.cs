@@ -62,7 +62,7 @@ public class ListTest : TestBase {
     [Fact]
     public async Task List_of_elements_with_some_items_empty_reads_file() {
         /*
-         list data:
+         list data (column 1):
          - 1: [1, 2, 3]
          - 2: []
          - 3: [1, 2, 3]
@@ -75,14 +75,15 @@ public class ListTest : TestBase {
             Assert.Equal(4, groupReader.RowCount);
             DataField[] fs = reader.Schema.GetDataFields();
 
-            DataColumn id = await groupReader.ReadColumnAsync(fs[0]);
-            Assert.Equal(4, id.Data.Length);
-            Assert.False(id.HasRepetitions);
+            using RawColumnData<int> idCol = await groupReader.ReadRawColumnDataAsync<int>(fs[0]);
+            Assert.Equal(4, idCol.Values.Length);
+            Assert.Equal([1, 2, 3, 4], idCol.Values);
 
-            DataColumn list = await groupReader.ReadColumnAsync(fs[1]);
-            Assert.Equal(8, list.Data.Length);
-            Assert.Equal(new int[] { 3, 3, 3, 1, 3, 3, 3, 1 }, list.DefinitionLevels);
-            Assert.Equal(new int[] { 0, 1, 1, 0, 0, 1, 1, 0 }, list.RepetitionLevels);
+            using RawColumnData<ReadOnlyMemory<char>> list = await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(fs[1]);
+            Assert.Equal(8, list.Values.Length);
+            //Assert.Equal([1, 2, 3, 1, 2, 3], list.Values);
+            Assert.Equal([3, 3, 3, 1, 3, 3, 3, 1], list.DefinitionLevels);
+            Assert.Equal([0, 1, 1, 0, 0, 1, 1, 0], list.RepetitionLevels);
         }
 
     }

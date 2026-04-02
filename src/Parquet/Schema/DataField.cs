@@ -25,12 +25,6 @@ public class DataField : Field, ICloneable {
     }
 
     /// <summary>
-    /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
-    /// </summary>
-    [Obsolete("Use IsNullable instead.")]
-    public bool HasNulls => IsNullable;
-
-    /// <summary>
     /// When true, the value is an array rather than a single value.
     /// </summary>
     public bool IsArray {
@@ -51,7 +45,8 @@ public class DataField : Field, ICloneable {
     public Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
 
     /// <summary>
-    /// Optional metadata integer, used in Lake implementations. See https://arrow.apache.org/docs/cpp/parquet.html#parquet-field-id
+    /// Optional metadata integer, used in Lake implementations. See
+    /// https://arrow.apache.org/docs/cpp/parquet.html#parquet-field-id
     /// </summary>
     public int FieldId { get => _fieldId; set => _fieldId = value; }
 
@@ -59,10 +54,19 @@ public class DataField : Field, ICloneable {
     /// Creates a new instance of <see cref="DataField"/> by name and CLR type.
     /// </summary>
     /// <param name="name">Field name</param>
-    /// <param name="clrType">CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.</param>
-    /// <param name="isNullable">When set, will override <see cref="IsNullable"/> attribute regardless whether passed type was nullable or not.</param>
-    /// <param name="isArray">When set, will override <see cref="IsArray"/> attribute regardless whether passed type was an array or not.</param>
-    /// <param name="propertyName">When set, uses this property to get the field's data.  When not set, uses the property that matches the name parameter.</param>
+    /// <param name="clrType">
+    /// CLR type of this field. The type is internally discovered and expanded into appropriate Parquet flags.
+    /// </param>
+    /// <param name="isNullable">
+    /// When set, will override <see cref="IsNullable"/> attribute regardless whether passed type was nullable or not.
+    /// </param>
+    /// <param name="isArray">
+    /// When set, will override <see cref="IsArray"/> attribute regardless whether passed type was an array or not.
+    /// </param>
+    /// <param name="propertyName">
+    /// When set, uses this property to get the field's data. When not set, uses the property that matches the name
+    /// parameter.
+    /// </param>
     public DataField(string name, Type clrType, bool? isNullable = null, bool? isArray = null, string? propertyName = null)
        : base(name, SchemaType.Data) {
 
@@ -138,13 +142,11 @@ public class DataField : Field, ICloneable {
 
     private Type BaseClrType {
         get {
-#if NET6_0_OR_GREATER
             if(ClrType == typeof(DateOnly))
                 return typeof(DateTime);
 
             if(ClrType == typeof(TimeOnly))
                 return typeof(TimeSpan);
-#endif
 
             return ClrType;
         }
@@ -189,6 +191,12 @@ public class DataField : Field, ICloneable {
             baseType = baseType.GetNonNullable();
             isNullable = true;
         }
+    }
+
+    internal bool IsCompatibleWith(Type structType) {
+        return structType == ClrType ||
+            (structType == typeof(ReadOnlyMemory<char>) && ClrType == typeof(string));
+
     }
 
     /// <summary>

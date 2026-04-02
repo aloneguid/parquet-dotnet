@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -52,8 +53,8 @@ public class CompressionTest : TestBase {
         using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
 
         DataField[] fields = reader.Schema.GetDataFields();
-        RawColumnData<int> column1 = await ReadColumn<int>(reader, fields[0]);
-        RawColumnData<int> column2 = await ReadColumn<int>(reader, fields[1]);
+        RawColumnData<DateTime> column1 = await ReadColumn<DateTime>(reader, fields[0]);
+        RawColumnData<ReadOnlyMemory<char>> column2 = await ReadColumn<ReadOnlyMemory<char>>(reader, fields[1]);
 
         Assert.True(column1.Values.Length > 0);
         Assert.True(column2.Values.Length > 0);

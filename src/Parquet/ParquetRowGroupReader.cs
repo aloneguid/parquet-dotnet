@@ -95,6 +95,11 @@ public class ParquetRowGroupReader : IDisposable {
         CancellationToken cancellationToken = default)
         where T : struct {
 
+
+        if(!field.IsCompatibleWith(typeof(T))) {
+            throw new ArgumentException($"Field \"{field.Path}\" ({field.ClrType}) is not compatible with type {typeof(T)}");
+        }
+
         ColumnChunk columnChunk = GetMetadata(field)
             ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
 
