@@ -12,6 +12,11 @@ namespace Parquet.Schema {
         public TimeSpanFormat TimeSpanFormat { get; }
 
         /// <summary>
+        /// IsAdjustedToUTC
+        /// </summary>
+        public bool IsAdjustedToUTC { get; set; } = true;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="TimeOnlyDataField"/> class.
         /// </summary>
         /// <param name="name">The name.</param>

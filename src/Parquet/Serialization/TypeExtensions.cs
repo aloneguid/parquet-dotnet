@@ -165,12 +165,15 @@ namespace Parquet.Serialization {
                 };
 #if NET6_0_OR_GREATER
             } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
+                ParquetTimeSpanAttribute? tsaTimeOnly = member?.TimeSpanAttribute;
                 r = new TimeOnlyDataField(name,
                     member?.MicroSecondsTimeAttribute == null
                         ? TimeSpanFormat.MilliSeconds
                         : TimeSpanFormat.MicroSeconds,
                     t == typeof(TimeOnly?),
-                    null, propertyName);
+                    null, propertyName) {
+                    IsAdjustedToUTC = tsaTimeOnly == null ? true : tsaTimeOnly.IsAdjustedToUTC
+                };
 #endif
             } else if(t == typeof(decimal) || t == typeof(decimal?)) {
                 ParquetDecimalAttribute? ps = member?.DecimalAttribute;
