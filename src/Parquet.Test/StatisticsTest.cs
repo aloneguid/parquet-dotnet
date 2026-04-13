@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -21,11 +22,11 @@ public class StatisticsTest : TestBase {
         ms.Position = 0;
         await using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
             using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
-            DataColumn dc = await rgr.ReadColumnAsync(schema.DataFields[0]);
-            Assert.Equal(0, dc.Statistics.NullCount);
-            Assert.Equal(1, dc.Statistics.MinValue);
-            Assert.Equal(5, dc.Statistics.MaxValue);
+            DataColumnStatistics? stats = rgr.GetStatistics(schema.DataFields[0]);
+            Assert.NotNull(stats);
+            Assert.Equal(0, stats.NullCount);
+            Assert.Equal(1, stats.MinValue);
+            Assert.Equal(5, stats.MaxValue);
         }
     }
-
 }

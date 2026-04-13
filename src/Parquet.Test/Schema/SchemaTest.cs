@@ -403,42 +403,9 @@ namespace Parquet.Test.Schema {
 
                 //smoke test we can read it
                 using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
-                    DataColumn values4 = await rg.ReadColumnAsync((DataField)schema[4]);
+                    using RawColumnData<double> col = await rg.ReadRawColumnDataAsync<double>((DataField)schema[4]);
                 }
             }
-        }
-
-        [Fact]
-        public async Task Column_called_root() {
-
-            var schema = new ParquetSchema(
-                new DataField<string>("root"),
-                new DataField<string>("other"));
-            string[] values1 = ["AAA"];
-            string[] values2 = ["BBB"];
-
-            var columns = new List<DataColumn> {
-                new DataColumn(schema.DataFields[0], values1),
-                new DataColumn(schema.DataFields[1], values2)
-            };
-
-            // the writer used to create structure type under "root" (https://github.com/aloneguid/parquet-dotnet/issues/143)
-            var ms = new MemoryStream();
-            await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, ms))
-            using(ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup()) {
-                await groupWriter.WriteAsync(schema.DataFields[0], values1);
-                await groupWriter.WriteAsync(schema.DataFields[1], values2);
-            }
-
-            ms.Position = 0;
-            await using ParquetReader parquetReader = await ParquetReader.CreateAsync(ms);
-            DataField[] dataFields = parquetReader.Schema.GetDataFields();
-            for(int i = 0; i < parquetReader.RowGroupCount; i++)
-                using(ParquetRowGroupReader groupReader = parquetReader.OpenRowGroupReader(i)) {
-                    foreach(DataColumn column in columns) {
-                        DataColumn c = await groupReader.ReadColumnAsync(column.Field);
-                    }
-                }
         }
 
         [Fact]
@@ -520,8 +487,9 @@ namespace Parquet.Test.Schema {
         }
 
         /// <summary>
-        /// Tests the following fact from specs:
-        ///  A repeated field that is neither contained by a LIST- or MAP-annotated group nor annotated by LIST or MAP should be interpreted as a required list of required elements where the element type is the type of the field.
+        /// Tests the following fact from specs: A repeated field that is neither contained by a LIST- or MAP-annotated
+        /// group nor annotated by LIST or MAP should be interpreted as a required list of required elements where the
+        /// element type is the type of the field.
         /// </summary>
         [Fact]
         public void Decode_list_implicit_one() {

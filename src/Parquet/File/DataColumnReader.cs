@@ -347,7 +347,12 @@ class DataColumnReader {
             //    ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.DefinitionLevelsByteLength, out int usedLength);
             //dataUsed += usedLength;
             //rc.MarkDefinitionLevels(levelsRead);
-            throw new NotImplementedException();
+            int levelsRead = ReadLevels(
+                pageMemory.Memory.Span.Slice(dataUsed), _dataField.MaxDefinitionLevel,
+                rc.DefinitionLevelsToReadInto,
+                ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.DefinitionLevelsByteLength, out int usedLength);
+            dataUsed += usedLength;
+            rc.MarkDefinitionLevels(levelsRead, _dataField.MaxDefinitionLevel);
         }
 
         int maxReadCount = ph.DataPageHeaderV2.NumValues - ph.DataPageHeaderV2.NumNulls;
