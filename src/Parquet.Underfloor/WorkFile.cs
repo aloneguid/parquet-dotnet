@@ -130,7 +130,7 @@ class WorkFile : IAsyncDisposable {
 
     public uint CurrentRawDataFieldIndex = 0;
 
-    public DataColumn? CurrentRawDataFieldData;
+    //public DataColumn? CurrentRawDataFieldData;
 
     public ReadStatus CurrentRawDataFieldDataReadStatus { get; set; } = ReadStatus.NotStarted;
 
@@ -172,14 +172,14 @@ class WorkFile : IAsyncDisposable {
 
         DataField df = _rawDataFields[CurrentRawDataFieldIndex];
         _stream.Seek(0, SeekOrigin.Begin);
-        CurrentRawDataFieldData = null;
+        //CurrentRawDataFieldData = null;
         CurrentRawDataFieldDataReadStatus = ReadStatus.InProgress;
 
         try {
             await using ParquetReader pr = await ParquetReader.CreateAsync(_stream);
             using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
-            DataColumn dc = await rgr.ReadColumnAsync(df);
-            CurrentRawDataFieldData = dc;
+            //DataColumn dc = await rgr.ReadColumnAsync(df);
+            //CurrentRawDataFieldData = dc;
             CurrentRawDataFieldDataReadStatus = ReadStatus.Completed;
         } catch(Exception ex) {
             CurrentRawDataFieldReadError = ex;

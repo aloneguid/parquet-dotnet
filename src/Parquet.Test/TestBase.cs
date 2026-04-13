@@ -20,7 +20,7 @@ public class TestBase {
         return new StreamReader("./data/" + name);
     }
 
-    protected async Task<DataColumn?> WriteReadSingleColumn<T>(DataField df, ReadOnlyMemory<T> values, int[]? repetitionLevels = null) where T : struct {
+    protected async Task<RawColumnData<T>?> WriteReadSingleColumn<T>(DataField df, ReadOnlyMemory<T> values, int[]? repetitionLevels = null) where T : struct {
         using var ms = new MemoryStream();
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(df), ms)) {
             using ParquetRowGroupWriter rg = writer.CreateRowGroup();
@@ -40,10 +40,10 @@ public class TestBase {
             return null;
         ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
-        return await rgReader.ReadColumnAsync(df);
+        return await rgReader.ReadRawColumnDataAsync<T>(df);
     }
 
-    protected async Task<DataColumn?> WriteReadSingleColumn<T>(DataField df, ReadOnlyMemory<T?> values, int[]? repetitionLevels = null) where T : struct {
+    protected async Task<RawColumnData<T>?> WriteReadSingleColumn<T>(DataField df, ReadOnlyMemory<T?> values, int[]? repetitionLevels = null) where T : struct {
         using var ms = new MemoryStream();
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(df), ms)) {
             using ParquetRowGroupWriter rg = writer.CreateRowGroup();
@@ -62,18 +62,7 @@ public class TestBase {
             return null;
         ParquetRowGroupReader rgReader = reader.OpenRowGroupReader(0);
 
-        return await rgReader.ReadColumnAsync(df);
-    }
-
-    protected async Task<List<DataColumn>> ReadColumns(Stream s) {
-        await using ParquetReader reader = await ParquetReader.CreateAsync(s);
-        using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
-        var r = new List<DataColumn>();
-        foreach(DataField df in reader.Schema.DataFields) {
-            DataColumn dc = await rgr.ReadColumnAsync(df);
-            r.Add(dc);
-        }
-        return r;
+        return await rgReader.ReadRawColumnDataAsync<T>(df);
     }
 
     protected async ValueTask<RawColumnData<T>> ReadColumn<T>(ParquetReader reader, DataField df) where T : struct {

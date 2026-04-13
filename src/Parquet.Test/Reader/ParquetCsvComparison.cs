@@ -6,9 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CsvHelper;
-using Parquet.Data;
-using Parquet.Extensions;
-using Parquet.Schema;
+using Parquet.Serialization;
 using Xunit;
 using Type = System.Type;
 
@@ -28,144 +26,124 @@ public class ParquetCsvComparison : TestBase {
             parquetFilePrefix += $".{dataPageVersion}";
         }
 
-        (DataColumn[] Columns, IReadOnlyList<Field> Fields) parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
-
-        DataColumn[] csv = ReadCsv($"{baseName}.csv");
+        IList<Dictionary<string, object>> parquet = await ReadParquetAsync($"{parquetFilePrefix}.parquet", treatByteArrayAsString);
+        IList<Dictionary<string, string>> csv = ReadCsv($"{baseName}.csv");
 
         Compare(parquet, csv, columnTypes);
     }
 
-    private void Compare((DataColumn[] Columns, IReadOnlyList<Field> Fields) parquet, DataColumn[] csv, Type[] columnTypes) {
-        DataColumn[] parquetCols = parquet.Columns;
+    private void Compare(IList<Dictionary<string, object>> parquet, IList<Dictionary<string, string>> csv, Type[] columnTypes) {
+        Assert.Equal(csv.Count, parquet.Count);
 
-        Assert.All(parquet.Fields, (field, i) => {
-            var dataField = field as DataField;
-            Assert.Equal(columnTypes[i], dataField?.ClrNullableIfHasNullsType);
-        });
+        List<string> columnNames = csv.Count > 0 ? csv[0].Keys.ToList() : [];
 
-        var errors = new List<string>();
+        for(int rowIndex = 0; rowIndex < csv.Count; rowIndex++) {
+            Dictionary<string, string> csvRow = csv[rowIndex];
+            Dictionary<string, object> parquetRow = parquet[rowIndex];
 
-        //compare number of columns is the same
-        Assert.True(parquetCols.Length == csv.Length, $"parquet has {parquetCols.Length} column(s) but CSV has {csv.Length}");
+            for(int colIndex = 0; colIndex < columnNames.Count; colIndex++) {
+                string columnName = columnNames[colIndex];
 
-        //compare column names
-        foreach(DataColumn column in parquetCols) {
-            string colName = column.Field.Name;
-            bool contains = csv.Any(f => f.Field.Name == colName);
-            Assert.True(contains, $"csv does not contain column '{colName}'");
-        }
+                csvRow.TryGetValue(columnName, out string? csvValue);
+                parquetRow.TryGetValue(columnName, out object? parquetValueObj);
+                string parquetValue = ConvertToString(parquetValueObj, columnTypes[colIndex]);
 
-        //compare column values one by one
-        for(int ci = 0; ci < parquetCols.Length; ci++) {
-            DataColumn pc = parquetCols[ci];
-            DataColumn cc = csv[ci];
+                csvValue = Stringify(csvValue);
+                parquetValue = Stringify(parquetValue);
 
-            for(int ri = 0; ri < pc.Data.Length; ri++) {
-                Type clrType = pc.Field.ClrType;
-                object? pv = pc.Data.GetValue(ri);
-                object? cv = ChangeType(cc.Data.GetValue(ri), clrType);
-
-                if(pv == null) {
-                    bool isCsvNull =
-                       cv == null ||
-                       (cv is string s && s == string.Empty);
-
-                    if(!isCsvNull)
-                        errors.Add($"expected null value in column {pc.Field.Name}, value #{ri}");
-                } else {
-                    if(clrType == typeof(string)) {
-                        if(((string)pv).Trim() != ((string?)cv)?.Trim()) {
-                            errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
-                            //errors.Add(pv.ToString());
-                        }
-                    } else if(clrType == typeof(byte[])) {
-                        byte[] pva = (byte[])pv;
-                        byte[] cva = (byte[])cv!;
-
-                        if(pva.Length != cva.Length)
-                            errors.Add($"expected length {cva.Length} but was {pva.Length} in column {pc.Field.Name}, value #{ri}");
-
-                        for(int i = 0; i < pva.Length; i++) {
-                            if(pva[i] != cva[i])
-                                errors.Add($"expected {cva[i]} but was {pva[i]} in column {pc.Field.Name}, value #{ri}, array index {i}");
-                        }
-                    } else {
-                        if(!pv.Equals(cv))
-                            errors.Add($"expected {cv} but was {pv} in column {pc.Field.Name}, value #{ri}");
-                    }
+                bool equal = string.Equals(csvValue, parquetValue, StringComparison.Ordinal);
+                if(!equal) {
+                    string message =
+                        $"Mismatch at row {rowIndex + 1}, column '{columnName}' (col#{colIndex + 1}).\n" +
+                        $"CSV:     [{csvValue ?? "<null>"}]\nParquet: [{parquetValue ?? "<null>"}]";
+                    Assert.Fail(message);
                 }
             }
         }
-
-        if(errors.Count > 0) {
-            Assert.Fail($"{errors.Count} error(s):" + Environment.NewLine + string.Join(Environment.NewLine, errors));
-        }
     }
 
-    private object? ChangeType(object? v, Type t) {
-        if(v == null)
-            return null;
-        if(v.GetType() == t)
-            return v;
-        if(v is string s && string.IsNullOrEmpty(s))
-            return null;
-
-        if(t == typeof(DateTime)) {
-            string so = (string)v;
-            return DateTime.Parse(so).ToUniversalTime();
+    private string ConvertToString(object? value, Type columnType) {
+        if(value == null) {
+            return string.Empty;
         }
 
-        if(t == typeof(byte[])) {
-            string so = (string)v;
-            return Encoding.UTF8.GetBytes(so);
-        }
+        // Get the non-nullable type for comparison
+        Type baseType = columnType.GetNonNullable();
 
-        return Convert.ChangeType(v, t);
+        return baseType switch {
+            _ when baseType == typeof(bool) => value.ToString()!.ToLowerInvariant(),
+            _ when baseType == typeof(byte[]) => Encoding.UTF8.GetString((byte[])value),
+            _ when IsNumericType(baseType) || baseType == typeof(decimal) 
+                => Convert.ToString(value, CultureInfo.InvariantCulture)!,
+            _ when baseType == typeof(DateTime) 
+                => ((DateTime)value).ToString("O", CultureInfo.InvariantCulture),
+            _ => value.ToString() ?? string.Empty
+        };
     }
 
-    private async Task<(DataColumn[] Columns, IReadOnlyList<Field> Fields)> ReadParquetAsync(string name,
+    private string Stringify(string? value) {
+        if(value == null)
+            return string.Empty;
+
+        if(value == "0.0")
+            return "0";
+
+        if(DateTime.TryParse(value, out DateTime result)) {
+            return result.ToString("o");
+        }
+
+
+        return value.Trim();
+    }
+
+    private bool IsNumericType(Type type) {
+        return type == typeof(byte) ||
+               type == typeof(sbyte) ||
+               type == typeof(short) ||
+               type == typeof(ushort) ||
+               type == typeof(int) ||
+               type == typeof(uint) ||
+               type == typeof(long) ||
+               type == typeof(ulong) ||
+               type == typeof(float) ||
+               type == typeof(double);
+    }
+
+    private async Task<IList<Dictionary<string, object>>> ReadParquetAsync(string name,
         bool treatByteArrayAsString) {
         await using Stream s = OpenTestFile(name);
-        var parquetOptions = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
-        await using ParquetReader pr = await ParquetReader.CreateAsync(s, parquetOptions);
-        using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
-        return (await pr.Schema.GetDataFields()
-            .Select(df => rgr.ReadColumnAsync(df))
-            .SequentialWhenAll(), pr.Schema.Fields);
+        var options = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
+        ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s, new ParquetSerializerOptions { ParquetOptions = options });
+        return r.Data;
     }
 
-    private DataColumn[] ReadCsv(string name) {
-        var columns = new List<List<string>>();
+    private IList<Dictionary<string, string>> ReadCsv(string name) {
+        var result = new List<Dictionary<string, string>>();
 
-        string[] columnNames;
+        var columnNames = new List<string>();
 
         using(StreamReader fs = OpenTestFileReader(name)) {
             var reader = new CsvReader(fs, CultureInfo.InvariantCulture);
 
-            reader.Read();
-            columnNames = Enumerable.Range(0, reader.ColumnCount).Select(i => reader.GetField(i)!).ToArray();
-
             //header
-            columns.AddRange(columnNames.Select(n => new List<string>()));
+            reader.Read();
+            columnNames.AddRange(Enumerable.Range(0, reader.ColumnCount).Select(i => reader.GetField(i)!));
 
             //values
             while(reader.Read()) {
+                var row = new Dictionary<string, string>();
                 for(int i = 0; i < reader.ColumnCount; i++) {
-                    List<string> column = columns[i];
-                    column.Add(reader.GetField(i)!);
+                    string columnName = columnNames[i];
+                    row[columnName] = reader.GetField(i)!;
                 }
+                result.Add(row);
             }
         }
 
         if(columnNames == null)
             throw new InvalidOperationException("no columns?");
 
-        var schema = new ParquetSchema(columnNames.Select(n => new DataField<string>(n)).ToList());
-
-        //compose result
-        return
-           columnNames!.Select((n, i) => new DataColumn(schema.GetDataFields()[i], columns[i].ToArray()))
-           .ToArray();
+        return result;
     }
 
 }

@@ -22,11 +22,12 @@ public class RepeatableFieldsTest : TestBase {
            repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        Assert.NotNull(rc);
 
         // assert
-        Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc!.Data);
-        Assert.Equal(new int[] { 0, 1, 1, 0, 1 }, rc!.RepetitionLevels);
+        Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, rc.Values);
+        Assert.Equal(new int[] { 0, 1, 1, 0, 1 }, rc.RepetitionLevels);
     }
 
     [Fact]
@@ -42,11 +43,13 @@ public class RepeatableFieldsTest : TestBase {
            values, repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        Assert.NotNull(rc);
 
         // assert
-        Assert.Equal(values, rc!.Data);
-        Assert.Equal(repetitionLevels, rc!.RepetitionLevels);
+        Assert.NotNull(rc);
+        Assert.Equal(values, rc.GetNullableValues());
+        Assert.Equal(repetitionLevels, rc.RepetitionLevels);
     }
 
     [Fact]
@@ -61,10 +64,11 @@ public class RepeatableFieldsTest : TestBase {
            repetitionLevels);
 
         // act
-        DataColumn? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        Assert.NotNull(rc);
 
         // assert
-        Assert.Equal(values, rc!.Data);
+        Assert.Equal(values, rc.GetNullableValues());
         Assert.Equal(repetitionLevels, rc!.RepetitionLevels);
     }
 }

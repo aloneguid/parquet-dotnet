@@ -15,12 +15,10 @@ using Xunit;
 namespace Parquet.Test.Serialisation;
 
 /// <summary>
-/// When writing tests for this class, please note that you must write the test
-/// for strong typed entities, and for untyped dictionaries. This is because
-/// assembler and shredder has slightly different code paths for untyped dictionaries,
-/// despite majority of the code being shared.
-/// Make the tests small and focused, and use the same test data for both. It helps to debug
-/// expression trees easier.
+/// When writing tests for this class, please note that you must write the test for strong typed entities, and for
+/// untyped dictionaries. This is because assembler and shredder has slightly different code paths for untyped
+/// dictionaries, despite majority of the code being shared. Make the tests small and focused, and use the same test
+/// data for both. It helps to debug expression trees easier.
 /// </summary>
 public class ParquetSerializerTest : TestBase {
 
@@ -653,12 +651,14 @@ public class ParquetSerializerTest : TestBase {
 
         // low-level validate that the file has correct levels
         ms.Position = 0;
-        List<Data.DataColumn> cols = await ReadColumns(ms);
-        DataColumn pidsCol = cols[1];
-        Assert.Equal(new int[] { 1, 2, 3, 4, 5 }, pidsCol.DefinedData);
-        Assert.Equal(new int[] { 2, 2, 1, 2, 2, 2 }, pidsCol.DefinitionLevels);
-        Assert.Equal(new int[] { 0, 1, 0, 0, 1, 1 }, pidsCol.RepetitionLevels);
-
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            using(RawColumnData<int> col = await rgr.ReadRawColumnDataAsync<int>(reader.Schema.DataFields[1])) {
+                Assert.Equivalent(new int[] { 1, 2, 3, 4, 5 }, col.GetNullableValues().ToArray());
+                Assert.Equivalent(new int[] { 2, 2, 1, 2, 2, 2 }, col.DefinitionLevels.ToArray());
+                Assert.Equivalent(new int[] { 0, 1, 0, 0, 1, 1 }, col.RepetitionLevels.ToArray());
+            }
+        }
 
         // deserialise
         ms.Position = 0;
@@ -692,11 +692,14 @@ public class ParquetSerializerTest : TestBase {
 
         // low-level validate that the file has correct levels
         ms.Position = 0;
-        List<Data.DataColumn> cols = await ReadColumns(ms);
-        DataColumn pidsCol = cols[1];
-        Assert.Equal(new int[] { 1, 2, 3, 4 }, pidsCol.DefinedData);
-        Assert.Equal(new int[] { 2, 2, 0, 2, 2 }, pidsCol.DefinitionLevels);
-        Assert.Equal(new int[] { 0, 1, 0, 0, 1 }, pidsCol.RepetitionLevels);
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            using(RawColumnData<int> col = await rgr.ReadRawColumnDataAsync<int>(reader.Schema.DataFields[1])) {
+                Assert.Equivalent(new int[] { 1, 2, 3, 4 }, col.GetNullableValues().ToArray());
+                Assert.Equivalent(new int[] { 2, 2, 0, 2, 2 }, col.DefinitionLevels.ToArray());
+                Assert.Equivalent(new int[] { 0, 1, 0, 0, 1 }, col.RepetitionLevels.ToArray());
+            }
+        }
 
         // deserialise
         ms.Position = 0;
