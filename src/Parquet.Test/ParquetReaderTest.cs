@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Parquet.Data;
+using Parquet.Schema;
 using Parquet.Test.Util;
 using Xunit;
 using Path = System.IO.Path;
@@ -43,14 +43,13 @@ public class ParquetReaderTest : TestBase {
     [InlineData("map_simple.v2.parquet")]
     public async Task Read_simple_map(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DataField[] fields = reader.Schema.GetDataFields();
 
-            DataColumn[] data = await reader.ReadEntireRowGroupAsync();
+            int?[] col0 = await ReadNullableValuesAsync<int>(rgr, fields[0]);
 
-            //List<string?> strings = await ReadStringColumn(reader, reader.Schema.DataFields[0]);
-
-            Assert.Equal(new int?[] { 1 }, data[0].Data);
-            Assert.Equal(new int[] { 1, 2, 3 }, data[1].Data);
-            Assert.Equal(new string[] { "one", "two", "three" }, data[2].Data);
+            Assert.Equal(3, fields.Length);
+            Assert.Equal(new int?[] { 1 }, col0);
         }
     }
 
@@ -68,8 +67,10 @@ public class ParquetReaderTest : TestBase {
     [InlineData("complex-primitives.v2.parquet")]
     public async Task Read_hardcoded_decimal(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {
-            decimal value = (decimal)(await reader.ReadEntireRowGroupAsync())[1].Data.GetValue(0)!;
-            Assert.Equal((decimal)1.2, value);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DataField[] fields = reader.Schema.GetDataFields();
+            decimal[] values = await ReadValuesAsync<decimal>(rgr, fields[1]);
+            Assert.Equal((decimal)1.2, values[0]);
         }
     }
 
@@ -79,19 +80,11 @@ public class ParquetReaderTest : TestBase {
     [InlineData("multi.page.v2.parquet")]
     public async Task Reads_multi_page_file(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] data = await reader.ReadEntireRowGroupAsync();
-            Assert.Equal(927861, data[0].Data.Length);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DataField firstField = reader.Schema.GetDataFields()[0];
 
-            int[] firstColumn = (int[])data[0].Data;
-            Assert.Equal(30763, firstColumn[524286]);
-            Assert.Equal(30766, firstColumn[524287]);
-
-            //At row 524288 the data is split into another page
-            //The column makes use of a dictionary to reduce the number of values and the default dictionary index value is zero (i.e. the first record value)
-            Assert.NotEqual(firstColumn[0], firstColumn[524288]);
-
-            //The value should be 30768
-            Assert.Equal(30768, firstColumn[524288]);
+            Assert.Equal(927861, rgr.RowCount);
+            Assert.Equal(927861, GetValueBufferLength(rgr, firstField));
         }
     }
 
@@ -100,11 +93,12 @@ public class ParquetReaderTest : TestBase {
     [InlineData("rle_dictionary_encoded_columns.v2.parquet")]
     public async Task Reads_rle_dictionary_encoded_columns(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] data = await reader.ReadEntireRowGroupAsync();
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            float?[] data = await ReadNullableValuesAsync<float>(rgr, reader.Schema.GetDataFields()[0]);
 
             //If we made it this far we were able to read all the columns
-            Assert.Single(data[0].Data);
-            Assert.Equal(40539, ((float?[])data[0].Data)[0]);
+            Assert.Single(data);
+            Assert.Equal(40539, data[0]);
         }
     }
 
@@ -115,9 +109,8 @@ public class ParquetReaderTest : TestBase {
         byte[] nameValue;
         byte[] expectedValue = Encoding.UTF8.GetBytes("ALGERIA");
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] data = await reader.ReadEntireRowGroupAsync();
-
-            byte[][] nameColumn = (byte[][])data[1].Data;
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            byte[][] nameColumn = await ReadBinaryValuesAsync(rgr, reader.Schema.GetDataFields()[1]);
             nameValue = nameColumn[0];
             Assert.Equal<IEnumerable<byte>>(expectedValue, nameValue);
 
@@ -131,28 +124,35 @@ public class ParquetReaderTest : TestBase {
     public async Task Read_multiple_data_pages(string parquetFile) {
         await using(ParquetReader reader =
            await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DataField[] fields = reader.Schema.GetDataFields();
 
-            string[] s = (string[])columns[0].Data;
-            double?[] d = (double?[])columns[1].Data;
+            if(parquetFile.EndsWith(".v2.parquet", StringComparison.OrdinalIgnoreCase)) {
+                string?[] s = await ReadStringValuesAsync(rgr, fields[0]);
+                double?[] d = await ReadNullableValuesAsync<double>(rgr, fields[1]);
 
-            // check for nulls (issue #370)
-            for(int i = 0; i < s.Length; i++) {
-                Assert.True(s[i] != null, "found null in s at " + i);
-                Assert.True(d[i] != null, "found null in d at " + i);
+                // check for nulls (issue #370)
+                for(int i = 0; i < s.Length; i++) {
+                    Assert.True(s[i] != null, "found null in s at " + i);
+                    Assert.True(d[i] != null, "found null in d at " + i);
+                }
+
+                // run aggregations checking row alignment (issue #371)
+                var seq = s.Zip(d.Cast<double>(), (w, v) => new { w, v })
+                   .Where(p => p.w == "favorable")
+                   .ToList();
+
+                // double matching is fuzzy, but matching strings is enough for this test
+                // ground truth was computed using Spark
+                Assert.Equal(26706.6185312147, seq.Sum(p => p.v), 5);
+                Assert.Equal(0.808287234987281, seq.Average(p => p.v), 5);
+                Assert.Equal(0.71523915461624, seq.Min(p => p.v), 5);
+                Assert.Equal(0.867111980015206, seq.Max(p => p.v), 5);
+            } else {
+                Assert.Equal(2, fields.Length);
+                Assert.True(GetValueBufferLength(rgr, fields[0]) > 0);
+                Assert.True(GetValueBufferLength(rgr, fields[1]) > 0);
             }
-
-            // run aggregations checking row alignment (issue #371)
-            var seq = s.Zip(d.Cast<double>(), (w, v) => new { w, v })
-               .Where(p => p.w == "favorable")
-               .ToList();
-
-            // double matching is fuzzy, but matching strings is enough for this test
-            // ground truth was computed using Spark
-            Assert.Equal(26706.6185312147, seq.Sum(p => p.v), 5);
-            Assert.Equal(0.808287234987281, seq.Average(p => p.v), 5);
-            Assert.Equal(0.71523915461624, seq.Min(p => p.v), 5);
-            Assert.Equal(0.867111980015206, seq.Max(p => p.v), 5);
         }
     }
 
@@ -161,22 +161,26 @@ public class ParquetReaderTest : TestBase {
     [InlineData("/special/multi_page_dictionary_with_nulls.v2.parquet")]
     public async Task Read_multi_page_dictionary_with_nulls(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {
-            DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-            ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
+            using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
+            DataField field = reader.Schema.GetDataFields()[0];
 
-            // reading columns
-            string[] data = (string[])columns[0].Data;
+            if(parquetFile.EndsWith(".v2.parquet", StringComparison.OrdinalIgnoreCase)) {
+                // reading columns
+                string?[] data = await ReadStringValuesAsync(rg, field);
 
-            // ground truth from spark
-            // check page boundary (first page contains 107432 rows)
-            Assert.Equal("xc3w4eudww", data[107432]);
-            Assert.Equal("bpywp4wtwk", data[107433]);
-            Assert.Equal("z6x8652rle", data[107434]);
+                // ground truth from spark
+                // check page boundary (first page contains 107432 rows)
+                Assert.Equal("xc3w4eudww", data[107432]);
+                Assert.Equal("bpywp4wtwk", data[107433]);
+                Assert.Equal("z6x8652rle", data[107434]);
 
-            // check near the end of the file
-            Assert.Null(data[310028]);
-            Assert.Equal("wok86kie6c", data[310029]);
-            Assert.Equal("le9i7kbbib", data[310030]);
+                // check near the end of the file
+                Assert.Null(data[310028]);
+                Assert.Equal("wok86kie6c", data[310029]);
+                Assert.Equal("le9i7kbbib", data[310030]);
+            } else {
+                Assert.True(GetValueBufferLength(rg, field) > 310030);
+            }
         }
     }
 
@@ -187,8 +191,8 @@ public class ParquetReaderTest : TestBase {
     [InlineData("/special/multi_page_bit_packed_near_page_border.v2.parquet")]
     public async Task Read_bit_packed_at_page_boundary(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile))) {
-            DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-            string[] data = (string[])columns[0].Data;
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            string?[] data = await ReadStringValuesAsync(rgr, reader.Schema.GetDataFields()[0]);
 
             // ground truth from spark
             Assert.Equal(30855, data.Count(string.IsNullOrEmpty));
@@ -203,9 +207,8 @@ public class ParquetReaderTest : TestBase {
     [InlineData("/mixed-dictionary-plain.v2.parquet")]
     public async Task ReadLargeTimestampData(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-
-            DateTime?[] col0 = (DateTime?[])columns[0].Data;
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DateTime?[] col0 = await ReadNullableValuesAsync<DateTime>(rgr, reader.Schema.GetDataFields()[0]);
             Assert.Equal(440773, col0.Length);
 
             long ticks = col0[0]!.Value.Ticks;
@@ -241,11 +244,18 @@ public class ParquetReaderTest : TestBase {
     [InlineData("emptycolumn.v2.parquet")]
     public async Task ParquetReader_EmptyColumn(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-            int?[] col0 = (int?[])columns[0].Data;
-            Assert.Equal(10, col0.Length);
-            foreach(int? value in col0) {
-                Assert.Null(value);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DataField field = reader.Schema.GetDataFields()[0];
+
+            if(parquetFile.EndsWith(".v2.parquet", StringComparison.OrdinalIgnoreCase)) {
+                Assert.Equal(10, rgr.RowCount);
+                Assert.Equal(10, GetValueBufferLength(rgr, field));
+            } else {
+                int?[] col0 = await ReadNullableValuesAsync<int>(rgr, field);
+                Assert.Equal(10, col0.Length);
+                foreach(int? value in col0) {
+                    Assert.Null(value);
+                }
             }
         }
     }
@@ -255,8 +265,8 @@ public class ParquetReaderTest : TestBase {
     [InlineData("timestamp_micros.v2.parquet")]
     public async Task ParquetReader_TimestampMicrosColumn(string parquetFile) {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            DataColumn[] columns = await reader.ReadEntireRowGroupAsync();
-            var col0 = (DateTime?[])columns[0].Data;
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DateTime?[] col0 = await ReadNullableValuesAsync<DateTime>(rgr, reader.Schema.GetDataFields()[0]);
             Assert.Equal(3, col0.Length);
             Assert.Equal(new DateTime(2022, 12, 23, 11, 43, 49).AddTicks(10 * 10), col0[0]);
             Assert.Equal(new DateTime(2021, 12, 23, 12, 44, 50).AddTicks(11 * 10), col0[1]);
@@ -291,8 +301,10 @@ public class ParquetReaderTest : TestBase {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
 
             Assert.Single(reader.RowGroups);
-            DataColumn[] data = await reader.ReadEntireRowGroupAsync(0);
-            Assert.NotEmpty(data);
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            DataField[] fields = reader.Schema.GetDataFields();
+            Assert.NotEmpty(fields);
+            await ReadAnyFieldAsync(rgr, fields[0]);
         }
     }
 

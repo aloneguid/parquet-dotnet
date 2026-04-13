@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Parquet.Schema;
@@ -184,7 +183,7 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         DataField[] fields = r.Schema.GetDataFields();
         Assert.Equal(2, fields.Length);
 
-        string[] col0 = await ReadStringValuesAsync(rgr, fields[0]);
+        string[] col0 = (await ReadStringValuesAsync(rgr, fields[0])).Select(x => x!).ToArray();
         long[] col1 = await ReadValuesAsync<long>(rgr, fields[1]);
 
         Assert.Equal(126, col0.Length);
@@ -338,76 +337,5 @@ public class ParquetReaderOnTestFilesTest : TestBase {
 
         TimeSpan?[] data = await ReadNullableValuesAsync<TimeSpan>(groupReader, fs[1]);
         Assert.Equal(TimeSpan.FromTicks(215720000000), data[0]);
-    }
-
-    private static int GetValueBufferLength(ParquetRowGroupReader rgr, DataField field) {
-        long numValues = rgr.GetMetadata(field)?.MetaData?.NumValues ?? rgr.RowCount;
-        return checked((int)numValues);
-    }
-
-    private static async Task<T[]> ReadValuesAsync<T>(ParquetRowGroupReader rgr, DataField field) where T : struct {
-        if(field.MaxDefinitionLevel > 0 && field.MaxRepetitionLevel == 0) {
-            T?[] nullableValues = await ReadNullableValuesAsync<T>(rgr, field);
-            return nullableValues.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
-        }
-
-        int bufferLength = GetValueBufferLength(rgr, field);
-        T[] values = new T[bufferLength];
-        int[] repetitionLevels = new int[bufferLength];
-        await rgr.ReadAsync<T>(field, values.AsMemory(), repetitionLevels.AsMemory());
-        return values;
-    }
-
-    private static async Task<T?[]> ReadNullableValuesAsync<T>(ParquetRowGroupReader rgr, DataField field) where T : struct {
-        T?[] values = new T?[checked((int)rgr.RowCount)];
-        int repetitionLevelLength = GetValueBufferLength(rgr, field);
-        int[] repetitionLevels = new int[repetitionLevelLength];
-        await rgr.ReadAsync<T>(field, values.AsMemory(), repetitionLevels.AsMemory());
-        return values;
-    }
-
-    private static async Task<string?[]> ReadStringValuesAsync(ParquetRowGroupReader rgr, DataField field) {
-        int bufferLength = GetValueBufferLength(rgr, field);
-        ReadOnlyMemory<char>?[] values = new ReadOnlyMemory<char>?[bufferLength];
-        int[] repetitionLevels = new int[bufferLength];
-        await rgr.ReadAsync<ReadOnlyMemory<char>>(field, values.AsMemory(), repetitionLevels.AsMemory());
-
-        return values.Select(v => v.HasValue ? new string(v.Value.Span) : null).ToArray();
-    }
-
-    private static async Task<byte[][]> ReadBinaryValuesAsync(ParquetRowGroupReader rgr, DataField field) {
-        int bufferLength = GetValueBufferLength(rgr, field);
-        ReadOnlyMemory<byte>?[] values = new ReadOnlyMemory<byte>?[bufferLength];
-        int[] repetitionLevels = new int[bufferLength];
-        await rgr.ReadAsync<ReadOnlyMemory<byte>>(field, values.AsMemory(), repetitionLevels.AsMemory());
-
-        return values.Where(v => v.HasValue)
-            .Select(v => v!.Value.ToArray())
-            .ToArray();
-    }
-
-    private static Task ReadAnyFieldAsync(ParquetRowGroupReader rgr, DataField field) {
-        if(field.ClrType == typeof(string)) {
-            return ReadStringValuesAsync(rgr, field);
-        }
-
-        if(field.ClrType == typeof(byte[])) {
-            return ReadBinaryValuesAsync(rgr, field);
-        }
-
-        MethodInfo method = typeof(ParquetReaderOnTestFilesTest)
-            .GetMethod(nameof(ReadAnyStructFieldAsync), BindingFlags.Static | BindingFlags.NonPublic)!
-            .MakeGenericMethod(field.ClrType);
-
-        return (Task)method.Invoke(null, new object[] { rgr, field })!;
-    }
-
-    private static async Task ReadAnyStructFieldAsync<T>(ParquetRowGroupReader rgr, DataField field) where T : struct {
-        if(field.MaxDefinitionLevel > 0 && field.MaxRepetitionLevel == 0) {
-            await ReadNullableValuesAsync<T>(rgr, field);
-            return;
-        }
-
-        await ReadValuesAsync<T>(rgr, field);
     }
 }
