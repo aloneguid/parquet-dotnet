@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Test.Util;
 using Xunit;
@@ -37,16 +36,17 @@ public class NonSeekableWriterTest {
             using(ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0)) {
                 Assert.Equal(1, rgr.RowCount);
 
-                DataColumn column = await rgr.ReadColumnAsync((DataField)schema[0]);
-                Assert.Equal(1, column.Data.GetValue(0));
+                int[] values = new int[checked((int)rgr.RowCount)];
+                await rgr.ReadAsync<int>(schema.DataFields[0], values);
+                Assert.Equal(1, values[0]);
             }
 
             using(ParquetRowGroupReader rgr = reader.OpenRowGroupReader(1)) {
                 Assert.Equal(1, rgr.RowCount);
 
-                DataColumn column = await rgr.ReadColumnAsync((DataField)schema[0]);
-                Assert.Equal(2, column.Data.GetValue(0));
-
+                int[] values = new int[checked((int)rgr.RowCount)];
+                await rgr.ReadAsync<int>(schema.DataFields[0], values);
+                Assert.Equal(2, values[0]);
             }
 
         }

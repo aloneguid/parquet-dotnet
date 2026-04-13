@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Encodings;
@@ -115,32 +116,39 @@ public class ByteStreamSplitEncoderTest : TestBase {
          */
         await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
         Assert.Equal(1, reader.RowGroupCount);
-        ParquetRowGroupReader row = reader.OpenRowGroupReader(0);
+        using ParquetRowGroupReader row = reader.OpenRowGroupReader(0);
 
-        DataColumn floatsCol = await row.ReadColumnAsync(reader.Schema.FindDataField("floats"));
-        Assert.Equal(5, floatsCol.NumValues);
-        Assert.Equal(5, floatsCol.Data.Length);
-        Assert.Equal(3, floatsCol.DefinedData.Length);
+        DataField floatsField = reader.Schema.FindDataField("floats");
 
         if(parquetFile.Contains("double")) {
-            double[] definedValues = (double[])floatsCol.DefinedData;
+            double?[] dataValues = new double?[row.RowCount];
+            await row.ReadAsync<double>(floatsField, dataValues);
+
+            Assert.Equal(5, dataValues.Length);
+            Assert.Equal(3, dataValues.Count(v => v.HasValue));
+
+            double[] definedValues = dataValues.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
             Assert.Equal(1.1, definedValues[0]);
             Assert.Equal(3.3, definedValues[1]);
             Assert.Equal(5.5, definedValues[2]);
 
-            double?[] dataValues = (double?[])floatsCol.Data;
             Assert.Equal(1.1, dataValues[0]);
             Assert.Null(dataValues[1]);
             Assert.Equal(3.3, dataValues[2]);
             Assert.Null(dataValues[3]);
             Assert.Equal(5.5, dataValues[4]);
         } else {
-            float[] definedValues = (float[])floatsCol.DefinedData;
+            float?[] dataValues = new float?[row.RowCount];
+            await row.ReadAsync<float>(floatsField, dataValues);
+
+            Assert.Equal(5, dataValues.Length);
+            Assert.Equal(3, dataValues.Count(v => v.HasValue));
+
+            float[] definedValues = dataValues.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
             Assert.Equal(1.1f, definedValues[0]);
             Assert.Equal(3.3f, definedValues[1]);
             Assert.Equal(5.5f, definedValues[2]);
 
-            float?[] dataValues = (float?[])floatsCol.Data;
             Assert.Equal(1.1f, dataValues[0]);
             Assert.Null(dataValues[1]);
             Assert.Equal(3.3f, dataValues[2]);
