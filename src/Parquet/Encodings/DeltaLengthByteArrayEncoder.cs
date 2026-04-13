@@ -13,40 +13,44 @@ static class DeltaLengthByteArrayEncoder {
 
     private static readonly Encoding E = Encoding.UTF8;
 
-    private static int MakeStrings(Span<byte> s, Span<int> lengths, string[] dest, int destOffset) {
+    private static int MakeStrings(Span<byte> s, Span<int> lengths, Span<ReadOnlyMemory<char>> dest) {
+        Decoder decoder = System.Text.Encoding.UTF8.GetDecoder();
         int made = 0;
         foreach(int len in lengths) {
-            dest[destOffset++] = E.GetString(s.Slice(0, len));
+            Span<byte> elSpan = s.Slice(0, len);
+            char[] charBuffer = new char[System.Text.Encoding.UTF8.GetCharCount(elSpan)];
+            decoder.GetChars(elSpan, charBuffer, true);
+            dest[made] = charBuffer;
             s = s.Slice(len);
             made++;
         }
         return made;
     }
 
-    private static int MakeBytes(Span<byte> s, Span<int> lengths, byte[][] dest, int destOffset) {
+    private static int MakeBytes(Span<byte> s, Span<int> lengths, Span<ReadOnlyMemory<byte>> dest) {
         int made = 0;
         foreach(int len in lengths) {
-            dest[destOffset++] = s.Slice(0, len).ToArray();
+            Span<byte> elSpan = s.Slice(0, len);
+            dest[made] = elSpan.ToArray();
             s = s.Slice(len);
             made++;
         }
         return made;
     }
 
-    public static int Decode(Span<byte> s, Array dest, int destOffset, int valueCount) {
+    public static int Decode<T>(Span<byte> s, Span<T> dest, int valueCount) where T : struct {
 
         int[] lengths = ArrayPool<int>.Shared.Rent(valueCount);
         try {
             int actualCount = DeltaBinaryPackedEncoder.Decode(s, lengths, 0, valueCount, out int lengthConsumedBytes);
             s = s.Slice(lengthConsumedBytes);
 
-            Type? et = dest.GetType().GetElementType();
-            if(et == typeof(string)) {
-                return MakeStrings(s, lengths.AsSpan(0, valueCount), (string[])dest, destOffset);
-            } else if(et == typeof(byte[])) {
-                return MakeBytes(s, lengths.AsSpan(0, valueCount), (byte[][])dest, destOffset);
+            if(typeof(T) == typeof(ReadOnlyMemory<char>)) {
+                return MakeStrings(s, lengths.AsSpan(0, valueCount), dest.AsSpan<T, ReadOnlyMemory<char>>());
+            } else if(typeof(T) == typeof(ReadOnlyMemory<byte>)) {
+                return MakeBytes(s, lengths.AsSpan(0, valueCount), dest.AsSpan<T, ReadOnlyMemory<byte>>());
             } else {
-                throw new NotSupportedException($"unsupported type {et}, delta length byte arrays only can do strings and byte arrays");
+                throw new NotSupportedException($"unsupported type {typeof(T)}, delta length byte arrays only can do strings and byte arrays");
             }
 
         } finally {

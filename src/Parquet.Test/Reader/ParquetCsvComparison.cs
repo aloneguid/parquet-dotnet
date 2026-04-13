@@ -72,7 +72,11 @@ public class ParquetCsvComparison : TestBase {
 
         return baseType switch {
             _ when baseType == typeof(bool) => value.ToString()!.ToLowerInvariant(),
-            _ when baseType == typeof(byte[]) => Encoding.UTF8.GetString((byte[])value),
+            _ when baseType == typeof(byte[]) => value switch {
+                byte[] bytes => Encoding.UTF8.GetString(bytes),
+                ReadOnlyMemory<byte> memory => Encoding.UTF8.GetString(memory.Span),
+                _ => throw new InvalidOperationException($"Expected byte[] or {nameof(ReadOnlyMemory<byte>)} for '{baseType}', but got '{value.GetType()}'.")
+            },
             _ when IsNumericType(baseType) || baseType == typeof(decimal) 
                 => Convert.ToString(value, CultureInfo.InvariantCulture)!,
             _ when baseType == typeof(DateTime) 

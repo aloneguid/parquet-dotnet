@@ -18,7 +18,7 @@ public class RawColumnData<T> : IDisposable where T : struct {
     /// <param name="values"></param>
     /// <param name="definitionLevels"></param>
     /// <param name="repetitionLevels"></param>
-    public RawColumnData(IMemoryOwner<T> values, IMemoryOwner<int>? definitionLevels, IMemoryOwner<int>? repetitionLevels) {
+    internal RawColumnData(IMemoryOwner<T> values, IMemoryOwner<int>? definitionLevels, IMemoryOwner<int>? repetitionLevels) {
         _values = values;
         _definitionLevels = definitionLevels;
         _repetitionLevels = repetitionLevels;

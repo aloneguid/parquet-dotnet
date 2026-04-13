@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Serialization.Dremel;
 using Type = System.Type;
@@ -569,17 +568,18 @@ public static class ParquetSerializer {
             if(readerField == null)
                 continue;
 
+
             // this needs reflected schema field due to it containing important schema adjustments
-            DataColumn dc;
+            object rawColumnDataOfT;
 
             try {
-                dc = await rg.ReadColumnAsync(readerField, cancellationToken);
+                rawColumnDataOfT = await rg.ReadRawColumnDataAsObjectAsync(readerField, cancellationToken);
             } catch(Exception ex) {
                 throw new InvalidDataException($"failed to read column '{fasm.Field.Path}'", ex);
             }
 
             try {
-                fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), dc);
+                fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), rawColumnDataOfT);
             } catch(Exception ex) {
                 throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}'", ex);
             }

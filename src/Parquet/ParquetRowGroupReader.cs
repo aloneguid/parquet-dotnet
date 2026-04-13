@@ -64,18 +64,6 @@ public class ParquetRowGroupReader : IDisposable {
         return GetMetadata(field) != null;
     }
 
-    /// <summary>
-    /// Reads a column from this row group. Unlike writing, columns can be read in any order. If the column is missing,
-    /// an exception will be thrown.
-    /// </summary>
-    public Task<DataColumn> ReadColumnAsync(DataField field, CancellationToken cancellationToken = default) {
-        ColumnChunk columnChunk = GetMetadata(field)
-            ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
-        var columnReader = new DataColumnReader(field, _stream,
-            columnChunk, ReadColumnStatistics(columnChunk), _footer, _options);
-        return columnReader.ReadAsync(cancellationToken);
-    }
-
     private ColumnMetaData GetColumnMetaData(DataField field) {
         ColumnChunk columnChunk = GetMetadata(field)
             ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
@@ -142,13 +130,35 @@ public class ParquetRowGroupReader : IDisposable {
         IMemoryOwner<int>? definitionLevels = field.MaxDefinitionLevel > 0 ? MemoryOwner<int>.Allocate((int)numValues) : null;
         IMemoryOwner<int>? repetitionLevels = field.MaxRepetitionLevel > 0 ? MemoryOwner<int>.Allocate((int)numValues) : null;
 
-        await ReadRawAsync(field, values.Memory, definitionLevels?.Memory, repetitionLevels?.Memory, cancellationToken);
+        try {
+            await ReadRawAsync(field, values.Memory, definitionLevels?.Memory, repetitionLevels?.Memory, cancellationToken);
+        } catch {
+            values.Dispose();
+            definitionLevels?.Dispose();
+            repetitionLevels?.Dispose();
+            throw;
+        }
 
         return new RawColumnData<T>(values, definitionLevels, repetitionLevels);
     }
 
+    internal async ValueTask<object> ReadRawColumnDataAsObjectAsync(DataField field, CancellationToken cancellationToken = default) {
+        // use reflection to call generic version of the method
+        MethodInfo? method = typeof(ParquetRowGroupReader)
+            .GetMethod(nameof(ParquetRowGroupReader.ReadRawColumnDataAsync), BindingFlags.Instance | BindingFlags.NonPublic);
+        if(method == null) {
+            throw new InvalidOperationException($"can't find {nameof(ParquetRowGroupReader.ReadRawColumnDataAsync)} method on {nameof(ParquetRowGroupReader)}");
+        }
+        method = method.MakeGenericMethod(field.ClrValueType);
+
+        object? valueTask = method.Invoke(this, [field, cancellationToken]);
+        object? result = await (dynamic)valueTask!;
+        return result;
+    }
+
     /// <summary>
-    /// Read non-nullable column data
+    /// Reads a column from this row group. Unlike writing, columns can be read in any order. If the column is missing,
+    /// an exception will be thrown.
     /// </summary>
     public async ValueTask ReadAsync<T>(DataField field,
         Memory<T> values,

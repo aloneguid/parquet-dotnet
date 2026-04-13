@@ -17,7 +17,7 @@ public class HighLevel {
 
     private const int DataSize = 10000000;
     private readonly ParquetSchema _intsSchema = new ParquetSchema(new DataField<int?>("i"));
-    private DataColumn? _ints;
+    //private DataColumn? _ints;
     private MemoryStream? _intsMs;
     private static readonly string[] TargetVersions = [
         "",
@@ -42,60 +42,60 @@ public class HighLevel {
 
     [GlobalSetup]
     public async Task Setup() {
-        _ints = new DataColumn(_intsSchema.GetDataFields()[0],
-            Enumerable.Range(0, DataSize).Select(i => i % 4 == 0 ? (int?)null : i).ToArray(),
-            null);
-        _intsMs = await MakeFile(_intsSchema, _ints);
+        //_ints = new DataColumn(_intsSchema.GetDataFields()[0],
+        //    Enumerable.Range(0, DataSize).Select(i => i % 4 == 0 ? (int?)null : i).ToArray(),
+        //    null);
+        //_intsMs = await MakeFile(_intsSchema, _ints);
 
         Console.WriteLine($"parquet version: {Parquet.Globals.Version}");
     }
 
-    private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
-        var ms = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-            writer.CompressionMethod = CM;
-            // create a new row group in the file
-            using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
-                //await groupWriter.WriteColumnAsync(c);
-                throw new NotImplementedException();
-            }
-        }
-        return ms;
-    }
+    //private async Task<MemoryStream> MakeFile(ParquetSchema schema, DataColumn c) {
+    //    var ms = new MemoryStream();
+    //    await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+    //        writer.CompressionMethod = CM;
+    //        // create a new row group in the file
+    //        using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
+    //            //await groupWriter.WriteColumnAsync(c);
+    //            throw new NotImplementedException();
+    //        }
+    //    }
+    //    return ms;
+    //}
 
-    private async Task<MemoryStream> Run(ParquetSchema schema, DataColumn c) {
-        var r = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, r)) {
-            writer.CompressionMethod = CM;
-            // create a new row group in the file
-            using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
-                //await groupWriter.WriteColumnAsync(c);
-                throw new NotImplementedException();
-            }
-        }
-        return r;
-    }
+    //private async Task<MemoryStream> Run(ParquetSchema schema, DataColumn c) {
+    //    var r = new MemoryStream();
+    //    await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, r)) {
+    //        writer.CompressionMethod = CM;
+    //        // create a new row group in the file
+    //        using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
+    //            //await groupWriter.WriteColumnAsync(c);
+    //            throw new NotImplementedException();
+    //        }
+    //    }
+    //    return r;
+    //}
 
-    private async Task<MemoryStream> Run(DataColumn c, MemoryStream ms) {
-        ms.Position = 0;
-        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-            //await reader.ReadEntireRowGroupAsync();
-        }
-        ms.Position = 0;
-        return ms;
-    }
+    //private async Task<MemoryStream> Run(DataColumn c, MemoryStream ms) {
+    //    ms.Position = 0;
+    //    await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+    //        //await reader.ReadEntireRowGroupAsync();
+    //    }
+    //    ms.Position = 0;
+    //    return ms;
+    //}
 
-    [Benchmark]
-    public Task<MemoryStream> WriteNullableInts() {
-        return Run(_intsSchema, _ints!);
-    }
+    //[Benchmark]
+    //public Task<MemoryStream> WriteNullableInts() {
+    //    return Run(_intsSchema, _ints!);
+    //}
 
-    [Benchmark]
-    public Task<MemoryStream> ReadNullableInts() {
-        return Run(_ints!, _intsMs!);
-    }
+    //[Benchmark]
+    //public Task<MemoryStream> ReadNullableInts() {
+    //    return Run(_ints!, _intsMs!);
+    //}
 
     public static void Run() {
-        BenchmarkRunner.Run<HighLevel>();
+        //BenchmarkRunner.Run<HighLevel>();
     }
 }

@@ -16,13 +16,8 @@ public class RepeatableFieldsTest : TestBase {
         int[] values = [1, 2, 3, 4, 5];
         int[] repetitionLevels = [0, 1, 1, 0, 1];
 
-        var column = new DataColumn(
-           schema.GetDataFields()[0],
-           values,
-           repetitionLevels);
-
         // act
-        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(schema.DataFields[0], values, repetitionLevels);
         Assert.NotNull(rc);
 
         // assert
@@ -38,12 +33,8 @@ public class RepeatableFieldsTest : TestBase {
         int?[] values = [1, 2, null, 4, 5];
         int[] repetitionLevels = [0, 1, 1, 0, 1];
 
-        var column = new DataColumn(
-           schema.DataFields[0],
-           values, repetitionLevels);
-
         // act
-        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(schema.DataFields[0], values, repetitionLevels);
         Assert.NotNull(rc);
 
         // assert
@@ -58,13 +49,9 @@ public class RepeatableFieldsTest : TestBase {
         var schema = new ParquetSchema(new DataField<IEnumerable<int>>("items") { IsNullable = true });
         int?[] values = { 1, 2, 3, 4, 5 };
         int[] repetitionLevels = { 0, 1, 1, 0, 1 };
-        var column = new DataColumn(
-           schema.GetDataFields()[0],
-           values,
-           repetitionLevels);
-
+    
         // act
-        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(column.Field, values, repetitionLevels);
+        RawColumnData<int>? rc = await WriteReadSingleColumn<int>(schema.DataFields[0], values, repetitionLevels);
         Assert.NotNull(rc);
 
         // assert

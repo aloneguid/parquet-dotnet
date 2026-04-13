@@ -423,7 +423,6 @@ public class ParquetWriterTest : TestBase {
             strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
             strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
             strings.AddRange(Enumerable.Repeat("The main reason behind the occurrence of this error is...", 10000));
-            var strData = new DataColumn(str, strings.ToArray());
 
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                 await rg.WriteAsync(str, strings.ToArray());

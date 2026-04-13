@@ -121,6 +121,13 @@ static class ExpressionExtensions {
         return Expression.Equal(nullableVar, Expression.Constant(null));
     }
 
+    internal static T GetSpanItem<T>(Span<T> span, int index) => span[index];
+
+    public static Expression GetSpanElement(this Expression span, Type elementType, Expression index) {
+        MethodInfo spanGetter = typeof(ExpressionExtensions).GetMethod(nameof(GetSpanItem), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(elementType);
+        return Expression.Call(spanGetter, span, index);
+    }
+
     /// <summary>
     /// Gets internal property "DebugView" which is normally only available in Visual Studio debugging session
     /// </summary>

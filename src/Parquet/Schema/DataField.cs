@@ -39,6 +39,14 @@ public class DataField : Field, ICloneable {
     /// </summary>
     public Type ClrType { get; private set; }
 
+    internal Type ClrValueType {
+        get {
+            if(ClrType == typeof(string)) return typeof(ReadOnlyMemory<char>);
+            if(ClrType == typeof(byte[])) return typeof(ReadOnlyMemory<byte>);
+            return ClrType;
+        }
+    }
+
     /// <summary>
     /// Unsupported, use at your own risk!
     /// </summary>
