@@ -66,18 +66,34 @@ namespace Parquet.Encodings {
             double threshold) {
 
             string[] src = (string[])data;
-            HashSet<string> distinctSet = Distinct(src, offset, count);
-            double factor = distinctSet.Count / (double)count;
+
+            // Single pass: build value-to-index map directly, eliminating the separate HashSet
+            var valueToIndex = new Dictionary<string, int>(count, StringComparer.Ordinal);
+            int nextIndex = 0;
+
+            for(int i = offset; i < offset + count; i++) {
+#if NET6_0_OR_GREATER
+                ref int slot = ref System.Runtime.InteropServices.CollectionsMarshal
+                    .GetValueRefOrAddDefault(valueToIndex, src[i], out bool existed);
+                if(!existed)
+                    slot = nextIndex++;
+#else
+                if(!valueToIndex.ContainsKey(src[i]))
+                    valueToIndex[src[i]] = nextIndex++;
+#endif
+            }
+
+            double factor = valueToIndex.Count / (double)count;
             if(factor > threshold)
                 return false;
 
-            // extract indexes
-            string[] dictionary = distinctSet.ToArray();
+            // Build dictionary array ordered by assigned index
+            string[] dictionary = new string[valueToIndex.Count];
+            foreach(var kvp in valueToIndex)
+                dictionary[kvp.Value] = kvp.Key;
             dictionaryArray = dictionary;
-            var valueToIndex = new Dictionary<string, int>(StringComparer.Ordinal);
-            for(int i = 0; i < dictionary.Length; i++)
-                valueToIndex[dictionary[i]] = i;
 
+            // Build index array
             rentedIndexes = ArrayPool<int>.Shared.Rent(count);
             for(int isrc = offset, itgt = 0; isrc < offset + count; isrc++, itgt++)
                 rentedIndexes[itgt] = valueToIndex[src[isrc]];
@@ -113,20 +129,36 @@ namespace Parquet.Encodings {
             double threshold) where T : notnull {
             var src = (T[])data;
 
-            //TODO: calculate some more statistics beyond uniquness like run lengths, index size and index bitwidth to determine if there is value
-            //in dictionary encoding this data vs PLAIN encoding
-            //e.g. Dictionary encoding for byte values could be worse than plain even with 50% uniqueness depending on run lengths and value spread
-            Dictionary<T, (int Count, int MaxRunLength, int Index)> distinctSet = Distinct(src, offset, count, EqualityComparer<T>.Default);
-            double uniquenessFactor = distinctSet.Count / (double)count;
+            // Single pass: build value-to-index map directly with simpler Dictionary<T,int>
+            var valueToIndex = new Dictionary<T, int>(count);
+            int nextIndex = 0;
+
+            for(int i = offset; i < offset + count; i++) {
+#if NET6_0_OR_GREATER
+                ref int slot = ref System.Runtime.InteropServices.CollectionsMarshal
+                    .GetValueRefOrAddDefault(valueToIndex, src[i], out bool existed);
+                if(!existed)
+                    slot = nextIndex++;
+#else
+                if(!valueToIndex.ContainsKey(src[i]))
+                    valueToIndex[src[i]] = nextIndex++;
+#endif
+            }
+
+            double uniquenessFactor = valueToIndex.Count / (double)count;
             if(uniquenessFactor > threshold)
                 return false;
 
-            T[] dictionary = distinctSet.Keys.ToArray();
+            // Build dictionary array ordered by assigned index
+            T[] dictionary = new T[valueToIndex.Count];
+            foreach(var kvp in valueToIndex)
+                dictionary[kvp.Value] = kvp.Key;
             dictionaryArray = dictionary;
 
+            // Build index array
             rentedIndexes = ArrayPool<int>.Shared.Rent(count);
             for(int isrc = offset, itgt = 0; isrc < offset + count; isrc++, itgt++)
-                rentedIndexes[itgt] = distinctSet[src[isrc]].Index;
+                rentedIndexes[itgt] = valueToIndex[src[isrc]];
 
             return true;
         }
