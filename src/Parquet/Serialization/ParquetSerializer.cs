@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Schema;
@@ -13,8 +12,8 @@ using Type = System.Type;
 namespace Parquet.Serialization;
 
 /// <summary>
-/// High-level object serialisation.
-/// Comes as a rewrite of ParquetConvert/ClrBridge/MSILGenerator and supports nested types as well.
+/// High-level object serialisation. Comes as a rewrite of ParquetConvert/ClrBridge/MSILGenerator and supports nested
+/// types as well.
 /// </summary>
 public static class ParquetSerializer {
 
@@ -67,23 +66,10 @@ public static class ParquetSerializer {
         rg.CompleteValidate();
     }
 
-    /// <summary>
-    /// Serialize a collection into one row group using an existing writer.
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="objectInstances"></param>
-    /// <param name="cancellationToken"></param>
-    /// <typeparam name="T"></typeparam>
-    public static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, IEnumerable<T> objectInstances,
-        CancellationToken cancellationToken) {
-        object boxedStriper = _typeToStriper.GetOrAdd(typeof(T), _ => new Striper<T>(typeof(T).GetParquetSchema(false)));
-        var striper = (Striper<T>)boxedStriper;
-
-        await SerializeRowGroupAsync(writer, striper, objectInstances, cancellationToken);
-    }
+    #region [ Serialization ]
 
     /// <summary>
-    /// Serialize 
+    /// Serialize object instances into Parquet format and write to provided destination stream.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="objectInstances"></param>
@@ -92,7 +78,8 @@ public static class ParquetSerializer {
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="ApplicationException"></exception>
-    public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, Stream destination,
+    public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances,
+        Stream destination,
         ParquetSerializerOptions? options = null,
         CancellationToken cancellationToken = default) {
 
@@ -124,56 +111,18 @@ public static class ParquetSerializer {
         return striper.Schema;
     }
 
-#if NET10_0_OR_GREATER
-
     /// <summary>
-    /// Serialize from an <see cref="IAsyncEnumerable{T}"/>
+    /// Serialize untyped data (collection of dictionaries) into Parquet format and write to provided destination
+    /// stream. Schema must be provided, as it can't be inferred from data.
     /// </summary>
-    public static async Task<ParquetSchema> SerializeAsync<T>(IAsyncEnumerable<T> objectInstances, Stream destination,
-        ParquetSerializerOptions? options = null,
-        CancellationToken cancellationToken = default) {
-
-        object boxedStriper = _typeToStriper.GetOrAdd(typeof(T), _ => new Striper<T>(typeof(T).GetParquetSchema(false)));
-        var striper = (Striper<T>)boxedStriper;
-
-        bool append = options != null && options.Append;
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
-            options?.ParquetOptions,
-            append, cancellationToken)) {
-
-            if(options != null) {
-                writer.CompressionMethod = options.CompressionMethod;
-                writer.CompressionLevel = options.CompressionLevel;
-            }
-
-            if(options?.RowGroupSize != null) {
-                int rgs = options.RowGroupSize.Value;
-                if(rgs < 1)
-                    throw new InvalidOperationException($"row group size must be a positive number, but passed {rgs}");
-                await foreach(T[] chunk in objectInstances.Chunk(rgs).WithCancellation(cancellationToken)) {
-                    await SerializeRowGroupAsync<T>(writer, striper, chunk, cancellationToken);
-                }
-            } else {
-                // Without row group size, we need to materialize all items at once
-                List<T> allItems = await objectInstances.ToListAsync(cancellationToken);
-                await SerializeRowGroupAsync<T>(writer, striper, allItems, cancellationToken);
-            }
-        }
-
-        return striper.Schema;
-    }
-
-#endif
-
-    /// <summary>
-    /// Experimental object serialisation
-    /// </summary>
-    public static async Task SerializeAsync(ParquetSchema schema,
-        IReadOnlyCollection<IDictionary<string, object?>> data,
+    /// <remarks>
+    /// This method is the slowest, use only when necessary.
+    /// </remarks>
+    public static async Task SerializeAsync(IReadOnlyCollection<IDictionary<string, object?>> data,
+        ParquetSchema schema,
         Stream destination,
         ParquetSerializerOptions? options = null,
         CancellationToken cancellationToken = default) {
-
 
         object boxedStriper = _schemaToStriper.GetOrAdd(schema, _ => new Striper<IDictionary<string, object?>>(schema));
         var striper = (Striper<IDictionary<string, object?>>)boxedStriper;
@@ -202,7 +151,10 @@ public static class ParquetSerializer {
     }
 
     /// <summary>
-    /// Serialise
+    /// Serialize object instances into Parquet format and write to a local file. If file already exists, it will be
+    /// overwritten, unless ParquetSerializerOptions.Append is set to true. In this case, data will be appended to
+    /// existing file, but only if existing file's schema is compatible with data schema. Otherwise, an exception will
+    /// be thrown.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="objectInstances"></param>
@@ -219,91 +171,9 @@ public static class ParquetSerializer {
         return await SerializeAsync(objectInstances, fs, options, cancellationToken);
     }
 
+    #endregion
 
-    /// <summary>
-    /// Deserialise row group
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="source"></param>
-    /// <param name="rowGroupIndex"></param>
-    /// <param name="options"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
-        int rowGroupIndex,
-        ParquetSerializerOptions? options = null,
-        CancellationToken cancellationToken = default)
-        where T : class, new() {
-
-        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
-
-        Assembler<T> asm = GetAssembler<T>();
-
-        List<T> result = GetList<T>(reader.Metadata?.RowGroups[rowGroupIndex].NumRows);
-        await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Deserialize row group into provided list
-    /// </summary>
-    /// <param name="source"></param>
-    /// <param name="rowGroupIndex"></param>
-    /// <param name="result"></param>
-    /// <param name="options"></param>
-    /// <param name="cancellationToken"></param>
-    /// <param name="resultsAlreadyAllocated">Set to true if provided result collection already contains allocated elements (like using a pool)</param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    /// <exception cref="ArgumentException"></exception>
-    public static async Task DeserializeAsync<T>(Stream source, int rowGroupIndex, IList<T> result,
-        ParquetSerializerOptions? options = null, CancellationToken cancellationToken = default,
-        bool resultsAlreadyAllocated = false) where T : class, new() {
-
-        await using ParquetReader reader =
-            await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
-
-        await DeserializeAsync(reader, rowGroupIndex, result, cancellationToken, resultsAlreadyAllocated);
-    }
-
-    /// <summary>
-    /// Deserialize row group into provided list, using provided Parquet reader
-    /// Useful to iterate over row group using a single parquet reader
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="rowGroupIndex"></param>
-    /// <param name="result"></param>
-    /// <param name="cancellationToken"></param>
-    /// <param name="resultsAlreadyAllocated">Set to true if provided result collection already contains allocated elements (like using a pool)</param>
-    /// <param name="options"></param>
-    /// <typeparam name="T"></typeparam>
-    public static async Task DeserializeAsync<T>(ParquetReader reader, int rowGroupIndex, IList<T> result,
-        CancellationToken cancellationToken = default, bool resultsAlreadyAllocated = false,
-        ParquetSerializerOptions? options = null) where T : class, new() {
-        Assembler<T> asm = GetAssembler<T>();
-        await DeserializeRowGroupAsync(reader, rowGroupIndex, asm, result, options, cancellationToken,
-            resultsAlreadyAllocated);
-    }
-
-    /// <summary>
-    /// Deserialize a specific row group from a local file.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="filePath">Local file path</param>
-    /// <param name="rowGroupIndex">Zero-based row group index</param>
-    /// <param name="options">Parquet options</param>
-    /// <param name="cancellationToken">Optional cancellation token</param>
-    /// <returns></returns>
-    public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
-        int rowGroupIndex,
-        ParquetSerializerOptions? options = null,
-        CancellationToken cancellationToken = default)
-        where T : class, new() {
-        using FileStream fs = System.IO.File.OpenRead(filePath);
-        return await DeserializeAsync<T>(fs, rowGroupIndex, options, cancellationToken);
-    }
+    #region [ Deserialization ]
 
     /// <summary>
     /// Deserialise
@@ -311,11 +181,13 @@ public static class ParquetSerializer {
     /// <typeparam name="T"></typeparam>
     /// <param name="source"></param>
     /// <param name="options"></param>
+    /// <param name="rowGroupIndex">When specified, only reads specified row group.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
         ParquetSerializerOptions? options = null,
+        int? rowGroupIndex = null,
         CancellationToken cancellationToken = default)
         where T : class, new() {
 
@@ -327,6 +199,10 @@ public static class ParquetSerializer {
         List<T> result = GetList<T>(requestedCapacity);
 
         for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
+
+            if(rowGroupIndex.HasValue && rgi != rowGroupIndex.Value) {
+                continue;
+            }
 
             await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
         }
@@ -340,15 +216,19 @@ public static class ParquetSerializer {
     /// <typeparam name="T"></typeparam>
     /// <param name="filePath">File path</param>
     /// <param name="options">Options</param>
+    /// <param name="rowGroupIndex">When specified, only reads specified row group.</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns></returns>
     public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
         ParquetSerializerOptions? options = null,
+        int? rowGroupIndex = null,
         CancellationToken cancellationToken = default)
         where T : class, new() {
         using FileStream fs = System.IO.File.OpenRead(filePath);
-        return await DeserializeAsync<T>(fs, options, cancellationToken);
+        return await DeserializeAsync<T>(fs, options, rowGroupIndex, cancellationToken);
     }
+
+    #endregion
 
     /// <summary>
     /// Highly experimental
@@ -374,104 +254,6 @@ public static class ParquetSerializer {
         }
 
         return new UntypedResult(result, schema);
-    }
-
-    /// <summary>
-    /// Deserialize as async enumerable
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="source"></param>
-    /// <param name="options"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public static async IAsyncEnumerable<T> DeserializeAllAsync<T>(Stream source,
-        ParquetSerializerOptions? options = null,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        where T : class, new() {
-
-        Assembler<T> asm = GetAssembler<T>();
-
-        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
-
-        long? requestedCapacity = reader.Metadata?.RowGroups.Max(x => x.NumRows);
-        List<T> result = GetList<T>(requestedCapacity);
-
-        for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
-
-            await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
-            foreach(T? item in result) {
-                yield return item;
-            }
-
-            result.Clear();
-        }
-    }
-
-    /// <summary>
-    /// Deserialize row group per row group as IAsyncEnumerable
-    /// </summary>
-    /// <param name="source"></param>
-    /// <param name="options"></param>
-    /// <param name="cancellationToken"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public static async IAsyncEnumerable<IList<T>> DeserializeAllByGroupsAsync<T>(Stream source,
-        ParquetSerializerOptions? options = null,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        where T : class, new() {
-        Assembler<T> asm = GetAssembler<T>();
-
-        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
-
-        for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
-            ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(rgi);
-            List<T> result = GetList<T>(rowGroupReader.RowCount);
-            await DeserializeRowGroupAsync(rowGroupReader, reader.Schema, asm, result, options, cancellationToken);
-            yield return result;
-        }
-    }
-
-
-    /// <summary>
-    /// Deserialise
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="rowGroupReader"></param>
-    /// <param name="schema"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    /// <exception cref="InvalidDataException"></exception>
-    public static async Task<IList<T>> DeserializeAsync<T>(ParquetRowGroupReader rowGroupReader,
-        ParquetSchema schema,
-        CancellationToken cancellationToken = default)
-        where T : class, new() {
-        List<T> result = GetList<T>(rowGroupReader.RowGroup.NumRows);
-
-        await DeserializeRowGroupAsync(rowGroupReader, schema, result, cancellationToken);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Deserialize a single row group into a provided collection.
-    /// </summary>
-    /// <param name="rowGroupReader"></param>
-    /// <param name="schema"></param>
-    /// <param name="result"></param>
-    /// <param name="cancellationToken"></param>
-    /// <param name="resultsAlreadyAllocated">Set to true if provided result collection already contains allocated elements (like using a pool)</param>
-    /// <param name="options"></param>
-    /// <typeparam name="T"></typeparam>
-    public static async Task DeserializeRowGroupAsync<T>(ParquetRowGroupReader rowGroupReader,
-        ParquetSchema schema,
-        ICollection<T> result,
-        CancellationToken cancellationToken = default,
-        bool resultsAlreadyAllocated = false,
-        ParquetSerializerOptions? options = null) where T : class, new() {
-        Assembler<T> asm = GetAssembler<T>();
-
-        await DeserializeRowGroupAsync(rowGroupReader, schema, asm, result, options, cancellationToken, resultsAlreadyAllocated);
     }
 
     private static Assembler<T> GetAssembler<T>() where T : new() {

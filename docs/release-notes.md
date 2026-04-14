@@ -1,5 +1,11 @@
 # 6.0.0-pre.1
 
+## Highlights
+
+- Complete rewrite of the low-level API.
+- .NET 8 is the minimum supported version.
+- Massive performance and memory usage improvements.
+
 > V6 is a substantial rewrite of the low-level API, which addresses memory and performance issues. It's time to forget about the past and target modern .NET with modern APIs. The high-level API (class serializer) is not affected by these changes and should work as before logically, however you will see a massive performance increase and much lower memory usage. Parquet.Net development was pretty much stale for the last year or two, due to requirement for backward compatibility all the way to V1, and so I had to make a choice - whether stop adding any features and improvements, or break backward compatibility and make the library better. I chose the latter, and I hope you will like the new version as much as I do.
 
 ## Breaking changes
@@ -13,6 +19,7 @@
 - As with the latest V5 minor release, I have high hopes for managed .NET compression libraries maintained by the community, so there will be absolutely zero native dependencies. They were created in C++ as a separate project in the times when .NET was young and didn't have good support for such things, but now there are some great high-performance libraries available. If I have time to spend on improving compression performance, I'd rather contribute to those projects.
 - `IParquetRowGroupReader` interface removed as it's not in use. Just use `ParquetRowGroupReader` directly.
 - `ParquetReader.ReadEntireRowGroup` removed in favor of strongly typed alternatives.
+- `IAsyncEnumerable` operations in `ParquetSerializer` are removed as they don't add anything in terms of performance - Parquet is not row-oriented format.
 
 ## Improvements
 
