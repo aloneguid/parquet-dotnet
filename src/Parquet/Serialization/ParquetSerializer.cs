@@ -12,8 +12,7 @@ using Type = System.Type;
 namespace Parquet.Serialization;
 
 /// <summary>
-/// High-level object serialisation. Comes as a rewrite of ParquetConvert/ClrBridge/MSILGenerator and supports nested
-/// types as well.
+/// High-level object serialisation. Supports everything, including nested types.
 /// </summary>
 public static class ParquetSerializer {
 
