@@ -16,7 +16,6 @@ namespace Parquet;
 /// Writer for Parquet row groups
 /// </summary>
 public class ParquetRowGroupWriter : IDisposable {
-    private readonly ParquetSchema _schema;
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
     private readonly CompressionMethod _compressionMethod;
@@ -26,13 +25,12 @@ public class ParquetRowGroupWriter : IDisposable {
     private readonly SchemaElement[] _thschema;
     private int _colIdx;
 
-    internal ParquetRowGroupWriter(ParquetSchema schema,
+    internal ParquetRowGroupWriter(
        Stream stream,
        ThriftFooter footer,
        CompressionMethod compressionMethod,
        ParquetOptions formatOptions,
        CompressionLevel compressionLevel) {
-        _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
         _footer = footer ?? throw new ArgumentNullException(nameof(footer));
         _compressionMethod = compressionMethod;
@@ -49,7 +47,9 @@ public class ParquetRowGroupWriter : IDisposable {
     #region [ Helper methods ]
 
     /// <summary>
-    /// todo
+    /// Helper method that converts the provided string values to nullable <see cref="ReadOnlyMemory{Char}"/> and calls
+    /// the main WriteAsync method. This is useful for writing string columns without having to manually convert them to
+    /// the required format.
     /// </summary>
     public async Task WriteAsync(DataField field, IEnumerable<string?> values,
         ReadOnlyMemory<int>? repetitionLevels = null) {
@@ -58,8 +58,14 @@ public class ParquetRowGroupWriter : IDisposable {
     }
 
     /// <summary>
-    /// todo
+    /// Helper method that converts the provided byte array values to nullable <see cref="ReadOnlyMemory{Byte}"/> and
+    /// calls the main WriteAsync method. This is useful for writing binary columns without having to manually convert
+    /// them to the required format.
     /// </summary>
+    /// <param name="field"></param>
+    /// <param name="values"></param>
+    /// <param name="repetitionLevels"></param>
+    /// <returns></returns>
     public async Task WriteAsync(DataField field, IEnumerable<byte[]?> values,
         ReadOnlyMemory<int>? repetitionLevels = null) {
         ReadOnlyMemory<ReadOnlyMemory<byte>?> memValues = values.Select(b => b.AsNullableReadOnlyMemory()).ToArray();
@@ -69,9 +75,18 @@ public class ParquetRowGroupWriter : IDisposable {
 
     #endregion
 
+
     /// <summary>
-    /// XP
+    /// Writes a column of data to this row group. The column must correspond to the next column in the schema, and all
+    /// columns must be written in the order they appear in the schema. The method will validate that the provided field
+    /// matches the expected column from the schema, and that all columns have the same row count. If any of these
+    /// validations fail, an exception will be thrown.
     /// </summary>
+    /// <param name="field">The data field representing the column to write.</param>
+    /// <param name="values">The values to write for the column.</param>
+    /// <param name="repetitionLevels">Optional repetition levels for the column.</param>
+    /// <param name="customMetadata">Optional custom metadata for the column.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     public async Task WriteAsync<T>(DataField field,
         ReadOnlyMemory<T?> values,
         ReadOnlyMemory<int>? repetitionLevels = null,
@@ -82,9 +97,18 @@ public class ParquetRowGroupWriter : IDisposable {
         await WriteAsyncInternal(field, wc, customMetadata, cancellationToken);
     }
 
+
     /// <summary>
-    /// XP
+    /// Writes a column of data to this row group. The column must correspond to the next column in the schema, and all
+    /// columns must be written in the order they appear in the schema. The method will validate that the provided field
+    /// matches the expected column from the schema, and that all columns have the same row count. If any of these
+    /// validations fail, an exception will be thrown.
     /// </summary>
+    /// <param name="field">The data field representing the column to write.</param>
+    /// <param name="values">The values to write for the column.</param>
+    /// <param name="repetitionLevels">Optional repetition levels for the column.</param>
+    /// <param name="customMetadata">Optional custom metadata for the column.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     public async Task WriteAsync<T>(DataField field,
         ReadOnlyMemory<T> values,
         ReadOnlyMemory<int>? repetitionLevels = null,
@@ -104,10 +128,6 @@ public class ParquetRowGroupWriter : IDisposable {
         await WriteAsyncInternal(field, wc, null, cancellationToken);
     }
 
-
-    /// <summary>
-    /// XP
-    /// </summary>
     private async Task WriteAsyncInternal<T>(DataField field,
         WritingColumn<T> wc,
         Dictionary<string, string>? customMetadata,
@@ -155,9 +175,11 @@ public class ParquetRowGroupWriter : IDisposable {
     /// <summary>
     /// Call to indicate that all columns have been written, to validate completeness.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when not all columns from the schema have been written.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when not all columns from the schema have been written.
+    /// </exception>
     public void CompleteValidate() {
-        // note: this code used to live in Dispose, but Dispose must not throw exceptions, see issue 666.
+        // This code used to live in Dispose, but Dispose must not throw exceptions, see issue 666.
 
         // Check if all columns are present
         if(_colIdx < _thschema.Length) {

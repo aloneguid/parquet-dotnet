@@ -6,9 +6,11 @@
 ![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
-**Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets modern .NET runtimes such as `.NET 10` and `.NET 8`.
+**Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets only modern .NET runtimes such as `.NET 10` and `.NET 8`.
 
 Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.Net has you covered.
+
+> This documentation is regarding Parquet.Net v6, which is very new. If you are looking for V5, I've kept [the branch](https://github.com/aloneguid/parquet-dotnet/tree/v5) available.
 
 # Features at a glance
 

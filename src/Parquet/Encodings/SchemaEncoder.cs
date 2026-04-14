@@ -356,8 +356,8 @@ static class SchemaEncoder {
 
     private static DataField GetDecimalDataField(SchemaElement se, SType clrType) =>
         new DecimalDataField(se.Name,
-            se.Precision.GetValueOrDefault(DecimalFormatDefaults.DefaultPrecision),
-            se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : DecimalFormatDefaults.DefaultScale),
+            se.Precision.GetValueOrDefault(ParquetOptions.DefaultPrecision),
+            se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : ParquetOptions.DefaultScale),
             clrType: clrType);
 
     private static DataField GetDateTimeDataField(SchemaElement se) {
@@ -527,8 +527,8 @@ static class SchemaEncoder {
             } else {
                 //set defaults
                 tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
-                precision = DecimalFormatDefaults.DefaultPrecision;
-                scale = DecimalFormatDefaults.DefaultScale;
+                precision = ParquetOptions.DefaultPrecision;
+                scale = ParquetOptions.DefaultScale;
                 tse.TypeLength = 16;
             }
 

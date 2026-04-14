@@ -9,7 +9,7 @@ namespace Parquet.Extensions.Streaming;
 /// A read-only <see cref="Stream"/> backed by a memory slice. This implementation is zero-copy when
 /// constructed with a <see cref="ReadOnlyMemory{Byte}"/>. It intentionally does not copy the underlying data.
 ///
-/// Note about <see cref="ReadOnlySpan{Byte}"/>: a span is a ref struct and cannot be stored on the heap,
+/// A span is a ref struct and cannot be stored on the heap,
 /// therefore a stream (a reference type) cannot safely hold a span field. Callers that only have a span
 /// should convert it to <see cref="ReadOnlyMemory{Byte}"/> or pass the original array and offset to avoid copying.
 /// </summary>
@@ -26,15 +26,6 @@ class ReadSpanSubStream : Stream {
         _buffer = source;
         _position = 0;
     }
-
-    /// <summary>
-    /// Obsolete constructor that accepted ReadOnlySpan; kept for discoverability only and throws
-    /// to avoid accidental copies. Callers that need zero-copy should pass a <see cref="ReadOnlyMemory{Byte}"/>
-    /// or the original array/offset instead.
-    /// </summary>
-    /// <param name="source">Span to wrap (not supported).</param>
-    [Obsolete("ReadOnlySpan<byte> cannot be stored by heap types without copying. Use ReadOnlyMemory<byte> or pass a backing array and offset to avoid copies.")]
-    public ReadSpanSubStream(ReadOnlySpan<byte> source) => throw new NotSupportedException("ReadOnlySpan<byte> cannot be captured by a Stream without copying; pass ReadOnlyMemory<byte> or array/offset to avoid copies.");
 
     public override bool CanRead => true;
     public override bool CanSeek => true;

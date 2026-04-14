@@ -170,7 +170,7 @@ public static class TypeExtensions {
             bool isTypeNullable = t == typeof(decimal?);
             r = ps == null
                 ? new DecimalDataField(name,
-                    DecimalFormatDefaults.DefaultPrecision, DecimalFormatDefaults.DefaultScale,
+                    ParquetOptions.DefaultPrecision, ParquetOptions.DefaultScale,
                         isNullable: isTypeNullable, propertyName: propertyName)
                 : new DecimalDataField(name, ps.Precision, ps.Scale,
                     isNullable: isTypeNullable, propertyName: propertyName);

@@ -416,8 +416,7 @@ public class ParquetWriterTest : TestBase {
     public async Task Dictionary_encoding_can_be_turned_off() {
         var str = new DataField<string>("s");
         using var ms = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms,
-            new ParquetOptions { UseDictionaryEncoding = false })) {
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms)) {
             writer.CompressionMethod = CompressionMethod.None;
             var strings = new List<string>();
             strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
@@ -431,7 +430,6 @@ public class ParquetWriterTest : TestBase {
 
         // should be relatively big
         Assert.True(ms.Length > 200000, $"output size is {ms.Length}");
-
     }
 
     [Fact]

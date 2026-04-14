@@ -267,13 +267,23 @@ class FieldAssemblerCompiler<TClass> {
 
 
         if(collectionType.IsGenericIList()) {
-            yield return Expression.Assign(element, Expression.New(elementType));
+            // Ref structs cannot be created with Expression.New
+            if(elementType.IsByRefLike) {
+                yield return Expression.Assign(element, Expression.Default(elementType));
+            } else {
+                yield return Expression.Assign(element, Expression.New(elementType));
+            }
             yield return collection.IListAdd(collectionType, element, elementType);
             yield break;
         }
 
         if(collectionType.IsGenericIDictionary()) {
-            yield return Expression.Assign(element, Expression.New(elementType));
+            // Ref structs cannot be created with Expression.New
+            if(elementType.IsByRefLike) {
+                yield return Expression.Assign(element, Expression.Default(elementType));
+            } else {
+                yield return Expression.Assign(element, Expression.New(elementType));
+            }
             yield break;
 
             //if(!collectionType.TryExtractDictionaryType(out Type? keyType, out Type? valueType) || keyType == null || valueType == null) {
@@ -404,9 +414,17 @@ class FieldAssemblerCompiler<TClass> {
     record ClassMember(Expression Accessor, Expression IsNull, Type Type);
 
     private Expression CreateInstance(Type t) {
-        Expression r = t.IsArray
-            ? Expression.NewArrayBounds(t.GetElementType()!, Zero)
-            : Expression.New(t);
+        Expression r;
+
+        // Ref structs (ByRef-like types) cannot be created with Expression.New
+        // because they can't be boxed. Use Expression.Default instead.
+        if(t.IsByRefLike) {
+            r = Expression.Default(t);
+        } else if(t.IsArray) {
+            r = Expression.NewArrayBounds(t.GetElementType()!, Zero);
+        } else {
+            r = Expression.New(t);
+        }
 
 #if DEBUG
         r = DebugWrap(r, $"CreateInstance of {t}", false);

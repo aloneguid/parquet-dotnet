@@ -39,14 +39,6 @@ public class ParquetOptions {
     public bool UseTimeOnlyTypeForTimeMicros { get; set; } = false;
 
     /// <summary>
-    /// Whether to use dictionary encoding for columns if data meets <seealso cref="DictionaryEncodingThreshold"/>
-    /// The following CLR types are currently supported:
-    /// <see cref="string"/>, <see cref="DateTime"/>, <see cref="decimal"/>, <see cref="byte"/>, <see cref="short"/>, <see cref="ushort"/>, <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, <see cref="ulong"/>, <see cref="float"/>, <see cref="double"/>"/>
-    /// </summary>
-    [Obsolete("use per-column encoding")]
-    public bool UseDictionaryEncoding { get; set; } = true;
-
-    /// <summary>
     /// List of columns paths to apply dictionary encoding to. To get column path use <see cref="Field.Path"/> on <see cref="DataField"/>.
     /// </summary>
     public HashSet<string> DictionaryEncodedColumns { get; } = new HashSet<string>();
@@ -105,4 +97,14 @@ public class ParquetOptions {
     public bool UseBigDecimal { get; set; } = false;
 
     internal Type DecimalType => UseBigDecimal ? typeof(BigDecimal) : typeof(decimal);
+
+    /// <summary>
+    /// The Default Precision value used when not explicitly defined; this is the value used prior to parquet-dotnet v3.9.
+    /// </summary>
+    public const int DefaultPrecision = 38;
+
+    /// <summary>
+    /// The Default Scale value used when not explicitly defined; this is the value used prior to parquet-dotnet v3.9.
+    /// </summary>
+    public const int DefaultScale = 18;
 }

@@ -14,7 +14,7 @@ class ThriftCompactProtocolWriter {
         _outputStream = outputStream;
     }
 
-    // note: increment/decrement recursion depth from the original only performs sanity check, no real logic
+    // Iincrement/decrement recursion depth from the original only performs sanity check, no real logic
 
     // todo: there is some weird logic for booleans to implement
 

@@ -1249,6 +1249,17 @@ public class ParquetSerializerTest : TestBase {
         Assert.Equal(3, r[2].Id);
     }
 
+    [Fact]
+    public async Task ListOfStructs_Dict() {
+        using Stream s = OpenTestFile("list_structs.parquet");
+        ParquetSerializer.UntypedResult data = await ParquetSerializer.DeserializeAsync(s, new ParquetSerializerOptions {
+            ParquetOptions = new ParquetOptions {
+                TreatByteArrayAsString = true,
+                UseBigDecimal = true
+            }
+        });
+    }
+
     class ClassWithPreinitializedDict {
         public Dictionary<DateTime, double> DateTimeDoubleDict { get; set; } = new();
     }
