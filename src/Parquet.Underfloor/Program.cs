@@ -461,10 +461,10 @@ void RenderData() {
                 return;
             }
 
-            if(fd.Sample == null || fd.Sample.Data.Count() < row)
+            if(fd.Sample == null || fd.Sample.Count() < row)
                 return;
 
-            Dictionary<string, object> cell = fd.Sample.Data[row];
+            Dictionary<string, object> cell = fd.Sample[row];
             string colName = fd.ColumnsDisplay[col];
             Field f = fd.Schema[col - 1];
             cell.TryGetValue(colName, out object? value);

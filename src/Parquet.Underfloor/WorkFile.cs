@@ -116,7 +116,9 @@ class WorkFile : IAsyncDisposable {
 
     public ReadStatus SampleReadStatus { get; set; } = ReadStatus.NotStarted;
 
-    public ParquetSerializer.UntypedResult? Sample { get; set; }
+    public ParquetSchema? SampleSchema { get; set; }
+
+    public IList<Dictionary<string, object>>? Sample { get; set; }
 
     public Exception? SampleReadException { get; set; }
 
@@ -146,7 +148,7 @@ class WorkFile : IAsyncDisposable {
             DateTime start = DateTime.UtcNow;
             _stream.Seek(0, SeekOrigin.Begin);
             try {
-                ParquetSerializer.UntypedResult ur = await ParquetSerializer.DeserializeAsync(_stream,
+                (IList<Dictionary<string, object>> data, ParquetSchema schema) = await ParquetSerializer.DeserializeUntypedAsync(_stream,
                     new ParquetSerializerOptions {
                         ParquetOptions = new ParquetOptions {
                             TreatByteArrayAsString = true,
@@ -154,7 +156,8 @@ class WorkFile : IAsyncDisposable {
                         }
                     });
 
-                Sample = ur;
+                SampleSchema = schema;
+                Sample = data;
                 SampleReadStatus = ReadStatus.Completed;
             } catch(Exception ex) {
                 SampleReadException = ex;

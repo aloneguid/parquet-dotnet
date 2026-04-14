@@ -20,6 +20,8 @@
 - `IParquetRowGroupReader` interface removed as it's not in use. Just use `ParquetRowGroupReader` directly.
 - `ParquetReader.ReadEntireRowGroup` removed in favor of strongly typed alternatives.
 - `IAsyncEnumerable` operations in `ParquetSerializer` are removed as they don't add anything in terms of performance - Parquet is not row-oriented format.
+- `ParquetSerializer` untyped serialization methods renamed to contain "Untyped" in their name, to make it more clear that they are not the same as class serializer methods and have very different use cases.
+- `ParquetSerializer` untyped deserialization is not experimental anymore, but it has changed signature to become stable.
 
 ## Improvements
 

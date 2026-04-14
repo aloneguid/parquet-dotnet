@@ -23,7 +23,7 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         await using Stream s = OpenTestFile(parquetFile);
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
-        ParquetSerializer.UntypedResult result = await ParquetSerializer.DeserializeAsync(s);
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s);
     }
 
     [Theory]
@@ -242,7 +242,7 @@ public class ParquetReaderOnTestFilesTest : TestBase {
     [Fact]
     public async Task ThriftProtocolBreakingChangeJune2024_Untyped() {
         using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
-        ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s);
     }
 
     [Fact]
@@ -281,7 +281,7 @@ public class ParquetReaderOnTestFilesTest : TestBase {
     [Fact]
     public async Task HyparquetCompressed() {
         using Stream s = OpenTestFile("hyparquet.snappy.parquet");
-        ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s);
     }
 
     [Fact]

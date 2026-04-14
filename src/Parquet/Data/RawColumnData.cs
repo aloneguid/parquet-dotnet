@@ -6,6 +6,7 @@ using System.Text;
 namespace Parquet.Data;
 
 /// <summary>
+/// Used as a container for column data read if you don't want to allocate the memory yourself.
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class RawColumnData<T> : IDisposable where T : struct {

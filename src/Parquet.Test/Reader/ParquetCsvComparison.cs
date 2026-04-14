@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CsvHelper;
+using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
 using Type = System.Type;
@@ -117,8 +118,8 @@ public class ParquetCsvComparison : TestBase {
         bool treatByteArrayAsString) {
         await using Stream s = OpenTestFile(name);
         var options = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
-        ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s, new ParquetSerializerOptions { ParquetOptions = options });
-        return r.Data;
+        (IList<Dictionary<string, object>> data, ParquetSchema schema) = await ParquetSerializer.DeserializeUntypedAsync(s, new ParquetSerializerOptions { ParquetOptions = options });
+        return data;
     }
 
     private IList<Dictionary<string, string>> ReadCsv(string name) {

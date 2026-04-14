@@ -50,7 +50,7 @@ public class ParquetSerializerTest : TestBase {
 
         // serialize to parquet
         using var ms = new MemoryStream();
-        await ParquetSerializer.SerializeAsync(input, typeof(TSchema).GetParquetSchema(true), ms);
+        await ParquetSerializer.SerializeUntypedAsync(input, typeof(TSchema).GetParquetSchema(true), ms);
 
         if(writeTestFile != null) {
             System.IO.File.WriteAllBytes(writeTestFile, ms.ToArray());
@@ -58,13 +58,13 @@ public class ParquetSerializerTest : TestBase {
 
         // deserialize from parquet
         ms.Position = 0;
-        ParquetSerializer.UntypedResult deserialized = await ParquetSerializer.DeserializeAsync(ms);
+        (IList<Dictionary<string, object>> data, ParquetSchema schema) = await ParquetSerializer.DeserializeUntypedAsync(ms);
 
         // compare
         if(asJson) {
-            XAssert.JsonEquivalent(input, deserialized.Data);
+            XAssert.JsonEquivalent(input, data);
         } else {
-            Assert.Equivalent(input, deserialized.Data);
+            Assert.Equivalent(input, data);
         }
     }
 
@@ -286,18 +286,18 @@ public class ParquetSerializerTest : TestBase {
 
     [Fact]
     public async Task TestData_LegacyPrimitivesCollectionArrays_Dict() {
-        ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(
             OpenTestFile("legacy_primitives_collection_arrays.parquet"));
 
-        Assert.NotNull(r);
+        Assert.NotNull(data);
     }
 
     [Fact]
     public async Task TestData_DeltaCheckpoint_Untyped() {
-        ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(
             OpenTestFile("delta.checkpoint.parquet"));
 
-        Assert.NotNull(r);
+        Assert.NotNull(data);
     }
 
     class DeltaCheckpointAdd {
@@ -1213,7 +1213,7 @@ public class ParquetSerializerTest : TestBase {
     [Fact]
     public async Task ListOfStructs_Dict() {
         using Stream s = OpenTestFile("list_structs.parquet");
-        ParquetSerializer.UntypedResult data = await ParquetSerializer.DeserializeAsync(s, new ParquetSerializerOptions {
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s, new ParquetSerializerOptions {
             ParquetOptions = new ParquetOptions {
                 TreatByteArrayAsString = true,
                 UseBigDecimal = true

@@ -118,7 +118,7 @@ public static class ParquetSerializer {
     /// <remarks>
     /// This method is the slowest, use only when necessary.
     /// </remarks>
-    public static async Task SerializeAsync(IReadOnlyCollection<IDictionary<string, object?>> data,
+    public static async Task SerializeUntypedAsync(IReadOnlyCollection<IDictionary<string, object?>> data,
         ParquetSchema schema,
         Stream destination,
         ParquetSerializerOptions? options = null,
@@ -231,15 +231,12 @@ public static class ParquetSerializer {
     #endregion
 
     /// <summary>
-    /// Highly experimental
+    /// Deserialise untyped data (collection of dictionaries) from Parquet format read from provided source stream.
+    /// Schema is returned as well, as it can't be inferred from data.
     /// </summary>
-    public record UntypedResult(IList<Dictionary<string, object>> Data, ParquetSchema Schema);
-
-    /// <summary>
-    /// Highly experimental
-    /// </summary>
-    public static async Task<UntypedResult> DeserializeAsync(Stream source,
+    public static async Task<(IList<Dictionary<string, object>> Data, ParquetSchema Schema)> DeserializeUntypedAsync(Stream source,
         ParquetSerializerOptions? options = null,
+        int? rowGroupIndex = null,
         CancellationToken cancellationToken = default) {
 
         // we can't get assembler in here until we know the schema.
@@ -250,10 +247,13 @@ public static class ParquetSerializer {
         ParquetSchema schema = reader.Schema;
         Assembler<Dictionary<string, object>> asm = GetAssembler(schema);
         for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
+            if(rowGroupIndex.HasValue && rgi != rowGroupIndex.Value) {
+                continue;
+            }
             await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
         }
 
-        return new UntypedResult(result, schema);
+        return (result, schema);
     }
 
     private static Assembler<T> GetAssembler<T>() where T : new() {
