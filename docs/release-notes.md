@@ -1,9 +1,48 @@
-# 5.6.0-pre.3
+# 6.0.0-pre.1
 
-- BREAKING CHANGE: To enable further evolution, like Spans, direct memory access, SIMD support and so on, I am dropping support for .NET Standard. The minimum supported version of .NET is .NET 8. Supporting anything lower would require a lot of effort which I can't give you.
-- feat: parquet decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
-- fix: Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
-- chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
+## Highlights
+
+- Complete rewrite of the low-level API.
+- .NET 8 is the minimum supported version.
+- Massive performance and memory usage improvements.
+
+> V6 is a substantial rewrite of the low-level API, which addresses memory and performance issues. It's time to forget about the past and target modern .NET with modern APIs. The high-level API (class serializer) is not affected by these changes and should work as before logically, however you will see a massive performance increase and much lower memory usage. Parquet.Net development was pretty much stale for the last year or two, due to requirement for backward compatibility all the way to V1, and so I had to make a choice - whether stop adding any features and improvements, or break backward compatibility and make the library better. I chose the latter, and I hope you will like the new version as much as I do.
+
+## Breaking changes
+
+- To enable further evolution of this library, like using Spans, direct memory access, SIMD support and so on, I am dropping support for .NET Standard and older .NET versions. The minimum supported version of .NET is .NET 8. Supporting anything lower (or Windows specific .NET, which only shares the name and not much more with THE .NET) would require a lot of effort which I can't give you.
+- `ParquetWriter` and `ParquetReader` only supports `IAsyncDisposable` now, so you should use `await using` instead of `using` when writing row groups. This is because some of the operations during writing are asynchronous and it would be a shame to not take advantage of that. Previously, `IDisposable` was supported as well, but that would occassionally cause write deadlocks.
+- `ParquetRowGroupWriter` now accepts `ReadOnlyMemory<T>` instead of untyped `DataColumn` (which is now removed). This solves old dangling issue with inflexible memory useage, as users of the low-level API had to unnecessarily allocate memory just to write a column, often resuling in making large redundant copies.
+- Same goes for `ParquetRowGroupReader`, which uses direct memory access interface instead of allocating a lot of memory via DataColumn and adding a lot of GC pressure.
+- `ParquetOptions.UseDictionaryEncoding` is removed to avoid trying to dictionary-encode everything, which is not always the best choice. Instead, you can specify encodings for each column in `ParquetOptions.DictionaryEncodedColumns`.
+- `Utils` namespace removed, which used to provide a sub-par implementations of `FileMerger` and `FlatFileConverter`. Shout if you need them, as I can add more efficient versions of these utilities in the future, here or in a separate package. Both of these utilities were subobtimal and half-done, and I don't want to maintain them in the long run.
+- As with the latest V5 minor release, I have high hopes for managed .NET compression libraries maintained by the community, so there will be absolutely zero native dependencies. They were created in C++ as a separate project in the times when .NET was young and didn't have good support for such things, but now there are some great high-performance libraries available. If I have time to spend on improving compression performance, I'd rather contribute to those projects.
+- `IParquetRowGroupReader` interface removed as it's not in use. Just use `ParquetRowGroupReader` directly.
+- `ParquetReader.ReadEntireRowGroup` removed in favor of strongly typed alternatives.
+- `IAsyncEnumerable` operations in `ParquetSerializer` are removed as they don't add anything in terms of performance - Parquet is not row-oriented format.
+- `ParquetSerializer` untyped serialization methods renamed to contain "Untyped" in their name, to make it more clear that they are not the same as class serializer methods and have very different use cases.
+- `ParquetSerializer` untyped deserialization is not experimental anymore, but it has changed signature to become stable.
+
+## Improvements
+
+- More APIs respect `CancellationToken` allowing you to cancel long-running parquet operations.
+
+## Bug fixes
+
+- Decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
+- Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
+
+## Performance
+
+- Serializer uses significantly less memory when serializing large collections.
+- Dictionary encoder will give up earlier if cardinality is too high, without iterating all values. Less memory is allocated on early exit.
+
+## Other changes
+
+- Greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
+- DuckDB integration tests removed, they turned out to be pretty much useless.
+- Some tests made much cleaner and more manageable by removing Theory and replacing it with Facts, when Theory validation had too many edge cases and actually made tests less maintainable.
+- `Parquet.Data.DataAnalysis` logic greatly simplified, T4 template removed.
 
 # 5.5.0
 

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
@@ -21,33 +22,30 @@ namespace Parquet.Test.Types {
                ));
 
             using var ms = new MemoryStream();
-            using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+                using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
-                await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[0], new[] { "Joe" }));
+                await rgw.WriteAsync(schema.DataFields[0], new[] { "Joe" });
 
-                await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[1].Children[0], new[] { "Amazonland" }));
+                await rgw.WriteAsync(schema.DataFields[1], new[] { "Amazonland" });
 
-                await rgw.WriteColumnAsync(
-                    new DataColumn((DataField)schema[1].Children[1], new[] { "AAABBB" }));
+                await rgw.WriteAsync(schema.DataFields[2], new[] { "AAABBB" });
             }
 
             ms.Position = 0;
 
-            using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
 
                 DataField[] dataFields = reader.Schema.GetDataFields();
 
-                DataColumn name = await rg.ReadColumnAsync(dataFields[0]);
-                DataColumn line1 = await rg.ReadColumnAsync(dataFields[1]);
-                DataColumn postcode = await rg.ReadColumnAsync(dataFields[2]);
+                List<string?> names = await ReadStringColumn(reader, dataFields[0]);
+                List<string?> line1s = await ReadStringColumn(reader, dataFields[1]);
+                List<string?> postcodes = await ReadStringColumn(reader, dataFields[2]);
 
-                Assert.Equal(new[] { "Joe" }, name.Data);
-                Assert.Equal(new[] { "Amazonland" }, line1.Data);
-                Assert.Equal(new[] { "AAABBB" }, postcode.Data);
+                Assert.Equal(new[] { "Joe" }, names);
+                Assert.Equal(new[] { "Amazonland" }, line1s);
+                Assert.Equal(new[] { "AAABBB" }, postcodes);
             }
         }
     }

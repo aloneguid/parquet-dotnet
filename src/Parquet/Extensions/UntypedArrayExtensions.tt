@@ -39,9 +39,7 @@ namespace Parquet.Extensions {
 <#       }        
     }
     CallCalculateNullCount(types); #>
-#if NET6_0_OR_GREATER
 <#  CallCalculateNullCount(net6_types); #>
-#endif            
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
 
@@ -66,9 +64,7 @@ namespace Parquet.Extensions {
 
     EmitCalculateNullCount(types);
 #>
-#if NET6_0_OR_GREATER
 <# EmitCalculateNullCount(net6_types);  #>
-#endif
     #endregion
 
     #region [ Null Packing ]
@@ -107,9 +103,7 @@ namespace Parquet.Extensions {
    }
    EmitCallPackNullsTypeFast(types);
 #> 
-#if NET6_0_OR_GREATER
 <# EmitCallPackNullsTypeFast(net6_types); #>
-#endif
             throw new NotSupportedException($"cannot pack type {t}");
         }
 
@@ -141,9 +135,7 @@ namespace Parquet.Extensions {
    }
 
    PackNullsTypeFast(types);  #>
-#if NET6_0_OR_GREATER
 <# PackNullsTypeFast(net6_types);#>
-#endif
     #endregion
 
     #region [ Null Unpacking ]
@@ -174,9 +166,7 @@ namespace Parquet.Extensions {
    }
    EmitCallUnpackNullsTypeFast(types);
 #>
-#if NET6_0_OR_GREATER
 <# EmitCallUnpackNullsTypeFast(net6_types); #>
-#endif            
         throw new NotSupportedException($"cannot pack type {t}");
 
     }
@@ -207,9 +197,7 @@ namespace Parquet.Extensions {
 
    UnpackNullsTypeFast(types);
 #>
-#if NET6_0_OR_GREATER
 <# UnpackNullsTypeFast(net6_types); #>
-#endif
     #endregion
 
     #region [ Dictionary Explosion ]
@@ -237,9 +225,7 @@ namespace Parquet.Extensions {
    }
    EmitCallExplodeTypeFast(types);
 #>
-#if NET6_0_OR_GREATER
 <# EmitCallExplodeTypeFast(net6_types); #>
-#endif            
         throw new NotSupportedException($"cannot pack type {t}");
     }
 
@@ -268,9 +254,7 @@ namespace Parquet.Extensions {
    }
    EmitExplodeTypeFast(types);
 #>
-#if NET6_0_OR_GREATER
 <# EmitExplodeTypeFast(net6_types);#>
-#endif
     #endregion
 
     }

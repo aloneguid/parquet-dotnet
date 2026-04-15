@@ -5,18 +5,18 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Schema;
-using Parquet.File;
-using Parquet.Meta;
 using Parquet.Extensions;
 using Parquet.Extensions.Streaming;
+using Parquet.File;
+using Parquet.Meta;
+using Parquet.Schema;
 
-namespace Parquet; 
+namespace Parquet;
 
 /// <summary>
 /// Implements Apache Parquet format writer
 /// </summary>
-public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable {
+public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     private ThriftFooter? _footer;
     private readonly ParquetSchema _schema;
     private readonly ParquetOptions _formatOptions;
@@ -31,11 +31,7 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
     /// <summary>
     /// Level of compression
     /// </summary>
-#if NET6_0_OR_GREATER
     public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
-#else
-    public CompressionLevel CompressionLevel = CompressionLevel.Optimal;
-#endif
 
     private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false)
        : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
@@ -50,7 +46,7 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
 
     /// <summary>
     /// Creates an instance of parquet writer on top of a stream. dfaldkjf ;adkfj ad;lfja ;ldjflkjlkj kjflkjdlfj jlf
-    /// ldsjf ljdlsfjk adljflkdj fldjfljd ;sfj. lkdjf;j ;jfdsjk;afjdlkjfdlsjflkdjsfdsf. dlkj;lj ; j;j ;lj
+    /// ldsjf ljdlsfjk adljflkdj fldjfljd ;sfj. lkdjf;j ;jfdsjk;afjdlkjfdlsjflkdjsfdsf. dlkj;lj; j;j ;lj
     /// dslfkj;jf;ljkflj d;fljka ;djf ;jd f;laj dlfj f fdsljf lj.
     /// </summary>
     /// <param name="schema"></param>
@@ -74,7 +70,7 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
     public ParquetRowGroupWriter CreateRowGroup() {
         _dataWritten = true;
 
-        var writer = new ParquetRowGroupWriter(_schema, Stream, _footer!,
+        var writer = new ParquetRowGroupWriter(Stream, _footer!,
            CompressionMethod, _formatOptions, CompressionLevel);
 
         _openedWriters.Add(writer);
@@ -108,14 +104,16 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
             await GoBeforeFooterAsync();
         } else {
             if(_footer == null) {
-                _footer = new ThriftFooter(_schema, 0 /* todo: don't forget to set the total row count at the end!!! */, _formatOptions);
+                // totalRowCount is set to 0 with expectation that it will be updated at the end of writing (see DisposeCore)
+                _footer = new ThriftFooter(_schema, 0, _formatOptions);
 
                 //file starts with magic
                 await WriteMagicAsync();
             } else {
                 ValidateSchemasCompatible(_footer, _schema);
 
-                _footer.Add(0 /* todo: don't forget to set the total row count at the end!!! */);
+                // it's set to 0 with expectation that row count will be updated at the end of writing (see DisposeCore)
+                _footer.Add(0);
             }
         }
     }
@@ -129,7 +127,6 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
         }
     }
 
-    private void WriteMagic() => Stream.Write(MagicBytes, 0, MagicBytes.Length);
     private Task WriteMagicAsync() => Stream.WriteAsync(MagicBytes, 0, MagicBytes.Length);
 
     private void DisposeCore() {
@@ -137,22 +134,6 @@ public sealed class ParquetWriter : ParquetActor, IDisposable, IAsyncDisposable 
             //update row count (on append add row count to existing metadata)
             _footer!.Add(_openedWriters.Sum(w => w.RowCount ?? 0));
         }
-    }
-
-    /// <summary>
-    /// Disposes the writer and writes the file footer.
-    /// </summary>
-    public void Dispose() {
-
-        DisposeCore();
-
-        if(_footer == null)
-            return;
-
-        long size = _footer.Write(Stream);
-        Stream.WriteInt32((int)size); // metadata size: 4 bytes
-        WriteMagic();                 // end magic:     4 bytes
-        Stream.Flush();
     }
 
     /// <summary>

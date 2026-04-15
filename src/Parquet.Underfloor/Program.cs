@@ -273,7 +273,7 @@ void RenderMetadata() {
     if(fd.RowGroups != null) {
         Table("rgs", ["Index/Path", "Row/value count", "File offset", "Size", "Compressed size", "Codec", "Encodings"], ta => {
             int idx = 0;
-            foreach(IParquetRowGroupReader rg in fd.RowGroups) {
+            foreach(ParquetRowGroupReader rg in fd.RowGroups) {
                 ta.BeginRow();
                 TreeNode(idx.ToString(), true, false, (bool isOpen) => {
                     ta.NextColumn();
@@ -461,10 +461,10 @@ void RenderData() {
                 return;
             }
 
-            if(fd.Sample == null || fd.Sample.Data.Count() < row)
+            if(fd.Sample == null || fd.Sample.Count() < row)
                 return;
 
-            Dictionary<string, object> cell = fd.Sample.Data[row];
+            Dictionary<string, object> cell = fd.Sample[row];
             string colName = fd.ColumnsDisplay[col];
             Field f = fd.Schema[col - 1];
             cell.TryGetValue(colName, out object? value);
@@ -488,49 +488,49 @@ void RenderRawColumnData() {
         fd.ReadRawDataFieldAsync();
     }
 
-    if(fd.CurrentRawDataFieldData != null) {
-        DataColumn dc = fd.CurrentRawDataFieldData;
-        Label("num values: "); SL(); Label(dc.NumValues.ToString());
+    //if(fd.CurrentRawDataFieldData != null) {
+    //    DataColumn dc = fd.CurrentRawDataFieldData;
+    //    Label("num values: "); SL(); Label(dc.NumValues.ToString());
 
-        BigTable("raw",
-            ["#", "Value", "Definition level", "Repetition level"],
-            dc.NumValues,
-            (int row, int column) => {
-                if(column == 0) {
-                    Label(row.ToString(), isEnabled: false);
-                } else if(column == 1) {
-                    if(dc.Data == null) {
-                        Label("NULL DATA", Emphasis.Error);
-                    } else if(dc.Data.Length <= row) {
-                        Label("NO VALUE", Emphasis.Error);
-                    } else {
-                        object? value = dc.Data.GetValue(row);
-                        if(value == null) {
-                            Label("NULL", isEnabled: false);
-                        } else {
-                            Label(value?.ToString() ?? "", Emphasis.Primary);
-                        }
-                    }
-                } else if(column == 2) {
-                    if(dc.DefinitionLevels != null) {
-                        if(dc.DefinitionLevels.Length <= row) {
-                            Label("NO VALUE", Emphasis.Error);
-                        } else {
-                            Label(dc.DefinitionLevels[row].ToString(), Emphasis.Secondary);
-                        }
-                    }
-                } else if(column == 3) {
-                    if(dc.RepetitionLevels != null) {
-                        if(dc.RepetitionLevels.Length <= row) {
-                            Label("NO VALUE", Emphasis.Error);
-                        } else {
-                            Label(dc.RepetitionLevels[row].ToString());
-                        }
-                    }
-                }
-            },
-            0, 0, alternateRowBg: true);
-    }
+    //    BigTable("raw",
+    //        ["#", "Value", "Definition level", "Repetition level"],
+    //        dc.NumValues,
+    //        (int row, int column) => {
+    //            if(column == 0) {
+    //                Label(row.ToString(), isEnabled: false);
+    //            } else if(column == 1) {
+    //                if(dc.Data == null) {
+    //                    Label("NULL DATA", Emphasis.Error);
+    //                } else if(dc.Data.Length <= row) {
+    //                    Label("NO VALUE", Emphasis.Error);
+    //                } else {
+    //                    object? value = dc.Data.GetValue(row);
+    //                    if(value == null) {
+    //                        Label("NULL", isEnabled: false);
+    //                    } else {
+    //                        Label(value?.ToString() ?? "", Emphasis.Primary);
+    //                    }
+    //                }
+    //            } else if(column == 2) {
+    //                if(dc.DefinitionLevels != null) {
+    //                    if(dc.DefinitionLevels.Length <= row) {
+    //                        Label("NO VALUE", Emphasis.Error);
+    //                    } else {
+    //                        Label(dc.DefinitionLevels[row].ToString(), Emphasis.Secondary);
+    //                    }
+    //                }
+    //            } else if(column == 3) {
+    //                if(dc.RepetitionLevels != null) {
+    //                    if(dc.RepetitionLevels.Length <= row) {
+    //                        Label("NO VALUE", Emphasis.Error);
+    //                    } else {
+    //                        Label(dc.RepetitionLevels[row].ToString());
+    //                    }
+    //                }
+    //            }
+    //        },
+    //        0, 0, alternateRowBg: true);
+    //}
 
     if(fd.CurrentRawDataFieldReadError != null) {
         Label("Error reading raw data field.", Emphasis.Error);

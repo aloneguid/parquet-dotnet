@@ -1,4 +1,4 @@
-﻿namespace Parquet.Test.Util; 
+﻿namespace Parquet.Test.Util;
 
 using System;
 using System.IO;

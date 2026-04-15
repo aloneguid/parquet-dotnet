@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
@@ -13,9 +14,8 @@ using TType = Parquet.Meta.Type;
 namespace Parquet.Encodings;
 
 /// <summary>
-/// Fast data encoder. 
-/// See https://github.com/aloneguid/parquet-dotnet/issues/643#issuecomment-3489932123 for future performance ideas.
-/// Experimental.
+/// Fast data encoder. See https://github.com/aloneguid/parquet-dotnet/issues/643#issuecomment-3489932123 for future
+/// performance ideas. Experimental.
 /// </summary>
 static class ParquetPlainEncoder {
 
@@ -23,121 +23,127 @@ static class ParquetPlainEncoder {
     private static readonly byte[] ZeroInt32 = BitConverter.GetBytes(0);
     private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
-    public static void Encode(
-        Array data, int offset, int count,
+    /// <summary>
+    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migrattion from legacy
+    /// .NET.
+    /// </summary>
+    /// <param name="sourceSpan">
+    /// Reference to <see cref="ReadOnlyMemory{T}"/> passed as an object, due to unclarity of what the T will be.
+    /// </param>
+    /// <param name="destination">Where do we write this to?</param>
+    /// <param name="tse"></param>
+    /// <param name="stats"></param>
+    public static void Encode<T>(ReadOnlySpan<T> sourceSpan, Stream destination,
         SchemaElement tse,
-        Stream destination,
-        DataColumnStatistics? stats = null) {
-        System.Type t = data.GetType();
+        DataColumnStatistics? stats = null) where T : struct {
 
-        if(t == typeof(bool[])) {
-            Span<bool> span = ((bool[])data).AsSpan(offset, count);
+        System.Type t = typeof(T);
+
+        if(t == typeof(bool)) {
+            ReadOnlySpan<bool> span = sourceSpan.AsSpan<T, bool>();
             Encode(span, destination);
             // no stats for bools
-        } else if(t == typeof(byte[])) {
-            Span<byte> span = ((byte[])data).AsSpan(offset, count);
+        } else if(t == typeof(byte)) {
+            ReadOnlySpan<byte> span = sourceSpan.AsSpan<T, byte>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(sbyte[])) {
-            Span<sbyte> span = ((sbyte[])data).AsSpan(offset, count);
+        } else if(t == typeof(sbyte)) {
+            ReadOnlySpan<sbyte> span = sourceSpan.AsSpan<T, sbyte>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(short[])) {
-            Span<short> span = ((short[])data).AsSpan(offset, count);
+        } else if(t == typeof(short)) {
+            ReadOnlySpan<short> span = sourceSpan.AsSpan<T, short>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(ushort[])) {
-            Span<ushort> span = ((ushort[])data).AsSpan(offset, count);
+        } else if(t == typeof(ushort)) {
+            ReadOnlySpan<ushort> span = sourceSpan.AsSpan<T, ushort>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(int[])) {
-            Span<int> span = ((int[])data).AsSpan(offset, count);
+        } else if(t == typeof(int)) {
+            ReadOnlySpan<int> span = sourceSpan.AsSpan<T, int>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(uint[])) {
-            Span<uint> span = ((uint[])data).AsSpan(offset, count);
+        } else if(t == typeof(uint)) {
+            ReadOnlySpan<uint> span = sourceSpan.AsSpan<T, uint>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(long[])) {
-            Span<long> span = ((long[])data).AsSpan(offset, count);
+        } else if(t == typeof(long)) {
+            ReadOnlySpan<long> span = sourceSpan.AsSpan<T, long>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(ulong[])) {
-            Span<ulong> span = ((ulong[])data).AsSpan(offset, count);
+        } else if(t == typeof(ulong)) {
+            ReadOnlySpan<ulong> span = sourceSpan.AsSpan<T, ulong>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(BigInteger[])) {
-            Span<BigInteger> span = ((BigInteger[])data).AsSpan(offset, count);
+        } else if(t == typeof(BigInteger)) {
+            ReadOnlySpan<BigInteger> span = sourceSpan.AsSpan<T, BigInteger>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(decimal[])) {
-            Span<decimal> span = ((decimal[])data).AsSpan(offset, count);
+        } else if(t == typeof(decimal)) {
+            ReadOnlySpan<decimal> span = sourceSpan.AsSpan<T, decimal>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(BigDecimal[])) {
-            Span<BigDecimal> span = ((BigDecimal[])data).AsSpan(offset, count);
+        } else if(t == typeof(BigDecimal)) {
+            ReadOnlySpan<BigDecimal> span = sourceSpan.AsSpan<T, BigDecimal>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(double[])) {
-            Span<double> span = ((double[])data).AsSpan(offset, count);
+        } else if(t == typeof(double)) {
+            ReadOnlySpan<double> span = sourceSpan.AsSpan<T, double>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(float[])) {
-            Span<float> span = ((float[])data).AsSpan(offset, count);
+        } else if(t == typeof(float)) {
+            ReadOnlySpan<float> span = sourceSpan.AsSpan<T, float>();
             Encode(span, destination);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(byte[][])) {
-            Span<byte[]> span = ((byte[][])data).AsSpan(offset, count);
-            Encode(span, destination);
-        } else if(t == typeof(DateTime[])) {
-            Span<DateTime> span = ((DateTime[])data).AsSpan(offset, count);
+        } else if(t == typeof(DateTime)) {
+            ReadOnlySpan<DateTime> span = sourceSpan.AsSpan<T, DateTime>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-#if NET6_0_OR_GREATER
-        } else if(t == typeof(DateOnly[])) {
-            Span<DateOnly> span = ((DateOnly[])data).AsSpan(offset, count);
+        } else if(t == typeof(DateOnly)) {
+            ReadOnlySpan<DateOnly> span = sourceSpan.AsSpan<T, DateOnly>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(TimeOnly[])) {
-            Span<TimeOnly> span = ((TimeOnly[])data).AsSpan(offset, count);
+        } else if(t == typeof(TimeOnly)) {
+            ReadOnlySpan<TimeOnly> span = sourceSpan.AsSpan<T, TimeOnly>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-#endif
-        } else if(t == typeof(TimeSpan[])) {
-            Span<TimeSpan> span = ((TimeSpan[])data).AsSpan(offset, count);
+        } else if(t == typeof(TimeSpan)) {
+            ReadOnlySpan<TimeSpan> span = sourceSpan.AsSpan<T, TimeSpan>();
             Encode(span, destination, tse);
             if(stats != null)
                 FillStats(span, stats);
-        } else if(t == typeof(Interval[])) {
-            Span<Interval> span = ((Interval[])data).AsSpan(offset, count);
+        } else if(t == typeof(Interval)) {
+            ReadOnlySpan<Interval> span = sourceSpan.AsSpan<T, Interval>();
             Encode(span, destination);
             // no stats, maybe todo
-        } else if(t == typeof(string[])) {
-            Span<string> span = ((string[])data).AsSpan(offset, count);
+        } else if(t == typeof(ReadOnlyMemory<char>)) {
+            ReadOnlySpan<ReadOnlyMemory<char>> span = sourceSpan.AsSpan<T, ReadOnlyMemory<char>>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
-        } else if(t == typeof(Guid[])) {
-            Span<Guid> span = ((Guid[])data).AsSpan(offset, count);
+            // todo: minmax
+        } else if(t == typeof(ReadOnlyMemory<byte>)) {
+            ReadOnlySpan<ReadOnlyMemory<byte>> span = sourceSpan.AsSpan<T, ReadOnlyMemory<byte>>();
+            Encode(span, destination);
+        } else if(t == typeof(Guid)) {
+            ReadOnlySpan<Guid> span = sourceSpan.AsSpan<T, Guid>();
             Encode(span, destination);
         } else {
-            throw new NotSupportedException($"no PLAIN encoder exists for {t}");
+            throw new NotSupportedException($"no PLAIN encoder exists for {typeof(T)}");
         }
     }
 
@@ -196,14 +202,12 @@ static class ParquetPlainEncoder {
         } else if(t == typeof(DateTime[])) {
             Span<DateTime> span = ((DateTime[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
-#if NET6_0_OR_GREATER
         } else if(t == typeof(DateOnly[])) {
             Span<DateOnly> span = ((DateOnly[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
         } else if(t == typeof(TimeOnly[])) {
             Span<TimeOnly> span = ((TimeOnly[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
-#endif
         } else if(t == typeof(TimeSpan[])) {
             Span<TimeSpan> span = ((TimeSpan[])dest).AsSpan(offset, count);
             elementsRead = Decode(source, span, tse);
@@ -219,6 +223,94 @@ static class ParquetPlainEncoder {
         } else {
             elementsRead = 0;
             throw new NotSupportedException($"no PLAIN decoder exists for {t}");
+        }
+    }
+
+    /// <summary>
+    /// Generic overload for decoding directly into a Span{T} with element count control.
+    /// </summary>
+    public static void Decode<T>(
+        Span<T> dest,
+        int count,
+        SchemaElement tse,
+        Span<byte> source,
+        out int elementsRead) where T : struct {
+
+        int rem = dest.Length;
+        if(count > rem)
+            count = rem;
+
+        System.Type t = typeof(T);
+
+        if(t == typeof(bool)) {
+            Span<bool> span = dest.AsSpan<T, bool>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(byte)) {
+            Span<byte> span = dest.AsSpan<T, byte>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(sbyte)) {
+            Span<sbyte> span = dest.AsSpan<T, sbyte>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(short)) {
+            Span<short> span = dest.AsSpan<T, short>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(ushort)) {
+            Span<ushort> span = dest.AsSpan<T, ushort>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(int)) {
+            Span<int> span = dest.AsSpan<T, int>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(uint)) {
+            Span<uint> span = dest.AsSpan<T, uint>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(long)) {
+            Span<long> span = dest.AsSpan<T, long>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(ulong)) {
+            Span<ulong> span = dest.AsSpan<T, ulong>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(BigInteger)) {
+            Span<BigInteger> span = dest.AsSpan<T, BigInteger>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(decimal)) {
+            Span<decimal> span = dest.AsSpan<T, decimal>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(BigDecimal)) {
+            Span<BigDecimal> span = dest.AsSpan<T, BigDecimal>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(double)) {
+            Span<double> span = dest.AsSpan<T, double>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(float)) {
+            Span<float> span = dest.AsSpan<T, float>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(DateTime)) {
+            Span<DateTime> span = dest.AsSpan<T, DateTime>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(DateOnly)) {
+            Span<DateOnly> span = dest.AsSpan<T, DateOnly>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(TimeOnly)) {
+            Span<TimeOnly> span = dest.AsSpan<T, TimeOnly>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(TimeSpan)) {
+            Span<TimeSpan> span = dest.AsSpan<T, TimeSpan>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(Interval)) {
+            Span<Interval> span = dest.AsSpan<T, Interval>();
+            elementsRead = Decode(source, span.Slice(0, count));
+        } else if(t == typeof(ReadOnlyMemory<char>)) {
+            Span<ReadOnlyMemory<char>> span = dest.AsSpan<T, ReadOnlyMemory<char>>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(ReadOnlyMemory<byte>)) {
+            Span<ReadOnlyMemory<byte>> span = dest.AsSpan<T, ReadOnlyMemory<byte>>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else if(t == typeof(Guid)) {
+            Span<Guid> span = dest.AsSpan<T, Guid>();
+            elementsRead = Decode(source, span.Slice(0, count), tse);
+        } else {
+            elementsRead = 0;
+            throw new NotSupportedException($"no PLAIN decoder exists for {typeof(T)}");
         }
     }
 
@@ -276,12 +368,10 @@ static class ParquetPlainEncoder {
             return true;
         } else if(t == typeof(DateTime))
             return TryEncode((DateTime)value, tse, out result);
-#if NET6_0_OR_GREATER
         else if(t == typeof(DateOnly))
             return TryEncode((DateOnly)value, tse, out result);
         else if(t == typeof(TimeOnly))
             return TryEncode((TimeOnly)value, tse, out result);
-#endif
         else if(t == typeof(TimeSpan))
             return TryEncode((TimeSpan)value, tse, out result);
         else if(t == typeof(Interval)) {
@@ -383,7 +473,6 @@ static class ParquetPlainEncoder {
         }
     }
 
-#if NET6_0_OR_GREATER
     private static bool TryEncode(DateOnly value, SchemaElement tse, out byte[] result) {
         int days = value.ToUnixDays();
         result = BitConverter.GetBytes(days);
@@ -404,7 +493,6 @@ static class ParquetPlainEncoder {
                 throw new InvalidDataException($"data type '{tse.Type}' does not represent any time types");
         }
     }
-#endif
 
     private static bool TryEncode(decimal value, SchemaElement tse, out byte[] result) {
         try {
@@ -832,9 +920,19 @@ static class ParquetPlainEncoder {
         }
     }
 
+    public static void Encode(ReadOnlySpan<ReadOnlyMemory<byte>> data, Stream destination) {
+        foreach(ReadOnlyMemory<byte> element in data) {
+            byte[] l = BitConverter.GetBytes(element.Length);
+            destination.Write(l, 0, l.Length);
+            destination.Write(element.Span);
+        }
+    }
+
     public static void Encode(ReadOnlySpan<Guid> data, Stream destination) {
         foreach(Guid element in data) {
-            byte[] b = element.ToBigEndianByteArray();
+            // Since .NET 8 there's a built-in support for big-endian encoding
+            // see https://learn.microsoft.com/en-us/dotnet/api/system.guid.tobytearray?view=net-8.0
+            byte[] b = element.ToByteArray(true);
             destination.Write(b, 0, b.Length);
         }
     }
@@ -868,6 +966,35 @@ static class ParquetPlainEncoder {
         return read;
     }
 
+    public static int Decode(Span<byte> source, Span<ReadOnlyMemory<byte>> data, SchemaElement tse) {
+        int read = 0;
+        int sourceOffset = 0;
+
+        if(tse.Type == TType.FIXED_LEN_BYTE_ARRAY) {
+            if(tse.TypeLength == null)
+                throw new InvalidDataException($"type length must be set for {nameof(TType.FIXED_LEN_BYTE_ARRAY)}");
+            int length = tse.TypeLength.Value;
+            while(read < data.Length) {
+                ReadOnlyMemory<byte> el = source.Slice(sourceOffset, length).ToArray();
+                sourceOffset += length;
+                data[read++] = el;
+            }
+        } else {
+            while(read < data.Length) {
+                int length = source.ReadInt32(sourceOffset);
+                sourceOffset += sizeof(int);
+                if(length > 0) {
+                    ReadOnlyMemory<byte> el = source.Slice(sourceOffset, length).ToArray();
+                    sourceOffset += length;
+                    data[read++] = el;
+                } else {
+                    data[read++] = ReadOnlyMemory<byte>.Empty;
+                }
+            }
+        }
+        return read;
+    }
+
     public static void Encode(ReadOnlySpan<DateTime> data, Stream destination, SchemaElement tse) {
 
         switch(tse.Type) {
@@ -884,12 +1011,12 @@ static class ParquetPlainEncoder {
                         if(tse.LogicalType.TIMESTAMP.Unit.MILLIS is not null) {
                             long unixTime = element.ToUnixMilliseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
-                            destination.Write(raw, 0, raw.Length);    
-                        } else if (tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
+                            destination.Write(raw, 0, raw.Length);
+                        } else if(tse.LogicalType.TIMESTAMP.Unit.MICROS is not null) {
                             long unixTime = element.ToUtc().ToUnixMicroseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
                             destination.Write(raw, 0, raw.Length);
-                        } else if (tse.LogicalType.TIMESTAMP.Unit.NANOS is not null) {
+                        } else if(tse.LogicalType.TIMESTAMP.Unit.NANOS is not null) {
                             long unixTime = element.ToUtc().ToUnixNanoseconds();
                             byte[] raw = BitConverter.GetBytes(unixTime);
                             destination.Write(raw, 0, raw.Length);
@@ -929,7 +1056,6 @@ static class ParquetPlainEncoder {
         }
     }
 
-#if NET6_0_OR_GREATER
     public static void Encode(ReadOnlySpan<DateOnly> data, Stream destination, SchemaElement tse) {
         foreach(DateOnly element in data) {
             int days = element.ToUnixDays();
@@ -955,7 +1081,6 @@ static class ParquetPlainEncoder {
                 break;
         }
     }
-#endif
 
     public static int Decode(Span<byte> source, Span<DateTime> data, SchemaElement tse) {
         switch(tse.Type) {
@@ -1030,7 +1155,6 @@ static class ParquetPlainEncoder {
         }
     }
 
-#if NET6_0_OR_GREATER
     public static int Decode(Span<byte> source, Span<DateOnly> data, SchemaElement tse) {
         int[] ints = ArrayPool<int>.Shared.Rent(data.Length);
         try {
@@ -1046,30 +1170,29 @@ static class ParquetPlainEncoder {
     public static int Decode(Span<byte> source, Span<TimeOnly> data, SchemaElement tse) {
         switch(tse.Type) {
             case TType.INT32: {
-                int i = 0;
-                int srcPos = 0;
-                while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
-                    int iv = source.ReadInt32(srcPos);
-                    srcPos += sizeof(int);
-                    data[i++] = new TimeOnly(iv * TimeSpan.TicksPerMillisecond);
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(int) <= source.Length && i < data.Length) {
+                        int iv = source.ReadInt32(srcPos);
+                        srcPos += sizeof(int);
+                        data[i++] = new TimeOnly(iv * TimeSpan.TicksPerMillisecond);
+                    }
+                    return i;
                 }
-                return i;
-            }
             case TType.INT64: {
-                int i = 0;
-                int srcPos = 0;
-                while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
-                    long lv = source.ReadInt64(srcPos);
-                    srcPos += sizeof(long);
-                    data[i++] = new TimeOnly(lv * 10);
+                    int i = 0;
+                    int srcPos = 0;
+                    while(srcPos + sizeof(long) <= source.Length && i < data.Length) {
+                        long lv = source.ReadInt64(srcPos);
+                        srcPos += sizeof(long);
+                        data[i++] = new TimeOnly(lv * 10);
+                    }
+                    return i;
                 }
-                return i;
-            }
             default:
                 throw new NotSupportedException();
         }
     }
-#endif
 
     public static void Encode(ReadOnlySpan<TimeSpan> data, Stream destination, SchemaElement tse) {
         switch(tse.Type) {
@@ -1143,15 +1266,15 @@ static class ParquetPlainEncoder {
         return i;
     }
 
-    public static void Encode(ReadOnlySpan<string> data, Stream destination) {
+    public static void Encode(ReadOnlySpan<ReadOnlyMemory<char>> data, Stream destination) {
 
         // rent a buffer large enough not to reallocate often and not call stream write often
         byte[] rb = BytePool.Rent(1024 * 10);
         int rbOffset = 0;
         try {
 
-            foreach(string s in data) {
-                int len = string.IsNullOrEmpty(s) ? 0 : E.GetByteCount(s);
+            foreach(ReadOnlyMemory<char> s in data) {
+                int len = s.IsEmpty ? 0 : E.GetByteCount(s.Span);
                 int minLen = len + sizeof(int);
                 int rem = rb.Length - rbOffset;
 
@@ -1174,7 +1297,7 @@ static class ParquetPlainEncoder {
                     Array.Copy(BitConverter.GetBytes(len), 0, rb, rbOffset, sizeof(int));
                 rbOffset += sizeof(int);
                 if(len > 0) {
-                    E.GetBytes(s, 0, s.Length, rb, rbOffset);
+                    E.GetBytes(s.Span, rb.AsSpan(rbOffset));
                     rbOffset += len;
                 }
             }
@@ -1201,11 +1324,7 @@ static class ParquetPlainEncoder {
             int length = tse.TypeLength.Value;
 
             for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
-#if NETSTANDARD2_0
-                data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
-#else
                 data[i] = E.GetString(source.Slice(spanIdx, length));
-#endif
                 spanIdx += length;
             }
 
@@ -1214,11 +1333,48 @@ static class ParquetPlainEncoder {
             for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
                 int length = source.ReadInt32(spanIdx);
                 spanIdx += sizeof(int);
-#if NETSTANDARD2_0
-            data[i] = E.GetString(source.Slice(spanIdx, length).ToArray());
-#else
                 data[i] = E.GetString(source.Slice(spanIdx, length));
-#endif
+                spanIdx += length;
+            }
+        }
+        return i;
+    }
+
+    public static int Decode(Span<byte> source, Span<ReadOnlyMemory<char>> data, SchemaElement tse) {
+        //int remLength = (int)(source.Length - source.Position);
+
+        if(source.Length == 0)
+            return 0;
+
+        int i = 0;
+
+        Decoder decoder = System.Text.Encoding.UTF8.GetDecoder();
+
+        if(tse.Type == TType.FIXED_LEN_BYTE_ARRAY) {
+            if(tse.TypeLength == null)
+                throw new InvalidDataException($"type length must be set for {nameof(TType.FIXED_LEN_BYTE_ARRAY)}");
+            int length = tse.TypeLength.Value;
+
+            for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
+
+                Span<byte> elementSpan = source.Slice(spanIdx, length);
+                char[] charBuffer = new char[System.Text.Encoding.UTF8.GetCharCount(elementSpan)];
+                decoder.GetChars(elementSpan, charBuffer, flush: true);
+                ReadOnlyMemory<char> charMemory = charBuffer.AsMemory();
+                data[i] = charMemory;
+                spanIdx += length;
+            }
+
+        } else {
+
+            for(int spanIdx = 0; spanIdx < source.Length && i < data.Length; i++) {
+                int length = source.ReadInt32(spanIdx);
+                spanIdx += sizeof(int);
+                Span<byte> elementSpan = source.Slice(spanIdx, length);
+                char[] charBuffer = new char[System.Text.Encoding.UTF8.GetCharCount(elementSpan)];
+                decoder.GetChars(elementSpan, charBuffer, flush: true);
+                ReadOnlyMemory<char> charMemory = charBuffer.AsMemory();
+                data[i] = charMemory;
                 spanIdx += length;
             }
         }
@@ -1231,7 +1387,7 @@ static class ParquetPlainEncoder {
 
         int i = 0;
         for(int offset = 0; offset + 16 <= source.Length && i < data.Length; offset += 16, i++) {
-            data[i] = ((ReadOnlySpan<byte>)source.Slice(offset, 16)).ToGuidFromBigEndian();
+            data[i] = new Guid(((ReadOnlySpan<byte>)source.Slice(offset, 16)), true);
         }
         return i;
     }
@@ -1239,36 +1395,7 @@ static class ParquetPlainEncoder {
     #region [ .NET differences ]
 
     private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
-#if NETSTANDARD2_0
-        byte[] tmp = bytes.ToArray();
-        destination.Write(tmp, 0, tmp.Length);
-#else
         destination.Write(bytes);
-#endif
-    }
-
-    private static int Read(Stream source, Span<byte> bytes) {
-#if NETSTANDARD2_0
-        byte[] tmp = new byte[bytes.Length];
-        int read = 0;
-        while(read < tmp.Length) {
-            int r0 = source.Read(tmp, read, tmp.Length);
-            if(r0 == 0)
-                break;
-            read += r0;
-        }
-        tmp.CopyTo(bytes);
-        return read;
-#else
-        int read = 0;
-        while(read < bytes.Length) {
-            int r0 = source.Read(bytes.Slice(read));
-            if(r0 == 0)
-                break;
-            read += r0;
-        }
-        return read;
-#endif
     }
 
     #endregion
@@ -1368,7 +1495,6 @@ static class ParquetPlainEncoder {
         stats.MaxValue = max;
     }
 
-#if NET6_0_OR_GREATER
     public static void FillStats(ReadOnlySpan<DateOnly> data, DataColumnStatistics stats) {
         data.MinMax(out DateOnly min, out DateOnly max);
         stats.MinValue = min;
@@ -1380,7 +1506,6 @@ static class ParquetPlainEncoder {
         stats.MinValue = min;
         stats.MaxValue = max;
     }
-#endif
 
     public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {
         data.MinMax(out TimeSpan min, out TimeSpan max);

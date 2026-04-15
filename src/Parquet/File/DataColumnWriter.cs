@@ -7,13 +7,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IO;
-using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
 
-namespace Parquet.File; 
+namespace Parquet.File;
+
 class DataColumnWriter {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
@@ -43,24 +43,24 @@ class DataColumnWriter {
         _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
     }
 
-    public async Task<ColumnChunk> WriteAsync(
-        FieldPath fullPath, DataColumn column,
-        CancellationToken cancellationToken = default) {
-
+    public async Task<ColumnChunk> WriteAsync<T>(
+        FieldPath fullPath,
+        WritingColumn<T> wc,
+        CancellationToken cancellationToken) where T : struct {
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
         ColumnChunk chunk = _footer.CreateColumnChunk(
-            _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
+            _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, wc.NumValues,
             _keyValueMetadata);
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
-        ColumnMetrics metrics = await WriteColumnAsync(
-            chunk, column, _schemaElement,
+        ColumnMetrics metrics = await WriteAsync(
+            chunk, wc, _schemaElement,
             cancellationToken);
         chunk.MetaData.Encodings = metrics.GetUsedEncodings();
 
         //generate stats for column chunk
-        chunk.MetaData.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
+        chunk.MetaData.Statistics = wc.Statistics.ToThriftStatistics(_schemaElement);
 
         //the following counters must include both data size and header size
         chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
@@ -127,11 +127,13 @@ class DataColumnWriter {
         cs.UncompressedSize += ph.UncompressedPageSize;
     }
 
-    private async Task<ColumnMetrics> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
-       SchemaElement tse,
-       CancellationToken cancellationToken = default) {
+    private async Task<ColumnMetrics> WriteAsync<T>(ColumnChunk chunk,
+        WritingColumn<T> wc,
+        SchemaElement tse,
+        CancellationToken cancellationToken) where T : struct {
 
-        column.Field.EnsureAttachedToSchema(nameof(column));
+        wc.Field.EnsureAttachedToSchema(nameof(wc.Field));
+        wc.Pack(_options);
 
         var r = new ColumnMetrics();
 
@@ -141,59 +143,55 @@ class DataColumnWriter {
          * the write efficiency.
          */
 
-        using var pc = new PackedColumn(column);
-        pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
-
         // dictionary page
-        if(pc.HasDictionary) {
-            PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length, out _);
+        if(wc.HasDictionary) {
+            PageHeader ph = _footer.CreateDictionaryPage(wc.Dictionary.Length, out _);
             r.Pages.Add(ph);
             using MemoryStream ms = _rmsMgr.GetStream();
-            ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
-                   tse,
-                   ms, column.Statistics);
-
+            ParquetPlainEncoder.Encode(wc.Dictionary, ms, tse, wc.Statistics);
             await CompressAndWriteAsync(ph, ms, r, cancellationToken);
         }
 
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
-            Array data = pc.GetPlainData(out int offset, out int count);
-            bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
-           
+            bool deltaEncode = wc.Field.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
+
             // data page Num_values also does include NULLs
-            PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode, out DataPageHeader dph);
+            PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, out DataPageHeader dph);
             r.Pages.Add(ph);
-            if(pc.HasRepetitionLevels) {
-                WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
+
+            if(wc.HasRepetitionLevels) {
+                WriteLevels(ms, wc.RepetitionLevels!, wc.Field.MaxRepetitionLevel);
             }
-            if(pc.HasDefinitionLevels) {
-                WriteLevels(ms, pc.DefinitionLevels!, column.DefinitionLevels!.Length, column.Field.MaxDefinitionLevel);
+            if(wc.HasDefinitionLevels) {
+                WriteLevels(ms, wc.DefinitionLevels!, wc.Field.MaxDefinitionLevel);
             }
 
-            if(pc.HasDictionary) {
+            if(wc.HasDictionary) {
                 // dictionary indexes are always encoded with RLE
-                int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
-                int bitWidth = pc.Dictionary!.Length.GetBitWidth();
+                int bitWidth = wc.Dictionary.Length.GetBitWidth();  // bit width is determined by the dictionary size
                 ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
-                RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
-            } else {                
+                RleBitpackedHybridEncoder.Encode(ms, wc.DictionaryIndexes, bitWidth);
+            } else {
                 if(deltaEncode) {
-                    DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
+                    DeltaBinaryPackedEncoder.Encode(wc.Values, ms, wc.Statistics);
                 } else {
-                    ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
+                    ParquetPlainEncoder.Encode(wc.Values,
+                        ms,
+                        tse,
+                        wc.HasDictionary ? null : wc.Statistics);
                 }
             }
 
-            dph.Statistics = column.Statistics.ToThriftStatistics(tse);
+            dph.Statistics = wc.Statistics.ToThriftStatistics(tse);
             await CompressAndWriteAsync(ph, ms, r, cancellationToken);
         }
 
         return r;
     }
 
-    private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
+    private static void WriteLevels(Stream s, ReadOnlySpan<int> levels, int maxValue) {
         int bitWidth = maxValue.GetBitWidth();
-        RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
+        RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels);
     }
 }

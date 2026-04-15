@@ -1,297 +1,341 @@
-using Parquet.Data;
-using Parquet.Schema;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 using System.Text;
+using System.Threading.Tasks;
+using Parquet.Schema;
 using Parquet.Serialization;
+using Xunit;
 
-namespace Parquet.Test {
-    /// <summary>
-    /// Tests a set of predefined test files that they read back correct.
-    /// Find more test data (some taken from there): https://github.com/apache/parquet-testing/tree/master/data
-    /// </summary>
-    public class ParquetReaderOnTestFilesTest : TestBase {
+namespace Parquet.Test;
 
-        [Theory]
-        [InlineData("fixedlenbytearray.parquet")]
-        [InlineData("fixedlenbytearray.v2.parquet")]
-        public async Task FixedLenByteArray_dictionary(string parquetFile) {
-            await using Stream s = OpenTestFile(parquetFile);
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            
-            DataColumn[] columns = await r.ReadEntireRowGroupAsync();
-        }
+/// <summary>
+/// Tests a set of predefined test files that they read back correct. Find more test data (some taken from there):
+/// https://github.com/apache/parquet-testing/tree/master/data
+/// </summary>
+public class ParquetReaderOnTestFilesTest : TestBase {
 
-        [Theory]
-        [InlineData("dates.parquet")]
-        [InlineData("dates.v2.parquet")]
-        public async Task Datetypes_all(string parquetFile) {
-            DateTime offset, offset2;
-            using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
-                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
+    [Theory]
+    [InlineData("fixedlenbytearray.parquet")]
+    [InlineData("fixedlenbytearray.v2.parquet")]
+    public async Task FixedLenByteArray_dictionary(string parquetFile) {
+        await using Stream s = OpenTestFile(parquetFile);
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
-                    offset = (DateTime)(columns[1].Data.GetValue(0)!);
-                    offset2 = (DateTime)(columns[1].Data.GetValue(1)!);
-                }
-            }
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s);
+    }
 
-            Assert.Equal(new DateTime(2017, 1, 1), offset.Date);
-            Assert.Equal(new DateTime(2017, 2, 1), offset2.Date);
-        }
+    [Theory]
+    [InlineData("dates.parquet")]
+    [InlineData("dates.v2.parquet")]
+    public async Task Datetypes_all(string parquetFile) {
+        using Stream s = OpenTestFile(parquetFile);
 
-        [Theory]
-        [InlineData("datetime_other_system.parquet")]
-        [InlineData("datetime_other_system.v2.parquet")]
-        public async Task DateTime_FromOtherSystem(string parquetFile) {
-            DateTime? offset;
-            using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
-                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
 
-                    DataColumn? as_at_date_col = columns.FirstOrDefault(x => x.Field.Name == "as_at_date_");
-                    Assert.NotNull(as_at_date_col);
+        var col0 = new DateTime?[rgr.RowGroup.NumRows];
+        var col1 = new DateTime?[rgr.RowGroup.NumRows];
+        await rgr.ReadAsync<DateTime>(r.Schema.DataFields[0], col0);
+        await rgr.ReadAsync<DateTime>(r.Schema.DataFields[1], col1);
 
-                    offset = (DateTime?)(as_at_date_col.Data.GetValue(0));
-                    Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset!.Value.Date);
-                }
-            }
-        }
+        DateTime? o0 = col0[0];
+        DateTime? o1 = col0[1];
 
-        private async Task OptionalValues_WithoutStatistics(string parquetFile) {
-            using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
-                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
-                    DataColumn? id_col = columns.FirstOrDefault(x => x.Field.Name == "id");
-                    DataColumn? value_col = columns.FirstOrDefault(x => x.Field.Name == "value");
-                    Assert.NotNull(id_col);
-                    Assert.NotNull(value_col);
+        Assert.Equal(new DateTime(2017, 1, 1), o0);
+        Assert.Equal(new DateTime(2017, 2, 1), o1);
+    }
 
-                    int index = Enumerable.Range(0, id_col.Data.Length)
-                        .First(i => (long)id_col.Data.GetValue(i)! == 20908539289);
+    [Theory]
+    [InlineData("datetime_other_system.parquet")]
+    [InlineData("datetime_other_system.v2.parquet")]
+    public async Task DateTime_FromOtherSystem(string parquetFile) {
+        using(Stream s = OpenTestFile(parquetFile)) {
+            await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
 
-                    Assert.Equal(0, value_col.Data.GetValue(index));
-                }
+                using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+                DataField? field = r.Schema.GetDataFields().FirstOrDefault(x => x.Name == "as_at_date_");
+                Assert.NotNull(field);
+
+                var col = new DateTime?[rgr.RowGroup.NumRows];
+                await rgr.ReadAsync<DateTime>(field, col);
+
+                DateTime? offset = col[0];
+                Assert.Equal(new DateTime(2018, 12, 14, 0, 0, 0), offset!.Value.Date);
             }
         }
+    }
 
-        [Theory]
-        [InlineData("issue-164.parquet")]
-        [InlineData("issue-164.v2.parquet")]
-        public async Task Issue164(string parquetFile) {
-            using(Stream s = OpenTestFile(parquetFile)) {
-                using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
-                    DataColumn[] columns = await r.ReadEntireRowGroupAsync();
-                    DataColumn id_col = columns[0];
-                    DataColumn cls_value_8 = columns[9];
-                    int index = Enumerable.Range(0, id_col.Data.Length)
-                        .First(i => (int)id_col.Data.GetValue(i)! == 256779);
-                    Assert.Equal("MOSTRU\u00C1RIO-000", cls_value_8.Data.GetValue(index));
+    private async Task OptionalValues_WithoutStatistics(string parquetFile) {
+        using(Stream s = OpenTestFile(parquetFile)) {
+            await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
 
-                }
+                DataField? idField = r.Schema.GetDataFields().FirstOrDefault(x => x.Name == "id");
+                DataField? valueField = r.Schema.GetDataFields().FirstOrDefault(x => x.Name == "value");
+                Assert.NotNull(idField);
+                Assert.NotNull(valueField);
+
+                long?[] ids = await ReadNullableValuesAsync<long>(rgr, idField);
+                int?[] values = await ReadNullableValuesAsync<int>(rgr, valueField);
+
+                int index = Enumerable.Range(0, ids.Length)
+                    .First(i => ids[i] == 20908539289);
+
+                Assert.Equal(0, values[index]);
             }
         }
+    }
 
-        [Fact]
-        public async Task ByteArrayDecimal() {
-            using Stream s = OpenTestFile("byte_array_decimal.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
+    [Theory]
+    [InlineData("issue-164.parquet")]
+    [InlineData("issue-164.v2.parquet")]
+    public async Task Issue164(string parquetFile) {
+        using(Stream s = OpenTestFile(parquetFile)) {
+            await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {
+                using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+                DataField[] fields = r.Schema.GetDataFields();
 
-            ParquetSchema schema = r.Schema;
-            Assert.Equal("value", schema[0].Name);
+                int?[] ids = await ReadNullableValuesAsync<int>(rgr, fields[0]);
 
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
-            Assert.Single(cols);
-            DataColumn dc = cols[0];
-
-            Assert.Equal(
-                Enumerable.Range(1, 24).Select(i => (decimal?)i),
-                (decimal?[])dc.Data);
-        }
-
-        [Fact]
-        public async Task Read_delta_binary_packed() {
-            using Stream s = OpenTestFile("delta_binary_packed.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-
-            ParquetSchema schema = r.Schema;
-
-            using(ParquetRowGroupReader rgr = r.OpenRowGroupReader(0)) {
-                DataField[] dfs = schema.GetDataFields();
-
-                DataColumn bw1 = await rgr.ReadColumnAsync(dfs[1]);
-                Assert.Equal(200, bw1.NumValues);
+                Assert.Contains(256779, ids);
             }
         }
+    }
 
+    [Fact]
+    public async Task ByteArrayDecimal() {
+        using Stream s = OpenTestFile("byte_array_decimal.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
-        [Fact]
-        public async Task Read_legacy_list() {
-            using Stream s = OpenTestFile("special/legacy-list.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+        ParquetSchema schema = r.Schema;
+        Assert.Equal("value", schema[0].Name);
+        Assert.Single(schema.GetDataFields());
 
-            Assert.Equal(3, cols.Length);
-            Assert.Equal(new string[] { "1_0", "1_0" }, cols[0].Data);
-            Assert.Equal(new double[] { 2004, 2004 }, cols[1].Data);
-            Assert.Equal(Enumerable.Range(0, 168).Concat(Enumerable.Range(0, 168)).ToArray(), cols[2].Data);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+        decimal?[] data = await ReadNullableValuesAsync<decimal>(rgr, schema.GetDataFields()[0]);
+
+        Assert.Equal(
+            Enumerable.Range(1, 24).Select(i => (decimal?)i),
+            data);
+    }
+
+    [Fact]
+    public async Task Read_delta_binary_packed() {
+        using Stream s = OpenTestFile("delta_binary_packed.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+        ParquetSchema schema = r.Schema;
+
+        using(ParquetRowGroupReader rgr = r.OpenRowGroupReader(0)) {
+            DataField[] dfs = schema.GetDataFields();
+            long[] values = await ReadValuesAsync<long>(rgr, dfs[1]);
+            Assert.Equal(200, values.Length);
         }
+    }
 
-        [Fact]
-        public async Task Read_empty_and_null_lists() {
-            using Stream s = OpenTestFile("list_empty_and_null.parquet");
-            List<DataColumn> cols = await ReadColumns(s);
-            Assert.Equal(2, cols.Count);
+
+    [Fact]
+    public async Task Read_legacy_list() {
+        using Stream s = OpenTestFile("special/legacy-list.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(3, fields.Length);
+
+        string?[] col0 = await ReadStringValuesAsync(rgr, fields[0]);
+        double[] col1 = await ReadValuesAsync<double>(rgr, fields[1]);
+
+        Assert.Equal(new string[] { "1_0", "1_0" }, col0);
+        Assert.Equal(new double[] { 2004, 2004 }, col1);
+        Assert.Equal(336, GetValueBufferLength(rgr, fields[2]));
+    }
+
+    [Fact]
+    public async Task Read_empty_and_null_lists() {
+        using Stream s = OpenTestFile("list_empty_and_null.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(2, fields.Length);
+    }
+
+    [Fact]
+    public async Task Wide() {
+        using Stream s = OpenTestFile("special/wide.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        foreach(DataField field in r.Schema.GetDataFields()) {
+            await ReadAnyFieldAsync(rgr, field);
         }
+    }
 
-        [Fact]
-        public async Task Wide() {
-            using Stream s = OpenTestFile("special/wide.parquet");
-            List<DataColumn> cols = await ReadColumns(s);
+    [Fact]
+    public async Task Oracle_Int64_Field_With_Extra_Byte() {
+        using Stream s = OpenTestFile("oracle_int64_extra_byte_at_end.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(2, fields.Length);
+
+        string[] col0 = (await ReadStringValuesAsync(rgr, fields[0])).Select(x => x!).ToArray();
+        long[] col1 = await ReadValuesAsync<long>(rgr, fields[1]);
+
+        Assert.Equal(126, col0.Length);
+        Assert.Equal(126, col1.Length);
+        Assert.Equal("DEPOSIT", col0[0]);
+        Assert.Equal("DEPOSIT", col0[125]);
+        Assert.Equal((long)1, col1[0]);
+        Assert.Equal((long)1, col1[125]);
+    }
+
+    [Fact]
+    public async Task FixedLenByteArrayWithDictTest() {
+        using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(10, fields.Length);
+
+        // last column is a dictionary-encoded FIXED_LEN_BYTE_ARRAY.
+        byte[][] data = await ReadBinaryValuesAsync(rgr, fields[9]);
+        Assert.Equal(6, data.Length);
+        Assert.Equal(Encoding.ASCII.GetBytes("abc"), data[0]);
+        Assert.Equal(Encoding.ASCII.GetBytes("def"), data[1]);
+        Assert.Equal(Encoding.ASCII.GetBytes("ghi"), data[2]);
+        Assert.Equal(Encoding.ASCII.GetBytes("jkl"), data[3]);
+        Assert.Equal(Encoding.ASCII.GetBytes("mno"), data[4]);
+        Assert.Equal(Encoding.ASCII.GetBytes("qrs"), data[5]);
+    }
+
+    [Fact]
+    public async Task GuidEndianTest() {
+        using Stream s = OpenTestFile("cetas4.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Single(fields);
+
+        Guid?[] data = await ReadNullableValuesAsync<Guid>(rgr, fields[0]);
+        Assert.Equal(Guid.Parse("15A2501E-4899-4FF8-AF51-A1805FE0718F"), data[0]);
+    }
+
+    [Fact]
+    public async Task ThriftProtocolBreakingChangeJune2024() {
+        using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(55, fields.Length);
+
+        await ReadAnyFieldAsync(rgr, fields[0]);
+    }
+
+    [Fact]
+    public async Task ThriftProtocolBreakingChangeJune2024_Untyped() {
+        using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s);
+    }
+
+    [Fact]
+    public async Task DecimalsWithNoDefinedScale() {
+        using Stream s = OpenTestFile("decimals_with_precision_but_no_scale.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(8, fields.Length);
+
+        //DECIMAL(9, 5)
+        decimal?[] data = await ReadNullableValuesAsync<decimal>(rgr, fields[5]);
+        Assert.Equal(1.02232M, data[7]);
+        Assert.Equal(-27.427M, data[344]);
+
+        //DECIMAL(9, 0)
+        data = await ReadNullableValuesAsync<decimal>(rgr, fields[6]);
+        Assert.Equal(0M, data[0]);
+        Assert.Equal(1000M, data[6616]);
+    }
+
+    [Fact]
+    public async Task DuckDbRLE_637() {
+        using Stream s = OpenTestFile("issues/637-duckdb.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Single(fields);
+
+        int?[] data = await ReadNullableValuesAsync<int>(rgr, fields[0]);
+        Assert.Equal(new int?[] { 2023, 2024 }, data);
+    }
+
+    [Fact]
+    public async Task HyparquetCompressed() {
+        using Stream s = OpenTestFile("hyparquet.snappy.parquet");
+        (IList<Dictionary<string, object>>? data, ParquetSchema? schema) = await ParquetSerializer.DeserializeUntypedAsync(s);
+    }
+
+    [Fact]
+    public async Task NestedGroup_681() {
+        using Stream s = OpenTestFile("issues/681_nested.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField df = r.Schema.FindDataField(new FieldPath("data_group", "nested"));
+
+        string?[] values = await ReadStringValuesAsync(rgr, df);
+
+        Assert.Single(values);
+    }
+
+    [Fact]
+    public async Task BigDecimalDefaultOptions() {
+        using Stream s = OpenTestFile("bigdecimal.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        DataField[] fields = r.Schema.GetDataFields();
+        await Assert.ThrowsAsync<OverflowException>(async () => {
+            foreach(DataField field in fields) {
+                await ReadAnyFieldAsync(rgr, field);
+            }
+        });
+    }
+
+    [Fact]
+    public async Task BigDecimalWithUseBigDecimalsOptionOn() {
+        using Stream s = OpenTestFile("bigdecimal.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s, new ParquetOptions {
+            UseBigDecimal = true
+        });
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+
+        foreach(DataField field in r.Schema.GetDataFields()) {
+            await ReadAnyFieldAsync(rgr, field);
         }
+    }
 
-        [Fact]
-        public async Task Oracle_Int64_Field_With_Extra_Byte() {
-            using Stream s = OpenTestFile("oracle_int64_extra_byte_at_end.parquet");
-            List<DataColumn> cols = await ReadColumns(s);
-            Assert.Equal(2, cols.Count);
-            Assert.Equal(126, cols[0].NumValues);
-            Assert.Equal(126, cols[1].NumValues);
-            Assert.Equal("DEPOSIT", cols[0].Data.GetValue(0));
-            Assert.Equal("DEPOSIT", cols[0].Data.GetValue(125));
-            Assert.Equal((long)1, cols[1].Data.GetValue(0));
-            Assert.Equal((long)1, cols[1].Data.GetValue(125));
-        }
+    [Fact]
+    public async Task PyArrow22() {
+        using Stream s = OpenTestFile("special/pyarrow_v22.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
-        [Fact]
-        public async Task FixedLenByteArrayWithDictTest() {
-            using Stream s = OpenTestFile("fixed_len_byte_array_with_dict.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
+        using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
 
-            Assert.Equal(10, cols.Length);
+        Assert.Equal(4626, groupReader.RowCount);
+        DataField[] fs = r.Schema.GetDataFields();
+        Assert.Equal(2, fs.Length);
 
-            // last column is a dictionary-encoded FIXED_LEN_BYTE_ARRAY.
-            DataColumn lastCol = cols[9];
-            Assert.Equal(6, lastCol.Data.Length);
-            byte[][] data = (byte[][])lastCol.Data;
-            Assert.Equal(Encoding.ASCII.GetBytes("abc"), data[0]);
-            Assert.Equal(Encoding.ASCII.GetBytes("def"), data[1]);
-            Assert.Equal(Encoding.ASCII.GetBytes("ghi"), data[2]);
-            Assert.Equal(Encoding.ASCII.GetBytes("jkl"), data[3]);
-            Assert.Equal(Encoding.ASCII.GetBytes("mno"), data[4]);
-            Assert.Equal(Encoding.ASCII.GetBytes("qrs"), data[5]);
-        }
-
-        [Fact]
-        public async Task GuidEndianTest() {
-            using Stream s = OpenTestFile("cetas4.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
-
-            Assert.Single(cols);
-            DataColumn col = cols[0];
-            Assert.Equal(Guid.Parse("15A2501E-4899-4FF8-AF51-A1805FE0718F"), col.Data.GetValue(0));
-        }
-
-        [Fact]
-        public async Task ThriftProtocolBreakingChangeJune2024() {
-            using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
-
-            Assert.Equal(55, cols.Length);
-        }
-
-        [Fact]
-        public async Task ThriftProtocolBreakingChangeJune2024_Untyped() {
-            using Stream s = OpenTestFile("thrift/breaking-spec-2024.parquet");
-            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
-        }
-
-        [Fact]
-        public async Task DecimalsWithNoDefinedScale() {
-            using Stream s = OpenTestFile("decimals_with_precision_but_no_scale.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
-
-            Assert.Equal(8, cols.Length);
-            
-            //DECIMAL(9, 5)
-            DataColumn decimal_p9_s5 = cols[5];
-            decimal?[] data = (decimal?[])decimal_p9_s5.Data;
-            Assert.Equal(1.02232M, data[7]);
-            Assert.Equal(-27.427M, data[344]);
-
-            //DECIMAL(9, 0)
-            DataColumn decimal_p9_s0 = cols[6];
-            data = (decimal?[])decimal_p9_s0.Data;
-            Assert.Equal(0M, data[0]);
-            Assert.Equal(1000M, data[6616]);
-        }
-
-        [Fact]
-        public async Task DuckDbRLE_637() {
-            using Stream s = OpenTestFile("issues/637-duckdb.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
-            Assert.Single(cols);
-            Assert.Equal(new int?[] {2023, 2024}, cols[0].Data);
-        }
-
-        [Fact]
-        public async Task HyparquetCompressed() {
-            using Stream s = OpenTestFile("hyparquet.snappy.parquet");
-            ParquetSerializer.UntypedResult r = await ParquetSerializer.DeserializeAsync(s);
-        }
-
-        [Fact]
-        public async Task NestedGroup_681() {
-            using Stream s = OpenTestFile("issues/681_nested.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
-
-            DataField df = r.Schema.FindDataField(new FieldPath("data_group", "nested"));
-
-            DataColumn data = await rgr.ReadColumnAsync(df);
-
-            Assert.Equal(1, data.NumValues);
-        }
-
-        [Fact]
-        public async Task BigDecimalDefaultOptions() {
-            using Stream s = OpenTestFile("bigdecimal.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-            await Assert.ThrowsAsync<OverflowException>(() => r.ReadEntireRowGroupAsync());
-        }
-
-        [Fact]
-        public async Task BigDecimalWithUseBigDecimalsOptionOn() {
-            using Stream s = OpenTestFile("bigdecimal.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s, new ParquetOptions {
-                UseBigDecimal = true
-            });
-            DataColumn[] cols = await r.ReadEntireRowGroupAsync();
-        }
-
-        [Fact]
-        public async Task PyArrow22() {
-            using Stream s = OpenTestFile("special/pyarrow_v22.parquet");
-            using ParquetReader r = await ParquetReader.CreateAsync(s);
-
-            using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
-
-            Assert.Equal(4626, groupReader.RowCount);
-            DataField[] fs = r.Schema.GetDataFields();
-            Assert.Equal(2, fs.Length);
-
-            DataColumn timeData = await groupReader.ReadColumnAsync(fs[1]);
-            Assert.Equal(TimeSpan.FromTicks(215720000000), timeData.Data.GetValue(0));
-        }
-
+        TimeSpan?[] data = await ReadNullableValuesAsync<TimeSpan>(groupReader, fs[1]);
+        Assert.Equal(TimeSpan.FromTicks(215720000000), data[0]);
     }
 }

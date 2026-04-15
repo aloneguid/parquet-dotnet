@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Parquet.Schema; 
+namespace Parquet.Schema;
 
 /// <summary>
 /// Maps to Parquet decimal type, allowing to specify custom scale and precision

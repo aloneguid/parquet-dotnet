@@ -1,19 +1,19 @@
-﻿using Parquet.File;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Parquet.Data;
-using System.Threading.Tasks;
 using System.Threading;
-using Parquet.Schema;
+using System.Threading.Tasks;
+using Parquet.Data;
+using Parquet.File;
 using Parquet.Meta;
+using Parquet.Schema;
 
-namespace Parquet; 
+namespace Parquet;
 
 /// <summary>
 /// Implements Apache Parquet format reader, experimental version for next major release.
 /// </summary>
-public class ParquetReader : ParquetActor, IDisposable {
+public class ParquetReader : ParquetActor, IAsyncDisposable {
     private readonly Stream _input;
     private FileMetaData? _meta;
     private ThriftFooter _thriftFooter;
@@ -95,7 +95,7 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// Opens file at specified path to read schema and return
     /// </summary>
     public static async Task<ParquetSchema> ReadSchemaAsync(string filePath) {
-        using ParquetReader reader = await CreateAsync(filePath);
+        await using ParquetReader reader = await CreateAsync(filePath);
         return reader.Schema;
     }
 
@@ -103,7 +103,7 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// Reads file stream and returns
     /// </summary>
     public static async Task<ParquetSchema> ReadSchemaAsync(Stream parquetStream) {
-        using ParquetReader reader = await CreateAsync(parquetStream);
+        await using ParquetReader reader = await CreateAsync(parquetStream);
         return reader.Schema;
     }
 
@@ -139,34 +139,7 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// <summary>
     /// Collection of row group readers, fast random access and enumeration
     /// </summary>
-    public IReadOnlyList<IParquetRowGroupReader> RowGroups => _groupReaders;
-
-    /// <summary>
-    /// Reads entire row group's data columns in one go.
-    /// </summary>
-    /// <param name="rowGroupIndex">Index of the row group. Default to the first row group if not specified.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns></returns>
-    public async Task<DataColumn[]> ReadEntireRowGroupAsync(int rowGroupIndex = 0, CancellationToken cancellationToken = default)
-    {
-        if(Schema == null)
-            throw new InvalidOperationException("schema is not initialised yet");
-
-        DataField[] dataFields = Schema.GetDataFields();
-        DataColumn[] result = new DataColumn[dataFields.Length];
-
-        using(ParquetRowGroupReader reader = OpenRowGroupReader(rowGroupIndex))
-        {
-            for(int i = 0; i < dataFields.Length; i++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                DataColumn column = await reader.ReadColumnAsync(dataFields[i], cancellationToken);
-                result[i] = column;
-            }
-        }
-
-        return result;
-    }
+    public IReadOnlyList<ParquetRowGroupReader> RowGroups => _groupReaders;
 
     private void InitRowGroupReaders() {
         _groupReaders.Clear();
@@ -181,9 +154,10 @@ public class ParquetReader : ParquetActor, IDisposable {
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public void Dispose() {
+    public ValueTask DisposeAsync() {
         if(!_leaveStreamOpen) {
             _input.Dispose();
         }
+        return ValueTask.CompletedTask;
     }
 }

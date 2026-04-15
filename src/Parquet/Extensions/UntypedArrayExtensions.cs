@@ -77,14 +77,12 @@ namespace Parquet.Extensions {
             if(t == typeof(Guid?)) {
                 return CalculateNullCount((Guid?[])array, offset, count);
             }
-#if NET6_0_OR_GREATER
             if(t == typeof(DateOnly?)) {
                 return CalculateNullCount((DateOnly?[])array, offset, count);
             }
             if(t == typeof(TimeOnly?)) {
                 return CalculateNullCount((TimeOnly?[])array, offset, count);
             }
-#endif            
             throw new NotSupportedException($"cannot count nulls in type {t}");
         }
 
@@ -268,7 +266,6 @@ namespace Parquet.Extensions {
             }
             return r;
         }
-#if NET6_0_OR_GREATER
         private static int CalculateNullCount(DateOnly?[] array, int offset, int count) {
             int r = 0;
             for(int i = offset; i < count; i++) {
@@ -287,7 +284,6 @@ namespace Parquet.Extensions {
             }
             return r;
         }
-#endif
     #endregion
 
     #region [ Null Packing ]
@@ -449,7 +445,6 @@ namespace Parquet.Extensions {
                 return;
             }
  
-#if NET6_0_OR_GREATER
             if(t == typeof(DateOnly?)) {
                 PackNullsTypeFast((DateOnly?[])array,
                     offset, count,
@@ -464,7 +459,6 @@ namespace Parquet.Extensions {
                     dest, fillerValue);
                 return;
             }
-#endif
             throw new NotSupportedException($"cannot pack type {t}");
         }
 
@@ -848,7 +842,6 @@ namespace Parquet.Extensions {
             }
         }
 
-#if NET6_0_OR_GREATER
         private static void PackNullsTypeFast(DateOnly?[] array,
             int offset, int count,
             DateOnly[] packedArray,
@@ -887,7 +880,6 @@ namespace Parquet.Extensions {
             }
         }
 
-#endif
     #endregion
 
     #region [ Null Unpacking ]
@@ -1021,7 +1013,6 @@ namespace Parquet.Extensions {
                 (Guid?[])result);
             return;
         }
-#if NET6_0_OR_GREATER
         if(t == typeof(DateOnly)) {
             UnpackNullsTypeFast((DateOnly[])array,
                 flags, fillFlag,
@@ -1034,7 +1025,6 @@ namespace Parquet.Extensions {
                 (TimeOnly?[])result);
             return;
         }
-#endif            
         throw new NotSupportedException($"cannot pack type {t}");
 
     }
@@ -1319,7 +1309,6 @@ namespace Parquet.Extensions {
         }
     }
 
-#if NET6_0_OR_GREATER
     private static void UnpackNullsTypeFast(DateOnly[] array,
         Span<int> flags, int fillFlag,
         DateOnly?[] result) {
@@ -1348,7 +1337,6 @@ namespace Parquet.Extensions {
         }
     }
 
-#endif
     #endregion
 
     #region [ Dictionary Explosion ]
@@ -1460,7 +1448,6 @@ namespace Parquet.Extensions {
                 indexes, (Guid[])result, resultOffset, resultCount);
             return;
         }
-#if NET6_0_OR_GREATER
         if(t == typeof(DateOnly)) {
             ExplodeTypeFast((DateOnly[])dictionary,
                 indexes, (DateOnly[])result, resultOffset, resultCount);
@@ -1471,7 +1458,6 @@ namespace Parquet.Extensions {
                 indexes, (TimeOnly[])result, resultOffset, resultCount);
             return;
         }
-#endif            
         throw new NotSupportedException($"cannot pack type {t}");
     }
 
@@ -1755,7 +1741,6 @@ namespace Parquet.Extensions {
         }
     }
 
-#if NET6_0_OR_GREATER
     private static void ExplodeTypeFast(DateOnly[] dictionary,
         Span<int> indexes,
         DateOnly[] result, int resultOffset, int resultCount) {
@@ -1784,7 +1769,6 @@ namespace Parquet.Extensions {
         }
     }
 
-#endif
     #endregion
 
     }

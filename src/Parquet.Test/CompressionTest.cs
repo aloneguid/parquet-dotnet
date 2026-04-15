@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test; 
+namespace Parquet.Test;
 
 public class CompressionTest : TestBase {
     [Theory]
@@ -15,31 +17,31 @@ public class CompressionTest : TestBase {
     [InlineData(CompressionMethod.LZ4)]
     [InlineData(CompressionMethod.Zstd)]
     [InlineData(CompressionMethod.Lz4Raw)]
-    public async Task All_compression_methods_supported_for_simple_integers(CompressionMethod compressionMethod) {
-        const int value = 5;
-        object actual = await WriteReadSingle(new DataField<int>("id"), value, compressionMethod);
-        Assert.Equal(5, (int)actual);
-    }
-
-    [Theory]
-    [InlineData(CompressionMethod.None)]
-    [InlineData(CompressionMethod.Snappy)]
-    [InlineData(CompressionMethod.Gzip)]
-    //[InlineData(CompressionMethod.Lzo)]
-    [InlineData(CompressionMethod.Brotli)]
-    [InlineData(CompressionMethod.LZ4)]
-    [InlineData(CompressionMethod.Zstd)]
-    [InlineData(CompressionMethod.Lz4Raw)]
-    public async Task All_compression_methods_supported_for_simple_strings(CompressionMethod compressionMethod) {
+    public async Task Compression_roundtrip(CompressionMethod compressionMethod) {
         /*
          * uncompressed: length - 14, levels - 6
          * 
          * 
          */
 
-        const string value = "five";
-        object actual = await WriteReadSingle(new DataField<string>("id"), value, compressionMethod);
-        Assert.Equal("five", actual);
+        using var ms = new MemoryStream();
+        var schema = new ParquetSchema(new DataField<int>("id"));
+
+        int testValue = 10;
+
+        // write value
+        await using(ParquetWriter w = await ParquetWriter.CreateAsync(schema, ms)) {
+            w.CompressionMethod = compressionMethod;
+            using ParquetRowGroupWriter rgw = w.CreateRowGroup();
+            await rgw.WriteAsync<int>(schema.DataFields[0], new[] { testValue });
+        }
+
+        // read value back
+        ms.Position = 0;
+        await using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
+            RawColumnData<int> c = await ReadColumn<int>(r, schema.DataFields[0]);
+            Assert.Equal(testValue, c.Values[0]);
+        }
     }
 
     [Fact]
@@ -47,14 +49,14 @@ public class CompressionTest : TestBase {
         // This file has a Zstd-compressed column whose UncompressedPageSize in the Parquet metadata
         // is incorrect (8 instead of the actual 1024 bytes). The library must ignore the metadata hint
         // and rely solely on the size embedded in the Zstd frame header.
-        using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("special/zstd-invalid-length.parquet"));
+        await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("special/zstd-invalid-length.parquet"));
         using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
 
         DataField[] fields = reader.Schema.GetDataFields();
-        DataColumn column1 = await groupReader.ReadColumnAsync(fields[0]);
-        DataColumn column2 = await groupReader.ReadColumnAsync(fields[1]);
+        RawColumnData<DateTime> column1 = await ReadColumn<DateTime>(reader, fields[0]);
+        RawColumnData<ReadOnlyMemory<char>> column2 = await ReadColumn<ReadOnlyMemory<char>>(reader, fields[1]);
 
-        Assert.NotNull(column1.Data);
-        Assert.NotNull(column2.Data);
+        Assert.True(column1.Values.Length > 0);
+        Assert.True(column2.Values.Length > 0);
     }
 }

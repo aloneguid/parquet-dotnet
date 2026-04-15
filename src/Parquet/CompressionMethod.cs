@@ -1,46 +1,46 @@
-﻿namespace Parquet {
+﻿namespace Parquet;
+
+/// <summary>
+/// Parquet compression method. See https://github.com/apache/parquet-format/blob/master/Compression.md
+/// </summary>
+public enum CompressionMethod {
     /// <summary>
-    /// Parquet compression method. See https://github.com/apache/parquet-format/blob/master/Compression.md
+    /// No compression
     /// </summary>
-    public enum CompressionMethod {
-        /// <summary>
-        /// No compression
-        /// </summary>
-        None = 0,
+    None = 0,
 
-        /// <summary>
-        /// Snappy compression 
-        /// </summary>
-        Snappy = 1,
+    /// <summary>
+    /// Snappy compression 
+    /// </summary>
+    Snappy = 1,
 
-        /// <summary>
-        /// Gzip compression
-        /// </summary>
-        Gzip = 2,
+    /// <summary>
+    /// Gzip compression
+    /// </summary>
+    Gzip = 2,
 
-        /// <summary>
-        /// LZO
-        /// </summary>
-        Lzo = 3,
+    /// <summary>
+    /// LZO
+    /// </summary>
+    Lzo = 3,
 
-        /// <summary>
-        /// Brotli
-        /// </summary>
-        Brotli = 4,
+    /// <summary>
+    /// Brotli
+    /// </summary>
+    Brotli = 4,
 
-        /// <summary>
-        /// LZ4
-        /// </summary>
-        LZ4 = 5,
+    /// <summary>
+    /// LZ4
+    /// </summary>
+    LZ4 = 5,
 
-        /// <summary>
-        /// ZSTD
-        /// </summary>
-        Zstd = 6,
+    /// <summary>
+    /// ZSTD
+    /// </summary>
+    Zstd = 6,
 
-        /// <summary>
-        /// LZ4 raw
-        /// </summary>
-        Lz4Raw = 7,
-    }
+    /// <summary>
+    /// LZ4 raw
+    /// </summary>
+    Lz4Raw = 7,
 }

@@ -2,7 +2,7 @@
 using Parquet.Data;
 using Xunit;
 
-namespace Parquet.Test.DataTypes; 
+namespace Parquet.Test.DataTypes;
 
 public class BigDecimalTest {
     [Fact]

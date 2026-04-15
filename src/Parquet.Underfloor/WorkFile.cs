@@ -108,7 +108,7 @@ class WorkFile : IAsyncDisposable {
 
     public string[]? ColumnsDisplay { get; set; }
 
-    public IReadOnlyList<IParquetRowGroupReader>? RowGroups { get; set; }
+    public IReadOnlyList<ParquetRowGroupReader>? RowGroups { get; set; }
 
     public string[]? RowGroupDisplayNames;
 
@@ -116,7 +116,9 @@ class WorkFile : IAsyncDisposable {
 
     public ReadStatus SampleReadStatus { get; set; } = ReadStatus.NotStarted;
 
-    public ParquetSerializer.UntypedResult? Sample { get; set; }
+    public ParquetSchema? SampleSchema { get; set; }
+
+    public IList<Dictionary<string, object>>? Sample { get; set; }
 
     public Exception? SampleReadException { get; set; }
 
@@ -130,7 +132,7 @@ class WorkFile : IAsyncDisposable {
 
     public uint CurrentRawDataFieldIndex = 0;
 
-    public DataColumn? CurrentRawDataFieldData;
+    //public DataColumn? CurrentRawDataFieldData;
 
     public ReadStatus CurrentRawDataFieldDataReadStatus { get; set; } = ReadStatus.NotStarted;
 
@@ -146,7 +148,7 @@ class WorkFile : IAsyncDisposable {
             DateTime start = DateTime.UtcNow;
             _stream.Seek(0, SeekOrigin.Begin);
             try {
-                ParquetSerializer.UntypedResult ur = await ParquetSerializer.DeserializeAsync(_stream,
+                (IList<Dictionary<string, object>> data, ParquetSchema schema) = await ParquetSerializer.DeserializeUntypedAsync(_stream,
                     new ParquetSerializerOptions {
                         ParquetOptions = new ParquetOptions {
                             TreatByteArrayAsString = true,
@@ -154,7 +156,8 @@ class WorkFile : IAsyncDisposable {
                         }
                     });
 
-                Sample = ur;
+                SampleSchema = schema;
+                Sample = data;
                 SampleReadStatus = ReadStatus.Completed;
             } catch(Exception ex) {
                 SampleReadException = ex;
@@ -172,14 +175,14 @@ class WorkFile : IAsyncDisposable {
 
         DataField df = _rawDataFields[CurrentRawDataFieldIndex];
         _stream.Seek(0, SeekOrigin.Begin);
-        CurrentRawDataFieldData = null;
+        //CurrentRawDataFieldData = null;
         CurrentRawDataFieldDataReadStatus = ReadStatus.InProgress;
 
         try {
-            using ParquetReader pr = await ParquetReader.CreateAsync(_stream);
+            await using ParquetReader pr = await ParquetReader.CreateAsync(_stream);
             using ParquetRowGroupReader rgr = pr.OpenRowGroupReader(0);
-            DataColumn dc = await rgr.ReadColumnAsync(df);
-            CurrentRawDataFieldData = dc;
+            //DataColumn dc = await rgr.ReadColumnAsync(df);
+            //CurrentRawDataFieldData = dc;
             CurrentRawDataFieldDataReadStatus = ReadStatus.Completed;
         } catch(Exception ex) {
             CurrentRawDataFieldReadError = ex;

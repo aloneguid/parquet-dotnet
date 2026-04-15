@@ -272,11 +272,11 @@ static class SchemaEncoder {
         // time
         if(se.LogicalType?.TIME != null) {
             TimeType timeType = se.LogicalType.TIME;
-            if(timeType.Unit.MILLIS != null ) {
+            if(timeType.Unit.MILLIS != null) {
                 return options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan);
             }
             if(timeType.Unit.MICROS != null) {
-                return options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) :  typeof(TimeSpan);
+                return options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan);
             }
             if(timeType.Unit.NANOS != null) {
                 return typeof(DateTime);
@@ -356,8 +356,8 @@ static class SchemaEncoder {
 
     private static DataField GetDecimalDataField(SchemaElement se, SType clrType) =>
         new DecimalDataField(se.Name,
-            se.Precision.GetValueOrDefault(DecimalFormatDefaults.DefaultPrecision),
-            se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : DecimalFormatDefaults.DefaultScale),
+            se.Precision.GetValueOrDefault(ParquetOptions.DefaultPrecision),
+            se.Scale.GetValueOrDefault(se.Precision is not null ? 0 : ParquetOptions.DefaultScale),
             clrType: clrType);
 
     private static DataField GetDateTimeDataField(SchemaElement se) {
@@ -453,7 +453,7 @@ static class SchemaEncoder {
         SType st = field.ClrType;
         var tse = new SchemaElement { Name = field.Name };
 
-        if( field.FieldId != -1 ) { 
+        if(field.FieldId != -1) {
             tse.FieldId = field.FieldId;
         }
 
@@ -527,8 +527,8 @@ static class SchemaEncoder {
             } else {
                 //set defaults
                 tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
-                precision = DecimalFormatDefaults.DefaultPrecision;
-                scale = DecimalFormatDefaults.DefaultScale;
+                precision = ParquetOptions.DefaultPrecision;
+                scale = ParquetOptions.DefaultScale;
                 tse.TypeLength = 16;
             }
 
@@ -560,7 +560,8 @@ static class SchemaEncoder {
                         break;
                     case DateTimeFormat.Timestamp:
                         tse.Type = Type.INT64;
-                        tse.LogicalType = new LogicalType { TIMESTAMP = new TimestampType {
+                        tse.LogicalType = new LogicalType {
+                            TIMESTAMP = new TimestampType {
                                 IsAdjustedToUTC = dfDateTime.IsAdjustedToUTC,
                                 Unit = dfDateTime.Unit switch {
                                     DateTimeTimeUnit.Millis => new TimeUnit {
@@ -590,7 +591,7 @@ static class SchemaEncoder {
             tse.Type = Type.INT32;
             tse.LogicalType = new LogicalType { DATE = new DateType() };
             tse.ConvertedType = ConvertedType.DATE;
-        } else if (st == typeof(TimeOnly)) {
+        } else if(st == typeof(TimeOnly)) {
             // TimeOnly
             if(field is TimeOnlyDataField dfTime) {
                 switch(dfTime.TimeSpanFormat) {

@@ -26,7 +26,7 @@
         /// Only stores a date. Time portion is truncated. Internally stored as INT32
         /// </summary>
         Date,
-        
+
         /// <summary>
         /// Logical Type Timestamp.
         /// </summary>

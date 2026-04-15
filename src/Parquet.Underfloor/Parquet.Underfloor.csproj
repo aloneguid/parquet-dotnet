@@ -6,14 +6,14 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PublishAot>true</PublishAot>
+        <!--<PublishAot>true</PublishAot>-->
         <InvariantGlobalization>true</InvariantGlobalization>
         <ApplicationIcon>icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="ByteSize" Version="2.1.2" />
-        <PackageReference Include="GreyMatter" Version="0.0.0-pre.40" />
+        <PackageReference Include="GreyMatter" Version="0.0.0-pre.42" />
     </ItemGroup>
 
     <ItemGroup>

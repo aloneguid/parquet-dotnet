@@ -4,131 +4,139 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Parquet.Extensions {
-    static class ExpressionExtensions {
-        public static Expression Loop(this Expression iterationBody,
-            Expression collection,
-            Type collectionElementType,
-            ParameterExpression elementHolder,
-            ParameterExpression? loopCounterHolder = null) {
+namespace Parquet.Extensions;
 
-            Type enumeratorGenericType = typeof(IEnumerator<>).MakeGenericType(collectionElementType);
-            Type enumerableGenericType = typeof(IEnumerable<>).MakeGenericType(collectionElementType);
+static class ExpressionExtensions {
+    public static Expression Loop(this Expression iterationBody,
+        Expression collection,
+        Type collectionElementType,
+        ParameterExpression elementHolder,
+        ParameterExpression? loopCounterHolder = null) {
 
-            ParameterExpression enumeratorVar = Expression.Variable(enumeratorGenericType);
-            MethodCallExpression getEnumeratorCall = Expression.Call(collection,
-                enumerableGenericType.GetMethod(nameof(IEnumerable.GetEnumerator))!);
-            MethodCallExpression moveNextCall = Expression.Call(enumeratorVar,
-                typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext))!);
-            LabelTarget loopBreakLabel = Expression.Label();
+        Type enumeratorGenericType = typeof(IEnumerator<>).MakeGenericType(collectionElementType);
+        Type enumerableGenericType = typeof(IEnumerable<>).MakeGenericType(collectionElementType);
 
-            // doc: Expression.Loop is an infinite loop that can be exited with "break"
-            LoopExpression loop = Expression.Loop(
+        ParameterExpression enumeratorVar = Expression.Variable(enumeratorGenericType);
+        MethodCallExpression getEnumeratorCall = Expression.Call(collection,
+            enumerableGenericType.GetMethod(nameof(IEnumerable.GetEnumerator))!);
+        MethodCallExpression moveNextCall = Expression.Call(enumeratorVar,
+            typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext))!);
+        LabelTarget loopBreakLabel = Expression.Label();
+
+        // doc: Expression.Loop is an infinite loop that can be exited with "break"
+        LoopExpression loop = Expression.Loop(
+            Expression.IfThenElse(
+
+                // test
+                Expression.Equal(moveNextCall, Expression.Constant(true)),
+
+                // if true
+                Expression.Block(
+                    //new[] { classElementVar },
+
+                    // get class element into loopVar
+                    Expression.Assign(elementHolder, Expression.Property(enumeratorVar, nameof(IEnumerator.Current))),
+
+                    iterationBody,
+
+                    loopCounterHolder == null
+                        ? Expression.Empty()
+                        : Expression.PostIncrementAssign(loopCounterHolder)),
+
+                // if false
+                Expression.Break(loopBreakLabel)
+                ), loopBreakLabel);
+
+        return Expression.Block(
+            new[] { enumeratorVar, elementHolder },
+
+            // get enumerator from class collection
+            Expression.Assign(enumeratorVar, getEnumeratorCall),
+
+            // loop over classes
+            loop);
+    }
+
+    public static Expression ForLoop(this Expression fromVar, Expression toVar,
+        ParameterExpression iVar, Expression body) {
+
+        LabelTarget loopBreakLabel = Expression.Label();
+        return Expression.Block(
+            new[] { iVar },
+            Expression.Assign(iVar, fromVar),
+
+            Expression.Loop(
                 Expression.IfThenElse(
+                    Expression.LessThan(iVar, toVar),
 
-                    // test
-                    Expression.Equal(moveNextCall, Expression.Constant(true)),
-
-                    // if true
                     Expression.Block(
-                        //new[] { classElementVar },
+                        body,
+                        Expression.PostIncrementAssign(iVar)),
 
-                        // get class element into loopVar
-                        Expression.Assign(elementHolder, Expression.Property(enumeratorVar, nameof(IEnumerator.Current))),
+                    Expression.Break(loopBreakLabel)),
+                loopBreakLabel)
+            );
+    }
 
-                        iterationBody,
-                        
-                        loopCounterHolder == null
-                            ? Expression.Empty()
-                            : Expression.PostIncrementAssign(loopCounterHolder)),
+    /// <summary>
+    /// Calls <see cref="Array.Clear(Array, int, int)"/>
+    /// </summary>
+    public static Expression ClearArray(this ParameterExpression array, Expression? fromIndexVar = null) {
 
-                    // if false
-                    Expression.Break(loopBreakLabel)
-                    ), loopBreakLabel);
+        Expression from = fromIndexVar ?? Expression.Constant(0);
+        Expression length = Expression.Property(array, nameof(Array.Length));
+        if(fromIndexVar != null)
+            length = Expression.Subtract(length, fromIndexVar);
 
-            return Expression.Block(
-                new[] { enumeratorVar, elementHolder },
+        return Expression.Call(
+            typeof(Array).GetMethod(
+                nameof(Array.Clear),
+                BindingFlags.Static | BindingFlags.Public,
+                null,
+                new[] { typeof(Array), typeof(int), typeof(int) },
+                null)!,
+            array, from, length);
+    }
 
-                // get enumerator from class collection
-                Expression.Assign(enumeratorVar, getEnumeratorCall),
+    public static Expression CollectionCount(this Expression collection, Type collectionType) {
+        return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
+    }
 
-                // loop over classes
-                loop);
-        }
+    public static Expression IListAdd(
+        this Expression collection, Type collectionType,
+        Expression element, Type elementType) {
 
-        public static Expression ForLoop(this Expression fromVar, Expression toVar,
-            ParameterExpression iVar, Expression body) {
+        MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), [elementType]);
 
-            LabelTarget loopBreakLabel = Expression.Label();
-            return Expression.Block(
-                new[] { iVar },
-                Expression.Assign(iVar, fromVar),
+        if(method == null)
+            throw new NotSupportedException($"can't find list's .{nameof(IList.Add)}() method");
 
-                Expression.Loop(
-                    Expression.IfThenElse(
-                        Expression.LessThan(iVar, toVar),
-                        
-                        Expression.Block(
-                            body,
-                            Expression.PostIncrementAssign(iVar)),
-                        
-                        Expression.Break(loopBreakLabel)),
-                    loopBreakLabel)
-                );
-        }
+        return Expression.Call(
+            collection,
+            method,
+            element);
+    }
 
-        /// <summary>
-        /// Calls <see cref="Array.Clear(Array, int, int)"/>
-        /// </summary>
-        public static Expression ClearArray(this ParameterExpression array, Expression? fromIndexVar = null) {
+    public static Expression IsNull(this Expression nullableVar) {
+        return Expression.Equal(nullableVar, Expression.Constant(null));
+    }
 
-            Expression from = fromIndexVar ?? Expression.Constant(0);
-            Expression length = Expression.Property(array, nameof(Array.Length));
-            if(fromIndexVar != null) length = Expression.Subtract(length, fromIndexVar);
+    internal static T GetSpanItem<T>(Span<T> span, int index) => span[index];
 
-            return Expression.Call(
-                typeof(Array).GetMethod(
-                    nameof(Array.Clear),
-                    BindingFlags.Static | BindingFlags.Public,
-                    null,
-                    new[] { typeof(Array), typeof(int), typeof(int) },
-                    null)!,
-                array, from, length);
-        }
+    public static Expression GetSpanElement(this Expression span, Type elementType, Expression index) {
+        MethodInfo spanGetter = typeof(ExpressionExtensions).GetMethod(nameof(GetSpanItem), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(elementType);
+        return Expression.Call(spanGetter, span, index);
+    }
 
-        public static Expression CollectionCount(this Expression collection, Type collectionType) {
-            return Expression.Property(collection, nameof(IReadOnlyCollection<int>.Count));
-        }
+    /// <summary>
+    /// Gets internal property "DebugView" which is normally only available in Visual Studio debugging session
+    /// </summary>
+    /// <returns></returns>
+    public static string GetPseudoCode(this Expression expression) {
+        PropertyInfo? propertyInfo = typeof(Expression).GetProperty("DebugView", BindingFlags.Instance | BindingFlags.NonPublic);
+        if(propertyInfo == null)
+            return string.Empty;
 
-        public static Expression IListAdd(
-            this Expression collection, Type collectionType,
-            Expression element, Type elementType) {
-
-            MethodInfo? method = collectionType.GetMethod(nameof(IList.Add), [elementType]);
-
-            if(method == null)
-                throw new NotSupportedException($"can't find list's .{nameof(IList.Add)}() method");
-
-            return Expression.Call(
-                collection,
-                method,
-                element);
-        }
-
-        public static Expression IsNull(this Expression nullableVar) {
-            return Expression.Equal(nullableVar, Expression.Constant(null));
-        }
-
-        /// <summary>
-        /// Gets internal property "DebugView" which is normally only available in Visual Studio debugging session
-        /// </summary>
-        /// <returns></returns>
-        public static string GetPseudoCode(this Expression expression) {
-            PropertyInfo? propertyInfo = typeof(Expression).GetProperty("DebugView", BindingFlags.Instance | BindingFlags.NonPublic);
-            if(propertyInfo == null)
-                return string.Empty;
-
-            return (string)propertyInfo.GetValue(expression)!;
-        }
+        return (string)propertyInfo.GetValue(expression)!;
     }
 }

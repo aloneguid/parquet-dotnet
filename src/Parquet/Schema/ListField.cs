@@ -127,7 +127,8 @@ namespace Parquet.Schema {
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) {
-            if(obj is not ListField other) return false;
+            if(obj is not ListField other)
+                return false;
 
             return base.Equals(obj) && (Item?.Equals(other.Item) ?? true);
         }

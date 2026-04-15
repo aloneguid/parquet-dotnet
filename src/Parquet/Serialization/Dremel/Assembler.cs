@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Parquet.Schema;
 
-namespace Parquet.Serialization.Dremel; 
+namespace Parquet.Serialization.Dremel;
 
 class Assembler<TClass> {
     public Assembler(ParquetSchema schema) {

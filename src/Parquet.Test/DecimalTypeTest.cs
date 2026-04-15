@@ -1,9 +1,8 @@
 ﻿using System;
-using Xunit;
-using System.Threading.Tasks;
 using Parquet.Schema;
+using Xunit;
 
-namespace Parquet.Test; 
+namespace Parquet.Test;
 
 public class DecimalTypeTest : TestBase {
 

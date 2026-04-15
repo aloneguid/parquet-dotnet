@@ -177,8 +177,8 @@ namespace Parquet.Meta.Proto {
                     ReadI64();
                     break;
                 //case Types.Double:
-                    //await protocol.ReadDoubleAsync(cancellationToken);
-                    //break;
+                //await protocol.ReadDoubleAsync(cancellationToken);
+                //break;
                 case CompactType.Binary:
                     // Don't try to decode the string, just skip it.
                     ReadBinary();

@@ -6,9 +6,11 @@
 ![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
-**Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets modern .NET runtimes such as `.NET 10` and `.NET 8`.
+**Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets only modern .NET runtimes such as `.NET 10` and `.NET 8`.
 
 Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.Net has you covered.
+
+> This documentation is regarding Parquet.Net v6, which is very new. If you are looking for V5, I've kept [the branch](https://github.com/aloneguid/parquet-dotnet/tree/v5) available.
 
 # Features at a glance
 
@@ -44,7 +46,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 - [Appending to files](#appending-to-files)
 - [Parallelism](#parallelism)
 - [Internals](#internals)
-    - [DataColumn](#datacolumn)
+    - [Reading and Writing Columns](#reading-and-writing-columns)
     - [Schema](#schema)
         - [Lists](#lists)
         - [Lists of primitive types](#lists-of-primitive-types)
@@ -87,57 +89,55 @@ var schema = new ParquetSchema(
     new DataField<double>("MeterValue"));
 ```
 
-The next step is to create `ParquetWriter` class, which builds parquet file skeleton inside the passed stream, and allows you to create a `ParquetRowGroupsWriter` that can write column data to the file. Row group in parquet is a group of all columns from the schema. A file can have any number of row groups, but there must be at least one present. If file is small enough (less than 64Mb or so) it will usually have a single row group. Row groups allow parquet files to contain massive amounts of data and also enable read parallelism (but not write parallelism), Each row group contains all the columns from the schema, but different "rows" or data. This is how you create a simple file with a single row group and write all 3 columns to it:
+The next step is to create `ParquetWriter` class, which builds parquet file skeleton inside the passed stream, and allows you to create a `ParquetRowGroupWriter` that can write column data to the file. Row group in parquet is a group of all columns from the schema. A file can have any number of row groups, but there must be at least one present. If file is small enough (less than 64Mb or so) it will usually have a single row group. Row groups allow parquet files to contain massive amounts of data and also enable read parallelism (but not write parallelism), Each row group contains all the columns from the schema, but different "rows" or data. This is how you create a simple file with a single row group and write all 3 columns to it:
 
 ```c#
-var column1 = new DataColumn(
-    (DataField)schema[0],
-    new[] { 
+using Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet"); 
+await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs));
+using ParquetRowGroupWriter groupWriter = writer.CreateRowGroup();
+
+await groupWriter.WriteAsync<DateTime>(schema.DataFields[0],
+    new[] {
         new DateTime(2025, 11, 18, 22, 07, 00),
         new DateTime(2025, 11, 18, 22, 08, 00),
         new DateTime(2025, 11, 18, 22, 09, 00)});
 
-var column2 = new DataColumn(
-    (DataField)schema[1],
+await groupWriter.WriteAsync(schema.DataFields[1],
     new[] { "start", "stop", "pause" });
 
-var column3 = new DataColumn(
-    (DataField)schema[2],
+await groupWriter.WriteAsync<double>(schema.DataFields[2],
     new[] { 12.34, 56.78, 90.12 });
-
-using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
-    using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs)) {
-        using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
-            
-            await groupWriter.WriteColumnAsync(column1);
-            await groupWriter.WriteColumnAsync(column2);
-            await groupWriter.WriteColumnAsync(column3);
-        }
-    }
-}
 ```
+
+Notice that `ParquetWriter` implements `IAsyncDisposable`, hence `await using`. Column data is written directly by calling `WriteAsync` on the row group writer, passing the schema field and the values array. For strings and byte arrays, there are convenient overloads that accept `IEnumerable<string?>` and `IEnumerable<byte[]?>` respectively.
 
 To read this file back (or just any file created with this or any other parquet software) you can do pretty much the reverse action:
 
 ```csharp
-using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
-    using(ParquetReader reader = await ParquetReader.CreateAsync(fs)) {
-        // optionally access schema: reader.Schema
-        for(int i = 0; i < reader.RowGroupCount; i++) { 
-            using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
+using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet"));
+await using(ParquetReader reader = await ParquetReader.CreateAsync(fs));
+// optionally access schema: reader.Schema
+for(int i = 0; i < reader.RowGroupCount; i++) { 
+    using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i));
+    
+    DataField[] dataFields = reader.Schema.GetDataFields();
 
-                foreach(DataField df in reader.Schema.GetDataFields()) {
-                    DataColumn columnData = await rowGroupReader.ReadColumnAsync(df);
+    // read non-nullable columns by pre-allocating a buffer and calling ReadAsync
+    DateTime[] timestamps = new DateTime[rowGroupReader.RowCount];
+    await rowGroupReader.ReadAsync<DateTime>(dataFields[0], timestamps);
 
-                    // do something to the column...
-                }
-            }
-        }
-    }
+    // strings have a convenience overload that accepts string[]
+    string[] eventNames = new string[rowGroupReader.RowCount];
+    await rowGroupReader.ReadAsync(dataFields[1], eventNames);
+
+    double[] meterValues = new double[rowGroupReader.RowCount];
+    await rowGroupReader.ReadAsync<double>(dataFields[2], meterValues);
+
+    // do something with the data...
 }
 ```
 
-Just like with reading, you create `ParquetReader` on the source stream. Upon creating the stream, Parquet.Net reads stream metadata from the end of the file (hence the requirement for the source stream to have random access) and initializes the internal structures without reading any data. You can even access schema immediately by calling to `reader.Schema` to inspect it. Then enumerate row groups and read columns one by one.
+Just like with writing, you create `ParquetReader` on the source stream (also using `await using`). Upon creating the reader, Parquet.Net reads stream metadata from the end of the file (hence the requirement for the source stream to have random access) and initializes the internal structures without reading any data. You can even access schema immediately by calling to `reader.Schema` to inspect it. Then enumerate row groups and read columns one by one by calling `ReadAsync<T>` with a pre-allocated buffer. For nullable columns, you can use `ReadAsync<T>` with a `Memory<T?>` buffer instead.
 
 ### High level API
 
@@ -154,7 +154,7 @@ class Event {
 Now let's generate some fake data:
 
 ```c#
-var data = Enumerable.Range(0, 1_000_000).Select(i => new Event {
+List<Event> data = Enumerable.Range(0, 1_000_000).Select(i => new Event {
     Timestamp = DateTime.UtcNow.AddSeconds(i),
     EventName = i % 2 == 0 ? "on" : "off",
     MeterValue = i 
@@ -430,42 +430,46 @@ The following code snippet illustrates this:
 
 ```C#
 //write a file with a single row group
-var schema = new ParquetSchema(new DataField<int>("id"));
+var id = new DataField<int>("id");
+var schema = new ParquetSchema(id);
 var ms = new MemoryStream();
 
-using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
     using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-        await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 1, 2 }));
+        await rg.WriteAsync<int>(id, new int[] { 1, 2 });
     }
 }
 
 //append to this file. Note that you cannot append to existing row group, therefore create a new one
 ms.Position = 0;    // this is to rewind our memory stream, no need to do it in real code.
-using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, append: true)) {
+await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, append: true)) {
     using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
-        await rg.WriteColumnAsync(new DataColumn(schema.DataFields[0], new int[] { 3, 4 }));
+        await rg.WriteAsync<int>(id, new int[] { 3, 4 });
     }
 }
 
 //check that this file now contains two row groups and all the data is valid
 ms.Position = 0;
-using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
     Assert.Equal(2, reader.RowGroupCount);
 
     using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
         Assert.Equal(2, rg.RowCount);
-        Assert.Equal(new int[] { 1, 2 }, (await rg.ReadColumnAsync(schema.DataFields[0])).Data);
+        int[] values0 = new int[rg.RowCount];
+        await rg.ReadAsync<int>(id, values0);
+        Assert.Equal(new int[] { 1, 2 }, values0);
     }
 
     using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(1)) {
         Assert.Equal(2, rg.RowCount);
-        Assert.Equal(new int[] { 3, 4 }, (await rg.ReadColumnAsync(schema.DataFields[0])).Data);
+        int[] values1 = new int[rg.RowCount];
+        await rg.ReadAsync<int>(id, values1);
+        Assert.Equal(new int[] { 3, 4 }, values1);
     }
-
 }
 ```
 
-Note that you have to specify that you are opening `ParquetWriter` in **append** mode in its constructor explicitly - `new ParquetWriter(new Schema(id), ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream position to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `.Dispose()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
+Note that you have to specify that you are opening `ParquetWriter` in **append** mode explicitly - `await ParquetWriter.CreateAsync(schema, ms, append: true)`. Doing so makes parquet.net open the file, find the file footer and delete it, rewinding current stream position to the end of actual data. Then, creating more row groups simply writes data to the file as usual, and `DisposeAsync()` on `ParquetWriter` generates a new file footer, writes it to the file and closes down the stream.
 
 Please keep in mind that row groups are designed to hold a large amount of data (50000 rows on average) therefore try to find a large enough batch to append to the file. Do not treat parquet file as a row stream by creating a row group and placing 1-2 rows in it, because this will both increase file size massively and cause a huge performance degradation for a client reading such a file.
 
@@ -476,13 +480,13 @@ File streams are generally not compatible with parallel processing. You can, how
 Here is an example of reading a file in parallel, where a unit of parallelism is a row group:
 
 ```C#
-var reader = await ParquetReader.CreateAsync(path);
+await using var reader = await ParquetReader.CreateAsync(path);
 var count = reader.RowGroupCount;
 
 await Parallel.ForAsync(0, count,
     async (i, cancellationToken) => {
         // create an instance of a row group reader for each group
-        using (var gr = await ParquetReader.CreateAsync(path)) {
+        await using (var gr = await ParquetReader.CreateAsync(path)) {
             using (var rgr = gr.OpenRowGroupReader(i)) {
               // process the row group ...
             }
@@ -493,27 +497,39 @@ await Parallel.ForAsync(0, count,
 
 ## Internals
 
-### DataColumn
+### Reading and Writing Columns
 
-`DataColumn` is an essential part for low-level serialization. It represents a column that has actual data and for simple records that contain atomic types (int, string etc.):
+In the low-level API, columns are read and written directly through `ParquetRowGroupWriter` and `ParquetRowGroupReader`, without an intermediate `DataColumn` class.
 
-```mermaid
-classDiagram
-    class DataColumn {
-      +Field Field
-      +Array DefinedData
-      +Array Data
-      +int[]? DefinitionLevels;
-      +int[]? RepetitionLevels;
-      +DataColumn(DataField field, Array definedData, int[]? definitionLevels, int[]? repetitionLevels)
-      +DataColumn(DataField field, Array data, int[]? repetitionLevels = null)
-    }
+**Writing** is done by calling `WriteAsync<T>` on the row group writer, passing the `DataField` from the schema, the values array, and optionally repetition levels:
 
+```c#
+await groupWriter.WriteAsync<int>(field, new int[] { 1, 2, 3 });
 ```
 
-- `Field` is a schema field that defines this column that you can obtain from a schema you define.
-- `DefinedData` is raw data that is defined by `Field`'s type. If field is nullable, `DefinedData` represents non-nullable values. On the other hand, `Data` represents data as-is, including nulls. If you are reading `DataColumn` and need to access the data, `Data` is the field. To access data as it's stored in parquet file, use `DefinedData`. The names are chosen mostly due to backward compatibility reasons.
-- Going further, to access *repetition and definition levels* as they are stored in parquet file, use the corresponding `DefinitionLevels` and `RepetitionLevels` fields.
+For nullable columns, pass a nullable array:
+
+```c#
+await groupWriter.WriteAsync<int>(field, new int?[] { 1, null, 3 });
+```
+
+For strings and byte arrays, convenience overloads accept `IEnumerable<string?>` and `IEnumerable<byte[]?>`.
+
+**Reading** is done by pre-allocating a buffer and calling `ReadAsync<T>` on the row group reader:
+
+```c#
+int[] values = new int[rowGroupReader.RowCount];
+await rowGroupReader.ReadAsync<int>(field, values);
+```
+
+For nullable columns:
+
+```c#
+int?[] values = new int?[rowGroupReader.RowCount];
+await rowGroupReader.ReadAsync<int>(field, values);
+```
+
+For advanced scenarios where you need direct access to definition levels and repetition levels, use `ReadRawAsync<T>` which accepts separate `Memory<T>`, `Memory<int>?` for definition levels, and `Memory<int>?` for repetition levels. There is also `ReadRawColumnDataAsync<T>` (internal helper) that pre-allocates all buffers and returns a `RawColumnData<T>` container.
 
 ### Schema
 
@@ -751,17 +767,14 @@ To write data, we use plain columns:
 
 ```C#
 using var ms = new MemoryStream();
-using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-    ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+    using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
-    await rgw.WriteColumnAsync(
-        new DataColumn(new DataField<string>("name"), new[] { "Joe" }));
+    await rgw.WriteAsync(schema.DataFields[0], new[] { "Joe" });
 
-    await rgw.WriteColumnAsync(
-        new DataColumn(new DataField<string>("line1"), new[] { "Amazonland" }));
+    await rgw.WriteAsync(schema.DataFields[1], new[] { "Amazonland" });
 
-    await rgw.WriteColumnAsync(
-        new DataColumn(new DataField<string>("postcode"), new[] { "AAABBB" }));
+    await rgw.WriteAsync(schema.DataFields[2], new[] { "AAABBB" });
 }
 
 ```
@@ -769,20 +782,25 @@ using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
 To read back, again, the data is in plain columns:
 
 ```C#
- ms.Position = 0;
+ms.Position = 0;
 
-using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
     using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
 
     DataField[] dataFields = reader.Schema.GetDataFields();
 
-    DataColumn name = await rg.ReadColumnAsync(dataFields[0]);
-    DataColumn line1 = await rg.ReadColumnAsync(dataFields[1]);
-    DataColumn postcode = await rg.ReadColumnAsync(dataFields[2]);
+    string[] name = new string[rg.RowCount];
+    await rg.ReadAsync(dataFields[0], name);
 
-    Assert.Equal(new[] { "Joe" }, name.Data);
-    Assert.Equal(new[] { "Amazonland" }, line1.Data);
-    Assert.Equal(new[] { "AAABBB" }, postcode.Data);
+    string[] line1 = new string[rg.RowCount];
+    await rg.ReadAsync(dataFields[1], line1);
+
+    string[] postcode = new string[rg.RowCount];
+    await rg.ReadAsync(dataFields[2], postcode);
+
+    Assert.Equal(new[] { "Joe" }, name);
+    Assert.Equal(new[] { "Amazonland" }, line1);
+    Assert.Equal(new[] { "AAABBB" }, postcode);
 }
 ```
 
@@ -794,7 +812,7 @@ Note that the only indication that this is a part of struct is `Path` property i
 
 Arrays *aka repeatable fields* is a basis for understanding how more complex data structures work in Parquet.
 
-`DataColumn` in Parquet can contain not just a single but multiple values. Sometimes they are called repeated fields (because the data type value repeats) or arrays. In order to create a schema for a repeatable field, let's say of type `int` you could use one of two forms:
+A column in Parquet can contain not just a single but multiple values per row. Sometimes they are called repeated fields (because the data type value repeats) or arrays. In order to create a schema for a repeatable field, let's say of type `int` you could use one of two forms:
 
 ```C#
 var field = new DataField<IEnumerable<int>>("items");
@@ -819,12 +837,12 @@ in a flat array, it will look like `[1, 2, 3, 4, 5]`. And that's exactly how par
 
 In other words - it is the level at which we have to create a new list for the current value. In other words, the repetition level can be seen as a marker of when to start a new list and at which level.
 
-To represent this in C# code:
+To write this in C# code:
 
 ```C#
 var field = new DataField<IEnumerable<int>>("items");
-var column = new DataColumn(
-   field,
+// ...attach field to schema and create writer...
+await groupWriter.WriteAsync<int>(field,
    new int[] { 1, 2, 3, 4, 5 },
    new int[] { 0, 1, 1, 0, 1 });
 ```
@@ -919,12 +937,16 @@ One thing to note - `ListField` automatically assumes there will be an internal 
 
 The struct is called `"element"` which is what `ListField.ElementName` constant is equal to. Theoretically you can name it anything you want, but common convention is recommended to be followed.
 
-And the final thing is to create data for those 3 columns with their repetition levels:
+And the final thing is to write data for those 3 columns with their repetition levels:
 
 ```C#
-var nameCol = new DataColumn(nameField, new string[] { "Joe", "Bob" });
-var line1Col = new DataColumn(line1Field, new[] { "Amazonland", "Disneyland", "Cryptoland" }, new[] { 0, 1, 0 });
-var postcodeCol = new DataColumn(postcodeField, new[] { "AAABBB", "CCCDDD", "EEEFFF" }, new[] { 0, 1, 0 });
+await using(ParquetWriter w = await ParquetWriter.CreateAsync(schema, ms)) {
+    using ParquetRowGroupWriter gw = w.CreateRowGroup();
+
+    await gw.WriteAsync(nameField, new string[] { "Joe", "Bob" });
+    await gw.WriteAsync(line1Field, new[] { "Amazonland", "Disneyland", "Cryptoland" }, new[] { 0, 1, 0 });
+    await gw.WriteAsync(postcodeField, new[] { "AAABBB", "CCCDDD", "EEEFFF" }, new[] { 0, 1, 0 });
+}
 ```
 
 Congrats, you have saved your first list!

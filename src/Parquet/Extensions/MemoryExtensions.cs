@@ -1,14 +1,14 @@
 ﻿using System.Numerics;
 using Parquet.Data;
 
-namespace System; 
+namespace System;
 
-internal static class SpanExtensions {
+internal static class MemoryExtensions {
     public static int ReadInt32(this Span<byte> span, int offset) {
         if(BitConverter.IsLittleEndian)
             return (int)span[0 + offset] |
                 ((int)span[1 + offset] << 8) |
-                ((int)span[2 + offset] << 16) | 
+                ((int)span[2 + offset] << 16) |
                 ((int)span[3 + offset] << 24);
 
         return ((int)span[0 + offset] << 24) |
@@ -18,11 +18,27 @@ internal static class SpanExtensions {
     }
 
     public static long ReadInt64(this Span<byte> span, int offset) {
-#if NETSTANDARD2_0
-        return BitConverter.ToInt64(span.Slice(offset, sizeof(long)).ToArray(), 0);
-#else
         return BitConverter.ToInt64(span.Slice(offset, sizeof(long)));
-#endif
+    }
+
+    public static ReadOnlyMemory<char>? AsNullableReadOnlyMemory(this string? s) {
+        if(s == null)
+            return null;
+        return s.AsMemory();
+    }
+
+    public static ReadOnlyMemory<char> AsReadOnlyMemory(this string s) {
+        return s.AsMemory();
+    }
+
+    public static ReadOnlyMemory<byte>? AsNullableReadOnlyMemory(this byte[]? b) {
+        if(b == null)
+            return null;
+        return b.AsMemory();
+    }
+
+    public static ReadOnlyMemory<byte> AsReadOnlyMemory(this byte[] b) {
+        return b.AsMemory();
     }
 
     // All of these could be replaced with generic math, but we don't have access to it due to supporting older than .NET 6
@@ -199,7 +215,6 @@ internal static class SpanExtensions {
         }
     }
 
-#if NET6_0_OR_GREATER
     public static void MinMax(this ReadOnlySpan<DateOnly> span, out DateOnly min, out DateOnly max) {
         min = span.IsEmpty ? default(DateOnly) : span[0];
         max = min;
@@ -210,7 +225,7 @@ internal static class SpanExtensions {
                 max = i;
         }
     }
-    
+
     public static void MinMax(this ReadOnlySpan<TimeOnly> span, out TimeOnly min, out TimeOnly max) {
         min = span.IsEmpty ? default(TimeOnly) : span[0];
         max = min;
@@ -221,7 +236,6 @@ internal static class SpanExtensions {
                 max = i;
         }
     }
-#endif
 
     public static void MinMax(this ReadOnlySpan<TimeSpan> span, out TimeSpan min, out TimeSpan max) {
         min = span.IsEmpty ? default(TimeSpan) : span[0];
@@ -254,10 +268,10 @@ internal static class SpanExtensions {
     /// is smaller, only the bytes available will be copied to the target.
     /// </summary>
     public static void CopyWithLimitTo<T>(this Span<T> source, Span<T> target) {
-            int copyLength = target.Length;
-            if (target.Length > source.Length) {
-                copyLength = source.Length;
-            }
-            source.Slice(0, copyLength).CopyTo(target);
+        int copyLength = target.Length;
+        if(target.Length > source.Length) {
+            copyLength = source.Length;
+        }
+        source.Slice(0, copyLength).CopyTo(target);
     }
 }

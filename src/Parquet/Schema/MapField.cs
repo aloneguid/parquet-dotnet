@@ -81,7 +81,7 @@ namespace Parquet.Schema {
 
         internal override Field[] Children => new Field[] { Key, Value };
 
-        internal SchemaElement ? GroupSchemaElement { get; set; } = null;
+        internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
         internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
 
@@ -119,8 +119,8 @@ namespace Parquet.Schema {
             if(obj is not MapField other)
                 return false;
 
-            return base.Equals(other) && 
-                (Key?.Equals(other.Key) ?? true) && 
+            return base.Equals(other) &&
+                (Key?.Equals(other.Key) ?? true) &&
                 (Value?.Equals(other.Value) ?? true);
         }
 

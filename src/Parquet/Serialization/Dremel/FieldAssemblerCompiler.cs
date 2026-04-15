@@ -8,7 +8,7 @@ using Parquet.Data;
 using Parquet.Extensions;
 using Parquet.Schema;
 
-namespace Parquet.Serialization.Dremel; 
+namespace Parquet.Serialization.Dremel;
 
 class FieldAssemblerCompiler<TClass> {
 
@@ -17,10 +17,11 @@ class FieldAssemblerCompiler<TClass> {
 
     private readonly ParquetSchema _schema;
     private readonly DataField _df;
-
     private readonly bool _isUntypedClass = typeof(TClass) == typeof(Dictionary<string, object>);
 
-    private readonly ParameterExpression _dcParam = Expression.Parameter(typeof(DataColumn), "dc");
+
+    private readonly Type _rawColumnDataType;
+    private readonly ParameterExpression _rcdParam;
 
     private readonly ParameterExpression _classElementVar = Expression.Variable(typeof(TClass), "curr");
 
@@ -31,7 +32,7 @@ class FieldAssemblerCompiler<TClass> {
 
     // control whether to inject debug code blocks (you might not want them in debug mode all the time)
     private readonly bool _enableDebug = (Environment.GetEnvironmentVariable("PARQUET_NET_ENABLE_DEBUG") != null)
-        || false;    
+        || false;
 #endif
 
 
@@ -62,11 +63,14 @@ class FieldAssemblerCompiler<TClass> {
 
     public FieldAssemblerCompiler(ParquetSchema schema, DataField df) {
         _schema = schema;
+        _rawColumnDataType = typeof(RawColumnData<>).MakeGenericType(df.ClrValueType);
+        _rcdParam = Expression.Parameter(_rawColumnDataType, "rcd");
         _df = df;
 
         // expecting non-nullable elements, because definition levels are handled by this algorithm
-        _dataVar = Expression.Variable(_df.ClrType.MakeArrayType(), "data");
-        _dataElementVar = Expression.Variable(_df.ClrType, "dataElement");
+        //_dataVar = Expression.Variable(_df.ClrType.MakeArrayType(), "data");
+        _dataVar = Expression.Variable(typeof(Span<>).MakeGenericType(_df.ClrValueType), "data");
+        _dataElementVar = Expression.Variable(_df.ClrValueType, "dataElement");
 
 #if DEBUG
         _injectLevelDebugMethod = GetType().GetMethod(nameof(InjectLevelDebug), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -77,23 +81,23 @@ class FieldAssemblerCompiler<TClass> {
     }
 
     private Expression GetDataLength() {
-        return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), nameof(Array.Length));
+        return Expression.Property(Expression.Property(_rcdParam, nameof(RawColumnData<>.Values)), nameof(Span<>.Length));
     }
 
     private Expression GetRlLength() {
-        return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.RepetitionLevels)), nameof(Array.Length));
+        return Expression.Property(Expression.Property(_rcdParam, nameof(RawColumnData<>.RepetitionLevels)), nameof(Span<>.Length));
     }
 
     private Expression GetDLLength() {
-        return Expression.Property(Expression.Property(_dcParam, nameof(DataColumn.DefinitionLevels)), nameof(Array.Length));
+        return Expression.Property(Expression.Property(_rcdParam, nameof(RawColumnData<>.DefinitionLevels)), nameof(Span<>.Length));
     }
 
     private Expression GetRLAt(Expression index) {
-        return Expression.ArrayAccess(Expression.Property(_dcParam, nameof(DataColumn.RepetitionLevels)), index);
+        return Expression.Property(_rcdParam, nameof(RawColumnData<>.RepetitionLevels)).GetSpanElement(typeof(int), index);
     }
 
     private Expression GetDLAt(Expression index) {
-        return Expression.ArrayAccess(Expression.Property(_dcParam, nameof(DataColumn.DefinitionLevels)), index);
+        return Expression.Property(_rcdParam, nameof(RawColumnData<>.DefinitionLevels)).GetSpanElement(typeof(int), index);
     }
 
 
@@ -105,6 +109,41 @@ class FieldAssemblerCompiler<TClass> {
                 Zero)
             : Zero;
     }
+
+    #region [ Data conversion helpers ]
+
+    private static string ROMCharToString(ReadOnlyMemory<char> memory) => new string(memory.Span);
+    private static byte[] ROMByteToArray(ReadOnlyMemory<byte> memory) => memory.ToArray();
+
+    private static readonly MethodInfo _romCharToStringMethod = typeof(FieldAssemblerCompiler<TClass>).GetMethod(nameof(ROMCharToString), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo _romByteToArrayMethod = typeof(FieldAssemblerCompiler<TClass>).GetMethod(nameof(ROMByteToArray), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private Expression ConvertDataElement(Type targetType) {
+        // ReadOnlyMemory<char> → string
+        if(_dataElementVar.Type == typeof(ReadOnlyMemory<char>) && targetType == typeof(string))
+            return Expression.Call(_romCharToStringMethod, _dataElementVar);
+
+        // ReadOnlyMemory<byte> → byte[]
+        if(_dataElementVar.Type == typeof(ReadOnlyMemory<byte>) && targetType == typeof(byte[]))
+            return Expression.Call(_romByteToArrayMethod, _dataElementVar);
+
+        // object boxing (untyped path)
+        if(targetType == typeof(object)) {
+
+            // respect conversion configuration for untyped path
+            if(ParquetSerializerOptions.PreferUntypedByteArray && _dataElementVar.Type == typeof(ReadOnlyMemory<byte>))
+                return Expression.Call(_romByteToArrayMethod, _dataElementVar);
+
+            if(ParquetSerializerOptions.PreferUntypedString && _dataElementVar.Type == typeof(ReadOnlyMemory<char>))
+                return Expression.Call(_romCharToStringMethod, _dataElementVar);
+
+            return Expression.Convert(_dataElementVar, typeof(object));
+        }
+
+        return Expression.Convert(_dataElementVar, targetType);
+    }
+
+    #endregion
 
     private Expression TakeCurrentValuesAndAdvance() {
 
@@ -130,8 +169,10 @@ class FieldAssemblerCompiler<TClass> {
                 _df.MaxDefinitionLevel > 0
                     ? Expression.IfThen(
                         Expression.Equal(_dlVar, Expression.Constant(_df.MaxDefinitionLevel)),
-                        Expression.Assign(_dataElementVar, Expression.ArrayAccess(_dataVar, Expression.PostIncrementAssign(_dataIdxVar))))
-                    : Expression.Assign(_dataElementVar, Expression.ArrayAccess(_dataVar, Expression.PostIncrementAssign(_dataIdxVar))),
+                        //Expression.Assign(_dataElementVar, Expression.ArrayAccess(_dataVar, Expression.PostIncrementAssign(_dataIdxVar))))
+                        Expression.Assign(_dataElementVar, _dataVar.GetSpanElement(_df.ClrValueType, Expression.PostIncrementAssign(_dataIdxVar))))
+                    //: Expression.Assign(_dataElementVar, Expression.ArrayAccess(_dataVar, Expression.PostIncrementAssign(_dataIdxVar))),
+                    : Expression.Assign(_dataElementVar, _dataVar.GetSpanElement(_df.ClrValueType, Expression.PostIncrementAssign(_dataIdxVar))),
 
                 // get repetition level value: rlVar = dcParam.RepetitionLevels[rlIndexVar];
                 _df.MaxRepetitionLevel > 0
@@ -221,18 +262,28 @@ class FieldAssemblerCompiler<TClass> {
     }
 
     private IEnumerable<Expression> CollectionAddNewDefaultItem(
-        Expression collection,  Type collectionType,
-        Expression element,     Type elementType) {
+        Expression collection, Type collectionType,
+        Expression element, Type elementType) {
 
 
         if(collectionType.IsGenericIList()) {
-            yield return Expression.Assign(element, Expression.New(elementType));
+            // Ref structs cannot be created with Expression.New
+            if(elementType.IsByRefLike) {
+                yield return Expression.Assign(element, Expression.Default(elementType));
+            } else {
+                yield return Expression.Assign(element, Expression.New(elementType));
+            }
             yield return collection.IListAdd(collectionType, element, elementType);
             yield break;
         }
 
         if(collectionType.IsGenericIDictionary()) {
-            yield return Expression.Assign(element, Expression.New(elementType));
+            // Ref structs cannot be created with Expression.New
+            if(elementType.IsByRefLike) {
+                yield return Expression.Assign(element, Expression.Default(elementType));
+            } else {
+                yield return Expression.Assign(element, Expression.New(elementType));
+            }
             yield break;
 
             //if(!collectionType.TryExtractDictionaryType(out Type? keyType, out Type? valueType) || keyType == null || valueType == null) {
@@ -363,9 +414,17 @@ class FieldAssemblerCompiler<TClass> {
     record ClassMember(Expression Accessor, Expression IsNull, Type Type);
 
     private Expression CreateInstance(Type t) {
-        Expression r = t.IsArray
-            ? Expression.NewArrayBounds(t.GetElementType()!, Zero)
-            : Expression.New(t);
+        Expression r;
+
+        // Ref structs (ByRef-like types) cannot be created with Expression.New
+        // because they can't be boxed. Use Expression.Default instead.
+        if(t.IsByRefLike) {
+            r = Expression.Default(t);
+        } else if(t.IsArray) {
+            r = Expression.NewArrayBounds(t.GetElementType()!, Zero);
+        } else {
+            r = Expression.New(t);
+        }
 
 #if DEBUG
         r = DebugWrap(r, $"CreateInstance of {t}", false);
@@ -509,7 +568,7 @@ class FieldAssemblerCompiler<TClass> {
         }
 
         // ----
-        
+
         Expression iteration = Expression.Empty();
 
         if(isRepeated) {
@@ -537,7 +596,7 @@ class FieldAssemblerCompiler<TClass> {
                     // add element to collection - end here
                     leafExpr = Expression.Call(Expression.Convert(currentVar, currentVarType),
                         currentVarType.GetMethod(nameof(IList.Add))!,
-                        Expression.Convert(_dataElementVar, collectionElementType));
+                        ConvertDataElement(collectionElementType));
                 }
 
 #if DEBUG
@@ -571,9 +630,9 @@ class FieldAssemblerCompiler<TClass> {
         } else {
             if(isAtomic) {
                 // conversion compensates for nullable types and maybe implicit conversions (below transforms "_dataElementVar" to "(classPropertyType.Type)_dataElementVar")
-                UnaryExpression x = _isUntypedClass && parentField?.SchemaType != SchemaType.Map
-                    ? Expression.Convert(_dataElementVar, typeof(object))
-                    : Expression.Convert(_dataElementVar, currentVarType);
+                Expression x = _isUntypedClass && parentField?.SchemaType != SchemaType.Map
+                    ? ConvertDataElement(typeof(object))
+                    : ConvertDataElement(currentVarType);
 
                 // C#: if(dlDepth == _dlVar) currentVar = x;
                 iteration =
@@ -687,16 +746,19 @@ class FieldAssemblerCompiler<TClass> {
 
     public FieldAssembler<TClass> Compile() {
         ParameterExpression classesParam = Expression.Parameter(typeof(IEnumerable<TClass>), "classes");
-        
+        ParameterExpression rcdParamObject = Expression.Parameter(typeof(object), "rcdObj");
+
         Expression iteration = InjectColumn();
 
         BlockExpression block = Expression.Block(
-            [_classElementVar,
+            [_classElementVar, _rcdParam,
                 _dataVar, _dataIdxVar, _dataElementVar, _dlIdxVar, _dlVar, _rlIdxVar, _rlVar, _hasData, _rsmVar],
 
+            // unbox
+            Expression.Assign(_rcdParam, Expression.Convert(rcdParamObject, _rawColumnDataType)),
+
             // initialise array vars
-            Expression.Assign(_dataVar,
-                Expression.Convert(Expression.Property(_dcParam, nameof(DataColumn.DefinedData)), _df.ClrType.MakeArrayType())),
+            Expression.Assign(_dataVar, Expression.Property(_rcdParam, nameof(RawColumnData<>.Values))),
             Expression.Assign(_dataIdxVar, Zero),
             Expression.Assign(_rlIdxVar, Zero),
             Expression.Assign(_rlVar, Zero),
@@ -709,7 +771,7 @@ class FieldAssemblerCompiler<TClass> {
             iteration.Loop(classesParam, typeof(TClass), _classElementVar));
 
         return new FieldAssembler<TClass>(_schema, _df,
-            Expression.Lambda<Action<IEnumerable<TClass>, DataColumn>>(block, classesParam, _dcParam).Compile(),
+            Expression.Lambda<Action<IEnumerable<TClass>, object>>(block, classesParam, rcdParamObject).Compile(),
             block, iteration);
     }
 }

@@ -9,12 +9,12 @@ namespace Parquet.Schema {
         /// Desired data format, Parquet specific
         /// </summary>
         public DateTimeFormat DateTimeFormat { get; }
-        
+
         /// <summary>
         /// IsAdjustedToUTC
         /// </summary>
         public bool IsAdjustedToUTC { get; }
-        
+
         /// <summary>
         /// TimeUnit
         /// </summary>
@@ -34,7 +34,7 @@ namespace Parquet.Schema {
            : base(name, typeof(DateTime), isNullable, isArray, propertyName) {
             DateTimeFormat = format;
             IsAdjustedToUTC = isAdjustedToUTC;
-            
+
             // Override the unit for legacy types
             if(format == DateTimeFormat.DateAndTime) {
                 Unit = DateTimeTimeUnit.Millis;
