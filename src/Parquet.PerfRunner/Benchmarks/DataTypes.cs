@@ -5,7 +5,9 @@ namespace Parquet.PerfRunner.Benchmarks;
 
 internal class DataTypes {
 
-    private const int DataSize = 1000000;
+    private const int DataSize = 1_000_000;
+    private readonly int[] _ints;
+    private readonly int?[] _nullableInts;
     //private Parquet.Data.DataColumn _ints;
 
     private readonly ParquetSchema _nullableIntsSchema = new ParquetSchema(new DataField<int?>("i"));
@@ -27,13 +29,11 @@ internal class DataTypes {
     }
 
     public DataTypes() {
-        //_ints = new DataColumn(new DataField<int>("c"), Enumerable.Range(0, DataSize).ToArray());
-
-        //_nullableInts = new DataColumn(_nullableIntsSchema.DataFields[0],
-        //    Enumerable
-        //        .Range(0, DataSize)
-        //        .Select(i => i % 4 == 0 ? (int?)null : i)
-        //        .ToArray());
+        _ints = Enumerable.Range(0, DataSize).ToArray();
+        _nullableInts = Enumerable
+            .Range(0, DataSize)
+            .Select(i => i % 4 == 0 ? (int?)null : i)
+            .ToArray();
 
         //_nullableDecimals = new DataColumn(_nullableDecimalsSchema.DataFields[0],
         //    Enumerable
@@ -74,9 +74,13 @@ internal class DataTypes {
     //    }
     //}
 
-    //public Task NullableInts() {
-    //    return Run(_nullableInts);
-    //}
+    public async Task NullableInts() {
+        using var ms = new MemoryStream();
+        await using ParquetWriter w = await ParquetWriter.CreateAsync(_nullableIntsSchema, ms);
+        w.CompressionMethod = CompressionMethod.None;
+        using ParquetRowGroupWriter rgw = w.CreateRowGroup();
+        await rgw.WriteAsync<int>(_nullableIntsSchema.DataFields[0], _nullableInts);
+    }
 
     //public Task NullableDecimals() {
     //    return Run(_nullableDecimals);

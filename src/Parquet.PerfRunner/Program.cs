@@ -17,6 +17,6 @@ if(args.Length == 1) {
             break;
     }
 } else {
-    //await new DataTypes().NullableInts();
+    await new DataTypes().NullableInts();
     //await SampleGenerator.GenerateFiles();
 }
