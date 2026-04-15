@@ -107,4 +107,9 @@ public class ParquetOptions {
     /// The Default Scale value used when not explicitly defined; this is the value used prior to parquet-dotnet v3.9.
     /// </summary>
     public const int DefaultScale = 18;
+
+    /// <summary>
+    /// If true, will attemp to use hardware accelerated math.
+    /// </summary>
+    public static bool UseHardwareAcceleration { get; set; } = true;
 }

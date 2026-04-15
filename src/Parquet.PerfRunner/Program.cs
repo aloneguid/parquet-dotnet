@@ -13,6 +13,9 @@ if(args.Length == 1) {
         case "write":
             BenchmarkRunner.Run<WriteBenchmark>();
             break;
+        case "encoding":
+            BenchmarkRunner.Run<EncodingBenchmarks>();
+            break;
         case "twosamples":
             break;
     }

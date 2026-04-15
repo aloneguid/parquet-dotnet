@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Text;
 using Parquet.Data;
 using Parquet.Extensions;
@@ -542,7 +543,15 @@ static class ParquetPlainEncoder {
 
     #endregion
 
+
     public static void Encode(ReadOnlySpan<bool> data, Stream destination) {
+        if(ParquetOptions.UseHardwareAcceleration)
+            EncodeHwx(data, destination);
+        else
+            EncodeOnCpu(data, destination);
+    }
+
+    internal static void EncodeOnCpu(ReadOnlySpan<bool> data, Stream destination) {
         int targetLength = (data.Length + 7) / 8;
         byte[] buffer = ArrayPool<byte>.Shared.Rent(targetLength);
 
@@ -570,6 +579,74 @@ static class ParquetPlainEncoder {
 
         } finally {
             ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    internal static void EncodeHwx(ReadOnlySpan<bool> data, Stream destination) {
+        if(Vector512.IsHardwareAccelerated && Vector512<byte>.IsSupported && data.Length > Vector512<byte>.Count) {
+            ReadOnlySpan<byte> boolBytes = MemoryMarshal.AsBytes(data);
+            ref byte current = ref MemoryMarshal.GetReference(boolBytes);
+
+            int fullVectors = boolBytes.Length / Vector512<byte>.Count;
+
+            long vl;
+            for(int i = 0; i < fullVectors; i++) {
+                Vector512<byte> isFalse = Vector512.Equals(Vector512.LoadUnsafe(ref current), Vector512<byte>.Zero);
+
+                vl = (long)(~isFalse.ExtractMostSignificantBits());
+                destination.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref vl, 1)));
+                current = ref Unsafe.Add(ref current, Vector512<byte>.Count);
+            }
+
+            byte b = 0;
+            int n = 0;
+
+            //Process the last few bits
+            for(int i = fullVectors * Vector512<byte>.Count; i < boolBytes.Length; i++) {
+                b |= (byte)((data[i] ? 1 : 0) << n);
+                n++;
+                if(n == 8) {
+                    destination.WriteByte(b);
+                    n = 0;
+                    b = 0;
+                }
+            }
+            if(n != 0) {
+                destination.WriteByte(b);
+            }
+        } else if(Vector256.IsHardwareAccelerated && Vector256<byte>.IsSupported && data.Length > Vector256<byte>.Count) {
+            ReadOnlySpan<byte> boolBytes = MemoryMarshal.AsBytes(data);
+            ref byte current = ref MemoryMarshal.GetReference(boolBytes);
+
+            int fullVectors = boolBytes.Length / Vector256<byte>.Count;
+
+            int vl;
+            for(int i = 0; i < fullVectors; i++) {
+                Vector256<byte> isFalse = Vector256.Equals(Vector256.LoadUnsafe(ref current), Vector256<byte>.Zero);
+
+                vl = (int)(~isFalse.ExtractMostSignificantBits());
+                destination.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref vl, 1)));
+                current = ref Unsafe.Add(ref current, Vector256<byte>.Count);
+            }
+
+            byte b = 0;
+            int n = 0;
+
+            //Process the last few bits
+            for(int i = fullVectors * Vector256<byte>.Count; i < boolBytes.Length; i++) {
+                b |= (byte)((data[i] ? 1 : 0) << n);
+                n++;
+                if(n == 8) {
+                    destination.WriteByte(b);
+                    n = 0;
+                    b = 0;
+                }
+            }
+            if(n != 0) {
+                destination.WriteByte(b);
+            }
+        } else {
+            EncodeOnCpu(data, destination);
         }
     }
 
