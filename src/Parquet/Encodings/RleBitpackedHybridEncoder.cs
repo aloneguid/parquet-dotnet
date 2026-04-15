@@ -16,7 +16,7 @@ static partial class RleBitpackedHybridEncoder {
     /// </summary>
     public static void EncodeWithLength(Stream s, int bitWidth, ReadOnlySpan<int> data) {
 
-        int length = Encode(data, bitWidth, out byte[]? rentedBuffer);
+        int length = RLEEncode(data, bitWidth, out byte[]? rentedBuffer);
         if(rentedBuffer == null)
             return;
         try {
@@ -28,7 +28,8 @@ static partial class RleBitpackedHybridEncoder {
     }
 
     public static void Encode(Stream dest, ReadOnlySpan<int> data, int bitWidth) {
-        int length = Encode(data, bitWidth, out byte[]? rentedBuffer);
+        //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
+        int length = RLEEncode(data, bitWidth, out byte[]? rentedBuffer);
         if(rentedBuffer == null)
             return;
         try {
@@ -38,10 +39,15 @@ static partial class RleBitpackedHybridEncoder {
         }
     }
 
-    public static int Encode(ReadOnlySpan<int> data, int bitWidth, out byte[]? rentedBuffer) {
-
-        //for simplicity, we're only going to write RLE, however bitpacking needs to be implemented as well
-
+    /// <summary>
+    /// Encoding with RLE: https://youtu.be/p-K3TzFQvJo
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="bitWidth"></param>
+    /// <param name="rentedBuffer"></param>
+    /// <returns></returns>
+    /// <exception cref="IOException"></exception>
+    public static int RLEEncode(ReadOnlySpan<int> data, int bitWidth, out byte[]? rentedBuffer) {
         int byteWidth = (bitWidth + 7) / 8; //number of whole bytes for this bit width
         if(byteWidth > 4)
             throw new IOException($"encountered bit width ({byteWidth}) that requires more than 4 bytes.");

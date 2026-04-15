@@ -92,54 +92,48 @@ var schema = new ParquetSchema(
 The next step is to create `ParquetWriter` class, which builds parquet file skeleton inside the passed stream, and allows you to create a `ParquetRowGroupWriter` that can write column data to the file. Row group in parquet is a group of all columns from the schema. A file can have any number of row groups, but there must be at least one present. If file is small enough (less than 64Mb or so) it will usually have a single row group. Row groups allow parquet files to contain massive amounts of data and also enable read parallelism (but not write parallelism), Each row group contains all the columns from the schema, but different "rows" or data. This is how you create a simple file with a single row group and write all 3 columns to it:
 
 ```c#
-using(Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet")) {
-    await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs)) {
-        using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
+using Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet"); 
+await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs));
+using ParquetRowGroupWriter groupWriter = writer.CreateRowGroup();
 
-            await groupWriter.WriteAsync<DateTime>((DataField)schema[0],
-                new[] {
-                    new DateTime(2025, 11, 18, 22, 07, 00),
-                    new DateTime(2025, 11, 18, 22, 08, 00),
-                    new DateTime(2025, 11, 18, 22, 09, 00)});
+await groupWriter.WriteAsync<DateTime>(schema.DataFields[0],
+    new[] {
+        new DateTime(2025, 11, 18, 22, 07, 00),
+        new DateTime(2025, 11, 18, 22, 08, 00),
+        new DateTime(2025, 11, 18, 22, 09, 00)});
 
-            await groupWriter.WriteAsync((DataField)schema[1],
-                new[] { "start", "stop", "pause" });
+await groupWriter.WriteAsync(schema.DataFields[1],
+    new[] { "start", "stop", "pause" });
 
-            await groupWriter.WriteAsync<double>((DataField)schema[2],
-                new[] { 12.34, 56.78, 90.12 });
-        }
-    }
-}
+await groupWriter.WriteAsync<double>(schema.DataFields[2],
+    new[] { 12.34, 56.78, 90.12 });
 ```
 
-Notice that `ParquetWriter` implements `IAsyncDisposable`, so you should use `await using` to dispose of it properly. Column data is written directly by calling `WriteAsync` on the row group writer, passing the schema field and the values array. For strings and byte arrays, there are convenient overloads that accept `IEnumerable<string?>` and `IEnumerable<byte[]?>` respectively.
+Notice that `ParquetWriter` implements `IAsyncDisposable`, hence `await using`. Column data is written directly by calling `WriteAsync` on the row group writer, passing the schema field and the values array. For strings and byte arrays, there are convenient overloads that accept `IEnumerable<string?>` and `IEnumerable<byte[]?>` respectively.
 
 To read this file back (or just any file created with this or any other parquet software) you can do pretty much the reverse action:
 
 ```csharp
-using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet")) {
-    await using(ParquetReader reader = await ParquetReader.CreateAsync(fs)) {
-        // optionally access schema: reader.Schema
-        for(int i = 0; i < reader.RowGroupCount; i++) { 
-            using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i)) {
+using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet"));
+await using(ParquetReader reader = await ParquetReader.CreateAsync(fs));
+// optionally access schema: reader.Schema
+for(int i = 0; i < reader.RowGroupCount; i++) { 
+    using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i));
+    
+    DataField[] dataFields = reader.Schema.GetDataFields();
 
-                DataField[] dataFields = reader.Schema.GetDataFields();
+    // read non-nullable columns by pre-allocating a buffer and calling ReadAsync
+    DateTime[] timestamps = new DateTime[rowGroupReader.RowCount];
+    await rowGroupReader.ReadAsync<DateTime>(dataFields[0], timestamps);
 
-                // read non-nullable columns by pre-allocating a buffer and calling ReadAsync
-                DateTime[] timestamps = new DateTime[rowGroupReader.RowCount];
-                await rowGroupReader.ReadAsync<DateTime>(dataFields[0], timestamps);
+    // strings have a convenience overload that accepts string[]
+    string[] eventNames = new string[rowGroupReader.RowCount];
+    await rowGroupReader.ReadAsync(dataFields[1], eventNames);
 
-                // strings have a convenience overload that accepts string[]
-                string[] eventNames = new string[rowGroupReader.RowCount];
-                await rowGroupReader.ReadAsync(dataFields[1], eventNames);
+    double[] meterValues = new double[rowGroupReader.RowCount];
+    await rowGroupReader.ReadAsync<double>(dataFields[2], meterValues);
 
-                double[] meterValues = new double[rowGroupReader.RowCount];
-                await rowGroupReader.ReadAsync<double>(dataFields[2], meterValues);
-
-                // do something with the data...
-            }
-        }
-    }
+    // do something with the data...
 }
 ```
 
@@ -160,7 +154,7 @@ class Event {
 Now let's generate some fake data:
 
 ```c#
-var data = Enumerable.Range(0, 1_000_000).Select(i => new Event {
+List<Event> data = Enumerable.Range(0, 1_000_000).Select(i => new Event {
     Timestamp = DateTime.UtcNow.AddSeconds(i),
     EventName = i % 2 == 0 ? "on" : "off",
     MeterValue = i 
