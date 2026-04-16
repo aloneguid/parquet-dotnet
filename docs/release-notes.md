@@ -46,6 +46,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 - DuckDB integration tests removed, they turned out to be pretty much useless.
 - Some tests made much cleaner and more manageable by removing Theory and replacing it with Facts, when Theory validation had too many edge cases and actually made tests less maintainable.
 - `Parquet.Data.DataAnalysis` logic greatly simplified, T4 template removed.
+- Updated to the latest `parquet.thrift` to enable further feature implementations.
 
 # 5.5.0
 

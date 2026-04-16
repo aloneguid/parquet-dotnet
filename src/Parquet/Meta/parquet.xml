@@ -116,6 +116,13 @@ particular timezone or date." />
       <member name="OPTIONAL" value="1" doc="The field is optional (can be null) and each row has 0 or 1 values." />
       <member name="REPEATED" value="2" doc="The field is repeated and can contain 0 or more values" />
     </enum>
+    <enum name="EdgeInterpolationAlgorithm" doc="Edge interpolation algorithm for Geography logical type">
+      <member name="SPHERICAL" value="0" />
+      <member name="VINCENTY" value="1" />
+      <member name="THOMAS" value="2" />
+      <member name="ANDOYER" value="3" />
+      <member name="KARNEY" value="4" />
+    </enum>
     <enum name="Encoding" doc="Encodings supported by Parquet.  Not all encodings are valid for all types.  These
 enums are also used to specify the encoding of definition and repetition levels.
 See the accompanying doc for the details of the more complicated encodings.">
@@ -217,6 +224,23 @@ loss of information." required="optional" type="list">
         <elemType type="i64" />
       </field>
     </struct>
+    <struct name="BoundingBox" doc="Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max
+value pair of coordinates from each axis.">
+      <field name="xmin" field-id="1" required="required" type="double" />
+      <field name="xmax" field-id="2" required="required" type="double" />
+      <field name="ymin" field-id="3" required="required" type="double" />
+      <field name="ymax" field-id="4" required="required" type="double" />
+      <field name="zmin" field-id="5" required="optional" type="double" />
+      <field name="zmax" field-id="6" required="optional" type="double" />
+      <field name="mmin" field-id="7" required="optional" type="double" />
+      <field name="mmax" field-id="8" required="optional" type="double" />
+    </struct>
+    <struct name="GeospatialStatistics" doc="Statistics specific to Geometry and Geography logical types">
+      <field name="bbox" field-id="1" doc="A bounding box of geospatial instances" required="optional" type="id" type-module="parquet" type-id="BoundingBox" />
+      <field name="geospatial_types" field-id="2" doc="Geospatial type codes of all instances, or an empty list if not known" required="optional" type="list">
+        <elemType type="i32" />
+      </field>
+    </struct>
     <struct name="Statistics" doc="Statistics per row group and per page
 All fields are optional.">
       <field name="max" field-id="1" doc="DEPRECATED: min and max value of the column. Use min_value and max_value.
@@ -310,7 +334,41 @@ Allowed for physical types: BYTE_ARRAY" />
     <struct name="BsonType" doc="Embedded BSON logical type annotation
 
 Allowed for physical types: BYTE_ARRAY" />
-    <struct name="VariantType" doc="Embedded Variant logical type annotation" />
+    <struct name="VariantType" doc="Embedded Variant logical type annotation">
+      <field name="specification_version" field-id="1" required="optional" type="i8" />
+    </struct>
+    <struct name="GeometryType" doc="Embedded Geometry logical type annotation
+
+Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+is always linear/planar.
+
+A custom CRS can be set by the crs field. If unset, it defaults to &quot;OGC:CRS84&quot;,
+which means that the geometries must be stored in longitude, latitude based on
+the WGS84 datum.
+
+Allowed for physical type: BYTE_ARRAY.
+
+See Geospatial.md for details.">
+      <field name="crs" field-id="1" required="optional" type="string" />
+    </struct>
+    <struct name="GeographyType" doc="Embedded Geography logical type annotation
+
+Geospatial features in the WKB format with an explicit (non-linear/non-planar)
+edges interpolation algorithm.
+
+A custom geographic CRS can be set by the crs field, where longitudes are
+bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
+defaults to &quot;OGC:CRS84&quot;.
+
+An optional algorithm can be set to correctly interpret edges interpolation
+of the geometries. If unset, the algorithm defaults to SPHERICAL.
+
+Allowed for physical type: BYTE_ARRAY.
+
+See Geospatial.md for details.">
+      <field name="crs" field-id="1" required="optional" type="string" />
+      <field name="algorithm" field-id="2" required="optional" type="id" type-module="parquet" type-id="EdgeInterpolationAlgorithm" />
+    </struct>
     <union name="LogicalType" doc="LogicalType annotations to replace ConvertedType.
 
 To maintain compatibility, implementations using LogicalType for a
@@ -331,6 +389,8 @@ from the following table.">
       <field name="UUID" field-id="14" required="optional" type="id" type-module="parquet" type-id="UUIDType" />
       <field name="FLOAT16" field-id="15" required="optional" type="id" type-module="parquet" type-id="Float16Type" />
       <field name="VARIANT" field-id="16" required="optional" type="id" type-module="parquet" type-id="VariantType" />
+      <field name="GEOMETRY" field-id="17" required="optional" type="id" type-module="parquet" type-id="GeometryType" />
+      <field name="GEOGRAPHY" field-id="18" required="optional" type="id" type-module="parquet" type-id="GeographyType" />
     </union>
     <struct name="SchemaElement" doc="Represents a element inside a schema definition.
  - if it is a group (inner node) then type is undefined and num_children is defined
@@ -383,9 +443,14 @@ can be placed in a column chunk.">
       <field name="encoding" field-id="2" doc="Encoding using this dictionary page *" required="required" type="id" type-module="parquet" type-id="Encoding" />
       <field name="is_sorted" field-id="3" doc="If true, the entries in the dictionary are sorted in ascending order *" required="optional" type="bool" />
     </struct>
-    <struct name="DataPageHeaderV2" doc="New page format allowing reading levels without decompressing the data
+    <struct name="DataPageHeaderV2" doc="Alternate page format allowing reading levels without decompressing the data
 Repetition and definition levels are uncompressed
-The remaining section containing the data is compressed if is_compressed is true">
+The remaining section containing the data is compressed if is_compressed is true
+
+Implementation note - this header is not necessarily a strict improvement over
+`DataPageHeader` (in particular the original header might provide better compression
+in some scenarios). Page indexes require pages to start and end at row boundaries,
+regardless of which page header is used.">
       <field name="num_values" field-id="1" doc="Number of values, including NULLs, in this data page. *" required="required" type="i32" />
       <field name="num_nulls" field-id="2" doc="Number of NULL values, in this data page.
 Number of non-null = num_values - num_nulls which is also the number of values in the data section *" required="required" type="i32" />
@@ -503,6 +568,7 @@ in a single I/O." required="optional" type="i32" />
 representations. The histograms contained in these statistics can
 also be useful in some cases for more fine-grained nullability/list length
 filter pushdown." required="optional" type="id" type-module="parquet" type-id="SizeStatistics" />
+      <field name="geospatial_statistics" field-id="17" doc="Optional statistics specific for Geometry and Geography logical types" required="optional" type="id" type-module="parquet" type-id="GeospatialStatistics" />
     </struct>
     <struct name="EncryptionWithFooterKey" />
     <struct name="EncryptionWithColumnKey">
@@ -517,7 +583,22 @@ filter pushdown." required="optional" type="id" type-module="parquet" type-id="S
     </union>
     <struct name="ColumnChunk">
       <field name="file_path" field-id="1" doc="File where column data is stored.  If not set, assumed to be same file as
-metadata.  This path is relative to the current file." required="optional" type="string" />
+metadata.  This path is relative to the current file.
+
+As of December 2025, the only known use-case for this field is writing summary
+parquet files (i.e. &quot;_metadata&quot; files).  These files consolidate footers from
+multiple parquet files to allow for efficient reading of footers to avoid file
+listing costs and prune out files that do not need to be read based on statistics.
+
+These files do not appear to have ever been formally specified in the specification.
+and are potentially problematic from a correctness perspective [1].
+
+[1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
+
+There is no other known usage of this field. Specifically, there are no known
+reference implementations that will read externally stored column data if this field is populated
+within a standard parquet file. Making use of the field for this purpose is
+not considered part of the Parquet specification." required="optional" type="string" />
       <field name="file_offset" field-id="2" doc="Deprecated: Byte offset in file_path to the ColumnMetaData
 
 Past use of this field has been inconsistent, with some implementations
@@ -581,6 +662,7 @@ for this column should be ignored.">
   UINT64 - unsigned comparison
   DECIMAL - signed comparison of the represented value
   DATE - signed comparison
+  FLOAT16 - signed comparison of the represented value (*)
   TIME_MILLIS - signed comparison
   TIME_MICROS - signed comparison
   TIMESTAMP_MILLIS - signed comparison
@@ -592,16 +674,27 @@ for this column should be ignored.">
   LIST - undefined
   MAP - undefined
   VARIANT - undefined
+  GEOMETRY - undefined
+  GEOGRAPHY - undefined
 
 In the absence of logical types, the sort order is determined by the physical type:
   BOOLEAN - false, true
   INT32 - signed comparison
   INT64 - signed comparison
-  INT96 (only used for legacy timestamps) - undefined
+  INT96 (only used for legacy timestamps) - undefined(+)
   FLOAT - signed comparison of the represented value (*)
   DOUBLE - signed comparison of the represented value (*)
   BYTE_ARRAY - unsigned byte-wise comparison
   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
+
+(+) While the INT96 type has been deprecated, at the time of writing it is
+   still used in many legacy systems. If a Parquet implementation chooses
+   to write statistics for INT96 columns, it is recommended to order them
+   according to the legacy rules:
+   - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+   - if equal last 4 bytes, compare the first 8 bytes as a little-endian
+     64-bit signed integer (nanos)
+   See https://github.com/apache/parquet-format/issues/502 for more details
 
 (*) Because the sorting order is not specified properly for floating
     point values (relations vs. total ordering) the following
@@ -718,7 +811,13 @@ readers must supply the prefix *" required="optional" type="bool" />
       <field name="AES_GCM_CTR_V1" field-id="2" required="optional" type="id" type-module="parquet" type-id="AesGcmCtrV1" />
     </union>
     <struct name="FileMetaData" doc="Description for file metadata">
-      <field name="version" field-id="1" doc="Version of this file *" required="required" type="i32" />
+      <field name="version" field-id="1" doc="Version of this file
+
+As of December 2025, there is no agreed upon consensus of what constitutes
+version 2 of the file. For maximum compatibility with readers, writers should
+always populate &quot;1&quot; for version. For maximum compatibility with writers,
+readers should accept &quot;1&quot; and &quot;2&quot; interchangeably.  All other versions are
+reserved for potential future use-cases." required="required" type="i32" />
       <field name="schema" field-id="2" doc="Parquet schema for this file.  This schema contains metadata for all the columns.
 The schema is represented as a tree with a single root.  The nodes of the tree
 are flattened to a list by doing a depth-first traversal.

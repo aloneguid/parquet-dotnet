@@ -33,7 +33,7 @@ enum Type {
   BOOLEAN = 0;
   INT32 = 1;
   INT64 = 2;
-  INT96 = 3;  // deprecated, only used by legacy implementations.
+  INT96 = 3;  // deprecated, new Parquet writers should not write data in INT96
   FLOAT = 4;
   DOUBLE = 5;
   BYTE_ARRAY = 6;
@@ -238,6 +238,29 @@ struct SizeStatistics {
 }
 
 /**
+ * Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max
+ * value pair of coordinates from each axis.
+ */
+struct BoundingBox {
+  1: required double xmin;
+  2: required double xmax;
+  3: required double ymin;
+  4: required double ymax;
+  5: optional double zmin;
+  6: optional double zmax;
+  7: optional double mmin;
+  8: optional double mmax;
+}
+
+/** Statistics specific to Geometry and Geography logical types */
+struct GeospatialStatistics {
+  /** A bounding box of geospatial instances */
+  1: optional BoundingBox bbox;
+  /** Geospatial type codes of all instances, or an empty list if not known */
+  2: optional list<i32> geospatial_types;
+}
+
+/**
  * Statistics per row group and per page
  * All fields are optional.
  */
@@ -257,7 +280,7 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** 
+   /**
     * Count of null values in the column.
     *
     * Writers SHOULD always write this field even if it is zero (i.e. no null value)
@@ -290,12 +313,12 @@ struct Statistics {
 
 /** Empty structs to use as logical type annotations */
 struct StringType {}  // allowed for BYTE_ARRAY, must be encoded with UTF-8
-struct UUIDType {}    // allowed for FIXED[16], must encoded raw UUID bytes
+struct UUIDType {}    // allowed for FIXED[16], must be encoded as raw UUID bytes
 struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
-struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes
+struct Float16Type {} // allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md)
 
 /**
  * Logical type to annotate a column that is always null.
@@ -384,6 +407,58 @@ struct BsonType {
  * Embedded Variant logical type annotation
  */
 struct VariantType {
+  // The version of the variant specification that the variant was
+  // written with.
+  1: optional i8 specification_version
+}
+
+/** Edge interpolation algorithm for Geography logical type */
+enum EdgeInterpolationAlgorithm {
+  SPHERICAL = 0;
+  VINCENTY = 1;
+  THOMAS = 2;
+  ANDOYER = 3;
+  KARNEY = 4;
+}
+
+/**
+ * Embedded Geometry logical type annotation
+ *
+ * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+ * is always linear/planar.
+ *
+ * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
+ * which means that the geometries must be stored in longitude, latitude based on
+ * the WGS84 datum.
+ *
+ * Allowed for physical type: BYTE_ARRAY.
+ *
+ * See Geospatial.md for details.
+ */
+struct GeometryType {
+  1: optional string crs;
+}
+
+/**
+ * Embedded Geography logical type annotation
+ *
+ * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
+ * edges interpolation algorithm.
+ *
+ * A custom geographic CRS can be set by the crs field, where longitudes are
+ * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
+ * defaults to "OGC:CRS84".
+ *
+ * An optional algorithm can be set to correctly interpret edges interpolation
+ * of the geometries. If unset, the algorithm defaults to SPHERICAL.
+ *
+ * Allowed for physical type: BYTE_ARRAY.
+ *
+ * See Geospatial.md for details.
+ */
+struct GeographyType {
+  1: optional string crs;
+  2: optional EdgeInterpolationAlgorithm algorithm;
 }
 
 /**
@@ -417,6 +492,8 @@ union LogicalType {
   14: UUIDType UUID           // no compatible ConvertedType
   15: Float16Type FLOAT16     // no compatible ConvertedType
   16: VariantType VARIANT     // no compatible ConvertedType
+  17: GeometryType GEOMETRY   // no compatible ConvertedType
+  18: GeographyType GEOGRAPHY // no compatible ConvertedType
 }
 
 /**
@@ -635,9 +712,14 @@ struct DictionaryPageHeader {
 }
 
 /**
- * New page format allowing reading levels without decompressing the data
+ * Alternate page format allowing reading levels without decompressing the data
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
+ *
+ * Implementation note - this header is not necessarily a strict improvement over
+ * `DataPageHeader` (in particular the original header might provide better compression
+ * in some scenarios). Page indexes require pages to start and end at row boundaries,
+ * regardless of which page header is used.
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
@@ -815,7 +897,7 @@ struct ColumnMetaData {
   /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
   6: required i64 total_uncompressed_size
 
-  /** total byte size of all compressed, and potentially encrypted, pages 
+  /** total byte size of all compressed, and potentially encrypted, pages
    *  in this column chunk (including the headers) **/
   7: required i64 total_compressed_size
 
@@ -857,6 +939,9 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /** Optional statistics specific for Geometry and Geography logical types */
+  17: optional GeospatialStatistics geospatial_statistics;
 }
 
 struct EncryptionWithFooterKey {
@@ -878,6 +963,21 @@ union ColumnCryptoMetaData {
 struct ColumnChunk {
   /** File where column data is stored.  If not set, assumed to be same file as
     * metadata.  This path is relative to the current file.
+    *
+    * As of December 2025, the only known use-case for this field is writing summary
+    * parquet files (i.e. "_metadata" files).  These files consolidate footers from
+    * multiple parquet files to allow for efficient reading of footers to avoid file
+    * listing costs and prune out files that do not need to be read based on statistics.
+    *
+    * These files do not appear to have ever been formally specified in the specification.
+    * and are potentially problematic from a correctness perspective [1].
+    *
+    * [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
+    *
+    * There is no other known usage of this field. Specifically, there are no known
+    * reference implementations that will read externally stored column data if this field is populated
+    * within a standard parquet file. Making use of the field for this purpose is
+    * not considered part of the Parquet specification.
     **/
   1: optional string file_path
 
@@ -939,10 +1039,10 @@ struct RowGroup {
    * in this row group **/
   5: optional i64 file_offset
 
-  /** Total byte size of all compressed (and potentially encrypted) column data 
+  /** Total byte size of all compressed (and potentially encrypted) column data
    *  in this row group **/
   6: optional i64 total_compressed_size
-  
+
   /** Row group ordinal in the file **/
   7: optional i16 ordinal
 }
@@ -977,6 +1077,7 @@ union ColumnOrder {
    *   UINT64 - unsigned comparison
    *   DECIMAL - signed comparison of the represented value
    *   DATE - signed comparison
+   *   FLOAT16 - signed comparison of the represented value (*)
    *   TIME_MILLIS - signed comparison
    *   TIME_MICROS - signed comparison
    *   TIMESTAMP_MILLIS - signed comparison
@@ -988,16 +1089,27 @@ union ColumnOrder {
    *   LIST - undefined
    *   MAP - undefined
    *   VARIANT - undefined
+   *   GEOMETRY - undefined
+   *   GEOGRAPHY - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 (only used for legacy timestamps) - undefined
+   *   INT96 (only used for legacy timestamps) - undefined(+)
    *   FLOAT - signed comparison of the represented value (*)
    *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
+   *
+   * (+) While the INT96 type has been deprecated, at the time of writing it is
+   *    still used in many legacy systems. If a Parquet implementation chooses
+   *    to write statistics for INT96 columns, it is recommended to order them
+   *    according to the legacy rules:
+   *    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+   *    - if equal last 4 bytes, compare the first 8 bytes as a little-endian
+   *      64-bit signed integer (nanos)
+   *    See https://github.com/apache/parquet-format/issues/502 for more details
    *
    * (*) Because the sorting order is not specified properly for floating
    *     point values (relations vs. total ordering) the following
@@ -1007,7 +1119,7 @@ union ColumnOrder {
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
-   * 
+   *
    *     When writing statistics the following rules should be followed:
    *     - NaNs should not be written to min or max statistics fields.
    *     - If the computed max value is zero (whether negative or positive),
@@ -1100,13 +1212,13 @@ struct ColumnIndex {
   4: required BoundaryOrder boundary_order
 
   /**
-   * A list containing the number of null values for each page 
+   * A list containing the number of null values for each page
    *
    * Writers SHOULD always write this field even if no null values
    * are present or the column is not nullable.
-   * Readers MUST distinguish between null_counts not being present 
+   * Readers MUST distinguish between null_counts not being present
    * and null_count being 0.
-   * If null_counts are not present, readers MUST NOT assume all 
+   * If null_counts are not present, readers MUST NOT assume all
    * null counts are 0.
    */
   5: optional list<i64> null_counts
@@ -1163,7 +1275,14 @@ union EncryptionAlgorithm {
  * Description for file metadata
  */
 struct FileMetaData {
-  /** Version of this file **/
+  /** Version of this file
+    *
+    * As of December 2025, there is no agreed upon consensus of what constitutes
+    * version 2 of the file. For maximum compatibility with readers, writers should
+    * always populate "1" for version. For maximum compatibility with writers,
+    * readers should accept "1" and "2" interchangeably.  All other versions are
+    * reserved for potential future use-cases.
+    */
   1: required i32 version
 
   /** Parquet schema for this file.  This schema contains metadata for all the columns.
@@ -1207,30 +1326,30 @@ struct FileMetaData {
    */
   7: optional list<ColumnOrder> column_orders;
 
-  /** 
+  /**
    * Encryption algorithm. This field is set only in encrypted files
    * with plaintext footer. Files with encrypted footer store algorithm id
    * in FileCryptoMetaData structure.
    */
   8: optional EncryptionAlgorithm encryption_algorithm
 
-  /** 
-   * Retrieval metadata of key used for signing the footer. 
-   * Used only in encrypted files with plaintext footer. 
-   */ 
+  /**
+   * Retrieval metadata of key used for signing the footer.
+   * Used only in encrypted files with plaintext footer.
+   */
   9: optional binary footer_signing_key_metadata
 }
 
 /** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
-  /** 
+  /**
    * Encryption algorithm. This field is only used for files
    * with encrypted footer. Files with plaintext footer store algorithm id
    * inside footer (FileMetaData structure).
    */
   1: required EncryptionAlgorithm encryption_algorithm
-    
-  /** Retrieval metadata of key used for encryption of footer, 
+
+  /** Retrieval metadata of key used for encryption of footer,
    *  and (possibly) columns **/
   2: optional binary key_metadata
 }
