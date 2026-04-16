@@ -1,7 +1,8 @@
-# 5.6.0-pre.3
+# 5.6.0
 
 - BREAKING CHANGE: To enable further evolution, like Spans, direct memory access, SIMD support and so on, I am dropping support for .NET Standard. The minimum supported version of .NET is .NET 8. Supporting anything lower would require a lot of effort which I can't give you.
 - feat: parquet decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
+- feat: Add IsAdjustedToUTC property to TimeOnlyDataField, by @rferraton in #727.
 - fix: Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
 - chore: greatly simplified versioning logic in CI/CD, now the only place to set version is in `docs/release-notes.md` file, which also supports pre-release version logic.
 
