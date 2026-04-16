@@ -1,4 +1,4 @@
-# 6.0.0-pre.1
+# 6.0.0-pre.2
 
 ## Highlights
 
@@ -7,6 +7,8 @@
 - Massive performance and memory usage improvements.
 
 > V6 is a substantial rewrite of the low-level API, which addresses memory and performance issues. It's time to forget about the past and target modern .NET with modern APIs. The high-level API (class serializer) is not affected by these changes and should work as before logically, however you will see a massive performance increase and much lower memory usage. Parquet.Net development was pretty much stale for the last year or two, due to requirement for backward compatibility all the way to V1, and so I had to make a choice - whether stop adding any features and improvements, or break backward compatibility and make the library better. I chose the latter, and I hope you will like the new version as much as I do.
+
+For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/04/parquet6/).
 
 ## Breaking changes
 
