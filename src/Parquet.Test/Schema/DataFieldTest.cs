@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Parquet.Schema;
 using Xunit;
 
@@ -67,5 +68,23 @@ public class DataFieldTest {
         Assert.Equal(typeof(int), f.ClrType);
         Assert.False(f.IsNullable);
         Assert.True(f.IsArray);
+    }
+
+    [Fact]
+    public void StringField() {
+        var f = new DataField("name", typeof(string));
+        Assert.Equal("name", f.Name);
+        Assert.Equal(typeof(string), f.ClrType);
+        Assert.True(f.IsNullable);
+        Assert.False(f.IsArray);
+    }
+
+    [Fact]
+    public void StringAsRomCharField() {
+        var f = new DataField("name", typeof(ReadOnlyMemory<char>));
+        Assert.Equal("name", f.Name);
+        Assert.Equal(typeof(ReadOnlyMemory<char>), f.ClrType);
+        Assert.False(f.IsNullable);
+        Assert.False(f.IsArray);
     }
 }

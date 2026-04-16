@@ -59,6 +59,52 @@ public class ParquetWriterTest : TestBase {
     }
 
     [Fact]
+    public async Task Write_read_string_rom() {
+        var name = new DataField<ReadOnlyMemory<char>>("name");
+        ReadOnlyMemory<char>[] input = ["start".AsMemory(), "stop".AsMemory(), "pause".AsMemory()];
+        var ms = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(name), ms)) {
+            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                await rg.WriteAsync<ReadOnlyMemory<char>>(name, input);
+            }
+        }
+
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(input.Length, rg.RowCount);
+                ReadOnlyMemory<char>[] values = new ReadOnlyMemory<char>[rg.RowCount];
+                await rg.ReadAsync<ReadOnlyMemory<char>>(name, values);
+                Assert.Equivalent(input, values);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Write_read_nullable_string_rom() {
+        var name = new DataField<ReadOnlyMemory<char>?>("name");
+        ReadOnlyMemory<char>?[] input = ["start".AsMemory(), null, "pause".AsMemory()];
+        var ms = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(name), ms)) {
+            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                await rg.WriteAsync<ReadOnlyMemory<char>>(name, input);
+            }
+        }
+
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            using (ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(input.Length, rg.RowCount);
+                ReadOnlyMemory<char>?[] values = new ReadOnlyMemory<char>?[rg.RowCount];
+                await rg.ReadAsync<ReadOnlyMemory<char>>(name, values);
+                Assert.Equivalent(input, values);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Cannot_write_columns_in_wrong_order() {
         var schema = new ParquetSchema(new DataField<int>("id"), new DataField<int>("id2"));
 

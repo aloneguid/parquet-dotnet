@@ -31,7 +31,9 @@ static class SchemaEncoder {
         typeof(TimeSpan),
         typeof(Interval),
         typeof(byte[]),
+        typeof(ReadOnlyMemory<byte>),
         typeof(string),
+        typeof(ReadOnlyMemory<char>),
         typeof(Guid)
     };
 
@@ -494,13 +496,13 @@ static class SchemaEncoder {
                 }
             };
             tse.ConvertedType = st == typeof(long) ? ConvertedType.INT_64 : ConvertedType.UINT_64;
-        } else if(st == typeof(float)) {                        // float
+        } else if(st == typeof(float)) {                                                    // float
             tse.Type = Type.FLOAT;
-        } else if(st == typeof(double)) {                       // double
+        } else if(st == typeof(double)) {                                                   // double
             tse.Type = Type.DOUBLE;
-        } else if(st == typeof(BigInteger)) {                   // BigInteger
+        } else if(st == typeof(BigInteger)) {                                               // BigInteger
             tse.Type = Type.INT96;
-        } else if(st == typeof(string)) {                       // string
+        } else if(st == typeof(string) || st == typeof(ReadOnlyMemory<char>)) {             // string
             tse.Type = Type.BYTE_ARRAY;
             tse.LogicalType = new LogicalType {
                 STRING = new StringType()
@@ -541,9 +543,9 @@ static class SchemaEncoder {
             tse.ConvertedType = ConvertedType.DECIMAL;
             tse.Precision = precision;
             tse.Scale = scale;
-        } else if(st == typeof(byte[])) {           // byte[]
+        } else if(st == typeof(byte[]) || st == typeof(ReadOnlyMemory<byte>)) {           // byte[]
             tse.Type = Type.BYTE_ARRAY;
-        } else if(st == typeof(DateTime)) {         // DateTime
+        } else if(st == typeof(DateTime)) {                                               // DateTime
             if(field is DateTimeDataField dfDateTime) {
                 switch(dfDateTime.DateTimeFormat) {
                     case DateTimeFormat.DateAndTime:
@@ -585,7 +587,6 @@ static class SchemaEncoder {
             } else {
                 tse.Type = Type.INT96;
             }
-#if NET6_0_OR_GREATER
         } else if(st == typeof(DateOnly)) {
             // DateOnly
             tse.Type = Type.INT32;
@@ -599,7 +600,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT32;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MILLIS = new MilliSeconds() }
                             }
                         };
@@ -609,7 +610,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT64;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MICROS = new MicroSeconds() }
                             }
                         };
@@ -628,7 +629,6 @@ static class SchemaEncoder {
                 };
                 tse.ConvertedType = ConvertedType.TIME_MILLIS;
             }
-#endif
         } else if(st == typeof(TimeSpan)) {         // TimeSpan
             if(field is TimeSpanDataField dfTime) {
                 switch(dfTime.TimeSpanFormat) {
@@ -636,7 +636,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT32;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MILLIS = new MilliSeconds() }
                             }
                         };
@@ -646,7 +646,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT64;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MICROS = new MicroSeconds() }
                             }
                         };

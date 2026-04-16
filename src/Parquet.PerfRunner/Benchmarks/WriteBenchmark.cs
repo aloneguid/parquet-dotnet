@@ -1,5 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Parquet.Data;
 using Parquet.Schema;
 using ParquetSharp;
 using ParquetSharp.IO;
@@ -10,14 +9,12 @@ namespace Parquet.PerfRunner.Benchmarks;
 [MeanColumn]
 [MemoryDiagnoser]
 [MarkdownExporter]
-[RPlotExporter]
+//[RPlotExporter]
 public class WriteBenchmark : BenchmarkBase {
 
-    [Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
-    //[Params(typeof(string))]
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public Type DataType;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    //[Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
+    [Params(typeof(string), typeof(ReadOnlyMemory<char>))]
+    public Type DataType = typeof(int);
 
     private ParquetSchema? _schema;
     //private DataColumn? _c;
@@ -40,17 +37,39 @@ public class WriteBenchmark : BenchmarkBase {
     public async Task ParquetNet() {
         using var ms = new MemoryStream();
         await using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms);
-        using(ParquetRowGroupWriter rgw = pw.CreateRowGroup()) {
-            //await rgw.WriteColumnAsync(_c!);
-            throw new NotImplementedException();
+        pw.CompressionMethod = CompressionMethod.None;
+        using ParquetRowGroupWriter rgw = pw.CreateRowGroup();
+
+        if(DataType == typeof(int)) {
+            int[] data = (int[])_ar!;
+            await rgw.WriteAsync<int>(_schema!.DataFields[0], data);
+        } else if(DataType == typeof(int?)) {
+            int?[] data = (int?[])_ar!;
+            await rgw.WriteAsync<int>(_schema!.DataFields[0], data);
+        } else if(DataType == typeof(double)) {
+            double[] data = (double[])_ar!;
+            await rgw.WriteAsync<double>(_schema!.DataFields[0], data);
+        } else if(DataType == typeof(double?)) {
+            double?[] data = (double?[])_ar!;
+            await rgw.WriteAsync<double>(_schema!.DataFields[0], data);
+        } else if(DataType == typeof(string)) {
+            string[] data = (string[])_ar!;
+            await rgw.WriteAsync(_schema!.DataFields[0], data);
+        } else if(DataType == typeof(ReadOnlyMemory<char>)) {
+            ReadOnlyMemory<char>[] data = (ReadOnlyMemory<char>[])_ar!;
+            await rgw.WriteAsync<ReadOnlyMemory<char>>(_schema!.DataFields[0], data);
+        } else {
+            throw new InvalidOperationException($"don't know {DataType}");
         }
+
+        rgw.CompleteValidate();
     }
 
     [Benchmark]
     public void ParquetSharp() {
         using var ms = new MemoryStream();
         using var writer = new ManagedOutputStream(ms);
-        using var fileWriter = new ParquetFileWriter(writer, new[] { _psc! });
+        using var fileWriter = new ParquetFileWriter(writer, new[] { _psc! }, Compression.Uncompressed);
         using RowGroupWriter rowGroup = fileWriter.AppendRowGroup();
 
         if(DataType == typeof(int)) {
