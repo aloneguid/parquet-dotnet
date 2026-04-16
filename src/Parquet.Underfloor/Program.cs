@@ -349,6 +349,9 @@ void RenderStatusBar() {
     SBI(Icon.View_column, fd.ColumnCountDisplay, "number of columns");
     SBI(Icon.Numbers, fd.VersionDisplay, "format version");
     SBI(Icon.Timelapse, fd.SampleReadDurationDisplay, "data sample read duration");
+    if(fd.SampleReadMessage.Length > 0) {
+        SBI(Icon.Messenger, fd.SampleReadMessage, "data sample read status message");
+    }
 }
 
 #endregion
@@ -461,7 +464,7 @@ void RenderData() {
                 return;
             }
 
-            if(fd.Sample == null || fd.Sample.Count() < row)
+            if(fd.Sample == null || row >= fd.Sample.Count)
                 return;
 
             Dictionary<string, object> cell = fd.Sample[row];

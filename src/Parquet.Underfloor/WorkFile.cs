@@ -116,9 +116,11 @@ class WorkFile : IAsyncDisposable {
 
     public ReadStatus SampleReadStatus { get; set; } = ReadStatus.NotStarted;
 
+    public string SampleReadMessage { get; set; } = string.Empty;
+
     public ParquetSchema? SampleSchema { get; set; }
 
-    public IList<Dictionary<string, object>>? Sample { get; set; }
+    public IList<Dictionary<string, object>> Sample { get; } = new List<Dictionary<string, object>>();
 
     public Exception? SampleReadException { get; set; }
 
@@ -144,11 +146,24 @@ class WorkFile : IAsyncDisposable {
 
         if(SampleReadStatus == ReadStatus.NotStarted) {
             SampleReadStatus = ReadStatus.InProgress;
+            SampleReadMessage = string.Empty;
 
             DateTime start = DateTime.UtcNow;
             _stream.Seek(0, SeekOrigin.Begin);
             try {
-                (IList<Dictionary<string, object>> data, ParquetSchema schema) = await ParquetSerializer.DeserializeUntypedAsync(_stream,
+                Sample.Clear();
+                var result = new ParquetSerializer.LazyDeserialisationResult(Sample) {
+                    MaxRowGroups = 1,
+                    SchemaRead = s => {
+                        SampleSchema = s;
+                    },
+                    DataFieldReadStarted = df => {
+                        SampleReadMessage = $"reading {df.Path}";
+                    }
+                };
+
+                await ParquetSerializer.LazyDeserializeUntypedAsync(_stream,
+                    result,
                     new ParquetSerializerOptions {
                         ParquetOptions = new ParquetOptions {
                             TreatByteArrayAsString = true,
@@ -156,8 +171,6 @@ class WorkFile : IAsyncDisposable {
                         }
                     });
 
-                SampleSchema = schema;
-                Sample = data;
                 SampleReadStatus = ReadStatus.Completed;
             } catch(Exception ex) {
                 SampleReadException = ex;
@@ -165,6 +178,7 @@ class WorkFile : IAsyncDisposable {
             } finally {
                 SampleReadDuration = DateTime.UtcNow - start;
                 SampleReadDurationDisplay = SampleReadDuration.ToString();
+                SampleReadMessage = string.Empty;
             }
         }
     }

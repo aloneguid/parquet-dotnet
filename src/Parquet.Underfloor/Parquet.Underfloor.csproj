@@ -9,6 +9,8 @@
         <!--<PublishAot>true</PublishAot>-->
         <InvariantGlobalization>true</InvariantGlobalization>
         <ApplicationIcon>icon.ico</ApplicationIcon>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>

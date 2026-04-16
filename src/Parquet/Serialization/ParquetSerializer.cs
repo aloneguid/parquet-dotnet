@@ -27,6 +27,11 @@ public static class ParquetSerializer {
         { typeof(TimeOnly), new HashSet<Type>{ typeof(TimeSpan) } },
     };
 
+    private class ProgressCallbacks {
+        public Action<DataField>? DataFieldReadStarted;
+        public Action<DataField, Exception?>? DataFieldReadFinished;
+    }
+
     private static async Task SerializeRowGroupAsync<T>(ParquetWriter writer, Striper<T> striper,
         IEnumerable<T> objectInstances,
         CancellationToken cancellationToken) {
@@ -203,7 +208,7 @@ public static class ParquetSerializer {
                 continue;
             }
 
-            await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
+            await DeserializeRowGroupAsync(reader, rgi, asm, result, options, null, cancellationToken);
         }
 
         return result;
@@ -249,10 +254,66 @@ public static class ParquetSerializer {
             if(rowGroupIndex.HasValue && rgi != rowGroupIndex.Value) {
                 continue;
             }
-            await DeserializeRowGroupAsync(reader, rgi, asm, result, options, cancellationToken);
+            await DeserializeRowGroupAsync(reader, rgi, asm, result, options, null, cancellationToken);
         }
 
         return (result, schema);
+    }
+
+    internal class LazyDeserialisationResult {
+        private ParquetSchema? _schema;
+
+        public LazyDeserialisationResult(IList<Dictionary<string, object>> data) {
+            Data = data;
+        }
+
+        public IList<Dictionary<string, object>> Data { get; }
+
+        public Action<ParquetSchema>? SchemaRead { get; set; }
+
+        public Action<DataField>? DataFieldReadStarted { get; set; }
+
+        public Action<DataField, Exception?>? DataFieldReadFinished { get; set; }
+
+        /// <summary>
+        /// Max number of row groups to read. By default, reads all row groups.
+        /// </summary>
+        public int? MaxRowGroups { get; set; }
+
+        public ParquetSchema? Schema {
+            get { return _schema; }
+            set {
+                _schema = value;
+                if(value != null) {
+                    SchemaRead?.Invoke(value);
+                }
+            }
+        }
+    }
+
+    internal static async Task LazyDeserializeUntypedAsync(Stream source,
+        LazyDeserialisationResult result,
+        ParquetSerializerOptions? options = null,
+        CancellationToken cancellationToken = default) {
+
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        ParquetSchema schema = reader.Schema;
+        result.Schema = reader.Schema;
+        Assembler<Dictionary<string, object>> asm = GetAssembler(schema);
+
+        for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
+            if(result.MaxRowGroups.HasValue && rgi >= result.MaxRowGroups) {
+                break;
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var p = new ProgressCallbacks {
+                DataFieldReadStarted = df => result.DataFieldReadStarted?.Invoke(df),
+                DataFieldReadFinished = (df, ex) => result.DataFieldReadFinished?.Invoke(df, ex)
+            };
+
+            await DeserializeRowGroupAsync(reader, rgi, asm, result.Data, options, p, cancellationToken);
+        }
     }
 
     private static Assembler<T> GetAssembler<T>() where T : new() {
@@ -266,21 +327,24 @@ public static class ParquetSerializer {
     }
 
     private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi, Assembler<T> asm,
-        ICollection<T> result, ParquetSerializerOptions? options, CancellationToken cancellationToken, bool resultsAlreadyAllocated = false)
+        ICollection<T> result, ParquetSerializerOptions? options,
+        ProgressCallbacks? progress,
+        CancellationToken cancellationToken, bool resultsAlreadyAllocated = false)
         where T : class, new() {
 
         using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
 
-        await DeserializeRowGroupAsync(rg, reader.Schema, asm, result, options, cancellationToken, resultsAlreadyAllocated);
+        await DeserializeRowGroupAsync(rg, reader.Schema, asm, result, options, progress, cancellationToken, resultsAlreadyAllocated);
     }
 
     private static async Task DeserializeRowGroupAsync(ParquetReader reader, int rgi,
         Assembler<Dictionary<string, object>> asm,
         List<Dictionary<string, object>> result,
         ParquetSerializerOptions? options,
+        ProgressCallbacks? progress,
         CancellationToken cancellationToken) {
         using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
-        await DeserializeRowGroupAsync(rg, reader.Schema, asm, result, options, cancellationToken);
+        await DeserializeRowGroupAsync(rg, reader.Schema, asm, result, options, progress, cancellationToken);
     }
 
     private static DataField? MakeForReading(ParquetSchema fileSchema, DataField assemblerField, ParquetSerializerOptions? options) {
@@ -328,6 +392,7 @@ public static class ParquetSerializer {
         Assembler<T> asm,
         ICollection<T> result,
         ParquetSerializerOptions? options,
+        ProgressCallbacks? progress = null,
         CancellationToken cancellationToken = default,
         bool resultsAlreadyAllocated = false) where T : class, new() {
 
@@ -343,6 +408,8 @@ public static class ParquetSerializer {
 
         foreach(FieldAssembler<T> fasm in asm.FieldAssemblers) {
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             DataField? readerField = MakeForReading(schema, fasm.Field, options);
 
             // skips column deserialisation if it doesn't exist in file's schema
@@ -352,18 +419,23 @@ public static class ParquetSerializer {
 
             // this needs reflected schema field due to it containing important schema adjustments
             object rawColumnDataOfT;
+            progress?.DataFieldReadStarted?.Invoke(fasm.Field);
 
             try {
                 rawColumnDataOfT = await rg.ReadRawColumnDataAsObjectAsync(readerField, cancellationToken);
             } catch(Exception ex) {
+                progress?.DataFieldReadFinished?.Invoke(fasm.Field, ex);
                 throw new InvalidDataException($"failed to read column '{fasm.Field.Path}'", ex);
             }
 
             try {
                 fasm.Assemble(resultsAlreadyAllocated ? result : result.Skip(prevRowCount), rawColumnDataOfT);
             } catch(Exception ex) {
+                progress?.DataFieldReadFinished?.Invoke(fasm.Field, ex);
                 throw new InvalidOperationException($"failed to deserialize column '{fasm.Field.Path}'", ex);
             }
+
+            progress?.DataFieldReadFinished?.Invoke(fasm.Field, null);
         }
     }
 
