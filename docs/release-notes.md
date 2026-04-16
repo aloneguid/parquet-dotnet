@@ -1,6 +1,6 @@
 # 5.6.0
 
-- **BREAKING:**: The minimum supported .NET version is 6.
+- **BREAKING:**: The minimum supported .NET version is 8.
 - feat: parquet decoder will prioritise logical type metadata when reading files, because some readers (like Arrow v22) do not write backward-compatible metadata anymore, in #719, #716 by @mukuntu, @aloneguid.
 - feat: Add IsAdjustedToUTC property to TimeOnlyDataField, by @rferraton in #727.
 - fix: Decode Zstd chunk with wrong length successfully, by @aloneguid in #717.
