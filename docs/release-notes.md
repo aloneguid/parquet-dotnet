@@ -28,6 +28,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 ## Improvements
 
 - More APIs respect `CancellationToken` allowing you to cancel long-running parquet operations.
+- Add IsAdjustedToUTC property to TimeOnlyDataField, by @rferraton in #727.
 
 ## Bug fixes
 

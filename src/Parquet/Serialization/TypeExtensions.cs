@@ -159,12 +159,15 @@ public static class TypeExtensions {
                 IsAdjustedToUTC = tsa == null ? true : tsa.IsAdjustedToUTC
             };
         } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
+            ParquetTimeSpanAttribute? tsaTimeOnly = member?.TimeSpanAttribute;
             r = new TimeOnlyDataField(name,
                 member?.MicroSecondsTimeAttribute == null
                     ? TimeSpanFormat.MilliSeconds
                     : TimeSpanFormat.MicroSeconds,
                 t == typeof(TimeOnly?),
-                null, propertyName);
+                null, propertyName) {
+                    IsAdjustedToUTC = tsaTimeOnly == null ? true : tsaTimeOnly.IsAdjustedToUTC
+                };
         } else if(t == typeof(decimal) || t == typeof(decimal?)) {
             ParquetDecimalAttribute? ps = member?.DecimalAttribute;
             bool isTypeNullable = t == typeof(decimal?);

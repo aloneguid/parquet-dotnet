@@ -600,7 +600,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT32;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MILLIS = new MilliSeconds() }
                             }
                         };
@@ -610,7 +610,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT64;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MICROS = new MicroSeconds() }
                             }
                         };
@@ -636,7 +636,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT32;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MILLIS = new MilliSeconds() }
                             }
                         };
@@ -646,7 +646,7 @@ static class SchemaEncoder {
                         tse.Type = Type.INT64;
                         tse.LogicalType = new LogicalType {
                             TIME = new TimeType {
-                                IsAdjustedToUTC = true,
+                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
                                 Unit = new TimeUnit { MICROS = new MicroSeconds() }
                             }
                         };
