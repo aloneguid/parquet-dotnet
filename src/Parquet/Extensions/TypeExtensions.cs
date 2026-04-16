@@ -25,7 +25,7 @@ static class TypeExtensions {
     /// <param name="baseType"></param>
     /// <returns></returns>
     public static bool TryExtractIEnumerableType(this Type t, out Type? baseType) {
-        if(typeof(byte[]) == t) {
+        if(typeof(byte[]) == t || typeof(string) == t || typeof(ReadOnlyMemory<char>) == t || typeof(ReadOnlyMemory<byte>) == t) {
             //it's a special case to avoid confustion between byte arrays and repeatable bytes
             baseType = null;
             return false;

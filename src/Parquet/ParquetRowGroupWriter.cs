@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -51,10 +52,17 @@ public class ParquetRowGroupWriter : IDisposable {
     /// the main WriteAsync method. This is useful for writing string columns without having to manually convert them to
     /// the required format.
     /// </summary>
-    public async Task WriteAsync(DataField field, IEnumerable<string?> values,
+    public async Task WriteAsync(DataField field, IReadOnlyCollection<string?> values,
         ReadOnlyMemory<int>? repetitionLevels = null) {
-        ReadOnlyMemory<ReadOnlyMemory<char>?> memValues = values.Select(s => s.AsNullableReadOnlyMemory()).ToArray();
-        await WriteAsync(field, memValues, repetitionLevels);
+        ReadOnlyMemory<char>?[] rented = ArrayPool<ReadOnlyMemory<char>?>.Shared.Rent(values.Count);
+        try {
+            int i = 0;
+            foreach(string? s in values)
+                rented[i++] = s.AsNullableReadOnlyMemory();
+            await WriteAsync(field, new ReadOnlyMemory<ReadOnlyMemory<char>?>(rented, 0, i), repetitionLevels);
+        } finally {
+            ArrayPool<ReadOnlyMemory<char>?>.Shared.Return(rented);
+        }
     }
 
     /// <summary>
@@ -66,10 +74,17 @@ public class ParquetRowGroupWriter : IDisposable {
     /// <param name="values"></param>
     /// <param name="repetitionLevels"></param>
     /// <returns></returns>
-    public async Task WriteAsync(DataField field, IEnumerable<byte[]?> values,
+    public async Task WriteAsync(DataField field, IReadOnlyCollection<byte[]?> values,
         ReadOnlyMemory<int>? repetitionLevels = null) {
-        ReadOnlyMemory<ReadOnlyMemory<byte>?> memValues = values.Select(b => b.AsNullableReadOnlyMemory()).ToArray();
-        await WriteAsync(field, memValues, repetitionLevels);
+        ReadOnlyMemory<byte>?[] rented = ArrayPool<ReadOnlyMemory<byte>?>.Shared.Rent(values.Count);
+        try {
+            int i = 0;
+            foreach(byte[]? b in values)
+                rented[i++] = b.AsNullableReadOnlyMemory();
+            await WriteAsync(field, new ReadOnlyMemory<ReadOnlyMemory<byte>?>(rented, 0, i), repetitionLevels);
+        } finally {
+            ArrayPool<ReadOnlyMemory<byte>?>.Shared.Return(rented);
+        }
     }
 
 

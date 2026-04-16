@@ -12,9 +12,9 @@ namespace Parquet.PerfRunner.Benchmarks;
 //[RPlotExporter]
 public class WriteBenchmark : BenchmarkBase {
 
-    [Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
-    //[Params(typeof(string))]
-    public Type DataType;
+    //[Params(typeof(int), typeof(int?), typeof(double), typeof(double?))]
+    [Params(typeof(string), typeof(ReadOnlyMemory<char>))]
+    public Type DataType = typeof(int);
 
     private ParquetSchema? _schema;
     //private DataColumn? _c;
@@ -55,6 +55,9 @@ public class WriteBenchmark : BenchmarkBase {
         } else if(DataType == typeof(string)) {
             string[] data = (string[])_ar!;
             await rgw.WriteAsync(_schema!.DataFields[0], data);
+        } else if(DataType == typeof(ReadOnlyMemory<char>)) {
+            ReadOnlyMemory<char>[] data = (ReadOnlyMemory<char>[])_ar!;
+            await rgw.WriteAsync<ReadOnlyMemory<char>>(_schema!.DataFields[0], data);
         } else {
             throw new InvalidOperationException($"don't know {DataType}");
         }

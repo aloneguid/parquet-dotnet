@@ -28,6 +28,8 @@ public abstract class BenchmarkBase {
             ar = Enumerable.Range(0, DataSize).Select(i => (i % 3 == 0) ? (double?)null : (double?)i).ToArray();
         } else if(t == typeof(string)) {
             ar = Enumerable.Range(0, DataSize).Select(i => RandomString(30)).ToArray();
+        } else if(t == typeof(ReadOnlyMemory<char>)) {
+            ar = Enumerable.Range(0, DataSize).Select(i => (ReadOnlyMemory<char>)RandomString(30).AsMemory()).ToArray();
         } else {
             throw new InvalidOperationException($"don't know about {t}");
         }

@@ -20,6 +20,6 @@ if(args.Length == 1) {
             break;
     }
 } else {
-    await new DataTypes().NullableInts();
+    await new DataTypes().RandomStrings();
     //await SampleGenerator.GenerateFiles();
 }
