@@ -240,7 +240,7 @@ void RenderKeyValueMetadata(List<KeyValue>? kvm) {
     if(kvm == null || kvm.Count == 0)
         return;
 
-    if(Accordion($"Metadata ({kvm.Count})")) {
+    if(Accordion($"Key-value(s) ({kvm.Count})")) {
         Table("kvm", ["key", "value"], ta => {
 
             foreach(KeyValue kv in kvm) {
@@ -254,7 +254,7 @@ void RenderKeyValueMetadata(List<KeyValue>? kvm) {
                 SL();
                 Label(kv.Value ?? "");
             }
-        }, 0, -20, true);
+        }, 0, 250, true);
     }
 }
 

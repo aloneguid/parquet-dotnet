@@ -15,7 +15,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
 # Features at a glance
 
 - 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e. desktops, servers, phones, watches and so on.
-- 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's even faster than native C++ implementations.
+- 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's even faster than native C++ implementations. **Hardware acceleration** is added in more and more places.
 - 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around — forces Parquet to fit into .NET.
 - 🦄**Unique Features**:
@@ -23,7 +23,8 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Supports all parquet types, encodings and compressions.
   - Fully supports [C# class serialization](#high-level-api), for all simple and **complex** Parquet types.
   - Provides **low-level**, high-level, and untyped API.
-  - Access to file and column metadata
+  - Access to file and column metadata.
+  - Fine-tune encodings per column.
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
 # Table of Contents

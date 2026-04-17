@@ -16,7 +16,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 - `ParquetWriter` and `ParquetReader` only supports `IAsyncDisposable` now, so you should use `await using` instead of `using` when writing row groups. This is because some of the operations during writing are asynchronous and it would be a shame to not take advantage of that. Previously, `IDisposable` was supported as well, but that would occassionally cause write deadlocks.
 - `ParquetRowGroupWriter` now accepts `ReadOnlyMemory<T>` instead of untyped `DataColumn` (which is now removed). This solves old dangling issue with inflexible memory useage, as users of the low-level API had to unnecessarily allocate memory just to write a column, often resuling in making large redundant copies.
 - Same goes for `ParquetRowGroupReader`, which uses direct memory access interface instead of allocating a lot of memory via DataColumn and adding a lot of GC pressure.
-- `ParquetOptions.UseDictionaryEncoding` is removed to avoid trying to dictionary-encode everything, which is not always the best choice. Instead, you can specify encodings for each column in `ParquetOptions.DictionaryEncodedColumns`.
+- `ParquetOptions.UseDictionaryEncoding` and `ParquetOptions.UseDeltaBinaryPackedEncoding` is removed to avoid trying to dictionary-encode everything, which is not always the best choice. Instead, you can specify "encoding hints", which is more flexible and extensible, plus you can specify hint per encoding.
 - `Utils` namespace removed, which used to provide a sub-par implementations of `FileMerger` and `FlatFileConverter`. Shout if you need them, as I can add more efficient versions of these utilities in the future, here or in a separate package. Both of these utilities were subobtimal and half-done, and I don't want to maintain them in the long run.
 - As with the latest V5 minor release, I have high hopes for managed .NET compression libraries maintained by the community, so there will be absolutely zero native dependencies. They were created in C++ as a separate project in the times when .NET was young and didn't have good support for such things, but now there are some great high-performance libraries available. If I have time to spend on improving compression performance, I'd rather contribute to those projects.
 - `IParquetRowGroupReader` interface removed as it's not in use. Just use `ParquetRowGroupReader` directly.
@@ -39,6 +39,10 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 
 - Serializer uses significantly less memory when serializing large collections.
 - Dictionary encoder will give up earlier if cardinality is too high, without iterating all values. Less memory is allocated on early exit.
+- Added initial support for hardware accelerated encoding/decoding (flag to turn it off is in `ParquetOptions`. Hardware acceleration will be added into more places as the library develops. At the moment:
+    - BYTE_STREAM_SPLIT decoding is about twice faster with hardware acceleration.
+    - PLAIN encoding for booleans is up to 12 times faster with hardware acceleration.
+
 
 ## Other changes
 

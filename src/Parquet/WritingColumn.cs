@@ -206,8 +206,7 @@ class WritingColumn<T> : IDisposable where T : struct {
             return;
 
         // only encode columns specified in options
-        string path = Field.Path.ToString();
-        if(!options.DictionaryEncodedColumns.Contains(path))
+        if(options.GetEncodingHint(Field) != EncodingHint.Dictionary)
             return;
 
         // cast ReadOnlyMemory<T> to ReadOnlyMemory<ReadOnlyMemory<char>>

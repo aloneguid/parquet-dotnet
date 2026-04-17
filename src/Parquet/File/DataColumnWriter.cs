@@ -154,7 +154,7 @@ class DataColumnWriter {
 
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
-            bool deltaEncode = wc.Field.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
+            bool deltaEncode = wc.Field.IsDeltaEncodable && _options.GetEncodingHint(wc.Field) == EncodingHint.DeltaBinaryPacked && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
 
             // data page Num_values also does include NULLs
             PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, out DataPageHeader dph);

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using Parquet.Meta.Proto;
 
 namespace Parquet.Meta;
-    /// <summary>
-    /// Types supported by Parquet.  These types are intended to be used in combination with the encodings to control the on disk storage format. For example INT16 is not included as a type since a good encoding of INT32 would handle this.
-    /// </summary>
+/// <summary>
+/// Types supported by Parquet.  These types are intended to be used in combination with the encodings to control the on disk storage format. For example INT16 is not included as a type since a good encoding of INT32 would handle this.
+/// </summary>
 public enum Type {
     BOOLEAN = 0,
 
@@ -26,68 +26,68 @@ public enum Type {
 
 }
 
-    /// <summary>
-    /// DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet. ConvertedType is superseded by LogicalType.  This enum should not be extended.  See LogicalTypes.md for conversion between ConvertedType and LogicalType.
-    /// </summary>
+/// <summary>
+/// DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet. ConvertedType is superseded by LogicalType.  This enum should not be extended.  See LogicalTypes.md for conversion between ConvertedType and LogicalType.
+/// </summary>
 public enum ConvertedType {
-        /// <summary>
-        /// A BYTE_ARRAY actually contains UTF8 encoded chars.
-        /// </summary>
+    /// <summary>
+    /// A BYTE_ARRAY actually contains UTF8 encoded chars.
+    /// </summary>
     UTF8 = 0,
 
-        /// <summary>
-        /// A map is converted as an optional field containing a repeated key/value pair.
-        /// </summary>
+    /// <summary>
+    /// A map is converted as an optional field containing a repeated key/value pair.
+    /// </summary>
     MAP = 1,
 
-        /// <summary>
-        /// A key/value pair is converted into a group of two fields.
-        /// </summary>
+    /// <summary>
+    /// A key/value pair is converted into a group of two fields.
+    /// </summary>
     MAP_KEY_VALUE = 2,
 
-        /// <summary>
-        /// A list is converted into an optional field containing a repeated field for its values.
-        /// </summary>
+    /// <summary>
+    /// A list is converted into an optional field containing a repeated field for its values.
+    /// </summary>
     LIST = 3,
 
-        /// <summary>
-        /// An enum is converted into a BYTE_ARRAY field.
-        /// </summary>
+    /// <summary>
+    /// An enum is converted into a BYTE_ARRAY field.
+    /// </summary>
     ENUM = 4,
 
-        /// <summary>
-        /// A decimal value.  This may be used to annotate BYTE_ARRAY or FIXED_LEN_BYTE_ARRAY primitive types. The underlying byte array stores the unscaled value encoded as two&#39;s complement using big-endian byte order (the most significant byte is the zeroth element). The value of the decimal is the value * 10^{-scale}.  This must be accompanied by a (maximum) precision and a scale in the SchemaElement. The precision specifies the number of digits in the decimal and the scale stores the location of the decimal point. For example 1.23 would have precision 3 (3 total digits) and scale 2 (the decimal point is 2 digits over).
-        /// </summary>
+    /// <summary>
+    /// A decimal value.  This may be used to annotate BYTE_ARRAY or FIXED_LEN_BYTE_ARRAY primitive types. The underlying byte array stores the unscaled value encoded as two&#39;s complement using big-endian byte order (the most significant byte is the zeroth element). The value of the decimal is the value * 10^{-scale}.  This must be accompanied by a (maximum) precision and a scale in the SchemaElement. The precision specifies the number of digits in the decimal and the scale stores the location of the decimal point. For example 1.23 would have precision 3 (3 total digits) and scale 2 (the decimal point is 2 digits over).
+    /// </summary>
     DECIMAL = 5,
 
-        /// <summary>
-        /// A Date  Stored as days since Unix epoch, encoded as the INT32 physical type.
-        /// </summary>
+    /// <summary>
+    /// A Date  Stored as days since Unix epoch, encoded as the INT32 physical type.
+    /// </summary>
     DATE = 6,
 
-        /// <summary>
-        /// A time  The total number of milliseconds since midnight.  The value is stored as an INT32 physical type.
-        /// </summary>
+    /// <summary>
+    /// A time  The total number of milliseconds since midnight.  The value is stored as an INT32 physical type.
+    /// </summary>
     TIME_MILLIS = 7,
 
-        /// <summary>
-        /// A time.  The total number of microseconds since midnight.  The value is stored as an INT64 physical type.
-        /// </summary>
+    /// <summary>
+    /// A time.  The total number of microseconds since midnight.  The value is stored as an INT64 physical type.
+    /// </summary>
     TIME_MICROS = 8,
 
-        /// <summary>
-        /// A date/time combination  Date and time recorded as milliseconds since the Unix epoch.  Recorded as a physical type of INT64.
-        /// </summary>
+    /// <summary>
+    /// A date/time combination  Date and time recorded as milliseconds since the Unix epoch.  Recorded as a physical type of INT64.
+    /// </summary>
     TIMESTAMP_MILLIS = 9,
 
-        /// <summary>
-        /// A date/time combination  Date and time recorded as microseconds since the Unix epoch.  The value is stored as an INT64 physical type.
-        /// </summary>
+    /// <summary>
+    /// A date/time combination  Date and time recorded as microseconds since the Unix epoch.  The value is stored as an INT64 physical type.
+    /// </summary>
     TIMESTAMP_MICROS = 10,
 
-        /// <summary>
-        /// An unsigned integer value.  The number describes the maximum number of meaningful data bits in the stored value. 8, 16 and 32 bit values are stored using the INT32 physical type.  64 bit values are stored using the INT64 physical type.
-        /// </summary>
+    /// <summary>
+    /// An unsigned integer value.  The number describes the maximum number of meaningful data bits in the stored value. 8, 16 and 32 bit values are stored using the INT32 physical type.  64 bit values are stored using the INT64 physical type.
+    /// </summary>
     UINT_8 = 11,
 
     UINT_16 = 12,
@@ -96,9 +96,9 @@ public enum ConvertedType {
 
     UINT_64 = 14,
 
-        /// <summary>
-        /// A signed integer value.  The number describes the maximum number of meaningful data bits in the stored value. 8, 16 and 32 bit values are stored using the INT32 physical type.  64 bit values are stored using the INT64 physical type.
-        /// </summary>
+    /// <summary>
+    /// A signed integer value.  The number describes the maximum number of meaningful data bits in the stored value. 8, 16 and 32 bit values are stored using the INT32 physical type.  64 bit values are stored using the INT64 physical type.
+    /// </summary>
     INT_8 = 15,
 
     INT_16 = 16,
@@ -107,47 +107,47 @@ public enum ConvertedType {
 
     INT_64 = 18,
 
-        /// <summary>
-        /// An embedded JSON document  A JSON document embedded within a single UTF8 column.
-        /// </summary>
+    /// <summary>
+    /// An embedded JSON document  A JSON document embedded within a single UTF8 column.
+    /// </summary>
     JSON = 19,
 
-        /// <summary>
-        /// An embedded BSON document  A BSON document embedded within a single BYTE_ARRAY column.
-        /// </summary>
+    /// <summary>
+    /// An embedded BSON document  A BSON document embedded within a single BYTE_ARRAY column.
+    /// </summary>
     BSON = 20,
 
-        /// <summary>
-        /// An interval of time  This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12 This data is composed of three separate little endian unsigned integers.  Each stores a component of a duration of time.  The first integer identifies the number of months associated with the duration, the second identifies the number of days associated with the duration and the third identifies the number of milliseconds associated with the provided duration.  This duration of time is independent of any particular timezone or date.
-        /// </summary>
+    /// <summary>
+    /// An interval of time  This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12 This data is composed of three separate little endian unsigned integers.  Each stores a component of a duration of time.  The first integer identifies the number of months associated with the duration, the second identifies the number of days associated with the duration and the third identifies the number of milliseconds associated with the provided duration.  This duration of time is independent of any particular timezone or date.
+    /// </summary>
     INTERVAL = 21,
 
 }
 
-    /// <summary>
-    /// Representation of Schemas.
-    /// </summary>
+/// <summary>
+/// Representation of Schemas.
+/// </summary>
 public enum FieldRepetitionType {
-        /// <summary>
-        /// This field is required (can not be null) and each row has exactly 1 value.
-        /// </summary>
+    /// <summary>
+    /// This field is required (can not be null) and each row has exactly 1 value.
+    /// </summary>
     REQUIRED = 0,
 
-        /// <summary>
-        /// The field is optional (can be null) and each row has 0 or 1 values.
-        /// </summary>
+    /// <summary>
+    /// The field is optional (can be null) and each row has 0 or 1 values.
+    /// </summary>
     OPTIONAL = 1,
 
-        /// <summary>
-        /// The field is repeated and can contain 0 or more values.
-        /// </summary>
+    /// <summary>
+    /// The field is repeated and can contain 0 or more values.
+    /// </summary>
     REPEATED = 2,
 
 }
 
-    /// <summary>
-    /// Edge interpolation algorithm for Geography logical type.
-    /// </summary>
+/// <summary>
+/// Edge interpolation algorithm for Geography logical type.
+/// </summary>
 public enum EdgeInterpolationAlgorithm {
     SPHERICAL = 0,
 
@@ -161,60 +161,60 @@ public enum EdgeInterpolationAlgorithm {
 
 }
 
-    /// <summary>
-    /// Encodings supported by Parquet.  Not all encodings are valid for all types.  These enums are also used to specify the encoding of definition and repetition levels. See the accompanying doc for the details of the more complicated encodings.
-    /// </summary>
+/// <summary>
+/// Encodings supported by Parquet.  Not all encodings are valid for all types.  These enums are also used to specify the encoding of definition and repetition levels. See the accompanying doc for the details of the more complicated encodings.
+/// </summary>
 public enum Encoding {
-        /// <summary>
-        /// Default encoding. BOOLEAN - 1 bit per value. 0 is false; 1 is true. INT32 - 4 bytes per value.  Stored as little-endian. INT64 - 8 bytes per value.  Stored as little-endian. FLOAT - 4 bytes per value.  IEEE. Stored as little-endian. DOUBLE - 8 bytes per value.  IEEE. Stored as little-endian. BYTE_ARRAY - 4 byte length stored as little endian, followed by bytes. FIXED_LEN_BYTE_ARRAY - Just the bytes.
-        /// </summary>
+    /// <summary>
+    /// Default encoding. BOOLEAN - 1 bit per value. 0 is false; 1 is true. INT32 - 4 bytes per value.  Stored as little-endian. INT64 - 8 bytes per value.  Stored as little-endian. FLOAT - 4 bytes per value.  IEEE. Stored as little-endian. DOUBLE - 8 bytes per value.  IEEE. Stored as little-endian. BYTE_ARRAY - 4 byte length stored as little endian, followed by bytes. FIXED_LEN_BYTE_ARRAY - Just the bytes.
+    /// </summary>
     PLAIN = 0,
 
-        /// <summary>
-        /// Deprecated: Dictionary encoding. The values in the dictionary are encoded in the plain type. in a data page use RLE_DICTIONARY instead. in a Dictionary page use PLAIN instead.
-        /// </summary>
+    /// <summary>
+    /// Deprecated: Dictionary encoding. The values in the dictionary are encoded in the plain type. in a data page use RLE_DICTIONARY instead. in a Dictionary page use PLAIN instead.
+    /// </summary>
     PLAIN_DICTIONARY = 2,
 
-        /// <summary>
-        /// Group packed run length encoding. Usable for definition/repetition levels encoding and Booleans (on one bit: 0 is false; 1 is true.).
-        /// </summary>
+    /// <summary>
+    /// Group packed run length encoding. Usable for definition/repetition levels encoding and Booleans (on one bit: 0 is false; 1 is true.).
+    /// </summary>
     RLE = 3,
 
-        /// <summary>
-        /// Bit packed encoding.  This can only be used if the data has a known max width.  Usable for definition/repetition levels encoding.
-        /// </summary>
+    /// <summary>
+    /// Bit packed encoding.  This can only be used if the data has a known max width.  Usable for definition/repetition levels encoding.
+    /// </summary>
     BIT_PACKED = 4,
 
-        /// <summary>
-        /// Delta encoding for integers. This can be used for int columns and works best on sorted data.
-        /// </summary>
+    /// <summary>
+    /// Delta encoding for integers. This can be used for int columns and works best on sorted data.
+    /// </summary>
     DELTA_BINARY_PACKED = 5,
 
-        /// <summary>
-        /// Encoding for byte arrays to separate the length values and the data. The lengths are encoded using DELTA_BINARY_PACKED.
-        /// </summary>
+    /// <summary>
+    /// Encoding for byte arrays to separate the length values and the data. The lengths are encoded using DELTA_BINARY_PACKED.
+    /// </summary>
     DELTA_LENGTH_BYTE_ARRAY = 6,
 
-        /// <summary>
-        /// Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED. Suffixes are stored as delta length byte arrays.
-        /// </summary>
+    /// <summary>
+    /// Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED. Suffixes are stored as delta length byte arrays.
+    /// </summary>
     DELTA_BYTE_ARRAY = 7,
 
-        /// <summary>
-        /// Dictionary encoding: the ids are encoded using the RLE encoding.
-        /// </summary>
+    /// <summary>
+    /// Dictionary encoding: the ids are encoded using the RLE encoding.
+    /// </summary>
     RLE_DICTIONARY = 8,
 
-        /// <summary>
-        /// Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY). K byte-streams are created where K is the size in bytes of the data type. The individual bytes of a value are scattered to the corresponding stream and the streams are concatenated. This itself does not reduce the size of the data but can lead to better compression afterwards.  Added in 2.8 for FLOAT and DOUBLE. Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
-        /// </summary>
+    /// <summary>
+    /// Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY). K byte-streams are created where K is the size in bytes of the data type. The individual bytes of a value are scattered to the corresponding stream and the streams are concatenated. This itself does not reduce the size of the data but can lead to better compression afterwards.  Added in 2.8 for FLOAT and DOUBLE. Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
+    /// </summary>
     BYTE_STREAM_SPLIT = 9,
 
 }
 
-    /// <summary>
-    /// Supported compression algorithms.  Codecs added in format version X.Y can be read by readers based on X.Y and later. Codec support may vary between readers based on the format version and libraries available at runtime.  See Compression.md for a detailed specification of these algorithms.
-    /// </summary>
+/// <summary>
+/// Supported compression algorithms.  Codecs added in format version X.Y can be read by readers based on X.Y and later. Codec support may vary between readers based on the format version and libraries available at runtime.  See Compression.md for a detailed specification of these algorithms.
+/// </summary>
 public enum CompressionCodec {
     UNCOMPRESSED = 0,
 
@@ -245,9 +245,9 @@ public enum PageType {
 
 }
 
-    /// <summary>
-    /// Enum to annotate whether lists of min/max elements inside ColumnIndex are ordered and if so, in which direction.
-    /// </summary>
+/// <summary>
+/// Enum to annotate whether lists of min/max elements inside ColumnIndex are ordered and if so, in which direction.
+/// </summary>
 public enum BoundaryOrder {
     UNORDERED = 0,
 
@@ -257,23 +257,23 @@ public enum BoundaryOrder {
 
 }
 
-    /// <summary>
-    /// A structure for capturing metadata for estimating the unencoded, uncompressed size of data written. This is useful for readers to estimate how much memory is needed to reconstruct data in their memory model and for fine grained filter pushdown on nested structures (the histograms contained in this structure can help determine the number of nulls at a particular nesting level and maximum length of lists).
-    /// </summary>
+/// <summary>
+/// A structure for capturing metadata for estimating the unencoded, uncompressed size of data written. This is useful for readers to estimate how much memory is needed to reconstruct data in their memory model and for fine grained filter pushdown on nested structures (the histograms contained in this structure can help determine the number of nulls at a particular nesting level and maximum length of lists).
+/// </summary>
 public class SizeStatistics {
-        /// <summary>
-        /// The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the bytes needed to store the length of each byte array. In other words, this field is equivalent to the `(size of PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine unencoded sizes of other types readers can use schema information multiplied by the number of non-null and null values. The number of null/non-null values can be inferred from the histograms below.  For example, if a column chunk is dictionary-encoded with dictionary [&quot;a&quot;, &quot;bc&quot;, &quot;cde&quot;], and a data page contains the indices [0, 0, 1, 2], then this value for that data page should be 7 (1 + 1 + 2 + 3).  This field should only be set for types that use BYTE_ARRAY as their physical type.
-        /// </summary>
+    /// <summary>
+    /// The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the bytes needed to store the length of each byte array. In other words, this field is equivalent to the `(size of PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine unencoded sizes of other types readers can use schema information multiplied by the number of non-null and null values. The number of null/non-null values can be inferred from the histograms below.  For example, if a column chunk is dictionary-encoded with dictionary [&quot;a&quot;, &quot;bc&quot;, &quot;cde&quot;], and a data page contains the indices [0, 0, 1, 2], then this value for that data page should be 7 (1 + 1 + 2 + 3).  This field should only be set for types that use BYTE_ARRAY as their physical type.
+    /// </summary>
     public long? UnencodedByteArrayDataBytes { get; set; }
 
-        /// <summary>
-        /// When present, there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) where each element represents the number of times the repetition level was observed in the data.  This field may be omitted if max_repetition_level is 0 without loss of information.
-        /// </summary>
+    /// <summary>
+    /// When present, there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) where each element represents the number of times the repetition level was observed in the data.  This field may be omitted if max_repetition_level is 0 without loss of information.
+    /// </summary>
     public List<long>? RepetitionLevelHistogram { get; set; }
 
-        /// <summary>
-        /// Same as repetition_level_histogram except for definition levels.  This field may be omitted if max_definition_level is 0 or 1 without loss of information.
-        /// </summary>
+    /// <summary>
+    /// Same as repetition_level_histogram except for definition levels.  This field may be omitted if max_definition_level is 0 or 1 without loss of information.
+    /// </summary>
     public List<long>? DefinitionLevelHistogram { get; set; }
 
 
@@ -331,9 +331,9 @@ public class SizeStatistics {
     }
 }
 
-    /// <summary>
-    /// Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max value pair of coordinates from each axis.
-    /// </summary>
+/// <summary>
+/// Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max value pair of coordinates from each axis.
+/// </summary>
 public class BoundingBox {
     public double Xmin { get; set; }
 
@@ -414,18 +414,18 @@ public class BoundingBox {
     }
 }
 
-    /// <summary>
-    /// Statistics specific to Geometry and Geography logical types.
-    /// </summary>
+/// <summary>
+/// Statistics specific to Geometry and Geography logical types.
+/// </summary>
 public class GeospatialStatistics {
-        /// <summary>
-        /// A bounding box of geospatial instances.
-        /// </summary>
+    /// <summary>
+    /// A bounding box of geospatial instances.
+    /// </summary>
     public BoundingBox? Bbox { get; set; }
 
-        /// <summary>
-        /// Geospatial type codes of all instances, or an empty list if not known.
-        /// </summary>
+    /// <summary>
+    /// Geospatial type codes of all instances, or an empty list if not known.
+    /// </summary>
     public List<int>? GeospatialTypes { get; set; }
 
 
@@ -472,42 +472,42 @@ public class GeospatialStatistics {
     }
 }
 
-    /// <summary>
-    /// Statistics per row group and per page All fields are optional.
-    /// </summary>
+/// <summary>
+/// Statistics per row group and per page All fields are optional.
+/// </summary>
 public class Statistics {
-        /// <summary>
-        /// DEPRECATED: min and max value of the column. Use min_value and max_value.  Values are encoded using PLAIN encoding, except that variable-length byte arrays do not include a length prefix.  These fields encode min and max values determined by signed comparison only. New files should use the correct order for a column&#39;s logical type and store the values in the min_value and max_value fields.  To support older readers, these may be set when the column order is signed.
-        /// </summary>
+    /// <summary>
+    /// DEPRECATED: min and max value of the column. Use min_value and max_value.  Values are encoded using PLAIN encoding, except that variable-length byte arrays do not include a length prefix.  These fields encode min and max values determined by signed comparison only. New files should use the correct order for a column&#39;s logical type and store the values in the min_value and max_value fields.  To support older readers, these may be set when the column order is signed.
+    /// </summary>
     public byte[]? Max { get; set; }
 
     public byte[]? Min { get; set; }
 
-        /// <summary>
-        /// Count of null values in the column.  Writers SHOULD always write this field even if it is zero (i.e. no null value) or the column is not nullable. Readers MUST distinguish between null_count not being present and null_count == 0. If null_count is not present, readers MUST NOT assume null_count == 0.
-        /// </summary>
+    /// <summary>
+    /// Count of null values in the column.  Writers SHOULD always write this field even if it is zero (i.e. no null value) or the column is not nullable. Readers MUST distinguish between null_count not being present and null_count == 0. If null_count is not present, readers MUST NOT assume null_count == 0.
+    /// </summary>
     public long? NullCount { get; set; }
 
-        /// <summary>
-        /// Count of distinct values occurring.
-        /// </summary>
+    /// <summary>
+    /// Count of distinct values occurring.
+    /// </summary>
     public long? DistinctCount { get; set; }
 
-        /// <summary>
-        /// Lower and upper bound values for the column, determined by its ColumnOrder.  These may be the actual minimum and maximum values found on a page or column chunk, but can also be (more compact) values that do not exist on a page or column chunk. For example, instead of storing &quot;Blart Versenwald III&quot;, a writer may set min_value=&quot;B&quot;, max_value=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type.  Values are encoded using PLAIN encoding, except that variable-length byte arrays do not include a length prefix.
-        /// </summary>
+    /// <summary>
+    /// Lower and upper bound values for the column, determined by its ColumnOrder.  These may be the actual minimum and maximum values found on a page or column chunk, but can also be (more compact) values that do not exist on a page or column chunk. For example, instead of storing &quot;Blart Versenwald III&quot;, a writer may set min_value=&quot;B&quot;, max_value=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type.  Values are encoded using PLAIN encoding, except that variable-length byte arrays do not include a length prefix.
+    /// </summary>
     public byte[]? MaxValue { get; set; }
 
     public byte[]? MinValue { get; set; }
 
-        /// <summary>
-        /// If true, max_value is the actual maximum value for a column.
-        /// </summary>
+    /// <summary>
+    /// If true, max_value is the actual maximum value for a column.
+    /// </summary>
     public bool? IsMaxValueExact { get; set; }
 
-        /// <summary>
-        /// If true, min_value is the actual minimum value for a column.
-        /// </summary>
+    /// <summary>
+    /// If true, min_value is the actual minimum value for a column.
+    /// </summary>
     public bool? IsMinValueExact { get; set; }
 
 
@@ -589,9 +589,9 @@ public class Statistics {
     }
 }
 
-    /// <summary>
-    /// Empty structs to use as logical type annotations.
-    /// </summary>
+/// <summary>
+/// Empty structs to use as logical type annotations.
+/// </summary>
 public class StringType {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -739,9 +739,9 @@ public class Float16Type {
     }
 }
 
-    /// <summary>
-    /// Logical type to annotate a column that is always null.  Sometimes when discovering the schema of existing data, values are always null and the physical type can&#39;t be determined. This annotation signals the case where the physical type was guessed from all null values.
-    /// </summary>
+/// <summary>
+/// Logical type to annotate a column that is always null.  Sometimes when discovering the schema of existing data, values are always null and the physical type can&#39;t be determined. This annotation signals the case where the physical type was guessed from all null values.
+/// </summary>
 public class NullType {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -763,9 +763,9 @@ public class NullType {
     }
 }
 
-    /// <summary>
-    /// Decimal logical type annotation  Scale must be zero or a positive integer less than or equal to the precision. Precision must be a non-zero positive integer.  To maintain forward-compatibility in v1, implementations using this logical type must also set scale and precision on the annotated SchemaElement.  Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.
-    /// </summary>
+/// <summary>
+/// Decimal logical type annotation  Scale must be zero or a positive integer less than or equal to the precision. Precision must be a non-zero positive integer.  To maintain forward-compatibility in v1, implementations using this logical type must also set scale and precision on the annotated SchemaElement.  Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.
+/// </summary>
 public class DecimalType {
     public int Scale { get; set; }
 
@@ -804,9 +804,9 @@ public class DecimalType {
     }
 }
 
-    /// <summary>
-    /// Time units for logical types.
-    /// </summary>
+/// <summary>
+/// Time units for logical types.
+/// </summary>
 public class MilliSeconds {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -924,9 +924,9 @@ public class TimeUnit {
     }
 }
 
-    /// <summary>
-    /// Timestamp logical type annotation  Allowed for physical types: INT64.
-    /// </summary>
+/// <summary>
+/// Timestamp logical type annotation  Allowed for physical types: INT64.
+/// </summary>
 public class TimestampType {
     public bool IsAdjustedToUTC { get; set; }
 
@@ -966,9 +966,9 @@ public class TimestampType {
     }
 }
 
-    /// <summary>
-    /// Time logical type annotation  Allowed for physical types: INT32 (millis), INT64 (micros, nanos).
-    /// </summary>
+/// <summary>
+/// Time logical type annotation  Allowed for physical types: INT32 (millis), INT64 (micros, nanos).
+/// </summary>
 public class TimeType {
     public bool IsAdjustedToUTC { get; set; }
 
@@ -1008,9 +1008,9 @@ public class TimeType {
     }
 }
 
-    /// <summary>
-    /// Integer logical type annotation  bitWidth must be 8, 16, 32, or 64.  Allowed for physical types: INT32, INT64.
-    /// </summary>
+/// <summary>
+/// Integer logical type annotation  bitWidth must be 8, 16, 32, or 64.  Allowed for physical types: INT32, INT64.
+/// </summary>
 public class IntType {
     public sbyte BitWidth { get; set; }
 
@@ -1049,9 +1049,9 @@ public class IntType {
     }
 }
 
-    /// <summary>
-    /// Embedded JSON logical type annotation  Allowed for physical types: BYTE_ARRAY.
-    /// </summary>
+/// <summary>
+/// Embedded JSON logical type annotation  Allowed for physical types: BYTE_ARRAY.
+/// </summary>
 public class JsonType {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -1073,9 +1073,9 @@ public class JsonType {
     }
 }
 
-    /// <summary>
-    /// Embedded BSON logical type annotation  Allowed for physical types: BYTE_ARRAY.
-    /// </summary>
+/// <summary>
+/// Embedded BSON logical type annotation  Allowed for physical types: BYTE_ARRAY.
+/// </summary>
 public class BsonType {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -1097,9 +1097,9 @@ public class BsonType {
     }
 }
 
-    /// <summary>
-    /// Embedded Variant logical type annotation.
-    /// </summary>
+/// <summary>
+/// Embedded Variant logical type annotation.
+/// </summary>
 public class VariantType {
     public sbyte? SpecificationVersion { get; set; }
 
@@ -1133,9 +1133,9 @@ public class VariantType {
     }
 }
 
-    /// <summary>
-    /// Embedded Geometry logical type annotation  Geospatial features in the Well-Known Binary (WKB) format and edges interpolation is always linear/planar.  A custom CRS can be set by the crs field. If unset, it defaults to &quot;OGC:CRS84&quot;, which means that the geometries must be stored in longitude, latitude based on the WGS84 datum.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
-    /// </summary>
+/// <summary>
+/// Embedded Geometry logical type annotation  Geospatial features in the Well-Known Binary (WKB) format and edges interpolation is always linear/planar.  A custom CRS can be set by the crs field. If unset, it defaults to &quot;OGC:CRS84&quot;, which means that the geometries must be stored in longitude, latitude based on the WGS84 datum.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
+/// </summary>
 public class GeometryType {
     public string? Crs { get; set; }
 
@@ -1169,9 +1169,9 @@ public class GeometryType {
     }
 }
 
-    /// <summary>
-    /// Embedded Geography logical type annotation  Geospatial features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm.  A custom geographic CRS can be set by the crs field, where longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS defaults to &quot;OGC:CRS84&quot;.  An optional algorithm can be set to correctly interpret edges interpolation of the geometries. If unset, the algorithm defaults to SPHERICAL.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
-    /// </summary>
+/// <summary>
+/// Embedded Geography logical type annotation  Geospatial features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm.  A custom geographic CRS can be set by the crs field, where longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS defaults to &quot;OGC:CRS84&quot;.  An optional algorithm can be set to correctly interpret edges interpolation of the geometries. If unset, the algorithm defaults to SPHERICAL.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
+/// </summary>
 public class GeographyType {
     public string? Crs { get; set; }
 
@@ -1214,9 +1214,9 @@ public class GeographyType {
     }
 }
 
-    /// <summary>
-    /// LogicalType annotations to replace ConvertedType.  To maintain compatibility, implementations using LogicalType for a SchemaElement must also set the corresponding ConvertedType (if any) from the following table.
-    /// </summary>
+/// <summary>
+/// LogicalType annotations to replace ConvertedType.  To maintain compatibility, implementations using LogicalType for a SchemaElement must also set the corresponding ConvertedType (if any) from the following table.
+/// </summary>
 public class LogicalType {
     public StringType? STRING { get; set; }
 
@@ -1411,55 +1411,55 @@ public class LogicalType {
     }
 }
 
-    /// <summary>
-    /// Represents a element inside a schema definition.  - if it is a group (inner node) then type is undefined and num_children is defined  - if it is a primitive type (leaf) then type is defined and num_children is undefined the nodes are listed in depth first traversal order.
-    /// </summary>
+/// <summary>
+/// Represents a element inside a schema definition.  - if it is a group (inner node) then type is undefined and num_children is defined  - if it is a primitive type (leaf) then type is defined and num_children is undefined the nodes are listed in depth first traversal order.
+/// </summary>
 public class SchemaElement {
-        /// <summary>
-        /// Data type for this field. Not set if the current element is a non-leaf node.
-        /// </summary>
+    /// <summary>
+    /// Data type for this field. Not set if the current element is a non-leaf node.
+    /// </summary>
     public Type? Type { get; set; }
 
-        /// <summary>
-        /// If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values. Otherwise, if specified, this is the maximum bit length to store any of the values. (e.g. a low cardinality INT col could have this set to 3).  Note that this is in the schema, and therefore fixed for the entire file.
-        /// </summary>
+    /// <summary>
+    /// If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values. Otherwise, if specified, this is the maximum bit length to store any of the values. (e.g. a low cardinality INT col could have this set to 3).  Note that this is in the schema, and therefore fixed for the entire file.
+    /// </summary>
     public int? TypeLength { get; set; }
 
-        /// <summary>
-        /// Repetition of the field. The root of the schema does not have a repetition_type. All other nodes must have one.
-        /// </summary>
+    /// <summary>
+    /// Repetition of the field. The root of the schema does not have a repetition_type. All other nodes must have one.
+    /// </summary>
     public FieldRepetitionType? RepetitionType { get; set; }
 
-        /// <summary>
-        /// Name of the field in the schema.
-        /// </summary>
+    /// <summary>
+    /// Name of the field in the schema.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Nested fields.  Since thrift does not support nested fields, the nesting is flattened to a single list by a depth-first traversal. The children count is used to construct the nested relationship. This field is not set when the element is a primitive type.
-        /// </summary>
+    /// <summary>
+    /// Nested fields.  Since thrift does not support nested fields, the nesting is flattened to a single list by a depth-first traversal. The children count is used to construct the nested relationship. This field is not set when the element is a primitive type.
+    /// </summary>
     public int? NumChildren { get; set; }
 
-        /// <summary>
-        /// DEPRECATED: When the schema is the result of a conversion from another model. Used to record the original type to help with cross conversion.  This is superseded by logicalType.
-        /// </summary>
+    /// <summary>
+    /// DEPRECATED: When the schema is the result of a conversion from another model. Used to record the original type to help with cross conversion.  This is superseded by logicalType.
+    /// </summary>
     public ConvertedType? ConvertedType { get; set; }
 
-        /// <summary>
-        /// DEPRECATED: Used when this column contains decimal data. See the DECIMAL converted type for more details.  This is superseded by using the DecimalType annotation in logicalType.
-        /// </summary>
+    /// <summary>
+    /// DEPRECATED: Used when this column contains decimal data. See the DECIMAL converted type for more details.  This is superseded by using the DecimalType annotation in logicalType.
+    /// </summary>
     public int? Scale { get; set; }
 
     public int? Precision { get; set; }
 
-        /// <summary>
-        /// When the original schema supports field ids, this will save the original field id in the parquet schema.
-        /// </summary>
+    /// <summary>
+    /// When the original schema supports field ids, this will save the original field id in the parquet schema.
+    /// </summary>
     public int? FieldId { get; set; }
 
-        /// <summary>
-        /// The logical type of this SchemaElement  LogicalType replaces ConvertedType, but ConvertedType is still required for some logical types to ensure forward-compatibility in format v1.
-        /// </summary>
+    /// <summary>
+    /// The logical type of this SchemaElement  LogicalType replaces ConvertedType, but ConvertedType is still required for some logical types to ensure forward-compatibility in format v1.
+    /// </summary>
     public LogicalType? LogicalType { get; set; }
 
 
@@ -1554,33 +1554,33 @@ public class SchemaElement {
     }
 }
 
-    /// <summary>
-    /// Data page header.
-    /// </summary>
+/// <summary>
+/// Data page header.
+/// </summary>
 public class DataPageHeader {
-        /// <summary>
-        /// Number of values, including NULLs, in this data page.  If a OffsetIndex is present, a page must begin at a row boundary (repetition_level = 0). Otherwise, pages may begin within a row (repetition_level &gt; 0).
-        /// </summary>
+    /// <summary>
+    /// Number of values, including NULLs, in this data page.  If a OffsetIndex is present, a page must begin at a row boundary (repetition_level = 0). Otherwise, pages may begin within a row (repetition_level &gt; 0).
+    /// </summary>
     public int NumValues { get; set; }
 
-        /// <summary>
-        /// Encoding used for this data page.
-        /// </summary>
+    /// <summary>
+    /// Encoding used for this data page.
+    /// </summary>
     public Encoding Encoding { get; set; } = new Encoding();
 
-        /// <summary>
-        /// Encoding used for definition levels.
-        /// </summary>
+    /// <summary>
+    /// Encoding used for definition levels.
+    /// </summary>
     public Encoding DefinitionLevelEncoding { get; set; } = new Encoding();
 
-        /// <summary>
-        /// Encoding used for repetition levels.
-        /// </summary>
+    /// <summary>
+    /// Encoding used for repetition levels.
+    /// </summary>
     public Encoding RepetitionLevelEncoding { get; set; } = new Encoding();
 
-        /// <summary>
-        /// Optional statistics for the data in this page.
-        /// </summary>
+    /// <summary>
+    /// Optional statistics for the data in this page.
+    /// </summary>
     public Statistics? Statistics { get; set; }
 
 
@@ -1655,23 +1655,23 @@ public class IndexPageHeader {
     }
 }
 
-    /// <summary>
-    /// The dictionary page must be placed at the first position of the column chunk if it is partly or completely dictionary encoded. At most one dictionary page can be placed in a column chunk.
-    /// </summary>
+/// <summary>
+/// The dictionary page must be placed at the first position of the column chunk if it is partly or completely dictionary encoded. At most one dictionary page can be placed in a column chunk.
+/// </summary>
 public class DictionaryPageHeader {
-        /// <summary>
-        /// Number of values in the dictionary.
-        /// </summary>
+    /// <summary>
+    /// Number of values in the dictionary.
+    /// </summary>
     public int NumValues { get; set; }
 
-        /// <summary>
-        /// Encoding using this dictionary page.
-        /// </summary>
+    /// <summary>
+    /// Encoding using this dictionary page.
+    /// </summary>
     public Encoding Encoding { get; set; } = new Encoding();
 
-        /// <summary>
-        /// If true, the entries in the dictionary are sorted in ascending order.
-        /// </summary>
+    /// <summary>
+    /// If true, the entries in the dictionary are sorted in ascending order.
+    /// </summary>
     public bool? IsSorted { get; set; }
 
 
@@ -1714,48 +1714,48 @@ public class DictionaryPageHeader {
     }
 }
 
-    /// <summary>
-    /// Alternate page format allowing reading levels without decompressing the data Repetition and definition levels are uncompressed The remaining section containing the data is compressed if is_compressed is true  Implementation note - this header is not necessarily a strict improvement over `DataPageHeader` (in particular the original header might provide better compression in some scenarios). Page indexes require pages to start and end at row boundaries, regardless of which page header is used.
-    /// </summary>
+/// <summary>
+/// Alternate page format allowing reading levels without decompressing the data Repetition and definition levels are uncompressed The remaining section containing the data is compressed if is_compressed is true  Implementation note - this header is not necessarily a strict improvement over `DataPageHeader` (in particular the original header might provide better compression in some scenarios). Page indexes require pages to start and end at row boundaries, regardless of which page header is used.
+/// </summary>
 public class DataPageHeaderV2 {
-        /// <summary>
-        /// Number of values, including NULLs, in this data page.
-        /// </summary>
+    /// <summary>
+    /// Number of values, including NULLs, in this data page.
+    /// </summary>
     public int NumValues { get; set; }
 
-        /// <summary>
-        /// Number of NULL values, in this data page. Number of non-null = num_values - num_nulls which is also the number of values in the data section.
-        /// </summary>
+    /// <summary>
+    /// Number of NULL values, in this data page. Number of non-null = num_values - num_nulls which is also the number of values in the data section.
+    /// </summary>
     public int NumNulls { get; set; }
 
-        /// <summary>
-        /// Number of rows in this data page. Every page must begin at a row boundary (repetition_level = 0): rows must **not** be split across page boundaries when using V2 data pages.
-        /// </summary>
+    /// <summary>
+    /// Number of rows in this data page. Every page must begin at a row boundary (repetition_level = 0): rows must **not** be split across page boundaries when using V2 data pages.
+    /// </summary>
     public int NumRows { get; set; }
 
-        /// <summary>
-        /// Encoding used for data in this page.
-        /// </summary>
+    /// <summary>
+    /// Encoding used for data in this page.
+    /// </summary>
     public Encoding Encoding { get; set; } = new Encoding();
 
-        /// <summary>
-        /// Length of the definition levels.
-        /// </summary>
+    /// <summary>
+    /// Length of the definition levels.
+    /// </summary>
     public int DefinitionLevelsByteLength { get; set; }
 
-        /// <summary>
-        /// Length of the repetition levels.
-        /// </summary>
+    /// <summary>
+    /// Length of the repetition levels.
+    /// </summary>
     public int RepetitionLevelsByteLength { get; set; }
 
-        /// <summary>
-        /// Whether the values are compressed. Which means the section of the page between definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included) is compressed with the compression_codec. If missing it is considered compressed.
-        /// </summary>
+    /// <summary>
+    /// Whether the values are compressed. Which means the section of the page between definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included) is compressed with the compression_codec. If missing it is considered compressed.
+    /// </summary>
     public bool? IsCompressed { get; set; }
 
-        /// <summary>
-        /// Optional statistics for the data in this page.
-        /// </summary>
+    /// <summary>
+    /// Optional statistics for the data in this page.
+    /// </summary>
     public Statistics? Statistics { get; set; }
 
 
@@ -1826,9 +1826,9 @@ public class DataPageHeaderV2 {
     }
 }
 
-    /// <summary>
-    /// Block-based algorithm type annotation.
-    /// </summary>
+/// <summary>
+/// Block-based algorithm type annotation.
+/// </summary>
 public class SplitBlockAlgorithm {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -1850,13 +1850,13 @@ public class SplitBlockAlgorithm {
     }
 }
 
-    /// <summary>
-    /// The algorithm used in Bloom filter.
-    /// </summary>
+/// <summary>
+/// The algorithm used in Bloom filter.
+/// </summary>
 public class BloomFilterAlgorithm {
-        /// <summary>
-        /// Block-based Bloom filter.
-        /// </summary>
+    /// <summary>
+    /// Block-based Bloom filter.
+    /// </summary>
     public SplitBlockAlgorithm? BLOCK { get; set; }
 
 
@@ -1890,9 +1890,9 @@ public class BloomFilterAlgorithm {
     }
 }
 
-    /// <summary>
-    /// Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash algorithm. It uses 64 bits version of xxHash.
-    /// </summary>
+/// <summary>
+/// Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash algorithm. It uses 64 bits version of xxHash.
+/// </summary>
 public class XxHash {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -1914,13 +1914,13 @@ public class XxHash {
     }
 }
 
-    /// <summary>
-    /// The hash function used in Bloom filter. This function takes the hash of a column value using plain encoding.
-    /// </summary>
+/// <summary>
+/// The hash function used in Bloom filter. This function takes the hash of a column value using plain encoding.
+/// </summary>
 public class BloomFilterHash {
-        /// <summary>
-        /// XxHash Strategy.
-        /// </summary>
+    /// <summary>
+    /// XxHash Strategy.
+    /// </summary>
     public XxHash? XXHASH { get; set; }
 
 
@@ -1954,9 +1954,9 @@ public class BloomFilterHash {
     }
 }
 
-    /// <summary>
-    /// The compression used in the Bloom filter.
-    /// </summary>
+/// <summary>
+/// The compression used in the Bloom filter.
+/// </summary>
 public class Uncompressed {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -2012,28 +2012,28 @@ public class BloomFilterCompression {
     }
 }
 
-    /// <summary>
-    /// Bloom filter header is stored at beginning of Bloom filter data of each column and followed by its bitset.
-    /// </summary>
+/// <summary>
+/// Bloom filter header is stored at beginning of Bloom filter data of each column and followed by its bitset.
+/// </summary>
 public class BloomFilterHeader {
-        /// <summary>
-        /// The size of bitset in bytes.
-        /// </summary>
+    /// <summary>
+    /// The size of bitset in bytes.
+    /// </summary>
     public int NumBytes { get; set; }
 
-        /// <summary>
-        /// The algorithm for setting bits.
-        /// </summary>
+    /// <summary>
+    /// The algorithm for setting bits.
+    /// </summary>
     public BloomFilterAlgorithm Algorithm { get; set; } = new BloomFilterAlgorithm();
 
-        /// <summary>
-        /// The hash function used for Bloom filter.
-        /// </summary>
+    /// <summary>
+    /// The hash function used for Bloom filter.
+    /// </summary>
     public BloomFilterHash Hash { get; set; } = new BloomFilterHash();
 
-        /// <summary>
-        /// The compression used in the Bloom filter.
-        /// </summary>
+    /// <summary>
+    /// The compression used in the Bloom filter.
+    /// </summary>
     public BloomFilterCompression Compression { get; set; } = new BloomFilterCompression();
 
 
@@ -2083,24 +2083,24 @@ public class BloomFilterHeader {
 }
 
 public class PageHeader {
-        /// <summary>
-        /// The type of the page: indicates which of the *_header fields is set.
-        /// </summary>
+    /// <summary>
+    /// The type of the page: indicates which of the *_header fields is set.
+    /// </summary>
     public PageType Type { get; set; } = new PageType();
 
-        /// <summary>
-        /// Uncompressed page size in bytes (not including this header).
-        /// </summary>
+    /// <summary>
+    /// Uncompressed page size in bytes (not including this header).
+    /// </summary>
     public int UncompressedPageSize { get; set; }
 
-        /// <summary>
-        /// Compressed (and potentially encrypted) page size in bytes, not including this header.
-        /// </summary>
+    /// <summary>
+    /// Compressed (and potentially encrypted) page size in bytes, not including this header.
+    /// </summary>
     public int CompressedPageSize { get; set; }
 
-        /// <summary>
-        /// The 32-bit CRC checksum for the page, to be be calculated as follows:  - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,   the same as in e.g. GZip). - All page types can have a CRC (v1 and v2 data pages, dictionary pages,   etc.). - The CRC is computed on the serialization binary representation of the page   (as written to disk), excluding the page header. For example, for v1   data pages, the CRC is computed on the concatenation of repetition levels,   definition levels and column values (optionally compressed, optionally   encrypted). - The CRC computation therefore takes place after any compression   and encryption steps, if any.  If enabled, this allows for disabling checksumming in HDFS if only a few pages need to be read.
-        /// </summary>
+    /// <summary>
+    /// The 32-bit CRC checksum for the page, to be be calculated as follows:  - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,   the same as in e.g. GZip). - All page types can have a CRC (v1 and v2 data pages, dictionary pages,   etc.). - The CRC is computed on the serialization binary representation of the page   (as written to disk), excluding the page header. For example, for v1   data pages, the CRC is computed on the concatenation of repetition levels,   definition levels and column values (optionally compressed, optionally   encrypted). - The CRC computation therefore takes place after any compression   and encryption steps, if any.  If enabled, this allows for disabling checksumming in HDFS if only a few pages need to be read.
+    /// </summary>
     public int? Crc { get; set; }
 
     public DataPageHeader? DataPageHeader { get; set; }
@@ -2188,9 +2188,9 @@ public class PageHeader {
     }
 }
 
-    /// <summary>
-    /// Wrapper struct to store key values.
-    /// </summary>
+/// <summary>
+/// Wrapper struct to store key values.
+/// </summary>
 public class KeyValue {
     public string Key { get; set; } = string.Empty;
 
@@ -2231,23 +2231,23 @@ public class KeyValue {
     }
 }
 
-    /// <summary>
-    /// Sort order within a RowGroup of a leaf column.
-    /// </summary>
+/// <summary>
+/// Sort order within a RowGroup of a leaf column.
+/// </summary>
 public class SortingColumn {
-        /// <summary>
-        /// The ordinal position of the column (in this row group).
-        /// </summary>
+    /// <summary>
+    /// The ordinal position of the column (in this row group).
+    /// </summary>
     public int ColumnIdx { get; set; }
 
-        /// <summary>
-        /// If true, indicates this column is sorted in descending order.
-        /// </summary>
+    /// <summary>
+    /// If true, indicates this column is sorted in descending order.
+    /// </summary>
     public bool Descending { get; set; }
 
-        /// <summary>
-        /// If true, nulls will come before non-null values, otherwise, nulls go at the end.
-        /// </summary>
+    /// <summary>
+    /// If true, nulls will come before non-null values, otherwise, nulls go at the end.
+    /// </summary>
     public bool NullsFirst { get; set; }
 
 
@@ -2288,23 +2288,23 @@ public class SortingColumn {
     }
 }
 
-    /// <summary>
-    /// Statistics of a given page type and encoding.
-    /// </summary>
+/// <summary>
+/// Statistics of a given page type and encoding.
+/// </summary>
 public class PageEncodingStats {
-        /// <summary>
-        /// The page type (data/dic/...).
-        /// </summary>
+    /// <summary>
+    /// The page type (data/dic/...).
+    /// </summary>
     public PageType PageType { get; set; } = new PageType();
 
-        /// <summary>
-        /// Encoding of the page.
-        /// </summary>
+    /// <summary>
+    /// Encoding of the page.
+    /// </summary>
     public Encoding Encoding { get; set; } = new Encoding();
 
-        /// <summary>
-        /// Number of pages of this type with this encoding.
-        /// </summary>
+    /// <summary>
+    /// Number of pages of this type with this encoding.
+    /// </summary>
     public int Count { get; set; }
 
 
@@ -2345,93 +2345,93 @@ public class PageEncodingStats {
     }
 }
 
-    /// <summary>
-    /// Description for column metadata.
-    /// </summary>
+/// <summary>
+/// Description for column metadata.
+/// </summary>
 public class ColumnMetaData {
-        /// <summary>
-        /// Type of this column.
-        /// </summary>
+    /// <summary>
+    /// Type of this column.
+    /// </summary>
     public Type Type { get; set; } = new Type();
 
-        /// <summary>
-        /// Set of all encodings used for this column. The purpose is to validate whether we can decode those pages.
-        /// </summary>
+    /// <summary>
+    /// Set of all encodings used for this column. The purpose is to validate whether we can decode those pages.
+    /// </summary>
     public List<Encoding> Encodings { get; set; } = new List<Encoding>();
 
-        /// <summary>
-        /// Path in schema.
-        /// </summary>
+    /// <summary>
+    /// Path in schema.
+    /// </summary>
     public List<string> PathInSchema { get; set; } = new List<string>();
 
-        /// <summary>
-        /// Compression codec.
-        /// </summary>
+    /// <summary>
+    /// Compression codec.
+    /// </summary>
     public CompressionCodec Codec { get; set; } = new CompressionCodec();
 
-        /// <summary>
-        /// Number of values in this column.
-        /// </summary>
+    /// <summary>
+    /// Number of values in this column.
+    /// </summary>
     public long NumValues { get; set; }
 
-        /// <summary>
-        /// Total byte size of all uncompressed pages in this column chunk (including the headers).
-        /// </summary>
+    /// <summary>
+    /// Total byte size of all uncompressed pages in this column chunk (including the headers).
+    /// </summary>
     public long TotalUncompressedSize { get; set; }
 
-        /// <summary>
-        /// Total byte size of all compressed, and potentially encrypted, pages in this column chunk (including the headers).
-        /// </summary>
+    /// <summary>
+    /// Total byte size of all compressed, and potentially encrypted, pages in this column chunk (including the headers).
+    /// </summary>
     public long TotalCompressedSize { get; set; }
 
-        /// <summary>
-        /// Optional key/value metadata.
-        /// </summary>
+    /// <summary>
+    /// Optional key/value metadata.
+    /// </summary>
     public List<KeyValue>? KeyValueMetadata { get; set; }
 
-        /// <summary>
-        /// Byte offset from beginning of file to first data page.
-        /// </summary>
+    /// <summary>
+    /// Byte offset from beginning of file to first data page.
+    /// </summary>
     public long DataPageOffset { get; set; }
 
-        /// <summary>
-        /// Byte offset from beginning of file to root index page.
-        /// </summary>
+    /// <summary>
+    /// Byte offset from beginning of file to root index page.
+    /// </summary>
     public long? IndexPageOffset { get; set; }
 
-        /// <summary>
-        /// Byte offset from the beginning of file to first (only) dictionary page.
-        /// </summary>
+    /// <summary>
+    /// Byte offset from the beginning of file to first (only) dictionary page.
+    /// </summary>
     public long? DictionaryPageOffset { get; set; }
 
-        /// <summary>
-        /// Optional statistics for this column chunk.
-        /// </summary>
+    /// <summary>
+    /// Optional statistics for this column chunk.
+    /// </summary>
     public Statistics? Statistics { get; set; }
 
-        /// <summary>
-        /// Set of all encodings used for pages in this column chunk. This information can be used to determine if all data pages are dictionary encoded for example.
-        /// </summary>
+    /// <summary>
+    /// Set of all encodings used for pages in this column chunk. This information can be used to determine if all data pages are dictionary encoded for example.
+    /// </summary>
     public List<PageEncodingStats>? EncodingStats { get; set; }
 
-        /// <summary>
-        /// Byte offset from beginning of file to Bloom filter data.
-        /// </summary>
+    /// <summary>
+    /// Byte offset from beginning of file to Bloom filter data.
+    /// </summary>
     public long? BloomFilterOffset { get; set; }
 
-        /// <summary>
-        /// Size of Bloom filter data including the serialized header, in bytes. Added in 2.10 so readers may not read this field from old files and it can be obtained after the BloomFilterHeader has been deserialized. Writers should write this field so readers can read the bloom filter in a single I/O.
-        /// </summary>
+    /// <summary>
+    /// Size of Bloom filter data including the serialized header, in bytes. Added in 2.10 so readers may not read this field from old files and it can be obtained after the BloomFilterHeader has been deserialized. Writers should write this field so readers can read the bloom filter in a single I/O.
+    /// </summary>
     public int? BloomFilterLength { get; set; }
 
-        /// <summary>
-        /// Optional statistics to help estimate total memory when converted to in-memory representations. The histograms contained in these statistics can also be useful in some cases for more fine-grained nullability/list length filter pushdown.
-        /// </summary>
+    /// <summary>
+    /// Optional statistics to help estimate total memory when converted to in-memory representations. The histograms contained in these statistics can also be useful in some cases for more fine-grained nullability/list length filter pushdown.
+    /// </summary>
     public SizeStatistics? SizeStatistics { get; set; }
 
-        /// <summary>
-        /// Optional statistics specific for Geometry and Geography logical types.
-        /// </summary>
+    /// <summary>
+    /// Optional statistics specific for Geometry and Geography logical types.
+    /// </summary>
     public GeospatialStatistics? GeospatialStatistics { get; set; }
 
 
@@ -2606,14 +2606,14 @@ public class EncryptionWithFooterKey {
 }
 
 public class EncryptionWithColumnKey {
-        /// <summary>
-        /// Column path in schema.
-        /// </summary>
+    /// <summary>
+    /// Column path in schema.
+    /// </summary>
     public List<string> PathInSchema { get; set; } = new List<string>();
 
-        /// <summary>
-        /// Retrieval metadata of column encryption key.
-        /// </summary>
+    /// <summary>
+    /// Retrieval metadata of column encryption key.
+    /// </summary>
     public byte[]? KeyMetadata { get; set; }
 
 
@@ -2702,49 +2702,49 @@ public class ColumnCryptoMetaData {
 }
 
 public class ColumnChunk {
-        /// <summary>
-        /// File where column data is stored.  If not set, assumed to be same file as metadata.  This path is relative to the current file.  As of December 2025, the only known use-case for this field is writing summary parquet files (i.e. &quot;_metadata&quot; files).  These files consolidate footers from multiple parquet files to allow for efficient reading of footers to avoid file listing costs and prune out files that do not need to be read based on statistics.  These files do not appear to have ever been formally specified in the specification. and are potentially problematic from a correctness perspective [1].  [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d  There is no other known usage of this field. Specifically, there are no known reference implementations that will read externally stored column data if this field is populated within a standard parquet file. Making use of the field for this purpose is not considered part of the Parquet specification.
-        /// </summary>
+    /// <summary>
+    /// File where column data is stored.  If not set, assumed to be same file as metadata.  This path is relative to the current file.  As of December 2025, the only known use-case for this field is writing summary parquet files (i.e. &quot;_metadata&quot; files).  These files consolidate footers from multiple parquet files to allow for efficient reading of footers to avoid file listing costs and prune out files that do not need to be read based on statistics.  These files do not appear to have ever been formally specified in the specification. and are potentially problematic from a correctness perspective [1].  [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d  There is no other known usage of this field. Specifically, there are no known reference implementations that will read externally stored column data if this field is populated within a standard parquet file. Making use of the field for this purpose is not considered part of the Parquet specification.
+    /// </summary>
     public string? FilePath { get; set; }
 
-        /// <summary>
-        /// Deprecated: Byte offset in file_path to the ColumnMetaData  Past use of this field has been inconsistent, with some implementations using it to point to the ColumnMetaData and some using it to point to the first page in the column chunk. In many cases, the ColumnMetaData at this location is wrong. This field is now deprecated and should not be used. Writers should set this field to 0 if no ColumnMetaData has been written outside the footer.
-        /// </summary>
+    /// <summary>
+    /// Deprecated: Byte offset in file_path to the ColumnMetaData  Past use of this field has been inconsistent, with some implementations using it to point to the ColumnMetaData and some using it to point to the first page in the column chunk. In many cases, the ColumnMetaData at this location is wrong. This field is now deprecated and should not be used. Writers should set this field to 0 if no ColumnMetaData has been written outside the footer.
+    /// </summary>
     public long FileOffset { get; set; }
 
-        /// <summary>
-        /// Column metadata for this chunk. Some writers may also replicate this at the location pointed to by file_path/file_offset. Note: while marked as optional, this field is in fact required by most major Parquet implementations. As such, writers MUST populate this field.
-        /// </summary>
+    /// <summary>
+    /// Column metadata for this chunk. Some writers may also replicate this at the location pointed to by file_path/file_offset. Note: while marked as optional, this field is in fact required by most major Parquet implementations. As such, writers MUST populate this field.
+    /// </summary>
     public ColumnMetaData? MetaData { get; set; }
 
-        /// <summary>
-        /// File offset of ColumnChunk&#39;s OffsetIndex.
-        /// </summary>
+    /// <summary>
+    /// File offset of ColumnChunk&#39;s OffsetIndex.
+    /// </summary>
     public long? OffsetIndexOffset { get; set; }
 
-        /// <summary>
-        /// Size of ColumnChunk&#39;s OffsetIndex, in bytes.
-        /// </summary>
+    /// <summary>
+    /// Size of ColumnChunk&#39;s OffsetIndex, in bytes.
+    /// </summary>
     public int? OffsetIndexLength { get; set; }
 
-        /// <summary>
-        /// File offset of ColumnChunk&#39;s ColumnIndex.
-        /// </summary>
+    /// <summary>
+    /// File offset of ColumnChunk&#39;s ColumnIndex.
+    /// </summary>
     public long? ColumnIndexOffset { get; set; }
 
-        /// <summary>
-        /// Size of ColumnChunk&#39;s ColumnIndex, in bytes.
-        /// </summary>
+    /// <summary>
+    /// Size of ColumnChunk&#39;s ColumnIndex, in bytes.
+    /// </summary>
     public int? ColumnIndexLength { get; set; }
 
-        /// <summary>
-        /// Crypto metadata of encrypted columns.
-        /// </summary>
+    /// <summary>
+    /// Crypto metadata of encrypted columns.
+    /// </summary>
     public ColumnCryptoMetaData? CryptoMetadata { get; set; }
 
-        /// <summary>
-        /// Encrypted column metadata for this chunk.
-        /// </summary>
+    /// <summary>
+    /// Encrypted column metadata for this chunk.
+    /// </summary>
     public byte[]? EncryptedColumnMetadata { get; set; }
 
 
@@ -2834,39 +2834,39 @@ public class ColumnChunk {
 }
 
 public class RowGroup {
-        /// <summary>
-        /// Metadata for each column chunk in this row group. This list must have the same order as the SchemaElement list in FileMetaData.
-        /// </summary>
+    /// <summary>
+    /// Metadata for each column chunk in this row group. This list must have the same order as the SchemaElement list in FileMetaData.
+    /// </summary>
     public List<ColumnChunk> Columns { get; set; } = new List<ColumnChunk>();
 
-        /// <summary>
-        /// Total byte size of all the uncompressed column data in this row group.
-        /// </summary>
+    /// <summary>
+    /// Total byte size of all the uncompressed column data in this row group.
+    /// </summary>
     public long TotalByteSize { get; set; }
 
-        /// <summary>
-        /// Number of rows in this row group.
-        /// </summary>
+    /// <summary>
+    /// Number of rows in this row group.
+    /// </summary>
     public long NumRows { get; set; }
 
-        /// <summary>
-        /// If set, specifies a sort ordering of the rows in this RowGroup. The sorting columns can be a subset of all the columns.
-        /// </summary>
+    /// <summary>
+    /// If set, specifies a sort ordering of the rows in this RowGroup. The sorting columns can be a subset of all the columns.
+    /// </summary>
     public List<SortingColumn>? SortingColumns { get; set; }
 
-        /// <summary>
-        /// Byte offset from beginning of file to first page (data or dictionary) in this row group.
-        /// </summary>
+    /// <summary>
+    /// Byte offset from beginning of file to first page (data or dictionary) in this row group.
+    /// </summary>
     public long? FileOffset { get; set; }
 
-        /// <summary>
-        /// Total byte size of all compressed (and potentially encrypted) column data in this row group.
-        /// </summary>
+    /// <summary>
+    /// Total byte size of all compressed (and potentially encrypted) column data in this row group.
+    /// </summary>
     public long? TotalCompressedSize { get; set; }
 
-        /// <summary>
-        /// Row group ordinal in the file.
-        /// </summary>
+    /// <summary>
+    /// Row group ordinal in the file.
+    /// </summary>
     public short? Ordinal { get; set; }
 
 
@@ -2946,9 +2946,9 @@ public class RowGroup {
     }
 }
 
-    /// <summary>
-    /// Empty struct to signal the order defined by the physical or logical type.
-    /// </summary>
+/// <summary>
+/// Empty struct to signal the order defined by the physical or logical type.
+/// </summary>
 public class TypeDefinedOrder {
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -2970,13 +2970,13 @@ public class TypeDefinedOrder {
     }
 }
 
-    /// <summary>
-    /// Union to specify the order used for the min_value and max_value fields for a column. This union takes the role of an enhanced enum that allows rich elements (which will be needed for a collation-based ordering in the future).  Possible values are: * TypeDefinedOrder - the column uses the order defined by its logical or                      physical type (if there is no logical type).  If the reader does not support the value of this union, min and max stats for this column should be ignored.
-    /// </summary>
+/// <summary>
+/// Union to specify the order used for the min_value and max_value fields for a column. This union takes the role of an enhanced enum that allows rich elements (which will be needed for a collation-based ordering in the future).  Possible values are: * TypeDefinedOrder - the column uses the order defined by its logical or                      physical type (if there is no logical type).  If the reader does not support the value of this union, min and max stats for this column should be ignored.
+/// </summary>
 public class ColumnOrder {
-        /// <summary>
-        /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   FLOAT16 - signed comparison of the represented value (*)   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - undefined   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined   VARIANT - undefined   GEOMETRY - undefined   GEOGRAPHY - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined(+)   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (+) While the INT96 type has been deprecated, at the time of writing it is    still used in many legacy systems. If a Parquet implementation chooses    to write statistics for INT96 columns, it is recommended to order them    according to the legacy rules:    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer    - if equal last 4 bytes, compare the first 8 bytes as a little-endian      64-bit signed integer (nanos)    See https://github.com/apache/parquet-format/issues/502 for more details  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.      When writing statistics the following rules should be followed:     - NaNs should not be written to min or max statistics fields.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.
-        /// </summary>
+    /// <summary>
+    /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   FLOAT16 - signed comparison of the represented value (*)   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - undefined   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined   VARIANT - undefined   GEOMETRY - undefined   GEOGRAPHY - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined(+)   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (+) While the INT96 type has been deprecated, at the time of writing it is    still used in many legacy systems. If a Parquet implementation chooses    to write statistics for INT96 columns, it is recommended to order them    according to the legacy rules:    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer    - if equal last 4 bytes, compare the first 8 bytes as a little-endian      64-bit signed integer (nanos)    See https://github.com/apache/parquet-format/issues/502 for more details  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.      When writing statistics the following rules should be followed:     - NaNs should not be written to min or max statistics fields.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.
+    /// </summary>
     public TypeDefinedOrder? TYPEORDER { get; set; }
 
 
@@ -3011,19 +3011,19 @@ public class ColumnOrder {
 }
 
 public class PageLocation {
-        /// <summary>
-        /// Offset of the page in the file.
-        /// </summary>
+    /// <summary>
+    /// Offset of the page in the file.
+    /// </summary>
     public long Offset { get; set; }
 
-        /// <summary>
-        /// Size of the page, including header. Sum of compressed_page_size and header length.
-        /// </summary>
+    /// <summary>
+    /// Size of the page, including header. Sum of compressed_page_size and header length.
+    /// </summary>
     public int CompressedPageSize { get; set; }
 
-        /// <summary>
-        /// Index within the RowGroup of the first row of the page. When an OffsetIndex is present, pages must begin on row boundaries (repetition_level = 0).
-        /// </summary>
+    /// <summary>
+    /// Index within the RowGroup of the first row of the page. When an OffsetIndex is present, pages must begin on row boundaries (repetition_level = 0).
+    /// </summary>
     public long FirstRowIndex { get; set; }
 
 
@@ -3064,18 +3064,18 @@ public class PageLocation {
     }
 }
 
-    /// <summary>
-    /// Optional offsets for each data page in a ColumnChunk.  Forms part of the page index, along with ColumnIndex.  OffsetIndex may be present even if ColumnIndex is not.
-    /// </summary>
+/// <summary>
+/// Optional offsets for each data page in a ColumnChunk.  Forms part of the page index, along with ColumnIndex.  OffsetIndex may be present even if ColumnIndex is not.
+/// </summary>
 public class OffsetIndex {
-        /// <summary>
-        /// PageLocations, ordered by increasing PageLocation.offset. It is required that page_locations[i].first_row_index &lt; page_locations[i+1].first_row_index.
-        /// </summary>
+    /// <summary>
+    /// PageLocations, ordered by increasing PageLocation.offset. It is required that page_locations[i].first_row_index &lt; page_locations[i+1].first_row_index.
+    /// </summary>
     public List<PageLocation> PageLocations { get; set; } = new List<PageLocation>();
 
-        /// <summary>
-        /// Unencoded/uncompressed size for BYTE_ARRAY types.  See documention for unencoded_byte_array_data_bytes in SizeStatistics for more details on this field.
-        /// </summary>
+    /// <summary>
+    /// Unencoded/uncompressed size for BYTE_ARRAY types.  See documention for unencoded_byte_array_data_bytes in SizeStatistics for more details on this field.
+    /// </summary>
     public List<long>? UnencodedByteArrayDataBytes { get; set; }
 
 
@@ -3124,40 +3124,40 @@ public class OffsetIndex {
     }
 }
 
-    /// <summary>
-    /// Optional statistics for each data page in a ColumnChunk.  Forms part the page index, along with OffsetIndex.  If this structure is present, OffsetIndex must also be present.  For each field in this structure, &lt;field&gt;[i] refers to the page at OffsetIndex.page_locations[i].
-    /// </summary>
+/// <summary>
+/// Optional statistics for each data page in a ColumnChunk.  Forms part the page index, along with OffsetIndex.  If this structure is present, OffsetIndex must also be present.  For each field in this structure, &lt;field&gt;[i] refers to the page at OffsetIndex.page_locations[i].
+/// </summary>
 public class ColumnIndex {
-        /// <summary>
-        /// A list of Boolean values to determine the validity of the corresponding min and max values. If true, a page contains only null values, and writers have to set the corresponding entries in min_values and max_values to byte[0], so that all lists have the same length. If false, the corresponding entries in min_values and max_values must be valid.
-        /// </summary>
+    /// <summary>
+    /// A list of Boolean values to determine the validity of the corresponding min and max values. If true, a page contains only null values, and writers have to set the corresponding entries in min_values and max_values to byte[0], so that all lists have the same length. If false, the corresponding entries in min_values and max_values must be valid.
+    /// </summary>
     public List<bool> NullPages { get; set; } = new List<bool>();
 
-        /// <summary>
-        /// Two lists containing lower and upper bounds for the values of each page determined by the ColumnOrder of the column. These may be the actual minimum and maximum values found on a page, but can also be (more compact) values that do not exist on a page. For example, instead of storing &quot;&quot;Blart Versenwald III&quot;, a writer may set min_values[i]=&quot;B&quot;, max_values[i]=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type. Readers must make sure that list entries are populated before using them by inspecting null_pages.
-        /// </summary>
+    /// <summary>
+    /// Two lists containing lower and upper bounds for the values of each page determined by the ColumnOrder of the column. These may be the actual minimum and maximum values found on a page, but can also be (more compact) values that do not exist on a page. For example, instead of storing &quot;&quot;Blart Versenwald III&quot;, a writer may set min_values[i]=&quot;B&quot;, max_values[i]=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type. Readers must make sure that list entries are populated before using them by inspecting null_pages.
+    /// </summary>
     public List<byte[]> MinValues { get; set; } = new List<byte[]>();
 
     public List<byte[]> MaxValues { get; set; } = new List<byte[]>();
 
-        /// <summary>
-        /// Stores whether both min_values and max_values are ordered and if so, in which direction. This allows readers to perform binary searches in both lists. Readers cannot assume that max_values[i] &lt;= min_values[i+1], even if the lists are ordered.
-        /// </summary>
+    /// <summary>
+    /// Stores whether both min_values and max_values are ordered and if so, in which direction. This allows readers to perform binary searches in both lists. Readers cannot assume that max_values[i] &lt;= min_values[i+1], even if the lists are ordered.
+    /// </summary>
     public BoundaryOrder BoundaryOrder { get; set; } = new BoundaryOrder();
 
-        /// <summary>
-        /// A list containing the number of null values for each page  Writers SHOULD always write this field even if no null values are present or the column is not nullable. Readers MUST distinguish between null_counts not being present and null_count being 0. If null_counts are not present, readers MUST NOT assume all null counts are 0.
-        /// </summary>
+    /// <summary>
+    /// A list containing the number of null values for each page  Writers SHOULD always write this field even if no null values are present or the column is not nullable. Readers MUST distinguish between null_counts not being present and null_count being 0. If null_counts are not present, readers MUST NOT assume all null counts are 0.
+    /// </summary>
     public List<long>? NullCounts { get; set; }
 
-        /// <summary>
-        /// Contains repetition level histograms for each page concatenated together.  The repetition_level_histogram field on SizeStatistics contains more details.  When present the length should always be (number of pages * (max_repetition_level + 1)) elements.  Element 0 is the first element of the histogram for the first page. Element (max_repetition_level + 1) is the first element of the histogram for the second page.
-        /// </summary>
+    /// <summary>
+    /// Contains repetition level histograms for each page concatenated together.  The repetition_level_histogram field on SizeStatistics contains more details.  When present the length should always be (number of pages * (max_repetition_level + 1)) elements.  Element 0 is the first element of the histogram for the first page. Element (max_repetition_level + 1) is the first element of the histogram for the second page.
+    /// </summary>
     public List<long>? RepetitionLevelHistograms { get; set; }
 
-        /// <summary>
-        /// Same as repetition_level_histograms except for definitions levels.
-        /// </summary>
+    /// <summary>
+    /// Same as repetition_level_histograms except for definitions levels.
+    /// </summary>
     public List<long>? DefinitionLevelHistograms { get; set; }
 
 
@@ -3256,19 +3256,19 @@ public class ColumnIndex {
 }
 
 public class AesGcmV1 {
-        /// <summary>
-        /// AAD prefix.
-        /// </summary>
+    /// <summary>
+    /// AAD prefix.
+    /// </summary>
     public byte[]? AadPrefix { get; set; }
 
-        /// <summary>
-        /// Unique file identifier part of AAD suffix.
-        /// </summary>
+    /// <summary>
+    /// Unique file identifier part of AAD suffix.
+    /// </summary>
     public byte[]? AadFileUnique { get; set; }
 
-        /// <summary>
-        /// In files encrypted with AAD prefix without storing it, readers must supply the prefix.
-        /// </summary>
+    /// <summary>
+    /// In files encrypted with AAD prefix without storing it, readers must supply the prefix.
+    /// </summary>
     public bool? SupplyAadPrefix { get; set; }
 
 
@@ -3316,19 +3316,19 @@ public class AesGcmV1 {
 }
 
 public class AesGcmCtrV1 {
-        /// <summary>
-        /// AAD prefix.
-        /// </summary>
+    /// <summary>
+    /// AAD prefix.
+    /// </summary>
     public byte[]? AadPrefix { get; set; }
 
-        /// <summary>
-        /// Unique file identifier part of AAD suffix.
-        /// </summary>
+    /// <summary>
+    /// Unique file identifier part of AAD suffix.
+    /// </summary>
     public byte[]? AadFileUnique { get; set; }
 
-        /// <summary>
-        /// In files encrypted with AAD prefix without storing it, readers must supply the prefix.
-        /// </summary>
+    /// <summary>
+    /// In files encrypted with AAD prefix without storing it, readers must supply the prefix.
+    /// </summary>
     public bool? SupplyAadPrefix { get; set; }
 
 
@@ -3419,53 +3419,53 @@ public class EncryptionAlgorithm {
     }
 }
 
-    /// <summary>
-    /// Description for file metadata.
-    /// </summary>
+/// <summary>
+/// Description for file metadata.
+/// </summary>
 public class FileMetaData {
-        /// <summary>
-        /// Version of this file  As of December 2025, there is no agreed upon consensus of what constitutes version 2 of the file. For maximum compatibility with readers, writers should always populate &quot;1&quot; for version. For maximum compatibility with writers, readers should accept &quot;1&quot; and &quot;2&quot; interchangeably.  All other versions are reserved for potential future use-cases.
-        /// </summary>
+    /// <summary>
+    /// Version of this file  As of December 2025, there is no agreed upon consensus of what constitutes version 2 of the file. For maximum compatibility with readers, writers should always populate &quot;1&quot; for version. For maximum compatibility with writers, readers should accept &quot;1&quot; and &quot;2&quot; interchangeably.  All other versions are reserved for potential future use-cases.
+    /// </summary>
     public int Version { get; set; }
 
-        /// <summary>
-        /// Parquet schema for this file.  This schema contains metadata for all the columns. The schema is represented as a tree with a single root.  The nodes of the tree are flattened to a list by doing a depth-first traversal. The column metadata contains the path in the schema for that column which can be used to map columns to nodes in the schema. The first element is the root.
-        /// </summary>
+    /// <summary>
+    /// Parquet schema for this file.  This schema contains metadata for all the columns. The schema is represented as a tree with a single root.  The nodes of the tree are flattened to a list by doing a depth-first traversal. The column metadata contains the path in the schema for that column which can be used to map columns to nodes in the schema. The first element is the root.
+    /// </summary>
     public List<SchemaElement> Schema { get; set; } = new List<SchemaElement>();
 
-        /// <summary>
-        /// Number of rows in this file.
-        /// </summary>
+    /// <summary>
+    /// Number of rows in this file.
+    /// </summary>
     public long NumRows { get; set; }
 
-        /// <summary>
-        /// Row groups in this file.
-        /// </summary>
+    /// <summary>
+    /// Row groups in this file.
+    /// </summary>
     public List<RowGroup> RowGroups { get; set; } = new List<RowGroup>();
 
-        /// <summary>
-        /// Optional key/value metadata.
-        /// </summary>
+    /// <summary>
+    /// Optional key/value metadata.
+    /// </summary>
     public List<KeyValue>? KeyValueMetadata { get; set; }
 
-        /// <summary>
-        /// String for application that wrote this file.  This should be in the format &lt;Application&gt; version &lt;App Version&gt; (build &lt;App Build Hash&gt;). e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55).
-        /// </summary>
+    /// <summary>
+    /// String for application that wrote this file.  This should be in the format &lt;Application&gt; version &lt;App Version&gt; (build &lt;App Build Hash&gt;). e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55).
+    /// </summary>
     public string? CreatedBy { get; set; }
 
-        /// <summary>
-        /// Sort order used for the min_value and max_value fields in the Statistics objects and the min_values and max_values fields in the ColumnIndex objects of each column in this file. Sort orders are listed in the order matching the columns in the schema. The indexes are not necessary the same though, because only leaf nodes of the schema are represented in the list of sort orders.  Without column_orders, the meaning of the min_value and max_value fields in the Statistics object and the ColumnIndex object is undefined. To ensure well-defined behaviour, if these fields are written to a Parquet file, column_orders must be written as well.  The obsolete min and max fields in the Statistics object are always sorted by signed comparison regardless of column_orders.
-        /// </summary>
+    /// <summary>
+    /// Sort order used for the min_value and max_value fields in the Statistics objects and the min_values and max_values fields in the ColumnIndex objects of each column in this file. Sort orders are listed in the order matching the columns in the schema. The indexes are not necessary the same though, because only leaf nodes of the schema are represented in the list of sort orders.  Without column_orders, the meaning of the min_value and max_value fields in the Statistics object and the ColumnIndex object is undefined. To ensure well-defined behaviour, if these fields are written to a Parquet file, column_orders must be written as well.  The obsolete min and max fields in the Statistics object are always sorted by signed comparison regardless of column_orders.
+    /// </summary>
     public List<ColumnOrder>? ColumnOrders { get; set; }
 
-        /// <summary>
-        /// Encryption algorithm. This field is set only in encrypted files with plaintext footer. Files with encrypted footer store algorithm id in FileCryptoMetaData structure.
-        /// </summary>
+    /// <summary>
+    /// Encryption algorithm. This field is set only in encrypted files with plaintext footer. Files with encrypted footer store algorithm id in FileCryptoMetaData structure.
+    /// </summary>
     public EncryptionAlgorithm? EncryptionAlgorithm { get; set; }
 
-        /// <summary>
-        /// Retrieval metadata of key used for signing the footer. Used only in encrypted files with plaintext footer.
-        /// </summary>
+    /// <summary>
+    /// Retrieval metadata of key used for signing the footer. Used only in encrypted files with plaintext footer.
+    /// </summary>
     public byte[]? FooterSigningKeyMetadata { get; set; }
 
 
@@ -3568,18 +3568,18 @@ public class FileMetaData {
     }
 }
 
-    /// <summary>
-    /// Crypto metadata for files with encrypted footer.
-    /// </summary>
+/// <summary>
+/// Crypto metadata for files with encrypted footer.
+/// </summary>
 public class FileCryptoMetaData {
-        /// <summary>
-        /// Encryption algorithm. This field is only used for files with encrypted footer. Files with plaintext footer store algorithm id inside footer (FileMetaData structure).
-        /// </summary>
+    /// <summary>
+    /// Encryption algorithm. This field is only used for files with encrypted footer. Files with plaintext footer store algorithm id inside footer (FileMetaData structure).
+    /// </summary>
     public EncryptionAlgorithm EncryptionAlgorithm { get; set; } = new EncryptionAlgorithm();
 
-        /// <summary>
-        /// Retrieval metadata of key used for encryption of footer, and (possibly) columns.
-        /// </summary>
+    /// <summary>
+    /// Retrieval metadata of key used for encryption of footer, and (possibly) columns.
+    /// </summary>
     public byte[]? KeyMetadata { get; set; }
 
 

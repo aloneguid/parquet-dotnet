@@ -40,7 +40,7 @@ public class DictionaryEncodingTest : TestBase {
         using var stream = new MemoryStream();
 
         var options = new ParquetOptions();
-        options.DictionaryEncodedColumns.Add("string");
+        options.ColumnEncodingHints["string"] = EncodingHint.Dictionary;
         await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: options)) {
             using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
             await groupWriter.WriteAsync<ReadOnlyMemory<char>>(dataField, data.Select(x => x.AsNullableReadOnlyMemory()).ToArray());

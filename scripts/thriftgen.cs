@@ -338,11 +338,11 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
 string ProcessStruct(XElement xStruct, StringBuilder sb, HashSet<string> enumTypeNames) {
     var fields = new List<ThriftField>();
     //xStruct.Dump();
-    ProcessXmlDoc(xStruct, 1, sb);
+    ProcessXmlDoc(xStruct, 0, sb);
     string typeName = xStruct.Attribute("name")!.Value;
     sb.AppendLine($"public class {typeName} {{");
     foreach (XElement xMember in xStruct.Elements()) {
-        ProcessXmlDoc(xMember, 2, sb);
+        ProcessXmlDoc(xMember, 1, sb);
         string mName = xMember.Attribute("name")!.Value.ToString();
         string mFieldId = xMember.Attribute("field-id")!.Value.ToString();
         bool required = xMember.Attribute("required")!.Value.ToString() == "required";
@@ -405,12 +405,12 @@ void ProcessXmlDoc(XElement xEntry, int spaces, StringBuilder sb) {
 string ProcessEnum(XElement xEnum, StringBuilder sb) {
     //xEnum.Dump();
     
-    ProcessXmlDoc(xEnum, 1, sb);
+    ProcessXmlDoc(xEnum, 0, sb);
 
     string typeName = xEnum.Attribute("name")!.Value;
     sb.AppendLine($"public enum {typeName} {{");
     foreach(XElement xMember in xEnum.Elements()) {
-        ProcessXmlDoc(xMember, 2, sb);
+        ProcessXmlDoc(xMember, 1, sb);
         string mName = xMember.Attribute("name")!.Value.ToString();
         string mValue = xMember.Attribute("value")!.Value.ToString();
         sb.AppendLine($"{Spacing}{mName} = {mValue},");

@@ -438,7 +438,7 @@ public class ParquetWriterTest : TestBase {
         using var ms = new MemoryStream();
 
         var options = new ParquetOptions();
-        options.DictionaryEncodedColumns.Add(str.Path.ToString());
+        options.ColumnEncodingHints[str.Path.ToString()] = EncodingHint.Dictionary;
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms, options)) {
             writer.CompressionMethod = CompressionMethod.None;
@@ -479,12 +479,15 @@ public class ParquetWriterTest : TestBase {
     }
 
     [Fact]
-    public async Task Default_int32_is_delta_binary_packed() {
+    public async Task Int32_override_to_delta_binary_packed() {
         var ms = new MemoryStream();
         var id = new DataField<int>("id");
 
+        var options = new ParquetOptions();
+        options.ColumnEncodingHints[id.Path.ToString()] = EncodingHint.DeltaBinaryPacked;
+
         //write
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms, options)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                 await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }
@@ -501,13 +504,14 @@ public class ParquetWriterTest : TestBase {
     }
 
     [Fact]
-    public async Task Override_int32_encoding_to_plain() {
+    public async Task Int32_encoding_is_plain_by_default() {
         var ms = new MemoryStream();
         var id = new DataField<int>("id");
 
+        var options = new ParquetOptions();
+
         //write
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms,
-            new ParquetOptions { UseDeltaBinaryPackedEncoding = false })) {
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(id), ms)) {
             using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
                 await rg.WriteAsync<int>(id, new[] { 1, 2, 3, 4 });
             }

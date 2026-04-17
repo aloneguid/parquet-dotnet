@@ -25,7 +25,7 @@ public class ByteStreamSplitEncoderTest : TestBase {
         byte[] bytes = ToByteArray("AA00A3BB11B4CC22C5DD33D6");
 
         float[] dest = new float[3];
-        ByteStreamSplitEncoder.DecodeByteStreamSplit(bytes, dest, 0, 3);
+        ByteStreamSplitEncoder.DecodeByteStreamSplit(bytes, dest);
         for(int i = 0; i < 3; i++) {
             Assert.Equal(expected[i], dest[i]);
         }
@@ -48,33 +48,38 @@ public class ByteStreamSplitEncoderTest : TestBase {
     }
 
     [Fact]
-    public void TestApacheExampleWithSpanDestination() {
-        float[] expected = [FromHex("AABBCCDD"), FromHex("00112233"), FromHex("A3B4C5D6")];
-        byte[] bytes = ToByteArray("AA00A3BB11B4CC22C5DD33D6");
+    public void TestApacheExampleEncoding() {
+        /*
+         * Encoding test based on TestApacheExample data.
+         * Original three 32-bit floats (raw bytes):
+         *        Element 0      Element 1      Element 2
+         * Bytes  AA BB CC DD    00 11 22 33    A3 B4 C5 D6
+         * 
+         * After encoding, should produce byte-stream-split format:
+         * Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
+         */
 
-        Span<float> dest = stackalloc float[3];
-        ByteStreamSplitEncoder.DecodeByteStreamSplit(bytes, dest, 3);
+        float[] source = [FromHex("AABBCCDD"), FromHex("00112233"), FromHex("A3B4C5D6")];
+        byte[] expected = ToByteArray("AA00A3BB11B4CC22C5DD33D6");
 
-        for(int i = 0; i < 3; i++) {
-            Assert.Equal(expected[i], dest[i]);
-        }
+        byte[] dest = new byte[12];
+        ByteStreamSplitEncoder.EncodeByteStreamSplit(source, dest);
 
-        static float FromHex(string hex) {
+        Assert.Equal(expected, dest);
+
+        float FromHex(string hex) {
             Span<byte> b = stackalloc byte[4];
             for(int i = 0; i < 4; i++) {
                 b[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
             }
-
             return BitConverter.ToSingle(b);
         }
-
-        static byte[] ToByteArray(string hex) {
+        byte[] ToByteArray(string hex) {
             int len = hex.Length / 2;
             byte[] b = new byte[len];
             for(int i = 0; i < len; i++) {
                 b[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
             }
-
             return b;
         }
     }
