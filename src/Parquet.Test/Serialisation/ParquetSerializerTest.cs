@@ -1240,4 +1240,15 @@ public class ParquetSerializerTest : TestBase {
         IList<Record1> data = await ParquetSerializer.DeserializeAsync<Record1>(ms);
         Assert.Empty(data);
     }
+
+    public record EmptyDuckDbFile_Model {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    [Fact]
+    public async Task EmptyDuckDbFile() {
+        using Stream src = OpenTestFile("data_0.parquet");
+        IList<EmptyDuckDbFile_Model> r = await ParquetSerializer.DeserializeAsync<EmptyDuckDbFile_Model>(src);
+    }
 }
