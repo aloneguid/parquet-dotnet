@@ -40,7 +40,7 @@ public class EndToEndTypeTest : TestBase {
     /// <summary>
     /// Writes a single nullable struct value using generic WriteAsync and reads it back.
     /// </summary>
-    private static async Task<T?> WriteReadSingleNullableAsync<T>(DataField field, T? value = null, ParquetOptions? options = null) where T : struct {
+    private static async Task<T?> WriteReadSingleNullableAsync<T>(DataField field, T? value, ParquetOptions? options = null) where T : struct {
         byte[] data;
         options ??= new ParquetOptions();
 
@@ -150,6 +150,7 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(10.44D, actual);
     }
 
+
     [Fact]
     public async Task Type_long_writes_and_reads() {
         var field = new DataField<long>("long");
@@ -224,7 +225,7 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expected, actual);
     }
 
-    // --- DateTime tests ---
+    // --- Temporal tests ---
 
     [Fact]
     public async Task Type_simple_datetime_writes_and_reads() {
@@ -262,7 +263,6 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expected, actual);
     }
 
-#if NET7_0_OR_GREATER
     [Fact]
     public async Task Type_date_and_time_micros_writes_and_reads() {
         var field = new DateTimeDataField("dateDateAndTime", DateTimeFormat.DateAndTimeMicros);
@@ -271,7 +271,6 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(DateTimeKind.Utc, actual.Kind);
         Assert.Equal(expected, actual);
     }
-#endif
 
     [Fact]
     public async Task Type_datetime_unknown_kind_writes_and_reads() {
@@ -361,7 +360,6 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expectedUtc, actual);
     }
 
-#if !NETCOREAPP3_1
     [Fact]
     public async Task Type_dateonly_writes_and_reads() {
         var field = new DataField<DateOnly>("dateOnly");
@@ -370,7 +368,6 @@ public class EndToEndTypeTest : TestBase {
         DateOnly actual = await WriteReadSingleAsync(field, expected, options);
         Assert.Equal(expected, actual);
     }
-#endif
 
     // --- Interval test ---
 
@@ -400,7 +397,6 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expected, actual);
     }
 
-#if NET6_0_OR_GREATER
     [Fact]
     public async Task Type_timeonly_micros_writes_and_reads() {
         var field = new TimeOnlyDataField("timeMicros", TimeSpanFormat.MicroSeconds);
@@ -416,7 +412,6 @@ public class EndToEndTypeTest : TestBase {
         TimeOnly actual = await WriteReadSingleAsync(field, expected);
         Assert.Equal(expected, actual);
     }
-#endif
 
     // --- Integer boundary tests ---
 
@@ -535,16 +530,30 @@ public class EndToEndTypeTest : TestBase {
     // --- Nullable tests ---
 
     [Fact]
+    public async Task Type_nullable_double_writes_and_reads() {
+        var field = new DataField<double?>("double");
+        double? actual = await WriteReadSingleNullableAsync<double>(field, (double?)10.44D);
+        Assert.Equal(10.44D, actual);
+    }
+
+    [Fact]
+    public async Task Type_null_decimal_writes_and_reads() {
+        var field = new DecimalDataField("decimal?", 4, 1, true, true);
+        decimal? actual = await WriteReadSingleNullableAsync<decimal>(field, null);
+        Assert.Null(actual);
+    }
+
+    [Fact]
     public async Task Type_nullable_decimal_writes_and_reads() {
         var field = new DecimalDataField("decimal?", 4, 1, true, true);
-        decimal? actual = await WriteReadSingleNullableAsync<decimal>(field);
-        Assert.Null(actual);
+        decimal? actual = await WriteReadSingleNullableAsync<decimal>(field, (decimal?)10.44M);
+        Assert.Equal(10.4M, actual);
     }
 
     [Fact]
     public async Task Type_nullable_datetime_writes_and_reads() {
         var field = new DateTimeDataField("DateTime?", DateTimeFormat.DateAndTime, isNullable: true);
-        DateTime? actual = await WriteReadSingleNullableAsync<DateTime>(field);
+        DateTime? actual = await WriteReadSingleNullableAsync<DateTime>(field, null);
         Assert.Null(actual);
     }
 
@@ -585,7 +594,7 @@ public class EndToEndTypeTest : TestBase {
     [Fact]
     public async Task Type_nullable_guid_null_writes_and_reads() {
         var field = new DataField<Guid?>("uuid");
-        Guid? actual = await WriteReadSingleNullableAsync<Guid>(field);
+        Guid? actual = await WriteReadSingleNullableAsync<Guid>(field, null);
         Assert.Null(actual);
     }
 }

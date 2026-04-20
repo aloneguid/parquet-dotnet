@@ -36,9 +36,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          6.0.x
           8.0.x
-          9.0.x
           10.0.x
     - name: Setup Python
       uses: actions/setup-python@v4
@@ -106,9 +104,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          6.0.x
           8.0.x
-          9.0.x
           10.0.x
 
     - name: Build Library

@@ -142,7 +142,16 @@ public class ParquetRowGroupReader : IDisposable {
         return new RawColumnData<T>(values, definitionLevels, repetitionLevels);
     }
 
-    internal async ValueTask<object> ReadRawColumnDataAsObjectAsync(DataField field, CancellationToken cancellationToken = default) {
+    /// <summary>
+    /// Read strongly typed data column and return as base class of <see cref="RawColumnData{T}"/>. This is useful when
+    /// the caller doesn't know the type at compile time. Note that this method will be slightly less efficient than
+    /// calling generic version directly, so if the caller does know the type, it's better to call generic version."/>
+    /// </summary>
+    /// <param name="field"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public async ValueTask<RawColumnData> ReadRawColumnDataBaseAsync(DataField field, CancellationToken cancellationToken = default) {
         // use reflection to call generic version of the method
         MethodInfo? method = typeof(ParquetRowGroupReader)
             .GetMethod(nameof(ParquetRowGroupReader.ReadRawColumnDataAsync), BindingFlags.Instance | BindingFlags.NonPublic);
@@ -153,7 +162,7 @@ public class ParquetRowGroupReader : IDisposable {
 
         object? valueTask = method.Invoke(this, [field, cancellationToken]);
         object? result = await (dynamic)valueTask!;
-        return result;
+        return (RawColumnData)result;
     }
 
     /// <summary>

@@ -6,13 +6,8 @@ using System.Runtime.CompilerServices;
 namespace Parquet.Encodings;
 
 /// <summary>
-/// https://github.com/apache/parquet-format/blob/master/Encodings.md#BYTESTREAMSPLIT
-/// Supported Types:
-/// - FLOAT
-/// - DOUBLE
-/// - INT32
-/// - INT64
-/// - FIXED_LEN_BYTE_ARRAY
+/// https://github.com/apache/parquet-format/blob/master/Encodings.md#BYTESTREAMSPLIT Supported Types: FLOAT, DOUBLE,
+/// INT32, INT64, FIXED_LEN_BYTE_ARRAY. Also, see https://youtu.be/29k7cou8Hdk
 /// </summary>
 static class ByteStreamSplitEncoder {
 

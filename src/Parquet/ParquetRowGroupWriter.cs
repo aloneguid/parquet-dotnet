@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -19,9 +21,7 @@ namespace Parquet;
 public class ParquetRowGroupWriter : IDisposable {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
-    private readonly CompressionMethod _compressionMethod;
-    private readonly CompressionLevel _compressionLevel;
-    private readonly ParquetOptions _formatOptions;
+    private readonly ParquetOptions _options;
     private readonly RowGroup _owGroup;
     private readonly SchemaElement[] _thschema;
     private int _colIdx;
@@ -29,14 +29,10 @@ public class ParquetRowGroupWriter : IDisposable {
     internal ParquetRowGroupWriter(
        Stream stream,
        ThriftFooter footer,
-       CompressionMethod compressionMethod,
-       ParquetOptions formatOptions,
-       CompressionLevel compressionLevel) {
+       ParquetOptions options) {
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
         _footer = footer ?? throw new ArgumentNullException(nameof(footer));
-        _compressionMethod = compressionMethod;
-        _compressionLevel = compressionLevel;
-        _formatOptions = formatOptions;
+        _options = options;
 
         _owGroup = _footer.AddRowGroup();
         _owGroup.Columns = new List<ColumnChunk>();
@@ -143,6 +139,42 @@ public class ParquetRowGroupWriter : IDisposable {
         await WriteAsyncInternal(field, wc, null, cancellationToken);
     }
 
+    internal async Task WriteAsync<T>(DataField field, RawColumnData<T> data, CancellationToken cancellationToken) where T : struct {
+        await WriteAsyncAllParts(field, data.ValuesMemory, data.DefinitionLevelsMemoryOrNull, data.RepetitionLevelsMemoryOrNull, cancellationToken);
+    }
+
+    internal async Task WriteAsync(DataField field, RawColumnData data, CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(data);
+
+        System.Type dataType = data.GetType();
+        if(!dataType.IsGenericType || dataType.GetGenericTypeDefinition() != typeof(RawColumnData<>))
+            throw new ArgumentException("expected RawColumnData<T> instance", nameof(data));
+
+        System.Type elementType = dataType.GetGenericArguments()[0];
+
+        MethodInfo? writeAsyncGenericDefinition = typeof(ParquetRowGroupWriter)
+            .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+            .SingleOrDefault(m =>
+                m.Name == nameof(WriteAsync) &&
+                m.IsGenericMethodDefinition &&
+                m.GetGenericArguments().Length == 1 &&
+                m.GetParameters() is { Length: 3 } p &&
+                p[0].ParameterType == typeof(DataField) &&
+                p[1].ParameterType.IsGenericType &&
+                p[1].ParameterType.GetGenericTypeDefinition() == typeof(RawColumnData<>) &&
+                p[2].ParameterType == typeof(CancellationToken));
+
+        if(writeAsyncGenericDefinition == null)
+            throw new InvalidOperationException("failed to locate generic WriteAsync overload");
+
+        MethodInfo closedWriteAsync = writeAsyncGenericDefinition.MakeGenericMethod(elementType);
+        Task writeTask = (Task?)closedWriteAsync.Invoke(this, new object[] { field, data, cancellationToken })
+            ?? throw new InvalidOperationException("generic WriteAsync invocation returned null task");
+
+        await writeTask;
+    }
+
     private async Task WriteAsyncInternal<T>(DataField field,
         WritingColumn<T> wc,
         Dictionary<string, string>? customMetadata,
@@ -165,11 +197,7 @@ public class ParquetRowGroupWriter : IDisposable {
 
         FieldPath path = _footer.GetPath(tse);
 
-        var writer = new DataColumnWriter(_stream, _footer, tse,
-           _compressionMethod,
-           _formatOptions,
-           _compressionLevel,
-           customMetadata);
+        var writer = new DataColumnWriter(_stream, _footer, tse, _options, customMetadata);
 
         if(RowCount == null) {
             RowCount = wc.CalculateRowCount();

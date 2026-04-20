@@ -19,21 +19,11 @@ namespace Parquet;
 public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     private ThriftFooter? _footer;
     private readonly ParquetSchema _schema;
-    private readonly ParquetOptions _formatOptions;
+    private readonly ParquetOptions _options;
     private bool _dataWritten;
     private readonly List<ParquetRowGroupWriter> _openedWriters = new List<ParquetRowGroupWriter>();
 
-    /// <summary>
-    /// Type of compression to use, defaults to <see cref="CompressionMethod.Snappy"/>
-    /// </summary>
-    public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
-
-    /// <summary>
-    /// Level of compression
-    /// </summary>
-    public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
-
-    private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false)
+    private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? options = null, bool append = false)
        : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
         if(output == null)
             throw new ArgumentNullException(nameof(output));
@@ -41,13 +31,11 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
         if(!output.CanWrite)
             throw new ArgumentException("stream is not writeable", nameof(output));
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
-        _formatOptions = formatOptions ?? new ParquetOptions();
+        _options = options ?? new ParquetOptions();
     }
 
     /// <summary>
-    /// Creates an instance of parquet writer on top of a stream. dfaldkjf ;adkfj ad;lfja ;ldjflkjlkj kjflkjdlfj jlf
-    /// ldsjf ljdlsfjk adljflkdj fldjfljd ;sfj. lkdjf;j ;jfdsjk;afjdlkjfdlsjflkdjsfdsf. dlkj;lj; j;j ;lj
-    /// dslfkj;jf;ljkflj d;fljka ;djf ;jd f;laj dlfj f fdsljf lj.
+    /// Creates an instance of parquet writer on top of a stream.
     /// </summary>
     /// <param name="schema"></param>
     /// <param name="output">Writeable, seekable stream</param>
@@ -70,8 +58,7 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     public ParquetRowGroupWriter CreateRowGroup() {
         _dataWritten = true;
 
-        var writer = new ParquetRowGroupWriter(Stream, _footer!,
-           CompressionMethod, _formatOptions, CompressionLevel);
+        var writer = new ParquetRowGroupWriter(Stream, _footer!, _options);
 
         _openedWriters.Add(writer);
 
@@ -105,7 +92,7 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
         } else {
             if(_footer == null) {
                 // totalRowCount is set to 0 with expectation that it will be updated at the end of writing (see DisposeCore)
-                _footer = new ThriftFooter(_schema, 0, _formatOptions);
+                _footer = new ThriftFooter(_schema, 0, _options);
 
                 //file starts with magic
                 await WriteMagicAsync();
@@ -119,7 +106,7 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     }
 
     private void ValidateSchemasCompatible(ThriftFooter footer, ParquetSchema schema) {
-        ParquetSchema existingSchema = footer.CreateModelSchema(_formatOptions);
+        ParquetSchema existingSchema = footer.CreateModelSchema(_options);
 
         if(!schema.Equals(existingSchema)) {
             string reason = schema.GetNotEqualsMessage(existingSchema, "appending", "existing");

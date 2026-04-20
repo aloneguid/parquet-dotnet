@@ -90,36 +90,30 @@ static partial class DeltaBinaryPackedEncoder {
         if(typeof(T) == typeof(int)) {
             ReadOnlySpan<int> span = data.AsSpan<T, int>();
             EncodeInt(span, destination, 1024, 32);
-            if(stats != null)
-                ParquetPlainEncoder.FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(typeof(T) == typeof(long)) {
             ReadOnlySpan<long> span = data.AsSpan<T, long>();
             EncodeLong(span, destination, 1024, 32);
-            if(stats != null)
-                ParquetPlainEncoder.FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(typeof(T) == typeof(short)) {
             ReadOnlySpan<short> span = data.AsSpan<T, short>();
             EncodeShort(span, destination, 1024, 32);
-            if(stats != null)
-                ParquetPlainEncoder.FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(typeof(T) == typeof(ushort)) {
             ReadOnlySpan<ushort> span = data.AsSpan<T, ushort>();
             EncodeUshort(span, destination, 1024, 32);
-            if(stats != null)
-                ParquetPlainEncoder.FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(typeof(T) == typeof(uint)) {
             ReadOnlySpan<uint> span = data.AsSpan<T, uint>();
             EncodeUint(span, destination, 1024, 32);
-            if(stats != null)
-                ParquetPlainEncoder.FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(typeof(T) == typeof(ulong)) {
             ReadOnlySpan<ulong> span = data.AsSpan<T, ulong>();
             if(!CanEncodeULong(span)) {
                 throw new NotSupportedException($"ulong values exceed long.MaxValue range and cannot be encoded with {Encoding.DELTA_BINARY_PACKED}. Use plain encoding instead.");
             }
             EncodeUlong(span, destination, 1024, 32);
-            if(stats != null)
-                ParquetPlainEncoder.FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else {
             throw new NotSupportedException($"type {typeof(T)} is not supported in {Encoding.DELTA_BINARY_PACKED}");
         }

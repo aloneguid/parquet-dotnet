@@ -18,8 +18,6 @@ class DataColumnWriter {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
     private readonly SchemaElement _schemaElement;
-    private readonly CompressionMethod _compressionMethod;
-    private readonly CompressionLevel _compressionLevel;
     private readonly Dictionary<string, string>? _keyValueMetadata;
     private readonly ParquetOptions _options;
     private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
@@ -28,15 +26,11 @@ class DataColumnWriter {
        Stream stream,
        ThriftFooter footer,
        SchemaElement schemaElement,
-       CompressionMethod compressionMethod,
        ParquetOptions options,
-       CompressionLevel compressionLevel,
        Dictionary<string, string>? keyValueMetadata) {
         _stream = stream;
         _footer = footer;
         _schemaElement = schemaElement;
-        _compressionMethod = compressionMethod;
-        _compressionLevel = compressionLevel;
         _keyValueMetadata = keyValueMetadata;
         _options = options;
         _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
@@ -49,7 +43,7 @@ class DataColumnWriter {
         CancellationToken cancellationToken) where T : struct {
         // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
         ColumnChunk chunk = _footer.CreateColumnChunk(
-            _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, wc.NumValues,
+            _options.CompressionMethod, _stream, _schemaElement.Type!.Value, fullPath, wc.NumValues,
             _keyValueMetadata);
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
@@ -100,7 +94,7 @@ class DataColumnWriter {
 
         int uncompressedLength = (int)uncompressedData.Length;
         using IMemoryOwner<byte> pageData = await Compressor.Instance.CompressAsync(
-            _compressionMethod, _compressionLevel, uncompressedData);
+            _options.CompressionMethod, _options.CompressionLevel, uncompressedData);
         int compressedLength = pageData.Memory.Length;
 
         ph.UncompressedPageSize = uncompressedLength;

@@ -437,12 +437,10 @@ public class ParquetWriterTest : TestBase {
         var str = new DataField<string>("s");
         using var ms = new MemoryStream();
 
-        var options = new ParquetOptions();
+        var options = new ParquetOptions { CompressionMethod = CompressionMethod.None };
         options.ColumnEncodingHints[str.Path.ToString()] = EncodingHint.Dictionary;
 
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms, options)) {
-            writer.CompressionMethod = CompressionMethod.None;
-
             var strings = new List<string>();
             strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
             strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));
@@ -462,8 +460,7 @@ public class ParquetWriterTest : TestBase {
     public async Task Dictionary_encoding_can_be_turned_off() {
         var str = new DataField<string>("s");
         using var ms = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms)) {
-            writer.CompressionMethod = CompressionMethod.None;
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(str), ms, new ParquetOptions { CompressionMethod = CompressionMethod.None })) {
             var strings = new List<string>();
             strings.AddRange(Enumerable.Repeat("Please consider reporting this to the maintainers", 10000));
             strings.AddRange(Enumerable.Repeat("UnsupportedOperationException indicates that the requested operation cannot be performed", 10000));

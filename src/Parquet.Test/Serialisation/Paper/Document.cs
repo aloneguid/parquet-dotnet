@@ -74,9 +74,9 @@ class Document {
                         new DataField<string>("Url")
                     )));
 
-    public static object[] RawColumns {
+    public static RawColumnData[] RawColumns {
         get {
-            return new object[] {
+            return new RawColumnData[] {
                 CreateRawColumnData(new long[] { 10, 20 }),
 
                 // Links/Backwards

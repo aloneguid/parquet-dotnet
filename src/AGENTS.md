@@ -22,3 +22,4 @@
 - Guide users through creating unit tests.
 - Do not emit "Act", "Arrange" or "Assert" comments.
 - Copy existing style in nearby files for test method names and capitalization.
+- Prefers individual `[Fact]` tests instead of `[Theory]` in test classes where edge cases become too complex or opaque.

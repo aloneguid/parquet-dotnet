@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Parquet;
+﻿namespace Parquet;
 
 /// <summary>
 /// Encoding hint per column. This should be used from <see cref="ParquetOptions"/>

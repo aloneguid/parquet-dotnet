@@ -47,102 +47,87 @@ static class ParquetPlainEncoder {
         } else if(t == typeof(byte)) {
             ReadOnlySpan<byte> span = sourceSpan.AsSpan<T, byte>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(sbyte)) {
             ReadOnlySpan<sbyte> span = sourceSpan.AsSpan<T, sbyte>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(short)) {
             ReadOnlySpan<short> span = sourceSpan.AsSpan<T, short>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(ushort)) {
             ReadOnlySpan<ushort> span = sourceSpan.AsSpan<T, ushort>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(int)) {
             ReadOnlySpan<int> span = sourceSpan.AsSpan<T, int>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(uint)) {
             ReadOnlySpan<uint> span = sourceSpan.AsSpan<T, uint>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(long)) {
             ReadOnlySpan<long> span = sourceSpan.AsSpan<T, long>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(ulong)) {
             ReadOnlySpan<ulong> span = sourceSpan.AsSpan<T, ulong>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(BigInteger)) {
             ReadOnlySpan<BigInteger> span = sourceSpan.AsSpan<T, BigInteger>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(decimal)) {
             ReadOnlySpan<decimal> span = sourceSpan.AsSpan<T, decimal>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(BigDecimal)) {
             ReadOnlySpan<BigDecimal> span = sourceSpan.AsSpan<T, BigDecimal>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(double)) {
             ReadOnlySpan<double> span = sourceSpan.AsSpan<T, double>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(float)) {
             ReadOnlySpan<float> span = sourceSpan.AsSpan<T, float>();
             Encode(span, destination);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(DateTime)) {
             ReadOnlySpan<DateTime> span = sourceSpan.AsSpan<T, DateTime>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(DateOnly)) {
             ReadOnlySpan<DateOnly> span = sourceSpan.AsSpan<T, DateOnly>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(TimeOnly)) {
             ReadOnlySpan<TimeOnly> span = sourceSpan.AsSpan<T, TimeOnly>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(TimeSpan)) {
             ReadOnlySpan<TimeSpan> span = sourceSpan.AsSpan<T, TimeSpan>();
             Encode(span, destination, tse);
-            if(stats != null)
-                FillStats(span, stats);
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(Interval)) {
             ReadOnlySpan<Interval> span = sourceSpan.AsSpan<T, Interval>();
             Encode(span, destination);
-            // no stats, maybe todo
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(ReadOnlyMemory<char>)) {
             ReadOnlySpan<ReadOnlyMemory<char>> span = sourceSpan.AsSpan<T, ReadOnlyMemory<char>>();
             Encode(span, destination);
-            // todo: minmax
+            StatsCompute.Compute(span, stats);
         } else if(t == typeof(ReadOnlyMemory<byte>)) {
             ReadOnlySpan<ReadOnlyMemory<byte>> span = sourceSpan.AsSpan<T, ReadOnlyMemory<byte>>();
             Encode(span, destination);
+            // todo: minmax
         } else if(t == typeof(Guid)) {
             ReadOnlySpan<Guid> span = sourceSpan.AsSpan<T, Guid>();
             Encode(span, destination);
+            StatsCompute.Compute(span, stats);
         } else {
             throw new NotSupportedException($"no PLAIN encoder exists for {typeof(T)}");
         }
@@ -378,6 +363,9 @@ static class ParquetPlainEncoder {
         else if(t == typeof(Interval)) {
             result = ((Interval)value).GetBytes();
             return true;
+        } else if(t == typeof(Guid)) {
+            result = ((Guid)value).ToByteArray();
+            return true;
         } else if(t == typeof(string)) {
             result = System.Text.Encoding.UTF8.GetBytes((string)value);
             return true;
@@ -592,7 +580,6 @@ static class ParquetPlainEncoder {
             long vl;
             for(int i = 0; i < fullVectors; i++) {
                 Vector512<byte> isFalse = Vector512.Equals(Vector512.LoadUnsafe(ref current), Vector512<byte>.Zero);
-
                 vl = (long)(~isFalse.ExtractMostSignificantBits());
                 destination.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref vl, 1)));
                 current = ref Unsafe.Add(ref current, Vector512<byte>.Count);
@@ -1473,127 +1460,6 @@ static class ParquetPlainEncoder {
 
     private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
         destination.Write(bytes);
-    }
-
-    #endregion
-
-    #region [ Statistics ]
-
-    /**
-     * Statistics will make certain types of queries on Parquet files much faster.
-     * The problem with statistics is they are very expensive to calculate, in particular
-     * exact number of distinct values.
-     * Min, Max and NullCount are relatively cheap though.
-     * To calculate distincts, we used to use HashSet and it's really slow, taking more than 50% of the whole encoding process.
-     * HyperLogLog is slower than HashSet though https://github.com/saguiitay/CardinalityEstimation .
-     */
-
-    public static void FillStats(ReadOnlySpan<byte> data, DataColumnStatistics stats) {
-        data.MinMax(out byte min, out byte max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<sbyte> data, DataColumnStatistics stats) {
-        data.MinMax(out sbyte min, out sbyte max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<short> data, DataColumnStatistics stats) {
-        data.MinMax(out short min, out short max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<ushort> data, DataColumnStatistics stats) {
-        data.MinMax(out ushort min, out ushort max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<int> data, DataColumnStatistics stats) {
-        data.MinMax(out int min, out int max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<uint> data, DataColumnStatistics stats) {
-        data.MinMax(out uint min, out uint max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<long> data, DataColumnStatistics stats) {
-        data.MinMax(out long min, out long max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<ulong> data, DataColumnStatistics stats) {
-        data.MinMax(out ulong min, out ulong max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<BigInteger> data, DataColumnStatistics stats) {
-        data.MinMax(out BigInteger min, out BigInteger max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<decimal> data, DataColumnStatistics stats) {
-        data.MinMax(out decimal min, out decimal max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<BigDecimal> data, DataColumnStatistics stats) {
-        data.MinMax(out BigDecimal min, out BigDecimal max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<double> data, DataColumnStatistics stats) {
-        data.MinMax(out double min, out double max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<float> data, DataColumnStatistics stats) {
-        data.MinMax(out float min, out float max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<DateTime> data, DataColumnStatistics stats) {
-        data.MinMax(out DateTime min, out DateTime max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<DateOnly> data, DataColumnStatistics stats) {
-        data.MinMax(out DateOnly min, out DateOnly max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<TimeOnly> data, DataColumnStatistics stats) {
-        data.MinMax(out TimeOnly min, out TimeOnly max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<TimeSpan> data, DataColumnStatistics stats) {
-        data.MinMax(out TimeSpan min, out TimeSpan max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
-    }
-
-    public static void FillStats(ReadOnlySpan<string> data, DataColumnStatistics stats) {
-        data.MinMax(out string? min, out string? max);
-        stats.MinValue = min;
-        stats.MaxValue = max;
     }
 
     #endregion

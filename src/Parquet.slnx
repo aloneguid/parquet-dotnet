@@ -6,7 +6,6 @@
     <File Path="../.editorconfig" />
     <File Path="../docs/README.md" />
     <File Path="../docs/release-notes.md" />
-    <File Path=".github/copilot-instructions.md" />
     <File Path="AGENTS.md" />
   </Folder>
   <Folder Name="/Solution Items/.github/">

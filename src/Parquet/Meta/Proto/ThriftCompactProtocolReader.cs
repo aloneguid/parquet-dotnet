@@ -210,7 +210,7 @@ class ThriftCompactProtocolReader {
                 }
                 break;
             default:
-                throw new InvalidOperationException($"don't know how to skip type {compactType}");
+                throw new ThriftProtocolException($"Invalid data in Thrift header. File is most likely corrupt (unexpected data type {compactType}).");
         }
     }
 }

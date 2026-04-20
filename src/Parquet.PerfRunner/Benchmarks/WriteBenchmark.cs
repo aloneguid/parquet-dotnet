@@ -36,8 +36,7 @@ public class WriteBenchmark : BenchmarkBase {
     [Benchmark]
     public async Task ParquetNet() {
         using var ms = new MemoryStream();
-        await using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms);
-        pw.CompressionMethod = CompressionMethod.None;
+        await using ParquetWriter pw = await ParquetWriter.CreateAsync(_schema!, ms, new ParquetOptions { CompressionMethod = CompressionMethod.None });
         using ParquetRowGroupWriter rgw = pw.CreateRowGroup();
 
         if(DataType == typeof(int)) {

@@ -30,8 +30,7 @@ public class CompressionTest : TestBase {
         int testValue = 10;
 
         // write value
-        await using(ParquetWriter w = await ParquetWriter.CreateAsync(schema, ms)) {
-            w.CompressionMethod = compressionMethod;
+        await using(ParquetWriter w = await ParquetWriter.CreateAsync(schema, ms, new ParquetOptions { CompressionMethod = compressionMethod })) {
             using ParquetRowGroupWriter rgw = w.CreateRowGroup();
             await rgw.WriteAsync<int>(schema.DataFields[0], new[] { testValue });
         }

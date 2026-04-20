@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Serialization.Dremel;
 using Type = System.Type;
@@ -95,11 +96,6 @@ public static class ParquetSerializer {
             options?.ParquetOptions,
             append, cancellationToken)) {
 
-            if(options != null) {
-                writer.CompressionMethod = options.CompressionMethod;
-                writer.CompressionLevel = options.CompressionLevel;
-            }
-
             if(options?.RowGroupSize != null) {
                 int rgs = options.RowGroupSize.Value;
                 if(rgs < 1)
@@ -135,11 +131,6 @@ public static class ParquetSerializer {
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination,
             options?.ParquetOptions,
             append, cancellationToken)) {
-
-            if(options != null) {
-                writer.CompressionMethod = options.CompressionMethod;
-                writer.CompressionLevel = options.CompressionLevel;
-            }
 
             if(options?.RowGroupSize != null) {
                 int rgs = options.RowGroupSize.Value;
@@ -418,11 +409,11 @@ public static class ParquetSerializer {
 
 
             // this needs reflected schema field due to it containing important schema adjustments
-            object rawColumnDataOfT;
+            RawColumnData rawColumnDataOfT;
             progress?.DataFieldReadStarted?.Invoke(fasm.Field);
 
             try {
-                rawColumnDataOfT = await rg.ReadRawColumnDataAsObjectAsync(readerField, cancellationToken);
+                rawColumnDataOfT = await rg.ReadRawColumnDataBaseAsync(readerField, cancellationToken);
             } catch(Exception ex) {
                 progress?.DataFieldReadFinished?.Invoke(fasm.Field, ex);
                 throw new InvalidDataException($"failed to read column '{fasm.Field.Path}'", ex);

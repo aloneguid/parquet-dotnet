@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -9,6 +10,17 @@ namespace Parquet;
 /// Parquet options
 /// </summary>
 public class ParquetOptions {
+
+    /// <summary>
+    /// Compression method to use when writing, defaults to <see cref="CompressionMethod.Snappy"/>
+    /// </summary>
+    public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Snappy;
+
+    /// <summary>
+    /// Compression level to use when writing, defaults to <see cref="CompressionLevel.SmallestSize"/>. The actual
+    /// physical compression level varies based on compression algorithm.
+    /// </summary>
+    public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
 
     /// <summary>
     /// When true byte arrays will be treated as UTF-8 strings on read

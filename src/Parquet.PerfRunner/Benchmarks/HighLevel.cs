@@ -54,8 +54,7 @@ public class HighLevel {
 
     private async Task<MemoryStream> MakeFile(ParquetSchema schema, int?[] values) {
         var ms = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-            writer.CompressionMethod = CM;
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, new ParquetOptions { CompressionMethod = CM })) {
             using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                 await groupWriter.WriteAsync<int>(schema.DataFields[0], values);
             }
@@ -65,8 +64,7 @@ public class HighLevel {
 
     private async Task<MemoryStream> Run(ParquetSchema schema, int?[] values) {
         var r = new MemoryStream();
-        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, r)) {
-            writer.CompressionMethod = CM;
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, r, new ParquetOptions { CompressionMethod = CM })) {
             // create a new row group in the file
             using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
                 await groupWriter.WriteAsync<int>(schema.DataFields.First(), values);

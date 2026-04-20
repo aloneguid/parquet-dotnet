@@ -82,8 +82,7 @@ internal class DataTypes {
 
     public async Task NullableInts() {
         using var ms = new MemoryStream();
-        await using ParquetWriter w = await ParquetWriter.CreateAsync(_nullableIntsSchema, ms);
-        w.CompressionMethod = CompressionMethod.None;
+        await using ParquetWriter w = await ParquetWriter.CreateAsync(_nullableIntsSchema, ms, new ParquetOptions { CompressionMethod = CompressionMethod.None });
         using ParquetRowGroupWriter rgw = w.CreateRowGroup();
         await rgw.WriteAsync<int>(_nullableIntsSchema.DataFields[0], _nullableInts);
     }
@@ -94,8 +93,7 @@ internal class DataTypes {
 
     public async Task RandomStrings() {
         using var ms = new MemoryStream();
-        await using ParquetWriter w = await ParquetWriter.CreateAsync(_nullableStringSchema, ms);
-        w.CompressionMethod = CompressionMethod.None;
+        await using ParquetWriter w = await ParquetWriter.CreateAsync(_nullableStringSchema, ms, new ParquetOptions { CompressionMethod = CompressionMethod.None });
                 using ParquetRowGroupWriter rgw = w.CreateRowGroup();
         await rgw.WriteAsync(_nullableStringSchema.DataFields[0], _nullableStrings);
     }
