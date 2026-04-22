@@ -148,10 +148,11 @@ class DataColumnWriter {
 
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
-            bool deltaEncode = wc.Field.IsDeltaEncodable && _options.GetEncodingHint(wc.Field) == EncodingHint.DeltaBinaryPacked && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
+            bool deltaEncode = _options.GetEncodingHint(wc.Field) == EncodingHint.DeltaBinaryPacked && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
+            bool byteSplitStreamEncode = _options.GetEncodingHint(wc.Field) == EncodingHint.ByteSplitStream && ByteStreamSplitEncoder.IsSupported(typeof(T));
 
             // data page Num_values also does include NULLs
-            PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, out DataPageHeader dph);
+            PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, byteSplitStreamEncode, out DataPageHeader dph);
             r.Pages.Add(ph);
 
             if(wc.HasRepetitionLevels) {
@@ -169,6 +170,8 @@ class DataColumnWriter {
             } else {
                 if(deltaEncode) {
                     DeltaBinaryPackedEncoder.Encode(wc.Values, ms, wc.Statistics);
+                } else if(byteSplitStreamEncode) {
+                    ByteStreamSplitEncoder.Encode(wc.Values, ms);
                 } else {
                     ParquetPlainEncoder.Encode(wc.Values,
                         ms,

@@ -426,6 +426,19 @@ IList<AfterRename> data3 = await ParquetSerializer.DeserializeAsync<AfterRename>
 - **Statistics** can be read on a particular row group at zero cost by calling to `GetStatistics(DataField field)`.
 - You can find other useful options in `ParquetOptions` class that can always be supplied to reader, writer, and serializer.
 
+### Encoding hints
+
+When writing, default encoding may not be always what you want, therefore you can give hints to parquet writer on which encoding to use for which column. Any method that accepts `ParquetOptions` can have hints set. For instance, to use `BYTE_STREAM_SPLIT` encoding on `id` column you can do the following:
+
+```csharp
+var options = new ParquetOptions();
+options.ColumnEncodingHints["id"] = EncodingHint.ByteSplitStream;
+await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, options: options)) {
+    using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
+    await groupWriter.WriteAsync<int>(dataField, Enumerable.Range(0, 256).ToArray());
+}
+```
+
 ## Appending to files
 
 Pseudo appending to files is supported, however it's worth keeping in mind that *row groups are immutable* by design, therefore the only way to append is to create a new row group at the end of the file. It's worth mentioning that small row groups make data compression and reading extremely ineffective, therefore the larger your row group the better.

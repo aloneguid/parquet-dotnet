@@ -7,7 +7,7 @@ using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test;
+namespace Parquet.Test.Encodings;
 
 public class DictionaryEncodingTest : TestBase {
 
@@ -41,7 +41,7 @@ public class DictionaryEncodingTest : TestBase {
 
         var options = new ParquetOptions();
         options.ColumnEncodingHints["string"] = EncodingHint.Dictionary;
-        await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, formatOptions: options)) {
+        await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, options: options)) {
             using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
             await groupWriter.WriteAsync<ReadOnlyMemory<char>>(dataField, data.Select(x => x.AsNullableReadOnlyMemory()).ToArray());
         }

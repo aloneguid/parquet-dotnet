@@ -39,15 +39,15 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     /// </summary>
     /// <param name="schema"></param>
     /// <param name="output">Writeable, seekable stream</param>
-    /// <param name="formatOptions">Additional options</param>
+    /// <param name="options">Additional options</param>
     /// <param name="append"></param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="ArgumentNullException">Output is null.</exception>
     /// <exception cref="ArgumentException">Output stream is not writeable</exception>
     public static async Task<ParquetWriter> CreateAsync(
-        ParquetSchema schema, Stream output, ParquetOptions? formatOptions = null, bool append = false,
+        ParquetSchema schema, Stream output, ParquetOptions? options = null, bool append = false,
         CancellationToken cancellationToken = default) {
-        var writer = new ParquetWriter(schema, output, formatOptions, append);
+        var writer = new ParquetWriter(schema, output, options, append);
         await writer.PrepareFileAsync(append, cancellationToken);
         return writer;
     }

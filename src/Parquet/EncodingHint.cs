@@ -17,5 +17,10 @@ public enum EncodingHint {
     /// <summary>
     /// Delta binary packed encoding can be applied to INT32 and INT64 fields.
     /// </summary>
-    DeltaBinaryPacked
+    DeltaBinaryPacked,
+
+    /// <summary>
+    /// Byte split stream encoding, supported FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY.
+    /// </summary>
+    ByteSplitStream
 }

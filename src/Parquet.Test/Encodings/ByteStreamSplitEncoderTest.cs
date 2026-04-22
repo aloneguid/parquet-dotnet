@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Meta;
 using Parquet.Schema;
 using Xunit;
 
@@ -25,7 +28,7 @@ public class ByteStreamSplitEncoderTest : TestBase {
         byte[] bytes = ToByteArray("AA00A3BB11B4CC22C5DD33D6");
 
         float[] dest = new float[3];
-        ByteStreamSplitEncoder.DecodeByteStreamSplit(bytes, dest);
+        ByteStreamSplitEncoder.Decode(bytes, dest);
         for(int i = 0; i < 3; i++) {
             Assert.Equal(expected[i], dest[i]);
         }
@@ -62,10 +65,10 @@ public class ByteStreamSplitEncoderTest : TestBase {
         float[] source = [FromHex("AABBCCDD"), FromHex("00112233"), FromHex("A3B4C5D6")];
         byte[] expected = ToByteArray("AA00A3BB11B4CC22C5DD33D6");
 
-        byte[] dest = new byte[12];
-        ByteStreamSplitEncoder.EncodeByteStreamSplit(source, dest);
+        using var ms = new MemoryStream();
+        ByteStreamSplitEncoder.Encode(source, ms);
 
-        Assert.Equal(expected, dest);
+        Assert.Equal(expected, ms.ToArray());
 
         float FromHex(string hex) {
             Span<byte> b = stackalloc byte[4];
@@ -161,4 +164,31 @@ public class ByteStreamSplitEncoderTest : TestBase {
             Assert.Equal(5.5f, dataValues[4]);
         }
     }
+
+    [Fact]
+    public async Task EncodingHint_respected() {
+        var dataField = new DataField<int>("id");
+        var parquetSchema = new ParquetSchema(dataField);
+
+        using var stream = new MemoryStream();
+
+        var options = new ParquetOptions();
+        options.ColumnEncodingHints["id"] = EncodingHint.ByteSplitStream;
+        await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, options: options)) {
+            using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
+            await groupWriter.WriteAsync<int>(dataField, Enumerable.Range(0, 256).ToArray());
+        }
+
+        await using ParquetReader rdr = await ParquetReader.CreateAsync(stream);
+        ParquetRowGroupReader rgr = rdr.OpenRowGroupReader(0);
+        using RawColumnData<int> col = await rgr.ReadRawColumnDataAsync<int>(dataField);
+
+        Assert.Equal(Enumerable.Range(0, 256).ToArray(), col.Values.ToArray());
+
+        // check encoding
+        ColumnChunk? meta = rgr.GetMetadata(dataField);
+        Assert.NotNull(meta);
+        Assert.Contains(Encoding.BYTE_STREAM_SPLIT, meta.MetaData!.Encodings);
+    }
+
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using CommunityToolkit.HighPerformance.Buffers;
@@ -58,12 +59,12 @@ public class EncodingBenchmarks : BenchmarkBase {
 
     [Benchmark]
     public void DecodeByteStreamSplit() {
-        ByteStreamSplitEncoder.DecodeByteStreamSplitOnCpu(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
+        ByteStreamSplitEncoder.DecodeOnCpu(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
     }
 
     [Benchmark]
     public void DecodeByteStreamSplitHwx() {
-        ByteStreamSplitEncoder.DecodeByteStreamSplitHwx(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
+        ByteStreamSplitEncoder.DecodeHwx(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
     }
 
 
@@ -76,7 +77,10 @@ public class EncodingBenchmarks : BenchmarkBase {
 
         var byteOwner = MemoryOwner<byte>.Allocate(count * sizeof(float));
         Span<byte> byteSpan = byteOwner.Memory.Span;
-        ByteStreamSplitEncoder.EncodeByteStreamSplit(floatSpan, byteSpan);
+
+        using var ms = new MemoryStream(count * sizeof(float));
+        ByteStreamSplitEncoder.Encode(floatSpan, ms);
+        ms.GetBuffer().AsSpan(0, (int)ms.Length).CopyTo(byteSpan);
 
         floatOwner.Dispose();
         return byteOwner;

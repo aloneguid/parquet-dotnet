@@ -142,8 +142,6 @@ public class DataField : Field, ICloneable {
         }
     }
 
-    internal bool IsDeltaEncodable => DeltaBinaryPackedEncoder.IsSupported(ClrType);
-
     /// <inheritdoc/>
     public override string ToString() =>
         $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";

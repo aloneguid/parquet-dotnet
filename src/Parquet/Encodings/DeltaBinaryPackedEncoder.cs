@@ -22,26 +22,6 @@ static partial class DeltaBinaryPackedEncoder {
         t == typeof(short) || t == typeof(ushort) ||       // int32 compatible
         t == typeof(uint) || t == typeof(ulong);           // int64 compatible
 
-    /// <summary>
-    /// Determines whether the specified data can be encoded using delta binary packed encoding.
-    /// For ulong arrays, checks if all values are within the range of long.MaxValue.
-    /// </summary>
-    /// <param name="data">The input array to check</param>
-    /// <param name="offset">Starting offset in the array</param>
-    /// <param name="count">Number of elements to check</param>
-    /// <returns>True if the data can be delta encoded, false otherwise</returns>
-    public static bool CanEncode(Array data, int offset, int count) {
-        if(count == 0)
-            return true;
-
-        // Fast path for ulong overflow check
-        if(data.GetType() == typeof(ulong[])) {
-            return CanEncodeULongArray((ulong[])data, offset, count);
-        }
-
-        return IsSupported(data.GetType().GetElementType() ?? data.GetType());
-    }
-
     public static bool CanEncode<T>(ReadOnlySpan<T> data) where T : struct {
         if(data.IsEmpty)
             return false;

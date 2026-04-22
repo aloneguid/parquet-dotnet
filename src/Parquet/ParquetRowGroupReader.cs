@@ -268,7 +268,9 @@ public class ParquetRowGroupReader : IDisposable {
 
 
     /// <summary>
-    /// Returns data column statistics for a particular data field
+    /// Retrieves statistics stored as metadata inside the Parquet file,for a particular data field. Note that these
+    /// statistics are not guaranteed to be present, and even when they are present, they may not be reliable. Always
+    /// check for nulls and use with caution.
     /// </summary>
     /// <param name="field"></param>
     /// <returns></returns>

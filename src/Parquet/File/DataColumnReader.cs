@@ -295,7 +295,7 @@ class DataColumnReader {
                 break;
 
             case Encoding.BYTE_STREAM_SPLIT: {       // 9
-                    ByteStreamSplitEncoder.DecodeByteStreamSplit5(src, rc.ValuesToReadInto.Slice(0, totalValuesInPage));
+                    ByteStreamSplitEncoder.Decode(src, rc.ValuesToReadInto.Slice(0, totalValuesInPage));
                     rc.MarkValuesRead(totalValuesInPage);
                 }
                 break;

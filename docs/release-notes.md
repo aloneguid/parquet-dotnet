@@ -1,4 +1,4 @@
-# 6.0.0-pre.3
+# 6.0.0-pre.4
 
 ## Highlights
 
@@ -31,6 +31,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 - More APIs respect `CancellationToken` allowing you to cancel long-running parquet operations.
 - Add IsAdjustedToUTC property to TimeOnlyDataField, by @rferraton in #727.
 - `FileMerger` utililty is faster and more battle tested.
+- Added support for BYTE_SPLIT_STREAM encoding on write (#725).
 
 ## Bug fixes
 

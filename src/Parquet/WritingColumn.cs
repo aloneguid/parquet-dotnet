@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Schema;
@@ -7,17 +8,15 @@ using Parquet.Schema;
 namespace Parquet;
 
 /// <summary>
-/// Column that's being written. This class holds required data parts, including allocation of any extra buffers (they will be disposed of when this class is disposed).
+/// Column that's being written. This class holds required data parts, including allocation of any extra buffers (they
+/// will be disposed of when this class is disposed).
 /// </summary>
 class WritingColumn<T> : IDisposable where T : struct {
-    private static readonly ArrayPool<int> IntPool = ArrayPool<int>.Shared;
-    private static readonly ArrayPool<T> TPool = ArrayPool<T>.Shared;
-
-    private readonly T[]? _valuesBase;              // if values are owned, this is the array from pool, otherwise null. Only here to return it to pool if we own it.
-    private readonly ReadOnlyMemory<T> _values;     // may be owned
-    private readonly int[]? _definitionLevelsBase;  // if definition levels are owned, this is the array from pool, otherwise null. Only here to return it to pool if we own it.
-    private readonly ReadOnlyMemory<int>? _definitionLevels;      // may be owned
-    private readonly ReadOnlyMemory<int>? _repetitionLevels;      // never owned
+    private readonly IMemoryOwner<T>? _valuesOwner;                 // not null if values are owned by this class
+    private readonly ReadOnlyMemory<T> _values;                     // may be owned
+    private readonly IMemoryOwner<int>? _definitionLevelsOwner;     // not null if definition levels are owned by this class
+    private readonly ReadOnlyMemory<int>? _definitionLevels;        // may be owned
+    private readonly ReadOnlyMemory<int>? _repetitionLevels;        // never owned
     private IMemoryOwner<T>? _dictionary;
     private IMemoryOwner<int>? _dictionaryIndexes;
 
@@ -33,16 +32,16 @@ class WritingColumn<T> : IDisposable where T : struct {
 
         // Calculate number of nulls beforehand in a separate cycle in order to consume some memory (we know how much to allocate after that).
         // We can also build definition levels in the same cycle.
-        int[] definitionLevels = IntPool.Rent(nullableValues.Length);
-        Span<int> span = definitionLevels.AsSpan(0, nullableValues.Length);
+        IMemoryOwner<int> definitionLevelsOwner = MemoryOwner<int>.Allocate(nullableValues.Length);
+        Span<int> span = definitionLevelsOwner.Memory.Span;
         int nullCount = FillDefinionsAndCountNulls(field, nullableValues.Span, ref span);
 
         // fill non-nulls
         int valueCount = nullableValues.Length - nullCount;
-        T[] values = TPool.Rent(valueCount);
-        FillNonNullValues(nullableValues.Span, values);
+        IMemoryOwner<T> valuesOwner = MemoryOwner<T>.Allocate(valueCount);
+        FillNonNullValues(nullableValues.Span, valuesOwner.Memory.Span);
 
-        return new WritingColumn<T>(field, nullableValues.Length, values, values, definitionLevels, definitionLevels, repetitionLevels);
+        return new WritingColumn<T>(field, nullableValues.Length, valuesOwner.Memory, valuesOwner, definitionLevelsOwner.Memory, definitionLevelsOwner, repetitionLevels);
     }
 
     public static WritingColumn<T> NewWritingColumn(DataField field, ReadOnlyMemory<T> values, ReadOnlyMemory<int>? definitionLevels, ReadOnlyMemory<int>? repetitionLevels) {
@@ -100,26 +99,26 @@ class WritingColumn<T> : IDisposable where T : struct {
 
     private WritingColumn(DataField field,
         int numValues,
-        ReadOnlyMemory<T> values, T[]? valuesBase,
-        ReadOnlyMemory<int>? definitionLevels, int[]? definitionLevelsBase,
+        ReadOnlyMemory<T> values, IMemoryOwner<T>? valuesOwner,
+        ReadOnlyMemory<int>? definitionLevels, IMemoryOwner<int>? definitionLevelsOwner,
         ReadOnlyMemory<int>? repetitionLevels) {
 
         NumValues = numValues;
         Field = field;
         _values = values;
-        _valuesBase = valuesBase;
+        _valuesOwner = valuesOwner;
         _definitionLevels = definitionLevels;
-        _definitionLevelsBase = definitionLevelsBase;
+        _definitionLevelsOwner = definitionLevelsOwner;
         _repetitionLevels = repetitionLevels;
 
         if(field.IsArray && _definitionLevels == null) {
             // special use case for legacy arrays
-            _definitionLevelsBase = IntPool.Rent(numValues);
-            _definitionLevels = _definitionLevelsBase.AsMemory(0, numValues);
+            _definitionLevelsOwner = MemoryOwner<int>.Allocate(numValues);
+            _definitionLevels = _definitionLevelsOwner.Memory;
             // fill all levels with MaxDefinitionLevel quickly
             int maxDefLevel = field.MaxDefinitionLevel;
             for(int i = 0; i < numValues; i++) {
-                _definitionLevelsBase[i] = maxDefLevel;
+                _definitionLevelsOwner.Memory.Span[i] = maxDefLevel;
             }
         }
 
@@ -127,7 +126,8 @@ class WritingColumn<T> : IDisposable where T : struct {
     }
 
     /// <summary>
-    /// Total number of values in this column. If column is nullable, this includes nulls. If column is repeated, this includes all values in all repetitions.
+    /// Total number of values in this column. If column is nullable, this includes nulls. If column is repeated, this
+    /// includes all values in all repetitions.
     /// </summary>
     public int NumValues { get; }
 
@@ -224,12 +224,12 @@ class WritingColumn<T> : IDisposable where T : struct {
     }
 
     public void Dispose() {
-        if(_definitionLevelsBase != null) {
-            IntPool.Return(_definitionLevelsBase);
+        if(_definitionLevelsOwner != null) {
+            _definitionLevelsOwner.Dispose();
         }
 
-        if(_valuesBase != null) {
-            TPool.Return(_valuesBase);
+        if(_valuesOwner != null) {
+            _valuesOwner.Dispose();
         }
 
         _dictionaryIndexes?.Dispose();

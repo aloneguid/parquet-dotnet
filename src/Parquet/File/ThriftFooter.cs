@@ -155,11 +155,23 @@ class ThriftFooter {
         return chunk;
     }
 
-    public PageHeader CreateDataPage(int valueCount, bool isDictionary, bool isDeltaEncodable, out DataPageHeader dph) {
+    public PageHeader CreateDataPage(int valueCount, bool isDictionary,
+        bool isDeltaEncodable,
+        bool byteSplitStreamEncode,
+        out DataPageHeader dph) {
+
+        Encoding enc = isDictionary
+            ? Encoding.PLAIN_DICTIONARY
+            : Encoding.PLAIN;
+
+        if(isDeltaEncodable) {
+            enc = Encoding.DELTA_BINARY_PACKED;
+        } else if(byteSplitStreamEncode) {
+            enc = Encoding.BYTE_STREAM_SPLIT;
+        }
+
         dph = new DataPageHeader {
-            Encoding = isDictionary
-                    ? Encoding.PLAIN_DICTIONARY
-                    : isDeltaEncodable ? Encoding.DELTA_BINARY_PACKED : Encoding.PLAIN,
+            Encoding = enc,
             DefinitionLevelEncoding = Encoding.RLE,
             RepetitionLevelEncoding = Encoding.RLE,
             NumValues = valueCount,
