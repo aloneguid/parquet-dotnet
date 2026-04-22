@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -18,6 +19,7 @@ namespace Parquet.Utils;
 public class FileMerger : IAsyncDisposable {
 
     private const string ParquetFileExtension = ".parquet";
+    private const int DefaultMergeRowGroupSize = 1_000_000;
 
     private readonly List<FileInfo> _inputFiles = new();
     private readonly List<Stream> _inputStreams = new();
@@ -109,7 +111,6 @@ public class FileMerger : IAsyncDisposable {
         }
     }
 
-    /*
     /// <summary>
     /// Merges all the row groups in the files into a single row group in the resulting file. If source files have more
     /// than one row group, they will be stil merged into one row group in the destination file, therefore you can use
@@ -119,12 +120,32 @@ public class FileMerger : IAsyncDisposable {
     /// <param name="options"></param>
     /// <param name="cancellationToken"></param>
     /// <param name="metadata"></param>
-    /// <param name="compressionMethod"></param>
+    /// <param name="rowGroupSize">Maximum number of elements allowed per merged field buffer.</param>
     /// <returns></returns>
-    public async Task MergeRowGroups(Stream destination,
+    public Task MergeRowGroups(Stream destination,
         ParquetOptions? options = null,
         CancellationToken cancellationToken = default,
-        Dictionary<string, string>? metadata = null) {
+        Dictionary<string, string>? metadata = null,
+        int rowGroupSize = DefaultMergeRowGroupSize) {
+        return MergeRowGroupsAsync(destination, options, cancellationToken, metadata, rowGroupSize);
+    }
+
+    /// <summary>
+    /// Merges all the row groups in the files into a single row group in the resulting file. If source files have more
+    /// than one row group, they will be stil merged into one row group in the destination file, therefore you can use
+    /// this method even on a single file if you want to just merge all the row groups into one.
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <param name="metadata"></param>
+    /// <param name="rowGroupSize">Maximum number of elements allowed per merged field buffer.</param>
+    /// <returns></returns>
+    public async Task MergeRowGroupsAsync(Stream destination,
+        ParquetOptions? options = null,
+        CancellationToken cancellationToken = default,
+        Dictionary<string, string>? metadata = null,
+        int rowGroupSize = DefaultMergeRowGroupSize) {
 
         if(_inputStreams.Count == 0) {
             throw new InvalidOperationException("No files to merge");
@@ -134,20 +155,19 @@ public class FileMerger : IAsyncDisposable {
             throw new ArgumentException("Destination stream must be writable", nameof(destination));
         }
 
-        // get the schema from the first file, it will be used to validate the rest of the files
-        ParquetSchema schema = await ParquetReader.ReadSchemaAsync(_inputStreams[0]);
-
-        // create writer for the destination file
-        await using ParquetWriter destWriter = await ParquetWriter.CreateAsync(schema, destination, options, false, cancellationToken);
-
-        if(metadata != null) {
-            destWriter.CustomMetadata = metadata;
+        if(rowGroupSize <= 0) {
+            throw new ArgumentOutOfRangeException(nameof(rowGroupSize), "Row group size must be greater than zero.");
         }
 
-        // We will open all of the files to utilise random access. They need to be opened sequentially one by one,
-        // to avoid an error of not disposing successfully opened files in case not all of them are valid.
+        foreach(Stream inputStream in _inputStreams) {
+            if(!inputStream.CanSeek) {
+                throw new IOException("Input streams must be seekable for row group merge operations.");
+            }
 
-        var readers = new List<ParquetReader>(_inputStreams.Count);
+            inputStream.Position = 0;
+        }
+
+        List<ParquetReader> readers = new List<ParquetReader>(_inputStreams.Count);
 
         try {
             foreach(Stream s in _inputStreams) {
@@ -155,40 +175,144 @@ public class FileMerger : IAsyncDisposable {
                 readers.Add(reader);
             }
 
-            // merge logic
-
-            // create a row group writer for the destination file
-            using ParquetRowGroupWriter wrg = destWriter.CreateRowGroup();
-
-            // as merging is memory intenstive, we will read and write column by column
-            // this way we will not load entire row group into memory
-
-            foreach(DataField dataField in schema.DataFields) {
-
-                var dataColumns = new List<DataColumn>();
-
-                // read all data columns
-                foreach(ParquetReader reader in readers) {
-                    for(int ig = 0; ig < reader.RowGroupCount; ig++) {
-                        using ParquetRowGroupReader rrg = reader.OpenRowGroupReader(ig);
-
-                        DataColumn dataColumn = await rrg.ReadColumnAsync(dataField, cancellationToken);
-                        dataColumns.Add(dataColumn);
-                    }
-                }
-
-                // merge and write to the destination
-                DataColumn mergedColumn = DataColumn.Concat(dataColumns);
-                await wrg.WriteColumnAsync(mergedColumn, cancellationToken);
+            if(readers.Sum(r => r.RowGroupCount) == 0) {
+                throw new InvalidOperationException("Input files do not contain any row groups to merge.");
             }
 
+            ParquetSchema schema = readers[0].Schema;
+            if(schema.DataFields.Length == 0) {
+                throw new InvalidOperationException("Input schema does not contain data fields to merge.");
+            }
+
+            // create writer for the destination file
+            await using ParquetWriter destWriter = await ParquetWriter.CreateAsync(schema, destination, options, false, cancellationToken);
+
+            if(metadata != null) {
+                destWriter.CustomMetadata = metadata;
+            }
+
+            using ParquetRowGroupWriter wrg = destWriter.CreateRowGroup();
+
+            foreach(DataField dataField in schema.DataFields) {
+                await MergeFieldAsync(dataField, readers, wrg, rowGroupSize, cancellationToken);
+            }
+
+            wrg.CompleteValidate();
         } finally {
             foreach(ParquetReader reader in readers) {
                 await reader.DisposeAsync();
             }
         }
     }
-    */
+
+    private static async Task MergeFieldAsync(DataField dataField,
+        IReadOnlyList<ParquetReader> readers,
+        ParquetRowGroupWriter writer,
+        int rowGroupSize,
+        CancellationToken cancellationToken) {
+
+        Type elementType = dataField.ClrValueType;
+        System.Reflection.MethodInfo method = typeof(FileMerger)
+            .GetMethod(nameof(MergeFieldTypedAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            ?? throw new InvalidOperationException($"can't find {nameof(MergeFieldTypedAsync)} method on {nameof(FileMerger)}");
+
+        System.Reflection.MethodInfo genericMethod = method.MakeGenericMethod(elementType);
+        Task task = (Task?)genericMethod.Invoke(null, new object[] { dataField, readers, writer, rowGroupSize, cancellationToken })
+            ?? throw new InvalidOperationException($"failed to invoke {nameof(MergeFieldTypedAsync)} for type {elementType}");
+
+        await task;
+    }
+
+    private static async Task MergeFieldTypedAsync<T>(DataField dataField,
+        IReadOnlyList<ParquetReader> readers,
+        ParquetRowGroupWriter writer,
+        int rowGroupSize,
+        CancellationToken cancellationToken) where T : struct {
+
+        List<RawColumnData<T>> rawColumns = new List<RawColumnData<T>>();
+
+        try {
+            foreach(ParquetReader reader in readers) {
+                for(int ig = 0; ig < reader.RowGroupCount; ig++) {
+                    using ParquetRowGroupReader rrg = reader.OpenRowGroupReader(ig);
+                    RawColumnData<T> rawData = await rrg.ReadRawColumnDataAsync<T>(dataField, cancellationToken);
+                    rawColumns.Add(rawData);
+                }
+            }
+
+            int valueCount = rawColumns.Sum(c => c.ValuesMemory.Length);
+            if(readers.Sum(r => r.RowGroupCount) > 0 && valueCount == 0) {
+                throw new InvalidOperationException($"No values were read for field '{dataField.Path}' while source row groups are present.");
+            }
+
+            if(valueCount > rowGroupSize) {
+                throw new InvalidOperationException(
+                    $"Field '{dataField.Path}' contains {valueCount} values which exceeds configured rowGroupSize {rowGroupSize}. Increase rowGroupSize to continue.");
+            }
+
+            using MemoryOwner<T> mergedValues = MemoryOwner<T>.Allocate(valueCount);
+            int valuesOffset = 0;
+
+            foreach(RawColumnData<T> column in rawColumns) {
+                column.ValuesMemory.Span.CopyTo(mergedValues.Memory.Span.Slice(valuesOffset));
+                valuesOffset += column.ValuesMemory.Length;
+            }
+
+            MemoryOwner<int>? mergedRepetitionLevels = null;
+            if(dataField.MaxRepetitionLevel > 0) {
+                int repetitionCount = rawColumns.Sum(c => c.RepetitionLevelsMemoryOrNull?.Length ?? 0);
+                mergedRepetitionLevels = MemoryOwner<int>.Allocate(repetitionCount);
+                int repetitionOffset = 0;
+
+                foreach(RawColumnData<T> column in rawColumns) {
+                    ReadOnlyMemory<int> repetitionLevels = column.RepetitionLevelsMemoryOrNull
+                        ?? throw new InvalidOperationException($"repetition levels are missing for field '{dataField.Path}'");
+                    repetitionLevels.Span.CopyTo(mergedRepetitionLevels.Memory.Span.Slice(repetitionOffset));
+                    repetitionOffset += repetitionLevels.Length;
+                }
+            }
+
+            try {
+                if(dataField.MaxDefinitionLevel > 0) {
+                    int definitionCount = rawColumns.Sum(c => c.DefinitionLevelsMemoryOrNull?.Length ?? 0);
+                    using MemoryOwner<int> mergedDefinitionLevels = MemoryOwner<int>.Allocate(definitionCount);
+                    int definitionOffset = 0;
+
+                    foreach(RawColumnData<T> column in rawColumns) {
+                        ReadOnlyMemory<int> definitionLevels = column.DefinitionLevelsMemoryOrNull
+                            ?? throw new InvalidOperationException($"definition levels are missing for field '{dataField.Path}'");
+                        definitionLevels.Span.CopyTo(mergedDefinitionLevels.Memory.Span.Slice(definitionOffset));
+                        definitionOffset += definitionLevels.Length;
+                    }
+
+                    using MemoryOwner<T?> nullableValues = MemoryOwner<T?>.Allocate(mergedDefinitionLevels.Length);
+                    int valueIndex = 0;
+                    for(int i = 0; i < mergedDefinitionLevels.Length; i++) {
+                        bool isNull = mergedDefinitionLevels.Span[i] < dataField.MaxDefinitionLevel;
+                        nullableValues.Span[i] = isNull ? null : mergedValues.Span[valueIndex++];
+                    }
+
+                    await writer.WriteAsync<T>(dataField,
+                        nullableValues.Memory,
+                        repetitionLevels: mergedRepetitionLevels?.Memory,
+                        customMetadata: null,
+                        cancellationToken: cancellationToken);
+                } else {
+                    await writer.WriteAsync<T>(dataField,
+                        mergedValues.Memory,
+                        repetitionLevels: mergedRepetitionLevels?.Memory,
+                        customMetadata: null,
+                        cancellationToken: cancellationToken);
+                }
+            } finally {
+                mergedRepetitionLevels?.Dispose();
+            }
+        } finally {
+            foreach(RawColumnData<T> column in rawColumns) {
+                column.Dispose();
+            }
+        }
+    }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync() {

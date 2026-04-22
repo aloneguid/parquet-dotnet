@@ -1035,6 +1035,28 @@ DataFrame dfr = await stream.ReadParquetAsDataFrameAsync();
   - [DataFrame enhancements](https://github.com/dotnet/machinelearning/issues/6088).
   - [Add parquet support for importing and exporting data to/from DataFrame](https://github.com/dotnet/machinelearning/issues/5972).
 
+## Utilities
+
+### Merging files
+
+Use `Parquet.Utils.FileMerger` to combine multiple parquet files with the same schema.
+
+- `MergeFilesAsync(...)` appends source row groups as-is. Fastest, most efficient, however if you have multiple small row groups it might be better to merge them using the method below.
+- `MergeRowGroupsAsync(...)` merges all source row groups into one (or more, configurable via `rowGroupSize` parameter, defaulting to 1 million rows ) destination row group.
+
+```csharp
+var files = new[] {
+    new FileInfo("part-1.parquet"),
+    new FileInfo("part-2.parquet")
+};
+
+await using var merger = new FileMerger(files);
+await using var destination = File.Create("merged.parquet");
+
+await merger.MergeFilesAsync(destination);
+// or: await merger.MergeRowGroupsAsync(destination, rowGroupSize: 2_000_000);
+```
+
 ## Used by
 
 - [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool).
