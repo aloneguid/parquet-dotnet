@@ -165,9 +165,9 @@ public class ByteStreamSplitEncoderTest : TestBase {
         }
     }
 
-    [Fact]
-    public async Task EncodingHint_respected() {
-        var dataField = new DataField<int>("id");
+
+    private async Task EncodingHint_Respected<T>(T[] sample) where T : struct {
+        var dataField = new DataField<T>("id");
         var parquetSchema = new ParquetSchema(dataField);
 
         using var stream = new MemoryStream();
@@ -176,19 +176,59 @@ public class ByteStreamSplitEncoderTest : TestBase {
         options.ColumnEncodingHints["id"] = EncodingHint.ByteSplitStream;
         await using(ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(parquetSchema, stream, options: options)) {
             using ParquetRowGroupWriter groupWriter = parquetWriter.CreateRowGroup();
-            await groupWriter.WriteAsync<int>(dataField, Enumerable.Range(0, 256).ToArray());
+            await groupWriter.WriteAsync<T>(dataField, sample);
         }
 
         await using ParquetReader rdr = await ParquetReader.CreateAsync(stream);
         ParquetRowGroupReader rgr = rdr.OpenRowGroupReader(0);
-        using RawColumnData<int> col = await rgr.ReadRawColumnDataAsync<int>(dataField);
+        using RawColumnData<T> col = await rgr.ReadRawColumnDataAsync<T>(dataField);
 
-        Assert.Equal(Enumerable.Range(0, 256).ToArray(), col.Values.ToArray());
+        Assert.Equal(sample, col.Values.ToArray());
 
         // check encoding
         ColumnChunk? meta = rgr.GetMetadata(dataField);
         Assert.NotNull(meta);
         Assert.Contains(Encoding.BYTE_STREAM_SPLIT, meta.MetaData!.Encodings);
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_float() {
+        await EncodingHint_Respected<float>(Enumerable.Range(0, 100).Select(i => (float)i).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_double() {
+        await EncodingHint_Respected<double>(Enumerable.Range(0, 100).Select(i => (double)i).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_int() {
+        await EncodingHint_Respected<int>(Enumerable.Range(0, 100).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_long() {
+        await EncodingHint_Respected<long>(Enumerable.Range(0, 100).Select(i => (long)i).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_short() {
+        await EncodingHint_Respected<short>(Enumerable.Range(0, 100).Select(i => (short)i).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_ushort() {
+        await EncodingHint_Respected<ushort>(Enumerable.Range(0, 100).Select(i => (ushort)i).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_uint() {
+        await EncodingHint_Respected<uint>(Enumerable.Range(0, 100).Select(i => (uint)i).ToArray());
+    }
+
+    [Fact]
+    public async Task EncodingHint_Respected_ulong() {
+        await EncodingHint_Respected<ulong>(Enumerable.Range(0, 100).Select(i => (ulong)i).ToArray());
     }
 
 }

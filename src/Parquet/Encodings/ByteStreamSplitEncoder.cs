@@ -4,28 +4,37 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.CompilerServices;
 using System.IO;
+using System.Linq;
 
 namespace Parquet.Encodings;
 
 /// <summary>
-/// https://github.com/apache/parquet-format/blob/master/Encodings.md#BYTESTREAMSPLIT.
-/// Supported Types: FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY. Also, see https://youtu.be/29k7cou8Hdk
+/// https://github.com/apache/parquet-format/blob/master/Encodings.md#BYTESTREAMSPLIT. Supported Types: FLOAT, DOUBLE,
+/// INT32, INT64, FIXED_LEN_BYTE_ARRAY. Also, see https://youtu.be/29k7cou8Hdk
 /// </summary>
 static class ByteStreamSplitEncoder {
 
-    public static bool IsSupported(System.Type t) =>
-        t == typeof(float)  ||
-        t == typeof(double) ||
-        t == typeof(int)    || t == typeof(long)    ||       // native types
-        t == typeof(short)  || t == typeof(ushort)  ||       // int32 compatible
-        t == typeof(uint)   || t == typeof(ulong);           // int64 compatible
+    /// <summary>
+    /// Types that are supported by this encoding.
+    /// </summary>
+    public static System.Type[] SupportedTypes { get; } = [
+        typeof(float),
+        typeof(double),
+        typeof(int), typeof(long),
+        typeof(short), typeof(ushort),
+        typeof(uint), typeof(ulong)
+    ];
+
+    public static bool IsSupported(System.Type t) => SupportedTypes.Contains(t);
 
     private static int SafeSizeOf<T>() {
         Type t = typeof(T);
-        if(typeof(int) == t || typeof(float) == t) {
+        if(typeof(short) == t || typeof(ushort) == t) {
+            return 2;
+        } else if(typeof(int) == t || typeof(float) == t || typeof(uint) == t) {
             return 4;
         }
-        if(typeof(long) == t || typeof(double) == t) {
+        if(typeof(long) == t || typeof(double) == t || typeof(ulong) == t) {
             return 8;
         }
         throw new NotSupportedException(t.Name);
