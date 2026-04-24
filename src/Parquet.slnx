@@ -2,6 +2,10 @@
   <Folder Name="/scripts/">
     <File Path="../scripts/thriftgen.ps1" />
   </Folder>
+  <Folder Name="/Showcase/">
+    <Project Path="Showcase/Parquet.Underfloor/Parquet.Underfloor.csproj" />
+    <Project Path="Showcase/Parquet.XTract/Parquet.XTract.csproj" Id="cb1f9982-5dc4-4a99-a682-9139a51b7c06" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="../.editorconfig" />
     <File Path="../docs/README.md" />
@@ -21,7 +25,6 @@
   <Folder Name="/test/">
     <Project Path="Parquet.PerfRunner/Parquet.PerfRunner.csproj" />
     <Project Path="Parquet.Test/Parquet.Test.csproj" />
-    <Project Path="Parquet.Underfloor/Parquet.Underfloor.csproj" />
   </Folder>
   <Project Path="Parquet.Data.Analysis/Parquet.Data.Analysis.csproj" />
   <Project Path="Parquet/Parquet.csproj" />

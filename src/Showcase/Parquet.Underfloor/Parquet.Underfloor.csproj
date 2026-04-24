@@ -10,7 +10,7 @@
         <InvariantGlobalization>true</InvariantGlobalization>
         <ApplicationIcon>icon.ico</ApplicationIcon>
         <SignAssembly>true</SignAssembly>
-        <AssemblyOriginatorKeyFile>../fake.snk</AssemblyOriginatorKeyFile>
+        <AssemblyOriginatorKeyFile>../../fake.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Parquet\Parquet.csproj" />
+        <ProjectReference Include="..\..\Parquet\Parquet.csproj" />
     </ItemGroup>
 
 </Project>
