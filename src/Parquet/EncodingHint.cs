@@ -10,17 +10,19 @@ public enum EncodingHint {
     Default = 0,
 
     /// <summary>
-    /// Dictionary encoding, applies to strings and byte arrays.
+    /// Dictionary encoding, applies to <see cref="string"/> and <see cref="byte"/>[] fields.
     /// </summary>
     Dictionary,
 
     /// <summary>
-    /// Delta binary packed encoding can be applied to INT32 and INT64 fields.
+    /// Delta binary packed encoding can be applied to <see cref="int"/> and <see cref="long"/> fields.
     /// </summary>
     DeltaBinaryPacked,
 
     /// <summary>
-    /// Byte split stream encoding, supported FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY.
+    /// Byte split stream encoding. Not all of the types can be encoded. Currently supported types are:
+    /// <see cref="float"/>, <see cref="double"/>, <see cref="int"/>, <see cref="long"/>, <see cref="short"/>,
+    /// <see cref="ushort"/>,
     /// </summary>
     ByteSplitStream
 }
