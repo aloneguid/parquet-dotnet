@@ -125,23 +125,6 @@ public class DataField : Field, ICloneable {
         IsAttachedToSchema = true;
     }
 
-    /// <summary>
-    /// Creates non-nullable uninitialised array to hold this data type.
-    /// </summary>
-    /// <param name="length">Exact array size</param>
-    /// <returns></returns>
-    internal Array CreateArray(int length) => Array.CreateInstance(ClrType, length);
-
-    internal Array UnpackDefinitions(Array definedData, Span<int> definitionLevels) {
-        if(IsNullable) {
-            Array result = Array.CreateInstance(ClrNullableIfHasNullsType, definitionLevels.Length);
-            definedData.UnpackNullsFast(definitionLevels, MaxDefinitionLevel, result);
-            return result;
-        } else {
-            return definedData;
-        }
-    }
-
     /// <inheritdoc/>
     public override string ToString() =>
         $"{Path} ({ClrType}{(_isNullable ? "?" : "")}{(_isArray ? "[]" : "")})";

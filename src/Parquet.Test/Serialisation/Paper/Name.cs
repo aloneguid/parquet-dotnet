@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 
-namespace Parquet.Test.Serialisation.Paper {
-    class Name {
+namespace Parquet.Test.Serialisation.Paper;
 
-        public List<Language>? Language { get; set; }
+class Name {
 
-        public string? Url { get; set; }
-    }
+    public List<Language>? Language { get; set; }
+
+    public string? Url { get; set; }
 }

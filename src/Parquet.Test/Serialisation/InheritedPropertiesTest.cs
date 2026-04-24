@@ -1,29 +1,29 @@
-namespace Parquet.Test.Serialisation {
-    public class InheritedPropertiesTest : TestBase {
-        private InheritedClass[] GenerateRecordsToSerialize() {
-            InheritedClass record = new() {
-                BasePropertyLevel2 = "0",
-                BaseProperty = "A",
-                InheritedProperty = "B"
-            };
+namespace Parquet.Test.Serialisation;
 
-            var recordsToSerialize = new InheritedClass[1] {
-                record
-            };
+public class InheritedPropertiesTest : TestBase {
+    private InheritedClass[] GenerateRecordsToSerialize() {
+        InheritedClass record = new() {
+            BasePropertyLevel2 = "0",
+            BaseProperty = "A",
+            InheritedProperty = "B"
+        };
 
-            return recordsToSerialize;
-        }
+        var recordsToSerialize = new InheritedClass[1] {
+            record
+        };
 
-        private class BaseClassLevel2 {
-            public string? BasePropertyLevel2 { get; set; }
-        }
+        return recordsToSerialize;
+    }
 
-        private class BaseClass : BaseClassLevel2 {
-            public string? BaseProperty { get; set; }
-        }
+    private class BaseClassLevel2 {
+        public string? BasePropertyLevel2 { get; set; }
+    }
 
-        private class InheritedClass : BaseClass {
-            public string? InheritedProperty { get; set; }
-        }
+    private class BaseClass : BaseClassLevel2 {
+        public string? BaseProperty { get; set; }
+    }
+
+    private class InheritedClass : BaseClass {
+        public string? InheritedProperty { get; set; }
     }
 }

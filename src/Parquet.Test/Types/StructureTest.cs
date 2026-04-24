@@ -5,48 +5,48 @@ using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test.Types {
-    public class StructureTest : TestBase {
+namespace Parquet.Test.Types;
 
-        /// <summary>
-        /// This method is used in documentation, keep formatting clear
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task Simple_structure_write_read() {
-            var schema = new ParquetSchema(
-               new DataField<string>("name"),
-               new StructField("address",
-                  new DataField<string>("line1"),
-                  new DataField<string>("postcode")
-               ));
+public class StructureTest : TestBase {
 
-            using var ms = new MemoryStream();
-            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
-                using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+    /// <summary>
+    /// This method is used in documentation, keep formatting clear
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task Simple_structure_write_read() {
+        var schema = new ParquetSchema(
+            new DataField<string>("name"),
+            new StructField("address",
+                new DataField<string>("line1"),
+                new DataField<string>("postcode")
+            ));
 
-                await rgw.WriteAsync(schema.DataFields[0], new[] { "Joe" });
+        using var ms = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms)) {
+            using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
 
-                await rgw.WriteAsync(schema.DataFields[1], new[] { "Amazonland" });
+            await rgw.WriteAsync(schema.DataFields[0], new[] { "Joe" });
 
-                await rgw.WriteAsync(schema.DataFields[2], new[] { "AAABBB" });
-            }
+            await rgw.WriteAsync(schema.DataFields[1], new[] { "Amazonland" });
 
-            ms.Position = 0;
+            await rgw.WriteAsync(schema.DataFields[2], new[] { "AAABBB" });
+        }
 
-            await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
-                using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
+        ms.Position = 0;
 
-                DataField[] dataFields = reader.Schema.GetDataFields();
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            using ParquetRowGroupReader rg = reader.OpenRowGroupReader(0);
 
-                List<string?> names = await ReadStringColumn(reader, dataFields[0]);
-                List<string?> line1s = await ReadStringColumn(reader, dataFields[1]);
-                List<string?> postcodes = await ReadStringColumn(reader, dataFields[2]);
+            DataField[] dataFields = reader.Schema.GetDataFields();
 
-                Assert.Equal(new[] { "Joe" }, names);
-                Assert.Equal(new[] { "Amazonland" }, line1s);
-                Assert.Equal(new[] { "AAABBB" }, postcodes);
-            }
+            List<string?> names = await ReadStringColumn(reader, dataFields[0]);
+            List<string?> line1s = await ReadStringColumn(reader, dataFields[1]);
+            List<string?> postcodes = await ReadStringColumn(reader, dataFields[2]);
+
+            Assert.Equal(new[] { "Joe" }, names);
+            Assert.Equal(new[] { "Amazonland" }, line1s);
+            Assert.Equal(new[] { "AAABBB" }, postcodes);
         }
     }
 }

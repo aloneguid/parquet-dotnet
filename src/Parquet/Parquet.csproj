@@ -78,10 +78,6 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <LastGenOutput>RleBitpackedHybridEncoder.Variations.cs</LastGenOutput>
         </None>
-        <None Update="Extensions\UntypedArrayExtensions.tt">
-            <Generator>TextTemplatingFileGenerator</Generator>
-            <LastGenOutput>UntypedArrayExtensions.cs</LastGenOutput>
-        </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -103,11 +99,6 @@
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
             <DependentUpon>RleBitpackedHybridEncoder.Variations.tt</DependentUpon>
-        </Compile>
-        <Compile Update="Extensions\UntypedArrayExtensions.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>UntypedArrayExtensions.tt</DependentUpon>
         </Compile>
         <Compile Update="Encodings\BitPackedEncoder.cs">
             <AutoGen>True</AutoGen>

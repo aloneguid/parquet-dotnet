@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 
-namespace Parquet.Test.Serialisation.Paper {
-    class Links {
-        public List<long>? Backward { get; set; }
+namespace Parquet.Test.Serialisation.Paper;
 
-        public List<long>? Forward { get; set; }
-    }
+class Links {
+    public List<long>? Backward { get; set; }
+
+    public List<long>? Forward { get; set; }
 }
