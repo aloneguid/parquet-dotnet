@@ -1,4 +1,4 @@
-# 6.0.0-pre.6
+# 6.0.0-pre.7
 
 ## Highlights
 
@@ -18,6 +18,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 - Same goes for `ParquetRowGroupReader`, which uses direct memory access interface instead of allocating a lot of memory via DataColumn and adding a lot of GC pressure.
 - `CompressionMethod` and `CompressionLevel` are moved to `ParquetOptions` for consistency reasons.
 - `ParquetOptions.UseDictionaryEncoding` and `ParquetOptions.UseDeltaBinaryPackedEncoding` is removed to avoid trying to dictionary-encode everything, which is not always the best choice. Instead, you can specify "encoding hints", which is more flexible and extensible, plus you can specify hint per encoding.
+- `ParquetSerializerOptions` is removed as it was often duplicating `ParquetOptions` and adding confusion. Instead, you can specify all options in `ParquetOptions`, which is used by both low-level and high-level APIs, so there is only one set of options to manage.
 - `FlatFileConverter` removed as it was subobtimal and half-done, and I don't want to maintain them in the long run.
 - As with the latest V5 minor release, I have high hopes for managed .NET compression libraries maintained by the community, so there will be absolutely zero native dependencies. They were created in C++ as a separate project in the times when .NET was young and didn't have good support for such things, but now there are some great high-performance libraries available. If I have time to spend on improving compression performance, I'd rather contribute to those projects.
 - `IParquetRowGroupReader` interface removed as it's not in use. Just use `ParquetRowGroupReader` directly.
@@ -25,6 +26,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 - `IAsyncEnumerable` operations in `ParquetSerializer` are removed as they don't add anything in terms of performance - Parquet is not row-oriented format.
 - `ParquetSerializer` untyped serialization methods renamed to contain "Untyped" in their name, to make it more clear that they are not the same as class serializer methods and have very different use cases.
 - `ParquetSerializer` untyped deserialization is not experimental anymore, but it has changed signature to become stable.
+- `ParquetSerializer` deserialization methods return `DeserializationResult<T>` which, in addition to data like before, also contains original file schema and custom metadata. This allows you to close the loop when writing custom metadata and reading it back using the same API. There is zero overhead to include schema and custom metadata in the result anyway. This also allows extending the result in the future with more information if needed, without breaking changes.
 
 ## Improvements
 

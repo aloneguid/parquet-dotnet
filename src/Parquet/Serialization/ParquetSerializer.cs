@@ -13,6 +13,15 @@ using Type = System.Type;
 namespace Parquet.Serialization;
 
 /// <summary>
+/// All the data read from the file.
+/// </summary>
+/// <typeparam name="T"></typeparam>
+/// <param name="Schema"></param>
+/// <param name="Data"></param>
+/// <param name="CustomMetadata"></param>
+public record DeserializationResult<T>(ParquetSchema Schema, IList<T> Data, IReadOnlyDictionary<string, string> CustomMetadata) where T : class, new();
+
+/// <summary>
 /// High-level object serialisation. Supports everything, including nested types.
 /// </summary>
 public static class ParquetSerializer {
@@ -80,12 +89,14 @@ public static class ParquetSerializer {
     /// <param name="objectInstances"></param>
     /// <param name="destination"></param>
     /// <param name="options"></param>
+    /// <param name="customMetadata">Specify custom key-value metadata to include in the Parquet file.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="ApplicationException"></exception>
     public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances,
         Stream destination,
-        ParquetSerializerOptions? options = null,
+        ParquetOptions? options = null,
+        IReadOnlyDictionary<string, string>? customMetadata = null,
         CancellationToken cancellationToken = default) {
 
         object boxedStriper = _typeToStriper.GetOrAdd(typeof(T), _ => new Striper<T>(typeof(T).GetParquetSchema(false)));
@@ -93,8 +104,9 @@ public static class ParquetSerializer {
 
         bool append = options != null && options.Append;
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(striper.Schema, destination,
-            options?.ParquetOptions,
+            options,
             append, cancellationToken)) {
+            if(customMetadata != null) writer.CustomMetadata = customMetadata;
 
             if(options?.RowGroupSize != null) {
                 int rgs = options.RowGroupSize.Value;
@@ -102,6 +114,7 @@ public static class ParquetSerializer {
                     throw new InvalidOperationException($"row group size must be a positive number, but passed {rgs}");
                 foreach(T[] chunk in objectInstances.Chunk(rgs)) {
                     await SerializeRowGroupAsync<T>(writer, striper, chunk, cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
             } else {
                 await SerializeRowGroupAsync<T>(writer, striper, objectInstances, cancellationToken);
@@ -115,13 +128,22 @@ public static class ParquetSerializer {
     /// Serialize untyped data (collection of dictionaries) into Parquet format and write to provided destination
     /// stream. Schema must be provided, as it can't be inferred from data.
     /// </summary>
+    /// <param name="data">List of dictionaries representing the data to serialize.</param>
+    /// <param name="schema">
+    /// Schema describing the structure of the data. This is required due to untyped nature of the data.
+    /// </param>
+    /// <param name="destination">Destination stream to write the Parquet data to.</param>
+    /// <param name="options">Optional Parquet options for serialization.</param>
+    /// <param name="customMetadata">Optional custom key-value metadata to include in the Parquet file.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <remarks>
     /// This method is the slowest, use only when necessary.
     /// </remarks>
     public static async Task SerializeUntypedAsync(IReadOnlyCollection<IDictionary<string, object?>> data,
         ParquetSchema schema,
         Stream destination,
-        ParquetSerializerOptions? options = null,
+        ParquetOptions? options = null,
+        IReadOnlyDictionary<string, string>? customMetadata = null,
         CancellationToken cancellationToken = default) {
 
         object boxedStriper = _schemaToStriper.GetOrAdd(schema, _ => new Striper<IDictionary<string, object?>>(schema));
@@ -129,8 +151,10 @@ public static class ParquetSerializer {
 
         bool append = options != null && options.Append;
         await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, destination,
-            options?.ParquetOptions,
+            options,
             append, cancellationToken)) {
+
+            if(customMetadata != null) writer.CustomMetadata = customMetadata;
 
             if(options?.RowGroupSize != null) {
                 int rgs = options.RowGroupSize.Value;
@@ -155,15 +179,17 @@ public static class ParquetSerializer {
     /// <param name="objectInstances"></param>
     /// <param name="filePath"></param>
     /// <param name="options"></param>
+    /// <param name="customMetadata"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public static async Task<ParquetSchema> SerializeAsync<T>(IEnumerable<T> objectInstances, string filePath,
-        ParquetSerializerOptions? options = null,
+        ParquetOptions? options = null,
+        IReadOnlyDictionary<string, string>? customMetadata = null,
         CancellationToken cancellationToken = default) {
         using FileStream fs = (options?.Append ?? false)
             ? System.IO.File.Open(filePath, FileMode.Open, FileAccess.ReadWrite)
             : System.IO.File.Create(filePath);
-        return await SerializeAsync(objectInstances, fs, options, cancellationToken);
+        return await SerializeAsync(objectInstances, fs, options, customMetadata, cancellationToken);
     }
 
     #endregion
@@ -180,15 +206,15 @@ public static class ParquetSerializer {
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static async Task<IList<T>> DeserializeAsync<T>(Stream source,
-        ParquetSerializerOptions? options = null,
+    public static async Task<DeserializationResult<T>> DeserializeAsync<T>(Stream source,
+        ParquetOptions? options = null,
         int? rowGroupIndex = null,
         CancellationToken cancellationToken = default)
         where T : class, new() {
 
         Assembler<T> asm = GetAssembler<T>();
 
-        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
 
         long? requestedCapacity = reader.Metadata?.RowGroups.Sum(x => x.NumRows);
         List<T> result = GetList<T>(requestedCapacity);
@@ -202,7 +228,7 @@ public static class ParquetSerializer {
             await DeserializeRowGroupAsync(reader, rgi, asm, result, options, null, cancellationToken);
         }
 
-        return result;
+        return new DeserializationResult<T>(reader.Schema, result, reader.CustomMetadata);
     }
 
     /// <summary>
@@ -214,8 +240,8 @@ public static class ParquetSerializer {
     /// <param name="rowGroupIndex">When specified, only reads specified row group.</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns></returns>
-    public static async Task<IList<T>> DeserializeAsync<T>(string filePath,
-        ParquetSerializerOptions? options = null,
+    public static async Task<DeserializationResult<T>> DeserializeAsync<T>(string filePath,
+        ParquetOptions? options = null,
         int? rowGroupIndex = null,
         CancellationToken cancellationToken = default)
         where T : class, new() {
@@ -229,16 +255,16 @@ public static class ParquetSerializer {
     /// Deserialise untyped data (collection of dictionaries) from Parquet format read from provided source stream.
     /// Schema is returned as well, as it can't be inferred from data.
     /// </summary>
-    public static async Task<(IList<Dictionary<string, object>> Data, ParquetSchema Schema)> DeserializeUntypedAsync(Stream source,
-        ParquetSerializerOptions? options = null,
+    public static async Task<DeserializationResult<Dictionary<string, object>>> DeserializeUntypedAsync(Stream source,
+        ParquetOptions? options = null,
         int? rowGroupIndex = null,
         CancellationToken cancellationToken = default) {
 
-        // we can't get assembler in here until we know the schema.
+        // we can't get assembler in here until schema is known.
 
         var result = new List<Dictionary<string, object>>();
 
-        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
         ParquetSchema schema = reader.Schema;
         Assembler<Dictionary<string, object>> asm = GetAssembler(schema);
         for(int rgi = 0; rgi < reader.RowGroupCount; rgi++) {
@@ -248,7 +274,7 @@ public static class ParquetSerializer {
             await DeserializeRowGroupAsync(reader, rgi, asm, result, options, null, cancellationToken);
         }
 
-        return (result, schema);
+        return new DeserializationResult<Dictionary<string, object>>(schema, result, reader.CustomMetadata);
     }
 
     internal class LazyDeserialisationResult {
@@ -282,12 +308,12 @@ public static class ParquetSerializer {
         }
     }
 
-    internal static async Task LazyDeserializeUntypedAsync(Stream source,
+    internal static async Task DeserializeUntypedAsync(Stream source,
         LazyDeserialisationResult result,
-        ParquetSerializerOptions? options = null,
+        ParquetOptions? options = null,
         CancellationToken cancellationToken = default) {
 
-        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options?.ParquetOptions, cancellationToken: cancellationToken);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source, options, cancellationToken: cancellationToken);
         ParquetSchema schema = reader.Schema;
         result.Schema = reader.Schema;
         Assembler<Dictionary<string, object>> asm = GetAssembler(schema);
@@ -318,7 +344,7 @@ public static class ParquetSerializer {
     }
 
     private static async Task DeserializeRowGroupAsync<T>(ParquetReader reader, int rgi, Assembler<T> asm,
-        ICollection<T> result, ParquetSerializerOptions? options,
+        ICollection<T> result, ParquetOptions? options,
         ProgressCallbacks? progress,
         CancellationToken cancellationToken, bool resultsAlreadyAllocated = false)
         where T : class, new() {
@@ -331,14 +357,14 @@ public static class ParquetSerializer {
     private static async Task DeserializeRowGroupAsync(ParquetReader reader, int rgi,
         Assembler<Dictionary<string, object>> asm,
         List<Dictionary<string, object>> result,
-        ParquetSerializerOptions? options,
+        ParquetOptions? options,
         ProgressCallbacks? progress,
         CancellationToken cancellationToken) {
         using ParquetRowGroupReader rg = reader.OpenRowGroupReader(rgi);
         await DeserializeRowGroupAsync(rg, reader.Schema, asm, result, options, progress, cancellationToken);
     }
 
-    private static DataField? MakeForReading(ParquetSchema fileSchema, DataField assemblerField, ParquetSerializerOptions? options) {
+    private static DataField? MakeForReading(ParquetSchema fileSchema, DataField assemblerField, ParquetOptions? options) {
         DataField? fileField;
 
         if(options != null && options.PropertyNameCaseInsensitive) {
@@ -382,7 +408,7 @@ public static class ParquetSerializer {
         ParquetSchema schema,
         Assembler<T> asm,
         ICollection<T> result,
-        ParquetSerializerOptions? options,
+        ParquetOptions? options,
         ProgressCallbacks? progress = null,
         CancellationToken cancellationToken = default,
         bool resultsAlreadyAllocated = false) where T : class, new() {

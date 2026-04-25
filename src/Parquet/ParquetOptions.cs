@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using Parquet.Data;
 using Parquet.Schema;
+using Parquet.Serialization;
 
 namespace Parquet;
 
@@ -23,12 +24,12 @@ public class ParquetOptions {
     public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
 
     /// <summary>
-    /// When true byte arrays will be treated as UTF-8 strings on read
+    /// When true byte arrays will be treated as UTF-8 strings when reading files.
     /// </summary>
     public bool TreatByteArrayAsString { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets a value indicating whether big integers are always treated as dates on read
+    /// When true, big integers are always treated as dates when reading files.
     /// </summary>
     public bool TreatBigIntegersAsDates { get; set; } = true;
 
@@ -109,4 +110,45 @@ public class ParquetOptions {
     /// If true, will attemp to use hardware accelerated math.
     /// </summary>
     public static bool UseHardwareAcceleration { get; set; } = true;
+
+    #region [ Serializer specific]
+
+    /// <summary>
+    /// When set to true, appends to file by creating a new row group. Only applicable when using
+    /// <see cref="ParquetSerializer"/>. Be careul not to create a lot of tiny row groups as this affects reading
+    /// performance in all Parquet readers, not just this library.
+    /// </summary>
+    public bool Append { get; set; } = false;
+
+    /// <summary>
+    /// Default size of row groups if not specified
+    /// </summary>
+    public const int DefaultRowGroupSize = 1_000_000;
+
+    /// <summary>
+    /// Custom row group size, if different from <see cref="DefaultRowGroupSize"/> used by
+    /// <see cref="ParquetSerializer"/>.
+    /// </summary>
+    public int? RowGroupSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value that indicates whether a property's name uses a case-insensitive comparison during
+    /// deserialization. The default value is false. Full credits to
+    /// https://learn.microsoft.com/en-us/dotnet/api/system.text.json.jsonserializeroptions.propertynamecaseinsensitive?view=net-8.0#system-text-json-jsonserializeroptions-propertynamecaseinsensitive
+    /// </summary>
+    public bool PropertyNameCaseInsensitive { get; set; } = false;
+
+    /// <summary>
+    /// When using untyped serialisation, prefers using <see cref="System.String"/> when reading string values, instead
+    /// of <see cref="System.ReadOnlyMemory{Char}"/>.
+    /// </summary>
+    public static bool PreferUntypedString { get; set; } = true;
+
+    /// <summary>
+    /// When using untyped serialisation, prefers using <see cref="byte"/> array when reading byte array values, instead
+    /// of <see cref="System.ReadOnlyMemory{Byte}"/>.
+    /// </summary>
+    public static bool PreferUntypedByteArray { get; set; } = true;
+
+    #endregion
 }

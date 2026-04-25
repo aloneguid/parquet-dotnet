@@ -131,10 +131,10 @@ class FieldAssemblerCompiler<TClass> {
         if(targetType == typeof(object)) {
 
             // respect conversion configuration for untyped path
-            if(ParquetSerializerOptions.PreferUntypedByteArray && _dataElementVar.Type == typeof(ReadOnlyMemory<byte>))
+            if(ParquetOptions.PreferUntypedByteArray && _dataElementVar.Type == typeof(ReadOnlyMemory<byte>))
                 return Expression.Call(_romByteToArrayMethod, _dataElementVar);
 
-            if(ParquetSerializerOptions.PreferUntypedString && _dataElementVar.Type == typeof(ReadOnlyMemory<char>))
+            if(ParquetOptions.PreferUntypedString && _dataElementVar.Type == typeof(ReadOnlyMemory<char>))
                 return Expression.Call(_romCharToStringMethod, _dataElementVar);
 
             return Expression.Convert(_dataElementVar, typeof(object));

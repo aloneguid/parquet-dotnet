@@ -112,7 +112,7 @@ await ParquetSerializer.SerializeAsync(data, "/mnt/storage/data.parquet");
 To read, simply call:
 
 ```c#
-IList<Event> data = await ParquetSerializer.DeserializeAsync<Event>("/mnt/storage/data.parquet");
+DeserializationResult<Event> data = await ParquetSerializer.DeserializeAsync<Event>("/mnt/storage/data.parquet");
 ```
 
 Class serialization is really fast as it generates [compiled expression trees](https://learn.microsoft.com/en-US/dotnet/csharp/programming-guide/concepts/expression-trees/) on the fly. That means there is a small delay when serializing the first entity, which in most cases is negligible. Once the class is serialized at least once, further operations become much faster (around ~40x compared to reflection on large amounts of data (~5 million records)).
@@ -412,11 +412,11 @@ await ParquetSerializer.SerializeAsync(data, ms);
 ms.Position = 0;
 
 // this will deserialize the data, but `LowerCase` property will be null, because it does not exist in the parquet file.
-IList<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
+DeserializationResult<AfterRename> data2 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms);
 
 // this will successfully deserialize the data, because property names are case insensitive
-IList<AfterRename> data3 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
-    new ParquetSerializerOptions { PropertyNameCaseInsensitive = true });
+DeserializationResult<AfterRename> data3 = await ParquetSerializer.DeserializeAsync<AfterRename>(ms,
+    new ParquetOptions { PropertyNameCaseInsensitive = true });
 ```
 
 ## Extra options
@@ -1013,7 +1013,7 @@ await ParquetSerializer.SerializeUntypedAsync(schema, data, stream);
 To read data back, use the reverse method:
 
 ```csharp
-(IList<Dictionary<string, object>> data, ParquetSchema schema) =
+DeserializationResult<Dictionary<string, object>> result =
     await ParquetSerializer.DeserializeUntypedAsync(stream);
 ```
 

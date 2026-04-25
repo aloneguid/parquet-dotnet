@@ -162,13 +162,11 @@ class WorkFile : IAsyncDisposable {
                     }
                 };
 
-                await ParquetSerializer.LazyDeserializeUntypedAsync(_stream,
+                await ParquetSerializer.DeserializeUntypedAsync(_stream,
                     result,
-                    new ParquetSerializerOptions {
-                        ParquetOptions = new ParquetOptions {
-                            TreatByteArrayAsString = true,
-                            UseBigDecimal = true
-                        }
+                    new ParquetOptions {
+                        TreatByteArrayAsString = true,
+                        UseBigDecimal = true
                     });
 
                 SampleReadStatus = ReadStatus.Completed;

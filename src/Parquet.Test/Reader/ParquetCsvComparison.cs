@@ -118,8 +118,8 @@ public class ParquetCsvComparison : TestBase {
         bool treatByteArrayAsString) {
         await using Stream s = OpenTestFile(name);
         var options = new ParquetOptions { TreatByteArrayAsString = treatByteArrayAsString };
-        (IList<Dictionary<string, object>> data, ParquetSchema schema) = await ParquetSerializer.DeserializeUntypedAsync(s, new ParquetSerializerOptions { ParquetOptions = options });
-        return data;
+        DeserializationResult<Dictionary<string, object>> result = await ParquetSerializer.DeserializeUntypedAsync(s, options);
+        return result.Data;
     }
 
     private IList<Dictionary<string, string>> ReadCsv(string name) {
