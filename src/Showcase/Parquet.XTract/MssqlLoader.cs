@@ -9,7 +9,7 @@ namespace Parquet.XTract;
 /// <summary>
 /// https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnection?view=sqlclient-dotnet-core-6.1
 /// </summary>
-class MssqlLoader : IDisposable {
+class MssqlLoader : IRelDbLoader {
     
     private readonly SqlConnection _connection;
     
@@ -83,7 +83,7 @@ class MssqlLoader : IDisposable {
             await _connection.OpenAsync();
 
         await using SqlCommand command = _connection.CreateCommand();
-        command.CommandText = $"select * from {table.Schema}.{table.Table}";
+        command.CommandText = $"select * from {table.Schema}.{table.Name}";
 
         int rowCount = 0;
         await using SqlDataReader reader = await command.ExecuteReaderAsync();

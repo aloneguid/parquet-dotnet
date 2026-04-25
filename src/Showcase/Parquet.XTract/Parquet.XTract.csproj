@@ -26,6 +26,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
     <PackageReference Include="Microsoft.SqlServer.Types" Version="170.1000.7" />
+    <PackageReference Include="Npgsql" Version="10.0.2" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
   </ItemGroup>
 

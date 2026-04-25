@@ -5,10 +5,20 @@ using Spectre.Console.Cli;
 
 namespace Parquet.XTract;
 
+public enum LoaderDialect {
+    Auto,
+    Mssql,
+    Postgresql
+}
+
 public class XCommandSettings : CommandSettings {
     [CommandOption("-s|--source")]
-    [Description("Source MSSQL connection string")]
+    [Description("Source connection string")]
     public string SourceConnection { get; set; } = string.Empty;
+
+    [CommandOption("-d|--dialect")]
+    [Description("Database dialect (Mssql or Postgresql)")]
+    public LoaderDialect Dialect { get; set; } = LoaderDialect.Auto;
 }
 
 public class XCommand : AsyncCommand<XCommandSettings> {
@@ -110,10 +120,12 @@ public class XCommand : AsyncCommand<XCommandSettings> {
         }
     }
 
-    private async Task Process(MssqlLoader loader, SourceTable table, ProgressContext ctx) {
-        
-        var task = ctx
-            .AddTask($"[grey]{table.Schema}[/].[yellow]{table.Table}[/]")
+    private async Task Process(IRelDbLoader loader, SourceTable table, ProgressContext ctx) {
+
+        AnsiConsole.MarkupLine($"Exporting table [grey]{table.Schema}[/].[yellow]{table.Name}[/]...");
+
+        ProgressTask task = ctx
+            .AddTask($"[grey]{table.Schema}[/].[yellow]{table.Name}[/]")
             .IsIndeterminate(true);
         
         TableExtract memData = await loader.ExportDataAsync(table);
@@ -127,56 +139,98 @@ public class XCommand : AsyncCommand<XCommandSettings> {
         task.IsIndeterminate(false);
         task.MaxValue = memData.Columns.Count;
         
-        AnsiConsole.MarkupLine($"Writing {memData.RowCount} row(s) to disk...");
+        AnsiConsole.MarkupLine($"Writing [yellow]{memData.RowCount}[/] row(s) to disk...");
         var schema = new ParquetSchema(memData.Columns.Select(c => c.Field));
-        using var fs = new FileStream($"{table.Schema}.{table.Table}.parquet", FileMode.Create, FileAccess.Write);
+        string fileName = $"{table.Schema}.{table.Name}.parquet";
+        if(System.IO.File.Exists(fileName)) {
+            System.IO.File.Delete(fileName);
+        }
+        using var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
         await using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs);
         
         // this demo will use just one row group
         using ParquetRowGroupWriter rowGroupWriter = writer.CreateRowGroup();
 
         foreach(ColumnExtract column in memData.Columns) {
-            task.Description = $"[grey]{table.Schema}[/].[yellow]{table.Table}[/] :: {column.Field.Name} ({column.SourceType})";
+            task.Description = $"[grey]{table.Schema}[/].[yellow]{table.Name}[/] :: {column.Field.Name} ({column.SourceType})";
             //AnsiConsole.MarkupLine($"Writing column [yellow]{column.Field.Name}[/] | {column.SourceType}...");
         
             await WriteAsync(column, rowGroupWriter);
             task.Increment(1);
         }
 
-        task.Description = $"[grey]{table.Schema}[/].[yellow]{table.Table}[/]";
+        task.Description = $"[grey]{table.Schema}[/].[yellow]{table.Name}[/]";
     }
-    
+
+    private async Task<IRelDbLoader> CreateLoaderAsync(XCommandSettings settings) {
+        switch(settings.Dialect) {
+            case LoaderDialect.Mssql:
+                return new MssqlLoader(settings.SourceConnection);
+            case LoaderDialect.Postgresql:
+                return new PgLoader(settings.SourceConnection);
+        }
+
+        // auto-detect
+        AnsiConsole.MarkupLine($"[grey]Source dialect not set, detecting...[/] ");
+        var factories = new Dictionary<LoaderDialect, Func<string, IRelDbLoader>> {
+            { LoaderDialect.Mssql, conn => new MssqlLoader(conn) },
+            { LoaderDialect.Postgresql, conn => new PgLoader(conn) }
+        };
+
+        foreach(KeyValuePair<LoaderDialect, Func<string, IRelDbLoader>> kvp in factories) {
+            try {
+                AnsiConsole.MarkupLine($"Trying [yellow]{kvp.Key}[/]...");
+                IRelDbLoader loader = kvp.Value(settings.SourceConnection);
+                await loader.GetCurrentDbNameAsync();
+                AnsiConsole.MarkupLine($"[green]This works![/].");
+                return loader;
+            } catch(Exception ex) {
+                AnsiConsole.WriteException(ex, ExceptionFormats.NoStackTrace);
+            }
+        }
+
+        throw new Exception("Could not connect with any dialect. Either connection string is invalid or server(s) are not reachable.");
+    }
+
     protected override async Task<int> ExecuteAsync(CommandContext context, XCommandSettings settings, CancellationToken cancellationToken) {
 
-        await AnsiConsole.Progress()
-            .HideCompleted(true)
-            .StartAsync(async ctx => {
-                var initTask = ctx.AddTask("Initializing");
-                var exportTask = ctx.AddTask("Exporting");
-                
-                using var loader = new MssqlLoader(settings.SourceConnection);
-                string dbName = await loader.GetCurrentDbNameAsync();
-                await Task.Delay(1000);
-                initTask.Increment(50);
-                
-                AnsiConsole.MarkupLine($"Connected to database [yellow]{dbName}[/], listing tables...");
-                IReadOnlyCollection<SourceTable> tableNames = await loader.ListTableNamesAsync();
-                
-                await Task.Delay(1000);
-                initTask.Increment(50);
-                
-                AnsiConsole.MarkupLine($"Found [red]{tableNames.Count}[/] table(s):");
-                foreach(SourceTable table in tableNames) {
-                    AnsiConsole.MarkupLine($"- [grey]{table.Schema}[/].[green]{table.Table}[/]");
-                }
+        try {
+            await AnsiConsole.Progress()
+                .HideCompleted(true)
+                .StartAsync(async ctx => {
 
-                foreach(SourceTable sourceTable in tableNames) {
-                    await Process(loader, sourceTable, ctx);
-                    exportTask.Increment(100 / tableNames.Count);
-                }
-                
-            });
-        
-        return 0;
+                    ProgressTask initTask = ctx.AddTask("Initializing");
+
+                    using IRelDbLoader loader = await CreateLoaderAsync(settings);
+                    string dbName = await loader.GetCurrentDbNameAsync();
+                    await Task.Delay(1000);
+                    initTask.Increment(50);
+
+                    ProgressTask exportTask = ctx.AddTask("Exporting");
+
+
+                    AnsiConsole.MarkupLine($"Connected to database [yellow]{dbName}[/], listing tables...");
+                    IReadOnlyCollection<SourceTable> tableNames = await loader.ListTableNamesAsync();
+
+                    await Task.Delay(1000);
+                    initTask.Increment(50);
+
+                    AnsiConsole.MarkupLine($"Found [red]{tableNames.Count}[/] table(s):");
+                    foreach(SourceTable table in tableNames) {
+                        AnsiConsole.MarkupLine($"- [grey]{table.Schema}[/].[green]{table.Name}[/]");
+                    }
+
+                    foreach(SourceTable sourceTable in tableNames) {
+                        await Process(loader, sourceTable, ctx);
+                        exportTask.Increment(100 / tableNames.Count);
+                    }
+
+                });
+
+            return 0;
+        } catch(Exception ex) {
+            AnsiConsole.WriteException(ex);
+            return 1;
+        }
     }
 }
