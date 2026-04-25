@@ -213,7 +213,8 @@ class WritingColumn<T> : IDisposable where T : struct {
         ReadOnlySpan<ReadOnlyMemory<char>> stringsSpan = Values.AsSpan<T, ReadOnlyMemory<char>>();
         if(ParquetDictionaryEncoder.TryExtractDictionary(stringsSpan, options.DictionaryEncodingThreshold,
             out IMemoryOwner<ReadOnlyMemory<char>>? dictionaryOwner,
-            out _dictionaryIndexes)) {
+            out _dictionaryIndexes,
+            options.DictionaryEncodingSampleSize)) {
             // case memory back to ReadOnlyMemory<T>
             _dictionary = dictionaryOwner as IMemoryOwner<T>;
             if(_dictionary == null) {

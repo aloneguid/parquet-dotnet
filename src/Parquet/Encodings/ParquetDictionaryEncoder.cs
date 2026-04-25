@@ -14,7 +14,9 @@ static class ParquetDictionaryEncoder {
         out IMemoryOwner<ReadOnlyMemory<char>>? dictionary,
 
         [NotNullWhen(true)]
-        out IMemoryOwner<int>? indexes) {
+        out IMemoryOwner<int>? indexes,
+
+        int sampleSize = 0) {
 
         dictionary = null;
         indexes = null;
@@ -22,6 +24,21 @@ static class ParquetDictionaryEncoder {
         int count = strings.Length;
         if(count == 0) {
             return false;
+        }
+
+        // Adaptive sampling: check a small sample before doing the expensive full-data scan.
+        // If the sample already exceeds the threshold, skip dictionary encoding entirely.
+        if(sampleSize > 0 && count > sampleSize) {
+            int sampleMaxDistinct = (int)(sampleSize * threshold);
+            var sampleSet = new Dictionary<ReadOnlyMemory<char>, int>(sampleSize, ReadOnlyMemoryCharOrdinalComparer.Instance);
+            for(int i = 0; i < sampleSize; i++) {
+                if(!sampleSet.ContainsKey(strings[i])) {
+                    if(sampleSet.Count >= sampleMaxDistinct) {
+                        return false;
+                    }
+                    sampleSet[strings[i]] = sampleSet.Count;
+                }
+            }
         }
 
         // Calculate max allowed distinct values based on threshold
