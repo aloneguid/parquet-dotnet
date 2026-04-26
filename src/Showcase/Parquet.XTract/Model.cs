@@ -1,8 +1,23 @@
 using Parquet.Schema;
+using Spectre.Console;
 
 namespace Parquet.XTract;
 
-public record SourceTable(string Schema, string Name);
+public class SourceTable {
+    public SourceTable(string schema, string name) {
+        Schema = schema;
+        Name = name;
+    }
+
+    public string Schema { get; }
+    public string Name { get; }
+
+    public override string ToString() => $"{Schema}.{Name}";
+
+    public string ToMarkupString() {
+        return $"[grey]{Markup.Escape(Schema)}[/].[green]{Markup.Escape(Name)}[/]";
+    }
+}
 
 public record TableExtract(SourceTable Table, List<ColumnExtract> Columns, int RowCount);
 

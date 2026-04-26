@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.RegularExpressions;
 using Parquet.Schema;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -6,23 +7,25 @@ using Spectre.Console.Cli;
 namespace Parquet.XTract;
 
 public enum LoaderDialect {
-    Auto,
     Mssql,
-    Postgresql
+    Postgres
 }
 
 public class XCommandSettings : CommandSettings {
-    [CommandOption("-s|--source")]
+    [CommandOption("-s|--source", isRequired: true)]
     [Description("Source connection string")]
     public string SourceConnection { get; set; } = string.Empty;
 
-    [CommandOption("-d|--dialect")]
-    [Description("Database dialect (Mssql or Postgresql)")]
-    public LoaderDialect Dialect { get; set; } = LoaderDialect.Auto;
+    [CommandOption("-d|--dialect", isRequired: true)]
+    [Description("Database dialect (Mssql or Postgres)")]
+    public LoaderDialect Dialect { get; set; } = LoaderDialect.Mssql;
+
+    [CommandOption("-t|--table-regex")]
+    [Description("Regex pattern to filter tables")]
+    public string TableFilterRegex { get; set; } = "";
 }
 
 public class XCommand : AsyncCommand<XCommandSettings> {
-
     private async Task WriteAsync(ColumnExtract column, ParquetRowGroupWriter w) {
         // switch on all types
         Type inType = column.Field.ClrType;
@@ -120,25 +123,18 @@ public class XCommand : AsyncCommand<XCommandSettings> {
         }
     }
 
-    private async Task Process(IRelDbLoader loader, SourceTable table, ProgressContext ctx) {
+    private async Task Process(IRelDbLoader loader, SourceTable table) {
 
-        AnsiConsole.MarkupLine($"Exporting table [grey]{table.Schema}[/].[yellow]{table.Name}[/]...");
+        AnsiConsole.Write(new Rule(table.ToMarkupString()) { Justification = Justify.Right });
 
-        ProgressTask task = ctx
-            .AddTask($"[grey]{table.Schema}[/].[yellow]{table.Name}[/]")
-            .IsIndeterminate(true);
-        
+        AnsiConsole.MarkupLine($"Selecting rows...");
         TableExtract memData = await loader.ExportDataAsync(table);
-        
+
         if(memData.RowCount == 0) {
-            AnsiConsole.MarkupLine($"[red]Table is empty, skipping[/]");
-            task.Increment(100);
+            AnsiConsole.MarkupLine($"[red]empty[/]");
             return;
         }
-        
-        task.IsIndeterminate(false);
-        task.MaxValue = memData.Columns.Count;
-        
+
         AnsiConsole.MarkupLine($"Writing [yellow]{memData.RowCount}[/] row(s) to disk...");
         var schema = new ParquetSchema(memData.Columns.Select(c => c.Field));
         string fileName = $"{table.Schema}.{table.Name}.parquet";
@@ -152,80 +148,57 @@ public class XCommand : AsyncCommand<XCommandSettings> {
         using ParquetRowGroupWriter rowGroupWriter = writer.CreateRowGroup();
 
         foreach(ColumnExtract column in memData.Columns) {
-            task.Description = $"[grey]{table.Schema}[/].[yellow]{table.Name}[/] :: {column.Field.Name} ({column.SourceType})";
-            //AnsiConsole.MarkupLine($"Writing column [yellow]{column.Field.Name}[/] | {column.SourceType}...");
-        
+            AnsiConsole.MarkupLine($"Writing column [yellow]{Markup.Escape(column.Field.Name)}[/] | {Markup.Escape(column.SourceType)}...");
             await WriteAsync(column, rowGroupWriter);
-            task.Increment(1);
         }
-
-        task.Description = $"[grey]{table.Schema}[/].[yellow]{table.Name}[/]";
     }
 
     private async Task<IRelDbLoader> CreateLoaderAsync(XCommandSettings settings) {
         switch(settings.Dialect) {
             case LoaderDialect.Mssql:
                 return new MssqlLoader(settings.SourceConnection);
-            case LoaderDialect.Postgresql:
+            case LoaderDialect.Postgres:
                 return new PgLoader(settings.SourceConnection);
+            default:
+                throw new NotSupportedException($"Unknown dialect: {settings.Dialect}");
         }
+    }
 
-        // auto-detect
-        AnsiConsole.MarkupLine($"[grey]Source dialect not set, detecting...[/] ");
-        var factories = new Dictionary<LoaderDialect, Func<string, IRelDbLoader>> {
-            { LoaderDialect.Mssql, conn => new MssqlLoader(conn) },
-            { LoaderDialect.Postgresql, conn => new PgLoader(conn) }
-        };
+    private async Task<IReadOnlyCollection<SourceTable>> ListTablesAsync(IRelDbLoader loader, XCommandSettings settings) {
+        IReadOnlyCollection<SourceTable> allTables = await loader.ListTableNamesAsync();
+        Regex? tableFilterRegex = string.IsNullOrEmpty(settings.TableFilterRegex)
+            ? null
+            : new Regex(settings.TableFilterRegex, RegexOptions.Compiled);
 
-        foreach(KeyValuePair<LoaderDialect, Func<string, IRelDbLoader>> kvp in factories) {
-            try {
-                AnsiConsole.MarkupLine($"Trying [yellow]{kvp.Key}[/]...");
-                IRelDbLoader loader = kvp.Value(settings.SourceConnection);
-                await loader.GetCurrentDbNameAsync();
-                AnsiConsole.MarkupLine($"[green]This works![/].");
-                return loader;
-            } catch(Exception ex) {
-                AnsiConsole.WriteException(ex, ExceptionFormats.NoStackTrace);
-            }
-        }
-
-        throw new Exception("Could not connect with any dialect. Either connection string is invalid or server(s) are not reachable.");
+        var result = allTables
+            .Where(t => tableFilterRegex == null || tableFilterRegex.IsMatch(t.ToString())).ToList();
+        AnsiConsole.MarkupLine($"Found [green]{allTables.Count}[/] table(s)" + 
+            (allTables.Count == result.Count ? "" : $", [yellow]{result.Count}[/] table(s) match the filter [grey]{settings.TableFilterRegex}[/]") +
+            ": " +
+            string.Join(", ", result.Select(t => t.ToMarkupString())));
+        return result;
     }
 
     protected override async Task<int> ExecuteAsync(CommandContext context, XCommandSettings settings, CancellationToken cancellationToken) {
-
         try {
-            await AnsiConsole.Progress()
-                .HideCompleted(true)
-                .StartAsync(async ctx => {
+            await AnsiConsole.Status().StartAsync("Initializing...", async ctx => {
+                using IRelDbLoader loader = await CreateLoaderAsync(settings);
 
-                    ProgressTask initTask = ctx.AddTask("Initializing");
+                ctx.Status("Getting current database name...");
+                string dbName = await loader.GetCurrentDbNameAsync();
 
-                    using IRelDbLoader loader = await CreateLoaderAsync(settings);
-                    string dbName = await loader.GetCurrentDbNameAsync();
-                    await Task.Delay(1000);
-                    initTask.Increment(50);
+                ctx.Status("Listing tables...");
+                IReadOnlyCollection<SourceTable> tableNames = await ListTablesAsync(loader, settings);
 
-                    ProgressTask exportTask = ctx.AddTask("Exporting");
-
-
-                    AnsiConsole.MarkupLine($"Connected to database [yellow]{dbName}[/], listing tables...");
-                    IReadOnlyCollection<SourceTable> tableNames = await loader.ListTableNamesAsync();
-
-                    await Task.Delay(1000);
-                    initTask.Increment(50);
-
-                    AnsiConsole.MarkupLine($"Found [red]{tableNames.Count}[/] table(s):");
-                    foreach(SourceTable table in tableNames) {
-                        AnsiConsole.MarkupLine($"- [grey]{table.Schema}[/].[green]{table.Name}[/]");
+                ctx.Status("Exporting...");
+                foreach(SourceTable sourceTable in tableNames) {
+                    try {
+                        await Process(loader, sourceTable);
+                    } catch(Exception ex) {
+                        AnsiConsole.WriteException(ex);
                     }
-
-                    foreach(SourceTable sourceTable in tableNames) {
-                        await Process(loader, sourceTable, ctx);
-                        exportTask.Increment(100 / tableNames.Count);
-                    }
-
-                });
+                }
+            });
 
             return 0;
         } catch(Exception ex) {
