@@ -1,37 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>true</IsPackable>
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>parquet-xtract</ToolCommandName>
-    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
-    <Version>1.0.2</Version>
-    <Title>Parquet.XTract</Title>
-    <Description>Experimental data extractor into Parquet format.</Description>
-    <PackageIcon>icon.png</PackageIcon>
-  </PropertyGroup>
-    
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>parquet-xtract</ToolCommandName>
+        <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
+        <Version>1.0.1</Version>
+        <Title>parquet-xtract</Title>
+        <Description>Experimental data extractor into Parquet format.</Description>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/aloneguid/parquet-dotnet/</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageId>parquet-xtract</PackageId>
+        <Product>parquet-xtract</Product>
+        <RepositoryUrl>https://github.com/aloneguid/parquet-dotnet/</RepositoryUrl>
+    </PropertyGroup>
+
     <ItemGroup>
         <None Include="..\..\icon.png">
             <Pack>True</Pack>
-            <PackagePath></PackagePath>
+            <PackagePath>\</PackagePath>
         </None>
-
+        <None Include="README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
     </ItemGroup>
-    
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
-    <PackageReference Include="Microsoft.SqlServer.Types" Version="170.1000.7" />
-    <PackageReference Include="Npgsql" Version="10.0.2" />
-    <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Parquet\Parquet.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+        <PackageReference Include="Microsoft.SqlServer.Types" Version="170.1000.7" />
+        <PackageReference Include="Npgsql" Version="10.0.2" />
+        <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Parquet\Parquet.csproj" />
+    </ItemGroup>
 
 </Project>

@@ -1,14 +1,14 @@
-# XTract
+# parquet-xtract
 
-A small showcase utility that demonstrates how to extract relational database to flat parquet files. This seems to be a popular use case for data analytics and machine learning workflows.
+A small showcase utility that demonstrates how to extract relational database to flat parquet files. This seems to be a popular use case for interfacing with legacy systems.
 
 This utility is not production ready, not supported and is only created as a proof of concept.
+
 This utility focuses on speed and very low memory footprint, but this might not be achieved yet.
 
 Current database support:
 - MSSQL
 - Postgres
-
 
 ## Using
 

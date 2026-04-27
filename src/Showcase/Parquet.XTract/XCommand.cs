@@ -23,107 +23,113 @@ public class XCommandSettings : CommandSettings {
     [CommandOption("-t|--table-regex")]
     [Description("Regex pattern to filter tables")]
     public string TableFilterRegex { get; set; } = "";
+
+    [CommandOption("-c|--compression")]
+    [Description("Compression method")]
+    public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Zstd;
 }
 
 public class XCommand : AsyncCommand<XCommandSettings> {
     private async Task WriteAsync(ColumnExtract column, ParquetRowGroupWriter w) {
         // switch on all types
-        Type inType = column.Field.ClrType;
-        bool isNullable = column.Field.IsNullable;
+        DataField df = column.Column.ToDataField();
+        Type inType = df.ClrType;
+        bool isNullable = df.IsNullable;
 
         if(inType == typeof(int)) {
             if(isNullable) {
-                await w.WriteAsync<int>(column.Field, column.Values.Cast<int?>().ToArray());
+                await w.WriteAsync<int>(df, column.Values.Cast<int?>().ToArray());
             } else {
-                await w.WriteAsync<int>(column.Field, column.Values.Cast<int>().ToArray());
+                await w.WriteAsync<int>(df, column.Values.Cast<int>().ToArray());
             }
         } else if(inType == typeof(bool)) {
             if(isNullable) {
-                await w.WriteAsync<bool>(column.Field, column.Values.Cast<bool?>().ToArray());
+                await w.WriteAsync<bool>(df, column.Values.Cast<bool?>().ToArray());
             } else {
-                await w.WriteAsync<bool>(column.Field, column.Values.Cast<bool>().ToArray());
+                await w.WriteAsync<bool>(df, column.Values.Cast<bool>().ToArray());
             }
         } else if(inType == typeof(byte)) {
             if(isNullable) {
-                await w.WriteAsync<byte>(column.Field, column.Values.Cast<byte?>().ToArray());
+                await w.WriteAsync<byte>(df, column.Values.Cast<byte?>().ToArray());
             } else {
-                await w.WriteAsync<byte>(column.Field, column.Values.Cast<byte>().ToArray());
+                await w.WriteAsync<byte>(df, column.Values.Cast<byte>().ToArray());
             }
         } else if(inType == typeof(short)) {
             if(isNullable) {
-                await w.WriteAsync<short>(column.Field, column.Values.Cast<short?>().ToArray());
+                await w.WriteAsync<short>(df, column.Values.Cast<short?>().ToArray());
             } else {
-                await w.WriteAsync<short>(column.Field, column.Values.Cast<short>().ToArray());
+                await w.WriteAsync<short>(df, column.Values.Cast<short>().ToArray());
             }
         } else if(inType == typeof(float)) {
             if(isNullable) {
-                await w.WriteAsync<float>(column.Field, column.Values.Cast<float?>().ToArray());
+                await w.WriteAsync<float>(df, column.Values.Cast<float?>().ToArray());
             } else {
-                await w.WriteAsync<float>(column.Field, column.Values.Cast<float>().ToArray());
+                await w.WriteAsync<float>(df, column.Values.Cast<float>().ToArray());
             }
         } else if(inType == typeof(long)) {
             if(isNullable) {
-                await w.WriteAsync<long>(column.Field, column.Values.Cast<long?>().ToArray());
+                await w.WriteAsync<long>(df, column.Values.Cast<long?>().ToArray());
             } else {
-                await w.WriteAsync<long>(column.Field, column.Values.Cast<long>().ToArray());
+                await w.WriteAsync<long>(df, column.Values.Cast<long>().ToArray());
             }
         } else if(inType == typeof(decimal)) {
             if(isNullable) {
-                await w.WriteAsync<decimal>(column.Field, column.Values.Cast<decimal?>().ToArray());
+                await w.WriteAsync<decimal>(df, column.Values.Cast<decimal?>().ToArray());
             } else {
-                await w.WriteAsync<decimal>(column.Field, column.Values.Cast<decimal>().ToArray());
+                await w.WriteAsync<decimal>(df, column.Values.Cast<decimal>().ToArray());
             }
         } else if(inType == typeof(double)) {
             if(isNullable) {
-                await w.WriteAsync<double>(column.Field, column.Values.Cast<double?>().ToArray());
+                await w.WriteAsync<double>(df, column.Values.Cast<double?>().ToArray());
             } else {
-                await w.WriteAsync<double>(column.Field, column.Values.Cast<double>().ToArray());
+                await w.WriteAsync<double>(df, column.Values.Cast<double>().ToArray());
             }
         } else if(inType == typeof(DateTime)) {
             if(isNullable) {
-                await w.WriteAsync<DateTime>(column.Field, column.Values.Cast<DateTime?>().ToArray());
+                await w.WriteAsync<DateTime>(df, column.Values.Cast<DateTime?>().ToArray());
             } else {
-                await w.WriteAsync<DateTime>(column.Field, column.Values.Cast<DateTime>().ToArray());
+                await w.WriteAsync<DateTime>(df, column.Values.Cast<DateTime>().ToArray());
             }
         } else if(inType == typeof(TimeSpan)) {
             if(isNullable) {
-                await w.WriteAsync<TimeSpan>(column.Field, column.Values.Cast<TimeSpan?>().ToArray());
+                await w.WriteAsync<TimeSpan>(df, column.Values.Cast<TimeSpan?>().ToArray());
             } else {
-                await w.WriteAsync<TimeSpan>(column.Field, column.Values.Cast<TimeSpan>().ToArray());
+                await w.WriteAsync<TimeSpan>(df, column.Values.Cast<TimeSpan>().ToArray());
             }
         } else if(inType == typeof(string)) {
 
             string?[] values;
 
-            if(column.SourceType == "sql_variant" ||
-               column.SourceType.EndsWith(".geography") ||
-               column.SourceType.EndsWith(".geometry") ||
-               column.SourceType.EndsWith(".hierarchyid")) {
+            string nativeType = column.Column.NativeType;
+            if(nativeType == "sql_variant" ||
+               nativeType.EndsWith(".geography") ||
+               nativeType.EndsWith(".geometry") ||
+               nativeType.EndsWith(".hierarchyid")) {
                 values = column.Values.Select(o => o?.ToString()).ToArray();
             } else {
                 values = column.Values.Cast<string?>().ToArray();
             }
             
-            await w.WriteAsync(column.Field, values);
+            await w.WriteAsync(df, values);
                 
         } else if(inType == typeof(Guid)) {
             if(isNullable) {
-                await w.WriteAsync<Guid>(column.Field, column.Values.Cast<Guid?>().ToArray());
+                await w.WriteAsync<Guid>(df, column.Values.Cast<Guid?>().ToArray());
             } else {
-                await w.WriteAsync<Guid>(column.Field, column.Values.Cast<Guid>().ToArray());
+                await w.WriteAsync<Guid>(df, column.Values.Cast<Guid>().ToArray());
             }
         } else if(inType == typeof(byte[])) {
             if(isNullable) {
-                await w.WriteAsync(column.Field, column.Values.Cast<byte[]?>().ToArray());
+                await w.WriteAsync(df, column.Values.Cast<byte[]?>().ToArray());
             } else {
-                await w.WriteAsync(column.Field, column.Values.Cast<byte[]>().ToArray());
+                await w.WriteAsync(df, column.Values.Cast<byte[]>().ToArray());
             }
         } else {
             throw new NotImplementedException($"Cannot write column type {inType}");
         }
     }
 
-    private async Task Process(IRelDbLoader loader, SourceTable table) {
+    private async Task Process(IRelDbLoader loader, SourceTable table, XCommandSettings settings) {
 
         AnsiConsole.Write(new Rule(table.ToMarkupString()) { Justification = Justify.Right });
 
@@ -136,19 +142,22 @@ public class XCommand : AsyncCommand<XCommandSettings> {
         }
 
         AnsiConsole.MarkupLine($"Writing [yellow]{memData.RowCount}[/] row(s) to disk...");
-        var schema = new ParquetSchema(memData.Columns.Select(c => c.Field));
-        string fileName = $"{table.Schema}.{table.Name}.parquet";
+        var schema = new ParquetSchema(memData.Columns.Select(c => c.Column.ToDataField()));
+        string fileName = $"{table.Schema}.{table.Name}.{settings.CompressionMethod.ToString().ToLower()}.parquet";
         if(System.IO.File.Exists(fileName)) {
             System.IO.File.Delete(fileName);
         }
         using var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
-        await using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs);
+        var options = new ParquetOptions {
+            CompressionMethod = settings.CompressionMethod
+        };
+        await using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs, options);
         
         // this demo will use just one row group
         using ParquetRowGroupWriter rowGroupWriter = writer.CreateRowGroup();
 
         foreach(ColumnExtract column in memData.Columns) {
-            AnsiConsole.MarkupLine($"Writing column [yellow]{Markup.Escape(column.Field.Name)}[/] | {Markup.Escape(column.SourceType)}...");
+            AnsiConsole.MarkupLine($"Writing column [yellow]{Markup.Escape(column.Column.ToString())}[/]...");
             await WriteAsync(column, rowGroupWriter);
         }
     }
@@ -165,7 +174,7 @@ public class XCommand : AsyncCommand<XCommandSettings> {
     }
 
     private async Task<IReadOnlyCollection<SourceTable>> ListTablesAsync(IRelDbLoader loader, XCommandSettings settings) {
-        IReadOnlyCollection<SourceTable> allTables = await loader.ListTableNamesAsync();
+        IReadOnlyCollection<SourceTable> allTables = await loader.ListTablesAsync();
         Regex? tableFilterRegex = string.IsNullOrEmpty(settings.TableFilterRegex)
             ? null
             : new Regex(settings.TableFilterRegex, RegexOptions.Compiled);
@@ -193,7 +202,7 @@ public class XCommand : AsyncCommand<XCommandSettings> {
                 ctx.Status("Exporting...");
                 foreach(SourceTable sourceTable in tableNames) {
                     try {
-                        await Process(loader, sourceTable);
+                        await Process(loader, sourceTable, settings);
                     } catch(Exception ex) {
                         AnsiConsole.WriteException(ex);
                     }

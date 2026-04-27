@@ -1,8 +1,7 @@
-using System.Collections.ObjectModel;
 using System.Data.Common;
 using Microsoft.Data.SqlClient;
+using Microsoft.SqlServer.Types;
 using Parquet.Schema;
-using Spectre.Console;
 
 namespace Parquet.XTract;
 
@@ -30,52 +29,83 @@ class MssqlLoader : IRelDbLoader {
         return await command.ExecuteScalarAsync() as string ?? string.Empty;
     }
 
-    public async Task<IReadOnlyCollection<SourceTable>> ListTableNamesAsync() {
+    public async Task<IReadOnlyCollection<SourceTable>> ListTablesAsync() {
         if(_connection.State != System.Data.ConnectionState.Open)
             await _connection.OpenAsync();
 
         await using SqlCommand command = _connection.CreateCommand();
         command.CommandText = """
-            SELECT TABLE_SCHEMA, TABLE_NAME
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_TYPE = 'BASE TABLE'
-            ORDER BY TABLE_NAME
+            SELECT t.TABLE_SCHEMA,
+                   t.TABLE_NAME,
+                   c.COLUMN_NAME,
+                   c.IS_NULLABLE,
+                   c.DATA_TYPE
+            FROM INFORMATION_SCHEMA.TABLES t
+            LEFT JOIN INFORMATION_SCHEMA.COLUMNS c
+                ON c.TABLE_SCHEMA = t.TABLE_SCHEMA
+               AND c.TABLE_NAME = t.TABLE_NAME
+            WHERE t.TABLE_TYPE = 'BASE TABLE'
+            ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION
             """;
 
-        List<SourceTable> tableNames = [];
+        List<SourceTable> tables = [];
+        Dictionary<(string Schema, string Name), SourceTable> tableByName = [];
 
         await using SqlDataReader reader = await command.ExecuteReaderAsync();
         while(await reader.ReadAsync()) {
-            tableNames.Add(new SourceTable(reader.GetString(0), reader.GetString(1)));
+            string schema = reader.GetString(0);
+            string tableName = reader.GetString(1);
+            (string Schema, string Name) key = (schema, tableName);
+            if(!tableByName.TryGetValue(key, out SourceTable? table)) {
+                table = new SourceTable(schema, tableName);
+                tableByName.Add(key, table);
+                tables.Add(table);
+            }
+
+            if(reader.IsDBNull(2)) {
+                continue;
+            }
+
+            string columnName = reader.GetString(2);
+            bool isNullable = reader.IsDBNull(3) || string.Equals(reader.GetString(3), "YES", StringComparison.OrdinalIgnoreCase);
+            string dataType = reader.GetString(4);
+
+            Type clrType = MapSourceTypeToClrType(dataType);
+            table.Columns.Add(new SourceColumn(columnName, clrType, isNullable, dataType));
         }
 
-        return tableNames;
+        return tables;
     }
 
-    private DataField ToParquetDataField(DbColumn column) {
-        AnsiConsole.WriteLine($"{column.ColumnName} {column.DataType} {column.AllowDBNull}");
-        bool isNullable = column.AllowDBNull ?? false;
-        Type? clrType = column.DataType;
-        
-        if(clrType == null) 
-            throw new InvalidOperationException($"Column '{column.ColumnName}' has null data type.");
-        
-        if(clrType == typeof(DateTimeOffset))
-            clrType = typeof(DateTime);
-        
-        else if(clrType == typeof(object))
-            clrType = typeof(string);
-        
-        else if(clrType == typeof(Microsoft.SqlServer.Types.SqlGeography))
-            clrType = typeof(string);
+    internal static Type MapSourceTypeToClrType(string dataType) {
+        string sourceType = dataType;
 
-        else if(clrType == typeof(Microsoft.SqlServer.Types.SqlGeometry))
-            clrType = typeof(string);
-        
-        else if(clrType == typeof(Microsoft.SqlServer.Types.SqlHierarchyId))
-            clrType = typeof(string);
-        
-        return new DataField(column.ColumnName, clrType, isNullable);
+        return sourceType.ToLowerInvariant() switch {
+            "bit" => typeof(bool),
+            "tinyint" => typeof(byte),
+            "smallint" => typeof(short),
+            "int" => typeof(int),
+            "bigint" => typeof(long),
+            "real" => typeof(float),
+            "float" => typeof(double),
+            "decimal" => typeof(decimal),
+            "numeric" => typeof(decimal),
+            "money" => typeof(decimal),
+            "smallmoney" => typeof(decimal),
+            "date" => typeof(DateTime),
+            "datetime" => typeof(DateTime),
+            "datetime2" => typeof(DateTime),
+            "smalldatetime" => typeof(DateTime),
+            "datetimeoffset" => typeof(DateTime),
+            "time" => typeof(TimeSpan),
+            "uniqueidentifier" => typeof(Guid),
+            "binary" => typeof(byte[]),
+            "varbinary" => typeof(byte[]),
+            "image" => typeof(byte[]),
+            "timestamp" => typeof(byte[]),
+            "rowversion" => typeof(byte[]),
+            _ => typeof(string)
+        };
     }
 
     public async Task<TableExtract> ExportDataAsync(SourceTable table) {
@@ -83,22 +113,21 @@ class MssqlLoader : IRelDbLoader {
             await _connection.OpenAsync();
 
         await using SqlCommand command = _connection.CreateCommand();
-        command.CommandText = $"select * from {table.Schema}.{table.Name}";
+        command.CommandText = $"select {string.Join(", ", table.Columns.Select(c => c.Name))} from {table.Schema}.{table.Name}";
 
         int rowCount = 0;
         await using SqlDataReader reader = await command.ExecuteReaderAsync();
-        ReadOnlyCollection<DbColumn> dbSchema = await reader.GetColumnSchemaAsync();
+        IReadOnlyList<DbColumn> dbSchema = await reader.GetColumnSchemaAsync();
         
         // can't get row count in forward-only data reader
         var columnsData = new List<ColumnExtract>();
         
         while(await reader.ReadAsync()) {
             for(int i = 0; i < dbSchema.Count; i++) {
-                DbColumn dbColMeta = dbSchema[i];
-
+                SourceColumn sc = table.Columns[i];
+                
                 if(i >= columnsData.Count) {
-                    DataField df = ToParquetDataField(dbColMeta);
-                    columnsData.Add(new ColumnExtract(df, new List<object?>(), dbColMeta.DataTypeName ?? string.Empty));
+                    columnsData.Add(new ColumnExtract(sc, new List<object?>()));
                 }
 
                 ColumnExtract colData = columnsData[i];
@@ -109,6 +138,12 @@ class MssqlLoader : IRelDbLoader {
                     object? value = reader.GetValue(i);
                     if(value is DateTimeOffset dto) {
                         value = dto.DateTime;
+                    } else if(value is SqlGeography geog) {
+                        value = geog.ToString();
+                    } else if(value is SqlGeometry geom) {
+                        value = geom.ToString();
+                    } else if(value is SqlHierarchyId hid) {
+                        value = hid.ToString();
                     }
                     colData.Values.Add(value);
                 }
