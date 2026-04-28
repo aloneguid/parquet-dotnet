@@ -1,4 +1,4 @@
-# 6.0.0-pre.7
+# 6.0.0-pre.8
 
 ## Highlights
 
@@ -30,6 +30,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 
 ## Improvements
 
+- Dictionary encoding supports adaptive sampling, by @meni-braun in #712.
 - More APIs respect `CancellationToken` allowing you to cancel long-running parquet operations.
 - Add IsAdjustedToUTC property to TimeOnlyDataField, by @rferraton in #727.
 - `FileMerger` utililty is faster and more battle tested. Additionally, it allows specifying custom row group size.
