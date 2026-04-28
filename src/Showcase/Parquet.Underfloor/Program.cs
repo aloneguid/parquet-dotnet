@@ -114,8 +114,16 @@ string FormatLogicalType(LogicalType? lt) {
     if(lt.BSON != null)
         return "BSON";
 
-    if(lt.VARIANT != null)
-        return "VARIANT";
+    if(lt.VARIANT != null){
+        return lt.VARIANT.SpecificationVersion != null ? $"VARIANT({lt.VARIANT.SpecificationVersion})" : "VARIANT";
+    }
+
+    if(lt.GEOMETRY != null)
+        return $"GEOMETRY({lt.GEOMETRY?.Crs})";
+
+    if(lt.GEOGRAPHY != null)
+        return $"GEOGRAPHY({lt.GEOGRAPHY?.Crs}, {lt.GEOGRAPHY?.Algorithm})";
+
 
     return string.Empty;
 }

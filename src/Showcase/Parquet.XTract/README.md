@@ -12,7 +12,7 @@ Current database support:
 
 ## Using
 
-This can be installed as a [dotnet tool](https://www.nuget.org/packages/Parquet.XTract) at the moment. Shouldn't be a problem to publish as self-contained executable if required.
+This can be installed as a [dotnet tool](https://www.nuget.org/packages/parquet-xtract) at the moment. Shouldn't be a problem to publish as self-contained executable if required.
 
 The shortest working example, which connects to a Postgres database and extracts all tables to parquet files in the current directory, is:
 

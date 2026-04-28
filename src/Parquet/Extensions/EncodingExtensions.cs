@@ -51,7 +51,7 @@ static class EncodingExtensions {
     #region [ Variable Length Encoding ]
 
     /// <summary>
-    /// Encodes in ULEB128 and returns number of emitted bytes.
+    /// Encodes in ULEB128 and returns number of emitted bytes. See https://youtu.be/hKQCpfdG7to and
     /// https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

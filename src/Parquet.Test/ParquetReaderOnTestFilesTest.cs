@@ -340,4 +340,11 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         TimeSpan?[] data = await ReadNullableValuesAsync<TimeSpan>(groupReader, fs[1]);
         Assert.Equal(TimeSpan.FromTicks(215720000000), data[0]);
     }
+
+    [Fact]
+    public async Task UnshreddedVariant() {
+        using Stream s = OpenTestFile("variant_unshredded.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        Assert.NotNull(r.Schema);
+    }
 }

@@ -25,7 +25,7 @@ public class XCommandSettings : CommandSettings {
     public string TableFilterRegex { get; set; } = "";
 
     [CommandOption("-c|--compression")]
-    [Description("Compression method")]
+    [Description("Compression method for the target parquet files.")]
     public CompressionMethod CompressionMethod { get; set; } = CompressionMethod.Zstd;
 }
 
