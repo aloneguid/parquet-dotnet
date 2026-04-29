@@ -9,10 +9,16 @@ using Parquet.Meta;
 namespace Parquet.Encodings;
 
 /// <summary>
-/// DELTA_BINARY_PACKED (https://github.com/apache/parquet-format/blob/master/Encodings.md#delta-encoding-delta_binary_packed--5)
-/// fastparquet sample: https://github.com/dask/fastparquet/blob/c59e105537a8e7673fa30676dfb16d9fa5fb1cac/fastparquet/cencoding.pyx#L232
-/// golang sample: https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingread.go#L270
-///
+/// DELTA_BINARY_PACKED
+/// (https://github.com/apache/parquet-format/blob/master/Encodings.md#delta-encoding-delta_binary_packed--5).
+/// Good video explainer: https://youtu.be/vNQqe6PGCH4.
+/// 
+/// Fastparquet sample:
+/// https://github.com/dask/fastparquet/blob/c59e105537a8e7673fa30676dfb16d9fa5fb1cac/fastparquet/cencoding.pyx#L232
+/// 
+/// Golang sample:
+/// https://github.com/xitongsys/parquet-go/blob/62cf52a8dad4f8b729e6c38809f091cd134c3749/encoding/encodingread.go#L270
+/// 
 /// Supported Types: short, ushort, int, uint, long, ulong
 /// </summary>
 static partial class DeltaBinaryPackedEncoder {

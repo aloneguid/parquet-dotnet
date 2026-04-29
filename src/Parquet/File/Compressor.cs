@@ -107,7 +107,6 @@ class DefaultCompressor : ICompressor {
 
     // "Brotli" compression
 
-#if !NETSTANDARD2_0
     private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
         using var ms = new MemoryStream();
         source.Position = 0;
@@ -142,39 +141,43 @@ class DefaultCompressor : ICompressor {
 
         return owner;
     }
-#endif
 
-    // "Zstd" compression. Requires ZstdSharp NuGet package, but should come in .NET 11: https://github.com/dotnet/runtime/issues/59591
+    // "Zstandard" compression (uses forward compatible "SystemIOCompression.Zstandard.Backporting", as Zstandard will be part of .NET 11)
 
     private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
         int zLevel = level switch {
             CompressionLevel.Optimal => 3,
             CompressionLevel.Fastest => 1,
             CompressionLevel.NoCompression => 1,
-#if NET6_0_OR_GREATER
             CompressionLevel.SmallestSize => 19,
-#endif
             _ => 0
         };
 
-        using var compressor = new ZstdSharp.Compressor(zLevel);
-        ReadOnlySpan<byte> data = source.GetBuffer().AsSpan(0, (int)source.Length);
-        Span<byte> compressed = compressor.Wrap(data);
-        var owner = MemoryOwner<byte>.Allocate(compressed.Length);
-        compressed.CopyTo(owner.Span);
-        return owner;
+        long maxDestLength = ZstandardEncoder.GetMaxCompressedLength(source.Length);
+        MemoryOwner<byte> owner = MemoryOwner<byte>.Allocate((int)maxDestLength);
+        bool ok = ZstandardEncoder.TryCompress(source.GetBuffer().AsSpan(0, (int)source.Length), owner.Memory.Span, out int compressedLength, zLevel, 0);
+        if(!ok) {
+            throw new InvalidOperationException("Compression failed");
+        }
+        return owner.Slice(0, compressedLength);
     }
 
     private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
-        using var decompressor = new ZstdSharp.Decompressor();
-        byte[] compressed = source.ToByteArray()!;
-        // Do not pass destinationLength as maxDecompressedSize — some Parquet files report an incorrect
-        // UncompressedPageSize in their metadata. Instead, let ZstdSharp read the actual content size
-        // that is embedded in the Zstd frame header, which is always accurate.
-        Span<byte> decompressed = decompressor.Unwrap(compressed);
-        var owner = MemoryOwner<byte>.Allocate(decompressed.Length);
-        decompressed.CopyTo(owner.Span);
-        return owner;
+
+        long length = source.Length;
+        using IMemoryOwner<byte> sourceMO = MemoryOwner<byte>.Allocate((int)length);
+        await source.CopyToAsync(sourceMO.Memory);
+
+        if(!ZstandardDecoder.TryGetMaxDecompressedLength(sourceMO.Memory.Span, out long destLength))
+            throw new InvalidOperationException("Invalid compressed data (could not get length)");
+
+        MemoryOwner<byte> destMO = MemoryOwner<byte>.Allocate((int)destLength);
+        bool ok = ZstandardDecoder.TryDecompress(sourceMO.Memory.Span, destMO.Memory.Span, out int actualDestLength);
+        if(!ok) {
+            throw new InvalidOperationException("Decompression failed");
+        }
+
+        return destMO.Slice(0, actualDestLength);
     }
 
     // "LZ4" compression, requires K4os.Compression.LZ4 NuGet package
@@ -184,9 +187,7 @@ class DefaultCompressor : ICompressor {
             CompressionLevel.Optimal => LZ4Level.L11_OPT,
             CompressionLevel.Fastest => LZ4Level.L00_FAST,
             CompressionLevel.NoCompression => LZ4Level.L00_FAST,
-#if NET6_0_OR_GREATER
             CompressionLevel.SmallestSize => LZ4Level.L12_MAX,
-#endif
             _ => LZ4Level.L09_HC
         };
 
@@ -218,10 +219,8 @@ class DefaultCompressor : ICompressor {
                 return await GzipCompress(source, level);
             case CompressionMethod.Lzo:
                 return await LzoCompress(source, level);
-#if !NETSTANDARD2_0
             case CompressionMethod.Brotli:
                 return await BrotliCompress(source, level);
-#endif
             case CompressionMethod.LZ4:
                 return await Lz4Compress(source, level);
             case CompressionMethod.Zstd:
@@ -244,10 +243,8 @@ class DefaultCompressor : ICompressor {
                 return await GzipDecompress(source, destinationLength);
             case CompressionMethod.Lzo:
                 return await LzoDecompress(source, destinationLength);
-#if !NETSTANDARD2_0
             case CompressionMethod.Brotli:
                 return await BrotliDecompress(source, destinationLength);
-#endif
             case CompressionMethod.LZ4:
                 return await Lz4Decompress(source, destinationLength);
             case CompressionMethod.Zstd:

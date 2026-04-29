@@ -48,6 +48,7 @@ For slightly more details, see [this post](https://www.aloneguid.uk/posts/2026/0
 - Added initial support for hardware accelerated encoding/decoding (flag to turn it off is in `ParquetOptions`. Hardware acceleration will be added into more places as the library develops. At the moment:
     - BYTE_STREAM_SPLIT decoding is about twice faster with hardware acceleration.
     - PLAIN encoding for booleans is up to 12 times faster with hardware acceleration.
+- Zstandard compression is up to twice faster, uses twice less memory and is forward-compatible with .NET 11 built-in implementation ([more details](https://www.aloneguid.uk/posts/2026/04/zstd-dotnet/)).
 
 
 ## Other changes

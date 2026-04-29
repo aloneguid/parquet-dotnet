@@ -13,6 +13,7 @@
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
         <PackageReference Include="ParquetSharp" Version="23.0.0.2" />
+        <PackageReference Include="ZstdSharp.Port" Version="0.8.7" />
     </ItemGroup>
 
     <!-- normally, reference project directly -->

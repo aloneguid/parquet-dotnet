@@ -21,6 +21,9 @@ if(args.Length == 1) {
             break;
         case "twosamples":
             break;
+        case "compression":
+            BenchmarkRunner.Run<CompressionBenchmarks>();
+            break;
     }
 } else {
     await new DataTypes().RandomStrings();
