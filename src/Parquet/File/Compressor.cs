@@ -144,6 +144,7 @@ class DefaultCompressor : ICompressor {
 
     // "Zstandard" compression (uses forward compatible "SystemIOCompression.Zstandard.Backporting", as Zstandard will be part of .NET 11)
 
+    /*
     private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
         int zLevel = level switch {
             CompressionLevel.Optimal => 3,
@@ -178,6 +179,36 @@ class DefaultCompressor : ICompressor {
         }
 
         return destMO.Slice(0, actualDestLength);
+    }
+    */
+
+    private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
+        int zLevel = level switch {
+            CompressionLevel.Optimal => 3,
+            CompressionLevel.Fastest => 1,
+            CompressionLevel.NoCompression => 1,
+            CompressionLevel.SmallestSize => 19,
+            _ => 0
+        };
+
+        using var compressor = new ZstdSharp.Compressor(zLevel);
+        ReadOnlySpan<byte> data = source.GetBuffer().AsSpan(0, (int)source.Length);
+        Span<byte> compressed = compressor.Wrap(data);
+        var owner = MemoryOwner<byte>.Allocate(compressed.Length);
+        compressed.CopyTo(owner.Span);
+        return owner;
+    }
+
+    private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
+        using var decompressor = new ZstdSharp.Decompressor();
+        byte[] compressed = source.ToByteArray()!;
+        // Do not pass destinationLength as maxDecompressedSize — some Parquet files report an incorrect
+        // UncompressedPageSize in their metadata. Instead, let ZstdSharp read the actual content size
+        // that is embedded in the Zstd frame header, which is always accurate.
+        Span<byte> decompressed = decompressor.Unwrap(compressed);
+        var owner = MemoryOwner<byte>.Allocate(decompressed.Length);
+        decompressed.CopyTo(owner.Span);
+        return owner;
     }
 
     // "LZ4" compression, requires K4os.Compression.LZ4 NuGet package
