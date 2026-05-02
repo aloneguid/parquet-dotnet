@@ -791,11 +791,12 @@ static class ParquetPlainEncoder {
         switch(tse.Type) {
             case TType.INT32:
                 double scaleFactor32 = Math.Pow(10, tse.Scale ?? 0);
+                Span<byte> buf4 = stackalloc byte[4];
                 foreach(decimal d in data)
                     try {
                         int i = (int)(d * (decimal)scaleFactor32);
-                        byte[] b = BitConverter.GetBytes(i);
-                        destination.Write(b, 0, b.Length);
+                        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(buf4, i);
+                        destination.Write(buf4);
                     } catch(OverflowException) {
                         throw new ParquetException(
                            $"value '{d}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
@@ -803,22 +804,24 @@ static class ParquetPlainEncoder {
                 break;
             case TType.INT64:
                 double sf64 = Math.Pow(10, tse.Scale ?? 0);
+                Span<byte> buf8 = stackalloc byte[8];
                 foreach(decimal d in data)
                     try {
                         long l = (long)(d * (decimal)sf64);
-                        byte[] b = BitConverter.GetBytes(l);
-                        destination.Write(b, 0, b.Length);
+                        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(buf8, l);
+                        destination.Write(buf8);
                     } catch(OverflowException) {
                         throw new ParquetException(
                            $"value '{d}' is too large to fit into scale {tse.Scale} and precision {tse.Precision}");
                     }
                 break;
             case TType.FIXED_LEN_BYTE_ARRAY:
+                Span<byte> decBuf = stackalloc byte[16];
                 foreach(decimal d in data) {
                     var bd = BigDecimal.FromDecimal(d, tse.Precision, tse.Scale);
-                    byte[] b = bd.GetBytes();
-                    tse.TypeLength = b.Length; //always re-set type length as it can differ from default type length
-                    destination.Write(b, 0, b.Length);
+                    int written = bd.WriteBytes(decBuf);
+                    tse.TypeLength = written;
+                    destination.Write(decBuf.Slice(0, written));
                 }
                 break;
             default:
@@ -827,10 +830,11 @@ static class ParquetPlainEncoder {
     }
 
     public static void Encode(ReadOnlySpan<BigDecimal> data, Stream destination, SchemaElement tse) {
+        Span<byte> buf = stackalloc byte[16];
         foreach(BigDecimal bd in data) {
-            byte[] b = bd.GetBytes();
-            tse.TypeLength = b.Length; //always re-set type length as it can differ from default type length
-            destination.Write(b, 0, b.Length);
+            int written = bd.WriteBytes(buf);
+            tse.TypeLength = written;
+            destination.Write(buf.Slice(0, written));
         }
     }
 
