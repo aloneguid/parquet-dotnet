@@ -217,10 +217,48 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expected, actual);
     }
 
-    [Fact]
-    public async Task Type_really_big_bigdecimal_writes_and_reads() {
-        var field = new BigDecimalDataField("decReallyBig", 38, 2);
-        var expected = new BigDecimal(BigInteger.Parse("12345678901234567890123456789012345678"), 38, 2);
+    [Theory]
+    // zero
+    [InlineData("0", 38, 2)]
+    [InlineData("0", 10, 0)]
+    // small positive, no scale
+    [InlineData("1", 10, 0)]
+    [InlineData("42", 10, 0)]
+    // small positive, with scale
+    [InlineData("12345", 10, 2)]          // 123.45
+    [InlineData("100", 10, 2)]            // 1.00
+    [InlineData("1", 10, 5)]              // 0.00001
+    // small negative, no scale
+    [InlineData("-1", 10, 0)]
+    [InlineData("-42", 10, 0)]
+    // small negative, with scale
+    [InlineData("-12345", 10, 2)]         // -123.45
+    [InlineData("-100", 10, 2)]           // -1.00
+    [InlineData("-1", 10, 5)]             // -0.00001
+    // medium precision (18, 8 bytes)
+    [InlineData("12345678901234", 18, 4)]
+    [InlineData("-12345678901234", 18, 4)]
+    [InlineData("999999999999999999", 18, 0)]
+    [InlineData("-999999999999999999", 18, 0)]
+    // large precision (28, 12 bytes)
+    [InlineData("1234567890123456789012", 28, 6)]
+    [InlineData("-1234567890123456789012", 28, 6)]
+    // max precision (38, 16 bytes), positive
+    [InlineData("12345678901234567890123456789012345678", 38, 2)]
+    [InlineData("99999999999999999999999999999999999999", 38, 0)]
+    [InlineData("99999999999999999999999999999999999", 38, 5)]
+    // max precision (38, 16 bytes), negative
+    [InlineData("-12345678901234567890123456789012345678", 38, 2)]
+    [InlineData("-99999999999999999999999999999999999999", 38, 0)]
+    [InlineData("-99999999999999999999999999999999999", 38, 5)]
+    // high scale
+    [InlineData("123456789012345678", 38, 20)]
+    [InlineData("-123456789012345678", 38, 20)]
+    [InlineData("1", 38, 37)]
+    [InlineData("-1", 38, 37)]
+    public async Task Type_bigdecimal_write_read_roundtrip(string unscaledStr, int precision, int scale) {
+        var field = new BigDecimalDataField("bd", precision, scale);
+        var expected = new BigDecimal(BigInteger.Parse(unscaledStr), precision, scale);
         BigDecimal actual = await WriteReadSingleAsync(field, expected);
         Assert.Equal(expected, actual);
     }
