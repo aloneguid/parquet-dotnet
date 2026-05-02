@@ -173,38 +173,35 @@ public struct BigDecimal {
     }
 
     internal byte[] GetBytes() {
-        /*
-         * Java: https://docs.oracle.com/javase/7/docs/api/java/math/BigInteger.html#toByteArray()
-         * 
-         * Returns a byte array containing the two's-complement representation of this BigInteger. The byte array will be in big-endian byte-order: the most significant byte is in the zeroth element. The array will contain the minimum number of bytes required to represent this BigInteger, including at least one sign bit, which is (ceil((this.bitLength() + 1)/8)). (This representation is compatible with the (byte[]) constructor.)
-         * 
-         * C#:   https://msdn.microsoft.com/en-us/library/system.numerics.biginteger.tobytearray(v=vs.110).aspx
-         * 
-         * 
-         *  value | C# | Java
-         * 
-         * -1 | [1111 1111] | [1111 1111] - no difference, so maybe buffer size?
-         * 
-         */
-
-
         byte[] result = AllocateResult();
+        WriteBytes(result.AsSpan());
+        return result;
+    }
 
-        byte[] data = UnscaledValue.ToByteArray();
-        if(data.Length > result.Length)
-            throw new NotSupportedException($"decimal data buffer is {data.Length} but result must fit into {result.Length} bytes");
+    internal int WriteBytes(Span<byte> destination) {
+        int size = GetBufferSize(Precision);
+        if(destination.Length < size)
+            throw new ArgumentException($"destination buffer is {destination.Length} but need {size} bytes");
 
-        Array.Copy(data, result, data.Length);
+        Span<byte> result = destination.Slice(0, size);
 
-        //if value is negative fill the remaining bytes with [1111 1111] i.e. negative flag bit (0xFF)
+        // write little-endian bytes directly into the span
+        if(!UnscaledValue.TryWriteBytes(result, out int bytesWritten, isUnsigned: false, isBigEndian: false))
+            throw new NotSupportedException($"decimal data buffer does not fit into {size} bytes");
+
+        if(bytesWritten > size)
+            throw new NotSupportedException($"decimal data buffer is {bytesWritten} but result must fit into {size} bytes");
+
+        // pad with sign extension
         if(UnscaledValue.Sign == -1) {
-            for(int i = data.Length; i < result.Length; i++) {
-                result[i] = 0xFF;
-            }
+            result.Slice(bytesWritten).Fill(0xFF);
+        } else {
+            result.Slice(bytesWritten).Fill(0);
         }
 
-        result = Enumerable.Reverse(result).ToArray();
-        return result;
+        // reverse to big-endian
+        result.Reverse();
+        return size;
     }
 
     /// <summary>
