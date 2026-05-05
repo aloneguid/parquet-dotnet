@@ -49,12 +49,15 @@ public class ParquetSharpComparisonBenchmark {
     [Benchmark(Description = "Parquet.Net -> MemoryStream")]
     public async Task ParquetNetAsync() {
         _memoryStream.Position = 0;
+#if PARQUET_PACKAGE
+        using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, _memoryStream, _parquetNetOptions);
+        writer.CompressionMethod = CompressionMethod.None;
+#else
         await using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, _memoryStream, _parquetNetOptions);
+#endif
         using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
 
-        foreach(TaxiColumn column in _parquetNetSchema.Columns) {
-            await column.WriteAsync(rowGroup);
-        }
+        await _parquetNetSchema.WriteAsync(rowGroup);
     }
 
     [Benchmark(Description = "Parquet.Net -> Disk")]
@@ -63,12 +66,15 @@ public class ParquetSharpComparisonBenchmark {
 
         try {
             await using FileStream output = IOFile.Create(path);
+#if PARQUET_PACKAGE
+            using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, output, _parquetNetOptions);
+            writer.CompressionMethod = CompressionMethod.None;
+#else
             await using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, output, _parquetNetOptions);
+#endif
             using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
 
-            foreach(TaxiColumn column in _parquetNetSchema.Columns) {
-                await column.WriteAsync(rowGroup);
-            }
+            await _parquetNetSchema.WriteAsync(rowGroup);
         } finally {
             IOFile.Delete(path);
         }

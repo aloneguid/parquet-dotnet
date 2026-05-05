@@ -1,3 +1,6 @@
+#if PARQUET_PACKAGE
+using Parquet.Data;
+#endif
 using Parquet.Schema;
 
 namespace Parquet.PerfRunner.Taxis;
@@ -5,11 +8,33 @@ namespace Parquet.PerfRunner.Taxis;
 sealed class TaxiSchema {
 
     public ParquetSchema Schema { get; }
-    public TaxiColumn[] Columns { get; }
+
+#if PARQUET_PACKAGE
+    private readonly DataColumn[] _columns;
+
+    private TaxiSchema(ParquetSchema schema, DataColumn[] columns) {
+        Schema = schema;
+        _columns = columns;
+    }
+#else
+    private readonly TaxiColumn[] _columns;
 
     private TaxiSchema(ParquetSchema schema, TaxiColumn[] columns) {
         Schema = schema;
-        Columns = columns;
+        _columns = columns;
+    }
+#endif
+
+    public async Task WriteAsync(ParquetRowGroupWriter rowGroup) {
+#if PARQUET_PACKAGE
+        foreach(DataColumn column in _columns) {
+            await rowGroup.WriteColumnAsync(column);
+        }
+#else
+        foreach(TaxiColumn column in _columns) {
+            await column.WriteAsync(rowGroup);
+        }
+#endif
     }
 
     public static TaxiSchema Full(TaxiDataset dataset) {
@@ -35,6 +60,29 @@ sealed class TaxiSchema {
             new DataField<double?>("Airport_fee")
         );
         DataField[] dataFields = schema.GetDataFields();
+#if PARQUET_PACKAGE
+        DataColumn[] columns = [
+            new DataColumn(dataFields[0], dataset.VendorID),
+            new DataColumn(dataFields[1], dataset.tpep_pickup_datetime),
+            new DataColumn(dataFields[2], dataset.tpep_dropoff_datetime),
+            new DataColumn(dataFields[3], dataset.passenger_count),
+            new DataColumn(dataFields[4], dataset.trip_distance),
+            new DataColumn(dataFields[5], dataset.RatecodeID),
+            new DataColumn(dataFields[6], dataset.store_and_fwd_flag),
+            new DataColumn(dataFields[7], dataset.PULocationID),
+            new DataColumn(dataFields[8], dataset.DOLocationID),
+            new DataColumn(dataFields[9], dataset.payment_type),
+            new DataColumn(dataFields[10], dataset.fare_amount),
+            new DataColumn(dataFields[11], dataset.extra),
+            new DataColumn(dataFields[12], dataset.mta_tax),
+            new DataColumn(dataFields[13], dataset.tip_amount),
+            new DataColumn(dataFields[14], dataset.tolls_amount),
+            new DataColumn(dataFields[15], dataset.improvement_surcharge),
+            new DataColumn(dataFields[16], dataset.total_amount),
+            new DataColumn(dataFields[17], dataset.congestion_surcharge),
+            new DataColumn(dataFields[18], dataset.Airport_fee)
+        ];
+#else
         TaxiColumn[] columns = [
             new(dataFields[0], rowGroup => rowGroup.WriteAsync<int>(dataFields[0], dataset.VendorID)),
             new(dataFields[1], rowGroup => rowGroup.WriteAsync<DateTime>(dataFields[1], dataset.tpep_pickup_datetime)),
@@ -56,6 +104,7 @@ sealed class TaxiSchema {
             new(dataFields[17], rowGroup => rowGroup.WriteAsync<double>(dataFields[17], dataset.congestion_surcharge)),
             new(dataFields[18], rowGroup => rowGroup.WriteAsync<double>(dataFields[18], dataset.Airport_fee))
         ];
+#endif
 
         return new TaxiSchema(schema, columns);
     }
@@ -70,6 +119,16 @@ sealed class TaxiSchema {
             new DataField<double?>("fare_amount")
         );
         DataField[] dataFields = schema.GetDataFields();
+#if PARQUET_PACKAGE
+        DataColumn[] columns = [
+            new DataColumn(dataFields[0], dataset.VendorID),
+            new DataColumn(dataFields[1], dataset.passenger_count),
+            new DataColumn(dataFields[2], dataset.trip_distance),
+            new DataColumn(dataFields[3], dataset.RatecodeID),
+            new DataColumn(dataFields[4], dataset.payment_type),
+            new DataColumn(dataFields[5], dataset.fare_amount)
+        ];
+#else
         TaxiColumn[] columns = [
             new(dataFields[0], rowGroup => rowGroup.WriteAsync<int>(dataFields[0], dataset.VendorID)),
             new(dataFields[1], rowGroup => rowGroup.WriteAsync<long>(dataFields[1], dataset.passenger_count)),
@@ -78,9 +137,12 @@ sealed class TaxiSchema {
             new(dataFields[4], rowGroup => rowGroup.WriteAsync<long>(dataFields[4], dataset.payment_type)),
             new(dataFields[5], rowGroup => rowGroup.WriteAsync<double>(dataFields[5], dataset.fare_amount))
         ];
+#endif
 
         return new TaxiSchema(schema, columns);
     }
 }
 
-public sealed record TaxiColumn(DataField Field, Func<ParquetRowGroupWriter, Task> WriteAsync);
+#if !PARQUET_PACKAGE
+sealed record TaxiColumn(DataField Field, Func<ParquetRowGroupWriter, Task> WriteAsync);
+#endif

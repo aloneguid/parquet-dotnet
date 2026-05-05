@@ -5,6 +5,7 @@ using Parquet.PerfRunner.Benchmarks;
 
 if(args.Length == 1) {
     switch(args[0]) {
+#if !PARQUET_PACKAGE
         case "highLevel":
             HighLevel.Run();
             break;
@@ -22,6 +23,7 @@ if(args.Length == 1) {
         case "compression":
             BenchmarkRunner.Run<CompressionBenchmarks>();
             break;
+#endif
         case "sharp-compare-taxi":
             BenchmarkRunner.Run<ParquetSharpComparisonBenchmark>();
             break;
@@ -30,6 +32,8 @@ if(args.Length == 1) {
             break;
     }
 } else {
+#if !PARQUET_PACKAGE
     await new DataTypes().RandomStrings();
+#endif
     //await SampleGenerator.GenerateFiles();
 }

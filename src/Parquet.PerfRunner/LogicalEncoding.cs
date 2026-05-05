@@ -12,14 +12,38 @@ public enum LogicalEncoding {
 }
 
 public static class LogicalEncodingExtensions {
+#if PARQUET_PACKAGE
+    public static ParquetOptions CreateOptions(this LogicalEncoding encoding, ParquetSchema? schema = null) =>
+      encoding switch {
+          LogicalEncoding.RleDictionary => new ParquetOptions {
+              UseDictionaryEncoding = true,
+              // Force dictionary extraction for every supported column to match the local benchmark setup.
+              DictionaryEncodingThreshold = double.MaxValue,
+              UseDeltaBinaryPackedEncoding = false
+          },
+          LogicalEncoding.DeltaBinaryPacked => new ParquetOptions {
+              UseDictionaryEncoding = false,
+              UseDeltaBinaryPackedEncoding = true
+          },
+          LogicalEncoding.Plain => new ParquetOptions {
+              UseDictionaryEncoding = false,
+              UseDeltaBinaryPackedEncoding = false
+          },
+          _ => throw new ArgumentOutOfRangeException(nameof(encoding), encoding, "Unknown logical encoding")
+      };
+#else
     public static ParquetOptions CreateOptions(this LogicalEncoding encoding, ParquetSchema? schema = null) {
         ParquetOptions options = encoding switch {
             LogicalEncoding.RleDictionary => new ParquetOptions {
+                CompressionMethod = CompressionMethod.None,
                 // Force dictionary extraction for every supported column to match the ParquetSharp benchmark setup.
                 DictionaryEncodingThreshold = double.MaxValue
             },
-            LogicalEncoding.DeltaBinaryPacked => new ParquetOptions(),
+            LogicalEncoding.DeltaBinaryPacked => new ParquetOptions {
+                CompressionMethod = CompressionMethod.None
+            },
             LogicalEncoding.Plain => new ParquetOptions {
+                CompressionMethod = CompressionMethod.None,
                 DictionaryEncodingThreshold = -1
             },
             _ => throw new ArgumentOutOfRangeException(nameof(encoding), encoding, "Unknown logical encoding")
@@ -40,4 +64,5 @@ public static class LogicalEncodingExtensions {
 
         return options;
     }
+#endif
 }

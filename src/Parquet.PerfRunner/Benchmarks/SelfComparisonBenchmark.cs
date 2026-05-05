@@ -15,8 +15,8 @@ public class SelfComparisonBenchmark {
             Job baseJob = Job.ShortRun.WithId("Parquet.Net (local)");
             AddJob(baseJob);
             AddJob(baseJob
-                .WithId("Parquet.Net 6.0.0")
-                .WithMsBuildArguments("/p:ParquetVersion=6.0.0"));
+                .WithId("Parquet.Net 5.6.0")
+                .WithMsBuildArguments("/p:ParquetVersion=5.6.0"));
         }
     }
 
@@ -39,11 +39,14 @@ public class SelfComparisonBenchmark {
     [Benchmark(Description = "Parquet.Net source")]
     public async Task ParquetNetAsync() {
         using var output = new MemoryStream();
+#if PARQUET_PACKAGE
+        using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_schema.Schema, output, _options);
+        writer.CompressionMethod = CompressionMethod.None;
+#else
         await using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_schema.Schema, output, _options);
+#endif
         using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
 
-        foreach(TaxiColumn column in _schema.Columns) {
-            await column.WriteAsync(rowGroup);
-        }
+        await _schema.WriteAsync(rowGroup);
     }
 }

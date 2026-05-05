@@ -1,6 +1,8 @@
 using Parquet.Schema;
 using IOFile = System.IO.File;
+#if !PARQUET_PACKAGE
 using Parquet.Data;
+#endif
 using ParquetReaderNet = Parquet.ParquetReader;
 
 namespace Parquet.PerfRunner.Taxis;
@@ -58,7 +60,11 @@ class TaxiDatasetLoader {
 
         foreach(string path in paths) {
             using FileStream fs = IOFile.OpenRead(Path.Combine(_dataFolder, path));
+#if PARQUET_PACKAGE
+            using ParquetReaderNet reader = await ParquetReaderNet.CreateAsync(fs);
+#else
             await using ParquetReaderNet reader = await ParquetReaderNet.CreateAsync(fs);
+#endif
 
             DataField vendor = FindDataField(reader.Schema, "VendorID");
             DataField pickup = FindDataField(reader.Schema, "tpep_pickup_datetime");
@@ -83,6 +89,27 @@ class TaxiDatasetLoader {
             for(int i = 0; i < reader.RowGroupCount; i++) {
                 using ParquetRowGroupReader rg = reader.OpenRowGroupReader(i);
 
+#if PARQUET_PACKAGE
+                vendorIds.AddRange((int?[])(await rg.ReadColumnAsync(vendor)).Data);
+                pickupTimes.AddRange((DateTime?[])(await rg.ReadColumnAsync(pickup)).Data);
+                dropoffTimes.AddRange((DateTime?[])(await rg.ReadColumnAsync(dropoff)).Data);
+                passengerCounts.AddRange((long?[])(await rg.ReadColumnAsync(passengerCount)).Data);
+                tripDistances.AddRange((double?[])(await rg.ReadColumnAsync(tripDistance)).Data);
+                rateCodes.AddRange((long?[])(await rg.ReadColumnAsync(rateCode)).Data);
+                storeAndFwdFlags.AddRange((string?[])(await rg.ReadColumnAsync(storeAndFwdFlag)).Data);
+                puLocationIds.AddRange((int?[])(await rg.ReadColumnAsync(puLocationId)).Data);
+                doLocationIds.AddRange((int?[])(await rg.ReadColumnAsync(doLocationId)).Data);
+                paymentTypes.AddRange((long?[])(await rg.ReadColumnAsync(paymentType)).Data);
+                fareAmounts.AddRange((double?[])(await rg.ReadColumnAsync(fareAmount)).Data);
+                extras.AddRange((double?[])(await rg.ReadColumnAsync(extra)).Data);
+                mtaTaxes.AddRange((double?[])(await rg.ReadColumnAsync(mtaTax)).Data);
+                tipAmounts.AddRange((double?[])(await rg.ReadColumnAsync(tipAmount)).Data);
+                tollsAmounts.AddRange((double?[])(await rg.ReadColumnAsync(tollsAmount)).Data);
+                improvementSurcharges.AddRange((double?[])(await rg.ReadColumnAsync(improvementSurcharge)).Data);
+                totalAmounts.AddRange((double?[])(await rg.ReadColumnAsync(totalAmount)).Data);
+                congestionSurcharges.AddRange((double?[])(await rg.ReadColumnAsync(congestionSurcharge)).Data);
+                airportFees.AddRange((double?[])(await rg.ReadColumnAsync(airportFee)).Data);
+#else
                 await AddNullableValuesAsync<int>(rg, vendor, vendorIds);
                 await AddNullableValuesAsync<DateTime>(rg, pickup, pickupTimes);
                 await AddNullableValuesAsync<DateTime>(rg, dropoff, dropoffTimes);
@@ -102,6 +129,7 @@ class TaxiDatasetLoader {
                 await AddNullableValuesAsync<double>(rg, totalAmount, totalAmounts);
                 await AddNullableValuesAsync<double>(rg, congestionSurcharge, congestionSurcharges);
                 await AddNullableValuesAsync<double>(rg, airportFee, airportFees);
+#endif
 
             }
         }
@@ -131,6 +159,7 @@ class TaxiDatasetLoader {
 
     private static DataField FindDataField(ParquetSchema schema, string v) => schema.GetDataFields().First(f => f.Name == v);
 
+#if !PARQUET_PACKAGE
     private static async Task AddNullableValuesAsync<T>(
         ParquetRowGroupReader rowGroup,
         DataField field,
@@ -170,6 +199,7 @@ class TaxiDatasetLoader {
             destination.Add(definitionLevel == field.MaxDefinitionLevel ? new string(data.Values[valueIndex++].Span) : null);
         }
     }
+#endif
 
     private static async Task PreloadFiles(IEnumerable<string> files)
         => await Task.WhenAll(
