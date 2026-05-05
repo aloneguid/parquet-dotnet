@@ -256,13 +256,11 @@ void RenderKeyValueMetadata(List<KeyValue>? kvm) {
                 Label(kv.Key);
 
                 ta.NextColumn();
-                if(Button($"{Icon.Content_copy}##{kv.Key}")) {
-                    // copy to clipboard
-                }
-                SL();
-                Label(kv.Value ?? "");
+                ValueView.Render(kv.Key, kv.Value);
             }
         }, 0, 250, true);
+
+        ValueView.RenderViewer();
     }
 }
 
