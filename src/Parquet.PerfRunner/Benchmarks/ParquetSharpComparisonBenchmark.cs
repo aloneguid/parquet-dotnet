@@ -1,5 +1,4 @@
 using BenchmarkDotNet.Attributes;
-using Parquet.Data;
 using Parquet.PerfRunner.Taxis;
 using ParquetSharp;
 using ParquetSharp.IO;
@@ -43,19 +42,18 @@ public class ParquetSharpComparisonBenchmark {
             _parquetNetSchema = TaxiSchema.Full(_dataset);
             _parquetSharpSchema = ParquetSharpTaxiSchema.Full();
         }
-        _parquetNetOptions = LogicalEncoding.CreateOptions();
+        _parquetNetOptions = LogicalEncoding.CreateOptions(_parquetNetSchema.Schema);
         _parquetSharpOptions = _parquetSharpSchema.CreateParquetSharpWriterProperties(LogicalEncoding);
     }
 
     [Benchmark(Description = "Parquet.Net -> MemoryStream")]
     public async Task ParquetNetAsync() {
         _memoryStream.Position = 0;
-        using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, _memoryStream, _parquetNetOptions);
-        writer.CompressionMethod = CompressionMethod.Snappy;
+        await using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, _memoryStream, _parquetNetOptions);
         using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
 
-        foreach(DataColumn column in _parquetNetSchema.Columns) {
-            await rowGroup.WriteColumnAsync(column);
+        foreach(TaxiColumn column in _parquetNetSchema.Columns) {
+            await column.WriteAsync(rowGroup);
         }
     }
 
@@ -65,12 +63,11 @@ public class ParquetSharpComparisonBenchmark {
 
         try {
             await using FileStream output = IOFile.Create(path);
-            using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, output, _parquetNetOptions);
-            writer.CompressionMethod = CompressionMethod.Snappy;
+            await using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_parquetNetSchema.Schema, output, _parquetNetOptions);
             using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
 
-            foreach(DataColumn column in _parquetNetSchema.Columns) {
-                await rowGroup.WriteColumnAsync(column);
+            foreach(TaxiColumn column in _parquetNetSchema.Columns) {
+                await column.WriteAsync(rowGroup);
             }
         } finally {
             IOFile.Delete(path);

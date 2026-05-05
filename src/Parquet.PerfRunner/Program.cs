@@ -1,31 +1,35 @@
-﻿// for performance tests only
+// for performance tests only
 
 using BenchmarkDotNet.Running;
 using Parquet.PerfRunner.Benchmarks;
 
-bool haveArgs = args.Length > 0;
-string benchName;
-if(!haveArgs) {
-    Console.WriteLine("Enter the benchmark name to run:");
-    benchName = Console.ReadLine()!;
+if(args.Length == 1) {
+    switch(args[0]) {
+        case "highLevel":
+            HighLevel.Run();
+            break;
+        case "write":
+            BenchmarkRunner.Run<WriteBenchmark>();
+            break;
+        case "encoding":
+            BenchmarkRunner.Run<EncodingBenchmarks>();
+            break;
+        case "curiosities":
+            BenchmarkRunner.Run<Curiosities>();
+            break;
+        case "twosamples":
+            break;
+        case "compression":
+            BenchmarkRunner.Run<CompressionBenchmarks>();
+            break;
+        case "sharp-compare-taxi":
+            BenchmarkRunner.Run<ParquetSharpComparisonBenchmark>();
+            break;
+        case "self-compare-taxi":
+            BenchmarkRunner.Run<SelfComparisonBenchmark>();
+            break;
+    }
 } else {
-    benchName = args[0];
-}
-
-switch(benchName) {
-    case "write":
-        BenchmarkRunner.Run<WriteBenchmark>();
-        break;
-    case "progression":
-        BenchmarkRunner.Run<VersionedBenchmark>();
-        break;
-    case "sharp-compare-taxi":
-        BenchmarkRunner.Run<ParquetSharpComparisonBenchmark>();
-        break;
-    case "self-compare-taxi":
-        BenchmarkRunner.Run<SelfComparisonBenchmark>();
-        break;
-    case "highLevel":
-        HighLevel.Run();
-        break;
+    await new DataTypes().RandomStrings();
+    //await SampleGenerator.GenerateFiles();
 }

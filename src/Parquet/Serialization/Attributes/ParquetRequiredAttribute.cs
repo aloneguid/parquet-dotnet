@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Parquet.Serialization.Attributes; 
+namespace Parquet.Serialization.Attributes;
 
 /// <summary>
 /// Changes column optionality to "required".

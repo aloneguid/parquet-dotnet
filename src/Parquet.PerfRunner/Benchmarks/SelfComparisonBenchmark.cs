@@ -1,7 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
-using Parquet.Data;
 using Parquet.PerfRunner.Taxis;
 using ParquetWriterNet = Parquet.ParquetWriter;
 
@@ -16,8 +15,8 @@ public class SelfComparisonBenchmark {
             Job baseJob = Job.ShortRun.WithId("Parquet.Net (local)");
             AddJob(baseJob);
             AddJob(baseJob
-                .WithId("Parquet.Net 5.4.0")
-                .WithMsBuildArguments("/p:ParquetVersion=5.4.0"));
+                .WithId("Parquet.Net 6.0.0")
+                .WithMsBuildArguments("/p:ParquetVersion=6.0.0"));
         }
     }
 
@@ -34,17 +33,17 @@ public class SelfComparisonBenchmark {
     public async Task LoadDatasetAsync() {
         _dataset = await TaxiDatasetLoader.Instance.LoadAsync(Dataset);
         _schema = TaxiSchema.Full(_dataset);
-        _options = LogicalEncoding.CreateOptions();
+        _options = LogicalEncoding.CreateOptions(_schema.Schema);
     }
 
     [Benchmark(Description = "Parquet.Net source")]
     public async Task ParquetNetAsync() {
         using var output = new MemoryStream();
-        using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_schema.Schema, output, _options);
+        await using ParquetWriterNet writer = await ParquetWriterNet.CreateAsync(_schema.Schema, output, _options);
         using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
 
-        foreach(DataColumn column in _schema.Columns) {
-            await rowGroup.WriteColumnAsync(column);
+        foreach(TaxiColumn column in _schema.Columns) {
+            await column.WriteAsync(rowGroup);
         }
     }
 }

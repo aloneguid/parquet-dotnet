@@ -2,31 +2,31 @@
 using System.Linq;
 using Parquet.Schema;
 
-namespace Parquet.Serialization.Dremel {
-    /// <summary>
-    /// Not a stripper
-    /// </summary>
-    class Striper<TClass> {
+namespace Parquet.Serialization.Dremel;
 
-        public Striper(ParquetSchema schema) {
-            Schema = schema;
+/// <summary>
+/// Not a stripper
+/// </summary>
+class Striper<TClass> {
 
-            FieldStripers = schema
-                .GetDataFields()
-                .Select(CreateStriper)
-                .ToList();
-        }
+    public Striper(ParquetSchema schema) {
+        Schema = schema;
 
-        public ParquetSchema Schema { get; }
+        FieldStripers = schema
+            .GetDataFields()
+            .Select(CreateStriper)
+            .ToList();
+    }
 
-        public IReadOnlyList<FieldStriper<TClass>> FieldStripers { get; }
+    public ParquetSchema Schema { get; }
 
-        private FieldStriper<TClass> CreateStriper(DataField df) {
-            return new FieldStriperCompiler<TClass>(Schema, df).Compile();
-        }
+    public IReadOnlyList<FieldStriper<TClass>> FieldStripers { get; }
 
-        public static Striper<TClass> Create() {
-            return new Striper<TClass>(typeof(TClass).GetParquetSchema(false));
-        }
+    private FieldStriper<TClass> CreateStriper(DataField df) {
+        return new FieldStriperCompiler<TClass>(Schema, df).Compile();
+    }
+
+    public static Striper<TClass> Create() {
+        return new Striper<TClass>(typeof(TClass).GetParquetSchema(false));
     }
 }

@@ -1,1 +1,0 @@
-..\tools\thrift-0.16.0.exe --gen json -out ..\src\Parquet\Meta\ ..\src\Parquet\Meta\parquet.thrift

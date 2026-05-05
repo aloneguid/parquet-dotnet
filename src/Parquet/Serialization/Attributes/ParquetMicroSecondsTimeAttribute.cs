@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Parquet.Serialization.Attributes; 
+namespace Parquet.Serialization.Attributes;
 
 /// <summary>
 /// Specifies that <see cref="TimeSpan"/> field should be serialised with microseconds precision (not default milliseconds).
