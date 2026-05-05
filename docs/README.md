@@ -27,6 +27,12 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Fine-tune encodings per column.
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
+
+
+# Important
+
+This project does **not use LLMs** for writing code. It **will not accept LLMs** for issues. No pull requests written by LLMs will be reviewed. No LLMs for comments on the bug tracker, including translation. English is encouraged, but not required. You are welcome to post in your native language and rely on others to have their own translation tools of choice to interpret your words. LLM contributions will be treated as spam with all the consequences.
+
 # Table of Contents
 
 <!-- TOC depthfrom:2 -->

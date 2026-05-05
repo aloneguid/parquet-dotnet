@@ -1,3 +1,7 @@
+# 6.0.1-pre.1
+
+- added LLM comments
+
 # 6.0.0
 
 ## Highlights
