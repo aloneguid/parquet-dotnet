@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
@@ -30,6 +29,33 @@ public class ParquetWriterTest : TestBase {
                 int[] values = new int[rg.RowCount];
                 await rg.ReadAsync<int>(id, values);
                 Assert.Equal([1, 2, 3], values);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Write_read_non_nullable_string() {
+        var schema = new ParquetSchema(new DataField("Thing", typeof(string), isNullable: false));
+        using var ms = new MemoryStream();
+        string[] input = ["start", "stop", "pause"];
+
+        // write
+        DataField col = schema.DataFields[0];
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(col), ms)) {
+            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                await rg.WriteAsync(col, input);
+            }
+        }
+
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            Assert.Equal(1, reader.RowGroupCount);
+            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(input.Length, rg.RowCount);
+                string[] values = new string[rg.RowCount];
+                await rg.ReadAsync(col, values);
+                Assert.Equal(input, values);
             }
         }
     }

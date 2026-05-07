@@ -1,6 +1,9 @@
-# 6.0.1-pre.1
+# 6.0.1
 
-- added LLM comments
+Hot fix for #744 - string deserialisation helper always assumed nullable strings.
+
+## Other
+- Added future direction regardless LLM generated content. I'm getting really tired of this.
 
 # 6.0.0
 
