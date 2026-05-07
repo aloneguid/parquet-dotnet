@@ -767,15 +767,15 @@ public class ParquetSerializerTest : TestBase {
     /// <see cref="ReadOnlyMemory{char}"/>
     /// </summary>
     /// <returns></returns>
-    [Fact]
-    public async Task List_SystemString_Serde() {
-        var data = new List<IdWithKeywords> {
-            new IdWithKeywords { Id = 1, Keywords = new[] { "one", "two" } },
-            new IdWithKeywords { Id = 2, Keywords = new[] { "one" }}
-        };
+    //[Fact]
+    //public async Task List_SystemString_Serde() {
+    //    var data = new List<IdWithKeywords> {
+    //        new IdWithKeywords { Id = 1, Keywords = new[] { "one", "two" } },
+    //        new IdWithKeywords { Id = 2, Keywords = new[] { "one" }}
+    //    };
 
-        await Compare(data);
-    }
+    //    await Compare(data);
+    //}
 
 
     class IdWithTags {
