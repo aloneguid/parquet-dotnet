@@ -209,7 +209,7 @@ public class ParquetRowGroupReader : IDisposable {
     /// Read column as UTF-8 strings.
     /// </summary>
     public async ValueTask ReadAsync(DataField field,
-        Memory<string> values,
+        Memory<string?> values,
         Memory<int>? repetitionLevels = null,
         CancellationToken cancellationToken = default) {
 
@@ -225,9 +225,13 @@ public class ParquetRowGroupReader : IDisposable {
             // convert back to strings
             Span<int> dlSpan = definitionlevels.Memory.Span;
             Span<ReadOnlyMemory<char>> valueSpan = rawValues.Memory.Span;
-            for(int i = 0; i < valueSpan.Length; i++) {
-                bool isNull = dlSpan[i] == 0;
-                values.Span[i] = new string(valueSpan[i].Span);
+            int vi = 0;
+            for(int i = 0; i < dlSpan.Length; i++) {
+                if(dlSpan[i] == 0) {
+                    values.Span[i] = null;
+                } else {
+                    values.Span[i] = new string(valueSpan[vi++].Span);
+                }
             }
         } else {
             using IMemoryOwner<ReadOnlyMemory<char>> rawValues = MemoryOwner<ReadOnlyMemory<char>>.Allocate(values.Length);

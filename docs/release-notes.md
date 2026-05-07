@@ -1,3 +1,7 @@
+# 6.0.2-pre.1
+
+- `ParquetRowGroupReader.ReadAsync` returns compacted values for nullable string columns (interleaved nulls lost) in #746.
+
 # 6.0.1
 
 Hot fix for #744 - string deserialisation helper always assumed nullable strings.

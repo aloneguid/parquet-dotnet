@@ -61,6 +61,33 @@ public class ParquetWriterTest : TestBase {
     }
 
     [Fact]
+    public async Task Write_read_nullable_string() {
+        var schema = new ParquetSchema(new DataField("Thing", typeof(string)));
+        using var ms = new MemoryStream();
+        string?[] input = ["start", null, "pause"];
+
+        // write
+        DataField col = schema.DataFields[0];
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(col), ms)) {
+            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                await rg.WriteAsync(col, input);
+            }
+        }
+
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            Assert.Equal(1, reader.RowGroupCount);
+            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(input.Length, rg.RowCount);
+                string[] values = new string[rg.RowCount];
+                await rg.ReadAsync(col, values);
+                Assert.Equal(input, values);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Write_read_string_column_array_overload() {
         var name = new DataField<string>("name");
         string[] input = ["start", "stop", "pause"];
