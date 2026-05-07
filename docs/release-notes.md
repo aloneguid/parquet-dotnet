@@ -1,3 +1,7 @@
+# 5.6.1
+
+Update the snappier version to 1.3.1 to fix critical vulnerability, by @JonasChristensen90 in #743.
+
 # 5.6.0
 
 - **BREAKING:**: The minimum supported .NET version is 8.
