@@ -756,6 +756,27 @@ public class ParquetSerializerTest : TestBase {
         XAssert.JsonEquivalent(data, data2);
     }
 
+    class IdWithKeywords {
+        public int Id { get; set; }
+
+        public string[] Keywords { get; set; } = Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// System.String is treated slightly different by the deserializer, because it needs to convert from
+    /// <see cref="ReadOnlyMemory{char}"/>
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task List_SystemString_Serde() {
+        var data = new List<IdWithKeywords> {
+            new IdWithKeywords { Id = 1, Keywords = new[] { "one", "two" } },
+            new IdWithKeywords { Id = 2, Keywords = new[] { "one" }}
+        };
+
+        await Compare(data);
+    }
+
 
     class IdWithTags {
         public int Id { get; set; }

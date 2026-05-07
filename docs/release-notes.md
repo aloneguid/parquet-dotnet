@@ -1,6 +1,6 @@
-# 6.0.2-pre.1
+# 6.0.2
 
-- `ParquetRowGroupReader.ReadAsync` returns compacted values for nullable string columns (interleaved nulls lost) in #746.
+- `ParquetRowGroupReader.ReadAsync` returns compacted values for nullable string columns (interleaved nulls lost) in #746. Thanks to @vchekfiscal.
 
 # 6.0.1
 
