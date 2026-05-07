@@ -5,12 +5,16 @@ labels: ["bug", "triage"]
 assignees:
   - octocat
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please note that this project prohibits the use of LLMs for writing code, firing bug reports, issues, pull requests and everything else. Issues created with LLMs will be treated as spam and you account may be blocked.
   - type: input
     id: libversion
     attributes:
       label: Library Version
       description: Which version of Parquet.Net is affected?
-      placeholder: ex. 4.5.1
+      placeholder: ex. 6.0.0
     validations:
       required: true
   - type: input
