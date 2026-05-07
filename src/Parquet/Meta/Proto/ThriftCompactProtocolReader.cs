@@ -193,13 +193,22 @@ class ThriftCompactProtocolReader {
                 // Don't try to decode the string, just skip it.
                 ReadBinary();
                 break;
-            //case TType.Uuid:
-            //    await protocol.ReadUuidAsync(cancellationToken);
-            //    break;
+            case CompactType.Uuid:
+                // Apache Thrift compact spec: UUID is 16 raw bytes, no length prefix.
+                _inputStream.Seek(16, SeekOrigin.Current);
+                break;
             case CompactType.Struct:
                 StructBegin();
-                while(ReadNextField(out _, out _)) {
-
+                while(ReadNextField(out _, out CompactType nestedType)) {
+                    // Recurse so we consume each nested field's VALUE,
+                    // not just its header. Without this, the read cursor
+                    // is left mis-aligned partway through the first
+                    // non-empty nested field and the next bytes are
+                    // mis-parsed as field headers -- which then either
+                    // throws when the random byte's low nibble is an
+                    // unhandled CompactType, or (worse) silently returns
+                    // wrong data.
+                    SkipField(nestedType);
                 }
                 StructEnd();
                 break;
