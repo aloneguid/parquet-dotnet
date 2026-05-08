@@ -8,9 +8,9 @@ namespace Parquet.Schema;
 /// Represents a list of items. The list can contain either a normal data field or a complex structure.
 /// If you need to get a list of primitive data fields it's more efficient to use arrays.
 /// </summary>
-public class ListField : Field {
+public sealed class ListField : Field {
 
-    private bool _itemAssigned = false;
+    private bool _itemAssigned;
 
     /// <summary>
     /// Name of the element item for schema definition.
@@ -40,7 +40,7 @@ public class ListField : Field {
     /// Creates a new instance of <see cref="ListField"/>
     /// </summary>
     /// <param name="name">Field name</param>
-    /// <param name="item">Field representing list element</param>
+    /// <param name="item">Field representing the list element</param>
     /// <param name="containerName">Container name</param>
     public ListField(string name, Field item, string containerName = DefaultContainerName) : this(name) {
         Item = item ?? throw new ArgumentNullException(nameof(item));
@@ -131,7 +131,7 @@ public class ListField : Field {
         if(obj is not ListField other)
             return false;
 
-        return base.Equals(obj) && (Item?.Equals(other.Item) ?? true);
+        return base.Equals(obj) && Item.Equals(other.Item);
     }
 
     /// <inheritdoc/>

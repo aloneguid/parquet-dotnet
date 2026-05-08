@@ -10,7 +10,6 @@
     <File Path="../.editorconfig" />
     <File Path="../docs/README.md" />
     <File Path="../docs/release-notes.md" />
-    <File Path="AGENTS.md" />
   </Folder>
   <Folder Name="/Solution Items/.github/">
     <File Path="../.github/CONTRIBUTING.md" />

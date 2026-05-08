@@ -575,15 +575,6 @@ class FieldAssemblerCompiler<TClass> {
             Expression rsmAccess = Expression.ArrayAccess(_rsmVar, Expression.Constant(rlDepth - 1));
             currentVarType = SanitizeType(currentVarType, out Type collectionElementType);
 
-            //bool isDictionary = schemaField.SchemaType == SchemaType.Map;
-            //Type collectionElementType;
-            //if(isDictionary) {
-            //    ReplaceIDictionaryTypes(currentVarType, out Type newDictionaryType, out collectionElementType);
-            //    currentVarType = newDictionaryType;
-            //} else {
-            //    collectionElementType = currentVarType.ExtractElementTypeFromEnumerableType();
-            //}
-
             Expression leafExpr;
 
             if(isAtomic) {
@@ -591,7 +582,7 @@ class FieldAssemblerCompiler<TClass> {
                     // add element to array
                     leafExpr = Expression.Assign(
                         currentVar,
-                        RebuildArray(currentVar, currentVarType, Expression.Convert(_dataElementVar, collectionElementType)));
+                        RebuildArray(currentVar, currentVarType, ConvertDataElement(collectionElementType)));
                 } else {
                     // add element to collection - end here
                     leafExpr = Expression.Call(Expression.Convert(currentVar, currentVarType),

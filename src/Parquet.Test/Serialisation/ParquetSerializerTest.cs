@@ -6,7 +6,6 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
-using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Serialization.Attributes;
 using Parquet.Test.Xunit;
@@ -221,7 +220,7 @@ public class ParquetSerializerTest : TestBase {
         Assert.Equal(default, data2.First().NewTimestamp);
         Assert.Null(data2.First().NewEventName);
         Assert.Equal(123, data2.First().NewMeterValue);
-        Assert.Equal(default, data2.First().NewExternalId);
+        Assert.Equal(Guid.Empty, data2.First().NewExternalId);
     }
 
     class NullableRecord : Record {
@@ -767,15 +766,16 @@ public class ParquetSerializerTest : TestBase {
     /// <see cref="ReadOnlyMemory{char}"/>
     /// </summary>
     /// <returns></returns>
-    //[Fact]
-    //public async Task List_SystemString_Serde() {
-    //    var data = new List<IdWithKeywords> {
-    //        new IdWithKeywords { Id = 1, Keywords = new[] { "one", "two" } },
-    //        new IdWithKeywords { Id = 2, Keywords = new[] { "one" }}
-    //    };
+    [Fact]
+    public async Task List_SystemString_Serde() {
+        var data = new List<IdWithKeywords> {
+            new IdWithKeywords { Id = 1, Keywords = new[] { "one", "two" } },
+            new IdWithKeywords { Id = 2, Keywords = new[] { "one" }},
+            new IdWithKeywords { Id = 2, Keywords = Array.Empty<string>()}
+        };
 
-    //    await Compare(data);
-    //}
+        await Compare(data);
+    }
 
 
     class IdWithTags {
