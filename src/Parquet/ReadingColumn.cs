@@ -29,8 +29,6 @@ class ReadingColumn<T> : IDisposable where T : struct {
 
     public DataField Field { get; }
 
-    public Span<T> Values => _values.Span;
-
     public Span<T> ValuesToReadInto => _values.Span.Slice(_definedDataCount);
 
     public Span<int> DefinitionLevelsToReadInto {
@@ -51,7 +49,7 @@ class ReadingColumn<T> : IDisposable where T : struct {
 
     public int ValuesRead => Field.MaxDefinitionLevel > 0
         ? _definitionOffset
-        : (_dictionaryIndexes != null ? _dictionaryIndexesOffset : _definedDataCount);
+        : _definedDataCount;
 
     public void MarkValuesRead(int count) {
         _definedDataCount += count;
@@ -78,16 +76,6 @@ class ReadingColumn<T> : IDisposable where T : struct {
         _repetitionOffset += count;
     }
 
-    public Span<int> DictionaryIndexes {
-        get {
-            if(_dictionaryIndexes == null) {
-                _dictionaryIndexes = MemoryOwner<int>.Allocate(_values.Length);
-            }
-
-            return _dictionaryIndexes.Memory.Span;
-        }
-    }
-
     public bool HasDictionary => _dictionary != null;
 
     public Span<T> AllocateDictionary(int count) {
@@ -102,6 +90,7 @@ class ReadingColumn<T> : IDisposable where T : struct {
         if(_dictionaryIndexes == null) {
             _dictionaryIndexes = MemoryOwner<int>.Allocate(max);
         }
+
         return _dictionaryIndexes.Memory.Span.Slice(_dictionaryIndexesOffset);
     }
 
@@ -121,11 +110,9 @@ class ReadingColumn<T> : IDisposable where T : struct {
                 int index = indexes[i];
                 _values.Span[_definedDataCount + i] = dictionary[index];
             }
-            _definedDataCount = valueCount;
+            MarkValuesRead(valueCount);
 
             // cleanup
-            _dictionary.Dispose();
-            _dictionary = null;
             _dictionaryIndexes.Dispose();
             _dictionaryIndexes = null;
             _dictionaryIndexesOffset = 0;

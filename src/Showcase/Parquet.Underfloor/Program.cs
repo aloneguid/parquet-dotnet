@@ -6,6 +6,7 @@ using Parquet.Meta;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Parquet.Underfloor;
+using TextCopy;
 using static Grey.App;
 
 #pragma warning disable CS4014
@@ -458,6 +459,11 @@ void RenderData() {
 
     if(fd.SampleReadException != null) {
         Label("Error reading data sample", Emphasis.Error);
+        SL();
+        if(Button(Icon.Copy_all)) {
+            ClipboardService.SetText(fd.SampleReadException.ToString());
+            Notify("Copied");
+        }
         Label(fd.SampleReadException.ToString());
         return;
     }

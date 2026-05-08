@@ -341,10 +341,27 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         Assert.Equal(TimeSpan.FromTicks(215720000000), data[0]);
     }
 
+    /// <summary>
+    /// This file is interesting in a way that dictionary encoded columns have single dictionary page and several
+    /// dictionary index pages. Dictionary page needs to be kept as is, but index pages need to feed from dictionary one
+    /// after another.
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task PyArrow23() {
+        using Stream s = OpenTestFile("special/pyarrow_v23.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+        DeserializationResult<Dictionary<string, object>> rs = await ParquetSerializer.DeserializeUntypedAsync(s);
+        Assert.Equal(39_366, rs.Data.Count);
+    }
+
+
     [Fact]
     public async Task UnshreddedVariant() {
         using Stream s = OpenTestFile("variant_unshredded.parquet");
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
         Assert.NotNull(r.Schema);
     }
+
 }

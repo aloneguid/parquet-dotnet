@@ -1,3 +1,8 @@
+# 6.0.3-pre.1
+
+## Bugs fixed
+- Column reader did not calculate value count properly if one column chunk contained dictionary page and more than one dictionary index page. Thanks @ben-hamida for reporting it in #749.
+
 # 6.0.2
 
 - `ParquetRowGroupReader.ReadAsync` returns compacted values for nullable string columns (interleaved nulls lost) in #746. Thanks to @vchekfiscal.
