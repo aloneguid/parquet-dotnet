@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ByteSizeLib;
-using Parquet.Data;
+﻿using ByteSizeLib;
 using Parquet.Meta;
 using Parquet.Schema;
 using Parquet.Serialization;

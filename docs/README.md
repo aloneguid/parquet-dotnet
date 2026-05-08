@@ -2,7 +2,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aloneguid/parquet-dotnet)
-![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet)
+![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet) ![](https://img.shields.io/badge/AI-NO%20LLMs-blue)
 ![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
@@ -10,7 +10,8 @@
 
 Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.Net has you covered.
 
-> This documentation is regarding Parquet.Net v6, which is very new. If you are looking for V5, I've kept [the branch](https://github.com/aloneguid/parquet-dotnet/tree/v5) available.
+> [!IMPORTANT]
+> This project does **not use LLMs** for writing code. It **will not accept LLMs** for issues. No pull requests written by LLMs will be accepted. No LLMs for comments anywhere. Attempts to circumvent this may prevent your future contributions to this repository.
 
 # Features at a glance
 
@@ -27,11 +28,6 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Fine-tune encodings per column.
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
 
-
-
-# Important
-
-This project does **not use LLMs** for writing code. It **will not accept LLMs** for issues. No pull requests written by LLMs will be reviewed. No LLMs for comments on the bug tracker, including translation. English is encouraged, but not required. You are welcome to post in your native language and rely on others to have their own translation tools of choice to interpret your words. LLM contributions will be treated as spam with all the consequences.
 
 # Table of Contents
 
