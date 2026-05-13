@@ -88,26 +88,32 @@ public class RawColumnData<T> : RawColumnData where T : struct {
     }
 
     /// <summary>
+    /// Returns raw column values. If This column is nullable, you can also use <see cref="NullableValues"/> to account
+    /// for that. If you want to produce nullable values yourself, use this span and
+    /// <see cref="RawColumnData.DefinitionLevels"/> property.
     /// </summary>
     public Span<T> Values => _values.Memory.Span;
 
-    internal ReadOnlyMemory<T> ValuesMemory => _values.Memory;
-
-    internal IEnumerable<T?> GetNullableValues() {
-
-        int iv = 0;
-        for(int id = 0; id < DefinitionLevels.Length; id++) {
-            if(DefinitionLevels[id] == 0) {
-                yield return null;
-            } else {
-                yield return Values[iv++];
+    /// <summary>
+    /// Gets nullable values for this column. Only valid if this column allows for nullable values, othersiwe an
+    /// exception will be thrown.
+    /// </summary>
+    public IEnumerable<T?> NullableValues {
+        get {
+            int iv = 0;
+            for(int id = 0; id < DefinitionLevels.Length; id++) {
+                if(DefinitionLevels[id] == 0) {
+                    yield return null;
+                } else {
+                    yield return Values[iv++];
+                }
             }
-        }
 
-        yield break;
+            yield break;
+        }
     }
 
-
+    internal ReadOnlyMemory<T> ValuesMemory => _values.Memory;
 
     internal List<string> ValuesAsStrings {
         get {

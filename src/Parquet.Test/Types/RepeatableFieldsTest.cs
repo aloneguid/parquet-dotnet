@@ -39,7 +39,7 @@ public class RepeatableFieldsTest : TestBase {
 
         // assert
         Assert.NotNull(rc);
-        Assert.Equal(values, rc.GetNullableValues());
+        Assert.Equal(values, rc.NullableValues);
         Assert.Equal(repetitionLevels, rc.RepetitionLevels);
     }
 
@@ -55,7 +55,7 @@ public class RepeatableFieldsTest : TestBase {
         Assert.NotNull(rc);
 
         // assert
-        Assert.Equal(values, rc.GetNullableValues());
+        Assert.Equal(values, rc.NullableValues);
         Assert.Equal(repetitionLevels, rc!.RepetitionLevels);
     }
 }

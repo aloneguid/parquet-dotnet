@@ -700,7 +700,7 @@ public class ParquetSerializerTest : TestBase {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
             using(RawColumnData<int> col = await rgr.ReadRawColumnDataAsync<int>(reader.Schema.DataFields[1])) {
-                Assert.Equivalent(new int[] { 1, 2, 3, 4, 5 }, col.GetNullableValues().ToArray());
+                Assert.Equivalent(new int[] { 1, 2, 3, 4, 5 }, col.NullableValues.ToArray());
                 Assert.Equivalent(new int[] { 2, 2, 1, 2, 2, 2 }, col.DefinitionLevels.ToArray());
                 Assert.Equivalent(new int[] { 0, 1, 0, 0, 1, 1 }, col.RepetitionLevels.ToArray());
             }
@@ -741,7 +741,7 @@ public class ParquetSerializerTest : TestBase {
         await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
             using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
             using(RawColumnData<int> col = await rgr.ReadRawColumnDataAsync<int>(reader.Schema.DataFields[1])) {
-                Assert.Equivalent(new int[] { 1, 2, 3, 4 }, col.GetNullableValues().ToArray());
+                Assert.Equivalent(new int[] { 1, 2, 3, 4 }, col.NullableValues.ToArray());
                 Assert.Equivalent(new int[] { 2, 2, 0, 2, 2 }, col.DefinitionLevels.ToArray());
                 Assert.Equivalent(new int[] { 0, 1, 0, 0, 1 }, col.RepetitionLevels.ToArray());
             }
