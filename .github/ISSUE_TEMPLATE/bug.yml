@@ -54,7 +54,7 @@ body:
     attributes:
       label: How to reproduce?
       description: Provide the exact steps to reproduce the issue. If the steps aren't clear, the issue will be closed faster than you can say "works on my machine."
-      value: ""
+      value: "..."
     validations:
       required: true
   - type: textarea
