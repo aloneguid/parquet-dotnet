@@ -2,7 +2,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Parquet.Net.svg)](https://www.nuget.org/packages/Parquet.Net)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Parquet.Net)](https://www.nuget.org/packages/Parquet.Net)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aloneguid/parquet-dotnet)
-![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet)
+![GitHub repo size](https://img.shields.io/github/repo-size/aloneguid/parquet-dotnet) ![](https://img.shields.io/badge/AI-NO%20LLMs-blue)
 ![GitHub forks](https://img.shields.io/github/forks/aloneguid/parquet-dotnet)
 ![Icon](https://github.com/aloneguid/parquet-dotnet/blob/master/docs/img/banner.png?raw=true)
 
@@ -10,7 +10,8 @@
 
 Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, Xbox, PS4, Raspberry Pi, Samsung TVs or much more, Parquet.Net has you covered.
 
-> This documentation is regarding Parquet.Net v6, which is very new. If you are looking for V5, I've kept [the branch](https://github.com/aloneguid/parquet-dotnet/tree/v5) available.
+> [!IMPORTANT]
+> This project does **not use LLMs** for writing code. It **will not accept LLMs** for issues. No pull requests written by LLMs will be accepted. No LLMs for comments anywhere. Attempts to circumvent this may prevent your future contributions to this repository.
 
 # Features at a glance
 
@@ -26,6 +27,7 @@ Whether you want to build apps for Linux, MacOS, Windows, iOS, Android, Tizen, X
   - Access to file and column metadata.
   - Fine-tune encodings per column.
   - [Integration with DataFrames](#dataframe-support) (`Microsoft.Data.Analysis`).
+
 
 # Table of Contents
 
@@ -358,33 +360,33 @@ Similar to JSON [supported collection types](https://learn.microsoft.com/en-us/d
 
 `ParquetSerializer` supports appending data to an existing Parquet file. This can be useful when you have multiple batches of data that need to be written to the same file.
 
-To use this feature, you need to set the `Append` flag to `true` in the `ParquetSerializerOptions` object that you pass to the `SerializeAsync` method. This will tell the library to append the data batch to the end of the file stream instead of overwriting it. For example:
+To use this feature, you need to set the `Append` flag to `true` in the `ParquetOptions` object that you pass to the `SerializeAsync` method. This will tell the library to append the data batch to the end of the file stream instead of overwriting it. For example:
 
 ```C#
-await ParquetSerializer.SerializeAsync(dataBatch, ms, new ParquetSerializerOptions { Append = true });
+await ParquetSerializer.SerializeAsync(dataBatch, ms, new ParquetOptions { Append = true });
 ```
 
 However, there is one caveat: you should not set the `Append` flag to `true` for the first batch of data that you write to a new file. This is because a Parquet file has a header and a footer that contain metadata about the schema and statistics of the data. If you try to append data to an empty file stream, you will get an `IOException` because there is no header or footer to read from. Therefore, you should always set the `Append` flag to `false` for the first batch (or not pass any options, which makes it `false` by default) and then switch it to `true` for subsequent batches. For example:
 
 ```C#
 // First batch
-await ParquetSerializer.SerializeAsync(dataBatch1, ms, new ParquetSerializerOptions { Append = false });
+await ParquetSerializer.SerializeAsync(dataBatch1, ms, new ParquetOptions { Append = false });
 
 // Second batch
-await ParquetSerializer.SerializeAsync(dataBatch2, ms, new ParquetSerializerOptions { Append = true });
+await ParquetSerializer.SerializeAsync(dataBatch2, ms, new ParqueOptions { Append = true });
 
 // Third batch
-await ParquetSerializer.SerializeAsync(dataBatch3, ms, new ParquetSerializerOptions { Append = true });
+await ParquetSerializer.SerializeAsync(dataBatch3, ms, new ParquetOptions { Append = true });
 ```
 
 By following this pattern, you can easily append data to a Parquet file using `ParquetSerializer`.
 
 ### Specifying row group size
 
-Row groups are a logical division of data in a parquet file. They allow efficient filtering and scanning of data based on predicates. By default, all the class instances are serialized into a single row group, which is absolutely fine. If you need to set a custom row group size, you can specify it in `ParquetSerializerOptions` like so:
+Row groups are a logical division of data in a parquet file. They allow efficient filtering and scanning of data based on predicates. By default, all the class instances are serialized into a single row group, which is absolutely fine. If you need to set a custom row group size, you can specify it in `ParquetOptions` like so:
 
 ```C#
-await ParquetSerializer.SerializeAsync(data, stream, new ParquetSerializerOptions { RowGroupSize = 10_000_000 });
+await ParquetSerializer.SerializeAsync(data, stream, new ParquetOptions { RowGroupSize = 10_000_000 });
 ```
 
 Note that small row groups make parquet files very inefficient in general, so you should use this parameter only when you are absolutely sure what you are doing. For example, if you have a very large dataset that needs to be split into smaller files for distributed processing, you might want to use a smaller row group size to avoid having too many rows in one file. However, this will also increase the file size and the metadata overhead, so you should balance the trade-offs carefully.

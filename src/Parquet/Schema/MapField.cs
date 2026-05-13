@@ -9,13 +9,13 @@ namespace Parquet.Schema;
 /// <summary>
 /// Implements a dictionary field
 /// </summary>
-public class MapField : Field {
+public sealed class MapField : Field {
     internal const string ContainerName = "key_value";
     internal const string KeyName = "key";
     internal const string ValueName = "value";
 
-    private bool _keyAssigned = false;
-    private bool _valueAssigned = false;
+    private bool _keyAssigned;
+    private bool _valueAssigned;
 
     /// <summary>
     /// Data field used as a key
@@ -33,10 +33,8 @@ public class MapField : Field {
     public MapField(string name, Field keyField, Field valueField)
         : base(name, SchemaType.Map) {
 
-        if(keyField is DataField keyDataField) {
-            if(keyDataField.IsNullable) {
-                throw new ArgumentException($"map's key cannot be nullable", nameof(keyField));
-            }
+        if(keyField is DataField { IsNullable: true }) {
+            throw new ArgumentException($"map's key cannot be nullable", nameof(keyField));
         }
 
         Key = keyField;
@@ -80,7 +78,7 @@ public class MapField : Field {
         PathPrefix = null;
     }
 
-    internal override Field[] Children => new Field[] { Key, Value };
+    internal override Field[] Children => [Key, Value];
 
     internal SchemaElement? GroupSchemaElement { get; set; } = null;
 
@@ -121,8 +119,8 @@ public class MapField : Field {
             return false;
 
         return base.Equals(other) &&
-               (Key?.Equals(other.Key) ?? true) &&
-               (Value?.Equals(other.Value) ?? true);
+               Key.Equals(other.Key) &&
+               Value.Equals(other.Value);
     }
 
     /// <inheritdoc/>

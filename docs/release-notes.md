@@ -1,4 +1,21 @@
-# 6.0.0-pre.8
+# 6.0.3-pre.2
+
+## Bugs fixed
+- Column reader did not calculate value count properly if one column chunk contained dictionary page and more than one dictionary index page. Thanks @ben-hamida for reporting it in #749.
+- Class serializer could not handle `string[]` members (but could `List<string>`) due to not using correct conversion methods from `ReadOnlyMemory<char>` to `string`. Thanks to @jamesryanbell for investigation and reporting #741.
+
+# 6.0.2
+
+- `ParquetRowGroupReader.ReadAsync` returns compacted values for nullable string columns (interleaved nulls lost) in #746. Thanks to @vchekfiscal.
+
+# 6.0.1
+
+Hot fix for #744 - string deserialisation helper always assumed nullable strings.
+
+## Other
+- Added future direction regardless LLM generated content. I'm getting really tired of this.
+
+# 6.0.0
 
 ## Highlights
 

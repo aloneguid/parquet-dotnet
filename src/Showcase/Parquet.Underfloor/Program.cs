@@ -1,11 +1,10 @@
 ﻿using System.Collections;
 using Grey;
 using Parquet;
-using Parquet.Data;
 using Parquet.Meta;
 using Parquet.Schema;
-using Parquet.Serialization;
 using Parquet.Underfloor;
+using TextCopy;
 using static Grey.App;
 
 #pragma warning disable CS4014
@@ -256,13 +255,11 @@ void RenderKeyValueMetadata(List<KeyValue>? kvm) {
                 Label(kv.Key);
 
                 ta.NextColumn();
-                if(Button($"{Icon.Content_copy}##{kv.Key}")) {
-                    // copy to clipboard
-                }
-                SL();
-                Label(kv.Value ?? "");
+                ValueView.Render(kv.Key, kv.Value);
             }
         }, 0, 250, true);
+
+        ValueView.RenderViewer();
     }
 }
 
@@ -460,6 +457,11 @@ void RenderData() {
 
     if(fd.SampleReadException != null) {
         Label("Error reading data sample", Emphasis.Error);
+        SL();
+        if(Button(Icon.Copy_all)) {
+            ClipboardService.SetText(fd.SampleReadException.ToString());
+            Notify("Copied");
+        }
         Label(fd.SampleReadException.ToString());
         return;
     }

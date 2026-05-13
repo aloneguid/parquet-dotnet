@@ -19,8 +19,8 @@ public class EncodingBenchmarks : BenchmarkBase {
     private IMemoryOwner<byte>? _byteStreamSplitEncoded;
     private IMemoryOwner<float>? _byteStreamSplitDecoded;
 
-    [Params(100, 200, 1_000_000)]
-    //[Params(100)]
+    //[Params(100, 200, 1_000_000)]
+    [Params(1000)]
     public int Size;
 
     [GlobalSetup]
@@ -36,7 +36,7 @@ public class EncodingBenchmarks : BenchmarkBase {
         _byteStreamSplitEncoded?.Dispose();
     }
 
-    //[Benchmark]
+    [Benchmark]
     public void PlainBool() {
         if(_boolMemory == null) throw new InvalidOperationException();
 
@@ -44,7 +44,7 @@ public class EncodingBenchmarks : BenchmarkBase {
         ParquetPlainEncoder.EncodeOnCpu(_boolMemory.Memory.Span, ms);
     }
 
-    //[Benchmark]
+    [Benchmark]
     public void PlainBoolX() {
         if(_boolMemory == null) throw new InvalidOperationException();
 
@@ -57,12 +57,12 @@ public class EncodingBenchmarks : BenchmarkBase {
     //    ByteStreamSplitEncoder.DecodeByteStreamSplit5(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
     //}
 
-    [Benchmark]
+    //[Benchmark]
     public void DecodeByteStreamSplit() {
         ByteStreamSplitEncoder.DecodeOnCpu(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void DecodeByteStreamSplitHwx() {
         ByteStreamSplitEncoder.DecodeHwx(_byteStreamSplitEncoded.Memory.Span, _byteStreamSplitDecoded.Memory.Span);
     }

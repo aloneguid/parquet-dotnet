@@ -209,21 +209,40 @@ public class ParquetRowGroupReader : IDisposable {
     /// Read column as UTF-8 strings.
     /// </summary>
     public async ValueTask ReadAsync(DataField field,
-        Memory<string> values,
+        Memory<string?> values,
         Memory<int>? repetitionLevels = null,
         CancellationToken cancellationToken = default) {
 
-        using IMemoryOwner<int> definitionlevels = MemoryOwner<int>.Allocate(field.MaxDefinitionLevel > 0 ? (int)RowCount : 0);
-        using IMemoryOwner<ReadOnlyMemory<char>> rawValues = MemoryOwner<ReadOnlyMemory<char>>.Allocate(values.Length);
+        // short path for non-nullable strings for performance reasons
 
-        await ReadRawAsync(field, rawValues.Memory, definitionlevels.Memory, repetitionLevels, cancellationToken);
+        if(field.IsNullable) {
 
-        // convert back to strings
-        Span<int> dlSpan = definitionlevels.Memory.Span;
-        Span<ReadOnlyMemory<char>> valueSpan = rawValues.Memory.Span;
-        for(int i = 0; i < valueSpan.Length; i++) {
-            bool isNull = dlSpan[i] == 0;
-            values.Span[i] = new string(valueSpan[i].Span);
+            using IMemoryOwner<int>? definitionlevels = MemoryOwner<int>.Allocate(field.MaxDefinitionLevel > 0 ? (int)RowCount : 0);
+            using IMemoryOwner<ReadOnlyMemory<char>> rawValues = MemoryOwner<ReadOnlyMemory<char>>.Allocate(values.Length);
+
+            await ReadRawAsync(field, rawValues.Memory, definitionlevels.Memory, repetitionLevels, cancellationToken);
+
+            // convert back to strings
+            Span<int> dlSpan = definitionlevels.Memory.Span;
+            Span<ReadOnlyMemory<char>> valueSpan = rawValues.Memory.Span;
+            int vi = 0;
+            for(int i = 0; i < dlSpan.Length; i++) {
+                if(dlSpan[i] == 0) {
+                    values.Span[i] = null;
+                } else {
+                    values.Span[i] = new string(valueSpan[vi++].Span);
+                }
+            }
+        } else {
+            using IMemoryOwner<ReadOnlyMemory<char>> rawValues = MemoryOwner<ReadOnlyMemory<char>>.Allocate(values.Length);
+
+            await ReadRawAsync(field, rawValues.Memory, null, repetitionLevels, cancellationToken);
+
+            // convert back to strings
+            Span<ReadOnlyMemory<char>> valueSpan = rawValues.Memory.Span;
+            for(int i = 0; i < valueSpan.Length; i++) {
+                values.Span[i] = new string(valueSpan[i].Span);
+            }
         }
     }
 
