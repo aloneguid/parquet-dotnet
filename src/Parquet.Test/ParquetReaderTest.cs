@@ -42,15 +42,14 @@ public class ParquetReaderTest : TestBase {
     [InlineData("map_simple.parquet")]
     [InlineData("map_simple.v2.parquet")]
     public async Task Read_simple_map(string parquetFile) {
-        await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false)) {
-            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
-            DataField[] fields = reader.Schema.GetDataFields();
+        await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile(parquetFile), leaveStreamOpen: false);
+        using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+        DataField[] fields = reader.Schema.GetDataFields();
 
-            int?[] col0 = await ReadNullableValuesAsync<int>(rgr, fields[0]);
+        int?[] col0 = await ReadNullableValuesAsync<int>(rgr, fields[0]);
 
-            Assert.Equal(3, fields.Length);
-            Assert.Equal(new int?[] { 1 }, col0);
-        }
+        Assert.Equal(3, fields.Length);
+        Assert.Equal([1], col0);
     }
 
     [Fact(Skip = "todo: for some reason .Read (sync) is still called")]

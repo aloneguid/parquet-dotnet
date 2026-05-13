@@ -6,7 +6,8 @@ using System.Text;
 namespace Parquet.Data;
 
 /// <summary>
-/// Base interface for raw column data, to hold something other than raw object.
+/// Base interface for raw column data, to hold something other than a raw object.
+/// You have to dispose of this object after use!
 /// </summary>
 public abstract class RawColumnData : IDisposable {
 

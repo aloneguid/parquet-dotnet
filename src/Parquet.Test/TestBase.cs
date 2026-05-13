@@ -105,12 +105,12 @@ public class TestBase {
         }
 
         int bufferLength = GetValueBufferLength(rgr, field);
-        T[] values = new T[bufferLength];
+        var values = new T[bufferLength];
         Memory<int>? repetitionLevels = null;
         if(field.MaxRepetitionLevel > 0) {
             repetitionLevels = new int[bufferLength].AsMemory();
         }
-        await rgr.ReadAsync<T>(field, values.AsMemory(), repetitionLevels);
+        await rgr.ReadAsync(field, values.AsMemory(), repetitionLevels);
         return values;
     }
 
@@ -121,38 +121,38 @@ public class TestBase {
         if(field.MaxRepetitionLevel > 0) {
             repetitionLevels = new int[repetitionLevelLength].AsMemory();
         }
-        await rgr.ReadAsync<T>(field, values.AsMemory(), repetitionLevels);
+        await rgr.ReadAsync(field, values.AsMemory(), repetitionLevels);
         return values;
     }
 
     protected static async Task<string?[]> ReadStringValuesAsync(ParquetRowGroupReader rgr, DataField field) {
         if(field.MaxRepetitionLevel > 0) {
             int bufferLength = GetValueBufferLength(rgr, field);
-            ReadOnlyMemory<char>?[] repeatedValues = new ReadOnlyMemory<char>?[bufferLength];
+            var repeatedValues = new ReadOnlyMemory<char>?[bufferLength];
             Memory<int>? repetitionLevels = new int[bufferLength].AsMemory();
-            await rgr.ReadAsync<ReadOnlyMemory<char>>(field, repeatedValues.AsMemory(), repetitionLevels);
+            await rgr.ReadAsync(field, repeatedValues.AsMemory(), repetitionLevels);
             return repeatedValues.Select(x => x.HasValue ? new string(x.Value.Span) : null).ToArray();
         }
 
-        ReadOnlyMemory<char>?[] values = new ReadOnlyMemory<char>?[checked((int)rgr.RowCount)];
-        await rgr.ReadAsync<ReadOnlyMemory<char>>(field, values.AsMemory(), null);
+        var values = new ReadOnlyMemory<char>?[checked((int)rgr.RowCount)];
+        await rgr.ReadAsync(field, values.AsMemory());
         return values.Select(v => v.HasValue ? new string(v.Value.Span) : null).ToArray();
     }
 
     protected static async Task<byte[][]> ReadBinaryValuesAsync(ParquetRowGroupReader rgr, DataField field) {
         if(field.MaxDefinitionLevel > 0 && field.MaxRepetitionLevel == 0) {
-            ReadOnlyMemory<byte>?[] values = new ReadOnlyMemory<byte>?[checked((int)rgr.RowCount)];
-            await rgr.ReadAsync<ReadOnlyMemory<byte>>(field, values.AsMemory(), null);
+            var values = new ReadOnlyMemory<byte>?[checked((int)rgr.RowCount)];
+            await rgr.ReadAsync(field, values.AsMemory());
             return values.Where(v => v.HasValue).Select(v => v!.Value.ToArray()).ToArray();
         }
 
         int bufferLength = GetValueBufferLength(rgr, field);
-        ReadOnlyMemory<byte>[] binaryValues = new ReadOnlyMemory<byte>[bufferLength];
+        var binaryValues = new ReadOnlyMemory<byte>[bufferLength];
         Memory<int>? repetitionLevels = null;
         if(field.MaxRepetitionLevel > 0) {
             repetitionLevels = new int[bufferLength].AsMemory();
         }
-        await rgr.ReadAsync<ReadOnlyMemory<byte>>(field, binaryValues.AsMemory(), repetitionLevels);
+        await rgr.ReadAsync(field, binaryValues.AsMemory(), repetitionLevels);
         return binaryValues.Select(v => v.ToArray()).ToArray();
     }
 
