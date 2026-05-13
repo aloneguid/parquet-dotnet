@@ -1086,8 +1086,8 @@ Any contributions are welcome, in any form. Documentation, code, tests, or anyth
 
 Without these tools development would be really painful.
 
-- [Visual Studio Community](https://visualstudio.microsoft.com/vs/community/) - free IDE from Microsoft. The best in class C# and C++ development tool. It's worth using Windows just because Visual Studio exists there.
-- [JetBrains Rider](https://www.jetbrains.com/rider/) - for their cross-platform C# IDE, which has some great features.
-- [IntelliJ IDEA](https://www.jetbrains.com/idea/) - the best Python, Scala and Java IDE.
-- [Benchmarkdotnet](https://benchmarkdotnet.org/) - the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks for this.
+- [JetBrains Rider](https://www.jetbrains.com/rider/) – Probably the best-in-class C# IDE today. It came so far and is still improving.
+- [Visual Studio](https://visualstudio.microsoft.com/vs/community/) – IDE from Microsoft. I hope it will be great again one day.
+- [IntelliJ IDEA](https://www.jetbrains.com/idea/) – the best Python, Scala, and Java IDE.
+- [Benchmarkdotnet](https://benchmarkdotnet.org/) – the best cross-platform tool that can microbenchmark C# code. This library is faster than native ones only thanks to this.
 - **You** starring ⭐ this project!
