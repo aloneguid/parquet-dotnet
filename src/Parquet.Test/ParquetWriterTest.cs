@@ -88,6 +88,60 @@ public class ParquetWriterTest : TestBase {
     }
 
     [Fact]
+    public async Task Write_read_non_nullable_byte_array() {
+        var schema = new ParquetSchema(new DataField("Thing", typeof(byte[]), isNullable: false));
+        using var ms = new MemoryStream();
+        byte[][] input = [[0, 1], [2, 3], [4, 5]];
+
+        // write
+        DataField col = schema.DataFields[0];
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(col), ms)) {
+            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                await rg.WriteAsync(col, input);
+            }
+        }
+
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            Assert.Equal(1, reader.RowGroupCount);
+            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(input.Length, rg.RowCount);
+                byte[][] values = new byte[rg.RowCount][];
+                await rg.ReadAsync(col, values);
+                Assert.Equal(input, values);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Write_read_nullable_byte_Array() {
+        var schema = new ParquetSchema(new DataField("Thing", typeof(byte[])));
+        using var ms = new MemoryStream();
+        byte[][] input = [[1, 2], null, [5, 6]];
+
+        // write
+        DataField col = schema.DataFields[0];
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(col), ms)) {
+            using(ParquetRowGroupWriter rg = writer.CreateRowGroup()) {
+                await rg.WriteAsync(col, input);
+            }
+        }
+
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            Assert.Equal(1, reader.RowGroupCount);
+            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(input.Length, rg.RowCount);
+                byte[][] values = new byte[rg.RowCount][];
+                await rg.ReadAsync(col, values);
+                Assert.Equal(input, values);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Write_read_string_column_array_overload() {
         var name = new DataField<string>("name");
         string[] input = ["start", "stop", "pause"];

@@ -1,7 +1,8 @@
-# 6.0.3-pre.2
+# 6.0.3
 
 ## Improvements
 - `RawColumnData<T>` exposes `Values` and `NullableValues` properties and clear documentation (reported in #751 by @mukunku).
+- Add corresponding `ReadAsync` overload for `byte[]` (reported by @danielearwicker in #754).
 
 ## Bugs fixed
 - Column reader did not calculate the value count properly if one column chunk contained a dictionary page and more than one dictionary index page. Thanks @ben-hamida for reporting it in #749.

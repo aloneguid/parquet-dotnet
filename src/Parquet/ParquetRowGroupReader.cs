@@ -247,6 +247,47 @@ public class ParquetRowGroupReader : IDisposable {
     }
 
     /// <summary>
+    /// Read column as <see cref="byte"/>[].
+    /// </summary>
+    public async ValueTask ReadAsync(DataField field,
+        Memory<byte[]?> values,
+        Memory<int>? repetitionLevels = null,
+        CancellationToken cancellationToken = default) {
+
+        // short path for non-nullable strings for performance reasons
+
+        if(field.IsNullable) {
+
+            using IMemoryOwner<int>? definitionlevels = MemoryOwner<int>.Allocate(field.MaxDefinitionLevel > 0 ? (int)RowCount : 0);
+            using IMemoryOwner<ReadOnlyMemory<byte>> rawValues = MemoryOwner<ReadOnlyMemory<byte>>.Allocate(values.Length);
+
+            await ReadRawAsync(field, rawValues.Memory, definitionlevels.Memory, repetitionLevels, cancellationToken);
+
+            // convert back to byte[]
+            Span<int> dlSpan = definitionlevels.Memory.Span;
+            Span<ReadOnlyMemory<byte>> valueSpan = rawValues.Memory.Span;
+            int vi = 0;
+            for(int i = 0; i < dlSpan.Length; i++) {
+                if(dlSpan[i] == 0) {
+                    values.Span[i] = null;
+                } else {
+                    values.Span[i] = valueSpan[vi++].ToArray();
+                }
+            }
+        } else {
+            using IMemoryOwner<ReadOnlyMemory<byte>> rawValues = MemoryOwner<ReadOnlyMemory<byte>>.Allocate(values.Length);
+
+            await ReadRawAsync(field, rawValues.Memory, null, repetitionLevels, cancellationToken);
+
+            // convert back to byte[]
+            Span<ReadOnlyMemory<byte>> valueSpan = rawValues.Memory.Span;
+            for(int i = 0; i < valueSpan.Length; i++) {
+                values.Span[i] = valueSpan[i].ToArray();
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets raw column chunk metadata for this field
     /// </summary>
     public ColumnChunk? GetMetadata(DataField field) {
