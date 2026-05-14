@@ -46,10 +46,10 @@ class ShreddedColumn {
 
         // call WriteAsync via reflection, as it's generic and we only have the type at runtime
         MethodInfo? method = typeof(ParquetRowGroupWriter)
-            .GetMethod(nameof(ParquetRowGroupWriter.WriteAsyncAllParts), BindingFlags.NonPublic | BindingFlags.Instance);
+            .GetMethod(nameof(ParquetRowGroupWriter.WriteAllPartsAsync), BindingFlags.Public | BindingFlags.Instance);
 
         if(method == null) {
-            throw new InvalidOperationException($"can't find {nameof(ParquetRowGroupWriter.WriteAsyncAllParts)} method on {nameof(ParquetRowGroupWriter)}");
+            throw new InvalidOperationException($"can't find {nameof(ParquetRowGroupWriter.WriteAllPartsAsync)} method on {nameof(ParquetRowGroupWriter)}");
         }
 
         MethodInfo genericMethod = method.MakeGenericMethod(valueType);

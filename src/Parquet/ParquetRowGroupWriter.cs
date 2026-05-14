@@ -90,7 +90,7 @@ public class ParquetRowGroupWriter : IDisposable {
     /// <summary>
     /// Writes a column of data to this row group. The column must correspond to the next column in the schema, and all
     /// columns must be written in the order they appear in the schema. The method will validate that the provided field
-    /// matches the expected column from the schema, and that all columns have the same row count. If any of these
+    /// matches the expected column from the schema and that all columns have the same row count. If any of these
     /// validations fail, an exception will be thrown.
     /// </summary>
     /// <param name="field">The data field representing the column to write.</param>
@@ -112,7 +112,7 @@ public class ParquetRowGroupWriter : IDisposable {
     /// <summary>
     /// Writes a column of data to this row group. The column must correspond to the next column in the schema, and all
     /// columns must be written in the order they appear in the schema. The method will validate that the provided field
-    /// matches the expected column from the schema, and that all columns have the same row count. If any of these
+    /// matches the expected column from the schema and that all columns have the same row count. If any of these
     /// validations fail, an exception will be thrown.
     /// </summary>
     /// <param name="field">The data field representing the column to write.</param>
@@ -130,7 +130,20 @@ public class ParquetRowGroupWriter : IDisposable {
         await WriteAsyncInternal(field, wc, customMetadata, cancellationToken);
     }
 
-    internal async Task WriteAsyncAllParts<T>(DataField field,
+    /// <summary>
+    /// Writes a column of data to this row group. The column must correspond to the next column in the schema, and all
+    /// columns must be written in the order they appear in the schema. The method will validate that the provided field
+    /// matches the expected column from the schema and that all columns have the same row count. If any of these
+    /// validations fail, an exception will be thrown.
+    /// </summary>
+    /// <remarks>This method expects that you manually supply definition levels when writing nullable columns, therefore you should only use it for low-level high-performance operations and know what you are doing.</remarks>
+    /// <param name="field"></param>
+    /// <param name="values"></param>
+    /// <param name="definitionValues"></param>
+    /// <param name="repetitionLevels"></param>
+    /// <param name="cancellationToken"></param>
+    /// <typeparam name="T"></typeparam>
+    public async Task WriteAllPartsAsync<T>(DataField field,
         ReadOnlyMemory<T> values,
         ReadOnlyMemory<int>? definitionValues,
         ReadOnlyMemory<int>? repetitionLevels,
@@ -140,7 +153,7 @@ public class ParquetRowGroupWriter : IDisposable {
     }
 
     internal async Task WriteAsync<T>(DataField field, RawColumnData<T> data, CancellationToken cancellationToken) where T : struct {
-        await WriteAsyncAllParts(field, data.ValuesMemory, data.DefinitionLevelsMemoryOrNull, data.RepetitionLevelsMemoryOrNull, cancellationToken);
+        await WriteAllPartsAsync(field, data.ValuesMemory, data.DefinitionLevelsMemoryOrNull, data.RepetitionLevelsMemoryOrNull, cancellationToken);
     }
 
     internal async Task WriteAsync(DataField field, RawColumnData data, CancellationToken cancellationToken) {
@@ -169,7 +182,7 @@ public class ParquetRowGroupWriter : IDisposable {
             throw new InvalidOperationException("failed to locate generic WriteAsync overload");
 
         MethodInfo closedWriteAsync = writeAsyncGenericDefinition.MakeGenericMethod(elementType);
-        Task writeTask = (Task?)closedWriteAsync.Invoke(this, new object[] { field, data, cancellationToken })
+        Task writeTask = (Task?)closedWriteAsync.Invoke(this, [field, data, cancellationToken])
             ?? throw new InvalidOperationException("generic WriteAsync invocation returned null task");
 
         await writeTask;

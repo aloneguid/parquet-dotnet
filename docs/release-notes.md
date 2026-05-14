@@ -1,3 +1,8 @@
+# 6.0.4-pre.1
+
+## Improvements
+- Exposed `WriteAllPartsAsync` internal method for callers who wish to manually supply definition levels and values (really low-level high performance API). As wished by @spanglerco in #755.
+
 # 6.0.3
 
 ## Improvements
