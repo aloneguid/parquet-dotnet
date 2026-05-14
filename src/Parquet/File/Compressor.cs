@@ -11,20 +11,22 @@ using Snappier;
 namespace Parquet.File;
 
 /// <summary>
-/// Data compression interface. Unfortunately it's practically impossible to perform streaming in parquet pages.
-/// When this interface is stable for some time, it will allow public exposure and "Bring Your Own Compressor" plugins, but not right now.
+/// Data compression interface. Unfortunately it's practically impossible to perform streaming in parquet pages. When
+/// this interface is stable for some time, it will allow public exposure and "Bring Your Own Compressor" plugins, but
+/// not right now.
 /// </summary>
 interface ICompressor {
 
     /// <summary>
-    /// Compresses data from the source stream using the specified compression method and level.
-    /// Returns an <see cref="IMemoryOwner{T}"/> containing the compressed data.
+    /// Compresses data from the source stream using the specified compression method and level. Returns an
+    /// <see cref="IMemoryOwner{T}"/> containing the compressed data.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> CompressAsync(CompressionMethod method, CompressionLevel level, MemoryStream source);
 
     /// <summary>
     /// Decompresses data from the source stream and returns the decompressed data in an <see cref="IMemoryOwner{T}"/>.
-    /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed by this method.
+    /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed
+    /// by this method.
     /// </summary>
     ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength);
 }
@@ -65,7 +67,7 @@ class DefaultCompressor : ICompressor {
         // Compress into an in-memory stream and copy into MemoryOwner without extra temporary arrays
         using var ms = new MemoryStream();
         source.Position = 0;
-        using (var gzip = new GZipStream(ms, level, leaveOpen: true)) {
+        using(var gzip = new GZipStream(ms, level, leaveOpen: true)) {
             await source.CopyToAsync(gzip);
             await gzip.FlushAsync();
         }
@@ -86,30 +88,29 @@ class DefaultCompressor : ICompressor {
         using(var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true)) {
             copied = await gzip.CopyToAsync(owner.Memory);
         }
-		if(copied < destinationLength) {
-			// IMPORTANT: .Slice() transfers ownership, so owner does not need to be disposed
-			owner = owner.Slice(0, copied); 
-		}
+        if(copied < destinationLength) {
+            // IMPORTANT: .Slice() transfers ownership, so owner does not need to be disposed
+            owner = owner.Slice(0, copied);
+        }
         return owner;
     }
 
     // "LZO" compression
 
     private async ValueTask<IMemoryOwner<byte>> LzoCompress(MemoryStream source, CompressionLevel level) {
-        throw new NotImplementedException("LZO compression is not implemented yet.");
+        throw new NotImplementedException();
     }
 
     private async ValueTask<IMemoryOwner<byte>> LzoDecompress(Stream source, int destinationLength) {
-        throw new NotImplementedException("LZO decompression is not implemented yet.");
+        throw new NotImplementedException();
     }
 
     // "Brotli" compression
 
-#if !NETSTANDARD2_0
     private async ValueTask<IMemoryOwner<byte>> BrotliCompress(MemoryStream source, CompressionLevel level) {
         using var ms = new MemoryStream();
         source.Position = 0;
-        using (BrotliStream? brotli = new BrotliStream(ms, level, leaveOpen: true)) {
+        using(BrotliStream? brotli = new BrotliStream(ms, level, leaveOpen: true)) {
             await source.CopyToAsync(brotli);
         }
         int len = (int)ms.Length;
@@ -129,29 +130,64 @@ class DefaultCompressor : ICompressor {
             while(totalRead < destinationLength) {
                 int toRead = Math.Min(buffer.Length, destinationLength - totalRead);
                 int read = await brotli.ReadAsync(buffer, 0, toRead);
-                if(read == 0) break;
+                if(read == 0)
+                    break;
                 new ReadOnlySpan<byte>(buffer, 0, read).CopyTo(owner.Span.Slice(totalRead, read));
                 totalRead += read;
             }
-        }
-        finally {
+        } finally {
             ArrayPool<byte>.Shared.Return(buffer);
         }
 
         return owner;
     }
-#endif
 
-    // "Zstd" compression
+    // "Zstandard" compression (uses forward compatible "SystemIOCompression.Zstandard.Backporting", as Zstandard will be part of .NET 11)
+
+    /*
+    private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
+        int zLevel = level switch {
+            CompressionLevel.Optimal => 3,
+            CompressionLevel.Fastest => 1,
+            CompressionLevel.NoCompression => 1,
+            CompressionLevel.SmallestSize => 19,
+            _ => 0
+        };
+
+        long maxDestLength = ZstandardEncoder.GetMaxCompressedLength(source.Length);
+        MemoryOwner<byte> owner = MemoryOwner<byte>.Allocate((int)maxDestLength);
+        bool ok = ZstandardEncoder.TryCompress(source.GetBuffer().AsSpan(0, (int)source.Length), owner.Memory.Span, out int compressedLength, zLevel, 0);
+        if(!ok) {
+            throw new InvalidOperationException("Compression failed");
+        }
+        return owner.Slice(0, compressedLength);
+    }
+
+    private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
+
+        long length = source.Length;
+        using IMemoryOwner<byte> sourceMO = MemoryOwner<byte>.Allocate((int)length);
+        await source.CopyToAsync(sourceMO.Memory);
+
+        if(!ZstandardDecoder.TryGetMaxDecompressedLength(sourceMO.Memory.Span, out long destLength))
+            throw new InvalidOperationException("Invalid compressed data (could not get length)");
+
+        MemoryOwner<byte> destMO = MemoryOwner<byte>.Allocate((int)destLength);
+        bool ok = ZstandardDecoder.TryDecompress(sourceMO.Memory.Span, destMO.Memory.Span, out int actualDestLength);
+        if(!ok) {
+            throw new InvalidOperationException("Decompression failed");
+        }
+
+        return destMO.Slice(0, actualDestLength);
+    }
+    */
 
     private async ValueTask<IMemoryOwner<byte>> ZstdCompress(MemoryStream source, CompressionLevel level) {
         int zLevel = level switch {
             CompressionLevel.Optimal => 3,
             CompressionLevel.Fastest => 1,
             CompressionLevel.NoCompression => 1,
-#if NET6_0_OR_GREATER
             CompressionLevel.SmallestSize => 19,
-#endif
             _ => 0
         };
 
@@ -163,46 +199,47 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    public async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
+    private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
         using var decompressor = new ZstdSharp.Decompressor();
         byte[] compressed = source.ToByteArray()!;
-        Span<byte> decompressed = decompressor.Unwrap(compressed, destinationLength);
+        // Do not pass destinationLength as maxDecompressedSize — some Parquet files report an incorrect
+        // UncompressedPageSize in their metadata. Instead, let ZstdSharp read the actual content size
+        // that is embedded in the Zstd frame header, which is always accurate.
+        Span<byte> decompressed = decompressor.Unwrap(compressed);
         var owner = MemoryOwner<byte>.Allocate(decompressed.Length);
         decompressed.CopyTo(owner.Span);
         return owner;
     }
 
-	// "LZ4" compression
+    // "LZ4" compression, requires K4os.Compression.LZ4 NuGet package
 
-	private async ValueTask<IMemoryOwner<byte>> Lz4Compress(MemoryStream source, CompressionLevel level) {
-		LZ4Level lz4Level = level switch {
-			CompressionLevel.Optimal => LZ4Level.L11_OPT,
-			CompressionLevel.Fastest => LZ4Level.L00_FAST,
-			CompressionLevel.NoCompression => LZ4Level.L00_FAST,
-#if NET6_0_OR_GREATER
-			CompressionLevel.SmallestSize => LZ4Level.L12_MAX,
-#endif
-			_ => LZ4Level.L09_HC
-		};
+    private async ValueTask<IMemoryOwner<byte>> Lz4Compress(MemoryStream source, CompressionLevel level) {
+        LZ4Level lz4Level = level switch {
+            CompressionLevel.Optimal => LZ4Level.L11_OPT,
+            CompressionLevel.Fastest => LZ4Level.L00_FAST,
+            CompressionLevel.NoCompression => LZ4Level.L00_FAST,
+            CompressionLevel.SmallestSize => LZ4Level.L12_MAX,
+            _ => LZ4Level.L09_HC
+        };
 
-		ReadOnlySpan<byte> data = source.GetBuffer().AsSpan(0, (int)source.Length);
-		int maxCompressedSize = LZ4Codec.MaximumOutputSize(data.Length);
-		var owner = MemoryOwner<byte>.Allocate(maxCompressedSize);
-		int compressedSize = LZ4Codec.Encode(
-			data,
-			owner.Span,
-			level: lz4Level);
-		return owner.Slice(0, compressedSize);
-	}
-
-	private async ValueTask<IMemoryOwner<byte>> Lz4Decompress(Stream source, int destinationLength) {
-		byte[] compressed = source.ToByteArray()!;
-		var owner = MemoryOwner<byte>.Allocate(destinationLength);
-		LZ4Codec.Decode(compressed, owner.Span);
-		return owner;
+        ReadOnlySpan<byte> data = source.GetBuffer().AsSpan(0, (int)source.Length);
+        int maxCompressedSize = LZ4Codec.MaximumOutputSize(data.Length);
+        var owner = MemoryOwner<byte>.Allocate(maxCompressedSize);
+        int compressedSize = LZ4Codec.Encode(
+            data,
+            owner.Span,
+            level: lz4Level);
+        return owner.Slice(0, compressedSize);
     }
 
-	public async ValueTask<IMemoryOwner<byte>> CompressAsync(
+    private async ValueTask<IMemoryOwner<byte>> Lz4Decompress(Stream source, int destinationLength) {
+        byte[] compressed = source.ToByteArray()!;
+        var owner = MemoryOwner<byte>.Allocate(destinationLength);
+        LZ4Codec.Decode(compressed, owner.Span);
+        return owner;
+    }
+
+    public async ValueTask<IMemoryOwner<byte>> CompressAsync(
         CompressionMethod method, CompressionLevel level, MemoryStream source) {
         switch(method) {
             case CompressionMethod.None:
@@ -211,19 +248,17 @@ class DefaultCompressor : ICompressor {
                 return await SnappyCompress(source);
             case CompressionMethod.Gzip:
                 return await GzipCompress(source, level);
-			case CompressionMethod.Lzo:
-				return await LzoCompress(source, level);
-#if !NETSTANDARD2_0
-			case CompressionMethod.Brotli:
+            case CompressionMethod.Lzo:
+                return await LzoCompress(source, level);
+            case CompressionMethod.Brotli:
                 return await BrotliCompress(source, level);
-#endif
             case CompressionMethod.LZ4:
                 return await Lz4Compress(source, level);
-			case CompressionMethod.Zstd:
+            case CompressionMethod.Zstd:
                 return await ZstdCompress(source, level);
-			case CompressionMethod.Lz4Raw:
-				return await Lz4Compress(source, level);
-			default:
+            case CompressionMethod.Lz4Raw:
+                return await Lz4Compress(source, level);
+            default:
                 throw new NotSupportedException($"Compression method {method} is not supported.");
         }
     }
@@ -237,26 +272,33 @@ class DefaultCompressor : ICompressor {
                 return await SnappyDecompress(source);
             case CompressionMethod.Gzip:
                 return await GzipDecompress(source, destinationLength);
-			case CompressionMethod.Lzo:
-				return await LzoDecompress(source, destinationLength);
-#if !NETSTANDARD2_0
-			case CompressionMethod.Brotli:
+            case CompressionMethod.Lzo:
+                return await LzoDecompress(source, destinationLength);
+            case CompressionMethod.Brotli:
                 return await BrotliDecompress(source, destinationLength);
-#endif
             case CompressionMethod.LZ4:
                 return await Lz4Decompress(source, destinationLength);
-			case CompressionMethod.Zstd:
+            case CompressionMethod.Zstd:
                 return await ZstdDecompress(source, destinationLength);
-			case CompressionMethod.Lz4Raw:
-				return await Lz4Decompress(source, destinationLength);
-			default:
+            case CompressionMethod.Lz4Raw:
+                return await Lz4Decompress(source, destinationLength);
+            default:
                 throw new NotSupportedException($"Compression method {method} is not supported.");
         }
 
     }
 }
 
-
+/// <summary>
+/// Compressor entry point.
+/// </summary>
 static class Compressor {
+    /// <summary>
+    /// Gets the default instance of the compressor to use for compression and decompression operations.
+    /// </summary>
+    /// <remarks>
+    /// This property provides a shared, thread-safe compressor instance that can be used throughout the application.
+    /// Use this instance when a custom compressor is not required.
+    /// </remarks>
     public static ICompressor Instance { get; } = new DefaultCompressor();
 }

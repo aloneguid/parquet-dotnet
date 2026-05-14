@@ -1,142 +1,94 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.Schema;
 using Xunit;
 
-namespace Parquet.Test {
-    public class StatisticsTest : TestBase {
-        class TestDesc {
-            public Type? Type { get; set; }
+namespace Parquet.Test;
 
-            public Array? Data { get; set; }
+public class StatisticsTest : TestBase {
 
-            public long? DistinctCount { get; set; }
-
-            public long NullCount { get; set; }
-
-            public object? Min { get; set; }
-
-            public object? Max { get; set; }
+    [Fact]
+    public async Task Int32_null_min_max() {
+        var schema = new ParquetSchema(new DataField<int>("id"));
+        var ms = new MemoryStream();
+        await using(ParquetWriter w = await ParquetWriter.CreateAsync(schema, ms)) {
+            using ParquetRowGroupWriter rg = w.CreateRowGroup();
+            await rg.WriteAsync<int>(schema.DataFields[0], new int[] { 4, 2, 1, 3, 5, 1, 4 });
         }
 
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader r = await ParquetReader.CreateAsync(ms)) {
+            using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+            DataColumnStatistics? stats = rgr.GetStatistics(schema.DataFields[0]);
+            Assert.NotNull(stats);
+            Assert.Equal(0, stats.NullCount);
+            Assert.Equal(1, stats.MinValue);
+            Assert.Equal(5, stats.MaxValue);
+        }
+    }
 
-        private static readonly Dictionary<string, TestDesc> NameToTest = new Dictionary<string, TestDesc> {
-            ["int"] =
-              new TestDesc {
-                  Type = typeof(int),
-                  Data = new int[] { 4, 2, 1, 3, 5, 1, 4 },
-                  NullCount = 0,
-                  DistinctCount = 5,
-                  Min = 1,
-                  Max = 5
-              },
-            ["int?"] =
-              new TestDesc {
-                  Type = typeof(int?),
-                  Data = new int?[] { 4, 2, 1, 3, 1, null, 4 },
-                  DistinctCount = 4,
-                  NullCount = 1,
-                  Min = 1,
-                  Max = 4
-              },
-            ["string"] =
-              new TestDesc {
-                  Type = typeof(string),
-                  Data = new string[] { "one", "two", "one" },
-                  NullCount = 0,
-                  DistinctCount = 2,
-                  Min = "one",
-                  Max = "two"
-              },
-            ["float"] =
-              new TestDesc {
-                  Type = typeof(float),
-                  Data = new float[] { 1.23f, 2.1f, 0.5f, 0.5f },
-                  DistinctCount = 3,
-                  NullCount = 0,
-                  Min = 0.5f,
-                  Max = 2.1f
-              },
-            ["double"] =
-              new TestDesc {
-                  Type = typeof(double),
-                  Data = new double[] { 1.23D, 2.1D, 0.5D, 0.5D },
-                  DistinctCount = 3,
-                  NullCount = 0,
-                  Min = 0.5D,
-                  Max = 2.1D
-              },
-            ["dateTime"] =
-                new TestDesc {
-                    Type = typeof(DateTime),
-                    Data = new DateTime[]
-                    {
-                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Utc),
-                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Utc),
-                        new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Utc),
-                        new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Utc)
-                    },
-                    DistinctCount = 3,
-                    NullCount = 0,
-                    Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Utc),
-                    Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Utc)
-                },
-            ["dateTime unknown"] =
-                new TestDesc {
-                    Type = typeof(DateTime),
-                    Data = new DateTime[]
-                    {
-                        new DateTime(2019, 12, 16),
-                        new DateTime(2019, 12, 16),
-                        new DateTime(2019, 12, 15),
-                        new DateTime(2019, 12, 17)
-                    },
-                    DistinctCount = 3,
-                    NullCount = 0,
-                    Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Utc),
-                    Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Utc)
-                },
-            ["dateTime local"] =
-                new TestDesc {
-                    Type = typeof(DateTime),
-                    Data = new DateTime[]
-                    {
-                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Local),
-                        new DateTime(2019, 12, 16, 0, 0, 0, DateTimeKind.Local),
-                        new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Local),
-                        new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Local)
-                    },
-                    DistinctCount = 3,
-                    NullCount = 0,
-                    Min = new DateTime(2019, 12, 15, 0, 0, 0, DateTimeKind.Local).ToUniversalTime(),
-                    Max = new DateTime(2019, 12, 17, 0, 0, 0, DateTimeKind.Local).ToUniversalTime()
-                }
+    [Fact]
+    public async Task Issue735() {
+        ReadOnlyMemory<byte> id = new byte[]
+        {
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+            29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54
         };
 
-        [Theory]
-        [InlineData("int")]
-        [InlineData("int?")]
-        [InlineData("string")]
-        [InlineData("float")]
-        [InlineData("double")]
-        [InlineData("dateTime")]
-        [InlineData("dateTime unknown")]
-        [InlineData("dateTime local")]
-        public async Task Distinct_stat_for_basic_data_types(string name) {
-            TestDesc? test = NameToTest[name];
+        IReadOnlyCollection<string> checkpoint =
+        [
+            "003510", "KZ0516", "KZ0527", "003543", "KZ0149", "003021", "KZ0105", "KZ0561", "CN0027", "CN0038",
+            "CN0083", "CN0127", "CN0094", "KZ0716", "KZ0138", "KZ0483", "KZ0572", "KZ0249", "003632", "KZ0050",
+            "KZ0683", "KZ0694", "KZ0494", "KZ0338", "KZ0449", "001374", "CN0161", "001330", "KZ0061", "KZ0327",
+            "KZ0438", "KZ0016", "001307", "KZ0705", "KZ0261", "KZ0094", "KZ0738", "KZ0749", "FI0225", "FI0225",
+            "FI0014", "001196", "FI0203", "FI0203", "PL0017", "PL0017", "PL0028", "PL0039", "001029", "FI0158",
+            "FI0247", "KZ0372", "KZ0161", "KZ0172"
+        ];
 
-            var schema = new ParquetSchema(new DataField("id", test!.Type!));
-            DataField id = schema.GetDataFields()[0];
+        IReadOnlyCollection<string> docId =
+        [
+            "0196", "0199", "0202", "0203", "0220", "0218", "0247", "0222", "0224", "0226", "0230", "0232", "0234",
+            "0249", "0248", "0246", "0251", "0253", "0255", "0260", "0265", "0269", "0322", "0305", "0309", "0375",
+            "0390", "0424", "0428", "0430", "0432", "0435", "0437", "0439", "0444", "0446", "0448", "0450", "0499",
+            "0500", "0503", "0511", "0519", "0520", "0525", "0526", "0528", "0533", "0539", "0561", "0576", "0257",
+            "0688", "0690"
+        ];
 
-            DataColumn? rc = await WriteReadSingleColumn(new DataColumn(id, test!.Data!));
+        var fs = new MemoryStream();
 
-            Assert.Equal(test.Data!.Length, rc!.CalculateRowCount());
-            //Assert.Equal(test.DistinctCount, rc.Statistics.DistinctCount);
-            Assert.Equal(test.NullCount, rc.Statistics.NullCount);
-            Assert.Equal(test.Min, rc.Statistics.MinValue);
-            Assert.Equal(test.Max, rc.Statistics.MaxValue);
+        ParquetSchema ps = new
+        (
+            new DataField("ID", typeof(byte), false),
+            new DataField("CHECKPOINT", typeof(string), false),
+            new DataField("DOC_ID", typeof(string), false)
+        );
+
+        var parquetOptions = new ParquetOptions {
+            UseBigDecimal = false,
+            UseDateOnlyTypeForDates = true,
+            UseTimeOnlyTypeForTimeMillis = true,
+            MaximumSmallPoolFreeBytes = 32 * 1024 * 1024,
+            MaximumLargePoolFreeBytes = 64 * 1024 * 1024,
+            DictionaryEncodingThreshold = 0.5d
+        };
+
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(ps, fs, parquetOptions)) {
+            using ParquetRowGroupWriter groupWriter = writer.CreateRowGroup();
+
+            await groupWriter.WriteAsync(ps.DataFields[0], id);
+            await groupWriter.WriteAsync(ps.DataFields[1], checkpoint);
+            await groupWriter.WriteAsync(ps.DataFields[2], docId);
+            groupWriter.CompleteValidate();
         }
+
+        fs.Position = 0L;
+        await using ParquetReader reader = await ParquetReader.CreateAsync(fs);
+        using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
+        DataColumnStatistics? dataColumnStatistics = groupReader.GetStatistics(reader.Schema.DataFields[1]);
+        Assert.Equal(0, dataColumnStatistics?.NullCount);
     }
 }

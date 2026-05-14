@@ -1,7 +1,7 @@
 ﻿using System;
 using Parquet.Schema;
 
-namespace Parquet.Serialization.Attributes; 
+namespace Parquet.Serialization.Attributes;
 
 
 /// <summary>
@@ -46,12 +46,12 @@ public class ParquetTimestampAttribute : Attribute {
     /// Resolution of Parquet timestamp
     /// </summary>
     public ParquetTimestampResolution Resolution { get; private set; }
-    
+
     /// <summary>
     /// Resolution of Parquet timestamp
     /// </summary>
     public bool UseLogicalTimestamp { get; private set; }
-    
+
     /// <summary>
     /// IsAdjustedToUTC
     /// </summary>
@@ -60,7 +60,7 @@ public class ParquetTimestampAttribute : Attribute {
     internal DateTimeFormat GetDateTimeFormat() {
         if(UseLogicalTimestamp)
             return DateTimeFormat.Timestamp;
-        
+
         return Resolution switch {
             ParquetTimestampResolution.Milliseconds => DateTimeFormat.DateAndTime,
 #if NET7_0_OR_GREATER

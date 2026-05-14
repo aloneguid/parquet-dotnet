@@ -3,7 +3,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Parquet.Test.Util; 
+namespace Parquet.Test.Util;
+
 static class RandomGenerator {
     private static readonly RandomNumberGenerator Rnd = RandomNumberGenerator.Create();
 

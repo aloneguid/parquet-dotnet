@@ -1,6 +1,6 @@
 using System;
 
-namespace Parquet.File.Values.Primitives; 
+namespace Parquet.File.Values.Primitives;
 
 /// <summary>
 /// A parquet interval type compatible with a Spark INTERVAL type
