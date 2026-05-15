@@ -1,8 +1,9 @@
-# 6.0.4-pre.1
+# 6.0.4-pre.2
 
 ## Improvements
 - Exposed `WriteAllPartsAsync` internal method for callers who wish to manually supply definition levels and values (really low-level high-performance API). As wished by @spanglerco in #755.
 - `BigDecimal` encoding 7–17% speed improvement depending on precision and data size. By @rferraton in #740.
+- Marked INT96 `DateTimeKind` as `Unspecified` by @Kuinox in #695. 
 
 # 6.0.3
 
