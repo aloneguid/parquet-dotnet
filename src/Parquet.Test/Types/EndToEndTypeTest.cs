@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Data;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
@@ -270,7 +273,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DataField<DateTime>("datetime");
         DateTime expected = DateTime.UtcNow.RoundToSecond();
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         Assert.Equal(expected, actual);
     }
 
@@ -279,7 +282,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DataField<DateTime>("dateTime");
         DateTime expected = DateTime.UtcNow.RoundToSecond();
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         Assert.Equal(expected, actual);
     }
 
@@ -288,7 +291,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DateTimeDataField("dateImpala", DateTimeFormat.Impala);
         DateTime expected = DateTime.UtcNow.RoundToSecond();
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         Assert.Equal(expected, actual);
     }
 
@@ -315,7 +318,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DataField<DateTime>("dateTime unknown kind");
         var expected = new DateTime(2020, 06, 10, 11, 12, 13);
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         DateTime expectedUtc = DateTime.SpecifyKind(expected, DateTimeKind.Utc);
         Assert.Equal(expectedUtc, actual);
     }
@@ -325,7 +328,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DateTimeDataField("dateImpala unknown kind", DateTimeFormat.Impala);
         var expected = new DateTime(2020, 06, 10, 11, 12, 13);
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         DateTime expectedUtc = DateTime.SpecifyKind(expected, DateTimeKind.Utc);
         Assert.Equal(expectedUtc, actual);
     }
@@ -345,7 +348,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DataField<DateTime>("dateTime unknown kind");
         var expected = new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local);
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         Assert.Equal(expected.ToUniversalTime(), actual);
     }
 
@@ -354,7 +357,7 @@ public class EndToEndTypeTest : TestBase {
         var field = new DateTimeDataField("dateImpala unknown kind", DateTimeFormat.Impala);
         var expected = new DateTime(2020, 06, 10, 11, 12, 13, DateTimeKind.Local);
         DateTime actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(DateTimeKind.Utc, actual.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, actual.Kind);
         Assert.Equal(expected.ToUniversalTime(), actual);
     }
 
@@ -406,6 +409,40 @@ public class EndToEndTypeTest : TestBase {
         DateOnly actual = await WriteReadSingleAsync(field, expected, options);
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public async Task Int96_dates_round_trip_as_unknown() {
+
+        DateTime baseDate = DateTime.Parse("2020-06-10T11:12:13", CultureInfo.InvariantCulture);
+        DateTime utcDate = DateTime.SpecifyKind(baseDate, DateTimeKind.Utc);
+        DateTime unknownDate = DateTime.SpecifyKind(baseDate, DateTimeKind.Unspecified);
+        DateTime localDate = DateTime.SpecifyKind(baseDate, DateTimeKind.Local);
+        DateTime expectedUnspecified = DateTime.SpecifyKind(baseDate, DateTimeKind.Unspecified);
+        DateTime expectedLocal = DateTime.SpecifyKind(localDate.ToUniversalTime(), DateTimeKind.Unspecified);
+
+        var schema = new ParquetSchema(new DataField<DateTime>("datetime"));
+        DataField field = schema.DataFields[0];
+        var values = new[] { utcDate, unknownDate, localDate };
+
+        var ms = new MemoryStream();
+        
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms)) {
+            using ParquetRowGroupWriter rg = writer.CreateRowGroup();
+            await rg.WriteAsync<DateTime>(field, values.AsMemory());
+        }
+
+        ms.Position = 0;
+        await using ParquetReader reader = await ParquetReader.CreateAsync(ms);
+        using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
+        using RawColumnData<DateTime> rcd = await rowGroupReader.ReadRawColumnDataAsync<DateTime>(field);
+        
+        Assert.Equal(3, rcd.Values.Length);
+        Assert.Equal(expectedUnspecified, rcd.Values[0]); // utc will be converted to unspecified in the round trip
+        Assert.Equal(expectedUnspecified, rcd.Values[1]);
+        Assert.Equal(expectedLocal, rcd.Values[2]);
+        Assert.True(rcd.Values.ToArray().All(d => d.Kind == DateTimeKind.Unspecified));
+    }
+
 
     // --- Interval test ---
 

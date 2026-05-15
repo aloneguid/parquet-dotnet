@@ -81,7 +81,7 @@ public class ParquetCsvComparison : TestBase {
             _ when IsNumericType(baseType) || baseType == typeof(decimal) 
                 => Convert.ToString(value, CultureInfo.InvariantCulture)!,
             _ when baseType == typeof(DateTime) 
-                => ((DateTime)value).ToString("O", CultureInfo.InvariantCulture),
+                => ((DateTime)value).ToString("o"),
             _ => value.ToString() ?? string.Empty
         };
     }
@@ -94,7 +94,7 @@ public class ParquetCsvComparison : TestBase {
             return "0";
 
         if(DateTime.TryParse(value, out DateTime result)) {
-            return result.ToString("o");
+            return result.ToUtc().ToString("o");
         }
 
 

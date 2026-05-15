@@ -395,7 +395,7 @@ static class ParquetPlainEncoder {
         } else if(tse.Type == TType.INT96) {
             if(value.Length == 12)
                 if(options?.TreatBigIntegersAsDates ?? false)
-                    result = (DateTime)new NanoTime(value, 0);
+                    result = new NanoTime(value.AsSpan()).ToDateTime();
                 else
                     result = new BigInteger(value);
             else
@@ -1211,7 +1211,7 @@ static class ParquetPlainEncoder {
                     int offset = 0;
                     int els = 0;
                     while(offset + NanoTime.BinarySize <= source.Length) {
-                        data[els++] = new NanoTime(source.Slice(offset, NanoTime.BinarySize));
+                        data[els++] = new NanoTime(source.Slice(offset, NanoTime.BinarySize)).ToDateTime();
                         offset += NanoTime.BinarySize;
                     }
                     return els;

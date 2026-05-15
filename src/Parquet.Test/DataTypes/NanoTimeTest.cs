@@ -12,7 +12,7 @@ public class NanoTimeTest {
     public void ConvertToDateTimeOffset_PreservesTicks(long ticks) {
         var dto = new DateTime(ticks, DateTimeKind.Utc);
         var nanoTime = new NanoTime(dto);
-        var convertedDto = (DateTime)nanoTime;
+        var convertedDto = nanoTime.ToDateTime();
 
         Assert.Equal(dto, convertedDto);
     }
