@@ -1,12 +1,11 @@
-﻿// for performance tests only
+// for performance tests only
 
 using BenchmarkDotNet.Running;
-using Parquet;
-using Parquet.PerfRunner;
 using Parquet.PerfRunner.Benchmarks;
 
 if(args.Length == 1) {
     switch(args[0]) {
+#if !PARQUET_PACKAGE
         case "highLevel":
             HighLevel.Run();
             break;
@@ -24,8 +23,17 @@ if(args.Length == 1) {
         case "compression":
             BenchmarkRunner.Run<CompressionBenchmarks>();
             break;
+#endif
+        case "sharp-compare-taxi":
+            BenchmarkRunner.Run<ParquetSharpComparisonBenchmark>();
+            break;
+        case "self-compare-taxi":
+            BenchmarkRunner.Run<SelfComparisonBenchmark>();
+            break;
     }
 } else {
+#if !PARQUET_PACKAGE
     await new DataTypes().RandomStrings();
+#endif
     //await SampleGenerator.GenerateFiles();
 }

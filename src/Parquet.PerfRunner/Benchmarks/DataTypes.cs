@@ -1,4 +1,3 @@
-﻿using Parquet.Data;
 using Parquet.Schema;
 
 namespace Parquet.PerfRunner.Benchmarks;
@@ -94,7 +93,7 @@ internal class DataTypes {
     public async Task RandomStrings() {
         using var ms = new MemoryStream();
         await using ParquetWriter w = await ParquetWriter.CreateAsync(_nullableStringSchema, ms, new ParquetOptions { CompressionMethod = CompressionMethod.None });
-                using ParquetRowGroupWriter rgw = w.CreateRowGroup();
+        using ParquetRowGroupWriter rgw = w.CreateRowGroup();
         await rgw.WriteAsync(_nullableStringSchema.DataFields[0], _nullableStrings);
     }
 }
