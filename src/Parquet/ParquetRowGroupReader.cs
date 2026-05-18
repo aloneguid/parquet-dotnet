@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Extensions;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;

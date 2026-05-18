@@ -75,7 +75,7 @@ class DataColumnReader {
 
             switch(ph.Type) {
                 case PageType.DICTIONARY_PAGE:
-                    await ReadDictionaryPage(ph, rc, cancellationToken);
+                    await ReadDictionaryPageAsync(ph, rc, cancellationToken);
                     break;
                 case PageType.DATA_PAGE:
                     await ReadDataPageV1Async(ph, rc, cancellationToken);
@@ -94,7 +94,7 @@ class DataColumnReader {
         return await Compressor.Instance.Decompress(_compressionMethod, src, ph.UncompressedPageSize);
     }
 
-    private async ValueTask ReadDictionaryPage<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
+    private async ValueTask ReadDictionaryPageAsync<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
 
         if(rc.HasDictionary)
             throw new InvalidOperationException("dictionary already read");
@@ -102,7 +102,7 @@ class DataColumnReader {
         //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
         using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
 
-        // Dictionary should not contains null values
+        // Dictionary should not contain null values
         Span<T> dictionary = rc.AllocateDictionary(ph.DictionaryPageHeader!.NumValues);
 
         ParquetPlainEncoder.Decode(dictionary, ph.DictionaryPageHeader.NumValues,

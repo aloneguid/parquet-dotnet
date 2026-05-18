@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Parquet.Data;
+using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
 using Parquet.Meta;
 using Parquet.Schema;
