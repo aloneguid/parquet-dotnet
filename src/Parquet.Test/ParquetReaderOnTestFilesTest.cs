@@ -70,6 +70,47 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         }
     }
 
+    [Fact]
+    public async Task ReadLocicalTimeAllPrecisions() {
+        await using Stream s = OpenTestFile("logical_time_all_precisions.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
+        
+        DataField[] fields = r.Schema.GetDataFields();
+        Assert.Equal(3, fields.Length);
+        
+        // there are 3 columns: time_ms, time_us, time_ns, each marking 10:30 in logical time
+        
+        DataField timeMsField = fields[0];
+        DataField timeUsField = fields[1];
+        DataField timeNsField = fields[2];
+        
+        Assert.Equal("time_ms", timeMsField.Name);
+        Assert.Equal("time_us", timeUsField.Name);
+        Assert.Equal("time_ns", timeNsField.Name);
+        
+        // check logical type annotations
+        Assert.NotNull(timeMsField.SchemaElement?.LogicalType?.TIME);
+        Assert.NotNull(timeUsField.SchemaElement?.LogicalType?.TIME);
+        Assert.NotNull(timeNsField.SchemaElement?.LogicalType?.TIME);
+        Assert.NotNull(timeMsField.SchemaElement?.LogicalType.TIME.Unit.MILLIS);
+        Assert.NotNull(timeUsField.SchemaElement?.LogicalType?.TIME.Unit.MICROS);
+        Assert.NotNull(timeNsField.SchemaElement?.LogicalType?.TIME.Unit.NANOS);
+        
+        // check column value
+        int?[] msValues = new int?[1];
+        await rgr.ReadAsync<int>(timeMsField, msValues.AsMemory());
+        Assert.Equal(37800000, msValues[0]);
+        
+        long?[] usValues = new long?[1];
+        await rgr.ReadAsync<long>(timeUsField, usValues.AsMemory());
+        Assert.Equal(37800000000, usValues[0]);
+        
+        long?[] nsValues = new long?[1];
+        await rgr.ReadAsync<long>(timeNsField, nsValues.AsMemory());
+        Assert.Equal(37800000000000, nsValues[0]);
+    }
+
     private async Task OptionalValues_WithoutStatistics(string parquetFile) {
         using(Stream s = OpenTestFile(parquetFile)) {
             await using(ParquetReader r = await ParquetReader.CreateAsync(s)) {

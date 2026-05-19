@@ -13,12 +13,10 @@ public enum ParquetTimestampResolution {
     /// </summary>
     Milliseconds,
 
-#if NET7_0_OR_GREATER
     /// <summary>
     /// Microseconds, maps to <see cref="DateTimeFormat.DateAndTimeMicros"/>"
     /// </summary>
     Microseconds
-#endif
 
     // nanoseconds to be added
 }

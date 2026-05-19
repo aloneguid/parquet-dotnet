@@ -25,7 +25,7 @@ static class ParquetPlainEncoder {
     private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
     /// <summary>
-    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migrattion from legacy
+    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migration from legacy
     /// .NET.
     /// </summary>
     /// <param name="sourceSpan">
@@ -134,7 +134,7 @@ static class ParquetPlainEncoder {
     }
 
     /// <summary>
-    /// Generic overload for decoding directly into a Span{T} with element count control.
+    /// Generic overload for decoding directly into a <see cref="Span{T}"/> with element count control.
     /// </summary>
     public static void Decode<T>(
         Span<T> dest,

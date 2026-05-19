@@ -1,9 +1,13 @@
-# 6.0.4-pre.2
+# 6.1.0
 
 ## Improvements
 - Exposed `WriteAllPartsAsync` internal method for callers who wish to manually supply definition levels and values (really low-level high-performance API). As wished by @spanglerco in #755.
 - `BigDecimal` encoding 7–17% speed improvement depending on precision and data size. By @rferraton in #740.
-- Marked INT96 `DateTimeKind` as `Unspecified` by @Kuinox in #695. 
+- Marked INT96 `DateTimeKind` as `Unspecified` by @Kuinox in #695.
+- **Big TIME** improvements (potentially breaking). Parquet.Net treats `TIME` logical type as `int` or `long` depending on precision and does not attempt to convert to .NET native temporal types which may lose precision.
+
+## Bugs fixed
+- Legacy `TIME_MILLIS` converted type was not handled at all, now it's treated as `int`, and `TIME_MICROS` is handled as `long`, which is consistent with `TIME` logical type.
 
 # 6.0.3
 
