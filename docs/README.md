@@ -1061,20 +1061,20 @@ await merger.MergeFilesAsync(destination);
 
 ## Used by
 
-- [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool).
-- [RavenDB - An ACID NoSQL Document Database](https://github.com/ravendb/ravendb).
-- [Cinchoo ETL: An ETL framework for .NET](https://github.com/Cinchoo/ChoETL).
-- [ParquetViewer: Simple Windows desktop application for viewing & querying Apache Parquet files](https://github.com/mukunku/ParquetViewer).
-- [ML.NET: Machine Learning for .NET](https://github.com/dotnet/machinelearning).
-- [PSParquet: PowerShell Module for Parquet](https://github.com/Agazoth/PSParquet).
-- [Omni Loader: Self-tuning Database Migration Accelerator](https://www.omniloader.com).
-- [Contoso Data Generator V2 : sample data generator](https://github.com/sql-bi/Contoso-Data-Generator-V2).
-- [Recfuence - An analysis of YouTube's political influence through recommendations]().
-- [Kusto-loco - C# KQL query engine with flexible I/O layers and visualization](https://github.com/NeilMacMullen/kusto-loco).
-- [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
-- [Personal Data Warehouse - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)](https://github.com/BlazorData-Net/PersonalDataWarehouse).
-- [FastBCP - Export to parquet files in parallel from Oracle, SQL Server, MySQL, PostgreSQL, ODBC, Teradata, Netezza, SAP HANA, ClickHouse in one command line (Windows & Linux)](https://fastbcp.arpe.io/).
-- [Parquet.FSharp - Adds first-class support for F# types such as records, options, lists and discriminated unions](https://github.com/rob-earwaker/parquet-fsharp).
+- [Azure Cosmos DB Desktop Data Migration Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool)
+- [RavenDB](https://github.com/ravendb/ravendb) - An ACID NoSQL Document Database
+- [Cinchoo ETL](https://github.com/Cinchoo/ChoETL) - An ETL framework for .NET
+- [ParquetViewer](https://github.com/mukunku/ParquetViewer) - Simple Windows desktop application for viewing & querying Apache Parquet files
+- [ML.NET](https://github.com/dotnet/machinelearning) - Machine Learning for .NET
+- [PSParquet](https://github.com/Agazoth/PSParquet) - PowerShell Module for Parquet
+- [Omni Loader](https://www.omniloader.com) - Self-tuning Database Migration Accelerator
+- [Contoso Data Generator V2](https://github.com/sql-bi/Contoso-Data-Generator-V2) - Sample data generator
+- [Recfuence]() - An analysis of YouTube's political influence through recommendations
+- [Kusto-loco](https://github.com/NeilMacMullen/kusto-loco) - C# KQL query engine with flexible I/O layers and visualization
+- [DeltaIO](https://github.com/aloneguid/delta) - Delta Lake implementation in pure .NET
+- [Personal Data Warehouse](https://github.com/BlazorData-Net/PersonalDataWarehouse) - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)
+- [FastBCP](https://fastbcp.arpe.io/) - Export to parquet files in parallel from Oracle, SQL Server, MySQL, PostgreSQL, ODBC, Teradata, Netezza, SAP HANA, ClickHouse in one command line (Windows & Linux)
+- [Parquet.FSharp](https://github.com/rob-earwaker/parquet-fsharp) - Adds first-class support for F# types such as records, options, lists and discriminated unions
 
 *...raise a PR to appear here...*
 
