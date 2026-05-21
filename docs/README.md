@@ -1074,7 +1074,7 @@ await merger.MergeFilesAsync(destination);
 - [DeltaIO - Delta Lake implementation in pure .NET](https://github.com/aloneguid/delta).
 - [Personal Data Warehouse - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)](https://github.com/BlazorData-Net/PersonalDataWarehouse).
 - [FastBCP - Export to parquet files in parallel from Oracle, SQL Server, MySQL, PostgreSQL, ODBC, Teradata, Netezza, SAP HANA, ClickHouse in one command line (Windows & Linux)](https://fastbcp.arpe.io/).
-- [Parquet.FSharp - Extension of Parquet.Net that adds first-class support for F# types such as records, options, lists and discriminated unions](https://github.com/rob-earwaker/parquet-fsharp).
+- [Parquet.FSharp - Adds first-class support for F# types such as records, options, lists and discriminated unions](https://github.com/rob-earwaker/parquet-fsharp).
 
 *...raise a PR to appear here...*
 
