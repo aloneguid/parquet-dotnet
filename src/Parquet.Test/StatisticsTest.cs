@@ -69,7 +69,6 @@ public class StatisticsTest : TestBase {
 
         var parquetOptions = new ParquetOptions {
             UseBigDecimal = false,
-            UseDateOnlyTypeForDates = true,
             UseTimeOnlyTypeForTimeMillis = true,
             MaximumSmallPoolFreeBytes = 32 * 1024 * 1024,
             MaximumLargePoolFreeBytes = 64 * 1024 * 1024,

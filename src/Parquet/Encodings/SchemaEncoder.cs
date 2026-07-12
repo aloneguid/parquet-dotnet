@@ -268,7 +268,7 @@ static class SchemaEncoder {
 
         // date
         if(se.LogicalType?.DATE != null || se.ConvertedType == ConvertedType.DATE) {
-            return options.UseDateOnlyTypeForDates ? typeof(DateOnly) : typeof(DateTime);
+            return typeof(DateOnly);
         }
 
         // time
