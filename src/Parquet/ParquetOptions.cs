@@ -32,13 +32,7 @@ public class ParquetOptions {
     /// When true, big integers are always treated as dates when reading files.
     /// </summary>
     public bool TreatBigIntegersAsDates { get; set; } = true;
-
-    /// <summary>
-    /// When set to true, parquet dates will be deserialized as <see cref="DateOnly"/>, otherwise as
-    /// <see cref="DateTime"/> with missing time part.
-    /// </summary>
-    public bool UseDateOnlyTypeForDates { get; set; } = false;
-
+    
     /// <summary>
     /// When set to true, parquet times with millisecond precision will be deserialized as <see cref="TimeOnly"/>,
     /// otherwise as <see cref="TimeSpan"/> with missing time part.

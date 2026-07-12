@@ -405,8 +405,7 @@ public class EndToEndTypeTest : TestBase {
     public async Task Type_dateonly_writes_and_reads() {
         var field = new DataField<DateOnly>("dateOnly");
         DateOnly expected = DateOnly.FromDateTime(DateTime.UtcNow);
-        var options = new ParquetOptions { UseDateOnlyTypeForDates = true };
-        DateOnly actual = await WriteReadSingleAsync(field, expected, options);
+        DateOnly actual = await WriteReadSingleAsync(field, expected);
         Assert.Equal(expected, actual);
     }
 

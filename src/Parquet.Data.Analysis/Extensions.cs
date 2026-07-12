@@ -79,6 +79,7 @@ public static class AnalysisExtensions {
         if(t == typeof(float)) return new SingleDataFrameColumn(name, await ReadAsync<float>(rgr, field, rowCount, ct));
         if(t == typeof(double)) return new DoubleDataFrameColumn(name, await ReadAsync<double>(rgr, field, rowCount, ct));
         if(t == typeof(decimal)) return new DecimalDataFrameColumn(name, await ReadAsync<decimal>(rgr, field, rowCount, ct));
+        if(t == typeof(DateOnly)) return new PrimitiveDataFrameColumn<DateOnly>(name, await ReadAsync<DateOnly>(rgr, field, rowCount, ct));
         if(t == typeof(DateTime)) return new DateTimeDataFrameColumn(name, await ReadAsync<DateTime>(rgr, field, rowCount, ct));
         if(t == typeof(TimeSpan)) return new PrimitiveDataFrameColumn<TimeSpan>(name, await ReadAsync<TimeSpan>(rgr, field, rowCount, ct));
         if(t == typeof(string)) return new StringDataFrameColumn(name, await ReadStringsAsync(rgr, field, rowCount, ct));
@@ -103,6 +104,7 @@ public static class AnalysisExtensions {
         if(t == typeof(float)) { Append((PrimitiveDataFrameColumn<float>)col, await ReadAsync<float>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(double)) { Append((PrimitiveDataFrameColumn<double>)col, await ReadAsync<double>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(decimal)) { Append((PrimitiveDataFrameColumn<decimal>)col, await ReadAsync<decimal>(rgr, field, rowCount, ct)); return; }
+        if(t == typeof(DateOnly)) { Append((PrimitiveDataFrameColumn<DateOnly>)col, await ReadAsync<DateOnly>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(DateTime)) { Append((PrimitiveDataFrameColumn<DateTime>)col, await ReadAsync<DateTime>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(TimeSpan)) { Append((PrimitiveDataFrameColumn<TimeSpan>)col, await ReadAsync<TimeSpan>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(string)) { Append((StringDataFrameColumn)col, await ReadStringsAsync(rgr, field, rowCount, ct)); return; }
@@ -153,6 +155,7 @@ public static class AnalysisExtensions {
         if(t == typeof(float)) { await rgw.WriteAsync<float>(field, ((PrimitiveDataFrameColumn<float>)col).ToArray().AsMemory()); return; }
         if(t == typeof(double)) { await rgw.WriteAsync<double>(field, ((PrimitiveDataFrameColumn<double>)col).ToArray().AsMemory()); return; }
         if(t == typeof(decimal)) { await rgw.WriteAsync<decimal>(field, ((PrimitiveDataFrameColumn<decimal>)col).ToArray().AsMemory()); return; }
+        if(t == typeof(DateOnly)) { await rgw.WriteAsync<DateOnly>(field, ((PrimitiveDataFrameColumn<DateOnly>)col).ToArray().AsMemory()); return; }
         if(t == typeof(DateTime)) { await rgw.WriteAsync<DateTime>(field, ((PrimitiveDataFrameColumn<DateTime>)col).ToArray().AsMemory()); return; }
         if(t == typeof(TimeSpan)) { await rgw.WriteAsync<TimeSpan>(field, ((PrimitiveDataFrameColumn<TimeSpan>)col).ToArray().AsMemory()); return; }
         if(t == typeof(string)) {

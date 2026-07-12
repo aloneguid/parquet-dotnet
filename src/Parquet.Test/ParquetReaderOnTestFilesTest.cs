@@ -37,16 +37,16 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
         using ParquetRowGroupReader rgr = r.OpenRowGroupReader(0);
 
-        var col0 = new DateTime?[rgr.RowGroup.NumRows];
+        var col0 = new DateOnly?[rgr.RowGroup.NumRows];
         var col1 = new DateTime?[rgr.RowGroup.NumRows];
-        await rgr.ReadAsync<DateTime>(r.Schema.DataFields[0], col0);
+        await rgr.ReadAsync<DateOnly>(r.Schema.DataFields[0], col0);
         await rgr.ReadAsync<DateTime>(r.Schema.DataFields[1], col1);
 
-        DateTime? o0 = col0[0];
-        DateTime? o1 = col0[1];
+        DateOnly? o0 = col0[0];
+        DateOnly? o1 = col0[1];
 
-        Assert.Equal(new DateTime(2017, 1, 1), o0);
-        Assert.Equal(new DateTime(2017, 2, 1), o1);
+        Assert.Equal(new DateOnly(2017, 1, 1), o0);
+        Assert.Equal(new DateOnly(2017, 2, 1), o1);
     }
 
     [Theory]
