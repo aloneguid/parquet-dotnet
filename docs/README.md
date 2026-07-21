@@ -145,7 +145,7 @@ The next step is to create `ParquetWriter` class, which builds parquet file skel
 
 ```c#
 using Stream fs = System.IO.File.OpenWrite("/mnt/storage/data.parquet"); 
-await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs));
+await using ParquetWriter writer = await ParquetWriter.CreateAsync(schema, fs);
 using ParquetRowGroupWriter groupWriter = writer.CreateRowGroup();
 
 await groupWriter.WriteAsync<DateTime>(schema.DataFields[0],
@@ -166,11 +166,11 @@ Notice that `ParquetWriter` implements `IAsyncDisposable`, hence `await using`. 
 To read this file back (or just any file created with this or any other parquet software) you can do pretty much the reverse action:
 
 ```csharp
-using(Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet"));
-await using(ParquetReader reader = await ParquetReader.CreateAsync(fs));
+using Stream fs = System.IO.File.OpenRead("/mnt/storage/data.parquet");
+await using ParquetReader reader = await ParquetReader.CreateAsync(fs);
 // optionally access schema: reader.Schema
 for(int i = 0; i < reader.RowGroupCount; i++) { 
-    using(ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i));
+    using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(i);
     
     DataField[] dataFields = reader.Schema.GetDataFields();
 
