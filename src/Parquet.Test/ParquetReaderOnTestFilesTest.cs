@@ -356,7 +356,6 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         Assert.Equal(39_366, rs.Data.Count);
     }
 
-
     [Fact]
     public async Task UnshreddedVariant() {
         using Stream s = OpenTestFile("variant_unshredded.parquet");
@@ -364,4 +363,18 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         Assert.NotNull(r.Schema);
     }
 
+    [Fact]
+    public async Task AllNullColumnPyArrowV25() {
+        using Stream s = OpenTestFile("all_null_column_pyarrow_v25.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
+        DataField[] fs = r.Schema.GetDataFields();
+        double?[] data = await ReadNullableValuesAsync<double>(groupReader, fs[0]);
+        Assert.Equal(46, data.Length);
+        Assert.All(data, d => Assert.Null(d));
+
+        data = await ReadNullableValuesAsync<double>(groupReader, fs[1]);
+        Assert.Equal(46, data.Length);
+        Assert.All(data, d => Assert.Equal(0, d));
+    }
 }

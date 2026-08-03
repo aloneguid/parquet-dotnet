@@ -66,11 +66,11 @@ class DataColumnReader {
         if(_stats?.NullCount != null)
             definedValuesCount -= (int)_stats.NullCount.Value;
 
-        //using var pc = new PackedColumn(_dataField, totalValuesInChunk, definedValuesCount);
         long fileOffset = GetFileOffset();
         _inputStream.Seek(fileOffset, SeekOrigin.Begin);
 
-        while(rc.ValuesRead < totalValuesInChunk) {
+        bool allNullColumnProcessed = false;
+        while(rc.ValuesRead < totalValuesInChunk && !allNullColumnProcessed) {
             PageHeader ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
 
             switch(ph.Type) {
@@ -79,6 +79,7 @@ class DataColumnReader {
                     break;
                 case PageType.DATA_PAGE:
                     await ReadDataPageV1Async(ph, rc, cancellationToken);
+                    allNullColumnProcessed = definedValuesCount == 0;
                     break;
                 case PageType.DATA_PAGE_V2:
                     await ReadDataPageV2Async(ph, rc, totalValuesInChunk, cancellationToken);
@@ -122,12 +123,16 @@ class DataColumnReader {
     private async ValueTask ReadDataPageV1Async<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
         using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
 
+        int allValueCount = (int)_thriftColumnChunk.MetaData!.NumValues;
         if(ph.DataPageHeader == null) {
-            throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+            if (allValueCount != (int?)_stats?.NullCount) {
+                throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
+            }
+            rc.MarkValuesRead(allValueCount);
+            return;
         }
 
         int dataUsed = 0;
-        int allValueCount = (int)_thriftColumnChunk.MetaData!.NumValues;
         int pageValueCount = ph.DataPageHeader.NumValues;
 
         if(_dataField.MaxRepetitionLevel > 0) {
