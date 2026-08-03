@@ -128,6 +128,7 @@ class DataColumnReader {
             if (allValueCount != (int?)_stats?.NullCount) {
                 throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
             }
+            // all columns are meant to be null; mark as read and return.
             rc.MarkValuesRead(allValueCount);
             return;
         }
