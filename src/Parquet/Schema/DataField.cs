@@ -14,7 +14,7 @@ public class DataField : Field, ICloneable {
     private int _fieldId = -1;
 
     /// <summary>
-    /// When true, this element is allowed to have nulls. Bad naming, probably should be something like IsNullable.
+    /// When true, this element is allowed to have nulls.
     /// Changes <see cref="ClrNullableIfHasNullsType"/> property accordingly.
     /// </summary>
     public override bool IsNullable {
