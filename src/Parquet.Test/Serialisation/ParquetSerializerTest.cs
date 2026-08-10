@@ -1137,7 +1137,7 @@ public class ParquetSerializerTest : TestBase {
             lowerCase = i % 2 == 0 ? "on" : "off"
         }).ToList();
 
-        // serialise to memory stream
+        // serialize to memory stream
         using var ms = new MemoryStream();
         await ParquetSerializer.SerializeAsync(data, ms);
         ms.Position = 0;
@@ -1197,7 +1197,6 @@ public class ParquetSerializerTest : TestBase {
     // todo: check that TimeOnly restrictions fire.
     
     // todo: same but for dictionary-based
-    
     
 
     private struct StructWithIntProp {
