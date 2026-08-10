@@ -9,9 +9,29 @@ namespace Parquet.Test.Xunit;
 
 public static class XAssert {
 
+    public class ReadOnlyMemoryConverter : JsonConverter<ReadOnlyMemory<char>> {
+        public override ReadOnlyMemory<char> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => reader.TokenType == JsonTokenType.Null ? null : reader.GetString().AsMemory();
+
+        public override void Write(Utf8JsonWriter writer, ReadOnlyMemory<char> value, JsonSerializerOptions options) {
+            writer.WriteStringValue(value.Span);
+        }
+
+        public override ReadOnlyMemory<char> ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => reader.GetString().AsMemory();
+
+        public override void WriteAsPropertyName(Utf8JsonWriter writer, ReadOnlyMemory<char> value, JsonSerializerOptions options) {
+            writer.WritePropertyName(value.Span);
+        }
+    }
+
     private static readonly JsonSerializerOptions Options = new JsonSerializerOptions {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    static XAssert() {
+        Options.Converters.Add(new ReadOnlyMemoryConverter());
+    }
 
     public static void JsonEquivalent(object? expected, object? actual) {
 

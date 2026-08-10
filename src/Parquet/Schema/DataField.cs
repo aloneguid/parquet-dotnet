@@ -113,8 +113,8 @@ public class DataField : Field, ICloneable {
             throw new NotSupportedException($"type {clrType} is not supported");
         }
 
-        if(_alternativeToPhysicalType.TryGetValue(ClrType, out Type? alternativeType)) {
-            ClrType = alternativeType;
+        if(_alternativeToPhysicalType.TryGetValue(ClrType, out Type? physicalType)) {
+            ClrType = physicalType;
         }
 
         IsNullable = isNullable ?? discIsNullable;

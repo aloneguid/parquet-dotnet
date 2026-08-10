@@ -781,9 +781,9 @@ public class ParquetSerializerTest : TestBase {
     public async Task Map_Simple_Serde_Dict() {
         var data = Enumerable.Range(0, 10).Select(i => new Dictionary<string, object?> {
             ["Id"] = i,
-            ["Tags"] = new Dictionary<string, string> {
-                ["id"] = i.ToString(),
-                ["gen"] = DateTime.UtcNow.ToString()
+            ["Tags"] = new Dictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>?> {
+                ["id".AsReadOnlyMemory()] = i.ToString().AsNullableReadOnlyMemory(),
+                ["gen".AsReadOnlyMemory()] = DateTime.UtcNow.ToString().AsNullableReadOnlyMemory()
             }
         }).ToList();
 
@@ -822,9 +822,9 @@ public class ParquetSerializerTest : TestBase {
         var data = new List<Dictionary<string, object?>> {
     new Dictionary<string, object?> {
         ["Id"] = 1,
-        ["Names"] = new Dictionary<int, string> {
-            [1] = "Name1",
-            [2] = "name2"
+        ["Names"] = new Dictionary<int, ReadOnlyMemory<char>?> {
+            [1] = "Name1".AsNullableReadOnlyMemory(),
+            [2] = "name2".AsNullableReadOnlyMemory()
         }}};
 
         await DictCompareAsync<IdWithNames>(data, true);

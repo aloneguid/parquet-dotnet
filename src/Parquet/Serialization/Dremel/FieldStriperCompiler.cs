@@ -256,7 +256,7 @@ class FieldStriperCompiler<TClass> {
                     return dataConvertedResult == null ? default! : (TResult)dataConvertedResult;
                 }
 
-                throw new NotSupportedException($"({targetType}){sourceType}");
+                throw new NotSupportedException($"{sourceType} => {targetType}");
             }
             return (TResult)value;
         }
