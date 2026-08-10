@@ -268,7 +268,7 @@ public class SchemaTest : TestBase {
     [Fact]
     public void Byte_array_schema_is_a_bytearray_type() {
         var field = new DataField<byte[]>("bytes");
-        Assert.Equal(typeof(byte[]), field.ClrType);
+        Assert.Equal(typeof(ReadOnlyMemory<byte>), field.ClrType);
         Assert.False(field.IsArray);
         Assert.True(field.IsNullable);
     }

@@ -2,6 +2,7 @@
 using Parquet.Serialization;
 using Parquet.Serialization.Dremel;
 using Parquet.Test.Serialisation.Paper;
+using Parquet.Test.Util;
 using Xunit;
 
 namespace Parquet.Test.Serialisation;
@@ -108,7 +109,7 @@ public class DremelStriperTest {
     public void Field_4_Name_Language_Code() {
         FieldStriper<Document> striper = _striper.FieldStripers[3];
         ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
-        Assert.Equal(new string[] { "en-us", "en", "en-gb" }, col.Data);
+        Assert.Equal(new[] { "en-us", "en", "en-gb" }.ToRomArray(), col.Data);
         Assert.Equal(new int[] { 0, 2, 1, 1, 0 }, col.RepetitionLevels!);
         Assert.Equal(new int[] { 7, 7, 3, 7, 3 }, col.DefinitionLevels!);
     }
@@ -117,7 +118,7 @@ public class DremelStriperTest {
     public void Field_5_Name_Language_Country() {
         FieldStriper<Document> striper = _striper.FieldStripers[4];
         ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
-        Assert.Equal(new string[] { "us", "gb" }, col.Data);
+        Assert.Equal(new[] { "us", "gb" }.ToRomArray(), col.Data);
         Assert.Equal(new int[] { 0, 2, 1, 1, 0 }, col.RepetitionLevels!);
         Assert.Equal(new int[] { 7, 6, 3, 7, 3 }, col.DefinitionLevels!);
     }
@@ -126,7 +127,7 @@ public class DremelStriperTest {
     public void Field_6_Name_Url() {
         FieldStriper<Document> striper = _striper.FieldStripers[5];
         ShreddedColumn col = striper.Stripe(striper.Field, Document.Both);
-        Assert.Equal(new string[] { "http://A", "http://B", "http://C" }, col.Data);
+        Assert.Equal(new[] { "http://A", "http://B", "http://C" }.ToRomArray(), col.Data);
         Assert.Equal(new int[] { 0, 1, 1, 0 }, col.RepetitionLevels!);
         Assert.Equal(new int[] { 4, 4, 3, 4 }, col.DefinitionLevels!);
     }

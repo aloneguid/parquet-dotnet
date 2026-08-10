@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Parquet.Data;
+using Parquet.Extensions;
 using Parquet.File.Values.Primitives;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -13,29 +14,6 @@ using Type = Parquet.Meta.Type;
 namespace Parquet.Encodings;
 
 static class SchemaEncoder {
-
-    public static readonly SType[] SupportedTypes = new[] {
-        typeof(bool),
-        typeof(byte), typeof(sbyte),
-        typeof(short), typeof(ushort),
-        typeof(int), typeof(uint),
-        typeof(long), typeof(ulong),
-        typeof(float),
-        typeof(double),
-        typeof(decimal),
-        typeof(BigDecimal),
-        typeof(BigInteger),
-        typeof(DateTime),
-        typeof(DateOnly),
-        typeof(TimeOnly),
-        typeof(TimeSpan),
-        typeof(Interval),
-        typeof(byte[]),
-        typeof(ReadOnlyMemory<byte>),
-        typeof(string),
-        typeof(ReadOnlyMemory<char>),
-        typeof(Guid)
-    };
 
     static bool TryBuildList(List<SchemaElement> schema,
         ref int index, out int ownedChildren,
@@ -164,8 +142,6 @@ static class SchemaEncoder {
         return true;
     }
 
-    public static bool IsSupported(SType t) => t.IsEnum || SupportedTypes.Contains(t);
-
     /// <summary>
     /// Builds <see cref="Field"/> from schema
     /// </summary>
@@ -275,19 +251,23 @@ static class SchemaEncoder {
         if(se.LogicalType?.TIME != null) {
             TimeType timeType = se.LogicalType.TIME;
             if(timeType.Unit.MILLIS != null) {
-                return options.UseTimeOnlyTypeForTimeMillis ? typeof(TimeOnly) : typeof(TimeSpan);
+                return typeof(int);
             }
-            if(timeType.Unit.MICROS != null) {
-                return options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan);
+            if(timeType.Unit.MICROS != null || timeType.Unit.NANOS != null) {
+                return typeof(long);
             }
-            if(timeType.Unit.NANOS != null) {
-                return typeof(DateTime);
-            }
+
+            throw new NotImplementedException($"Unsupported time unit");
+        }
+
+        if(se.ConvertedType == ConvertedType.TIME_MILLIS) {
+            return typeof(int);
         }
 
         if(se.ConvertedType == ConvertedType.TIME_MICROS) {
-            return options.UseTimeOnlyTypeForTimeMicros ? typeof(TimeOnly) : typeof(TimeSpan);
+            return typeof(long);
         }
+        
         if(se.ConvertedType == ConvertedType.TIMESTAMP_MICROS) {
             return typeof(DateTime);
         }
@@ -345,8 +325,24 @@ static class SchemaEncoder {
         } else if(systemType == options.DecimalType) {
             df = GetDecimalDataField(se, options.DecimalType);
         } else {
-            // successful field built
-            df = new DataField(se.Name, systemType);
+
+            if(se.LogicalType?.TIME != null) {
+                TimeType time = se.LogicalType.TIME;
+                TimeUnitPrecision timeUnit;
+                if(time.Unit.MILLIS != null) {
+                    timeUnit = TimeUnitPrecision.Millis;
+                } else if(time.Unit.MICROS != null) {
+                    timeUnit = TimeUnitPrecision.Micros;
+                } else if(time.Unit.NANOS != null) {
+                    timeUnit = TimeUnitPrecision.Nanos;
+                } else {
+                    throw new NotSupportedException($"unsupported time unit {time.Unit}");
+                }
+
+                df = new TimeDataField(se.Name, timeUnit) { IsAdjustedToUtc = time.IsAdjustedToUTC };
+            } else {
+                df = new DataField(se.Name, systemType);
+            }
         }
         bool isNullable = se.RepetitionType != FieldRepetitionType.REQUIRED;
         bool isArray = se.RepetitionType == FieldRepetitionType.REPEATED;
@@ -475,27 +471,54 @@ static class SchemaEncoder {
                 bw = 32;
             bool signed = st == typeof(sbyte) || st == typeof(short) || st == typeof(int);
 
-            tse.LogicalType = new LogicalType {
-                INTEGER = new IntType {
-                    BitWidth = bw,
-                    IsSigned = signed
-                }
-            };
-            tse.ConvertedType = bw switch {
-                8 => signed ? ConvertedType.INT_8 : ConvertedType.UINT_8,
-                16 => signed ? ConvertedType.INT_16 : ConvertedType.UINT_16,
-                32 => signed ? ConvertedType.INT_32 : ConvertedType.UINT_32,
-                _ => ConvertedType.INT_32
-            };
+            if(field is TimeDataField tdf) {
+                tse.LogicalType = new LogicalType {
+                    TIME = new TimeType {
+                        IsAdjustedToUTC = tdf.IsAdjustedToUtc,
+                        Unit = new TimeUnit {
+                            MILLIS = new MilliSeconds() // "int" can only be in millisecond precision
+                        }
+                    }
+                };
+                // there is a correspondence to the legacy ConvertedType
+                tse.ConvertedType = ConvertedType.TIME_MILLIS;
+            } else {
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new IntType {
+                        BitWidth = bw,
+                        IsSigned = signed
+                    }
+                };
+                tse.ConvertedType = bw switch {
+                    8 => signed ? ConvertedType.INT_8 : ConvertedType.UINT_8,
+                    16 => signed ? ConvertedType.INT_16 : ConvertedType.UINT_16,
+                    32 => signed ? ConvertedType.INT_32 : ConvertedType.UINT_32,
+                    _ => ConvertedType.INT_32
+                };
+            }
         } else if(st == typeof(long) || st == typeof(ulong)) {  // 64-bit number
             tse.Type = Type.INT64;
-            tse.LogicalType = new LogicalType {
-                INTEGER = new IntType {
-                    BitWidth = 64,
-                    IsSigned = st == typeof(long)
-                }
-            };
-            tse.ConvertedType = st == typeof(long) ? ConvertedType.INT_64 : ConvertedType.UINT_64;
+
+            if(field is TimeDataField tdf) {
+                tse.LogicalType = new LogicalType {
+                    TIME = new TimeType { 
+                        IsAdjustedToUTC = tdf.IsAdjustedToUtc,
+                        Unit = new TimeUnit {
+                            MICROS = tdf.Precision == TimeUnitPrecision.Micros ? new MicroSeconds() : null,
+                            NANOS = tdf.Precision == TimeUnitPrecision.Nanos ? new NanoSeconds() : null,
+                        }
+                    }
+                };
+            } else {
+
+                tse.LogicalType = new LogicalType {
+                    INTEGER = new IntType {
+                        BitWidth = 64,
+                        IsSigned = st == typeof(long)
+                    }
+                };
+                tse.ConvertedType = st == typeof(long) ? ConvertedType.INT_64 : ConvertedType.UINT_64;
+            }
         } else if(st == typeof(float)) {                                                    // float
             tse.Type = Type.FLOAT;
         } else if(st == typeof(double)) {                                                   // double
@@ -592,79 +615,6 @@ static class SchemaEncoder {
             tse.Type = Type.INT32;
             tse.LogicalType = new LogicalType { DATE = new DateType() };
             tse.ConvertedType = ConvertedType.DATE;
-        } else if(st == typeof(TimeOnly)) {
-            // TimeOnly
-            if(field is TimeOnlyDataField dfTime) {
-                switch(dfTime.TimeSpanFormat) {
-                    case TimeSpanFormat.MilliSeconds:
-                        tse.Type = Type.INT32;
-                        tse.LogicalType = new LogicalType {
-                            TIME = new TimeType {
-                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
-                                Unit = new TimeUnit { MILLIS = new MilliSeconds() }
-                            }
-                        };
-                        tse.ConvertedType = ConvertedType.TIME_MILLIS;
-                        break;
-                    case TimeSpanFormat.MicroSeconds:
-                        tse.Type = Type.INT64;
-                        tse.LogicalType = new LogicalType {
-                            TIME = new TimeType {
-                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
-                                Unit = new TimeUnit { MICROS = new MicroSeconds() }
-                            }
-                        };
-                        tse.ConvertedType = ConvertedType.TIME_MICROS;
-                        break;
-                    default:
-                        throw new NotImplementedException($"{dfTime.TimeSpanFormat} time format is not implemented");
-                }
-            } else {
-                tse.Type = Type.INT32;
-                tse.LogicalType = new LogicalType {
-                    TIME = new TimeType() {
-                        IsAdjustedToUTC = true,
-                        Unit = new TimeUnit { MILLIS = new MilliSeconds() }
-                    }
-                };
-                tse.ConvertedType = ConvertedType.TIME_MILLIS;
-            }
-        } else if(st == typeof(TimeSpan)) {         // TimeSpan
-            if(field is TimeSpanDataField dfTime) {
-                switch(dfTime.TimeSpanFormat) {
-                    case TimeSpanFormat.MilliSeconds:
-                        tse.Type = Type.INT32;
-                        tse.LogicalType = new LogicalType {
-                            TIME = new TimeType {
-                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
-                                Unit = new TimeUnit { MILLIS = new MilliSeconds() }
-                            }
-                        };
-                        tse.ConvertedType = ConvertedType.TIME_MILLIS;
-                        break;
-                    case TimeSpanFormat.MicroSeconds:
-                        tse.Type = Type.INT64;
-                        tse.LogicalType = new LogicalType {
-                            TIME = new TimeType {
-                                IsAdjustedToUTC = dfTime.IsAdjustedToUTC,
-                                Unit = new TimeUnit { MICROS = new MicroSeconds() }
-                            }
-                        };
-                        tse.ConvertedType = ConvertedType.TIME_MICROS;
-                        break;
-                    default:
-                        throw new NotImplementedException($"{dfTime.TimeSpanFormat} time format is not implemented");
-                }
-            } else {
-                tse.Type = Type.INT32;
-                tse.LogicalType = new LogicalType {
-                    TIME = new TimeType {
-                        IsAdjustedToUTC = true,
-                        Unit = new TimeUnit { MILLIS = new MilliSeconds() }
-                    }
-                };
-                tse.ConvertedType = ConvertedType.TIME_MILLIS;
-            }
         } else if(st == typeof(Interval)) {         // Interval
             tse.Type = Type.FIXED_LEN_BYTE_ARRAY;
             tse.TypeLength = 12;

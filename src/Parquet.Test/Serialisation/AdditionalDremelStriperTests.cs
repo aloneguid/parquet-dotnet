@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Parquet.Serialization;
 using Parquet.Serialization.Dremel;
@@ -31,7 +32,7 @@ public class AdditionalDremelStriperTests {
     public void Empty_Null_Lists_Nullable_Item() {
         FieldStriper<TestRow> striper = _striper.FieldStripers[1];
         ShreddedColumn col = striper.Stripe(striper.Field, NullEmptyListTestCases);
-        Assert.Equal(new string[] { "abc" }, col.Data);
+        Assert.Equal(new ReadOnlyMemory<char>[] { "abc".AsMemory() }, col.Data);
         Assert.Equal(new int[] { 0, 0, 0, 0 }, col.RepetitionLevels!);
         Assert.Equal(new int[] { 3, 1, 2, 0 }, col.DefinitionLevels!);
     }

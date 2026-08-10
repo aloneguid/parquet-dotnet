@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Analysis;
+using Parquet.Extensions;
 using Parquet.Schema;
 
 namespace Parquet;
@@ -81,7 +82,7 @@ public static class AnalysisExtensions {
         if(t == typeof(decimal)) return new DecimalDataFrameColumn(name, await ReadAsync<decimal>(rgr, field, rowCount, ct));
         if(t == typeof(DateTime)) return new DateTimeDataFrameColumn(name, await ReadAsync<DateTime>(rgr, field, rowCount, ct));
         if(t == typeof(TimeSpan)) return new PrimitiveDataFrameColumn<TimeSpan>(name, await ReadAsync<TimeSpan>(rgr, field, rowCount, ct));
-        if(t == typeof(string)) return new StringDataFrameColumn(name, await ReadStringsAsync(rgr, field, rowCount, ct));
+        if(t == typeof(ReadOnlyMemory<char>)) return new StringDataFrameColumn(name, await ReadStringsAsync(rgr, field, rowCount, ct));
 
         throw new NotSupportedException($"unsupported column type {t}");
     }
@@ -105,7 +106,7 @@ public static class AnalysisExtensions {
         if(t == typeof(decimal)) { Append((PrimitiveDataFrameColumn<decimal>)col, await ReadAsync<decimal>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(DateTime)) { Append((PrimitiveDataFrameColumn<DateTime>)col, await ReadAsync<DateTime>(rgr, field, rowCount, ct)); return; }
         if(t == typeof(TimeSpan)) { Append((PrimitiveDataFrameColumn<TimeSpan>)col, await ReadAsync<TimeSpan>(rgr, field, rowCount, ct)); return; }
-        if(t == typeof(string)) { Append((StringDataFrameColumn)col, await ReadStringsAsync(rgr, field, rowCount, ct)); return; }
+        if(t == typeof(ReadOnlyMemory<char>)) { Append((StringDataFrameColumn)col, await ReadStringsAsync(rgr, field, rowCount, ct)); return; }
 
         throw new NotSupportedException($"unsupported column type {t}");
     }

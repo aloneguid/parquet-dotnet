@@ -25,7 +25,7 @@ static class ParquetPlainEncoder {
     private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 
     /// <summary>
-    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migrattion from legacy
+    /// Memory-friendly method to encode data. This might be ugly, but it's a step forward in migration from legacy
     /// .NET.
     /// </summary>
     /// <param name="sourceSpan">
@@ -133,87 +133,8 @@ static class ParquetPlainEncoder {
         }
     }
 
-    public static void Decode(
-        Array dest, int offset, int count,
-        SchemaElement tse,
-        Span<byte> source,
-        out int elementsRead) {
-
-        int rem = dest.Length - offset;
-        if(count > rem)
-            count = rem;
-
-        System.Type t = dest.GetType();
-
-        if(t == typeof(bool[])) {
-            elementsRead = Decode(source, ((bool[])dest).AsSpan(offset, count));
-        } else if(t == typeof(byte[])) {
-            elementsRead = Decode(source, ((byte[])dest).AsSpan(offset, count));
-        } else if(t == typeof(sbyte[])) {
-            elementsRead = Decode(source, ((sbyte[])dest).AsSpan(offset, count));
-        } else if(t == typeof(short[])) {
-            elementsRead = Decode(source, ((short[])dest).AsSpan(offset, count));
-        } else if(t == typeof(ushort[])) {
-            elementsRead = Decode(source, ((ushort[])dest).AsSpan(offset, count));
-        } else if(t == typeof(int[])) {
-            Span<int> span = ((int[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(uint[])) {
-            Span<uint> span = ((uint[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(long[])) {
-            Span<long> span = ((long[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(ulong[])) {
-            Span<ulong> span = ((ulong[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(BigInteger[])) {
-            Span<BigInteger> span = ((BigInteger[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(decimal[])) {
-            Span<decimal> span = ((decimal[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(BigDecimal[])) {
-            Span<BigDecimal> span = ((BigDecimal[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(double[])) {
-            Span<double> span = ((double[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(float[])) {
-            Span<float> span = ((float[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(byte[][])) {
-            Span<byte[]> span = ((byte[][])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(DateTime[])) {
-            Span<DateTime> span = ((DateTime[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(DateOnly[])) {
-            Span<DateOnly> span = ((DateOnly[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(TimeOnly[])) {
-            Span<TimeOnly> span = ((TimeOnly[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(TimeSpan[])) {
-            Span<TimeSpan> span = ((TimeSpan[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(Interval[])) {
-            Span<Interval> span = ((Interval[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span);
-        } else if(t == typeof(string[])) {
-            Span<string> span = ((string[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else if(t == typeof(Guid[])) {
-            Span<Guid> span = ((Guid[])dest).AsSpan(offset, count);
-            elementsRead = Decode(source, span, tse);
-        } else {
-            elementsRead = 0;
-            throw new NotSupportedException($"no PLAIN decoder exists for {t}");
-        }
-    }
-
     /// <summary>
-    /// Generic overload for decoding directly into a Span{T} with element count control.
+    /// Generic overload for decoding directly into a <see cref="Span{T}"/> with element count control.
     /// </summary>
     public static void Decode<T>(
         Span<T> dest,
@@ -563,7 +484,7 @@ static class ParquetPlainEncoder {
             if(n != 0)
                 buffer[ib] = b;
 
-            Write(destination, buffer.AsSpan(0, targetLength));
+            destination.Write(buffer.AsSpan(0, targetLength));
 
         } finally {
             ArrayPool<byte>.Shared.Return(buffer);
@@ -758,27 +679,27 @@ static class ParquetPlainEncoder {
 
     public static void Encode(ReadOnlySpan<int> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static void Encode(ReadOnlySpan<uint> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static void Encode(ReadOnlySpan<long> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static void Encode(ReadOnlySpan<ulong> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static void Encode(ReadOnlySpan<BigInteger> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static int Decode<T>(Span<byte> source, Span<T> data) where T : struct {
@@ -966,12 +887,12 @@ static class ParquetPlainEncoder {
 
     public static void Encode(ReadOnlySpan<double> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static void Encode(ReadOnlySpan<float> data, Stream destination) {
         ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(data);
-        Write(destination, bytes);
+        destination.Write(bytes);
     }
 
     public static int Decode(Span<byte> source, Span<float> data) {
@@ -1459,12 +1380,4 @@ static class ParquetPlainEncoder {
         }
         return i;
     }
-
-    #region [ .NET differences ]
-
-    private static void Write(Stream destination, ReadOnlySpan<byte> bytes) {
-        destination.Write(bytes);
-    }
-
-    #endregion
 }

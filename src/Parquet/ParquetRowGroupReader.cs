@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Extensions;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -158,7 +159,7 @@ public class ParquetRowGroupReader : IDisposable {
         if(method == null) {
             throw new InvalidOperationException($"can't find {nameof(ParquetRowGroupReader.ReadRawColumnDataAsync)} method on {nameof(ParquetRowGroupReader)}");
         }
-        method = method.MakeGenericMethod(field.ClrValueType);
+        method = method.MakeGenericMethod(field.ClrType);
 
         object? valueTask = method.Invoke(this, [field, cancellationToken]);
         object? result = await (dynamic)valueTask!;

@@ -74,7 +74,7 @@ public class DataFieldTest {
     public void StringField() {
         var f = new DataField("name", typeof(string));
         Assert.Equal("name", f.Name);
-        Assert.Equal(typeof(string), f.ClrType);
+        Assert.Equal(typeof(ReadOnlyMemory<char>), f.ClrType);
         Assert.True(f.IsNullable);
         Assert.False(f.IsArray);
     }

@@ -7,7 +7,7 @@ namespace Parquet.Test.Encodings;
 public class PlainEncoderTest {
     [Fact]
     public void EncodePlainBoolsTest() {
-        bool[] data = new bool[] { true, false, true, true, false };
+        bool[] data = [true, false, true, true, false];
         var ms = new MemoryStream();
         ParquetPlainEncoder.Encode(data, ms);
         byte[] encoded = ms.ToArray();
@@ -29,4 +29,8 @@ public class PlainEncoderTest {
         byte[] encoded = ms.ToArray();
         Assert.Equal(125000, encoded.Length);
     }
+    
+    /*
+     * TIME logical type encoding. TIME logical type  
+     */
 }

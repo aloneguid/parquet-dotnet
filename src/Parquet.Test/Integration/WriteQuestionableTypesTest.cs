@@ -17,11 +17,10 @@ public class WriteQuestionableTypesTest : IntegrationBase {
         if(F.Exists(testFileName))
             F.Delete(testFileName);
 
-        using(Stream s = F.OpenWrite(testFileName)) {
-            await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, s)) {
-                using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
-                await rgw.WriteAsync(df, values);
-            }
+        await using(Stream s = F.OpenWrite(testFileName))
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, s)) {
+            using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+            await rgw.WriteAsync(df, values);
         }
 
         string? json = ExecMrCat(testFileName);
@@ -38,9 +37,9 @@ public class WriteQuestionableTypesTest : IntegrationBase {
 
     [NonMacOSFact]
     public async Task Timestamp_Default() {
-        var schema = new ParquetSchema(new DataField<TimeSpan>("qtype"));
-        TimeSpan[] values = new[] { TimeSpan.FromHours(7) };
-        string json = await ReadWithPQT<TimeSpan>(schema, schema.DataFields.First(), values.AsMemory());
+        var schema = new ParquetSchema(new TimeDataField("qtype", TimeUnitPrecision.Millis));
+        int[] values = new[] { (int)TimeSpan.FromHours(7).TotalMilliseconds };
+        string json = await ReadWithPQT<int>(schema, schema.DataFields.First(), values.AsMemory());
         Assert.Equal("{\"qtype\":25200000}", json);
     }
 }
