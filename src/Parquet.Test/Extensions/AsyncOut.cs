@@ -4,6 +4,6 @@ namespace Parquet.Test.Extensions;
 /// Simulates OUT parameters in async methods.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class AsyncOut<T> {
+class AsyncOut<T> {
     public T? Value { get; set; }
 }

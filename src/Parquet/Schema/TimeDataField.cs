@@ -3,30 +3,11 @@ using System;
 namespace Parquet.Schema;
 
 /// <summary>
-/// Represents TIME logical type, which is a time of day since midnight.
+/// Represents TIME logical type, which is a time of day since midnight. See
+/// https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time
+/// Maps to either <see cref="int"/> or <see cref="long"/> data type.
 /// </summary>
 public class TimeDataField : DataField {
-
-    /// <summary>
-    /// Time precision. It's called "Unit" to match Parquet convention.
-    /// </summary>
-    public enum Unit {
-        /// <summary>
-        /// Milliseconds precision
-        /// </summary>
-        Millis,
-        
-        /// <summary>
-        /// Microseconds precision
-        /// </summary>
-        Micros,
-        
-        /// <summary>
-        /// Nanoseconds precision
-        /// </summary>
-        Nanos
-    }
-    
     /// <summary>
     /// Time data field
     /// </summary>
@@ -35,7 +16,7 @@ public class TimeDataField : DataField {
     /// <param name="isNullable"></param>
     /// <param name="isArray"></param>
     /// <param name="propertyName"></param>
-    public TimeDataField(string name, Unit precision, bool? isNullable = null, bool? isArray = null, string? propertyName = null)
+    public TimeDataField(string name, TimeUnitPrecision precision, bool? isNullable = null, bool? isArray = null, string? propertyName = null)
         : base(name, GetUnitType(precision), isNullable, isArray, propertyName) =>
         Precision = precision;
 
@@ -47,12 +28,12 @@ public class TimeDataField : DataField {
     /// <summary>
     /// Time precision.
     /// </summary>
-    public Unit Precision { get; init; }
+    public TimeUnitPrecision Precision { get; }
     
-    private static Type GetUnitType(Unit precision) =>
+    private static Type GetUnitType(TimeUnitPrecision precision) =>
         precision switch {
-            Unit.Millis => typeof(int),
-            Unit.Micros or Unit.Nanos => typeof(long),
+            TimeUnitPrecision.Millis => typeof(int),
+            TimeUnitPrecision.Micros or TimeUnitPrecision.Nanos => typeof(long),
             _ => throw new ArgumentOutOfRangeException(nameof(precision), precision, null)
         };
 }

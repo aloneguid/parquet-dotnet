@@ -1,13 +1,27 @@
 # 6.1.0
 
+## New
+
+- **Big TIME** improvements (potentially breaking). Parquet.Net treats `TIME` logical type as `int` or `long` depending on precision and does not attempt to convert to .NET native temporal types which may lose precision. Class serializer also understands `TimeOnly`. Time uses new schema field `TimeDataField` which also allows specifying precision and UTC adjustment.
+
 ## Improvements
 - Exposed `WriteAllPartsAsync` internal method for callers who wish to manually supply definition levels and values (really low-level high-performance API). As wished by @spanglerco in #755.
 - `BigDecimal` encoding 7–17% speed improvement depending on precision and data size. By @rferraton in #740.
 - Marked INT96 `DateTimeKind` as `Unspecified` by @Kuinox in #695.
-- **Big TIME** improvements (potentially breaking). Parquet.Net treats `TIME` logical type as `int` or `long` depending on precision and does not attempt to convert to .NET native temporal types which may lose precision.
+- Documentation moved to a [dedicated space](https://www.aloneguid.uk/projects/parquet-dotnet/) to break from the GitHub markdown limitations.
 
 ## Bugs fixed
 - Legacy `TIME_MILLIS` converted type was not handled at all, now it's treated as `int`, and `TIME_MICROS` is handled as `long`, which is consistent with `TIME` logical type.
+- `TimeSpan` and `TimeOnly` in class serializer defaults to millisecond precision (used to be microseconds, but those types do not get enough precision to support this).
+- .NET `TimeStamp` type does not map to anything now. Parquet time type which used to be used for mapping does not actually map well as they represent totally different temporal meanings (time of day and interval of time). If you need to represent a time interval, use `Interval` Type.
+
+
+## Breaking changes
+- `UseTimeOnlyTypeForTimeMillis` and `UseTimeOnlyTypeForTimeMicros` removed from `ParquetOptions` due to better time handling logic so they are not used anymore.
+
+todo:
+- should we even support TimeStamp? It can theoretically map to time, but actually no.
+- Class serializer should not attemp to use ROM<char> for strings.
 
 # 6.0.3
 

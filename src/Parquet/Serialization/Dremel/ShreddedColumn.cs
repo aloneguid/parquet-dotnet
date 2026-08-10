@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Parquet.Extensions;
 using Parquet.Schema;
 
 namespace Parquet.Serialization.Dremel;

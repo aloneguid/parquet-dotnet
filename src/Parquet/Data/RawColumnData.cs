@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
+using Parquet.Extensions;
 
 namespace Parquet.Data;
 

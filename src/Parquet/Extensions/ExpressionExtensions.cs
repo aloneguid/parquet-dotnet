@@ -3,9 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using Parquet.Serialization.Dremel;
 
 namespace Parquet.Extensions;
 
+/// <summary>
+/// Expression trees extensions
+/// </summary>
 static class ExpressionExtensions {
     public static Expression Loop(this Expression iterationBody,
         Expression collection,

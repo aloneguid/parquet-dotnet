@@ -63,25 +63,30 @@ class FieldStriperCompiler<TClass> {
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="elementType"></param>
     /// <param name="valueVar"></param>
     /// <param name="dl">Definition level if value is defined. For optional atoms that are null it must be -1.</param>
     /// <param name="currentRlVar"></param>
     /// <param name="isLeaf"></param>
     /// <param name="isAtomic">Value is atomic i.e. having real data value and not just RLs and DLs</param>
     /// <returns></returns>
-    private Expression WriteValue(ParameterExpression valueVar,
+    private Expression WriteValue(
+        Type elementType,
+        ParameterExpression valueVar,
         int dl, Expression currentRlVar,
         ParameterExpression isLeaf, bool isAtomic) {
 
         if(isAtomic) {
             if(_df.IsNullable) {
 
-                Expression getNonNullValue = _df.ClrNullableIfHasNullsType.IsSystemNullable()
+                Expression getNonNullValue = elementType.IsSystemNullable()
                     ? Expression.Property(valueVar, "Value")
                     : valueVar;
 
+                Type elementSourceType = elementType.IsSystemNullable() ? elementType.GetNonNullable() : elementType;
+
                 // cast if required
-                getNonNullValue = Expression.Convert(getNonNullValue, _df.ClrType);
+                getNonNullValue = DataConverter.Convert(getNonNullValue, elementSourceType, _df.ClrType);
 
                 return Expression.IfThenElse(
                     // value == null?
@@ -101,7 +106,7 @@ class FieldStriperCompiler<TClass> {
             } else {
 
                 // cast if required
-                UnaryExpression converted = Expression.Convert(valueVar, _df.ClrType);
+                Expression converted = DataConverter.Convert(valueVar, valueVar.Type, _df.ClrType);
 
                 // required atomics are simple - add value, RL and DL as is
                 return Expression.Block(
@@ -172,7 +177,7 @@ class FieldStriperCompiler<TClass> {
 
             Expression.IfThenElse(
                 Expression.IsTrue(isLeafVar),
-                WriteValue(valueVar, dl, chRepetitionLevelVar, isLeafVar, isAtomic),
+                WriteValue(elementType, valueVar, dl, chRepetitionLevelVar, isLeafVar, isAtomic),
                 isAtomic
                     ? Expression.Empty()
                     : DissectRecord(valueVar, elementType, field, field.NextDotPropertyPath(chainPath), rlDepth, chRepetitionLevelVar)
@@ -222,6 +227,43 @@ class FieldStriperCompiler<TClass> {
         }
     }
 
+    /// <summary>
+    /// This method gets injected into untyped serializer to convert data types
+    /// </summary>
+    /// <typeparam name="TResult"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="keyName"></param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    private static TResult GetUntypedValueOrDefault<TResult>(IDictionary<string, object> source, string keyName) {
+
+        if(source.TryGetValue(keyName, out object? value)) {
+            if(value == null) {
+                return default!;
+            }
+
+            Type sourceType = value.GetType();
+            Type targetType = typeof(TResult);
+
+            if(sourceType != targetType) {
+
+                // check if CLR can convert this for us, especially the quicks around nullable type boxing
+                if(sourceType.IsAssignableTo(targetType)) {
+                    return (TResult)value;
+                }
+
+                if(DataConverter.TryConvert(sourceType, value, targetType, out object? dataConvertedResult)) {
+                    return dataConvertedResult == null ? default! : (TResult)dataConvertedResult;
+                }
+
+                throw new NotSupportedException($"({targetType}){sourceType}");
+            }
+            return (TResult)value;
+        }
+
+        return default!;
+    }
+
     private Expression GetClassMemberAccessorAndType(
         Type rootType,
         Expression rootVar,
@@ -238,6 +280,13 @@ class FieldStriperCompiler<TClass> {
 
             type = GetIdealUntypedType(field);
 
+            return Expression.Call(
+                typeof(FieldStriperCompiler<TClass>),
+                nameof(GetUntypedValueOrDefault),
+                [type],
+                rootVar,
+                Expression.Constant(name));
+
             /*
              * Take into account that key may not be present in the dictionary.
              * In this case, code would look like:
@@ -246,14 +295,14 @@ class FieldStriperCompiler<TClass> {
              * return dict.TryGetValue(name, out value) ? (T)value : default(T);
              */
 
-            ParameterExpression retVal = Expression.Variable(typeof(object), "value");
-            return Expression.Block(
-                new[] { retVal },
+            //ParameterExpression retVal = Expression.Variable(typeof(object), "value");
+            //return Expression.Block(
+            //    new[] { retVal },
 
-                Expression.Condition(
-                    Expression.Call(rootVar, IDictionaryTryGetValueMethod, Expression.Constant(name), retVal),
-                    Expression.Convert(retVal, type),
-                    Expression.Default(type)));
+            //    Expression.Condition(
+            //        Expression.Call(rootVar, IDictionaryTryGetValueMethod, Expression.Constant(name), retVal),
+            //        DataConverter.RuntimeConvert(retVal, type),
+            //        Expression.Default(type)));
         }
 
         Expression? result = rootVar;

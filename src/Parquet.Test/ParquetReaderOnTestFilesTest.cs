@@ -368,8 +368,8 @@ public class ParquetReaderOnTestFilesTest : TestBase {
     }
 
     [Fact]
-    public async Task PyArrow22() {
-        using Stream s = OpenTestFile("special/pyarrow_v22.parquet");
+    public async Task PyArrow22Async() {
+        await using Stream s = OpenTestFile("special/pyarrow_v22.parquet");
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
         using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
@@ -378,19 +378,19 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         DataField[] fs = r.Schema.GetDataFields();
         Assert.Equal(2, fs.Length);
 
-        TimeSpan?[] data = await ReadNullableValuesAsync<TimeSpan>(groupReader, fs[1]);
-        Assert.Equal(TimeSpan.FromTicks(215720000000), data[0]);
+        long?[] data = await ReadNullableValuesAsync<long>(groupReader, fs[1]);
+        Assert.Equal(21_572_000_000, data[0]);
     }
 
     /// <summary>
-    /// This file is interesting in a way that dictionary encoded columns have single dictionary page and several
+    /// Interesting in a way that dictionary-encoded columns have single dictionary page and several
     /// dictionary index pages. Dictionary page needs to be kept as is, but index pages need to feed from dictionary one
     /// after another.
     /// </summary>
     /// <returns></returns>
     [Fact]
-    public async Task PyArrow23() {
-        using Stream s = OpenTestFile("special/pyarrow_v23.parquet");
+    public async Task PyArrow23Async() {
+        await using Stream s = OpenTestFile("special/pyarrow_v23.parquet");
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
 
         DeserializationResult<Dictionary<string, object>> rs = await ParquetSerializer.DeserializeUntypedAsync(s);
@@ -399,8 +399,8 @@ public class ParquetReaderOnTestFilesTest : TestBase {
 
 
     [Fact]
-    public async Task UnshreddedVariant() {
-        using Stream s = OpenTestFile("variant_unshredded.parquet");
+    public async Task UnshreddedVariantAsync() {
+        await using Stream s = OpenTestFile("variant_unshredded.parquet");
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
         Assert.NotNull(r.Schema);
     }

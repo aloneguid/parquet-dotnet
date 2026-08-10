@@ -29,10 +29,6 @@ class FieldAssemblerCompiler<TClass> {
     private readonly MethodInfo _injectLevelDebugMethod;
     private readonly MethodInfo _messageDebugMethod;
     private int _debugWrapIdx = 0;
-
-    // control whether to inject debug code blocks (you might not want them in debug mode all the time)
-    private readonly bool _enableDebug = (Environment.GetEnvironmentVariable("PARQUET_NET_ENABLE_DEBUG") != null)
-        || false;
 #endif
 
 
@@ -63,14 +59,14 @@ class FieldAssemblerCompiler<TClass> {
 
     public FieldAssemblerCompiler(ParquetSchema schema, DataField df) {
         _schema = schema;
-        _rawColumnDataType = typeof(RawColumnData<>).MakeGenericType(df.ClrValueType);
+        _rawColumnDataType = typeof(RawColumnData<>).MakeGenericType(df.ClrType);
         _rcdParam = Expression.Parameter(_rawColumnDataType, "rcd");
         _df = df;
 
         // expecting non-nullable elements, because definition levels are handled by this algorithm
         //_dataVar = Expression.Variable(_df.ClrType.MakeArrayType(), "data");
-        _dataVar = Expression.Variable(typeof(Span<>).MakeGenericType(_df.ClrValueType), "data");
-        _dataElementVar = Expression.Variable(_df.ClrValueType, "dataElement");
+        _dataVar = Expression.Variable(typeof(Span<>).MakeGenericType(_df.ClrType), "data");
+        _dataElementVar = Expression.Variable(_df.ClrType, "dataElement");
 
 #if DEBUG
         _injectLevelDebugMethod = GetType().GetMethod(nameof(InjectLevelDebug), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -110,41 +106,6 @@ class FieldAssemblerCompiler<TClass> {
             : Zero;
     }
 
-    #region [ Data conversion helpers ]
-
-    private static string ROMCharToString(ReadOnlyMemory<char> memory) => new string(memory.Span);
-    private static byte[] ROMByteToArray(ReadOnlyMemory<byte> memory) => memory.ToArray();
-
-    private static readonly MethodInfo _romCharToStringMethod = typeof(FieldAssemblerCompiler<TClass>).GetMethod(nameof(ROMCharToString), BindingFlags.NonPublic | BindingFlags.Static)!;
-    private static readonly MethodInfo _romByteToArrayMethod = typeof(FieldAssemblerCompiler<TClass>).GetMethod(nameof(ROMByteToArray), BindingFlags.NonPublic | BindingFlags.Static)!;
-
-    private Expression ConvertDataElement(Type targetType) {
-        // ReadOnlyMemory<char> → string
-        if(_dataElementVar.Type == typeof(ReadOnlyMemory<char>) && targetType == typeof(string))
-            return Expression.Call(_romCharToStringMethod, _dataElementVar);
-
-        // ReadOnlyMemory<byte> → byte[]
-        if(_dataElementVar.Type == typeof(ReadOnlyMemory<byte>) && targetType == typeof(byte[]))
-            return Expression.Call(_romByteToArrayMethod, _dataElementVar);
-
-        // object boxing (untyped path)
-        if(targetType == typeof(object)) {
-
-            // respect conversion configuration for untyped path
-            if(ParquetOptions.PreferUntypedByteArray && _dataElementVar.Type == typeof(ReadOnlyMemory<byte>))
-                return Expression.Call(_romByteToArrayMethod, _dataElementVar);
-
-            if(ParquetOptions.PreferUntypedString && _dataElementVar.Type == typeof(ReadOnlyMemory<char>))
-                return Expression.Call(_romCharToStringMethod, _dataElementVar);
-
-            return Expression.Convert(_dataElementVar, typeof(object));
-        }
-
-        return Expression.Convert(_dataElementVar, targetType);
-    }
-
-    #endregion
-
     private Expression TakeCurrentValuesAndAdvance() {
 
         Expression dataIdxLessThanExpr = Expression.LessThan(_dataIdxVar, GetDataLength());
@@ -170,9 +131,9 @@ class FieldAssemblerCompiler<TClass> {
                     ? Expression.IfThen(
                         Expression.Equal(_dlVar, Expression.Constant(_df.MaxDefinitionLevel)),
                         //Expression.Assign(_dataElementVar, Expression.ArrayAccess(_dataVar, Expression.PostIncrementAssign(_dataIdxVar))))
-                        Expression.Assign(_dataElementVar, _dataVar.GetSpanElement(_df.ClrValueType, Expression.PostIncrementAssign(_dataIdxVar))))
+                        Expression.Assign(_dataElementVar, _dataVar.GetSpanElement(_df.ClrType, Expression.PostIncrementAssign(_dataIdxVar))))
                     //: Expression.Assign(_dataElementVar, Expression.ArrayAccess(_dataVar, Expression.PostIncrementAssign(_dataIdxVar))),
-                    : Expression.Assign(_dataElementVar, _dataVar.GetSpanElement(_df.ClrValueType, Expression.PostIncrementAssign(_dataIdxVar))),
+                    : Expression.Assign(_dataElementVar, _dataVar.GetSpanElement(_df.ClrType, Expression.PostIncrementAssign(_dataIdxVar))),
 
                 // get repetition level value: rlVar = dcParam.RepetitionLevels[rlIndexVar];
                 _df.MaxRepetitionLevel > 0
@@ -201,8 +162,6 @@ class FieldAssemblerCompiler<TClass> {
     private Expression CallInjectLevelDebug(Expression expr,
         Field schemaField,
         int dlDepth, int rlDepth) {
-        if(!_enableDebug)
-            return expr;
 
         return Expression.Block(
             Expression.Call(_injectLevelDebugMethod,
@@ -226,9 +185,6 @@ class FieldAssemblerCompiler<TClass> {
     }
 
     private Expression DebugWrap(Expression expr, string message, bool withEnd = true) {
-        if(!_enableDebug)
-            return expr;
-
         int idx = _debugWrapIdx++;
 
         if(withEnd) {
@@ -582,12 +538,12 @@ class FieldAssemblerCompiler<TClass> {
                     // add element to array
                     leafExpr = Expression.Assign(
                         currentVar,
-                        RebuildArray(currentVar, currentVarType, ConvertDataElement(collectionElementType)));
+                        RebuildArray(currentVar, currentVarType, DataConverter.Convert(_dataElementVar, _dataElementVar.Type, collectionElementType)));
                 } else {
                     // add element to collection - end here
                     leafExpr = Expression.Call(Expression.Convert(currentVar, currentVarType),
                         currentVarType.GetMethod(nameof(IList.Add))!,
-                        ConvertDataElement(collectionElementType));
+                        DataConverter.Convert(_dataElementVar, _dataElementVar.Type, collectionElementType));
                 }
 
 #if DEBUG
@@ -622,8 +578,8 @@ class FieldAssemblerCompiler<TClass> {
             if(isAtomic) {
                 // conversion compensates for nullable types and maybe implicit conversions (below transforms "_dataElementVar" to "(classPropertyType.Type)_dataElementVar")
                 Expression x = _isUntypedClass && parentField?.SchemaType != SchemaType.Map
-                    ? ConvertDataElement(typeof(object))
-                    : ConvertDataElement(currentVarType);
+                    ? DataConverter.Convert(_dataElementVar, _dataElementVar.Type, typeof(object))
+                    : DataConverter.Convert(_dataElementVar, _dataElementVar.Type, currentVarType);
 
                 // C#: if(dlDepth == _dlVar) currentVar = x;
                 iteration =

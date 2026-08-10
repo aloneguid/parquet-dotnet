@@ -211,7 +211,7 @@ public class FileMerger : IAsyncDisposable {
         int rowGroupSize,
         CancellationToken cancellationToken) {
 
-        Type elementType = dataField.ClrValueType;
+        Type elementType = dataField.ClrType;
         System.Reflection.MethodInfo method = typeof(FileMerger)
             .GetMethod(nameof(MergeFieldTypedAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
             ?? throw new InvalidOperationException($"can't find {nameof(MergeFieldTypedAsync)} method on {nameof(FileMerger)}");

@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Numerics;
+using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Extensions;
+using Parquet.File.Values.Primitives;
 
 namespace Parquet.Schema;
 
@@ -8,6 +13,34 @@ namespace Parquet.Schema;
 /// Field containing actual data, unlike fields containing metadata.
 /// </summary>
 public class DataField : Field, ICloneable {
+
+    private static readonly ImmutableHashSet<Type> _physicalTypes = ImmutableHashSet.Create(
+        typeof(bool),
+        typeof(byte), typeof(sbyte),
+        typeof(short), typeof(ushort),
+        typeof(int), typeof(uint),
+        typeof(long), typeof(ulong),
+        typeof(float),
+        typeof(double),
+        typeof(decimal),
+        typeof(BigDecimal),
+        typeof(BigInteger),
+        typeof(DateTime),
+        typeof(DateOnly),
+        typeof(Interval),
+        typeof(ReadOnlyMemory<byte>),
+        typeof(ReadOnlyMemory<char>),
+        typeof(Guid)
+    );
+
+    private static readonly ImmutableDictionary<Type, Type> _alternativeToPhysicalType =
+        ImmutableDictionary.CreateRange([
+            KeyValuePair.Create(typeof(string), typeof(ReadOnlyMemory<char>)),
+            KeyValuePair.Create(typeof(byte[]), typeof(ReadOnlyMemory<byte>)),
+            KeyValuePair.Create(typeof(TimeOnly), typeof(long))
+        ]);
+    
+    internal static bool CanCreateFrom(Type t) => t.IsEnum || _physicalTypes.Contains(t) || _alternativeToPhysicalType.ContainsKey(t); 
 
     private bool _isNullable;
     private bool _isArray;
@@ -35,17 +68,9 @@ public class DataField : Field, ICloneable {
     }
 
     /// <summary>
-    /// CLR type of this column. This type is always non-nullable, regardless of whether this fields is nullable or not.
+    /// CLR type of this column. This type is always non-nullable, regardless of whether this field is nullable or not.
     /// </summary>
-    public Type ClrType { get; private set; }
-
-    internal Type ClrValueType {
-        get {
-            if(ClrType == typeof(string)) return typeof(ReadOnlyMemory<char>);
-            if(ClrType == typeof(byte[])) return typeof(ReadOnlyMemory<byte>);
-            return ClrType;
-        }
-    }
+    public Type ClrType { get; }
 
     /// <summary>
     /// Unsupported, use at your own risk!
@@ -80,12 +105,16 @@ public class DataField : Field, ICloneable {
 
         Discover(clrType, out Type baseType, out bool discIsArray, out bool discIsNullable);
         ClrType = baseType;
-        if(!SchemaEncoder.IsSupported(ClrType)) {
+        if(!CanCreateFrom(ClrType)) {
             if(baseType == typeof(DateTimeOffset)) {
                 throw new NotSupportedException($"{nameof(DateTimeOffset)} support was dropped due to numerous ambiguity issues, please use {nameof(DateTime)} from now on.");
-            } else {
-                throw new NotSupportedException($"type {clrType} is not supported");
             }
+
+            throw new NotSupportedException($"type {clrType} is not supported");
+        }
+
+        if(_alternativeToPhysicalType.TryGetValue(ClrType, out Type? alternativeType)) {
+            ClrType = alternativeType;
         }
 
         IsNullable = isNullable ?? discIsNullable;

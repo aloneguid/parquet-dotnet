@@ -6,9 +6,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Parquet;
+namespace Parquet.Extensions;
 
-static class TypeExtensions {
+static class ParquetClrSchemaExtensions {
     /// <summary>
     /// Creates a generic typed list of elements of this type.
     /// </summary>
@@ -26,7 +26,7 @@ static class TypeExtensions {
     /// <returns></returns>
     public static bool TryExtractIEnumerableType(this Type t, out Type? baseType) {
         if(typeof(byte[]) == t || typeof(string) == t || typeof(ReadOnlyMemory<char>) == t || typeof(ReadOnlyMemory<byte>) == t) {
-            //it's a special case to avoid confustion between byte arrays and repeatable bytes
+            //it's a special case to avoid confusion between byte arrays and repeatable bytes
             baseType = null;
             return false;
         }
@@ -155,6 +155,8 @@ static class TypeExtensions {
 
         return ti.IsGenericType && ti.GetGenericTypeDefinition() == typeof(Nullable<>);
     }
+
+    public static Type StripOffSystemNullable(this Type t) => IsSystemNullable(t) ? GetNonNullable(t) : t;
 
     public static Type GetNonNullable(this Type t) {
         TypeInfo ti = t.GetTypeInfo();

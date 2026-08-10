@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using Parquet.Extensions;
 using Xunit;
 
 namespace Parquet.Test.Extensions;
 
-public class TypeExtensionsTest {
+public class ParquetClrSchemaExtensionsTest {
     [Fact]
     public void String_array_is_enumerable() {
         Assert.True(typeof(string[]).TryExtractIEnumerableType(out Type? et));
