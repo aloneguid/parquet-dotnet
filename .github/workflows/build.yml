@@ -43,6 +43,11 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
