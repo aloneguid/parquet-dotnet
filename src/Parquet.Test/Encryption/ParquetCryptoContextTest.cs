@@ -106,6 +106,56 @@ public class ParquetCryptoContextTest {
             crypto.Decrypt(stream, ParquetModuleType.DataPageHeader, 0, 0, 0));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(15)]
+    [InlineData(16)]
+    [InlineData(17)]
+    [InlineData(4103)]
+    [InlineData(262144)]
+    public void CtrDataPageRoundTripsBoundarySizes(int size) {
+        var crypto = CreateContext(ParquetEncryptionAlgorithm.AesGcmCtrV1);
+        byte[] plaintext = Enumerable.Range(0, size).Select(i => (byte)i).ToArray();
+        byte[] encrypted = crypto.Encrypt(plaintext, ParquetModuleType.DataPage, 1, 2, 3);
+        using var stream = new MemoryStream(encrypted, writable: false);
+
+        Assert.Equal(
+            plaintext,
+            crypto.Decrypt(stream, ParquetModuleType.DataPage, 1, 2, 3));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    [InlineData(31)]
+    [InlineData(32)]
+    public void CtrDictionaryPageRoundTripsBoundarySizes(int size) {
+        var crypto = CreateContext(ParquetEncryptionAlgorithm.AesGcmCtrV1);
+        byte[] plaintext = Enumerable.Range(0, size).Select(i => (byte)(i * 7)).ToArray();
+        byte[] encrypted = crypto.Encrypt(plaintext, ParquetModuleType.DictionaryPage, 1, 2);
+        using var stream = new MemoryStream(encrypted, writable: false);
+
+        Assert.Equal(
+            plaintext,
+            crypto.Decrypt(stream, ParquetModuleType.DictionaryPage, 1, 2));
+    }
+
+    [Fact]
+    public void RejectsCtrFramingForPageHeader() {
+        var crypto = CreateContext(ParquetEncryptionAlgorithm.AesGcmCtrV1);
+        byte[] encrypted = crypto.Encrypt(
+            new byte[32],
+            ParquetModuleType.DataPage,
+            0,
+            0,
+            0);
+        using var stream = new MemoryStream(encrypted, writable: false);
+
+        Assert.Throws<AuthenticationTagMismatchException>(() =>
+            crypto.Decrypt(stream, ParquetModuleType.DataPageHeader, 0, 0, 0));
+    }
+
     [Fact]
     public void ModuleAndOrdinalsAreAuthenticated() {
         var crypto = CreateContext(ParquetEncryptionAlgorithm.AesGcmV1);

@@ -231,6 +231,132 @@ public class EncryptionIntegrationTest : IntegrationBase {
             async () => await rowGroup.ReadAsync<int>(field, new int[128]));
     }
 
+    [Fact]
+    public async Task ReadsAvailableColumnKeyAndRejectsMissingSecondKey() {
+        byte[] footerKey = CreateKey(16, 0x10);
+        byte[] salaryKey = CreateKey(16, 0x30);
+        byte[] ssnKey = CreateKey(16, 0x50);
+        var name = new DataField<string>("name");
+        var salary = new DataField<double>("salary");
+        var ssn = new DataField<string>("ssn");
+        var encryption = new ParquetEncryptionOptions(new ParquetKey(footerKey)) {
+            EncryptAllColumns = false
+        };
+        encryption.ColumnKeys["salary"] = new ParquetKey(salaryKey, "kms/salary"u8);
+        encryption.ColumnKeys["ssn"] = new ParquetKey(ssnKey, "kms/ssn"u8);
+        var writeOptions = new ParquetOptions { Encryption = encryption };
+        using var stream = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(
+                        new ParquetSchema(name, salary, ssn), stream, writeOptions)) {
+            using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
+            await rowGroup.WriteAsync(name, new string?[] { "alice", "bob" });
+            await rowGroup.WriteAsync<double>(salary, new double[] { 10, 20 });
+            await rowGroup.WriteAsync(ssn, new string?[] { "111", "222" });
+        }
+
+        stream.Position = 0;
+        var partialOptions = new ParquetOptions {
+            Decryption = new ParquetDecryptionOptions { FooterKey = footerKey }
+        };
+        partialOptions.Decryption.ColumnKeys["salary"] = salaryKey;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(stream, partialOptions)) {
+            using ParquetRowGroupReader rowGroup = reader.OpenRowGroupReader(0);
+            string?[] names = new string?[2];
+            double[] salaries = new double[2];
+            await rowGroup.ReadAsync(name, names);
+            await rowGroup.ReadAsync<double>(salary, salaries);
+            Assert.Equal(new string?[] { "alice", "bob" }, names);
+            Assert.Equal(new double[] { 10, 20 }, salaries);
+            await Assert.ThrowsAsync<InvalidDataException>(async () =>
+                await rowGroup.ReadAsync(ssn, new string?[2]));
+        }
+
+        stream.Position = 0;
+        var completeOptions = new ParquetOptions {
+            Decryption = new ParquetDecryptionOptions { FooterKey = footerKey }
+        };
+        completeOptions.Decryption.ColumnKeys["salary"] = salaryKey;
+        completeOptions.Decryption.ColumnKeys["ssn"] = ssnKey;
+        await using ParquetReader completeReader = await ParquetReader.CreateAsync(stream, completeOptions);
+        using ParquetRowGroupReader completeGroup = completeReader.OpenRowGroupReader(0);
+        string?[] ssns = new string?[2];
+        await completeGroup.ReadAsync(ssn, ssns);
+        Assert.Equal(new string?[] { "111", "222" }, ssns);
+    }
+
+    [Theory]
+    [InlineData(ParquetEncryptionAlgorithm.AesGcmV1, true)]
+    [InlineData(ParquetEncryptionAlgorithm.AesGcmV1, false)]
+    [InlineData(ParquetEncryptionAlgorithm.AesGcmCtrV1, true)]
+    [InlineData(ParquetEncryptionAlgorithm.AesGcmCtrV1, false)]
+    public async Task StoredAadPrefixTakesPrecedenceOverReaderValue(
+        ParquetEncryptionAlgorithm algorithm,
+        bool encryptFooter) {
+        byte[] key = CreateKey(16, 0x20);
+        var field = new DataField<int>("id");
+        var encryption = new ParquetEncryptionOptions(new ParquetKey(key)) {
+            Algorithm = algorithm,
+            EncryptFooter = encryptFooter,
+            AadPrefix = "stored-prefix"u8.ToArray(),
+            StoreAadPrefix = true
+        };
+        using var stream = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(
+                        new ParquetSchema(field),
+                        stream,
+                        new ParquetOptions { Encryption = encryption })) {
+            using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
+            await rowGroup.WriteAsync<int>(field, new int[] { 1, 2, 3 });
+        }
+
+        stream.Position = 0;
+        var readOptions = new ParquetOptions {
+            Decryption = new ParquetDecryptionOptions {
+                FooterKey = key,
+                AadPrefix = "wrong-reader-prefix"u8.ToArray()
+            }
+        };
+        await using ParquetReader reader = await ParquetReader.CreateAsync(stream, readOptions);
+        using ParquetRowGroupReader readGroup = reader.OpenRowGroupReader(0);
+        int[] values = new int[3];
+        await readGroup.ReadAsync<int>(reader.Schema.DataFields[0], values);
+        Assert.Equal(new int[] { 1, 2, 3 }, values);
+    }
+
+    [Fact]
+    public async Task ResolvesPlaintextFooterKeyFromSigningMetadata() {
+        byte[] key = CreateKey(16, 0x20);
+        byte[] metadata = "kms/signing"u8.ToArray();
+        var field = new DataField<int>("id");
+        var encryption = new ParquetEncryptionOptions(new ParquetKey(key, metadata)) {
+            EncryptFooter = false
+        };
+        using var stream = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(
+                        new ParquetSchema(field),
+                        stream,
+                        new ParquetOptions { Encryption = encryption })) {
+            using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
+            await rowGroup.WriteAsync<int>(field, new int[] { 7, 8 });
+        }
+
+        stream.Position = 0;
+        var retriever = new RecordingKeyRetriever(new Dictionary<string, byte[]> {
+            ["kms/signing"] = key
+        });
+        var options = new ParquetOptions {
+            Decryption = new ParquetDecryptionOptions { KeyRetriever = retriever }
+        };
+        await using ParquetReader reader = await ParquetReader.CreateAsync(stream, options);
+
+        Assert.Equal(metadata, reader.Metadata!.FooterSigningKeyMetadata);
+        Assert.Equal(new string[] { "kms/signing" }, retriever.Requests);
+        using ParquetRowGroupReader readGroup = reader.OpenRowGroupReader(0);
+        int[] values = new int[2];
+        await readGroup.ReadAsync<int>(reader.Schema.DataFields[0], values);
+        Assert.Equal(new int[] { 7, 8 }, values);
+    }
+
     private static async Task<MemoryStream> WriteMixedFileAsync(
         ParquetEncryptionAlgorithm algorithm,
         bool encryptFooter,
