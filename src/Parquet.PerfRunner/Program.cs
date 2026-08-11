@@ -7,16 +7,25 @@ using Parquet.PerfRunner.Benchmarks;
 
 if(args.Length == 1) {
     switch(args[0]) {
+        case "highLevel":
+            HighLevel.Run();
+            break;
         case "write":
             BenchmarkRunner.Run<WriteBenchmark>();
             break;
-        case "progression":
-            VersionedBenchmark.Run();
+        case "encoding":
+            BenchmarkRunner.Run<EncodingBenchmarks>();
+            break;
+        case "curiosities":
+            BenchmarkRunner.Run<Curiosities>();
             break;
         case "twosamples":
             break;
+        case "compression":
+            BenchmarkRunner.Run<CompressionBenchmarks>();
+            break;
     }
 } else {
-    await new DataTypes().NullableInts();
+    await new DataTypes().RandomStrings();
     //await SampleGenerator.GenerateFiles();
 }

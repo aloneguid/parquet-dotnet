@@ -1,0 +1,99 @@
+﻿using System.Buffers;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Running;
+using CommunityToolkit.HighPerformance.Buffers;
+using Parquet.Schema;
+
+namespace Parquet.PerfRunner.Benchmarks;
+
+/// <summary>
+/// High level numbers to track progress over time. These can be pushed to reporting database, therefore keep stable.
+/// </summary>
+[Config(typeof(Config))]
+[MemoryDiagnoser]
+public class HighLevel {
+
+    private const int DataSize = 10_000_000;
+    private readonly ParquetSchema _intsSchema = new ParquetSchema(new DataField<int?>("i"));
+    private int?[]? _intValues;
+    private IMemoryOwner<int?>? _memoryToReadInto;
+    private MemoryStream? _intsMs;
+    private static readonly string[] TargetVersions = [
+        "",
+        //"5.5.0"
+    ];
+
+    [Params(CompressionMethod.None, CompressionMethod.Snappy)]
+    public CompressionMethod CM { get; set; }
+
+    private class Config : ManualConfig {
+        public Config() {
+
+            // https://benchmarkdotnet.org/articles/samples/IntroNuGet.html
+
+            foreach(string v in TargetVersions) {
+                AddJob(Job.ShortRun
+                    .WithId(string.IsNullOrEmpty(v) ? "local" : v)
+                    .WithMsBuildArguments($"/p:ParquetVersion={v}"));
+            }
+        }
+    }
+
+
+    [GlobalSetup]
+    public async Task Setup() {
+        _intValues = Enumerable.Range(0, DataSize).Select(i => (i % 4 == 0) ? (int?)null : (int?)i).ToArray();
+        _intsMs = await MakeFile(_intsSchema, _intValues);
+        _memoryToReadInto = MemoryOwner<int?>.Allocate(DataSize);
+
+        Console.WriteLine($"parquet version: {Parquet.Globals.Version}");
+    }
+
+    private async Task<MemoryStream> MakeFile(ParquetSchema schema, int?[] values) {
+        var ms = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, new ParquetOptions { CompressionMethod = CM })) {
+            using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
+                await groupWriter.WriteAsync<int>(schema.DataFields[0], values);
+            }
+        }
+        return ms;
+    }
+
+    private async Task<MemoryStream> Run(ParquetSchema schema, int?[] values) {
+        var r = new MemoryStream();
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, r, new ParquetOptions { CompressionMethod = CM })) {
+            // create a new row group in the file
+            using(ParquetRowGroupWriter groupWriter = writer.CreateRowGroup()) {
+                await groupWriter.WriteAsync<int>(schema.DataFields.First(), values);
+            }
+        }
+        return r;
+    }
+
+    private async Task<MemoryStream> Run(Memory<int?> mem, MemoryStream ms) {
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            using ParquetRowGroupReader rgr = reader.OpenRowGroupReader(0);
+            await rgr.ReadAsync<int>(reader.Schema.DataFields.First(), mem);
+        }
+        ms.Position = 0;
+        return ms;
+    }
+
+    [Benchmark]
+    public Task<MemoryStream> WriteNullableInts() {
+        return Run(_intsSchema, _intValues!);
+    }
+
+    [Benchmark]
+    public Task<MemoryStream> ReadNullableInts() {
+        return Run(_memoryToReadInto!.Memory, _intsMs!);
+    }
+
+    public static void Run() {
+        BenchmarkRunner.Run<HighLevel>();
+    }
+}

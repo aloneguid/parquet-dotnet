@@ -1,26 +1,26 @@
-﻿namespace Parquet.Schema {
+﻿namespace Parquet.Schema;
+
+/// <summary>
+/// Type of schema
+/// </summary>
+public enum SchemaType {
     /// <summary>
-    /// Type of schema
+    /// Contains actual values i.e. declared by a <see cref="DataField"/>
     /// </summary>
-    public enum SchemaType {
-        /// <summary>
-        /// Contains actual values i.e. declared by a <see cref="DataField"/>
-        /// </summary>
-        Data,
+    Data,
 
-        /// <summary>
-        /// Contains dictionary definition
-        /// </summary>
-        Map,
+    /// <summary>
+    /// Contains dictionary definition
+    /// </summary>
+    Map,
 
-        /// <summary>
-        /// Contains structure definition
-        /// </summary>
-        Struct,
+    /// <summary>
+    /// Contains structure definition
+    /// </summary>
+    Struct,
 
-        /// <summary>
-        /// Contains list definition
-        /// </summary>
-        List
-    }
+    /// <summary>
+    /// Contains list definition
+    /// </summary>
+    List
 }

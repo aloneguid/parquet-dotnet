@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Parquet.Serialization.Attributes; 
+namespace Parquet.Serialization.Attributes;
 
 /// <summary>
 /// Specifies that a property is a simple repeatable field (as opposed to a list).

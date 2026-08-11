@@ -1,50 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Test.Xunit;
 using Xunit;
 using F = System.IO.File;
 using Path = System.IO.Path;
 
-namespace Parquet.Test.Integration {
-    public class WriteQuestionableTypesTest : IntegrationBase {
+namespace Parquet.Test.Integration;
 
-        private async Task<string> ReadWithPQT(ParquetSchema schema, DataColumn dc) {
-            string testFileName = Path.GetFullPath($"temp.{nameof(WriteQuestionableTypesTest)}.parquet");
-            if(F.Exists(testFileName))
-                F.Delete(testFileName);
+public class WriteQuestionableTypesTest : IntegrationBase {
 
-            using(Stream s = F.OpenWrite(testFileName)) {
-                using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, s)) {
-                    using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+    private async Task<string> ReadWithPQT<T>(ParquetSchema schema, DataField df, ReadOnlyMemory<T> values) where T : struct {
+        string testFileName = Path.GetFullPath($"temp.{nameof(WriteQuestionableTypesTest)}.parquet");
+        if(F.Exists(testFileName))
+            F.Delete(testFileName);
 
-                    await rgw.WriteColumnAsync(dc);
-                }
-            }
-
-            string? json = ExecMrCat(testFileName);
-            return json ?? string.Empty;
+        await using(Stream s = F.OpenWrite(testFileName))
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, s)) {
+            using ParquetRowGroupWriter rgw = writer.CreateRowGroup();
+            await rgw.WriteAsync(df, values);
         }
 
-        [NonMacOSFact]
-        public async Task DateTime_Default() {
-            var schema = new ParquetSchema(new DataField<DateTime>("qtype"));
-            var dc = new DataColumn(schema.DataFields.First(), new[] { new DateTime(2023, 04, 25, 1, 2, 3) });
-            string json = await ReadWithPQT(schema, dc);
-            Assert.Equal("{\"qtype\":\"AK4X1GIDAACciSUA\"}", json);
-        }
+        string? json = ExecMrCat(testFileName);
+        return json ?? string.Empty;
+    }
 
-        [NonMacOSFact]
-        public async Task Timestamp_Default() {
-            var schema = new ParquetSchema(new DataField<TimeSpan>("qtype"));
-            var dc = new DataColumn(schema.DataFields.First(), new[] { TimeSpan.FromHours(7) });
-            string json = await ReadWithPQT(schema, dc);
-            Assert.Equal("{\"qtype\":25200000}", json);
-        }
+    [NonMacOSFact]
+    public async Task DateTime_Default() {
+        var schema = new ParquetSchema(new DataField<DateTime>("qtype"));
+        DateTime[] values = new[] { new DateTime(2023, 04, 25, 1, 2, 3) };
+        string json = await ReadWithPQT<DateTime>(schema, schema.DataFields.First(), values.AsMemory());
+        Assert.Equal("{\"qtype\":\"AK4X1GIDAACciSUA\"}", json);
+    }
+
+    [NonMacOSFact]
+    public async Task Timestamp_Default() {
+        var schema = new ParquetSchema(new TimeDataField("qtype", TimeUnitPrecision.Millis));
+        int[] values = new[] { (int)TimeSpan.FromHours(7).TotalMilliseconds };
+        string json = await ReadWithPQT<int>(schema, schema.DataFields.First(), values.AsMemory());
+        Assert.Equal("{\"qtype\":25200000}", json);
     }
 }

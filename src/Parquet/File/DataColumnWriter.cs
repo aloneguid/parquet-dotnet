@@ -1,271 +1,253 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using IronCompress;
 using Microsoft.IO;
 using Parquet.Bloom;
-using Parquet.Data;
 using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
 
-namespace Parquet.File {
-    class DataColumnWriter {
-        private readonly Stream _stream;
-        private readonly ThriftFooter _footer;
-        private readonly SchemaElement _schemaElement;
-        private readonly CompressionMethod _compressionMethod;
-        private readonly CompressionLevel _compressionLevel;
-        private readonly Dictionary<string, string>? _keyValueMetadata;
-        private readonly ParquetOptions _options;
-        private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
+namespace Parquet.File;
 
-        public DataColumnWriter(
-           Stream stream,
-           ThriftFooter footer,
-           SchemaElement schemaElement,
-           CompressionMethod compressionMethod,
-           ParquetOptions options,
-           CompressionLevel compressionLevel,
-           Dictionary<string, string>? keyValueMetadata) {
-            _stream = stream;
-            _footer = footer;
-            _schemaElement = schemaElement;
-            _compressionMethod = compressionMethod;
-            _compressionLevel = compressionLevel;
-            _keyValueMetadata = keyValueMetadata;
-            _options = options;
-            _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
-            _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
+class DataColumnWriter {
+    private readonly Stream _stream;
+    private readonly ThriftFooter _footer;
+    private readonly SchemaElement _schemaElement;
+    private readonly Dictionary<string, string>? _keyValueMetadata;
+    private readonly ParquetOptions _options;
+    private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
+
+    public DataColumnWriter(
+       Stream stream,
+       ThriftFooter footer,
+       SchemaElement schemaElement,
+       ParquetOptions options,
+       Dictionary<string, string>? keyValueMetadata) {
+        _stream = stream;
+        _footer = footer;
+        _schemaElement = schemaElement;
+        _keyValueMetadata = keyValueMetadata;
+        _options = options;
+        _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
+        _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
+    }
+
+    public async Task<ColumnChunk> WriteAsync<T>(
+        FieldPath fullPath,
+        WritingColumn<T> wc,
+        CancellationToken cancellationToken) where T : struct {
+        // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
+        ColumnChunk chunk = _footer.CreateColumnChunk(
+            _options.CompressionMethod, _stream, _schemaElement.Type!.Value, fullPath, wc.NumValues,
+            _keyValueMetadata);
+        if(chunk.MetaData == null)
+            throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
+
+        ColumnMetrics metrics = await WriteAsync(
+            chunk, wc, _schemaElement,
+            cancellationToken);
+        chunk.MetaData.Encodings = metrics.GetUsedEncodings();
+
+        //generate stats for column chunk
+        chunk.MetaData.Statistics = wc.Statistics.ToThriftStatistics(_schemaElement);
+
+        //the following counters must include both data size and header size
+        chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
+        chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
+
+        return chunk;
+    }
+
+    class ColumnMetrics {
+        public int CompressedSize;
+        public int UncompressedSize;
+        public readonly List<PageHeader> Pages = new();
+
+        public List<Encoding> GetUsedEncodings() {
+            var r = new HashSet<Encoding>();
+            foreach(PageHeader page in Pages) {
+                if(page.DictionaryPageHeader != null) {
+                    r.Add(page.DictionaryPageHeader.Encoding);
+                }
+                if(page.DataPageHeader != null) {
+                    r.Add(page.DataPageHeader.Encoding);
+                    r.Add(page.DataPageHeader.DefinitionLevelEncoding);
+                    r.Add(page.DataPageHeader.RepetitionLevelEncoding);
+                }
+                if(page.DataPageHeaderV2 != null) {
+                    r.Add(page.DataPageHeaderV2.Encoding);
+                }
+            }
+            return r.ToList();
         }
+    }
 
-        public async Task<ColumnChunk> WriteAsync(
-            FieldPath fullPath, DataColumn column,
-            CancellationToken cancellationToken = default) {
+    private async Task CompressAndWriteAsync(
+        PageHeader ph, MemoryStream uncompressedData,
+        ColumnMetrics cs,
+        CancellationToken cancellationToken) {
 
-            // Num_values in the chunk does include null values - I have validated this by dumping spark-generated file.
-            ColumnChunk chunk = _footer.CreateColumnChunk(
-                _compressionMethod, _stream, _schemaElement.Type!.Value, fullPath, column.NumValues,
-                _keyValueMetadata);
+        int uncompressedLength = (int)uncompressedData.Length;
+        using IMemoryOwner<byte> pageData = await Compressor.Instance.CompressAsync(
+            _options.CompressionMethod, _options.CompressionLevel, uncompressedData);
+        int compressedLength = pageData.Memory.Length;
 
-            ColumnSizes columnSizes = await WriteColumnAsync(
-                chunk, column, _schemaElement,
-                cancellationToken);
-            //generate stats for column chunk
-            chunk.MetaData!.Statistics = column.Statistics.ToThriftStatistics(_schemaElement);
+        ph.UncompressedPageSize = uncompressedLength;
+        ph.CompressedPageSize = compressedLength;
 
-            //the following counters must include both data size and header size
-            chunk.MetaData.TotalCompressedSize = columnSizes.CompressedSize;
-            chunk.MetaData.TotalUncompressedSize = columnSizes.UncompressedSize;
-
-            return chunk;
-        }
-
-        class ColumnSizes {
-            public int CompressedSize;
-            public int UncompressedSize;
-        }
-
-        private async Task CompressAndWriteAsync(
-            PageHeader ph, MemoryStream data,
-            ColumnSizes cs,
-            CancellationToken cancellationToken) {
-
-            using IronCompress.IronCompressResult compressedData = _compressionMethod == CompressionMethod.None
-                ? new IronCompress.IronCompressResult(data.ToArray(), Codec.Snappy, false)
-                : Compressor.Compress(_compressionMethod, data.ToArray(), _compressionLevel);
-
-            ph.UncompressedPageSize = (int)data.Length;
-            ph.CompressedPageSize = compressedData.AsSpan().Length;
-
-            //write the header in
-            using MemoryStream headerMs = _rmsMgr.GetStream();
+        //write the header in
+        using(MemoryStream headerMs = _rmsMgr.GetStream()) {
             ph.Write(new Meta.Proto.ThriftCompactProtocolWriter(headerMs));
             int headerSize = (int)headerMs.Length;
             headerMs.Position = 0;
             _stream.Flush();
 
+            // write header
             await headerMs.CopyToAsync(_stream);
-
-            // write data
-            _stream.WriteSpan(compressedData);
 
             cs.CompressedSize += headerSize;
             cs.UncompressedSize += headerSize;
-
-            cs.CompressedSize += ph.CompressedPageSize;
-            cs.UncompressedSize += ph.UncompressedPageSize;
         }
 
-        private async Task<ColumnSizes> WriteColumnAsync(ColumnChunk chunk, DataColumn column,
-           SchemaElement tse,
-           CancellationToken cancellationToken = default) {
+        // write data
+        await pageData.Memory.CopyToAsync(_stream);
 
-            column.Field.EnsureAttachedToSchema(nameof(column));
+        cs.CompressedSize += ph.CompressedPageSize;
+        cs.UncompressedSize += ph.UncompressedPageSize;
+    }
 
-            var r = new ColumnSizes();
+    private async Task<ColumnMetrics> WriteAsync<T>(ColumnChunk chunk,
+        WritingColumn<T> wc,
+        SchemaElement tse,
+        CancellationToken cancellationToken) where T : struct {
 
-            /*
-             * Page header must preceeed actual data (compressed or not) however it contains both
-             * the uncompressed and compressed data size which we don't know! This somehow limits
-             * the write efficiency.
-             */
+        wc.Field.EnsureAttachedToSchema(nameof(wc.Field));
+        wc.Pack(_options);
 
-            using var pc = new PackedColumn(column);
-            pc.Pack(_options.UseDictionaryEncoding, _options.DictionaryEncodingThreshold);
+        var r = new ColumnMetrics();
+        BloomCollector? bloom = null;
+        if(_options.BloomFilterOptionsByColumn.TryGetValue(wc.Field.Name, out ParquetOptions.BloomFilterOptions? bloomOptions)
+            && bloomOptions.EnableBloomFilters) {
+            BloomSizing.BloomPlan plan = BloomSizing.Plan(
+                wc.Statistics.DistinctCount ?? wc.Values.Length,
+                bloomOptions.BloomFilterFpp,
+                bloomOptions.BloomFilterBitsPerValueOverride);
+            bloom = new BloomCollector(plan.Blocks);
+            BloomAddValues(bloom, wc.Values, tse);
+        }
 
-            BloomCollector? bloom = null;
-            if(_options.BloomFilterOptionsByColumn.TryGetValue(column.Field.Name, out ParquetOptions.BloomFilterOptions? bloomOptions)) {
-                if(bloomOptions != null && bloomOptions.EnableBloomFilters) {
-                    BloomSizing.BloomPlan plan = BloomSizing.Plan(
-                        estimatedDistinctValues: column.Statistics?.DistinctCount ?? column.NumValues,
-                        targetFpp: bloomOptions.BloomFilterFpp,
-                        bitsPerValueOverride: bloomOptions.BloomFilterBitsPerValueOverride);
-                    bloom = new BloomCollector(plan.Blocks);
-                }
+        /*
+         * Page header must preceeed actual data (compressed or not) however it contains both
+         * the uncompressed and compressed data size which we don't know! This somehow limits
+         * the write efficiency.
+         */
+
+        // dictionary page
+        if(wc.HasDictionary) {
+            PageHeader ph = _footer.CreateDictionaryPage(wc.Dictionary.Length, out _);
+            r.Pages.Add(ph);
+            using MemoryStream ms = _rmsMgr.GetStream();
+            ParquetPlainEncoder.Encode(wc.Dictionary, ms, tse, wc.Statistics);
+            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
+        }
+
+        // data page
+        using(MemoryStream ms = _rmsMgr.GetStream()) {
+            bool deltaEncode = _options.GetEncodingHint(wc.Field) == EncodingHint.DeltaBinaryPacked && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
+            bool byteSplitStreamEncode = _options.GetEncodingHint(wc.Field) == EncodingHint.ByteSplitStream && ByteStreamSplitEncoder.IsSupported(typeof(T));
+
+            // data page Num_values also does include NULLs
+            PageHeader ph = _footer.CreateDataPage(wc.NumValues, wc.HasDictionary, deltaEncode, byteSplitStreamEncode, out DataPageHeader dph);
+            r.Pages.Add(ph);
+
+            if(wc.HasRepetitionLevels) {
+                WriteLevels(ms, wc.RepetitionLevels!, wc.Field.MaxRepetitionLevel);
+            }
+            if(wc.HasDefinitionLevels) {
+                WriteLevels(ms, wc.DefinitionLevels!, wc.Field.MaxDefinitionLevel);
             }
 
-            // dictionary page
-            if(pc.HasDictionary) {
-                PageHeader ph = _footer.CreateDictionaryPage(pc.Dictionary!.Length);
-                using MemoryStream ms = _rmsMgr.GetStream();
-                ParquetPlainEncoder.Encode(pc.Dictionary, 0, pc.Dictionary.Length,
-                       tse,
-                       ms, column.Statistics);
-
-                await CompressAndWriteAsync(ph, ms, r, cancellationToken);
-                if(bloom != null) {
-                    BloomAddValues(bloom, pc.Dictionary, 0, pc.Dictionary.Length, _schemaElement);
-                }
-            }
-
-            // data page
-            using(MemoryStream ms = _rmsMgr.GetStream()) {
-                Array data = pc.GetPlainData(out int offset, out int count);
-                if(bloom != null) {
-                    BloomAddValues(bloom, data, offset, count, _schemaElement);
-                }
-                bool deltaEncode = column.IsDeltaEncodable && _options.UseDeltaBinaryPackedEncoding && DeltaBinaryPackedEncoder.CanEncode(data, offset, count);
-               
-                // data page Num_values also does include NULLs
-                PageHeader ph = _footer.CreateDataPage(column.NumValues, pc.HasDictionary, deltaEncode);
-                if(pc.HasRepetitionLevels) {
-                    WriteLevels(ms, pc.RepetitionLevels!, pc.RepetitionLevels!.Length, column.Field.MaxRepetitionLevel);
-                }
-                if(pc.HasDefinitionLevels) {
-                    WriteLevels(ms, pc.DefinitionLevels!, column.DefinitionLevels!.Length, column.Field.MaxDefinitionLevel);
-                }
-
-                if(pc.HasDictionary) {
-                    // dictionary indexes are always encoded with RLE
-                    int[] indexes = pc.GetDictionaryIndexes(out int indexesLength)!;
-                    int bitWidth = pc.Dictionary!.Length.GetBitWidth();
-                    ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
-                    RleBitpackedHybridEncoder.Encode(ms, indexes.AsSpan(0, indexesLength), bitWidth);
+            if(wc.HasDictionary) {
+                // dictionary indexes are always encoded with RLE
+                int bitWidth = wc.Dictionary.Length.GetBitWidth();  // bit width is determined by the dictionary size
+                ms.WriteByte((byte)bitWidth);   // bit width is stored as 1 byte before encoded data
+                RleBitpackedHybridEncoder.Encode(ms, wc.DictionaryIndexes, bitWidth);
+            } else {
+                if(deltaEncode) {
+                    DeltaBinaryPackedEncoder.Encode(wc.Values, ms, wc.Statistics);
+                } else if(byteSplitStreamEncode) {
+                    ByteStreamSplitEncoder.Encode(wc.Values, ms);
                 } else {
-                    if(deltaEncode) {
-                        DeltaBinaryPackedEncoder.Encode(data, offset, count, ms, column.Statistics);
-                        chunk.MetaData!.Encodings[2] = Encoding.DELTA_BINARY_PACKED;
-                    } else {
-                        ParquetPlainEncoder.Encode(data, offset, count, tse, ms, pc.HasDictionary ? null : column.Statistics);
-                    }
+                    ParquetPlainEncoder.Encode(wc.Values,
+                        ms,
+                        tse,
+                        wc.HasDictionary ? null : wc.Statistics);
                 }
-
-                ph.DataPageHeader!.Statistics = column.Statistics!.ToThriftStatistics(tse);
-                await CompressAndWriteAsync(ph, ms, r, cancellationToken);
             }
 
-            if(bloom != null && chunk?.MetaData != null) {
-                BloomFilterIO.WriteToStream(
-                    _stream,
-                    bloom.Filter,
-                    chunk.MetaData,
-                    s => new Meta.Proto.ThriftCompactProtocolWriter(s));
-            }
-
-            return r;
+            dph.Statistics = wc.Statistics.ToThriftStatistics(tse);
+            await CompressAndWriteAsync(ph, ms, r, cancellationToken);
         }
 
-        private static void WriteLevels(Stream s, Span<int> levels, int count, int maxValue) {
-            int bitWidth = maxValue.GetBitWidth();
-            RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels.Slice(0, count));
+        if(bloom != null && chunk.MetaData != null) {
+            BloomFilterIO.WriteToStream(
+                _stream,
+                bloom.Filter,
+                chunk.MetaData,
+                stream => new Meta.Proto.ThriftCompactProtocolWriter(stream));
         }
 
-        private static void BloomAddValues(BloomCollector bloom, Array values, int offset, int count, SchemaElement tse) {
-            switch(tse.Type!.Value) {
-                case Meta.Type.BOOLEAN: {
-                        if(values is bool[] a)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddBoolean(a[offset + i]);
-                        break;
-                    }
-                case Meta.Type.INT32: {
-                        if(values is int[] a)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddInt32(a[offset + i]);
-                        else if(values is uint[] au)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddInt32(unchecked((int)au[offset + i]));
-                        break;
-                    }
-                case Meta.Type.INT64: {
-                        if(values is long[] a)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddInt64(a[offset + i]);
-                        else if(values is ulong[] au)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddInt64(unchecked((long)au[offset + i]));
-                        break;
-                    }
-                case Meta.Type.INT96: {
-                        if(values is DateTime[] a)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddInt96(a[offset + i]);
-                        break;
-                    }
-                case Meta.Type.FLOAT: {
-                        if(values is float[] a)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddFloat(a[offset + i]);
-                        break;
-                    }
-                case Meta.Type.DOUBLE: {
-                        if(values is double[] a)
-                            for(int i = 0; i < count; i++)
-                                bloom.AddDouble(a[offset + i]);
-                        break;
-                    }
-                case Meta.Type.BYTE_ARRAY: {
-                        if(values is string[] sa) {
-                            for(int i = 0; i < count; i++)
-                                bloom.AddString(sa[offset + i]);
-                        } else if(values is byte[][] ba) {
-                            for(int i = 0; i < count; i++)
-                                bloom.AddByteArray(ba[offset + i]);
-                        } else if(values is Array any && any.Length > 0 && any.GetValue(0) is byte[]) {
-                            // Handles jagged byte[][] typed as Array
-                            for(int i = 0; i < count; i++)
-                                bloom.AddByteArray((byte[])any.GetValue(offset + i)!);
-                        }
-                        break;
-                    }
-                case Meta.Type.FIXED_LEN_BYTE_ARRAY: {
-                        if(values is byte[][] ba) {
-                            for(int i = 0; i < count; i++)
-                                bloom.AddFixed(ba[offset + i]);
-                        } else if(values is Array any && any.Length > 0 && any.GetValue(0) is byte[]) {
-                            for(int i = 0; i < count; i++)
-                                bloom.AddFixed((byte[])any.GetValue(offset + i)!);
-                        }
-                        break;
-                    }
-                default:
+        return r;
+    }
+
+    private static void BloomAddValues<T>(BloomCollector bloom, ReadOnlySpan<T> values, SchemaElement schemaElement)
+        where T : struct {
+        foreach(T value in values) {
+            object boxed = value;
+            switch(schemaElement.Type!.Value) {
+                case Meta.Type.BOOLEAN:
+                    bloom.AddBoolean(Convert.ToBoolean(boxed));
+                    break;
+                case Meta.Type.INT32:
+                    bloom.AddInt32(boxed is uint uintValue ? unchecked((int)uintValue) : Convert.ToInt32(boxed));
+                    break;
+                case Meta.Type.INT64:
+                    bloom.AddInt64(boxed is ulong ulongValue ? unchecked((long)ulongValue) : Convert.ToInt64(boxed));
+                    break;
+                case Meta.Type.INT96:
+                    if(boxed is DateTime dateTime)
+                        bloom.AddInt96(dateTime);
+                    break;
+                case Meta.Type.FLOAT:
+                    bloom.AddFloat(Convert.ToSingle(boxed));
+                    break;
+                case Meta.Type.DOUBLE:
+                    bloom.AddDouble(Convert.ToDouble(boxed));
+                    break;
+                case Meta.Type.BYTE_ARRAY:
+                    if(boxed is ReadOnlyMemory<char> chars)
+                        bloom.AddString(chars.ToString());
+                    else if(boxed is ReadOnlyMemory<byte> bytes)
+                        bloom.AddByteArray(bytes.ToArray());
+                    break;
+                case Meta.Type.FIXED_LEN_BYTE_ARRAY:
+                    if(boxed is ReadOnlyMemory<byte> fixedBytes)
+                        bloom.AddFixed(fixedBytes.ToArray());
+                    else if(boxed is Guid guid)
+                        bloom.AddFixed(guid.ToByteArray());
                     break;
             }
         }
+    }
+
+    private static void WriteLevels(Stream s, ReadOnlySpan<int> levels, int maxValue) {
+        int bitWidth = maxValue.GetBitWidth();
+        RleBitpackedHybridEncoder.EncodeWithLength(s, bitWidth, levels);
     }
 }

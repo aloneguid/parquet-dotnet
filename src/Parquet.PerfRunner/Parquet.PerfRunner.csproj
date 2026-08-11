@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -11,12 +11,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.15.7" />
-        <PackageReference Include="ParquetSharp" Version="21.0.0" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+        <PackageReference Include="ParquetSharp" Version="24.0.0" />
+        <PackageReference Include="ZstdSharp.Port" Version="0.8.8" />
+        <PackageReference Include="SystemIOCompression.Zstandard.Backporting" Version="11.0.4" />
     </ItemGroup>
 
-    <ItemGroup>
+    <!-- normally, reference project directly -->
+    <ItemGroup Condition="'$(ParquetVersion)' == ''">
         <ProjectReference Include="..\Parquet\Parquet.csproj" />
+    </ItemGroup>
+
+    <!-- for perf testing specific Parquet versions -->
+    <ItemGroup Condition="'$(ParquetVersion)' != ''">
+        <PackageReference Include="Parquet.Net" Version="$(ParquetVersion)" />
     </ItemGroup>
 
 </Project>
