@@ -68,8 +68,10 @@ public class ParquetActor {
                 throw new InvalidDataException("Unexpected bytes follow the encrypted footer.");
             using var footerStream = new MemoryStream(plaintextFooter, writable: false);
             FileMetaData metadata = FileMetaData.Read(new ThriftCompactProtocolReader(footerStream));
-            if(footerStream.Position != footerStream.Length)
-                throw new InvalidDataException("Unexpected bytes follow the decrypted footer metadata.");
+            ParquetCryptoContext.ValidateTrailingPadding(
+                plaintextFooter,
+                footerStream.Position,
+                "decrypted footer metadata");
             return new ParquetMetadataReadResult(metadata, crypto);
         }
 
@@ -96,6 +98,9 @@ public class ParquetActor {
         //go to -4 bytes (PAR1) -4 bytes (footer length number)
         _fileStream.Seek(-8, SeekOrigin.End);
         int footerLength = await _fileStream.ReadInt32Async();
+
+        if(footerLength < 0 || footerLength > _fileStream.Length - 8)
+            throw new InvalidDataException($"The footer length {footerLength} is invalid.");
 
         //set just before footer starts
         _fileStream.Seek(-8 - footerLength, SeekOrigin.End);

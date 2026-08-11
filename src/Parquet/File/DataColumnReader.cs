@@ -102,8 +102,10 @@ class DataColumnReader {
                         pageOrdinal);
                 using var headerStream = new MemoryStream(header, writable: false);
                 ph = PageHeader.Read(new ThriftCompactProtocolReader(headerStream));
-                if(headerStream.Position != headerStream.Length)
-                    throw new InvalidDataException("Unexpected bytes follow the encrypted page header.");
+                ParquetCryptoContext.ValidateTrailingPadding(
+                    header,
+                    headerStream.Position,
+                    "encrypted page header");
             }
             pageOffset = _inputStream.Position + ph.CompressedPageSize;
 

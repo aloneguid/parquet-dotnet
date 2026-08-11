@@ -138,6 +138,19 @@ internal sealed class ParquetCryptoContext {
         return aad;
     }
 
+    internal static void ValidateTrailingPadding(
+        ReadOnlySpan<byte> plaintext,
+        long consumed,
+        string moduleName) {
+        if(consumed < 0 || consumed > plaintext.Length)
+            throw new InvalidDataException($"The parsed {moduleName} length is invalid.");
+
+        for(int i = checked((int)consumed); i < plaintext.Length; i++) {
+            if(plaintext[i] != 0)
+                throw new InvalidDataException($"Unexpected non-zero bytes follow the {moduleName}.");
+        }
+    }
+
     private byte[] DecryptGcm(
         Stream source,
         ParquetModuleType module,
