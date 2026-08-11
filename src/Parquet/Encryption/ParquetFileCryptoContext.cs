@@ -104,7 +104,7 @@ internal sealed class ParquetFileCryptoContext {
             key = directKey;
         } else if(_decryptionOptions?.KeyRetriever != null) {
             key = _decryptionOptions.KeyRetriever
-                .GetKey(columnKey.KeyMetadata ?? Array.Empty<byte>())
+                .GetKey(path, columnKey.KeyMetadata ?? Array.Empty<byte>())
                 .ToArray();
         } else {
             throw new InvalidDataException(
@@ -127,7 +127,7 @@ internal sealed class ParquetFileCryptoContext {
     private static byte[] ResolveFooterKey(ParquetDecryptionOptions? options, byte[]? metadata) {
         byte[]? key = options?.FooterKey;
         if(key == null && options?.KeyRetriever != null)
-            key = options.KeyRetriever.GetKey(metadata ?? Array.Empty<byte>()).ToArray();
+            key = options.KeyRetriever.GetKey(null, metadata ?? Array.Empty<byte>()).ToArray();
         if(key == null)
             throw new InvalidDataException("A footer key is required to read this encrypted Parquet file.");
         if(key.Length is not (16 or 24 or 32))

@@ -99,6 +99,30 @@ public class ParquetEncryptionTest {
     }
 
     [Fact]
+    public async Task PassesColumnPathToKeyRetriever() {
+        using MemoryStream stream = await WriteMixedColumnsAsync(
+            ParquetEncryptionAlgorithm.AesGcmV1,
+            encryptFooter: true);
+        stream.Position = 0;
+        var keyRetriever = new PathAwareKeyRetriever();
+        var options = new ParquetOptions {
+            Decryption = new ParquetDecryptionOptions {
+                FooterKey = FooterKey,
+                KeyRetriever = keyRetriever
+            }
+        };
+
+        await using ParquetReader reader = await ParquetReader.CreateAsync(stream, options);
+        DataField secret = reader.Schema.DataFields[1];
+        using ParquetRowGroupReader rowGroup = reader.OpenRowGroupReader(0);
+        string?[] values = new string?[4];
+        await rowGroup.ReadAsync(secret, values);
+
+        Assert.Equal("secret", keyRetriever.RequestedColumnPath);
+        Assert.Equal(new string?[] { "red", "red", null, "blue" }, values);
+    }
+
+    [Fact]
     public async Task RequiresExternalAadPrefixWhenItIsNotStored() {
         var field = new DataField<int>("id");
         var encryption = new ParquetEncryptionOptions(new ParquetKey(FooterKey)) {
@@ -263,6 +287,20 @@ public class ParquetEncryptionTest {
             return Keys.TryGetValue(name, out byte[]? key)
                 ? key
                 : throw new InvalidDataException($"Unknown key metadata '{name}'.");
+        }
+    }
+
+    private sealed class PathAwareKeyRetriever : IParquetKeyRetriever {
+        public string? RequestedColumnPath { get; private set; }
+
+        public ReadOnlyMemory<byte> GetKey(ReadOnlyMemory<byte> keyMetadata) =>
+            throw new InvalidOperationException("The path-aware overload should be used for column keys.");
+
+        public ReadOnlyMemory<byte> GetKey(string? columnPath, ReadOnlyMemory<byte> keyMetadata) {
+            RequestedColumnPath = columnPath;
+            return columnPath == "secret"
+                ? ColumnKey
+                : throw new InvalidDataException($"Unknown column path '{columnPath}'.");
         }
     }
 }
