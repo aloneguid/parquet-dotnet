@@ -109,6 +109,16 @@ public class ParquetOptions {
     /// </summary>
     public static bool UseHardwareAcceleration { get; set; } = true;
 
+    /// <summary>
+    /// Modular encryption settings used when writing a file.
+    /// </summary>
+    public ParquetEncryptionOptions? Encryption { get; set; }
+
+    /// <summary>
+    /// Key retrieval and AAD settings used when reading an encrypted file.
+    /// </summary>
+    public ParquetDecryptionOptions? Decryption { get; set; }
+
     #region [ Serializer specific ]
 
     /// <summary>
