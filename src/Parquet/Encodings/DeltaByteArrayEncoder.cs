@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using Parquet.Extensions;
 
 namespace Parquet.Encodings;
 

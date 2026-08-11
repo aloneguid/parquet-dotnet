@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Extensions;
 using Parquet.Schema;
 using Parquet.Serialization.Attributes;
 
@@ -15,20 +15,14 @@ namespace Parquet.Serialization;
 /// Makes <see cref="ParquetSchema"/> from type information.
 /// Migrated from SchemaReflector to better fit into C# design strategy.
 /// </summary>
-public static class TypeExtensions {
+public static class ParquetClrSchemaExtensions {
     private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedWriteReflectedSchemas = new();
     private static readonly ConcurrentDictionary<Type, ParquetSchema> _cachedReadReflectedSchemas = new();
 
-    abstract class ClassMember {
-
-        private readonly MemberInfo _mi;
+    abstract class ClassMember(MemberInfo mi) {
         private string? _columnName;
 
-        protected ClassMember(MemberInfo mi) {
-            _mi = mi;
-        }
-
-        public string Name => _mi.Name;
+        public string Name => mi.Name;
 
         /// <summary>
         /// Parquet column name for this member. Will check appropriate attribute to detect name.
@@ -36,8 +30,8 @@ public static class TypeExtensions {
         public string ColumnName {
             get {
                 if(_columnName == null) {
-                    JsonPropertyNameAttribute? stxt = _mi.GetCustomAttribute<JsonPropertyNameAttribute>();
-                    _columnName = stxt?.Name ?? _mi.Name;
+                    JsonPropertyNameAttribute? stxt = mi.GetCustomAttribute<JsonPropertyNameAttribute>();
+                    _columnName = stxt?.Name ?? mi.Name;
                 }
 
                 return _columnName;
@@ -49,51 +43,35 @@ public static class TypeExtensions {
 
         public int? Order {
             get {
-                JsonPropertyOrderAttribute? po = _mi.GetCustomAttribute<JsonPropertyOrderAttribute>();
+                JsonPropertyOrderAttribute? po = mi.GetCustomAttribute<JsonPropertyOrderAttribute>();
                 return po?.Order;
             }
         }
 
-        public bool ShouldIgnore {
-            get {
-                return _mi.GetCustomAttribute<JsonIgnoreAttribute>() != null || _mi.GetCustomAttribute<ParquetIgnoreAttribute>() != null;
-            }
-        }
+        public bool ShouldIgnore => mi.GetCustomAttribute<JsonIgnoreAttribute>() != null || mi.GetCustomAttribute<ParquetIgnoreAttribute>() != null;
 
-        public bool IsLegacyRepeatable => _mi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
+        public bool IsLegacyRepeatable => mi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
 
-        public bool IsRequired => _mi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
+        public bool IsRequired => mi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
 
-        public bool IsListElementRequired => _mi.GetCustomAttribute<ParquetListElementRequiredAttribute>() != null;
+        public bool IsListElementRequired => mi.GetCustomAttribute<ParquetListElementRequiredAttribute>() != null;
 
-        public ParquetTimestampAttribute? TimestampAttribute => _mi.GetCustomAttribute<ParquetTimestampAttribute>();
+        public ParquetTimestampAttribute? TimestampAttribute => mi.GetCustomAttribute<ParquetTimestampAttribute>();
 
-        public ParquetTimeSpanAttribute? TimeSpanAttribute => _mi.GetCustomAttribute<ParquetTimeSpanAttribute>();
+        public ParquetMicroSecondsTimeAttribute? MicroSecondsTimeAttribute => mi.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>();
 
-        public ParquetMicroSecondsTimeAttribute? MicroSecondsTimeAttribute => _mi.GetCustomAttribute<ParquetMicroSecondsTimeAttribute>();
+        public ParquetDecimalAttribute? DecimalAttribute => mi.GetCustomAttribute<ParquetDecimalAttribute>();
 
-        public ParquetDecimalAttribute? DecimalAttribute => _mi.GetCustomAttribute<ParquetDecimalAttribute>();
+        public ParquetTimeAttribute? TimeAttribute => mi.GetCustomAttribute<ParquetTimeAttribute>();
     }
 
-    class ClassPropertyMember : ClassMember {
-        private readonly PropertyInfo _pi;
-
-        public ClassPropertyMember(PropertyInfo propertyInfo) : base(propertyInfo) {
-            _pi = propertyInfo;
-        }
-
-        public override Type MemberType => _pi.PropertyType;
+    class ClassPropertyMember(PropertyInfo propertyInfo) : ClassMember(propertyInfo) {
+        public override Type MemberType => propertyInfo.PropertyType;
 
     }
 
-    class ClassFieldMember : ClassMember {
-        private readonly FieldInfo _fi;
-
-        public ClassFieldMember(FieldInfo fi) : base(fi) {
-            _fi = fi;
-        }
-
-        public override Type MemberType => _fi.FieldType;
+    class ClassFieldMember(FieldInfo fi) : ClassMember(fi) {
+        public override Type MemberType => fi.FieldType;
     }
 
     /// <summary>
@@ -101,8 +79,8 @@ public static class TypeExtensions {
     /// </summary>
     /// <param name="t"></param>
     /// <param name="forWriting">
-    /// Set to true to get schema when deserialising into classes (writing to classes), otherwise false.
-    /// The result will differ if for instance some properties are read-only and some write-only.
+    /// Set to true to get schema when deserializing into classes (writing to classes), otherwise false.
+    /// The result will differ if, for instance, some properties are read-only and some write-only.
     /// </param>
     /// <returns></returns>
     public static ParquetSchema GetParquetSchema(this Type t, bool forWriting) {
@@ -142,32 +120,24 @@ public static class TypeExtensions {
             ? null
             : member.IsRequired ? false : null;
 
+
+        // time
+        bool isTime = t == typeof(TimeOnly) || t == typeof(TimeOnly?) || member?.TimeAttribute != null;
+        if(isTime) {
+            ParquetTimeAttribute? attr = member?.TimeAttribute;
+            ParquetTimeAttribute.Discover(t.StripOffSystemNullable(), member?.TimeAttribute, out TimeUnitPrecision precision, out bool isAdjustedToUtc);
+            return new TimeDataField(name,
+                precision, t.IsSystemNullable(), propertyName: propertyName) {  IsAdjustedToUtc =  isAdjustedToUtc };
+        }
+
+
         if(t == typeof(DateTime) || t == typeof(DateTime?)) {
             ParquetTimestampAttribute? tsa = member?.TimestampAttribute;
             r = new DateTimeDataField(name,
-                tsa == null ? DateTimeFormat.Impala : tsa.GetDateTimeFormat(),
-                isAdjustedToUTC: tsa == null ? true : tsa.IsAdjustedToUTC,
+                tsa?.GetDateTimeFormat() ?? DateTimeFormat.Impala,
+                isAdjustedToUTC: tsa?.IsAdjustedToUTC ?? true,
                 unit: tsa?.Resolution.Convert(),
                 isNullable: t == typeof(DateTime?), null, propertyName);
-        } else if(t == typeof(TimeSpan) || t == typeof(TimeSpan?)) {
-            ParquetTimeSpanAttribute? tsa = member?.TimeSpanAttribute;
-            r = new TimeSpanDataField(name,
-                member?.MicroSecondsTimeAttribute == null
-                    ? TimeSpanFormat.MilliSeconds
-                    : TimeSpanFormat.MicroSeconds,
-                t == typeof(TimeSpan?), null, propertyName) {
-                IsAdjustedToUTC = tsa == null ? true : tsa.IsAdjustedToUTC
-            };
-        } else if(t == typeof(TimeOnly) || t == typeof(TimeOnly?)) {
-            ParquetTimeSpanAttribute? tsaTimeOnly = member?.TimeSpanAttribute;
-            r = new TimeOnlyDataField(name,
-                member?.MicroSecondsTimeAttribute == null
-                    ? TimeSpanFormat.MilliSeconds
-                    : TimeSpanFormat.MicroSeconds,
-                t == typeof(TimeOnly?),
-                null, propertyName) {
-                    IsAdjustedToUTC = tsaTimeOnly == null ? true : tsaTimeOnly.IsAdjustedToUTC
-                };
         } else if(t == typeof(decimal) || t == typeof(decimal?)) {
             ParquetDecimalAttribute? ps = member?.DecimalAttribute;
             bool isTypeNullable = t == typeof(decimal?);
@@ -260,13 +230,19 @@ public static class TypeExtensions {
             baseType = bti!;
         }
 
-        if(SchemaEncoder.IsSupported(baseType)) {
+        if(DataField.CanCreateFrom(baseType)) {
             return ConstructDataField(columnName, propertyName, t, member);
-        } else if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
+        }
+        
+        if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
             return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
-        } else if(t.TryExtractIEnumerableType(out Type? elementType)) {
+        }
+
+        if(t.TryExtractIEnumerableType(out Type? elementType)) {
             return ConstructListField(columnName, propertyName, elementType!, member, forWriting);
-        } else if(baseType.IsClass || baseType.IsInterface || baseType.IsValueType) {
+        }
+
+        if(baseType.IsClass || baseType.IsInterface || baseType.IsValueType) {
             // must be a struct then (c# class, interface or struct)
             List<ClassMember> props = FindMembers(baseType, forWriting);
             Field[] fields = props
@@ -277,12 +253,12 @@ public static class TypeExtensions {
                 .ToArray();
 
             if(fields.Length == 0)
-                throw new InvalidOperationException($"property '{propertyName}' has no fields");
+                throw new InvalidOperationException($"property '{propertyName}' ({baseType}) has no fields");
 
-            StructField sf = new StructField(columnName, fields);
-            sf.ClrPropName = propertyName;
-            sf.IsNullable = baseType.IsNullable() || t.IsSystemNullable();
-            return sf;
+            return new StructField(columnName, fields) {
+                ClrPropName = propertyName,
+                IsNullable = baseType.IsNullable() || t.IsSystemNullable()
+            };
         }
 
         throw new NotImplementedException();

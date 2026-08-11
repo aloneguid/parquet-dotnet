@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -9,6 +8,7 @@ using System.Threading.Tasks;
 using Parquet.Data;
 using Parquet.File.Values.Primitives;
 using Parquet.Schema;
+using Parquet.Test.Extensions;
 using Parquet.Test.Util;
 using Xunit;
 
@@ -19,7 +19,8 @@ public class EndToEndTypeTest : TestBase {
     /// <summary>
     /// Writes a single non-nullable struct value using generic WriteAsync and reads it back.
     /// </summary>
-    private static async Task<T> WriteReadSingleAsync<T>(DataField field, T value, ParquetOptions? options = null) where T : struct {
+    private static async Task<T> WriteReadSingleAsync<T>(DataField field, T value, ParquetOptions? options = null,
+        AsyncOut<DataField>? outField = null) where T : struct {
         byte[] data;
         options ??= new ParquetOptions();
 
@@ -34,6 +35,11 @@ public class EndToEndTypeTest : TestBase {
         using(var ms = new MemoryStream(data)) {
             ms.Position = 0;
             await using ParquetReader reader = await ParquetReader.CreateAsync(ms, options);
+
+            if(outField is not null) {
+                outField.Value = reader.Schema.DataFields[0];
+            }
+            
             using ParquetRowGroupReader rowGroupReader = reader.OpenRowGroupReader(0);
             using RawColumnData<T> rcd = await rowGroupReader.ReadRawColumnDataAsync<T>(field);
             return rcd.Values[0];
@@ -266,7 +272,93 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expected, actual);
     }
 
-    // --- Temporal tests ---
+    #region [ Temporal ]
+    
+    // --- TIME:BEGIN ---
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Time_LogicalMillis(bool isAdjustedToUtc) {
+        var field = new TimeDataField("t", TimeUnitPrecision.Millis) { IsAdjustedToUtc = isAdjustedToUtc };
+        Assert.Equal(typeof(int), field.ClrType);
+
+        int value = (int)TimeSpan.FromMinutes(1234).TotalMilliseconds;
+        var outField = new AsyncOut<DataField>();
+        int actual = await WriteReadSingleAsync(field, value, outField: outField);
+        
+        // check value roundtrip
+        Assert.Equal(value, actual);
+        
+        // check that schema has proper metadata
+        Assert.NotNull(outField.Value);
+        Assert.Equal(typeof(int), outField.Value.ClrType);
+        Assert.NotNull(outField.Value.SchemaElement?.LogicalType?.TIME);
+        Assert.NotNull(outField.Value.SchemaElement?.LogicalType?.TIME.Unit.MILLIS);
+        Assert.Equal(isAdjustedToUtc, outField.Value.SchemaElement.LogicalType.TIME.IsAdjustedToUTC);
+        
+        var tdf = outField.Value as TimeDataField;
+        Assert.NotNull(tdf);
+        Assert.Equal(isAdjustedToUtc, tdf.IsAdjustedToUtc);
+        Assert.Equal(TimeUnitPrecision.Millis, tdf.Precision);
+    }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Time_LogicalMicros(bool isAdjustedToUtc) {
+        var field = new TimeDataField("t", TimeUnitPrecision.Micros) { IsAdjustedToUtc = isAdjustedToUtc };
+        Assert.Equal(typeof(long), field.ClrType);
+
+        long value = (long)TimeSpan.FromMinutes(1234567).TotalMilliseconds;
+        var outField = new AsyncOut<DataField>();
+        long actual = await WriteReadSingleAsync(field, value, outField: outField);
+        
+        // check value roundtrip
+        Assert.Equal(value, actual);
+        
+        // check that schema has proper metadata
+        Assert.NotNull(outField.Value);
+        Assert.Equal(typeof(long), outField.Value.ClrType);
+        Assert.NotNull(outField.Value.SchemaElement?.LogicalType?.TIME);
+        Assert.NotNull(outField.Value.SchemaElement?.LogicalType?.TIME.Unit.MICROS);
+        Assert.Equal(isAdjustedToUtc, outField.Value.SchemaElement.LogicalType.TIME.IsAdjustedToUTC);
+
+        var tdf = outField.Value as TimeDataField;
+        Assert.NotNull(tdf);
+        Assert.Equal(isAdjustedToUtc, tdf.IsAdjustedToUtc);
+        Assert.Equal(TimeUnitPrecision.Micros, tdf.Precision);
+    }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Time_LogicalNanos(bool isAdjustedToUtc) {
+        var field = new TimeDataField("t", TimeUnitPrecision.Nanos) { IsAdjustedToUtc = isAdjustedToUtc };
+        Assert.Equal(typeof(long), field.ClrType);
+
+        long value = (long)TimeSpan.FromMinutes(1234567890).TotalMilliseconds;
+        var outField = new AsyncOut<DataField>();
+        long actual = await WriteReadSingleAsync(field, value, outField: outField);
+        
+        // check value roundtrip
+        Assert.Equal(value, actual);
+        
+        // check that schema has proper metadata
+        Assert.NotNull(outField.Value);
+        Assert.Equal(typeof(long), outField.Value.ClrType);
+        Assert.NotNull(outField.Value.SchemaElement?.LogicalType?.TIME);
+        Assert.NotNull(outField.Value.SchemaElement?.LogicalType?.TIME.Unit.NANOS);
+        Assert.Equal(isAdjustedToUtc, outField.Value.SchemaElement.LogicalType.TIME.IsAdjustedToUTC);
+
+        var tdf = outField.Value as TimeDataField;
+        Assert.NotNull(tdf);
+        Assert.Equal(isAdjustedToUtc, tdf.IsAdjustedToUtc);
+        Assert.Equal(TimeUnitPrecision.Nanos, tdf.Precision);
+        
+    }
+    
+    // --- TIME:END ---
 
     [Fact]
     public async Task Type_simple_datetime_writes_and_reads() {
@@ -422,7 +514,7 @@ public class EndToEndTypeTest : TestBase {
 
         var schema = new ParquetSchema(new DataField<DateTime>("datetime"));
         DataField field = schema.DataFields[0];
-        var values = new[] { utcDate, unknownDate, localDate };
+        DateTime[] values = new[] { utcDate, unknownDate, localDate };
 
         var ms = new MemoryStream();
         
@@ -443,7 +535,6 @@ public class EndToEndTypeTest : TestBase {
         Assert.True(rcd.Values.ToArray().All(d => d.Kind == DateTimeKind.Unspecified));
     }
 
-
     // --- Interval test ---
 
     [Fact]
@@ -454,39 +545,7 @@ public class EndToEndTypeTest : TestBase {
         Assert.Equal(expected, actual);
     }
 
-    // --- TimeSpan tests ---
-
-    [Fact]
-    public async Task Type_time_micros_writes_and_reads() {
-        var field = new TimeSpanDataField("timeMicros", TimeSpanFormat.MicroSeconds);
-        var expected = new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10);
-        TimeSpan actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public async Task Type_time_millis_writes_and_reads() {
-        var field = new TimeSpanDataField("timeMillis", TimeSpanFormat.MilliSeconds);
-        var expected = new TimeSpan(DateTime.UtcNow.TimeOfDay.Ticks / 10000 * 10000);
-        TimeSpan actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public async Task Type_timeonly_micros_writes_and_reads() {
-        var field = new TimeOnlyDataField("timeMicros", TimeSpanFormat.MicroSeconds);
-        var expected = new TimeOnly(DateTime.UtcNow.TimeOfDay.Ticks / 10 * 10);
-        TimeOnly actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public async Task Type_timeonly_millis_writes_and_reads() {
-        var field = new TimeOnlyDataField("timeMillis", TimeSpanFormat.MilliSeconds);
-        var expected = new TimeOnly(DateTime.UtcNow.TimeOfDay.Ticks / 10000 * 10000);
-        TimeOnly actual = await WriteReadSingleAsync(field, expected);
-        Assert.Equal(expected, actual);
-    }
+    #endregion [ Temporal ]
 
     // --- Integer boundary tests ---
 

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Parquet.Test.Util;
@@ -50,7 +52,6 @@ static class Extensions {
         return new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, time.Millisecond, time.Kind);
     }
 
-#if NET7_0_OR_GREATER
     /// <summary>
     /// Strips off details after microseconds
     /// </summary>
@@ -59,5 +60,8 @@ static class Extensions {
     public static DateTime RoundToMicrosecond(this DateTime time) {
         return new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, time.Millisecond, time.Microsecond, time.Kind);
     }
-#endif
+    
+    public static ReadOnlyMemory<char>[] ToRomArray(this IEnumerable<string> strings) {
+        return strings.Select(s => s.AsMemory()).ToArray();
+    }
 }

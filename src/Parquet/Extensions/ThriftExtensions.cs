@@ -2,13 +2,13 @@
 using Parquet.Meta;
 using Parquet.Schema;
 
-namespace Parquet;
+namespace Parquet.Extensions;
 
 /// <summary>
 /// Internal data structure helpers
 /// </summary>
 static class ThriftExtensions {
-    public static bool IsAnnotatedWithAny(this SchemaElement schemaElement, ConvertedType[] convertedTypes) {
+    public static bool IsAnnotatedWithAny(this SchemaElement schemaElement, ConvertedType[]? convertedTypes) {
         if(convertedTypes == null || convertedTypes.Length == 0)
             return false;
 
@@ -60,15 +60,7 @@ static class ThriftExtensions {
         return se.LogicalType?.TIMESTAMP?.Unit?.MICROS != null || se.ConvertedType == ConvertedType.TIMESTAMP_MICROS;
     }
 
-    public static bool IsNullable(this SchemaElement schemaElement) {
-        return schemaElement.RepetitionType != FieldRepetitionType.REQUIRED;
-    }
-
     public static FieldPath GetPath(this ColumnChunk columnChunk) {
         return new FieldPath(columnChunk.MetaData!.PathInSchema);
-    }
-
-    public static string Describe(this SchemaElement se) {
-        return $"[n: {se.Name}, t: {se.Type}, ct: {se.ConvertedType}, rt: {se.RepetitionType}, c: {se.NumChildren}]";
     }
 }

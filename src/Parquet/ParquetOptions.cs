@@ -21,7 +21,7 @@ public class ParquetOptions {
     /// Compression level to use when writing, defaults to <see cref="CompressionLevel.SmallestSize"/>. The actual
     /// physical compression level varies based on compression algorithm.
     /// </summary>
-    public CompressionLevel CompressionLevel = CompressionLevel.SmallestSize;
+    public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.SmallestSize;
 
     /// <summary>
     /// When true byte arrays will be treated as UTF-8 strings when reading files.
@@ -40,26 +40,13 @@ public class ParquetOptions {
     public bool UseDateOnlyTypeForDates { get; set; } = false;
 
     /// <summary>
-    /// When set to true, parquet times with millisecond precision will be deserialized as <see cref="TimeOnly"/>,
-    /// otherwise as <see cref="TimeSpan"/> with missing time part.
-    /// </summary>
-    public bool UseTimeOnlyTypeForTimeMillis { get; set; } = false;
-
-    /// <summary>
-    /// When set to true, parquet times with microsecond precision will be deserialized as <see cref="TimeOnly"/>,
-    /// otherwise as <see cref="TimeSpan"/> with missing time part.
-    /// </summary>
-    public bool UseTimeOnlyTypeForTimeMicros { get; set; } = false;
-
-    /// <summary>
     /// Specifies hints to the writers about which encoding to use for specific columns. To get column path use
     /// <see cref="Field.Path"/> on <see cref="DataField"/>.
     /// </summary>
     public readonly IDictionary<string, EncodingHint> ColumnEncodingHints = new Dictionary<string, EncodingHint>();
 
-    internal EncodingHint GetEncodingHint(DataField df) {
-        return ColumnEncodingHints.TryGetValue(df.Path.ToString(), out EncodingHint hint) ? hint : EncodingHint.Default;
-    }
+    internal EncodingHint GetEncodingHint(DataField df) =>
+        ColumnEncodingHints.TryGetValue(df.Path.ToString(), out EncodingHint hint) ? hint : EncodingHint.Default;
 
     /// <summary>
     /// Dictionary uniqueness threshold, which is a value from 0 (no unique values) to 1 (all values are unique)
@@ -122,7 +109,7 @@ public class ParquetOptions {
     /// </summary>
     public static bool UseHardwareAcceleration { get; set; } = true;
 
-    #region [ Serializer specific]
+    #region [ Serializer specific ]
 
     /// <summary>
     /// When set to true, appends to file by creating a new row group. Only applicable when using

@@ -470,7 +470,7 @@ void RenderData() {
         (int row, int col) => {
 
             if(col == 0) {
-                Selectable(row.ToString(), spanColumns: true);
+                Selectable((row + 1).ToString(), spanColumns: true);
                 return;
             }
 

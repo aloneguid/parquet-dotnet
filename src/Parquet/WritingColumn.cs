@@ -3,6 +3,7 @@ using System.Buffers;
 using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Extensions;
 using Parquet.Schema;
 
 namespace Parquet;
