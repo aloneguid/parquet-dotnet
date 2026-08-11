@@ -1,3 +1,9 @@
+# 6.1.1-pre.1
+
+## Breaking changes
+- The compression level changed from `SmallestSize` to `Optimal` for the default level like it was in v5. Thanks to @svenclaesson
+for pointing this out in #765.
+
 # 6.1.0
 
 ## New

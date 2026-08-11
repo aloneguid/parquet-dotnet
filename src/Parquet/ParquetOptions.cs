@@ -19,9 +19,9 @@ public class ParquetOptions {
 
     /// <summary>
     /// Compression level to use when writing, defaults to <see cref="CompressionLevel.SmallestSize"/>. The actual
-    /// physical compression level varies based on compression algorithm.
+    /// physical compression level varies based on the compression algorithm.
     /// </summary>
-    public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.SmallestSize;
+    public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.Optimal;
 
     /// <summary>
     /// When true byte arrays will be treated as UTF-8 strings when reading files.
