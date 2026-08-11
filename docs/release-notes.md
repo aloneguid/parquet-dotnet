@@ -14,6 +14,7 @@
 - Legacy `TIME_MILLIS` converted type was not handled at all, now it's treated as `int`, and `TIME_MICROS` is handled as `long`, which is consistent with `TIME` logical type.
 - `TimeSpan` and `TimeOnly` in class serializer defaults to millisecond precision (used to be microseconds, but those types do not get enough precision to support this).
 - .NET `TimeStamp` type does not map to anything now. Parquet time type which used to be used for mapping does not actually map well as they represent totally different temporal meanings (time of day and interval of time). If you need to represent a time interval, use `Interval` Type.
+- Use absolute positioning on every page read, because in some edge cases page reader may not exhaust page data in #781 and #777 and 776 by @mukunku.
 
 
 ## Breaking changes
