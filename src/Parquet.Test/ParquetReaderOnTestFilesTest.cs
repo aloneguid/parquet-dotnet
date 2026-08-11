@@ -397,6 +397,15 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         Assert.Equal(39_366, rs.Data.Count);
     }
 
+    [Fact]
+    public async Task PyArrow25() {
+        // all_null_column_pyarrow_v25
+        await using Stream s = OpenTestFile("special/all_null_column_pyarrow_v25.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+        DeserializationResult<Dictionary<string, object>> rs = await ParquetSerializer.DeserializeUntypedAsync(s);
+    }
+
 
     [Fact]
     public async Task UnshreddedVariantAsync() {
