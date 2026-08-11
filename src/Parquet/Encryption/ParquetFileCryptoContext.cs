@@ -61,6 +61,11 @@ internal sealed class ParquetFileCryptoContext {
                 "This encrypted file requires an externally supplied AAD prefix.");
         } else {
             prefix = storedPrefix;
+            if(options?.AadPrefix is { } expectedPrefix &&
+               !expectedPrefix.AsSpan().SequenceEqual(storedPrefix)) {
+                throw new InvalidDataException(
+                    "The stored AAD prefix does not match the expected prefix.");
+            }
         }
 
         byte[] key = ResolveFooterKey(options, footerKeyMetadata);

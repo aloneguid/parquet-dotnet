@@ -22,7 +22,11 @@ namespace Interop.Inspector {
 
         public EncParquetInspectorClient(string? jarPath = null, string javaExe = "java") {
             string toolsPath = Path.GetFullPath(Path.Combine("..", "..", "..", "..", "..", "tools"));
-            string defaultJar = Path.Combine(toolsPath, "encrypted_parquet_inspector-1.0.3.jar");
+            string defaultJar = Path.Combine(
+                toolsPath,
+                "encrypted-parquet-inspector",
+                "target",
+                "encrypted-parquet-inspector-1.0.4.jar");
             jarPath ??= defaultJar;
             JarPath = ResolveJar(jarPath)
                 ?? throw new FileNotFoundException(
@@ -152,13 +156,23 @@ namespace Interop.Inspector {
             }
 
             // Deserialize JSON from stdout (either success or error shape)
-            ParquetInspectJson? json = JsonSerializer.Deserialize<ParquetInspectJson>(
-                stdout,
-                new JsonSerializerOptions {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    NumberHandling = JsonNumberHandling.AllowReadingFromString
-                });
+            ParquetInspectJson? json;
+            try {
+                json = JsonSerializer.Deserialize<ParquetInspectJson>(
+                    stdout,
+                    new JsonSerializerOptions {
+                        PropertyNameCaseInsensitive = true,
+                        ReadCommentHandling = JsonCommentHandling.Skip,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString
+                    });
+            } catch(JsonException exception) {
+                throw new EncParquetInspectorException(
+                    $"Inspector returned invalid JSON. {stderr}",
+                    stdout,
+                    stderr,
+                    proc.ExitCode,
+                    exception);
+            }
 
             if(json == null)
                 throw new EncParquetInspectorException("Inspector returned non-JSON stdout.", stdout, stderr, proc.ExitCode);
@@ -364,8 +378,13 @@ namespace Interop.Inspector {
         public string Stderr { get; }
         public int ExitCode { get; }
 
-        public EncParquetInspectorException(string message, string stdout, string stderr, int exitCode)
-            : base(message) {
+        public EncParquetInspectorException(
+            string message,
+            string stdout,
+            string stderr,
+            int exitCode,
+            Exception? innerException = null)
+            : base(message, innerException) {
             Stdout = stdout;
             Stderr = stderr;
             ExitCode = exitCode;

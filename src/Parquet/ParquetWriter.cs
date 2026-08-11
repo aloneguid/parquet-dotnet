@@ -101,8 +101,10 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
             await GoBeforeFooterAsync();
         } else {
             if(_footer == null) {
-                if(_options.Encryption != null)
+                if(_options.Encryption != null) {
+                    ValidateEncryptionColumnPaths(_options.Encryption);
                     _cryptoContext = ParquetFileCryptoContext.CreateForWrite(_options.Encryption);
+                }
                 // totalRowCount is set to 0 with expectation that it will be updated at the end of writing (see DisposeCore)
                 _footer = new ThriftFooter(_schema, 0, _options);
                 if(_cryptoContext is { EncryptedFooter: false }) {
@@ -118,6 +120,23 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
                 // it's set to 0 with expectation that row count will be updated at the end of writing (see DisposeCore)
                 _footer.Add(0);
             }
+        }
+    }
+
+    private void ValidateEncryptionColumnPaths(ParquetEncryptionOptions encryption) {
+        var schemaPaths = _schema.DataFields
+            .Select(field => field.Path.ToString())
+            .ToHashSet(StringComparer.Ordinal);
+        string[] unknownPaths = encryption.ColumnKeys.Keys
+            .Concat(encryption.FooterKeyColumns)
+            .Where(path => !schemaPaths.Contains(path))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+        if(unknownPaths.Length != 0) {
+            throw new ArgumentException(
+                $"Encryption is configured for columns that are not present in the schema: {string.Join(", ", unknownPaths)}.",
+                nameof(ParquetOptions.Encryption));
         }
     }
 

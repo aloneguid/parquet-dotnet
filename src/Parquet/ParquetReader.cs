@@ -98,16 +98,43 @@ public class ParquetReader : ParquetActor, IAsyncDisposable {
     /// <summary>
     /// Opens file at specified path to read schema and return
     /// </summary>
-    public static async Task<ParquetSchema> ReadSchemaAsync(string filePath) {
-        await using ParquetReader reader = await CreateAsync(filePath);
+    public static Task<ParquetSchema> ReadSchemaAsync(string filePath) =>
+        ReadSchemaAsync(filePath, null);
+
+    /// <summary>
+    /// Opens a file at the specified path and reads its schema using the supplied options.
+    /// </summary>
+    /// <param name="filePath">Path to the Parquet file.</param>
+    /// <param name="parquetOptions">Optional reader and decryption settings.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    public static async Task<ParquetSchema> ReadSchemaAsync(
+        string filePath,
+        ParquetOptions? parquetOptions,
+        CancellationToken cancellationToken = default) {
+        await using ParquetReader reader = await CreateAsync(filePath, parquetOptions, cancellationToken);
         return reader.Schema;
     }
 
     /// <summary>
     /// Reads file stream and returns
     /// </summary>
-    public static async Task<ParquetSchema> ReadSchemaAsync(Stream parquetStream) {
-        await using ParquetReader reader = await CreateAsync(parquetStream);
+    public static Task<ParquetSchema> ReadSchemaAsync(Stream parquetStream) =>
+        ReadSchemaAsync(parquetStream, null);
+
+    /// <summary>
+    /// Reads a schema from a stream using the supplied options.
+    /// </summary>
+    /// <param name="parquetStream">Readable, seekable Parquet stream.</param>
+    /// <param name="parquetOptions">Optional reader and decryption settings.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    public static async Task<ParquetSchema> ReadSchemaAsync(
+        Stream parquetStream,
+        ParquetOptions? parquetOptions,
+        CancellationToken cancellationToken = default) {
+        await using ParquetReader reader = await CreateAsync(
+            parquetStream,
+            parquetOptions,
+            cancellationToken: cancellationToken);
         return reader.Schema;
     }
 

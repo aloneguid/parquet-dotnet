@@ -66,7 +66,7 @@ public class ParquetMrEncryptionIntegrationTest {
                 await Assert.ThrowsAsync<EncParquetInspectorException>(() =>
                     inspector.InspectAsync(path, FooterKey));
 
-            Assert.Contains("IllegalArgumentException", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("AAD prefix", exception.Message, StringComparison.OrdinalIgnoreCase);
         } finally {
             F.Delete(path);
         }

@@ -289,7 +289,7 @@ public class EncryptionIntegrationTest : IntegrationBase {
     [InlineData(ParquetEncryptionAlgorithm.AesGcmV1, false)]
     [InlineData(ParquetEncryptionAlgorithm.AesGcmCtrV1, true)]
     [InlineData(ParquetEncryptionAlgorithm.AesGcmCtrV1, false)]
-    public async Task StoredAadPrefixTakesPrecedenceOverReaderValue(
+    public async Task RejectsMismatchedStoredAadPrefix(
         ParquetEncryptionAlgorithm algorithm,
         bool encryptFooter) {
         byte[] key = CreateKey(16, 0x20);
@@ -316,11 +316,8 @@ public class EncryptionIntegrationTest : IntegrationBase {
                 AadPrefix = "wrong-reader-prefix"u8.ToArray()
             }
         };
-        await using ParquetReader reader = await ParquetReader.CreateAsync(stream, readOptions);
-        using ParquetRowGroupReader readGroup = reader.OpenRowGroupReader(0);
-        int[] values = new int[3];
-        await readGroup.ReadAsync<int>(reader.Schema.DataFields[0], values);
-        Assert.Equal(new int[] { 1, 2, 3 }, values);
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            ParquetReader.CreateAsync(stream, readOptions));
     }
 
     [Fact]

@@ -25,7 +25,7 @@ public sealed class ParquetDecryptionOptions {
     public IParquetKeyRetriever? KeyRetriever { get; set; }
 
     /// <summary>
-    /// AAD prefix for files that do not store their prefix.
+    /// Expected AAD prefix. For files that do not store their prefix, this value is also used for decryption.
     /// </summary>
     public byte[]? AadPrefix { get; set; }
 }

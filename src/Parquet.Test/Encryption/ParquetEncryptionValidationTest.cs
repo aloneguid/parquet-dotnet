@@ -133,6 +133,40 @@ public class ParquetEncryptionValidationTest {
                 new ParquetOptions { Encryption = encryption }));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RejectsUnknownEncryptionColumnPaths(bool useColumnKey) {
+        var field = new DataField<int>("id");
+        var encryption = new ParquetEncryptionOptions(new ParquetKey(Key)) {
+            EncryptAllColumns = false
+        };
+        if(useColumnKey)
+            encryption.ColumnKeys["unknown"] = new ParquetKey(Key);
+        else
+            encryption.FooterKeyColumns.Add("unknown");
+
+        ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            ParquetWriter.CreateAsync(
+                new ParquetSchema(field),
+                new MemoryStream(),
+                new ParquetOptions { Encryption = encryption }));
+
+        Assert.Equal(nameof(ParquetOptions.Encryption), exception.ParamName);
+    }
+
+    [Fact]
+    public async Task ReadsEncryptedSchemaUsingDecryptionOptions() {
+        using MemoryStream stream = await WriteFileAsync(
+            ParquetEncryptionAlgorithm.AesGcmV1,
+            encryptFooter: true);
+        stream.Position = 0;
+
+        ParquetSchema schema = await ParquetReader.ReadSchemaAsync(stream, CreateReadOptions());
+
+        Assert.Equal("id", schema.DataFields.Single().Name);
+    }
+
     [Fact]
     public async Task RejectsAppendingWithEncryptionOptions() {
         using var stream = new MemoryStream();

@@ -48,6 +48,10 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: maven
+          cache-dependency-path: tools/encrypted-parquet-inspector/pom.xml
+      - name: Build encrypted Parquet inspector
+        run: mvn --batch-mode --no-transfer-progress --file tools/encrypted-parquet-inspector/pom.xml package
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
