@@ -15,6 +15,7 @@ namespace Parquet.File;
 class ThriftFooter {
     private readonly FileMetaData _fileMeta;
     private readonly ThriftSchemaTree _tree;
+    private readonly Dictionary<ColumnChunk, ColumnMetaData> _runtimeColumnMetadata = new();
 
     internal static ThriftFooter Empty => new();
 
@@ -80,6 +81,14 @@ class ThriftFooter {
         _fileMeta.NumRows += totalRowCount;
     }
 
+    internal FileMetaData FileMetaData => _fileMeta;
+
+    internal byte[] Serialize() {
+        using var ms = new MemoryStream();
+        _fileMeta.Write(new ThriftCompactProtocolWriter(ms));
+        return ms.ToArray();
+    }
+
     public async Task<long> WriteAsync(Stream s, CancellationToken cancellationToken = default) {
         using var ms = new MemoryStream();
         _fileMeta.Write(new ThriftCompactProtocolWriter(ms));
@@ -101,8 +110,20 @@ class ThriftFooter {
             throw new ArgumentNullException(nameof(columnChunk));
         }
 
-        var findPath = new FieldPath(columnChunk.MetaData!.PathInSchema);
+        var findPath = new FieldPath(GetColumnMetaData(columnChunk).PathInSchema);
         return _tree.Find(findPath)?.element;
+    }
+
+    internal ColumnMetaData GetColumnMetaData(ColumnChunk columnChunk) {
+        if(columnChunk.MetaData != null)
+            return columnChunk.MetaData;
+        if(_runtimeColumnMetadata.TryGetValue(columnChunk, out ColumnMetaData? metadata))
+            return metadata;
+        throw new InvalidDataException("The column chunk does not contain column metadata.");
+    }
+
+    internal void SetRuntimeColumnMetaData(ColumnChunk columnChunk, ColumnMetaData metadata) {
+        _runtimeColumnMetadata[columnChunk] = metadata;
     }
 
     public FieldPath GetPath(SchemaElement schemaElement) {
@@ -124,9 +145,13 @@ class ThriftFooter {
         return _fileMeta.Schema.Where(tse => tse.Type != null).ToArray();
     }
 
-    public RowGroup AddRowGroup() {
-        var rg = new RowGroup();
+    public RowGroup AddRowGroup(bool requireOrdinal = false) {
         _fileMeta.RowGroups ??= new List<RowGroup>();
+        if(requireOrdinal && _fileMeta.RowGroups.Count > short.MaxValue)
+            throw new InvalidOperationException("Parquet modular encryption supports at most 32,768 row groups per file.");
+        var rg = new RowGroup();
+        if(_fileMeta.RowGroups.Count <= short.MaxValue)
+            rg.Ordinal = checked((short)_fileMeta.RowGroups.Count);
         _fileMeta.RowGroups.Add(rg);
         return rg;
     }

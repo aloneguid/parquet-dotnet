@@ -8,6 +8,7 @@ using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.IO;
 using Parquet.Data;
 using Parquet.Encodings;
+using Parquet.Encryption;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Meta.Proto;
@@ -28,6 +29,9 @@ class DataColumnReader {
     private readonly DataColumnStatistics? _stats;
     private readonly CompressionMethod _compressionMethod;
     private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
+    private readonly ParquetCryptoContext? _cryptoContext;
+    private readonly short _rowGroupOrdinal;
+    private readonly short _columnOrdinal;
 
     internal DataColumnReader(
        DataField dataField,
@@ -35,7 +39,10 @@ class DataColumnReader {
        ColumnChunk thriftColumnChunk,
        DataColumnStatistics? stats,
        ThriftFooter footer,
-       ParquetOptions? parquetOptions) {
+       ParquetOptions? parquetOptions,
+       ParquetCryptoContext? cryptoContext,
+       short rowGroupOrdinal,
+       short columnOrdinal) {
         _dataField = dataField ?? throw new ArgumentNullException(nameof(dataField));
         _inputStream = inputStream ?? throw new ArgumentNullException(nameof(inputStream));
         _thriftColumnChunk = thriftColumnChunk ?? throw new ArgumentNullException(nameof(thriftColumnChunk));
@@ -43,6 +50,9 @@ class DataColumnReader {
         _compressionMethod = (CompressionMethod)(int)(thriftColumnChunk.MetaData?.Codec ?? CompressionCodec.UNCOMPRESSED);
         _footer = footer ?? throw new ArgumentNullException(nameof(footer));
         _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
+        _cryptoContext = cryptoContext;
+        _rowGroupOrdinal = rowGroupOrdinal;
+        _columnOrdinal = columnOrdinal;
 
         dataField.EnsureAttachedToSchema(nameof(dataField));
 
@@ -68,11 +78,33 @@ class DataColumnReader {
 
         long fileOffset = GetFileOffset();
         long pageOffset = fileOffset;
+        short pageOrdinal = 0;
 
         while(rc.ValuesRead < totalValuesInChunk) {
             // use absolute positioning on every page read, because in some edge cases page reader may not exhaust or over-read page data
             _inputStream.Seek(pageOffset, SeekOrigin.Begin);
-            PageHeader ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
+            bool dictionaryPage = _thriftColumnChunk.MetaData?.DictionaryPageOffset == pageOffset;
+            PageHeader ph;
+            if(_cryptoContext == null) {
+                ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
+            } else {
+                byte[] header = dictionaryPage
+                    ? _cryptoContext.Decrypt(
+                        _inputStream,
+                        ParquetModuleType.DictionaryPageHeader,
+                        _rowGroupOrdinal,
+                        _columnOrdinal)
+                    : _cryptoContext.Decrypt(
+                        _inputStream,
+                        ParquetModuleType.DataPageHeader,
+                        _rowGroupOrdinal,
+                        _columnOrdinal,
+                        pageOrdinal);
+                using var headerStream = new MemoryStream(header, writable: false);
+                ph = PageHeader.Read(new ThriftCompactProtocolReader(headerStream));
+                if(headerStream.Position != headerStream.Length)
+                    throw new InvalidDataException("Unexpected bytes follow the encrypted page header.");
+            }
             pageOffset = _inputStream.Position + ph.CompressedPageSize;
 
             switch(ph.Type) {
@@ -80,10 +112,12 @@ class DataColumnReader {
                     await ReadDictionaryPageAsync(ph, rc, cancellationToken);
                     break;
                 case PageType.DATA_PAGE:
-                    await ReadDataPageV1Async(ph, rc, cancellationToken);
+                    await ReadDataPageV1Async(ph, rc, pageOrdinal, cancellationToken);
+                    pageOrdinal = checked((short)(pageOrdinal + 1));
                     break;
                 case PageType.DATA_PAGE_V2:
-                    await ReadDataPageV2Async(ph, rc, totalValuesInChunk, cancellationToken);
+                    await ReadDataPageV2Async(ph, rc, totalValuesInChunk, pageOrdinal, cancellationToken);
+                    pageOrdinal = checked((short)(pageOrdinal + 1));
                     break;
                 default:
                     throw new NotSupportedException($"can't read page type {ph.Type}");
@@ -91,8 +125,25 @@ class DataColumnReader {
         }
     }
 
-    private async ValueTask<IMemoryOwner<byte>> ReadPageDataAsync(PageHeader ph) {
-        Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize);
+    private async ValueTask<IMemoryOwner<byte>> ReadPageDataAsync(
+        PageHeader ph,
+        ParquetModuleType module,
+        short? pageOrdinal = null) {
+        Stream src;
+        if(_cryptoContext == null) {
+            src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize);
+        } else {
+            long start = _inputStream.Position;
+            byte[] encryptedPage = _cryptoContext.Decrypt(
+                _inputStream,
+                module,
+                _rowGroupOrdinal,
+                _columnOrdinal,
+                pageOrdinal);
+            if(_inputStream.Position - start != ph.CompressedPageSize)
+                throw new InvalidDataException("The encrypted page size does not match its header.");
+            src = new MemoryStream(encryptedPage, writable: false);
+        }
         return await Compressor.Instance.Decompress(_compressionMethod, src, ph.UncompressedPageSize);
     }
 
@@ -102,7 +153,7 @@ class DataColumnReader {
             throw new InvalidOperationException("dictionary already read");
 
         //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
-        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph, ParquetModuleType.DictionaryPage);
 
         // Dictionary should not contain null values
         Span<T> dictionary = rc.AllocateDictionary(ph.DictionaryPageHeader!.NumValues);
@@ -122,8 +173,12 @@ class DataColumnReader {
             .Where(e => e != 0)
             .Min();
 
-    private async ValueTask ReadDataPageV1Async<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
-        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+    private async ValueTask ReadDataPageV1Async<T>(
+        PageHeader ph,
+        ReadingColumn<T> rc,
+        short pageOrdinal,
+        CancellationToken cancellationToken) where T : struct {
+        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph, ParquetModuleType.DataPage, pageOrdinal);
 
         if(ph.DataPageHeader == null) {
             throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
@@ -162,13 +217,34 @@ class DataColumnReader {
             rc);
     }
 
-    private async ValueTask ReadDataPageV2Async<T>(PageHeader ph, ReadingColumn<T> rc, long maxValues, CancellationToken cancellationToken) where T : struct {
+    private async ValueTask ReadDataPageV2Async<T>(
+        PageHeader ph,
+        ReadingColumn<T> rc,
+        long maxValues,
+        short pageOrdinal,
+        CancellationToken cancellationToken) where T : struct {
         if(ph.DataPageHeaderV2 == null) {
             throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
         }
 
-        using var pageMemory = MemoryOwner<byte>.Allocate(ph.CompressedPageSize);
-        await using(Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize)) {
+        byte[]? decryptedPage = null;
+        if(_cryptoContext != null) {
+            long start = _inputStream.Position;
+            decryptedPage = _cryptoContext.Decrypt(
+                _inputStream,
+                ParquetModuleType.DataPage,
+                _rowGroupOrdinal,
+                _columnOrdinal,
+                pageOrdinal);
+            if(_inputStream.Position - start != ph.CompressedPageSize)
+                throw new InvalidDataException("The encrypted page size does not match its header.");
+        }
+        int pageLength = decryptedPage?.Length ?? ph.CompressedPageSize;
+        using var pageMemory = MemoryOwner<byte>.Allocate(pageLength);
+        if(decryptedPage != null) {
+            decryptedPage.CopyTo(pageMemory.Span);
+        } else {
+            await using Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize);
             await src.CopyToAsync(pageMemory.Memory, cancellationToken);
         }
         int dataUsed = 0;

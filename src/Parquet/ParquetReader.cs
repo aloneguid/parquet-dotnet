@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Encryption;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -20,6 +21,7 @@ public class ParquetReader : ParquetActor, IAsyncDisposable {
     private readonly ParquetOptions _parquetOptions;
     private readonly List<ParquetRowGroupReader> _groupReaders = new();
     private readonly bool _leaveStreamOpen;
+    private ParquetFileCryptoContext? _cryptoContext;
 
     private ParquetReader(Stream input, ParquetOptions? parquetOptions = null, bool leaveStreamOpen = true) : base(input) {
         _input = input ?? throw new ArgumentNullException(nameof(input));
@@ -40,7 +42,9 @@ public class ParquetReader : ParquetActor, IAsyncDisposable {
         await ValidateFileAsync();
 
         //read metadata instantly, now
-        _meta = await ReadMetadataAsync(cancellationToken);
+        ParquetMetadataReadResult result = await ReadMetadataAsync(_parquetOptions, cancellationToken);
+        _meta = result.Metadata;
+        _cryptoContext = result.CryptoContext;
         _thriftFooter = new ThriftFooter(_meta);
 
         InitRowGroupReaders();
@@ -146,8 +150,17 @@ public class ParquetReader : ParquetActor, IAsyncDisposable {
         if(_meta?.RowGroups == null)
             throw new InvalidOperationException("no row groups in metadata");
 
-        foreach(RowGroup rowGroup in _meta.RowGroups) {
-            _groupReaders.Add(new ParquetRowGroupReader(rowGroup, _thriftFooter!, Stream, _parquetOptions));
+        for(int i = 0; i < _meta.RowGroups.Count; i++) {
+            RowGroup rowGroup = _meta.RowGroups[i];
+            if(_cryptoContext != null) {
+                if(i > short.MaxValue)
+                    throw new InvalidDataException("Encrypted Parquet files cannot contain more than 32,768 row groups.");
+                rowGroup.Ordinal ??= checked((short)i);
+                if(rowGroup.Ordinal < 0)
+                    throw new InvalidDataException("The row group ordinal cannot be negative.");
+            }
+            _groupReaders.Add(new ParquetRowGroupReader(
+                rowGroup, _thriftFooter!, Stream, _parquetOptions, _cryptoContext));
         }
     }
 

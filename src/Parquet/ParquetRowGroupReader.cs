@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
 using Parquet.Data;
+using Parquet.Encryption;
 using Parquet.Encodings;
 using Parquet.Extensions;
 using Parquet.File;
@@ -26,16 +27,19 @@ public class ParquetRowGroupReader : IDisposable {
     private readonly Stream _stream;
     private readonly ParquetOptions? _options;
     private readonly Dictionary<FieldPath, ColumnChunk> _pathToChunk = new();
+    private readonly ParquetFileCryptoContext? _cryptoContext;
 
     internal ParquetRowGroupReader(
        RowGroup rowGroup,
        ThriftFooter footer,
        Stream stream,
-       ParquetOptions? parquetOptions) {
+       ParquetOptions? parquetOptions,
+       ParquetFileCryptoContext? cryptoContext) {
         _rowGroup = rowGroup ?? throw new ArgumentNullException(nameof(rowGroup));
         _footer = footer ?? throw new ArgumentNullException(nameof(footer));
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
         _options = parquetOptions ?? throw new ArgumentNullException(nameof(parquetOptions));
+        _cryptoContext = cryptoContext;
 
         //cache chunks
         foreach(ColumnChunk hunk in _rowGroup.Columns) {
@@ -68,9 +72,34 @@ public class ParquetRowGroupReader : IDisposable {
     private ColumnMetaData GetColumnMetaData(DataField field) {
         ColumnChunk columnChunk = GetMetadata(field)
             ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
-        if(columnChunk.MetaData == null)
-            throw new ParquetException($"Column chunk metadata is missing for '{field.Path}', meaning the file is most probably corrupt");
-        return columnChunk.MetaData;
+        return GetColumnMetaData(columnChunk, field.Path.ToString());
+    }
+
+    private ColumnMetaData GetColumnMetaData(ColumnChunk columnChunk, string path) {
+        if(columnChunk.EncryptedColumnMetadata != null) {
+            if(_cryptoContext == null)
+                throw new InvalidDataException($"Column '{path}' is encrypted, but no decryption properties are available.");
+            int columnIndex = _rowGroup.Columns.IndexOf(columnChunk);
+            if(columnIndex < 0 || columnIndex > short.MaxValue)
+                throw new InvalidDataException($"The ordinal for column '{path}' is invalid.");
+            short rowGroupOrdinal = _rowGroup.Ordinal
+                ?? throw new InvalidDataException("The encrypted row group does not have an ordinal.");
+            ParquetCryptoContext columnCrypto = _cryptoContext.GetColumnDecryptionContext(columnChunk, path);
+            using var encryptedMetadata = new MemoryStream(columnChunk.EncryptedColumnMetadata, writable: false);
+            byte[] plaintextMetadata = columnCrypto.Decrypt(
+                encryptedMetadata,
+                ParquetModuleType.ColumnMetaData,
+                rowGroupOrdinal,
+                checked((short)columnIndex));
+            if(encryptedMetadata.Position != encryptedMetadata.Length)
+                throw new InvalidDataException($"Unexpected data follows metadata for encrypted column '{path}'.");
+            using var metadataStream = new MemoryStream(plaintextMetadata, writable: false);
+            columnChunk.MetaData = ColumnMetaData.Read(new Meta.Proto.ThriftCompactProtocolReader(metadataStream));
+            columnChunk.EncryptedColumnMetadata = null;
+        }
+
+        return columnChunk.MetaData
+            ?? throw new ParquetException($"Column chunk metadata is missing for '{path}', meaning the file is most probably corrupt");
     }
 
     /// <summary>
@@ -111,8 +140,22 @@ public class ParquetRowGroupReader : IDisposable {
         if(repetitionLevels != null && repetitionLevels.Value.Length < numValues)
             throw new ArgumentException($"Repetition levels buffer is too small for field '{field.Path}' (length {repetitionLevels.Value.Length} < numValues {RowCount})");
 
+        GetColumnMetaData(columnChunk, field.Path.ToString());
+        int columnIndex = _rowGroup.Columns.IndexOf(columnChunk);
+        if(columnIndex < 0 || (_cryptoContext != null && columnIndex > short.MaxValue))
+            throw new InvalidDataException($"The ordinal for column '{field.Path}' is invalid.");
+        ParquetCryptoContext? columnCrypto = null;
+        if(columnChunk.CryptoMetadata != null) {
+            if(_cryptoContext == null)
+                throw new InvalidDataException($"Column '{field.Path}' is encrypted, but no decryption properties are available.");
+            columnCrypto = _cryptoContext.GetColumnDecryptionContext(columnChunk, field.Path.ToString());
+        }
+
         var columnReader = new DataColumnReader(field, _stream,
-            columnChunk, ReadColumnStatistics(columnChunk), _footer, _options);
+            columnChunk, ReadColumnStatistics(columnChunk), _footer, _options,
+            columnCrypto,
+            _rowGroup.Ordinal ?? 0,
+            _cryptoContext == null ? (short)0 : checked((short)columnIndex));
 
         using var rc = new ReadingColumn<T>(field, values, definitionLevels, repetitionLevels);
         await columnReader.ReadAsync(rc, cancellationToken);
@@ -307,15 +350,18 @@ public class ParquetRowGroupReader : IDisposable {
     /// </summary>
     public Dictionary<string, string> GetCustomMetadata(DataField field) {
         ColumnChunk? cc = GetMetadata(field);
-        if(cc?.MetaData?.KeyValueMetadata == null)
+        if(cc == null)
+            return new();
+        ColumnMetaData metadata = GetColumnMetaData(cc, field.Path.ToString());
+        if(metadata.KeyValueMetadata == null)
             return new();
 
-        return cc.MetaData.KeyValueMetadata.ToDictionary(kv => kv.Key, kv => kv.Value!);
+        return metadata.KeyValueMetadata.ToDictionary(kv => kv.Key, kv => kv.Value!);
     }
 
     private DataColumnStatistics? ReadColumnStatistics(ColumnChunk cc) {
 
-        Statistics? st = cc.MetaData!.Statistics;
+        Statistics? st = GetColumnMetaData(cc, cc.GetPath().ToString()).Statistics;
         if(st == null)
             return null;
 

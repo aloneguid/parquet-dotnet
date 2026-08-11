@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Extensions;
 using Parquet.Extensions.Streaming;
+using Parquet.Encryption;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -22,6 +23,7 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     private readonly ParquetOptions _options;
     private bool _dataWritten;
     private readonly List<ParquetRowGroupWriter> _openedWriters = new List<ParquetRowGroupWriter>();
+    private ParquetFileCryptoContext? _cryptoContext;
 
     private ParquetWriter(ParquetSchema schema, Stream output, ParquetOptions? options = null, bool append = false)
        : base(output.CanSeek == true ? output : new MeteredWriteStream(output)) {
@@ -58,7 +60,7 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
     public ParquetRowGroupWriter CreateRowGroup() {
         _dataWritten = true;
 
-        var writer = new ParquetRowGroupWriter(Stream, _footer!, _options);
+        var writer = new ParquetRowGroupWriter(Stream, _footer!, _options, _cryptoContext);
 
         _openedWriters.Add(writer);
 
@@ -75,6 +77,8 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
 
     private async Task PrepareFileAsync(bool append, CancellationToken cancellationToken) {
         if(append) {
+            if(_options.Encryption != null)
+                throw new NotSupportedException("Appending to encrypted Parquet files is not supported.");
             if(!Stream.CanSeek)
                 throw new IOException("destination stream must be seekable for append operations.");
 
@@ -83,7 +87,13 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
 
             await ValidateFileAsync();
 
-            FileMetaData fileMeta = await ReadMetadataAsync(cancellationToken);
+            if(HasEncryptedFooter)
+                throw new NotSupportedException("Appending to encrypted Parquet files is not supported.");
+
+            ParquetMetadataReadResult result = await ReadMetadataAsync(_options, cancellationToken);
+            if(result.CryptoContext != null)
+                throw new NotSupportedException("Appending to encrypted Parquet files is not supported.");
+            FileMetaData fileMeta = result.Metadata;
             _footer = new ThriftFooter(fileMeta);
 
             ValidateSchemasCompatible(_footer, _schema);
@@ -91,8 +101,14 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
             await GoBeforeFooterAsync();
         } else {
             if(_footer == null) {
+                if(_options.Encryption != null)
+                    _cryptoContext = ParquetFileCryptoContext.CreateForWrite(_options.Encryption);
                 // totalRowCount is set to 0 with expectation that it will be updated at the end of writing (see DisposeCore)
                 _footer = new ThriftFooter(_schema, 0, _options);
+                if(_cryptoContext is { EncryptedFooter: false }) {
+                    _footer.FileMetaData.EncryptionAlgorithm = _cryptoContext.ThriftAlgorithm;
+                    _footer.FileMetaData.FooterSigningKeyMetadata = _cryptoContext.FooterKeyMetadata;
+                }
 
                 //file starts with magic
                 await WriteMagicAsync();
@@ -114,7 +130,10 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
         }
     }
 
-    private Task WriteMagicAsync() => Stream.WriteAsync(MagicBytes, 0, MagicBytes.Length);
+    private Task WriteMagicAsync() {
+        byte[] magic = _cryptoContext is { EncryptedFooter: true } ? EncryptedMagicBytes : MagicBytes;
+        return Stream.WriteAsync(magic, 0, magic.Length);
+    }
 
     private void DisposeCore() {
         if(_dataWritten) {
@@ -132,8 +151,30 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
         if(_footer == null)
             return;
 
-        long size = await _footer.WriteAsync(Stream).ConfigureAwait(false);
-        await Stream.WriteInt32Async((int)size);
+        byte[] footerBytes = _footer.Serialize();
+        int size;
+        if(_cryptoContext == null) {
+            await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
+            size = footerBytes.Length;
+        } else if(_cryptoContext.EncryptedFooter) {
+            var cryptoMetadata = new FileCryptoMetaData {
+                EncryptionAlgorithm = _cryptoContext.ThriftAlgorithm,
+                KeyMetadata = _cryptoContext.FooterKeyMetadata
+            };
+            using var cryptoMetadataStream = new MemoryStream();
+            cryptoMetadata.Write(new Meta.Proto.ThriftCompactProtocolWriter(cryptoMetadataStream));
+            byte[] encryptedFooter = _cryptoContext.Footer.Encrypt(footerBytes, ParquetModuleType.Footer);
+            byte[] cryptoMetadataBytes = cryptoMetadataStream.ToArray();
+            await Stream.WriteAsync(cryptoMetadataBytes, 0, cryptoMetadataBytes.Length).ConfigureAwait(false);
+            await Stream.WriteAsync(encryptedFooter, 0, encryptedFooter.Length).ConfigureAwait(false);
+            size = checked(cryptoMetadataBytes.Length + encryptedFooter.Length);
+        } else {
+            byte[] signature = _cryptoContext.Footer.SignFooter(footerBytes);
+            await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
+            await Stream.WriteAsync(signature, 0, signature.Length).ConfigureAwait(false);
+            size = checked(footerBytes.Length + signature.Length);
+        }
+        await Stream.WriteInt32Async(size);
         await WriteMagicAsync();
         await Stream.FlushAsync();
     }

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IO;
 using Parquet.Encodings;
+using Parquet.Encryption;
 using Parquet.Extensions;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -21,18 +22,31 @@ class DataColumnWriter {
     private readonly Dictionary<string, string>? _keyValueMetadata;
     private readonly ParquetOptions _options;
     private static readonly RecyclableMemoryStreamManager _rmsMgr = new RecyclableMemoryStreamManager();
+    private readonly ColumnEncryptionContext? _columnEncryption;
+    private readonly bool _encryptedFooter;
+    private readonly short _rowGroupOrdinal;
+    private readonly short _columnOrdinal;
+    private short _pageOrdinal;
 
     public DataColumnWriter(
        Stream stream,
        ThriftFooter footer,
        SchemaElement schemaElement,
        ParquetOptions options,
-       Dictionary<string, string>? keyValueMetadata) {
+       Dictionary<string, string>? keyValueMetadata,
+       ColumnEncryptionContext? columnEncryption,
+       bool encryptedFooter,
+       short rowGroupOrdinal,
+       short columnOrdinal) {
         _stream = stream;
         _footer = footer;
         _schemaElement = schemaElement;
         _keyValueMetadata = keyValueMetadata;
         _options = options;
+        _columnEncryption = columnEncryption;
+        _encryptedFooter = encryptedFooter;
+        _rowGroupOrdinal = rowGroupOrdinal;
+        _columnOrdinal = columnOrdinal;
         _rmsMgr.Settings.MaximumSmallPoolFreeBytes = options.MaximumSmallPoolFreeBytes;
         _rmsMgr.Settings.MaximumLargePoolFreeBytes = options.MaximumLargePoolFreeBytes;
     }
@@ -48,6 +62,19 @@ class DataColumnWriter {
         if(chunk.MetaData == null)
             throw new InvalidDataException($"{nameof(chunk.MetaData)} can not be null");
 
+        if(_columnEncryption != null) {
+            chunk.CryptoMetadata = _columnEncryption.UsesColumnKey
+                ? new ColumnCryptoMetaData {
+                    ENCRYPTIONWITHCOLUMNKEY = new EncryptionWithColumnKey {
+                        PathInSchema = fullPath.ToList(),
+                        KeyMetadata = _columnEncryption.KeyMetadata
+                    }
+                }
+                : new ColumnCryptoMetaData {
+                    ENCRYPTIONWITHFOOTERKEY = new EncryptionWithFooterKey()
+                };
+        }
+
         ColumnMetrics metrics = await WriteAsync(
             chunk, wc, _schemaElement,
             cancellationToken);
@@ -60,7 +87,32 @@ class DataColumnWriter {
         chunk.MetaData.TotalCompressedSize = metrics.CompressedSize;
         chunk.MetaData.TotalUncompressedSize = metrics.UncompressedSize;
 
+        ProtectColumnMetadata(chunk);
+
         return chunk;
+    }
+
+    private void ProtectColumnMetadata(ColumnChunk chunk) {
+        if(_columnEncryption == null || chunk.MetaData == null)
+            return;
+        if(!_columnEncryption.UsesColumnKey && _encryptedFooter)
+            return;
+
+        ColumnMetaData metadata = chunk.MetaData;
+        using var metadataStream = _rmsMgr.GetStream();
+        metadata.Write(new Meta.Proto.ThriftCompactProtocolWriter(metadataStream));
+        chunk.EncryptedColumnMetadata = _columnEncryption.Crypto.Encrypt(
+            metadataStream.GetBuffer().AsSpan(0, checked((int)metadataStream.Length)),
+            ParquetModuleType.ColumnMetaData,
+            _rowGroupOrdinal,
+            _columnOrdinal);
+
+        _footer.SetRuntimeColumnMetaData(chunk, metadata);
+        if(_encryptedFooter) {
+            chunk.MetaData = null;
+        } else {
+            metadata.Statistics = null;
+        }
     }
 
     class ColumnMetrics {
@@ -98,7 +150,22 @@ class DataColumnWriter {
         int compressedLength = pageData.Memory.Length;
 
         ph.UncompressedPageSize = uncompressedLength;
-        ph.CompressedPageSize = compressedLength;
+        byte[]? encryptedBody = null;
+        if(_columnEncryption != null) {
+            encryptedBody = ph.Type == PageType.DICTIONARY_PAGE
+                ? _columnEncryption.Crypto.Encrypt(
+                    pageData.Memory.Span,
+                    ParquetModuleType.DictionaryPage,
+                    _rowGroupOrdinal,
+                    _columnOrdinal)
+                : _columnEncryption.Crypto.Encrypt(
+                    pageData.Memory.Span,
+                    ParquetModuleType.DataPage,
+                    _rowGroupOrdinal,
+                    _columnOrdinal,
+                    _pageOrdinal);
+        }
+        ph.CompressedPageSize = encryptedBody?.Length ?? compressedLength;
 
         //write the header in
         using(MemoryStream headerMs = _rmsMgr.GetStream()) {
@@ -107,18 +174,39 @@ class DataColumnWriter {
             headerMs.Position = 0;
             _stream.Flush();
 
-            // write header
-            await headerMs.CopyToAsync(_stream);
+            if(_columnEncryption == null) {
+                await headerMs.CopyToAsync(_stream);
+            } else {
+                byte[] encryptedHeader = ph.Type == PageType.DICTIONARY_PAGE
+                    ? _columnEncryption.Crypto.Encrypt(
+                        headerMs.GetBuffer().AsSpan(0, headerSize),
+                        ParquetModuleType.DictionaryPageHeader,
+                        _rowGroupOrdinal,
+                        _columnOrdinal)
+                    : _columnEncryption.Crypto.Encrypt(
+                        headerMs.GetBuffer().AsSpan(0, headerSize),
+                        ParquetModuleType.DataPageHeader,
+                        _rowGroupOrdinal,
+                        _columnOrdinal,
+                        _pageOrdinal);
+                await _stream.WriteAsync(encryptedHeader, 0, encryptedHeader.Length, cancellationToken);
+                headerSize = encryptedHeader.Length;
+            }
 
             cs.CompressedSize += headerSize;
-            cs.UncompressedSize += headerSize;
+            cs.UncompressedSize += _columnEncryption == null ? headerSize : checked((int)headerMs.Length);
         }
 
         // write data
-        await pageData.Memory.CopyToAsync(_stream);
+        if(encryptedBody == null)
+            await pageData.Memory.CopyToAsync(_stream, cancellationToken);
+        else
+            await _stream.WriteAsync(encryptedBody, 0, encryptedBody.Length, cancellationToken);
 
         cs.CompressedSize += ph.CompressedPageSize;
         cs.UncompressedSize += ph.UncompressedPageSize;
+        if(ph.Type != PageType.DICTIONARY_PAGE)
+            _pageOrdinal = checked((short)(_pageOrdinal + 1));
     }
 
     private async Task<ColumnMetrics> WriteAsync<T>(ColumnChunk chunk,
@@ -139,6 +227,7 @@ class DataColumnWriter {
 
         // dictionary page
         if(wc.HasDictionary) {
+            chunk.MetaData!.DictionaryPageOffset = _stream.Position;
             PageHeader ph = _footer.CreateDictionaryPage(wc.Dictionary.Length, out _);
             r.Pages.Add(ph);
             using MemoryStream ms = _rmsMgr.GetStream();
@@ -148,6 +237,7 @@ class DataColumnWriter {
 
         // data page
         using(MemoryStream ms = _rmsMgr.GetStream()) {
+            chunk.MetaData!.DataPageOffset = _stream.Position;
             bool deltaEncode = _options.GetEncodingHint(wc.Field) == EncodingHint.DeltaBinaryPacked && DeltaBinaryPackedEncoder.CanEncode(wc.Values);
             bool byteSplitStreamEncode = _options.GetEncodingHint(wc.Field) == EncodingHint.ByteSplitStream && ByteStreamSplitEncoder.IsSupported(typeof(T));
 

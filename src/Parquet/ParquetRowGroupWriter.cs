@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet.Data;
+using Parquet.Encryption;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -25,16 +26,19 @@ public class ParquetRowGroupWriter : IDisposable {
     private readonly RowGroup _owGroup;
     private readonly SchemaElement[] _thschema;
     private int _colIdx;
+    private readonly ParquetFileCryptoContext? _cryptoContext;
 
     internal ParquetRowGroupWriter(
        Stream stream,
        ThriftFooter footer,
-       ParquetOptions options) {
+       ParquetOptions options,
+       ParquetFileCryptoContext? cryptoContext) {
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
         _footer = footer ?? throw new ArgumentNullException(nameof(footer));
         _options = options;
+        _cryptoContext = cryptoContext;
 
-        _owGroup = _footer.AddRowGroup();
+        _owGroup = _footer.AddRowGroup(requireOrdinal: _cryptoContext != null);
         _owGroup.Columns = new List<ColumnChunk>();
         _thschema = _footer.GetWriteableSchema();
     }
@@ -202,6 +206,12 @@ public class ParquetRowGroupWriter : IDisposable {
                 "You may have called WriteColumnAsync more times than there are columns in the schema.");
         }
 
+        short columnOrdinal = 0;
+        if(_cryptoContext != null) {
+            if(_colIdx > short.MaxValue)
+                throw new InvalidOperationException("Parquet modular encryption supports at most 32,768 columns per row group.");
+            columnOrdinal = checked((short)_colIdx);
+        }
         SchemaElement tse = _thschema[_colIdx];
         if(!field.Equals(tse)) {
             throw new ArgumentException($"cannot write this column, expected '{tse.Name}', passed: '{field.Name}'", nameof(field));
@@ -210,7 +220,22 @@ public class ParquetRowGroupWriter : IDisposable {
 
         FieldPath path = _footer.GetPath(tse);
 
-        var writer = new DataColumnWriter(_stream, _footer, tse, _options, customMetadata);
+        short rowGroupOrdinal = _cryptoContext == null
+            ? (short)0
+            : _owGroup.Ordinal
+              ?? throw new InvalidOperationException("Parquet modular encryption supports at most 32,768 row groups per file.");
+        ColumnEncryptionContext? columnEncryption = _cryptoContext?.GetColumnEncryptionContext(path.ToString());
+
+        var writer = new DataColumnWriter(
+            _stream,
+            _footer,
+            tse,
+            _options,
+            customMetadata,
+            columnEncryption,
+            _cryptoContext?.EncryptedFooter == true,
+            rowGroupOrdinal,
+            columnOrdinal);
 
         if(RowCount == null) {
             RowCount = wc.CalculateRowCount();
@@ -254,7 +279,7 @@ public class ParquetRowGroupWriter : IDisposable {
 
         //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
         //luckily ColumnChunk already contains sizes of page+header in it's meta
-        _owGroup.TotalCompressedSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalCompressedSize);
-        _owGroup.TotalByteSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalUncompressedSize);
+        _owGroup.TotalCompressedSize = _owGroup.Columns.Sum(c => _footer.GetColumnMetaData(c).TotalCompressedSize);
+        _owGroup.TotalByteSize = _owGroup.Columns.Sum(c => _footer.GetColumnMetaData(c).TotalUncompressedSize);
     }
 }
