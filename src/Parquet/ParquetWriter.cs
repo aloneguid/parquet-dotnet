@@ -5,9 +5,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Parquet.Extensions;
-using Parquet.Extensions.Streaming;
 using Parquet.Encryption;
+using Parquet.Extensions.Streaming;
 using Parquet.File;
 using Parquet.Meta;
 using Parquet.Schema;
@@ -170,31 +169,8 @@ public sealed class ParquetWriter : ParquetActor, IAsyncDisposable {
         if(_footer == null)
             return;
 
-        byte[] footerBytes = _footer.Serialize();
-        int size;
-        if(_cryptoContext == null) {
-            await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
-            size = footerBytes.Length;
-        } else if(_cryptoContext.EncryptedFooter) {
-            var cryptoMetadata = new FileCryptoMetaData {
-                EncryptionAlgorithm = _cryptoContext.ThriftAlgorithm,
-                KeyMetadata = _cryptoContext.FooterKeyMetadata
-            };
-            using var cryptoMetadataStream = new MemoryStream();
-            cryptoMetadata.Write(new Meta.Proto.ThriftCompactProtocolWriter(cryptoMetadataStream));
-            byte[] encryptedFooter = _cryptoContext.Footer.Encrypt(footerBytes, ParquetModuleType.Footer);
-            byte[] cryptoMetadataBytes = cryptoMetadataStream.ToArray();
-            await Stream.WriteAsync(cryptoMetadataBytes, 0, cryptoMetadataBytes.Length).ConfigureAwait(false);
-            await Stream.WriteAsync(encryptedFooter, 0, encryptedFooter.Length).ConfigureAwait(false);
-            size = checked(cryptoMetadataBytes.Length + encryptedFooter.Length);
-        } else {
-            byte[] signature = _cryptoContext.Footer.SignFooter(footerBytes);
-            await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
-            await Stream.WriteAsync(signature, 0, signature.Length).ConfigureAwait(false);
-            size = checked(footerBytes.Length + signature.Length);
-        }
-        await Stream.WriteInt32Async(size);
-        await WriteMagicAsync();
+        byte[] footerBytes = ParquetFooterWriter.Serialize(_footer, _cryptoContext);
+        await Stream.WriteAsync(footerBytes, 0, footerBytes.Length).ConfigureAwait(false);
         await Stream.FlushAsync();
     }
 }

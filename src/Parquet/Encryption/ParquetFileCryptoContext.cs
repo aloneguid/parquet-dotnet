@@ -9,17 +9,20 @@ namespace Parquet.Encryption;
 internal sealed class ParquetFileCryptoContext {
     private readonly ParquetEncryptionOptions? _encryptionOptions;
     private readonly ParquetDecryptionOptions? _decryptionOptions;
+    private readonly byte[]? _footerKeyMetadata;
     private readonly Dictionary<string, ParquetCryptoContext> _columnContexts = new(StringComparer.Ordinal);
 
     private ParquetFileCryptoContext(
         ParquetCryptoContext footer,
         EncryptionAlgorithm thriftAlgorithm,
         bool encryptedFooter,
+        byte[]? footerKeyMetadata,
         ParquetEncryptionOptions? encryptionOptions,
         ParquetDecryptionOptions? decryptionOptions) {
         Footer = footer;
         ThriftAlgorithm = thriftAlgorithm;
         EncryptedFooter = encryptedFooter;
+        _footerKeyMetadata = footerKeyMetadata;
         _encryptionOptions = encryptionOptions;
         _decryptionOptions = decryptionOptions;
     }
@@ -30,7 +33,7 @@ internal sealed class ParquetFileCryptoContext {
 
     public bool EncryptedFooter { get; }
 
-    public byte[]? FooterKeyMetadata => _encryptionOptions?.FooterKey.KeyMetadata;
+    public byte[]? FooterKeyMetadata => _footerKeyMetadata;
 
     public static ParquetFileCryptoContext CreateForWrite(ParquetEncryptionOptions options) {
         ArgumentNullException.ThrowIfNull(options);
@@ -45,7 +48,13 @@ internal sealed class ParquetFileCryptoContext {
             fileUnique,
             !options.StoreAadPrefix);
         var footer = new ParquetCryptoContext(options.FooterKey.KeyBytes, prefix, fileUnique, options.Algorithm);
-        return new ParquetFileCryptoContext(footer, thriftAlgorithm, options.EncryptFooter, options, null);
+        return new ParquetFileCryptoContext(
+            footer,
+            thriftAlgorithm,
+            options.EncryptFooter,
+            options.FooterKey.KeyMetadata,
+            options,
+            null);
     }
 
     public static ParquetFileCryptoContext CreateForRead(
@@ -70,7 +79,13 @@ internal sealed class ParquetFileCryptoContext {
 
         byte[] key = ResolveFooterKey(options, footerKeyMetadata);
         var footer = new ParquetCryptoContext(key, prefix, fileUnique, kind);
-        return new ParquetFileCryptoContext(footer, algorithm, encryptedFooter, null, options);
+        return new ParquetFileCryptoContext(
+            footer,
+            algorithm,
+            encryptedFooter,
+            footerKeyMetadata,
+            null,
+            options);
     }
 
     public ColumnEncryptionContext? GetColumnEncryptionContext(string path) {
