@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Parquet.Schema;
 using ParquetSharp;
 using ParquetSharp.IO;
