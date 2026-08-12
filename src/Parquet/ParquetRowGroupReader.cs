@@ -27,6 +27,7 @@ public class ParquetRowGroupReader : IDisposable {
     private readonly Stream _stream;
     private readonly ParquetOptions? _options;
     private readonly Dictionary<FieldPath, ColumnChunk> _pathToChunk = new();
+    private readonly Dictionary<FieldPath, (OffsetIndex OffsetIndex, ColumnIndex? ColumnIndex)> _scannedPageIndexes = new();
     private readonly ParquetFileCryptoContext? _cryptoContext;
 
     internal ParquetRowGroupReader(
@@ -385,6 +386,60 @@ public class ParquetRowGroupReader : IDisposable {
     public DataColumnStatistics? GetStatistics(DataField field) {
         ColumnChunk cc = GetMetadata(field) ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
         return ReadColumnStatistics(cc);
+    }
+
+    /// <summary>
+    /// Gets the row group's offset index by scanning its page headers.
+    /// </summary>
+    public async ValueTask<OffsetIndex> GetOrCreateOffsetIndexAsync(
+        DataField field,
+        CancellationToken cancellationToken = default) =>
+        (await GetOrScanPageIndexesAsync(field, cancellationToken)).OffsetIndex;
+
+    /// <summary>
+    /// Gets the row group's column index by scanning its page headers.
+    /// Returns null when page statistics are incomplete.
+    /// </summary>
+    public async ValueTask<ColumnIndex?> GetOrCreateColumnIndexAsync(
+        DataField field,
+        CancellationToken cancellationToken = default) =>
+        (await GetOrScanPageIndexesAsync(field, cancellationToken)).ColumnIndex;
+
+    private async ValueTask<(OffsetIndex OffsetIndex, ColumnIndex? ColumnIndex)> GetOrScanPageIndexesAsync(
+        DataField field,
+        CancellationToken cancellationToken) {
+        if(field == null)
+            throw new ArgumentNullException(nameof(field));
+        if(_scannedPageIndexes.TryGetValue(field.Path, out var pageIndexes))
+            return pageIndexes;
+
+        ColumnChunk columnChunk = GetMetadata(field)
+            ?? throw new ParquetException($"'{field.Path}' does not exist in this file");
+        GetColumnMetaData(columnChunk, field.Path.ToString());
+        int columnIndex = _rowGroup.Columns.IndexOf(columnChunk);
+        if(columnIndex < 0 || (_cryptoContext != null && columnIndex > short.MaxValue))
+            throw new InvalidDataException($"The ordinal for column '{field.Path}' is invalid.");
+
+        ParquetCryptoContext? columnCrypto = null;
+        if(columnChunk.CryptoMetadata != null) {
+            if(_cryptoContext == null)
+                throw new InvalidDataException($"Column '{field.Path}' is encrypted, but no decryption properties are available.");
+            columnCrypto = _cryptoContext.GetColumnDecryptionContext(columnChunk, field.Path.ToString());
+        }
+
+        var columnReader = new DataColumnReader(
+            field,
+            _stream,
+            columnChunk,
+            ReadColumnStatistics(columnChunk),
+            _footer,
+            _options,
+            columnCrypto,
+            _rowGroup.Ordinal ?? 0,
+            _cryptoContext == null ? (short)0 : checked((short)columnIndex));
+        pageIndexes = await columnReader.ScanPageIndexesAsync(cancellationToken);
+        _scannedPageIndexes[field.Path] = pageIndexes;
+        return pageIndexes;
     }
 
     /// <summary>

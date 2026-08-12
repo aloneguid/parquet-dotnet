@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -84,29 +85,7 @@ class DataColumnReader {
             // use absolute positioning on every page read, because in some edge cases page reader may not exhaust or over-read page data
             _inputStream.Seek(pageOffset, SeekOrigin.Begin);
             bool dictionaryPage = _thriftColumnChunk.MetaData?.DictionaryPageOffset == pageOffset;
-            PageHeader ph;
-            if(_cryptoContext == null) {
-                ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
-            } else {
-                byte[] header = dictionaryPage
-                    ? _cryptoContext.Decrypt(
-                        _inputStream,
-                        ParquetModuleType.DictionaryPageHeader,
-                        _rowGroupOrdinal,
-                        _columnOrdinal)
-                    : _cryptoContext.Decrypt(
-                        _inputStream,
-                        ParquetModuleType.DataPageHeader,
-                        _rowGroupOrdinal,
-                        _columnOrdinal,
-                        pageOrdinal);
-                using var headerStream = new MemoryStream(header, writable: false);
-                ph = PageHeader.Read(new ThriftCompactProtocolReader(headerStream));
-                ParquetCryptoContext.ValidateTrailingPadding(
-                    header,
-                    headerStream.Position,
-                    "encrypted page header");
-            }
+            PageHeader ph = ReadPageHeader(dictionaryPage, pageOrdinal);
             pageOffset = _inputStream.Position + ph.CompressedPageSize;
 
             switch(ph.Type) {
@@ -125,6 +104,160 @@ class DataColumnReader {
                     throw new NotSupportedException($"can't read page type {ph.Type}");
             }
         }
+    }
+
+    internal async ValueTask<(OffsetIndex OffsetIndex, ColumnIndex? ColumnIndex)> ScanPageIndexesAsync(
+        CancellationToken cancellationToken = default) {
+        if(!_inputStream.CanSeek)
+            throw new InvalidOperationException("Input stream must be seekable to scan page indexes.");
+
+        long originalPosition = _inputStream.Position;
+        try {
+            int totalValuesInChunk = checked((int)_thriftColumnChunk.MetaData!.NumValues);
+            int valuesRead = 0;
+            long firstRowIndex = 0;
+            long pageOffset = GetFileOffset();
+            short pageOrdinal = 0;
+            var pageLocations = new List<PageLocation>();
+            var nullPages = new List<bool>();
+            var minValues = new List<byte[]>();
+            var maxValues = new List<byte[]>();
+            var nullCounts = new List<long>();
+            bool canBuildColumnIndex = true;
+            bool canBuildNullCounts = true;
+
+            while(valuesRead < totalValuesInChunk) {
+                cancellationToken.ThrowIfCancellationRequested();
+                long pageStart = pageOffset;
+                _inputStream.Seek(pageStart, SeekOrigin.Begin);
+                bool dictionaryPage = _thriftColumnChunk.MetaData.DictionaryPageOffset == pageStart;
+                PageHeader pageHeader = ReadPageHeader(dictionaryPage, pageOrdinal);
+                pageOffset = checked(_inputStream.Position + pageHeader.CompressedPageSize);
+
+                if(pageHeader.Type == PageType.DICTIONARY_PAGE)
+                    continue;
+
+                int valueCount;
+                int rowCount;
+                Statistics? statistics;
+                switch(pageHeader.Type) {
+                    case PageType.DATA_PAGE:
+                        DataPageHeader dataPageHeader = pageHeader.DataPageHeader
+                            ?? throw new InvalidDataException("Data page V1 header is missing.");
+                        valueCount = dataPageHeader.NumValues;
+                        rowCount = await GetDataPageV1RowCountAsync(
+                            pageHeader,
+                            dataPageHeader.NumValues,
+                            pageOrdinal);
+                        statistics = dataPageHeader.Statistics;
+                        break;
+                    case PageType.DATA_PAGE_V2:
+                        DataPageHeaderV2 dataPageHeaderV2 = pageHeader.DataPageHeaderV2
+                            ?? throw new InvalidDataException("Data page V2 header is missing.");
+                        valueCount = dataPageHeaderV2.NumValues;
+                        rowCount = dataPageHeaderV2.NumRows;
+                        statistics = dataPageHeaderV2.Statistics;
+                        break;
+                    default:
+                        throw new InvalidDataException($"Expected a data page, found '{pageHeader.Type}'.");
+                }
+
+                if(valueCount <= 0 || rowCount < 0)
+                    throw new InvalidDataException("Page header contains invalid value or row counts.");
+
+                pageLocations.Add(new PageLocation {
+                    Offset = pageStart,
+                    CompressedPageSize = checked((int)(pageOffset - pageStart)),
+                    FirstRowIndex = firstRowIndex
+                });
+                valuesRead = checked(valuesRead + valueCount);
+                firstRowIndex = checked(firstRowIndex + rowCount);
+
+                byte[]? minValue = statistics?.MinValue ?? statistics?.Min;
+                byte[]? maxValue = statistics?.MaxValue ?? statistics?.Max;
+                bool nullPage = statistics?.NullCount == valueCount;
+                if(statistics?.NullCount == null) {
+                    canBuildNullCounts = false;
+                } else {
+                    nullCounts.Add(statistics.NullCount.Value);
+                }
+                if(statistics == null || (!nullPage && (minValue == null || maxValue == null))) {
+                    canBuildColumnIndex = false;
+                } else {
+                    nullPages.Add(nullPage);
+                    minValues.Add(nullPage ? Array.Empty<byte>() : minValue!);
+                    maxValues.Add(nullPage ? Array.Empty<byte>() : maxValue!);
+                }
+
+                pageOrdinal = checked((short)(pageOrdinal + 1));
+            }
+
+            if(valuesRead != totalValuesInChunk)
+                throw new InvalidDataException("Page value counts do not match the column chunk metadata.");
+
+            var offsetIndex = new OffsetIndex { PageLocations = pageLocations };
+            ColumnIndex? columnIndex = canBuildColumnIndex
+                ? new ColumnIndex {
+                    NullPages = nullPages,
+                    MinValues = minValues,
+                    MaxValues = maxValues,
+                    BoundaryOrder = BoundaryOrder.UNORDERED,
+                    NullCounts = canBuildNullCounts ? nullCounts : null
+                }
+                : null;
+            return (offsetIndex, columnIndex);
+        } finally {
+            _inputStream.Seek(originalPosition, SeekOrigin.Begin);
+        }
+    }
+
+    private PageHeader ReadPageHeader(bool dictionaryPage, short pageOrdinal) {
+        if(_cryptoContext == null)
+            return PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
+
+        byte[] header = dictionaryPage
+            ? _cryptoContext.Decrypt(
+                _inputStream,
+                ParquetModuleType.DictionaryPageHeader,
+                _rowGroupOrdinal,
+                _columnOrdinal)
+            : _cryptoContext.Decrypt(
+                _inputStream,
+                ParquetModuleType.DataPageHeader,
+                _rowGroupOrdinal,
+                _columnOrdinal,
+                pageOrdinal);
+        using var headerStream = new MemoryStream(header, writable: false);
+        PageHeader pageHeader = PageHeader.Read(new ThriftCompactProtocolReader(headerStream));
+        ParquetCryptoContext.ValidateTrailingPadding(header, headerStream.Position, "encrypted page header");
+        return pageHeader;
+    }
+
+    private async ValueTask<int> GetDataPageV1RowCountAsync(
+        PageHeader pageHeader,
+        int valueCount,
+        short pageOrdinal) {
+        if(_dataField.MaxRepetitionLevel == 0)
+            return valueCount;
+
+        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(
+            pageHeader,
+            ParquetModuleType.DataPage,
+            pageOrdinal);
+        var repetitionLevels = new int[valueCount];
+        int levelsRead = ReadLevels(
+            bytes.Memory.Span,
+            _dataField.MaxRepetitionLevel,
+            repetitionLevels,
+            valueCount,
+            null,
+            out _);
+        int rowCount = 0;
+        for(int index = 0; index < levelsRead; index++) {
+            if(repetitionLevels[index] == 0)
+                rowCount++;
+        }
+        return rowCount;
     }
 
     private async ValueTask<IMemoryOwner<byte>> ReadPageDataAsync(
