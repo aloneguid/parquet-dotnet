@@ -22,7 +22,7 @@ namespace Parquet.Serialization;
 public record DeserializationResult<T>(ParquetSchema Schema, IList<T> Data, IReadOnlyDictionary<string, string> CustomMetadata) where T : class, new();
 
 /// <summary>
-/// High-level object serialisation. Supports everything, including nested types.
+/// High-level object serialization. Supports everything, including nested types.
 /// </summary>
 public static class ParquetSerializer {
 
@@ -32,9 +32,9 @@ public static class ParquetSerializer {
     private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToStriper = new();
     private static readonly ConcurrentDictionary<Type, object> _typeToAssembler = new();
     private static readonly ConcurrentDictionary<ParquetSchema, object> _schemaToAssembler = new();
-    private static readonly Dictionary<Type, HashSet<Type>> AllowedDeserializerConversions = new() {
-        { typeof(DateOnly), new HashSet<Type>{ typeof(DateTime) } },
-        { typeof(TimeOnly), new HashSet<Type>{ typeof(TimeSpan) } },
+    private static readonly Dictionary<Type, HashSet<Type>> _allowedDeserializerConversions = new() {
+        { typeof(DateOnly), [typeof(DateTime)] },
+        { typeof(TimeOnly), [typeof(TimeSpan)] },
     };
 
     private class ProgressCallbacks {
@@ -171,7 +171,7 @@ public static class ParquetSerializer {
 
     /// <summary>
     /// Serialize object instances into Parquet format and write to a local file. If file already exists, it will be
-    /// overwritten, unless ParquetSerializerOptions.Append is set to true. In this case, data will be appended to
+    /// overwritten, unless <see cref="ParquetOptions.Append"/> is set to true. In this case, data will be appended to
     /// existing file, but only if existing file's schema is compatible with data schema. Otherwise, an exception will
     /// be thrown.
     /// </summary>
@@ -277,14 +277,10 @@ public static class ParquetSerializer {
         return new DeserializationResult<Dictionary<string, object>>(schema, result, reader.CustomMetadata);
     }
 
-    internal class LazyDeserialisationResult {
+    internal class LazyDeserialisationResult(IList<Dictionary<string, object>> data) {
         private ParquetSchema? _schema;
 
-        public LazyDeserialisationResult(IList<Dictionary<string, object>> data) {
-            Data = data;
-        }
-
-        public IList<Dictionary<string, object>> Data { get; }
+        public IList<Dictionary<string, object>> Data { get; } = data;
 
         public Action<ParquetSchema>? SchemaRead { get; set; }
 
@@ -368,7 +364,7 @@ public static class ParquetSerializer {
         DataField? fileField;
 
         if(options != null && options.PropertyNameCaseInsensitive) {
-            // case insensitive search
+            // case-insensitive search
             string path = assemblerField.Path.ToString();
             fileField = fileSchema.DataFields.FirstOrDefault(f => f.Path.ToString().Equals(path, StringComparison.OrdinalIgnoreCase));
         } else {
@@ -389,7 +385,7 @@ public static class ParquetSerializer {
 
             // check if this is one of the allowed conversions
             bool isStillAllowed =
-                AllowedDeserializerConversions.TryGetValue(assemblerField.ClrType, out HashSet<Type>? allowedConversions) &&
+                _allowedDeserializerConversions.TryGetValue(assemblerField.ClrType, out HashSet<Type>? allowedConversions) &&
                 allowedConversions.Contains(fileField.ClrType);
 
             if(!isStillAllowed)
@@ -398,7 +394,7 @@ public static class ParquetSerializer {
 
 
         // make final result
-        DataField r = (DataField)assemblerField.Clone();
+        var r = (DataField)assemblerField.Clone();
         r.Path = fileField.Path;
 
         return r;
