@@ -132,9 +132,9 @@ class DataColumnWriter {
         var r = new ColumnMetrics();
 
         /*
-         * Page header must preceeed actual data (compressed or not) however it contains both
+         * The page header must precede actual data (compressed or not) however, it contains both
          * the uncompressed and compressed data size which we don't know! This somehow limits
-         * the write efficiency.
+         * the writing efficiency.
          */
 
         // dictionary page

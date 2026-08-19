@@ -5,13 +5,13 @@ using System.Linq;
 namespace Parquet.Schema;
 
 /// <summary>
-/// Represents a structure i.e. a container for other fields.
+/// Represents a structure i.e., a container for other fields.
 /// </summary>
-public class StructField : Field, IEquatable<StructField> {
+public sealed class StructField : Field, IEquatable<StructField> {
     private readonly List<Field> _fields = new();
 
-    private StructField(string name) : base(name, SchemaType.Struct) {
-        IsNullable = true;
+    private StructField(string name, bool isNullable = true) : base(name, SchemaType.Struct) {
+        IsNullable = isNullable;
     }
 
     /// <summary>
@@ -19,17 +19,25 @@ public class StructField : Field, IEquatable<StructField> {
     /// </summary>
     /// <param name="name">Structure name</param>
     /// <param name="elements">List of elements</param>
-    public StructField(string name, params Field[] elements) : this(name) {
-        if(elements == null || elements.Length == 0)
+    public StructField(string name, params Field[] elements) : this(name, elements, true) {
+
+    }
+
+    /// <summary>
+    /// Represents a structure field, which acts as a container for other fields.
+    /// </summary>
+    public StructField(string name, IReadOnlyCollection<Field> elements, bool isNullable = true) : this(name,
+        isNullable) {
+        if(elements == null || elements.Count == 0)
             throw new ArgumentException($"structure '{name}' requires at least one element");
 
-        //path for structures has no weirdnes, yay!
+        //path for structures has no weirdness, yay!
 
         foreach(Field field in elements)
             _fields.Add(field);
 
         Path = new FieldPath(name);
-        PathPrefix = null;
+        PathPrefix = null;        
     }
 
     internal override FieldPath? PathPrefix {

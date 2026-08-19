@@ -20,19 +20,19 @@ public sealed class ListField : Field {
     /// <summary>
     /// Default container name for a list
     /// </summary>
-    public const string DefaultContainerName = "list";
+    private const string _defaultContainerName = "list";
 
-    internal string ContainerName { get; set; }
+    internal string ContainerName { get; }
 
     /// <summary>
     /// Item contained within this list
     /// </summary>
-    public Field Item { get; internal set; }
+    public Field Item { get; private set; }
 
-    private ListField(string name) : base(name, SchemaType.List) {
+    private ListField(string name, bool isNullable) : base(name, SchemaType.List) {
         ContainerName = "list";
         Item = new DataField<int>("invalid");
-        IsNullable = true;  // lists are always nullable
+        IsNullable = isNullable;  // normally, lists are always nullable
     }
 
 
@@ -41,8 +41,9 @@ public sealed class ListField : Field {
     /// </summary>
     /// <param name="name">Field name</param>
     /// <param name="item">Field representing the list element</param>
+    /// <param name="isNullable"></param>
     /// <param name="containerName">Container name</param>
-    public ListField(string name, Field item, string containerName = DefaultContainerName) : this(name) {
+    public ListField(string name, Field item, string containerName = _defaultContainerName, bool isNullable = true) : this(name, isNullable) {
         Item = item ?? throw new ArgumentNullException(nameof(item));
         _itemAssigned = true;
         ContainerName = containerName;
@@ -57,16 +58,18 @@ public sealed class ListField : Field {
     /// <param name="propertyName">When set, uses this property to get the list's data.  When not set, uses the property that matches the name parameter.</param>
     /// <param name="containerName">Container name</param>
     /// <param name="elementName">Element name</param>
+    /// <param name="isNullable"></param>
     public ListField(string name,
         Type itemDataType,
         string? propertyName = null,
         string containerName = "list",
-        string? elementName = null) : this(name) {
+        string? elementName = null,
+        bool isNullable = false) : this(name, isNullable) {
         Item = new DataField(elementName ?? name, itemDataType, null, null, propertyName ?? name);
         _itemAssigned = true;
         ContainerName = containerName;
         PathPrefix = null;
-        IsNullable = true;  // lists are always nullable
+        IsNullable = isNullable;
     }
 
     internal override FieldPath? PathPrefix {
@@ -83,7 +86,7 @@ public sealed class ListField : Field {
 
     internal override Field[] Children => [Item];
 
-    internal SchemaElement? GroupSchemaElement { get; set; } = null;
+    internal SchemaElement? GroupSchemaElement { get; set; }
 
     internal override void PropagateLevels(int parentRepetitionLevel, int parentDefinitionLevel) {
 
@@ -114,13 +117,11 @@ public sealed class ListField : Field {
         Item.PropagateLevels(MaxRepetitionLevel, MaxDefinitionLevel);
     }
 
-    internal static ListField CreateWithNoItem(string name, bool isNullable) {
-        return new ListField(name) { IsNullable = isNullable };
-    }
+    internal static ListField CreateWithNoItem(string name, bool isNullable) => new(name, isNullable);
 
     internal override void Assign(Field field) {
         if(_itemAssigned)
-            throw new InvalidOperationException($"item was already assigned to this list ({Name}), somethin is terribly wrong because a list can only have one item.");
+            throw new InvalidOperationException($"item was already assigned to this list ({Name}), something is terribly wrong because a list can only have one item.");
 
         Item = field ?? throw new ArgumentNullException(nameof(field));
         _itemAssigned = true;
