@@ -16,11 +16,11 @@ public class ListTest : TestBase {
         var postcodeField = new DataField<string>("postcode");
 
         var schema = new ParquetSchema(
-           nameField,
-           new ListField("addresses",
-           new StructField(ListField.ElementName,
-              line1Field,
-              postcodeField)));
+            nameField,
+            new ListField("addresses",
+                new StructField(ListField.ElementName,
+                    line1Field,
+                    postcodeField)));
 
         string[] nameValues = ["Joe", "Bob"];
         string[] line1Values = ["Amazonland", "Disneyland", "Cryptoland"];
@@ -69,22 +69,59 @@ public class ListTest : TestBase {
          - 4: []
          */
 
-        await using(ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("list_empty_alt.parquet")))
+        await using ParquetReader reader = await ParquetReader.CreateAsync(OpenTestFile("list_empty_alt.parquet"));
 
-        using(ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0)) {
-            Assert.Equal(4, groupReader.RowCount);
-            DataField[] fs = reader.Schema.GetDataFields();
+        using ParquetRowGroupReader groupReader = reader.OpenRowGroupReader(0);
 
-            using RawColumnData<int> idCol = await groupReader.ReadRawColumnDataAsync<int>(fs[0]);
-            Assert.Equal(4, idCol.Values.Length);
-            Assert.Equal([1, 2, 3, 4], idCol.Values);
+        Assert.Equal(4, groupReader.RowCount);
+        DataField[] fs = reader.Schema.GetDataFields();
 
-            using RawColumnData<ReadOnlyMemory<char>> list = await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(fs[1]);
-            Assert.Equal(8, list.Values.Length);
-            //Assert.Equal([1, 2, 3, 1, 2, 3], list.Values);
-            Assert.Equal([3, 3, 3, 1, 3, 3, 3, 1], list.DefinitionLevels);
-            Assert.Equal([0, 1, 1, 0, 0, 1, 1, 0], list.RepetitionLevels);
+        using RawColumnData<int> idCol = await groupReader.ReadRawColumnDataAsync<int>(fs[0]);
+        Assert.Equal(4, idCol.Values.Length);
+        Assert.Equal([1, 2, 3, 4], idCol.Values);
+
+        using RawColumnData<ReadOnlyMemory<char>> list =
+            await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<char>>(fs[1]);
+        Assert.Equal(8, list.Values.Length);
+        //Assert.Equal([1, 2, 3, 1, 2, 3], list.Values);
+        Assert.Equal([3, 3, 3, 1, 3, 3, 3, 1], list.DefinitionLevels);
+        Assert.Equal([0, 1, 1, 0, 0, 1, 1, 0], list.RepetitionLevels);
+    }
+
+    [Fact]
+    public async Task List_write_required() {
+        // create schema with required list of integers
+        var idField = new DataField<int>("id");
+        var valueField = new DataField<int>("value");
+        var schema = new ParquetSchema(
+            idField,
+            new ListField("addresses", valueField, isNullable: false));
+        
+        int[] idValues = [1, 2];
+        int?[] valueValues = [1, 2, 3, 4, 5, 6];
+
+        // write
+
+        var ms = new MemoryStream();
+        await using(ParquetWriter w = await ParquetWriter.CreateAsync(schema, ms)) {
+            using ParquetRowGroupWriter gw = w.CreateRowGroup();
+            
+            await gw.WriteAsync<int>(idField, idValues);
+            await gw.WriteAsync<int>(valueField, valueValues, new[] { 0, 1, 1, 0, 1, 1 });
         }
 
+        // read back
+        ms.Position = 0;
+        await using(ParquetReader reader = await ParquetReader.CreateAsync(ms)) {
+            Assert.Equal(1, reader.RowGroupCount);
+            using(ParquetRowGroupReader rg = reader.OpenRowGroupReader(0)) {
+                Assert.Equal(2, rg.RowCount);
+                int[] values = new int[rg.RowCount];
+                await rg.ReadAsync<int>(idField, values);
+                Assert.Equal([1, 2], values);
+            }
+        }
+        
     }
+    
 }
