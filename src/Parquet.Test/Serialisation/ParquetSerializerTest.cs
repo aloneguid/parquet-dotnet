@@ -1357,4 +1357,83 @@ public class ParquetSerializerTest : TestBase {
         Assert.Equivalent(expectedFirstRow[0], actual[0]);
     }
 
+    [Fact]
+    public async Task Serialize_required_structs() {
+        var expected = new List<RequiredStructTest> {
+            new() {
+                Id = 0,
+                Optional = null,
+                Required = new RequiredStructRequiredStructTest {
+                    Category = "A",
+                    Score = 51,
+                    Verified = null
+                }
+            },
+            new() {
+                Id = 1,
+                Optional = new RequiredStructOptionalStructTest {
+                    Name = "name-2",
+                    Count = null,
+                    Active = true
+                },
+                Required = new RequiredStructRequiredStructTest {
+                    Category = "B",
+                    Score = 52,
+                    Verified = true
+                }
+            }
+        };
+
+        using var stream = new MemoryStream();
+        await ParquetSerializer.SerializeAsync(expected, stream);
+
+        stream.Position = 0;
+        DeserializationResult<RequiredStructTest> result = await ParquetSerializer.DeserializeAsync<RequiredStructTest>(stream);
+        IList<RequiredStructTest> actual = result.Data;
+
+        // validate the definition and repetition levels on the read schema
+        var optionalStruct = result.Schema.Fields.Single(field => field.Name == "optional_struct");
+        Assert.Equal(0, optionalStruct.MaxRepetitionLevel);
+        Assert.Equal(1, optionalStruct.MaxDefinitionLevel);
+
+        var requiredStruct = result.Schema.Fields.Single(field => field.Name == "required_struct");
+        Assert.Equal(0, requiredStruct.MaxRepetitionLevel);
+        Assert.Equal(0, requiredStruct.MaxDefinitionLevel);
+
+        var optionalName = optionalStruct.Children.Single(field => field.Name == "name");
+        Assert.Equal(0, optionalName.MaxRepetitionLevel);
+        Assert.Equal(1, optionalName.MaxDefinitionLevel);
+
+        var optionalCount = optionalStruct.Children.Single(field => field.Name == "count");
+        Assert.Equal(0, optionalCount.MaxRepetitionLevel);
+        Assert.Equal(2, optionalCount.MaxDefinitionLevel);
+
+        var optionalActive = optionalStruct.Children.Single(field => field.Name == "active");
+        Assert.Equal(0, optionalActive.MaxRepetitionLevel);
+        Assert.Equal(1, optionalActive.MaxDefinitionLevel);
+
+        var requiredCategory = requiredStruct.Children.Single(field => field.Name == "category");
+        Assert.Equal(0, requiredCategory.MaxRepetitionLevel);
+        Assert.Equal(1, requiredCategory.MaxDefinitionLevel);
+
+        var requiredScore = requiredStruct.Children.Single(field => field.Name == "score");
+        Assert.Equal(0, requiredScore.MaxRepetitionLevel);
+        Assert.Equal(0, requiredScore.MaxDefinitionLevel);
+
+        var requiredVerified = requiredStruct.Children.Single(field => field.Name == "verified");
+        Assert.Equal(0, requiredVerified.MaxRepetitionLevel);
+        Assert.Equal(1, requiredVerified.MaxDefinitionLevel);
+
+        Assert.Equivalent(expected, actual);
+        Assert.Null(actual[0].Optional);
+        Assert.NotNull(actual[0].Required);
+        Assert.Null(actual[0].Required.Verified);
+        Assert.NotNull(actual[1].Optional);
+        Assert.Null(actual[1].Optional.Count);
+        Assert.NotNull(actual[1].Required);
+        Assert.True(actual[1].Required.Verified);
+    }
+    
+    
+
 }

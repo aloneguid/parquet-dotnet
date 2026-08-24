@@ -12,6 +12,7 @@
 ## Breaking changes
 - The compression level changed from `SmallestSize` to `Optimal` for the default level like it was in v5. Thanks to @svenclaesson
 for pointing this out in #765.
+- Fixed `ClrNullableIfHasNulls` property visibility, it should be internal (#786).
 
 # 6.1.0
 
