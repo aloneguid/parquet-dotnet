@@ -1,11 +1,15 @@
 # 6.1.1-pre.2
 
-## Improvements
-- `StructField` and `ListField` support passing nullable modifier for schema as required in #756 by @rob-earwaker. They are now both sealed to prevent any future misunderstanding and misuses.
+## New features
+- `ParquetRequired` attribute (covering #613 and more):
+  - Accepts boolean flag, letting you be more explicit.
+  - Can be applied to .NET fields, not just properties.
+  - Works for structs, maps, and lists, not just to data fields.
 
 ## Breaking changes
 - The compression level changed from `SmallestSize` to `Optimal` for the default level like it was in v5. Thanks to @svenclaesson
 for pointing this out in #765.
+- Fixed `ClrNullableIfHasNulls` property visibility, it should be internal (#786).
 
 # 6.1.0
 

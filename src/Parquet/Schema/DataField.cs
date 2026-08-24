@@ -73,13 +73,13 @@ public class DataField : Field, ICloneable {
     public Type ClrType { get; }
 
     /// <summary>
-    /// Unsupported, use at your own risk!
+    /// Should be set to nullable clr type unlike <see cref="ClrType"/> which is always non-nullable. But only if the original type is OPTIONAL.
     /// </summary>
-    public Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
+    internal Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
 
     /// <summary>
-    /// Optional metadata integer, used in Lake implementations. See
-    /// https://arrow.apache.org/docs/cpp/parquet.html#parquet-field-id
+    /// Optional metadata integer, used in Lake implementations. If this field is set, writer will assign the appropriate metadata.
+    /// See https://arrow.apache.org/docs/cpp/parquet.html#parquet-field-id
     /// </summary>
     public int FieldId { get => _fieldId; set => _fieldId = value; }
 
