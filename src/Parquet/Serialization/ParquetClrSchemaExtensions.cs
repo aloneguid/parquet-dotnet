@@ -52,7 +52,7 @@ public static class ParquetClrSchemaExtensions {
 
         public bool IsLegacyRepeatable => mi.GetCustomAttribute<ParquetSimpleRepeatableAttribute>() != null;
 
-        public bool IsRequired => mi.GetCustomAttribute<ParquetRequiredAttribute>() != null;
+        public bool? Required => mi.GetCustomAttribute<ParquetRequiredAttribute>()?.IsRequired;
 
         public bool IsListElementRequired => mi.GetCustomAttribute<ParquetListElementRequiredAttribute>() != null;
 
@@ -116,10 +116,7 @@ public static class ParquetClrSchemaExtensions {
 
     private static Field ConstructDataField(string name, string propertyName, Type t, ClassMember? member) {
         Field r;
-        bool? isNullable = member == null
-            ? null
-            : member.IsRequired ? false : null;
-
+        bool? isNullable = !(member?.Required);
 
         // time
         bool isTime = t == typeof(TimeOnly) || t == typeof(TimeOnly?) || member?.TimeAttribute != null;
@@ -180,7 +177,7 @@ public static class ParquetClrSchemaExtensions {
             keyField.IsNullable = false;
         }
         Field valueField = MakeField(cpmValue, forWriting)!;
-        var mf = new MapField(name, keyField, valueField, isNullable: !(member?.IsRequired ?? false)) {
+        var mf = new MapField(name, keyField, valueField, isNullable: !(member?.Required ?? false)) {
             ClrPropName = propertyName
         };
         return mf;
@@ -195,7 +192,7 @@ public static class ParquetClrSchemaExtensions {
         if(member != null && member.IsListElementRequired) {
             listItemField.IsNullable = false;
         }
-        var lf = new ListField(name, listItemField, isNullable: !(member?.IsRequired ?? false)) {
+        var lf = new ListField(name, listItemField, isNullable: !(member?.Required ?? false)) {
             ClrPropName = propertyName
         };
         return lf;
@@ -225,6 +222,8 @@ public static class ParquetClrSchemaExtensions {
         bool forWriting) {
 
         Type baseType = t.IsNullable() ? t.GetNonNullable() : t;
+        if(baseType == null) throw new ArgumentNullException(nameof(baseType));
+        
         if(member != null && member.IsLegacyRepeatable && !baseType.IsGenericIDictionary() && baseType.TryExtractIEnumerableType(out Type? bti)) {
             baseType = bti!;
         }
@@ -255,8 +254,8 @@ public static class ParquetClrSchemaExtensions {
                 throw new InvalidOperationException($"property '{propertyName}' ({baseType}) has no fields");
 
             bool isNullable;
-            if(member?.IsRequired != null)
-                isNullable = !member.IsRequired;
+            if(member is { Required: not null })
+                isNullable = !member.Required.Value;
             else
                 isNullable = baseType.IsNullable() || t.IsSystemNullable();
             

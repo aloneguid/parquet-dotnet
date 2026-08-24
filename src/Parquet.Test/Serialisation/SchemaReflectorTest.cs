@@ -647,7 +647,7 @@ public class SchemaReflectorTest : TestBase {
     public void Strings_OptionalAndRequired() {
         ParquetSchema s = typeof(StringPoco).GetParquetSchema(true);
 
-        Assert.False(s.DataFields[0].IsNullable);
+        Assert.False(s.DataFields[0].IsNullable, "strings marked with [ParquetRequired] must not be nullable");
         Assert.True(s.DataFields[1].IsNullable);
         Assert.True(s.DataFields[2].IsNullable);
     }
@@ -774,21 +774,26 @@ public class SchemaReflectorTest : TestBase {
     }
 
     class StructWithClrStruct {
-        public SimpleClrStruct S { get; set; }
+        public SimpleClrStruct SOpt { get; set; }
+        
+        [ParquetRequired(false)]
+        public SimpleClrStruct SReq { get; set; }
     }
 
     [Fact]
     public void ClrStruct_AsMember_IsSupported() {
         ParquetSchema schema = typeof(StructWithClrStruct).GetParquetSchema(false);
-        Assert.Single(schema.Fields);
+        Assert.Equal(2, schema.Fields.Count);
 
-        // check it's a required struct
-        StructField sf = (StructField)schema[0];
-        Assert.False(sf.IsNullable, "struct cannot be optional");
+        var sf0 = (StructField)schema[0];
+        var sf1 = (StructField)schema[1];
+        
+        Assert.False(sf0.IsNullable, "struct must be required by default");
+        Assert.True(sf1.IsNullable, "struct must be optional when marked with [ParquetRequired(false)]");
 
         // check the struct field
-        Assert.Equal(2, sf.Children.Length);
-        var idField = (DataField)sf.Children[0];
+        Assert.Equal(2, sf0.Children.Length);
+        var idField = (DataField)sf0.Children[0];
         Assert.Equal(typeof(int), idField.ClrType);
     }
 
@@ -853,17 +858,17 @@ public class SchemaReflectorTest : TestBase {
         Assert.Equal(4, schema.Fields.Count);
 
         // check definition levels for both members and their children
-        StructField classField = (StructField)schema[0];
-        StructField structField = (StructField)schema[1];
+        var classField = (StructField)schema[0];
+        var structField = (StructField)schema[1];
 
         // class can be nullable, whereas struct cannot, therefore difference in definition levels
         Assert.Equal(1, classField.MaxDefinitionLevel);
         Assert.Equal(0, structField.MaxDefinitionLevel);
 
-        DataField classROS = (DataField)classField.Children[0];
-        DataField classROI = (DataField)classField.Children[1];
-        DataField structROS = (DataField)structField.Children[0];
-        DataField structROI = (DataField)structField.Children[1];
+        var classROS = (DataField)classField.Children[0];
+        var classROI = (DataField)classField.Children[1];
+        var structROS = (DataField)structField.Children[0];
+        var structROI = (DataField)structField.Children[1];
         Assert.Equal(2, classROS.MaxDefinitionLevel);
         Assert.Equal(1, classROI.MaxDefinitionLevel);
         Assert.Equal(1, structROS.MaxDefinitionLevel);
@@ -871,23 +876,23 @@ public class SchemaReflectorTest : TestBase {
 
         // --- lists of structs and classes ---
 
-        ListField classListField = (ListField)schema[2];
-        ListField structListField = (ListField)schema[3];
+        var classListField = (ListField)schema[2];
+        var structListField = (ListField)schema[3];
         // 2 is standard preamble
         Assert.Equal(2, classListField.MaxDefinitionLevel);
         Assert.Equal(2, structListField.MaxDefinitionLevel);
 
         // check list element
-        StructField classListElement = (StructField)classListField.Item;
-        StructField structListElement = (StructField)structListField.Item;
+        var classListElement = (StructField)classListField.Item;
+        var structListElement = (StructField)structListField.Item;
         Assert.Equal(3, classListElement.MaxDefinitionLevel);
         Assert.Equal(2, structListElement.MaxDefinitionLevel);
 
         // check children of list element (struct)
-        DataField classListElementROS = (DataField)classListElement.Children[0];
-        DataField classListElementROI = (DataField)classListElement.Children[1];
-        DataField structListElementROS = (DataField)structListElement.Children[0];
-        DataField structListElementROI = (DataField)structListElement.Children[1];
+        var classListElementROS = (DataField)classListElement.Children[0];
+        var classListElementROI = (DataField)classListElement.Children[1];
+        var structListElementROS = (DataField)structListElement.Children[0];
+        var structListElementROI = (DataField)structListElement.Children[1];
 
         Assert.Equal(4, classListElementROS.MaxDefinitionLevel);
         Assert.Equal(3, classListElementROI.MaxDefinitionLevel);
