@@ -406,6 +406,14 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         DeserializationResult<Dictionary<string, object>> rs = await ParquetSerializer.DeserializeUntypedAsync(s);
     }
 
+    [Fact]
+    public async Task RequiredStruct() {
+        await using Stream s = OpenTestFile("special/required_struct.parquet");
+        await using ParquetReader r = await ParquetReader.CreateAsync(s);
+
+        DeserializationResult<Dictionary<string, object>> rs = await ParquetSerializer.DeserializeUntypedAsync(s);
+    }
+
 
     [Fact]
     public async Task UnshreddedVariantAsync() {

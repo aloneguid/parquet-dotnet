@@ -165,7 +165,7 @@ public static class ParquetClrSchemaExtensions {
 
     private static MapField ConstructMapField(string name, string propertyName,
         Type tKey, Type tValue,
-        bool forWriting) {
+        ClassMember? member, bool forWriting) {
 
         Type kvpType = typeof(KeyValuePair<,>).MakeGenericType(tKey, tValue);
         PropertyInfo piKey = kvpType.GetProperty("Key")!;
@@ -180,8 +180,9 @@ public static class ParquetClrSchemaExtensions {
             keyField.IsNullable = false;
         }
         Field valueField = MakeField(cpmValue, forWriting)!;
-        var mf = new MapField(name, keyField, valueField);
-        mf.ClrPropName = propertyName;
+        var mf = new MapField(name, keyField, valueField, isNullable: !(member?.IsRequired ?? false)) {
+            ClrPropName = propertyName
+        };
         return mf;
     }
 
@@ -194,11 +195,9 @@ public static class ParquetClrSchemaExtensions {
         if(member != null && member.IsListElementRequired) {
             listItemField.IsNullable = false;
         }
-        ListField lf = new ListField(name, listItemField);
-        lf.ClrPropName = propertyName;
-        if(member != null && member.IsRequired) {
-            lf.IsNullable = false;
-        }
+        var lf = new ListField(name, listItemField, isNullable: !(member?.IsRequired ?? false)) {
+            ClrPropName = propertyName
+        };
         return lf;
     }
 
@@ -235,7 +234,7 @@ public static class ParquetClrSchemaExtensions {
         }
         
         if(t.TryExtractDictionaryType(out Type? tKey, out Type? tValue)) {
-            return ConstructMapField(columnName, propertyName, tKey!, tValue!, forWriting);
+            return ConstructMapField(columnName, propertyName, tKey!, tValue!, member, forWriting);
         }
 
         if(t.TryExtractIEnumerableType(out Type? elementType)) {
@@ -255,9 +254,14 @@ public static class ParquetClrSchemaExtensions {
             if(fields.Length == 0)
                 throw new InvalidOperationException($"property '{propertyName}' ({baseType}) has no fields");
 
-            return new StructField(columnName, fields) {
-                ClrPropName = propertyName,
-                IsNullable = baseType.IsNullable() || t.IsSystemNullable()
+            bool isNullable;
+            if(member?.IsRequired != null)
+                isNullable = !member.IsRequired;
+            else
+                isNullable = baseType.IsNullable() || t.IsSystemNullable();
+            
+            return new StructField(columnName, fields, isNullable: isNullable) {
+                ClrPropName = propertyName
             };
         }
 

@@ -1,7 +1,10 @@
 # 6.1.1-pre.2
 
+## New features
+- `ParquetRequired` attribute can be applied not just to data fields, but also for structs, maps and lists (#613).
+
 ## Improvements
-- `StructField` and `ListField` support passing nullable modifier for schema as required in #756 by @rob-earwaker. They are now both sealed to prevent any future misunderstanding and misuses.
+- `StructField` and `ListField` support passing nullable modifier for schema as required in #756 by @rob-earwaker. They are now both sealed to prevent any future misunderstanding and misuses. Also affects #613 opened by @btiteux. 
 
 ## Breaking changes
 - The compression level changed from `SmallestSize` to `Optimal` for the default level like it was in v5. Thanks to @svenclaesson

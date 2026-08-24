@@ -1302,4 +1302,59 @@ public class ParquetSerializerTest : TestBase {
         using Stream src = OpenTestFile("data_0.parquet");
         IList<EmptyDuckDbFile_Model> r = (await ParquetSerializer.DeserializeAsync<EmptyDuckDbFile_Model>(src)).Data;
     }
+
+    class RequiredStructOptionalStructTest {
+        [JsonPropertyName("name"), ParquetRequired]
+        public string Name { get; set; }
+        
+        [JsonPropertyName("count")]
+        public int? Count { get; set; }
+        
+        [JsonPropertyName("active")]
+        public bool Active { get; set; }
+    }
+
+    class RequiredStructRequiredStructTest {
+        [JsonPropertyName("category")]
+        public string Category { get; set; }
+        
+        [JsonPropertyName("score")]
+        public int Score { get; set; }
+
+        [JsonPropertyName("verified")]
+        public bool? Verified { get; set; }
+    }
+    
+    class RequiredStructTest {
+        public int Id { get; set; }
+        
+        [JsonPropertyName("optional_struct")]
+        public RequiredStructOptionalStructTest Optional { get; set; }
+        
+        [JsonPropertyName("required_struct"), ParquetRequired]
+        public RequiredStructRequiredStructTest Required { get; set; }
+    }
+    
+    [Fact]
+    public async Task Deserialize_required_structs() {
+        var expectedFirstRow = new RequiredStructTest[] {
+            new() { Id = 0, Optional = new RequiredStructOptionalStructTest {
+                Active = false,
+                Count = 10,
+                Name = "name-1"
+            }, Required = new RequiredStructRequiredStructTest {
+                Category = "A",
+                Score = 51,
+                Verified = true
+                
+            } }
+        };
+
+        await using Stream stream = OpenTestFile("special/required_struct.parquet");
+        IList<RequiredStructTest> actual = (await ParquetSerializer.DeserializeAsync<RequiredStructTest>(stream)).Data;
+
+        Assert.Equal(100, actual.Count);
+        Assert.Equivalent(expectedFirstRow[0], actual[0]);
+    }
+
 }
