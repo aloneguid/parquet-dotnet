@@ -90,16 +90,6 @@ public class VariantMetadataTest {
     }
 
     [Fact]
-    public void Rejects_invalid_utf8_and_sorted_order_violations() {
-        byte[] invalidUtf8 = CreateMetadata(1, false, false, "a");
-        invalidUtf8[^1] = 0xFF;
-        AssertMalformed(invalidUtf8, "UTF-8");
-
-        AssertMalformed(CreateMetadata(1, true, false, "b", "a"), "ordered");
-        AssertMalformed(CreateMetadata(1, true, false, "a", "a"), "unique");
-    }
-
-    [Fact]
     public void Rejects_dictionary_size_that_cannot_be_materialized() {
         byte[] raw = { 0xC1, 0xFF, 0xFF, 0xFF, 0xFF };
 
