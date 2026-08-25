@@ -27,7 +27,7 @@ public enum Type {
 }
 
 /// <summary>
-/// DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet. ConvertedType is superseded by LogicalType.  This enum should not be extended.  See LogicalTypes.md for conversion between ConvertedType and LogicalType.
+/// DEPRECATED: Common types used by frameworks (e.g. Hive, Pig) using parquet. ConvertedType is superseded by LogicalType.  This enum should not be extended.  See LogicalTypes.md for conversion between ConvertedType and LogicalType.
 /// </summary>
 public enum ConvertedType {
     /// <summary>
@@ -171,7 +171,7 @@ public enum Encoding {
     PLAIN = 0,
 
     /// <summary>
-    /// Deprecated: Dictionary encoding. The values in the dictionary are encoded in the plain type. in a data page use RLE_DICTIONARY instead. in a Dictionary page use PLAIN instead.
+    /// DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the plain type. For a data page use RLE_DICTIONARY instead. For a Dictionary page use PLAIN instead.
     /// </summary>
     PLAIN_DICTIONARY = 2,
 
@@ -181,7 +181,7 @@ public enum Encoding {
     RLE = 3,
 
     /// <summary>
-    /// Bit packed encoding.  This can only be used if the data has a known max width.  Usable for definition/repetition levels encoding.
+    /// DEPRECATED: Bit packed encoding.  This can only be used if the data has a known max width.  Usable for definition/repetition levels encoding. Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md.
     /// </summary>
     BIT_PACKED = 4,
 
@@ -209,6 +209,11 @@ public enum Encoding {
     /// Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY). K byte-streams are created where K is the size in bytes of the data type. The individual bytes of a value are scattered to the corresponding stream and the streams are concatenated. This itself does not reduce the size of the data but can lead to better compression afterwards.  Added in 2.8 for FLOAT and DOUBLE. Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
     /// </summary>
     BYTE_STREAM_SPLIT = 9,
+
+    /// <summary>
+    /// Adaptive Lossless floating-Point (ALP) encoding for FLOAT and DOUBLE. Losslessly converts decimal-like floating-point values to integers via decimal scaling, then applies Frame of Reference (FOR) encoding and bit-packing; values that cannot be converted losslessly are stored as exceptions. See Encodings.md for the detailed specification.
+    /// </summary>
+    ALP = 10,
 
 }
 
@@ -510,6 +515,11 @@ public class Statistics {
     /// </summary>
     public bool? IsMinValueExact { get; set; }
 
+    /// <summary>
+    /// Count of NaN values in the column; only present if physical type is FLOAT or DOUBLE, or logical type is FLOAT16. If this field is not present, readers MUST assume NaNs may be present (i.e. MUST assume nan_count &gt; 0 and MAY NOT assume nan_count == 0).
+    /// </summary>
+    public long? NanCount { get; set; }
+
 
     internal void Write(ThriftCompactProtocolWriter proto) {
         proto.StructBegin();
@@ -546,6 +556,10 @@ public class Statistics {
         if(IsMinValueExact != null) {
             proto.WriteBoolField(8, IsMinValueExact.Value);
         }
+        // 9: NanCount, i64
+        if(NanCount != null) {
+            proto.WriteI64Field(9, NanCount.Value);
+        }
 
         proto.StructEnd();
     }
@@ -578,6 +592,9 @@ public class Statistics {
                     break;
                 case 8: // IsMinValueExact, bool
                     r.IsMinValueExact = compactType == CompactType.BooleanTrue;
+                    break;
+                case 9: // NanCount, i64
+                    r.NanCount = proto.ReadI64();
                     break;
                 default:
                     proto.SkipField(compactType);
@@ -1134,7 +1151,7 @@ public class VariantType {
 }
 
 /// <summary>
-/// Embedded Geometry logical type annotation  Geospatial features in the Well-Known Binary (WKB) format and edges interpolation is always linear/planar.  A custom CRS can be set by the crs field. If unset, it defaults to &quot;OGC:CRS84&quot;, which means that the geometries must be stored in longitude, latitude based on the WGS84 datum.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
+/// Embedded Geometry logical type annotation  Geospatial features in the Well-Known Binary (WKB) format and `edges` interpolation is always linear/planar.  A custom CRS can be set by the crs field. If unset, it defaults to &quot;OGC:CRS84&quot;, which means that the geometries must be stored in longitude, latitude based on the WGS84 datum.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
 /// </summary>
 public class GeometryType {
     public string? Crs { get; set; }
@@ -1170,7 +1187,7 @@ public class GeometryType {
 }
 
 /// <summary>
-/// Embedded Geography logical type annotation  Geospatial features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm.  A custom geographic CRS can be set by the crs field, where longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS defaults to &quot;OGC:CRS84&quot;.  An optional algorithm can be set to correctly interpret edges interpolation of the geometries. If unset, the algorithm defaults to SPHERICAL.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
+/// Embedded Geography logical type annotation  Geospatial features in the WKB format with an explicit (non-linear/non-planar) `edges` interpolation algorithm.  A custom geographic CRS can be set by the crs field, where longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS defaults to &quot;OGC:CRS84&quot;.  An optional algorithm can be set to correctly interpret `edges` interpolation of the geometries. If unset, the algorithm defaults to SPHERICAL.  Allowed for physical type: BYTE_ARRAY.  See Geospatial.md for details.
 /// </summary>
 public class GeographyType {
     public string? Crs { get; set; }
@@ -1204,6 +1221,30 @@ public class GeographyType {
                 case 2: // Algorithm, id
                     r.Algorithm = (EdgeInterpolationAlgorithm)proto.ReadI32();
                     break;
+                default:
+                    proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+}
+
+/// <summary>
+/// File logical type annotation  Annotates a group that represents a reference to a file, or to a range of bytes that may be stored inline, elsewhere in this file, or in an external file.  See LogicalTypes.md for details.
+/// </summary>
+public class FileType {
+
+    internal void Write(ThriftCompactProtocolWriter proto) {
+        proto.WriteEmptyStruct();
+    }
+
+    internal static FileType Read(ThriftCompactProtocolReader proto) {
+        var r = new FileType();
+        proto.StructBegin();
+        while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
+            switch(fieldId) {
                 default:
                     proto.SkipField(compactType);
                     break;
@@ -1251,6 +1292,8 @@ public class LogicalType {
     public GeometryType? GEOMETRY { get; set; }
 
     public GeographyType? GEOGRAPHY { get; set; }
+
+    public FileType? FILE { get; set; }
 
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -1341,6 +1384,11 @@ public class LogicalType {
             proto.BeginInlineStruct(18);
             GEOGRAPHY.Write(proto);
         }
+        // 19: FILE, id
+        if(FILE != null) {
+            proto.BeginInlineStruct(19);
+            FILE.Write(proto);
+        }
 
         proto.StructEnd();
     }
@@ -1401,6 +1449,9 @@ public class LogicalType {
                 case 18: // GEOGRAPHY, id
                     r.GEOGRAPHY = GeographyType.Read(proto);
                     break;
+                case 19: // FILE, id
+                    r.FILE = FileType.Read(proto);
+                    break;
                 default:
                     proto.SkipField(compactType);
                     break;
@@ -1412,7 +1463,7 @@ public class LogicalType {
 }
 
 /// <summary>
-/// Represents a element inside a schema definition.  - if it is a group (inner node) then type is undefined and num_children is defined  - if it is a primitive type (leaf) then type is defined and num_children is undefined the nodes are listed in depth first traversal order.
+/// Represents an element inside a schema definition.  - if it is a group (inner node) then type is undefined and num_children is defined  - if it is a primitive type (leaf) then type is defined and num_children is undefined the nodes are listed in depth first traversal order.
 /// </summary>
 public class SchemaElement {
     /// <summary>
@@ -1559,7 +1610,7 @@ public class SchemaElement {
 /// </summary>
 public class DataPageHeader {
     /// <summary>
-    /// Number of values, including NULLs, in this data page.  If a OffsetIndex is present, a page must begin at a row boundary (repetition_level = 0). Otherwise, pages may begin within a row (repetition_level &gt; 0).
+    /// Number of values, including NULLs, in this data page.  If an OffsetIndex is present, a page must begin at a row boundary (repetition_level = 0). Otherwise, pages may begin within a row (repetition_level &gt; 0).
     /// </summary>
     public int NumValues { get; set; }
 
@@ -1749,7 +1800,7 @@ public class DataPageHeaderV2 {
     public int RepetitionLevelsByteLength { get; set; }
 
     /// <summary>
-    /// Whether the values are compressed. Which means the section of the page between definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included) is compressed with the compression_codec. If missing it is considered compressed.
+    /// Whether the values are compressed. Which means the section of the page between definition_levels_byte_length + repetition_levels_byte_length and compressed_page_size (included) is compressed with the compression_codec. If missing it is considered compressed.
     /// </summary>
     public bool? IsCompressed { get; set; }
 
@@ -2099,7 +2150,7 @@ public class PageHeader {
     public int CompressedPageSize { get; set; }
 
     /// <summary>
-    /// The 32-bit CRC checksum for the page, to be be calculated as follows:  - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,   the same as in e.g. GZip). - All page types can have a CRC (v1 and v2 data pages, dictionary pages,   etc.). - The CRC is computed on the serialization binary representation of the page   (as written to disk), excluding the page header. For example, for v1   data pages, the CRC is computed on the concatenation of repetition levels,   definition levels and column values (optionally compressed, optionally   encrypted). - The CRC computation therefore takes place after any compression   and encryption steps, if any.  If enabled, this allows for disabling checksumming in HDFS if only a few pages need to be read.
+    /// The 32-bit CRC checksum for the page, to be calculated as follows:  - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,   the same as in e.g. GZIP). - All page types can have a CRC (v1 and v2 data pages, dictionary pages,   etc.). - The CRC is computed on the serialization binary representation of the page   (as written to disk), excluding the page header. For example, for v1   data pages, the CRC is computed on the concatenation of repetition levels,   definition levels and column values (optionally compressed, optionally   encrypted). - The CRC computation therefore takes place after any compression   and encryption steps, if any.  If enabled, this allows for disabling checksumming in HDFS if only a few pages need to be read.
     /// </summary>
     public int? Crc { get; set; }
 
@@ -2708,7 +2759,7 @@ public class ColumnChunk {
     public string? FilePath { get; set; }
 
     /// <summary>
-    /// Deprecated: Byte offset in file_path to the ColumnMetaData  Past use of this field has been inconsistent, with some implementations using it to point to the ColumnMetaData and some using it to point to the first page in the column chunk. In many cases, the ColumnMetaData at this location is wrong. This field is now deprecated and should not be used. Writers should set this field to 0 if no ColumnMetaData has been written outside the footer.
+    /// DEPRECATED: Byte offset in file_path to the ColumnMetaData  Past use of this field has been inconsistent, with some implementations using it to point to the ColumnMetaData and some using it to point to the first page in the column chunk. In many cases, the ColumnMetaData at this location is wrong. This field is now deprecated and should not be used. Writers should set this field to 0 if no ColumnMetaData has been written outside the footer.
     /// </summary>
     public long FileOffset { get; set; }
 
@@ -2971,13 +3022,65 @@ public class TypeDefinedOrder {
 }
 
 /// <summary>
-/// Union to specify the order used for the min_value and max_value fields for a column. This union takes the role of an enhanced enum that allows rich elements (which will be needed for a collation-based ordering in the future).  Possible values are: * TypeDefinedOrder - the column uses the order defined by its logical or                      physical type (if there is no logical type).  If the reader does not support the value of this union, min and max stats for this column should be ignored.
+/// Empty struct to signal IEEE 754 total order for floating point types.
+/// </summary>
+public class IEEE754TotalOrder {
+
+    internal void Write(ThriftCompactProtocolWriter proto) {
+        proto.WriteEmptyStruct();
+    }
+
+    internal static IEEE754TotalOrder Read(ThriftCompactProtocolReader proto) {
+        var r = new IEEE754TotalOrder();
+        proto.StructBegin();
+        while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
+            switch(fieldId) {
+                default:
+                    proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+}
+
+/// <summary>
+/// Empty struct to signal chronological ordering of physical type INT96.
+/// </summary>
+public class Int96TimestampOrder {
+
+    internal void Write(ThriftCompactProtocolWriter proto) {
+        proto.WriteEmptyStruct();
+    }
+
+    internal static Int96TimestampOrder Read(ThriftCompactProtocolReader proto) {
+        var r = new Int96TimestampOrder();
+        proto.StructBegin();
+        while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {
+            switch(fieldId) {
+                default:
+                    proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+}
+
+/// <summary>
+/// Union to specify the order used for the min_value and max_value fields for a column. This union takes the role of an enhanced enum that allows rich elements (which will be needed for a collation-based ordering in the future).  Possible values are: * TypeDefinedOrder - the column uses the order defined by its logical or                      physical type (if there is no logical type). * IEEE754TotalOrder - the floating point column uses IEEE 754 total order.  * Int96TimestampOrder - the INT96 column uses chronological timestamp order.  If the reader does not support the value of this union, min and max stats for this column should be ignored.
 /// </summary>
 public class ColumnOrder {
     /// <summary>
-    /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   FLOAT16 - signed comparison of the represented value (*)   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - undefined   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined   VARIANT - undefined   GEOMETRY - undefined   GEOGRAPHY - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - undefined(+)   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (+) While the INT96 type has been deprecated, at the time of writing it is    still used in many legacy systems. If a Parquet implementation chooses    to write statistics for INT96 columns, it is recommended to order them    according to the legacy rules:    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer    - if equal last 4 bytes, compare the first 8 bytes as a little-endian      64-bit signed integer (nanos)    See https://github.com/apache/parquet-format/issues/502 for more details  (*) Because the sorting order is not specified properly for floating     point values (relations vs. total ordering) the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.      When writing statistics the following rules should be followed:     - NaNs should not be written to min or max statistics fields.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.
+    /// The sort orders for logical types are:   UTF8 - unsigned byte-wise comparison   INT8 - signed comparison   INT16 - signed comparison   INT32 - signed comparison   INT64 - signed comparison   UINT8 - unsigned comparison   UINT16 - unsigned comparison   UINT32 - unsigned comparison   UINT64 - unsigned comparison   DECIMAL - signed comparison of the represented value   DATE - signed comparison   FLOAT16 - signed comparison of the represented value (*)   TIME_MILLIS - signed comparison   TIME_MICROS - signed comparison   TIMESTAMP_MILLIS - signed comparison   TIMESTAMP_MICROS - signed comparison   INTERVAL - undefined   JSON - unsigned byte-wise comparison   BSON - unsigned byte-wise comparison   ENUM - unsigned byte-wise comparison   LIST - undefined   MAP - undefined   VARIANT - undefined   GEOMETRY - undefined   GEOGRAPHY - undefined   FILE - undefined  In the absence of logical types, the sort order is determined by the physical type:   BOOLEAN - false, true   INT32 - signed comparison   INT64 - signed comparison   INT96 (only used for legacy timestamps) - depends on sort order (+)   FLOAT - signed comparison of the represented value (*)   DOUBLE - signed comparison of the represented value (*)   BYTE_ARRAY - unsigned byte-wise comparison   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison  (+) While the INT96 type has been deprecated, at the time of writing it is     still used in many legacy systems. It is optional for writers to emit     statistics for INT96 columns. Writers that emit stats for such columns     should use the INT96_TIMESTAMP_ORDER for this type and order the values     according to the legacy rules:     - compare the last 4 bytes (days) as a little-endian 32-bit signed integer     - if equal last 4 bytes, compare the first 8 bytes as a little-endian       64-bit signed integer (nanos)     If TYPE_ORDER is used for an INT96 column, readers should ignore all statistics     (`min`/`max` fields in `Statistics` and `min_values`/`max_values` fields in     `ColumnIndex`) for that column.  (*) Because TYPE_ORDER is ambiguous for floating point types due to     underspecified handling of NaN and -0/+0, it is recommended that writers     use IEEE_754_TOTAL_ORDER for these types.      If TYPE_ORDER is used for floating point types, then the following     compatibility rules should be applied when reading statistics:     - If the min is a NaN, it should be ignored.     - If the max is a NaN, it should be ignored.     - If the nan_count field is set, a reader can compute       nan_count + null_count == num_values to deduce whether all non-null       values are NaN.     - If the min is +0, the row group may contain -0 values as well.     - If the max is -0, the row group may contain +0 values as well.     - When looking for NaN values, min and max should be ignored.       If the nan_count field is set, it can be used to check whether       NaNs are present.      When writing page or column chunk statistics for columns with     TYPE_ORDER order, the following rules must be followed:     - The nan_count field must be set for floating point types, even if       it is zero.     - If the nan_count field is set, min and max statistics fields, when       present, must not contain NaN values and must be computed from       non-NaN values only. This signals to readers that the min and max       statistics are reliable for non-NaN values.     - If all non-null values are NaN, min and max statistics must not be       written.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the max statistics field.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the min statistics field.      When writing column indexes for columns with TYPE_ORDER order, the     following rules must be followed:     - NaNs must not be written to min_values or max_values.     - If all non-null values of a page are NaN, a column index must not       be written for this column chunk because min_values and max_values       are required.     - If the computed max value is zero (whether negative or positive),       `+0.0` should be written into the corresponding max_values entry.     - If the computed min value is zero (whether negative or positive),       `-0.0` should be written into the corresponding min_values entry.
     /// </summary>
     public TypeDefinedOrder? TYPEORDER { get; set; }
+
+    public IEEE754TotalOrder? IEEE_754TOTALORDER { get; set; }
+
+    public Int96TimestampOrder? INT96TIMESTAMPORDER { get; set; }
 
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -2987,6 +3090,16 @@ public class ColumnOrder {
         if(TYPEORDER != null) {
             proto.BeginInlineStruct(1);
             TYPEORDER.Write(proto);
+        }
+        // 2: IEEE_754TOTALORDER, id
+        if(IEEE_754TOTALORDER != null) {
+            proto.BeginInlineStruct(2);
+            IEEE_754TOTALORDER.Write(proto);
+        }
+        // 3: INT96TIMESTAMPORDER, id
+        if(INT96TIMESTAMPORDER != null) {
+            proto.BeginInlineStruct(3);
+            INT96TIMESTAMPORDER.Write(proto);
         }
 
         proto.StructEnd();
@@ -2999,6 +3112,12 @@ public class ColumnOrder {
             switch(fieldId) {
                 case 1: // TYPEORDER, id
                     r.TYPEORDER = TypeDefinedOrder.Read(proto);
+                    break;
+                case 2: // IEEE_754TOTALORDER, id
+                    r.IEEE_754TOTALORDER = IEEE754TotalOrder.Read(proto);
+                    break;
+                case 3: // INT96TIMESTAMPORDER, id
+                    r.INT96TIMESTAMPORDER = Int96TimestampOrder.Read(proto);
                     break;
                 default:
                     proto.SkipField(compactType);
@@ -3017,7 +3136,7 @@ public class PageLocation {
     public long Offset { get; set; }
 
     /// <summary>
-    /// Size of the page, including header. Sum of compressed_page_size and header length.
+    /// Size of the page, including header. Equal to the sum of the page&#39;s PageHeader.compressed_page_size and the size of the serialized PageHeader.
     /// </summary>
     public int CompressedPageSize { get; set; }
 
@@ -3074,7 +3193,7 @@ public class OffsetIndex {
     public List<PageLocation> PageLocations { get; set; } = new List<PageLocation>();
 
     /// <summary>
-    /// Unencoded/uncompressed size for BYTE_ARRAY types.  See documention for unencoded_byte_array_data_bytes in SizeStatistics for more details on this field.
+    /// Unencoded/uncompressed size for BYTE_ARRAY types.  See documentation for unencoded_byte_array_data_bytes in SizeStatistics for more details on this field.
     /// </summary>
     public List<long>? UnencodedByteArrayDataBytes { get; set; }
 
@@ -3134,7 +3253,7 @@ public class ColumnIndex {
     public List<bool> NullPages { get; set; } = new List<bool>();
 
     /// <summary>
-    /// Two lists containing lower and upper bounds for the values of each page determined by the ColumnOrder of the column. These may be the actual minimum and maximum values found on a page, but can also be (more compact) values that do not exist on a page. For example, instead of storing &quot;&quot;Blart Versenwald III&quot;, a writer may set min_values[i]=&quot;B&quot;, max_values[i]=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type. Readers must make sure that list entries are populated before using them by inspecting null_pages.
+    /// Two lists containing lower and upper bounds for the values of each page determined by the ColumnOrder of the column. These may be the actual minimum and maximum values found on a page, but can also be (more compact) values that do not exist on a page. For example, instead of storing &quot;Blart Versenwald III&quot;, a writer may set min_values[i]=&quot;B&quot;, max_values[i]=&quot;C&quot;. Such more compact values must still be valid values within the column&#39;s logical type. Readers must make sure that list entries are populated before using them by inspecting null_pages.  For columns of physical type FLOAT or DOUBLE, or logical type FLOAT16, NaN values are not to be included in these bounds. If all non-null values of a page are NaN, then a writer must do the following: - If the order of this column is TYPE_ORDER, then a column index must   not be written for this column chunk. While this is unfortunate for   performance, it is necessary to avoid conflict with legacy files that   still included NaN in min_values and max_values even if the page had   non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended. - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]   and max_values[i] of that page must be set to the smallest and largest   NaN values as defined by IEEE 754 total order.  For columns of physical type INT96, the writer must do the following: - If the order of this column is not INT96_TIMESTAMP_ORDER, then a column   index must not be written for this column chunk. - If the order of this column is INT96_TIMESTAMP_ORDER, the min_values[i]   and max_values[i] of that page must be set to the smallest and largest   values as defined by the INT96 chronological timestamp ordering.
     /// </summary>
     public List<byte[]> MinValues { get; set; } = new List<byte[]>();
 
@@ -3159,6 +3278,11 @@ public class ColumnIndex {
     /// Same as repetition_level_histograms except for definitions levels.
     /// </summary>
     public List<long>? DefinitionLevelHistograms { get; set; }
+
+    /// <summary>
+    /// A list containing the number of NaN values for each page. Only present for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16. If this field is not present, readers MUST assume that there might be NaN values in any page.
+    /// </summary>
+    public List<long>? NanCounts { get; set; }
 
 
     internal void Write(ThriftCompactProtocolWriter proto) {
@@ -3199,6 +3323,13 @@ public class ColumnIndex {
         if(DefinitionLevelHistograms != null) {
             proto.WriteListBegin(7, 6, DefinitionLevelHistograms.Count);
             foreach(long element in DefinitionLevelHistograms) {
+                proto.WriteI64Value(element);
+            }
+        }
+        // 8: NanCounts, list
+        if(NanCounts != null) {
+            proto.WriteListBegin(8, 6, NanCounts.Count);
+            foreach(long element in NanCounts) {
                 proto.WriteI64Value(element);
             }
         }
@@ -3244,6 +3375,11 @@ public class ColumnIndex {
                     elementCount = proto.ReadListHeader(out _);
                     r.DefinitionLevelHistograms = new List<long>(elementCount);
                     for(int i = 0; i < elementCount; i++) { r.DefinitionLevelHistograms.Add(proto.ReadI64()); }
+                    break;
+                case 8: // NanCounts, list
+                    elementCount = proto.ReadListHeader(out _);
+                    r.NanCounts = new List<long>(elementCount);
+                    for(int i = 0; i < elementCount; i++) { r.NanCounts.Add(proto.ReadI64()); }
                     break;
                 default:
                     proto.SkipField(compactType);
@@ -3454,7 +3590,7 @@ public class FileMetaData {
     public string? CreatedBy { get; set; }
 
     /// <summary>
-    /// Sort order used for the min_value and max_value fields in the Statistics objects and the min_values and max_values fields in the ColumnIndex objects of each column in this file. Sort orders are listed in the order matching the columns in the schema. The indexes are not necessary the same though, because only leaf nodes of the schema are represented in the list of sort orders.  Without column_orders, the meaning of the min_value and max_value fields in the Statistics object and the ColumnIndex object is undefined. To ensure well-defined behaviour, if these fields are written to a Parquet file, column_orders must be written as well.  The obsolete min and max fields in the Statistics object are always sorted by signed comparison regardless of column_orders.
+    /// Sort order used for the min_value and max_value fields in the Statistics objects and the min_values and max_values fields in the ColumnIndex objects of each column in this file. Sort orders are listed in the order matching the columns in the schema. The indexes are not necessarily the same though, because only leaf nodes of the schema are represented in the list of sort orders.  Without column_orders, the meaning of the min_value and max_value fields in the Statistics object and the ColumnIndex object is undefined. To ensure well-defined behaviour, if these fields are written to a Parquet file, column_orders must be written as well.  The obsolete min and max fields in the Statistics object are always sorted by signed comparison regardless of column_orders.
     /// </summary>
     public List<ColumnOrder>? ColumnOrders { get; set; }
 

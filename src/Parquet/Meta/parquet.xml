@@ -35,7 +35,7 @@ would handle this.">
       <member name="BYTE_ARRAY" value="6" />
       <member name="FIXED_LEN_BYTE_ARRAY" value="7" />
     </enum>
-    <enum name="ConvertedType" doc="DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet.
+    <enum name="ConvertedType" doc="DEPRECATED: Common types used by frameworks (e.g. Hive, Pig) using parquet.
 ConvertedType is superseded by LogicalType.  This enum should not be extended.
 
 See LogicalTypes.md for conversion between ConvertedType and LogicalType.">
@@ -134,14 +134,15 @@ FLOAT - 4 bytes per value.  IEEE. Stored as little-endian.
 DOUBLE - 8 bytes per value.  IEEE. Stored as little-endian.
 BYTE_ARRAY - 4 byte length stored as little endian, followed by bytes.
 FIXED_LEN_BYTE_ARRAY - Just the bytes." />
-      <member name="PLAIN_DICTIONARY" value="2" doc="Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+      <member name="PLAIN_DICTIONARY" value="2" doc="DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the
 plain type.
-in a data page use RLE_DICTIONARY instead.
-in a Dictionary page use PLAIN instead" />
+For a data page use RLE_DICTIONARY instead.
+For a Dictionary page use PLAIN instead." />
       <member name="RLE" value="3" doc="Group packed run length encoding. Usable for definition/repetition levels
 encoding and Booleans (on one bit: 0 is false; 1 is true.)" />
-      <member name="BIT_PACKED" value="4" doc="Bit packed encoding.  This can only be used if the data has a known max
-width.  Usable for definition/repetition levels encoding." />
+      <member name="BIT_PACKED" value="4" doc="DEPRECATED: Bit packed encoding.  This can only be used if the data has a known max
+width.  Usable for definition/repetition levels encoding.
+Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md." />
       <member name="DELTA_BINARY_PACKED" value="5" doc="Delta encoding for integers. This can be used for int columns and works best
 on sorted data" />
       <member name="DELTA_LENGTH_BYTE_ARRAY" value="6" doc="Encoding for byte arrays to separate the length values and the data. The lengths
@@ -158,6 +159,11 @@ afterwards.
 
 Added in 2.8 for FLOAT and DOUBLE.
 Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11." />
+      <member name="ALP" value="10" doc="Adaptive Lossless floating-Point (ALP) encoding for FLOAT and DOUBLE.
+Losslessly converts decimal-like floating-point values to integers via
+decimal scaling, then applies Frame of Reference (FOR) encoding and
+bit-packing; values that cannot be converted losslessly are stored as
+exceptions. See Encodings.md for the detailed specification." />
     </enum>
     <enum name="CompressionCodec" doc="Supported compression algorithms.
 
@@ -275,6 +281,10 @@ arrays do not include a length prefix." required="optional" type="binary" />
       <field name="min_value" field-id="6" required="optional" type="binary" />
       <field name="is_max_value_exact" field-id="7" doc="If true, max_value is the actual maximum value for a column" required="optional" type="bool" />
       <field name="is_min_value_exact" field-id="8" doc="If true, min_value is the actual minimum value for a column" required="optional" type="bool" />
+      <field name="nan_count" field-id="9" doc="Count of NaN values in the column; only present if physical type is FLOAT
+or DOUBLE, or logical type is FLOAT16.
+If this field is not present, readers MUST assume NaNs may be present
+(i.e. MUST assume nan_count &gt; 0 and MAY NOT assume nan_count == 0)." required="optional" type="i64" />
     </struct>
     <struct name="StringType" doc="Empty structs to use as logical type annotations" />
     <struct name="UUIDType" />
@@ -339,7 +349,7 @@ Allowed for physical types: BYTE_ARRAY" />
     </struct>
     <struct name="GeometryType" doc="Embedded Geometry logical type annotation
 
-Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+Geospatial features in the Well-Known Binary (WKB) format and `edges` interpolation
 is always linear/planar.
 
 A custom CRS can be set by the crs field. If unset, it defaults to &quot;OGC:CRS84&quot;,
@@ -354,13 +364,13 @@ See Geospatial.md for details.">
     <struct name="GeographyType" doc="Embedded Geography logical type annotation
 
 Geospatial features in the WKB format with an explicit (non-linear/non-planar)
-edges interpolation algorithm.
+`edges` interpolation algorithm.
 
 A custom geographic CRS can be set by the crs field, where longitudes are
 bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
 defaults to &quot;OGC:CRS84&quot;.
 
-An optional algorithm can be set to correctly interpret edges interpolation
+An optional algorithm can be set to correctly interpret `edges` interpolation
 of the geometries. If unset, the algorithm defaults to SPHERICAL.
 
 Allowed for physical type: BYTE_ARRAY.
@@ -369,6 +379,13 @@ See Geospatial.md for details.">
       <field name="crs" field-id="1" required="optional" type="string" />
       <field name="algorithm" field-id="2" required="optional" type="id" type-module="parquet" type-id="EdgeInterpolationAlgorithm" />
     </struct>
+    <struct name="FileType" doc="File logical type annotation
+
+Annotates a group that represents a reference to a file, or to a range of
+bytes that may be stored inline, elsewhere in this file, or in an external
+file.
+
+See LogicalTypes.md for details." />
     <union name="LogicalType" doc="LogicalType annotations to replace ConvertedType.
 
 To maintain compatibility, implementations using LogicalType for a
@@ -391,8 +408,9 @@ from the following table.">
       <field name="VARIANT" field-id="16" required="optional" type="id" type-module="parquet" type-id="VariantType" />
       <field name="GEOMETRY" field-id="17" required="optional" type="id" type-module="parquet" type-id="GeometryType" />
       <field name="GEOGRAPHY" field-id="18" required="optional" type="id" type-module="parquet" type-id="GeographyType" />
+      <field name="FILE" field-id="19" required="optional" type="id" type-module="parquet" type-id="FileType" />
     </union>
-    <struct name="SchemaElement" doc="Represents a element inside a schema definition.
+    <struct name="SchemaElement" doc="Represents an element inside a schema definition.
  - if it is a group (inner node) then type is undefined and num_children is defined
  - if it is a primitive type (leaf) then type is defined and num_children is undefined
 the nodes are listed in depth first traversal order.">
@@ -427,7 +445,7 @@ for some logical types to ensure forward-compatibility in format v1." required="
     <struct name="DataPageHeader" doc="Data page header">
       <field name="num_values" field-id="1" doc="Number of values, including NULLs, in this data page.
 
-If a OffsetIndex is present, a page must begin at a row
+If an OffsetIndex is present, a page must begin at a row
 boundary (repetition_level = 0). Otherwise, pages may begin
 within a row (repetition_level &gt; 0)." required="required" type="i32" />
       <field name="encoding" field-id="2" doc="Encoding used for this data page *" required="required" type="id" type-module="parquet" type-id="Encoding" />
@@ -462,7 +480,7 @@ split across page boundaries when using V2 data pages." required="required" type
       <field name="repetition_levels_byte_length" field-id="6" doc="Length of the repetition levels" required="required" type="i32" />
       <field name="is_compressed" field-id="7" doc="Whether the values are compressed.
 Which means the section of the page between
-definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+definition_levels_byte_length + repetition_levels_byte_length and compressed_page_size (included)
 is compressed with the compression_codec.
 If missing it is considered compressed" required="optional" type="bool">
         <default>
@@ -496,10 +514,10 @@ and followed by its bitset.">
       <field name="type" field-id="1" doc="the type of the page: indicates which of the *_header fields is set *" required="required" type="id" type-module="parquet" type-id="PageType" />
       <field name="uncompressed_page_size" field-id="2" doc="Uncompressed page size in bytes (not including this header) *" required="required" type="i32" />
       <field name="compressed_page_size" field-id="3" doc="Compressed (and potentially encrypted) page size in bytes, not including this header *" required="required" type="i32" />
-      <field name="crc" field-id="4" doc="The 32-bit CRC checksum for the page, to be be calculated as follows:
+      <field name="crc" field-id="4" doc="The 32-bit CRC checksum for the page, to be calculated as follows:
 
 - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
-  the same as in e.g. GZip).
+  the same as in e.g. GZIP).
 - All page types can have a CRC (v1 and v2 data pages, dictionary pages,
   etc.).
 - The CRC is computed on the serialization binary representation of the page
@@ -599,7 +617,7 @@ There is no other known usage of this field. Specifically, there are no known
 reference implementations that will read externally stored column data if this field is populated
 within a standard parquet file. Making use of the field for this purpose is
 not considered part of the Parquet specification." required="optional" type="string" />
-      <field name="file_offset" field-id="2" doc="Deprecated: Byte offset in file_path to the ColumnMetaData
+      <field name="file_offset" field-id="2" doc="DEPRECATED: Byte offset in file_path to the ColumnMetaData
 
 Past use of this field has been inconsistent, with some implementations
 using it to point to the ColumnMetaData and some using it to point to
@@ -640,6 +658,8 @@ in this row group *" required="optional" type="i64" />
       <field name="ordinal" field-id="7" doc="Row group ordinal in the file *" required="optional" type="i16" />
     </struct>
     <struct name="TypeDefinedOrder" doc="Empty struct to signal the order defined by the physical or logical type" />
+    <struct name="IEEE754TotalOrder" doc="Empty struct to signal IEEE 754 total order for floating point types" />
+    <struct name="Int96TimestampOrder" doc="Empty struct to signal chronological ordering of physical type INT96" />
     <union name="ColumnOrder" doc="Union to specify the order used for the min_value and max_value fields for a
 column. This union takes the role of an enhanced enum that allows rich
 elements (which will be needed for a collation-based ordering in the future).
@@ -647,6 +667,9 @@ elements (which will be needed for a collation-based ordering in the future).
 Possible values are:
 * TypeDefinedOrder - the column uses the order defined by its logical or
                      physical type (if there is no logical type).
+* IEEE754TotalOrder - the floating point column uses IEEE 754 total order.
+
+* Int96TimestampOrder - the INT96 column uses chronological timestamp order.
 
 If the reader does not support the value of this union, min and max stats
 for this column should be ignored.">
@@ -676,46 +699,79 @@ for this column should be ignored.">
   VARIANT - undefined
   GEOMETRY - undefined
   GEOGRAPHY - undefined
+  FILE - undefined
 
 In the absence of logical types, the sort order is determined by the physical type:
   BOOLEAN - false, true
   INT32 - signed comparison
   INT64 - signed comparison
-  INT96 (only used for legacy timestamps) - undefined(+)
+  INT96 (only used for legacy timestamps) - depends on sort order (+)
   FLOAT - signed comparison of the represented value (*)
   DOUBLE - signed comparison of the represented value (*)
   BYTE_ARRAY - unsigned byte-wise comparison
   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
 
 (+) While the INT96 type has been deprecated, at the time of writing it is
-   still used in many legacy systems. If a Parquet implementation chooses
-   to write statistics for INT96 columns, it is recommended to order them
-   according to the legacy rules:
-   - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
-   - if equal last 4 bytes, compare the first 8 bytes as a little-endian
-     64-bit signed integer (nanos)
-   See https://github.com/apache/parquet-format/issues/502 for more details
+    still used in many legacy systems. It is optional for writers to emit
+    statistics for INT96 columns. Writers that emit stats for such columns
+    should use the INT96_TIMESTAMP_ORDER for this type and order the values
+    according to the legacy rules:
+    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+    - if equal last 4 bytes, compare the first 8 bytes as a little-endian
+      64-bit signed integer (nanos)
+    If TYPE_ORDER is used for an INT96 column, readers should ignore all statistics
+    (`min`/`max` fields in `Statistics` and `min_values`/`max_values` fields in
+    `ColumnIndex`) for that column.
 
-(*) Because the sorting order is not specified properly for floating
-    point values (relations vs. total ordering) the following
+(*) Because TYPE_ORDER is ambiguous for floating point types due to
+    underspecified handling of NaN and -0/+0, it is recommended that writers
+    use IEEE_754_TOTAL_ORDER for these types.
+
+    If TYPE_ORDER is used for floating point types, then the following
     compatibility rules should be applied when reading statistics:
     - If the min is a NaN, it should be ignored.
     - If the max is a NaN, it should be ignored.
+    - If the nan_count field is set, a reader can compute
+      nan_count + null_count == num_values to deduce whether all non-null
+      values are NaN.
     - If the min is +0, the row group may contain -0 values as well.
     - If the max is -0, the row group may contain +0 values as well.
     - When looking for NaN values, min and max should be ignored.
+      If the nan_count field is set, it can be used to check whether
+      NaNs are present.
 
-    When writing statistics the following rules should be followed:
-    - NaNs should not be written to min or max statistics fields.
+    When writing page or column chunk statistics for columns with
+    TYPE_ORDER order, the following rules must be followed:
+    - The nan_count field must be set for floating point types, even if
+      it is zero.
+    - If the nan_count field is set, min and max statistics fields, when
+      present, must not contain NaN values and must be computed from
+      non-NaN values only. This signals to readers that the min and max
+      statistics are reliable for non-NaN values.
+    - If all non-null values are NaN, min and max statistics must not be
+      written.
     - If the computed max value is zero (whether negative or positive),
       `+0.0` should be written into the max statistics field.
     - If the computed min value is zero (whether negative or positive),
-      `-0.0` should be written into the min statistics field." required="optional" type="id" type-module="parquet" type-id="TypeDefinedOrder" />
+      `-0.0` should be written into the min statistics field.
+
+    When writing column indexes for columns with TYPE_ORDER order, the
+    following rules must be followed:
+    - NaNs must not be written to min_values or max_values.
+    - If all non-null values of a page are NaN, a column index must not
+      be written for this column chunk because min_values and max_values
+      are required.
+    - If the computed max value is zero (whether negative or positive),
+      `+0.0` should be written into the corresponding max_values entry.
+    - If the computed min value is zero (whether negative or positive),
+      `-0.0` should be written into the corresponding min_values entry." required="optional" type="id" type-module="parquet" type-id="TypeDefinedOrder" />
+      <field name="IEEE_754_TOTAL_ORDER" field-id="2" required="optional" type="id" type-module="parquet" type-id="IEEE754TotalOrder" />
+      <field name="INT96_TIMESTAMP_ORDER" field-id="3" required="optional" type="id" type-module="parquet" type-id="Int96TimestampOrder" />
     </union>
     <struct name="PageLocation">
       <field name="offset" field-id="1" doc="Offset of the page in the file *" required="required" type="i64" />
-      <field name="compressed_page_size" field-id="2" doc="Size of the page, including header. Sum of compressed_page_size and header
-length" required="required" type="i32" />
+      <field name="compressed_page_size" field-id="2" doc="Size of the page, including header. Equal to the sum of the page&apos;s
+PageHeader.compressed_page_size and the size of the serialized PageHeader." required="required" type="i32" />
       <field name="first_row_index" field-id="3" doc="Index within the RowGroup of the first row of the page. When an
 OffsetIndex is present, pages must begin on row boundaries
 (repetition_level = 0)." required="required" type="i64" />
@@ -731,7 +787,7 @@ that page_locations[i].first_row_index &lt; page_locations[i+1].first_row_index.
       </field>
       <field name="unencoded_byte_array_data_bytes" field-id="2" doc="Unencoded/uncompressed size for BYTE_ARRAY types.
 
-See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+See documentation for unencoded_byte_array_data_bytes in SizeStatistics for
 more details on this field." required="optional" type="list">
         <elemType type="i64" />
       </field>
@@ -754,11 +810,30 @@ corresponding entries in min_values and max_values must be valid." required="req
       <field name="min_values" field-id="2" doc="Two lists containing lower and upper bounds for the values of each page
 determined by the ColumnOrder of the column. These may be the actual
 minimum and maximum values found on a page, but can also be (more compact)
-values that do not exist on a page. For example, instead of storing &quot;&quot;Blart
+values that do not exist on a page. For example, instead of storing &quot;Blart
 Versenwald III&quot;, a writer may set min_values[i]=&quot;B&quot;, max_values[i]=&quot;C&quot;.
 Such more compact values must still be valid values within the column&apos;s
 logical type. Readers must make sure that list entries are populated before
-using them by inspecting null_pages." required="required" type="list">
+using them by inspecting null_pages.
+
+For columns of physical type FLOAT or DOUBLE, or logical type FLOAT16,
+NaN values are not to be included in these bounds. If all non-null values
+of a page are NaN, then a writer must do the following:
+- If the order of this column is TYPE_ORDER, then a column index must
+  not be written for this column chunk. While this is unfortunate for
+  performance, it is necessary to avoid conflict with legacy files that
+  still included NaN in min_values and max_values even if the page had
+  non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended.
+- If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
+  and max_values[i] of that page must be set to the smallest and largest
+  NaN values as defined by IEEE 754 total order.
+
+For columns of physical type INT96, the writer must do the following:
+- If the order of this column is not INT96_TIMESTAMP_ORDER, then a column
+  index must not be written for this column chunk.
+- If the order of this column is INT96_TIMESTAMP_ORDER, the min_values[i]
+  and max_values[i] of that page must be set to the smallest and largest
+  values as defined by the INT96 chronological timestamp ordering." required="required" type="list">
         <elemType type="binary" />
       </field>
       <field name="max_values" field-id="3" required="required" type="list">
@@ -791,6 +866,12 @@ for the second page." required="optional" type="list">
         <elemType type="i64" />
       </field>
       <field name="definition_level_histograms" field-id="7" doc="Same as repetition_level_histograms except for definitions levels." required="optional" type="list">
+        <elemType type="i64" />
+      </field>
+      <field name="nan_counts" field-id="8" doc="A list containing the number of NaN values for each page. Only present
+for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
+If this field is not present, readers MUST assume that there might be
+NaN values in any page." required="optional" type="list">
         <elemType type="i64" />
       </field>
     </struct>
@@ -839,7 +920,7 @@ e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55)" requir
       <field name="column_orders" field-id="7" doc="Sort order used for the min_value and max_value fields in the Statistics
 objects and the min_values and max_values fields in the ColumnIndex
 objects of each column in this file. Sort orders are listed in the order
-matching the columns in the schema. The indexes are not necessary the same
+matching the columns in the schema. The indexes are not necessarily the same
 though, because only leaf nodes of the schema are represented in the list
 of sort orders.
 

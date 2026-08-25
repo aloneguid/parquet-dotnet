@@ -9,6 +9,7 @@
 
 ## Improvements
 - Fixed `ClrNullableIfHasNulls` property comments and added basic test coverage (#786).
+- Upgraded to the [latest Thrift specification](https://github.com/apache/parquet-format/blob/master/src/main/thrift/parquet.thrift) – affects only this library's developers and maintainers, or users of the low-level metadata.
 
 ## Breaking changes
 - The compression level changed from `SmallestSize` to `Optimal` for the default level like it was in v5. Thanks to @svenclaesson
