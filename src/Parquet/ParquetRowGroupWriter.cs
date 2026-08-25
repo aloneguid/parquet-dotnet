@@ -22,7 +22,7 @@ public class ParquetRowGroupWriter : IDisposable {
     private readonly Stream _stream;
     private readonly ThriftFooter _footer;
     private readonly ParquetOptions _options;
-    private readonly RowGroup _owGroup;
+    private readonly RowGroup _thriftRowGroup;
     private readonly SchemaElement[] _thschema;
     private int _colIdx;
 
@@ -34,10 +34,15 @@ public class ParquetRowGroupWriter : IDisposable {
         _footer = footer ?? throw new ArgumentNullException(nameof(footer));
         _options = options;
 
-        _owGroup = _footer.AddRowGroup();
-        _owGroup.Columns = new List<ColumnChunk>();
+        _thriftRowGroup = _footer.AddRowGroup();
+        _thriftRowGroup.Columns = [];
         _thschema = _footer.GetWriteableSchema();
     }
+    
+    /// <summary>
+    /// Provides access to the underlying low-level Thrift row group. Use it only for advanced scenarios when you know what you are doing. This library does modify this metadata before, during, and after writing the row group or calling any members, therefore, be extremely vigilant in what you are doing. One of the good non-conflicting uses of this member is setting <see cref="RowGroup.SortingColumns"/>.
+    /// </summary>
+    public RowGroup ThriftRowGroup => _thriftRowGroup;
 
     internal long? RowCount { get; private set; }
 
@@ -225,7 +230,7 @@ public class ParquetRowGroupWriter : IDisposable {
         }
 
         ColumnChunk chunk = await writer.WriteAsync(path, wc, cancellationToken);
-        _owGroup.Columns.Add(chunk);
+        _thriftRowGroup.Columns.Add(chunk);
     }
 
     /// <summary>
@@ -250,11 +255,11 @@ public class ParquetRowGroupWriter : IDisposable {
     /// </summary>
     public void Dispose() {
         //row count is known only after at least one column is written
-        _owGroup.NumRows = RowCount ?? 0;
+        _thriftRowGroup.NumRows = RowCount ?? 0;
 
         //row group's size is a sum of _uncompressed_ sizes of all columns in it, including the headers
         //luckily ColumnChunk already contains sizes of page+header in it's meta
-        _owGroup.TotalCompressedSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalCompressedSize);
-        _owGroup.TotalByteSize = _owGroup.Columns.Sum(c => c.MetaData!.TotalUncompressedSize);
+        _thriftRowGroup.TotalCompressedSize = _thriftRowGroup.Columns.Sum(c => c.MetaData!.TotalCompressedSize);
+        _thriftRowGroup.TotalByteSize = _thriftRowGroup.Columns.Sum(c => c.MetaData!.TotalUncompressedSize);
     }
 }
