@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
@@ -416,9 +417,19 @@ public class ParquetReaderOnTestFilesTest : TestBase {
 
 
     [Fact]
-    public async Task UnshreddedVariantAsync() {
-        await using Stream s = OpenTestFile("variant_unshredded.parquet");
+    public async Task Variant_Basics() {
+        await using Stream s = OpenTestFile("variants_basic.parquet");
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
+        DataField[] dfs = r.Schema.DataFields;
+        
+        using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
+        
+        //v_json
+        DataField vJsonMetadataField = dfs.First(d => d.Path.ToString() == "v_json/metadata");
+        RawColumnData<ReadOnlyMemory<byte>> vJsonMetadata = await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<byte>>(vJsonMetadataField);
+        ReadOnlyMemory<byte> vJsonMetadata0 = vJsonMetadata.Values[0];
+        var vJsonMetadataParsed = new VariantMetadata(vJsonMetadata0);
+        
         Assert.NotNull(r.Schema);
     }
 

@@ -56,7 +56,7 @@ if(args.Length == 0) {
     }
 }
 
-string title = "Parquet Underfloor";
+string title = $"Parquet Underfloor {Globals.Version}";
 
 #region [ Schema ]
 
