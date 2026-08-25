@@ -27,4 +27,18 @@
         <PackageReference Include="Parquet.Net" Version="$(ParquetVersion)" />
     </ItemGroup>
 
+    <PropertyGroup Condition="'$(ParquetVersion)' != ''">
+        <DefineConstants>$(DefineConstants);PARQUET_PACKAGE</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(ParquetVersion)' != ''">
+        <Compile Remove="SampleGenerator.cs" />
+        <Compile Remove="Benchmarks\CompressionBenchmarks.cs" />
+        <Compile Remove="Benchmarks\Curiosities.cs" />
+        <Compile Remove="Benchmarks\DataTypes.cs" />
+        <Compile Remove="Benchmarks\EncodingBenchmarks.cs" />
+        <Compile Remove="Benchmarks\HighLevel.cs" />
+        <Compile Remove="Benchmarks\WriteBenchmark.cs" />
+    </ItemGroup>
+
 </Project>
