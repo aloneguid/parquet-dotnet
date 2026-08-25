@@ -5,6 +5,7 @@
   - Accepts a boolean flag, letting you be more explicit.
   - Can be applied to .NET fields, not just properties.
   - Works for structs, maps, and lists, not just to data fields.
+- `ParquetRowGroupWriter` has open public member `ThriftRowGroup` that can be used to access the underlying low-level Thrift object. Use with caution. #614.
 
 ## Improvements
 - Fixed `ClrNullableIfHasNulls` property comments and added basic test coverage (#786).
