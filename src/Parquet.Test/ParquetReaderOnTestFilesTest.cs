@@ -445,15 +445,21 @@ select to_variant_object(struct('field', 'val'))
         RawColumnData<ReadOnlyMemory<byte>> variantValueValues = await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<byte>>(variantValueField);
         
         // value 0: JSON document
+        var m0Meta = new VariantMetadata(variantMetadataValues.Values[0]);
+        Assert.Equal(1, m0Meta.Version);
+        Assert.False(m0Meta.DictionaryIsSortedAndUnique);
+        Assert.Equal(2, m0Meta.Dictionary.Count);
+        Assert.Equal("key", m0Meta.Dictionary[0]);
+        Assert.Equal("data", m0Meta.Dictionary[1]);
 
         // value 1: NULL json
-        
+
         // value 2: JSON string
 
         // value 3: decimal primitive
-        
+
         // value 4: dictionary
-        
+
         // value 5: struct
     }
 

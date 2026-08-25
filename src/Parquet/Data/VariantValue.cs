@@ -284,7 +284,7 @@ public readonly struct VariantValue {
     /// Gets an object field name resolved through <see cref="VariantMetadata"/>.
     /// </summary>
     /// <exception cref="InvalidOperationException">The value is not an object.</exception>
-    public string GetFieldName(int index) => _metadata[GetFieldId(index)];
+    public string GetFieldName(int index) => _metadata.Dictionary[GetFieldId(index)];
 
     /// <summary>
     /// Gets an object field value as a raw memory slice.
@@ -502,10 +502,10 @@ public readonly struct VariantValue {
         string? previousName = null;
         for(int i = 0; i < elementCount; i++) {
             uint fieldId = ReadUnsignedLittleEndian(valueData, checked(tableStart + i * fieldIdSize), fieldIdSize);
-            if(fieldId >= (uint)metadata.DictionarySize)
+            if(fieldId >= (uint)metadata.Dictionary.Count)
                 throw new ArgumentException("Variant object field ID does not reference the metadata dictionary.", parameterName);
 
-            string fieldName = metadata[(int)fieldId];
+            string fieldName = metadata.Dictionary[(int)fieldId];
             if(previousName is not null && CompareUtf8(previousName, fieldName) >= 0)
                 throw new ArgumentException("Variant object field names must be unique and ordered by UTF-8 bytes.", parameterName);
 

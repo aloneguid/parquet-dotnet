@@ -12,12 +12,10 @@ public class VariantMetadataTest {
         var metadata = new VariantMetadata(CreateMetadata(1, false, false, "alpha", "beta", "gamma"));
 
         Assert.Equal(1, metadata.Version);
-        Assert.False(metadata.SortedStrings);
-        Assert.False(metadata.IsSortedStrings);
-        Assert.Equal(1, metadata.OffsetSize);
-        Assert.Equal(3, metadata.DictionarySize);
+        Assert.False(metadata.DictionaryIsSortedAndUnique);
+        Assert.Equal(3, metadata.Dictionary.Count);
         Assert.Equal(new[] { "alpha", "beta", "gamma" }, metadata.Dictionary);
-        Assert.Equal("beta", metadata[1]);
+        Assert.Equal("beta", metadata.Dictionary[1]);
     }
 
     [Theory]
@@ -30,16 +28,15 @@ public class VariantMetadataTest {
         var metadata = new VariantMetadata(CreateMetadata(offsetSize, false, false, value));
 
         Assert.Equal(1, metadata.Version);
-        Assert.Equal(offsetSize, metadata.OffsetSize);
-        Assert.Equal(1, metadata.DictionarySize);
-        Assert.Equal(value, metadata[0]);
+        Assert.Equal(1, metadata.Dictionary.Count);
+        Assert.Equal(value, metadata.Dictionary[0]);
     }
 
     [Fact]
     public void Parse_empty_dictionary() {
         var metadata = new VariantMetadata(CreateMetadata(1, false, false));
 
-        Assert.Equal(0, metadata.DictionarySize);
+        Assert.Equal(0, metadata.Dictionary.Count);
         Assert.Empty(metadata.Dictionary);
     }
 
@@ -47,8 +44,7 @@ public class VariantMetadataTest {
     public void Reserved_header_bit_is_ignored() {
         var metadata = new VariantMetadata(CreateMetadata(2, false, true, "value"));
 
-        Assert.Equal(2, metadata.OffsetSize);
-        Assert.Equal("value", metadata[0]);
+        Assert.Equal("value", metadata.Dictionary[0]);
     }
 
     [Fact]
