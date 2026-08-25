@@ -12,6 +12,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(int));
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int), f.ClrNullableIfHasNullsType);
         Assert.False(f.IsNullable);
         Assert.False(f.IsArray);
     }
@@ -21,6 +22,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(int?));
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int?), f.ClrNullableIfHasNullsType);
         Assert.True(f.IsNullable);
         Assert.False(f.IsArray);
     }
@@ -30,6 +32,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(IEnumerable<int>));
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int), f.ClrNullableIfHasNullsType);
         Assert.False(f.IsNullable);
         Assert.True(f.IsArray);
     }
@@ -39,6 +42,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(IEnumerable<int?>));
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int?), f.ClrNullableIfHasNullsType);
         Assert.True(f.IsNullable);
         Assert.True(f.IsArray);
     }
@@ -48,6 +52,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(int), null, true);
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int), f.ClrNullableIfHasNullsType);
         Assert.False(f.IsNullable);
         Assert.True(f.IsArray);
     }
@@ -57,6 +62,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(int), true, true);
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int?), f.ClrNullableIfHasNullsType);
         Assert.True(f.IsNullable);
         Assert.True(f.IsArray);
     }
@@ -66,6 +72,7 @@ public class DataFieldTest {
         var f = new DataField("id", typeof(IEnumerable<int?>), false);
         Assert.Equal("id", f.Name);
         Assert.Equal(typeof(int), f.ClrType);
+        Assert.Equal(typeof(int), f.ClrNullableIfHasNullsType);
         Assert.False(f.IsNullable);
         Assert.True(f.IsArray);
     }
@@ -75,6 +82,7 @@ public class DataFieldTest {
         var f = new DataField("name", typeof(string));
         Assert.Equal("name", f.Name);
         Assert.Equal(typeof(ReadOnlyMemory<char>), f.ClrType);
+        Assert.Equal(typeof(ReadOnlyMemory<char>?), f.ClrNullableIfHasNullsType);
         Assert.True(f.IsNullable);
         Assert.False(f.IsArray);
     }
@@ -84,7 +92,10 @@ public class DataFieldTest {
         var f = new DataField("name", typeof(ReadOnlyMemory<char>));
         Assert.Equal("name", f.Name);
         Assert.Equal(typeof(ReadOnlyMemory<char>), f.ClrType);
+        Assert.Equal(typeof(ReadOnlyMemory<char>), f.ClrNullableIfHasNullsType);
         Assert.False(f.IsNullable);
         Assert.False(f.IsArray);
     }
+    
+    
 }

@@ -75,7 +75,7 @@ public class DataField : Field, ICloneable {
     /// <summary>
     /// Should be set to nullable clr type unlike <see cref="ClrType"/> which is always non-nullable. But only if the original type is OPTIONAL.
     /// </summary>
-    internal Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
+    public Type ClrNullableIfHasNullsType { get; set; } = typeof(void);
 
     /// <summary>
     /// Optional metadata integer, used in Lake implementations. If this field is set, writer will assign the appropriate metadata.
