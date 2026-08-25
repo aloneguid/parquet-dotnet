@@ -2,14 +2,16 @@
 
 ## New features
 - `ParquetRequired` attribute (covering #613 and more):
-  - Accepts boolean flag, letting you be more explicit.
+  - Accepts a boolean flag, letting you be more explicit.
   - Can be applied to .NET fields, not just properties.
   - Works for structs, maps, and lists, not just to data fields.
+
+## Improvements
+- Fixed `ClrNullableIfHasNulls` property comments and added basic test coverage (#786).
 
 ## Breaking changes
 - The compression level changed from `SmallestSize` to `Optimal` for the default level like it was in v5. Thanks to @svenclaesson
 for pointing this out in #765.
-- Fixed `ClrNullableIfHasNulls` property visibility, it should be internal (#786).
 
 # 6.1.0
 
