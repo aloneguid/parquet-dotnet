@@ -198,11 +198,10 @@ public class ParquetRowGroupReader : IDisposable {
         Span<T?> valuesSpan = values.Span;
         Span<T> nonNullSpan = nonNullMemory.Memory.Span;
         Span<int> dlSpan = definitionLevels.Memory.Span;
-        int maxDl = field.MaxDefinitionLevel;
         int nni = 0;
+        int maxDl = field.MaxDefinitionLevel;
         for(int i = 0; i < RowCount; i++) {
-            bool isNull = dlSpan[i] < maxDl;
-            valuesSpan[i] = isNull ? null : nonNullSpan[nni++];
+            valuesSpan[i] = dlSpan[i] < maxDl ? null : nonNullSpan[nni++];
         }
     }
 
@@ -227,12 +226,9 @@ public class ParquetRowGroupReader : IDisposable {
             Span<int> dlSpan = definitionlevels.Memory.Span;
             Span<ReadOnlyMemory<char>> valueSpan = rawValues.Memory.Span;
             int vi = 0;
+            int maxDl = field.MaxDefinitionLevel;
             for(int i = 0; i < dlSpan.Length; i++) {
-                if(dlSpan[i] == 0) {
-                    values.Span[i] = null;
-                } else {
-                    values.Span[i] = new string(valueSpan[vi++].Span);
-                }
+                values.Span[i] = dlSpan[i] < maxDl ? null : new string(valueSpan[vi++].Span);
             }
         } else {
             using IMemoryOwner<ReadOnlyMemory<char>> rawValues = MemoryOwner<ReadOnlyMemory<char>>.Allocate(values.Length);
@@ -268,12 +264,9 @@ public class ParquetRowGroupReader : IDisposable {
             Span<int> dlSpan = definitionlevels.Memory.Span;
             Span<ReadOnlyMemory<byte>> valueSpan = rawValues.Memory.Span;
             int vi = 0;
+            int maxDl = field.MaxDefinitionLevel;
             for(int i = 0; i < dlSpan.Length; i++) {
-                if(dlSpan[i] == 0) {
-                    values.Span[i] = null;
-                } else {
-                    values.Span[i] = valueSpan[vi++].ToArray();
-                }
+                values.Span[i] = dlSpan[i] < maxDl ? null : valueSpan[vi++].ToArray();
             }
         } else {
             using IMemoryOwner<ReadOnlyMemory<byte>> rawValues = MemoryOwner<ReadOnlyMemory<byte>>.Allocate(values.Length);

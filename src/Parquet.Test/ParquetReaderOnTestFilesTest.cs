@@ -422,4 +422,18 @@ public class ParquetReaderOnTestFilesTest : TestBase {
         Assert.NotNull(r.Schema);
     }
 
+    [Fact]
+    public async Task Read_nested_nullable_string_with_intermediate_definition_level() {
+        await using Stream stream = OpenTestFile("issue-async-nested-null.parquet");
+        await using ParquetReader reader = await ParquetReader.CreateAsync(stream);
+        using ParquetRowGroupReader rowGroup = reader.OpenRowGroupReader(0);
+
+        DataField field = reader.Schema.GetDataFields()[0];
+        string?[] values = new string?[rowGroup.RowCount];
+
+        await rowGroup.ReadAsync(field, values);
+
+        Assert.Equal([null, "present"], values);
+    }
+    
 }
