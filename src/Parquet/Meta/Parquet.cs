@@ -1,6 +1,8 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Parquet.Meta.Proto;
 
 namespace Parquet.Meta;
@@ -598,6 +600,49 @@ public class Statistics {
                     break;
                 default:
                     proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+
+    internal static async ValueTask<Statistics> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {
+        var r = new Statistics();
+        proto.StructBegin();
+        while(true) {
+            (short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);
+            if(compactType == CompactType.Stop) break;
+            switch(fieldId) {
+                case 1: // Max, binary
+                    r.Max = await proto.ReadBinaryAsync(cancellationToken);
+                    break;
+                case 2: // Min, binary
+                    r.Min = await proto.ReadBinaryAsync(cancellationToken);
+                    break;
+                case 3: // NullCount, i64
+                    r.NullCount = await proto.ReadI64Async(cancellationToken);
+                    break;
+                case 4: // DistinctCount, i64
+                    r.DistinctCount = await proto.ReadI64Async(cancellationToken);
+                    break;
+                case 5: // MaxValue, binary
+                    r.MaxValue = await proto.ReadBinaryAsync(cancellationToken);
+                    break;
+                case 6: // MinValue, binary
+                    r.MinValue = await proto.ReadBinaryAsync(cancellationToken);
+                    break;
+                case 7: // IsMaxValueExact, bool
+                    r.IsMaxValueExact = compactType == CompactType.BooleanTrue;
+                    break;
+                case 8: // IsMinValueExact, bool
+                    r.IsMinValueExact = compactType == CompactType.BooleanTrue;
+                    break;
+                case 9: // NanCount, i64
+                    r.NanCount = await proto.ReadI64Async(cancellationToken);
+                    break;
+                default:
+                    await proto.SkipFieldAsync(compactType, cancellationToken);
                     break;
             }
         }
@@ -1683,6 +1728,37 @@ public class DataPageHeader {
         proto.StructEnd();
         return r;
     }
+
+    internal static async ValueTask<DataPageHeader> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {
+        var r = new DataPageHeader();
+        proto.StructBegin();
+        while(true) {
+            (short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);
+            if(compactType == CompactType.Stop) break;
+            switch(fieldId) {
+                case 1: // NumValues, i32
+                    r.NumValues = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 2: // Encoding, id
+                    r.Encoding = (Encoding)await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 3: // DefinitionLevelEncoding, id
+                    r.DefinitionLevelEncoding = (Encoding)await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 4: // RepetitionLevelEncoding, id
+                    r.RepetitionLevelEncoding = (Encoding)await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 5: // Statistics, id
+                    r.Statistics = await Statistics.ReadAsync(proto, cancellationToken);
+                    break;
+                default:
+                    await proto.SkipFieldAsync(compactType, cancellationToken);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
 }
 
 public class IndexPageHeader {
@@ -1698,6 +1774,22 @@ public class IndexPageHeader {
             switch(fieldId) {
                 default:
                     proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+
+    internal static async ValueTask<IndexPageHeader> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {
+        var r = new IndexPageHeader();
+        proto.StructBegin();
+        while(true) {
+            (short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);
+            if(compactType == CompactType.Stop) break;
+            switch(fieldId) {
+                default:
+                    await proto.SkipFieldAsync(compactType, cancellationToken);
                     break;
             }
         }
@@ -1757,6 +1849,31 @@ public class DictionaryPageHeader {
                     break;
                 default:
                     proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+
+    internal static async ValueTask<DictionaryPageHeader> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {
+        var r = new DictionaryPageHeader();
+        proto.StructBegin();
+        while(true) {
+            (short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);
+            if(compactType == CompactType.Stop) break;
+            switch(fieldId) {
+                case 1: // NumValues, i32
+                    r.NumValues = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 2: // Encoding, id
+                    r.Encoding = (Encoding)await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 3: // IsSorted, bool
+                    r.IsSorted = compactType == CompactType.BooleanTrue;
+                    break;
+                default:
+                    await proto.SkipFieldAsync(compactType, cancellationToken);
                     break;
             }
         }
@@ -1869,6 +1986,46 @@ public class DataPageHeaderV2 {
                     break;
                 default:
                     proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+
+    internal static async ValueTask<DataPageHeaderV2> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {
+        var r = new DataPageHeaderV2();
+        proto.StructBegin();
+        while(true) {
+            (short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);
+            if(compactType == CompactType.Stop) break;
+            switch(fieldId) {
+                case 1: // NumValues, i32
+                    r.NumValues = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 2: // NumNulls, i32
+                    r.NumNulls = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 3: // NumRows, i32
+                    r.NumRows = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 4: // Encoding, id
+                    r.Encoding = (Encoding)await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 5: // DefinitionLevelsByteLength, i32
+                    r.DefinitionLevelsByteLength = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 6: // RepetitionLevelsByteLength, i32
+                    r.RepetitionLevelsByteLength = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 7: // IsCompressed, bool
+                    r.IsCompressed = compactType == CompactType.BooleanTrue;
+                    break;
+                case 8: // Statistics, id
+                    r.Statistics = await Statistics.ReadAsync(proto, cancellationToken);
+                    break;
+                default:
+                    await proto.SkipFieldAsync(compactType, cancellationToken);
                     break;
             }
         }
@@ -2231,6 +2388,46 @@ public class PageHeader {
                     break;
                 default:
                     proto.SkipField(compactType);
+                    break;
+            }
+        }
+        proto.StructEnd();
+        return r;
+    }
+
+    internal static async ValueTask<PageHeader> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {
+        var r = new PageHeader();
+        proto.StructBegin();
+        while(true) {
+            (short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);
+            if(compactType == CompactType.Stop) break;
+            switch(fieldId) {
+                case 1: // Type, id
+                    r.Type = (PageType)await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 2: // UncompressedPageSize, i32
+                    r.UncompressedPageSize = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 3: // CompressedPageSize, i32
+                    r.CompressedPageSize = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 4: // Crc, i32
+                    r.Crc = await proto.ReadI32Async(cancellationToken);
+                    break;
+                case 5: // DataPageHeader, id
+                    r.DataPageHeader = await DataPageHeader.ReadAsync(proto, cancellationToken);
+                    break;
+                case 6: // IndexPageHeader, id
+                    r.IndexPageHeader = await IndexPageHeader.ReadAsync(proto, cancellationToken);
+                    break;
+                case 7: // DictionaryPageHeader, id
+                    r.DictionaryPageHeader = await DictionaryPageHeader.ReadAsync(proto, cancellationToken);
+                    break;
+                case 8: // DataPageHeaderV2, id
+                    r.DataPageHeaderV2 = await DataPageHeaderV2.ReadAsync(proto, cancellationToken);
+                    break;
+                default:
+                    await proto.SkipFieldAsync(compactType, cancellationToken);
                     break;
             }
         }

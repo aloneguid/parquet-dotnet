@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Parquet.Extensions.Streaming;
 
@@ -55,6 +57,21 @@ class ReadStreamSubStream : Stream {
 
         _baseStream.Position = _start + _position;
         int read = _baseStream.Read(buffer, offset, count);
+        _position += read;
+        return read;
+    }
+
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+        ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
+        int count = (int)Math.Min(buffer.Length, _length - _position);
+        if(count == 0)
+            return 0;
+
+        _baseStream.Position = _start + _position;
+        int read = await _baseStream.ReadAsync(buffer.Slice(0, count), cancellationToken);
         _position += read;
         return read;
     }

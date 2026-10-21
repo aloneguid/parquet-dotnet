@@ -68,11 +68,12 @@ class DataColumnReader {
 
         long fileOffset = GetFileOffset();
         long pageOffset = fileOffset;
+        var proto = new ThriftCompactProtocolReader(_inputStream);
 
         while(rc.ValuesRead < totalValuesInChunk) {
             // use absolute positioning on every page read, because in some edge cases page reader may not exhaust or over-read page data
             _inputStream.Seek(pageOffset, SeekOrigin.Begin);
-            PageHeader ph = PageHeader.Read(new ThriftCompactProtocolReader(_inputStream));
+            PageHeader ph = await PageHeader.ReadAsync(proto, cancellationToken);
             pageOffset = _inputStream.Position + ph.CompressedPageSize;
 
             switch(ph.Type) {
@@ -91,9 +92,9 @@ class DataColumnReader {
         }
     }
 
-    private async ValueTask<IMemoryOwner<byte>> ReadPageDataAsync(PageHeader ph) {
-        Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize);
-        return await Compressor.Instance.Decompress(_compressionMethod, src, ph.UncompressedPageSize);
+    private async ValueTask<IMemoryOwner<byte>> ReadPageDataAsync(PageHeader ph, CancellationToken cancellationToken) {
+        using Stream src = _inputStream.Sub(_inputStream.Position, ph.CompressedPageSize);
+        return await Compressor.Instance.Decompress(_compressionMethod, src, ph.UncompressedPageSize, cancellationToken);
     }
 
     private async ValueTask ReadDictionaryPageAsync<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
@@ -102,7 +103,7 @@ class DataColumnReader {
             throw new InvalidOperationException("dictionary already read");
 
         //Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding.
-        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph, cancellationToken);
 
         // Dictionary should not contain null values
         Span<T> dictionary = rc.AllocateDictionary(ph.DictionaryPageHeader!.NumValues);
@@ -123,7 +124,7 @@ class DataColumnReader {
             .Min();
 
     private async ValueTask ReadDataPageV1Async<T>(PageHeader ph, ReadingColumn<T> rc, CancellationToken cancellationToken) where T : struct {
-        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph);
+        using IMemoryOwner<byte> bytes = await ReadPageDataAsync(ph, cancellationToken);
 
         if(ph.DataPageHeader == null) {
             throw new ParquetException($"column '{_dataField.Path}' is missing data page header, file is corrupt");
@@ -210,7 +211,7 @@ class DataColumnReader {
         using IMemoryOwner<byte> decompressedDataMemory = await Compressor.Instance.Decompress(
             _compressionMethod,
             pageMemory.Memory.Sub(dataUsed, pageMemory.Length - dataUsed),
-            ph.UncompressedPageSize);
+            ph.UncompressedPageSize, cancellationToken);
 
         ReadColumn(decompressedDataMemory.Memory.Span,
             ph.DataPageHeaderV2.Encoding,

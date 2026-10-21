@@ -11,10 +11,13 @@ using System.Web;
 using Humanizer;
 
 const string Spacing = "    ";
-const string inputPath = @"D:\parquet-dotnet\src\Parquet\Meta\parquet.xml";
-const string outputDir = @"D:\parquet-dotnet\src\Parquet\Meta\";
+string inputPath = Path.Combine("..", "src", "Parquet", "Meta", "parquet.xml");
+string outputDir = Path.Combine("..", "src", "Parquet", "Meta");
 HashSet<string> AtomicTypeIds = new() {
     "bool", "i8", "i16", "i32", "i64", "binary", "string", "double"
+};
+HashSet<string> AsyncReaderTypeNames = new() {
+    "PageHeader", "DataPageHeader", "DataPageHeaderV2", "DictionaryPageHeader", "IndexPageHeader", "Statistics"
 };
 
 Main();
@@ -152,32 +155,35 @@ string GenerateAtomicWriter(string typeId, string getter, out string elementType
     }
 }
 
-string GenerateAtomicReader(string typeId, bool isField, out string csType) {
+string GenerateAtomicReader(string typeId, bool isField, out string csType, bool asyncRead = false) {
+    string Read(string method) => asyncRead
+        ? $"await proto.{method}Async(cancellationToken)"
+        : $"proto.{method}()";
     switch (typeId) {
         case "bool":
             csType = "bool";
-            return isField ? "compactType == CompactType.BooleanTrue" : "proto.ReadBool()";
+            return isField ? "compactType == CompactType.BooleanTrue" : Read("ReadBool");
         case "i8":
             csType = "sbyte";
-            return $"proto.ReadByte()";
+            return Read("ReadByte");
         case "i16":
             csType = "short";
-            return $"proto.ReadI16()";
+            return Read("ReadI16");
         case "i32":
             csType = "int";
-            return $"proto.ReadI32()";
+            return Read("ReadI32");
         case "i64":
             csType = "long";
-            return $"proto.ReadI64()";
+            return Read("ReadI64");
         case "double":
             csType = "double";
-            return $"proto.ReadDouble()";
+            return Read("ReadDouble");
         case "binary":
             csType = "byte[]";
-            return $"proto.ReadBinary()";
+            return Read("ReadBinary");
         case "string":
             csType = "string";
-            return $"proto.ReadString()";
+            return Read("ReadString");
         default:
             csType = "?";
             return "readAtom?";
@@ -270,17 +276,28 @@ void GenerateCompactWriter(List<ThriftField> fields, StringBuilder sb, HashSet<s
     sb.AppendLine($"{Spacing}}}");
 }
 
-void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames) {
+void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, StringBuilder sb, HashSet<string> enumTypeNames,
+    bool asyncRead = false) {
 
     bool hasLists = fields.Any(f => f.typeId == "list");
+    if(asyncRead && hasLists)
+        throw new NotSupportedException($"Async list fields are not supported in {enclosingTypeName}.");
 
     sb.AppendLine();
-    sb.AppendLine($"{Spacing}internal static {enclosingTypeName} Read(ThriftCompactProtocolReader proto) {{");
+    sb.AppendLine(asyncRead
+        ? $"{Spacing}internal static async ValueTask<{enclosingTypeName}> ReadAsync(ThriftCompactProtocolReader proto, CancellationToken cancellationToken) {{"
+        : $"{Spacing}internal static {enclosingTypeName} Read(ThriftCompactProtocolReader proto) {{");
     sb.AppendLine($"{Spacing}{Spacing}var r = new {enclosingTypeName}();");
     sb.AppendLine($"{Spacing}{Spacing}proto.StructBegin();");
     if(hasLists)
         sb.AppendLine($"{Spacing}{Spacing}int elementCount = 0;");
-    sb.AppendLine($"{Spacing}{Spacing}while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {{");
+    if(asyncRead) {
+        sb.AppendLine($"{Spacing}{Spacing}while(true) {{");
+        sb.AppendLine($"{Spacing}{Spacing}{Spacing}(short fieldId, CompactType compactType) = await proto.ReadNextFieldAsync(cancellationToken);");
+        sb.AppendLine($"{Spacing}{Spacing}{Spacing}if(compactType == CompactType.Stop) break;");
+    } else {
+        sb.AppendLine($"{Spacing}{Spacing}while(proto.ReadNextField(out short fieldId, out CompactType compactType)) {{");
+    }
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}switch(fieldId) {{");
 
     foreach (ThriftField f in fields) {
@@ -288,15 +305,18 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
         sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}case {f.id}: // {f.csName}, {f.typeId}");
 
         if (IsAtomic(f.typeId)) {
-            string body = GenerateAtomicReader(f.typeId, true, out _);
+            string body = GenerateAtomicReader(f.typeId, true, out _, asyncRead);
             sb.AppendLine($"{bSpacing}r.{f.csName} = {body};");
         } else if (f.typeId == "id") {
             if (f.subTypeId != null && enumTypeNames.Contains(f.subTypeId)) {
                 // enum
-                sb.AppendLine($"{bSpacing}r.{f.csName} = ({f.subTypeId})proto.ReadI32();");
+                string read = GenerateAtomicReader("i32", true, out _, asyncRead);
+                sb.AppendLine($"{bSpacing}r.{f.csName} = ({f.subTypeId}){read};");
             } else {
                 // inline struct
-                sb.AppendLine($"{bSpacing}r.{f.csName} = {f.subTypeId}.Read(proto);");
+                sb.AppendLine(asyncRead
+                    ? $"{bSpacing}r.{f.csName} = await {f.subTypeId}.ReadAsync(proto, cancellationToken);"
+                    : $"{bSpacing}r.{f.csName} = {f.subTypeId}.Read(proto);");
             }
         } else if (f.typeId == "list" && f.subTypeId != null) {
             // Enumerable.Range(0, proto.ReadListHeader(out _)).Select(i => [body]).ToList();
@@ -325,7 +345,9 @@ void GenerateCompactReader(string enclosingTypeName, List<ThriftField> fields, S
     }
 
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}default:");
-    sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}proto.SkipField(compactType);");
+    sb.AppendLine(asyncRead
+        ? $"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}await proto.SkipFieldAsync(compactType, cancellationToken);"
+        : $"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}proto.SkipField(compactType);");
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}{Spacing}{Spacing}break;");
 
     sb.AppendLine($"{Spacing}{Spacing}{Spacing}}}");
@@ -372,6 +394,8 @@ string ProcessStruct(XElement xStruct, StringBuilder sb, HashSet<string> enumTyp
     
     GenerateCompactWriter(fields, sb, enumTypeNames);
     GenerateCompactReader(typeName, fields, sb, enumTypeNames);
+    if(AsyncReaderTypeNames.Contains(typeName))
+        GenerateCompactReader(typeName, fields, sb, enumTypeNames, asyncRead: true);
     
     sb.AppendLine($"}}");
     sb.AppendLine();
@@ -433,6 +457,8 @@ void Main() {
     sb.AppendLine("#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member");
     sb.AppendLine("using System.Linq;");
     sb.AppendLine("using System.Collections.Generic;");
+    sb.AppendLine("using System.Threading;");
+    sb.AppendLine("using System.Threading.Tasks;");
     sb.AppendLine("using Parquet.Meta.Proto;");
     sb.AppendLine();
     sb.AppendLine("namespace Parquet.Meta;");
@@ -466,7 +492,7 @@ void Main() {
     sb.AppendLine("#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member");
     
     // save to file
-    File.WriteAllText(outputDir + "Parquet.cs", sb.ToString());
+    File.WriteAllText(Path.Combine(outputDir, "Parquet.cs"), sb.ToString());
 }
 
 class ThriftField {

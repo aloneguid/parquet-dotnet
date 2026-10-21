@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Parquet.Schema;
 
 namespace Parquet;
@@ -123,6 +125,16 @@ static class OtherExtensions {
             stream.CopyTo(ms);
             return ms.ToArray();
         }
+    }
+
+    public static async ValueTask<byte[]> ToByteArrayAsync(this Stream stream, CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
+        if(stream is MemoryStream memoryStream)
+            return memoryStream.ToArray();
+
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, cancellationToken);
+        return ms.ToArray();
     }
 
     #endregion

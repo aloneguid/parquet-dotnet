@@ -4,3 +4,7 @@
 2. Go to `/scripts` in the root of this repo.
 3. Run `..\tools\thrift-0.16.0.exe --gen xml:no_namespaces,no_default_ns -out ..\src\Parquet\Meta\ ..\src\Parquet\Meta\parquet.thrift`. This will re-generate xml file in `scripts/gen-xml` folder. Move it under this (Meta) folder and rename it to `parquet.xml`.
 4. Run `dotnet run thriftgen.cs` which will re-generate `Parquet.cs` in this (Meta) folder.
+
+The generator emits asynchronous readers for page headers and their nested types, listed in
+`AsyncReaderTypeNames`. Column reads must use these readers so seekable remote streams are never
+read synchronously. Footer metadata is fetched asynchronously into memory before synchronous parsing.

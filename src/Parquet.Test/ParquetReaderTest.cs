@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Parquet.File;
+using Parquet.Meta;
+using Parquet.Meta.Proto;
 using Parquet.Schema;
 using Parquet.Test.Util;
 using Xunit;
+using Encoding = System.Text.Encoding;
 using Path = System.IO.Path;
 
 namespace Parquet.Test;
@@ -52,13 +56,149 @@ public class ParquetReaderTest : TestBase {
         Assert.Equal([1], col0);
     }
 
-    [Fact(Skip = "todo: for some reason .Read (sync) is still called")]
+    [Fact]
     public async Task Reading_schema_uses_async_only_methods() {
         using Stream tf = OpenTestFile("map_simple.parquet");
         using Stream ao = new AsyncOnlyStream(tf, 3);
         await using ParquetReader reader = await ParquetReader.CreateAsync(ao);
 
         Assert.NotNull(reader.Schema);
+    }
+
+    [Theory]
+    [InlineData(CompressionMethod.None, false)]
+    [InlineData(CompressionMethod.None, true)]
+    [InlineData(CompressionMethod.Snappy, false)]
+    [InlineData(CompressionMethod.Snappy, true)]
+    [InlineData(CompressionMethod.Gzip, false)]
+    [InlineData(CompressionMethod.Gzip, true)]
+    [InlineData(CompressionMethod.Brotli, false)]
+    [InlineData(CompressionMethod.Brotli, true)]
+    [InlineData(CompressionMethod.LZ4, false)]
+    [InlineData(CompressionMethod.LZ4, true)]
+    [InlineData(CompressionMethod.Zstd, false)]
+    [InlineData(CompressionMethod.Zstd, true)]
+    [InlineData(CompressionMethod.Lz4Raw, false)]
+    [InlineData(CompressionMethod.Lz4Raw, true)]
+    public async Task Reading_columns_uses_async_only_methods(CompressionMethod compressionMethod, bool dictionary) {
+        using var ms = new MemoryStream();
+        var field = new DataField<int>("id", false);
+        var schema = new ParquetSchema(field);
+        int[] expected = Enumerable.Range(0, 128).Select(i => i % 4).ToArray();
+        var options = new ParquetOptions {
+            CompressionMethod = compressionMethod,
+            DictionaryEncodingThreshold = dictionary ? 1 : 0
+        };
+
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(schema, ms, options)) {
+            using ParquetRowGroupWriter group = writer.CreateRowGroup();
+            await group.WriteAsync<int>(field, expected);
+        }
+
+        using var source = new AsyncOnlyStream(ms, 7);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source);
+        using ParquetRowGroupReader rowGroup = reader.OpenRowGroupReader(0);
+        using var cancellation = new CancellationTokenSource();
+        source.OnReadAsync = token => Assert.Equal(cancellation.Token, token);
+        int[] actual = new int[expected.Length];
+        await rowGroup.ReadRawAsync<int>(reader.Schema.DataFields[0], actual, null, null, cancellation.Token);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(CompressionMethod.None, false)]
+    [InlineData(CompressionMethod.None, true)]
+    [InlineData(CompressionMethod.Snappy, false)]
+    [InlineData(CompressionMethod.Snappy, true)]
+    [InlineData(CompressionMethod.Gzip, false)]
+    [InlineData(CompressionMethod.Gzip, true)]
+    [InlineData(CompressionMethod.Brotli, false)]
+    [InlineData(CompressionMethod.Brotli, true)]
+    [InlineData(CompressionMethod.LZ4, false)]
+    [InlineData(CompressionMethod.LZ4, true)]
+    [InlineData(CompressionMethod.Zstd, false)]
+    [InlineData(CompressionMethod.Zstd, true)]
+    [InlineData(CompressionMethod.Lz4Raw, false)]
+    [InlineData(CompressionMethod.Lz4Raw, true)]
+    public async Task Reading_multiple_pages_uses_async_only_methods(CompressionMethod compressionMethod, bool v2) {
+        var field = new DataField<int>("id", false);
+        var options = new ParquetOptions { CompressionMethod = compressionMethod };
+        var footer = new ThriftFooter(new ParquetSchema(field), 12, options);
+        using var ms = new MemoryStream();
+        ms.Write(ParquetActor.MagicBytes);
+        ColumnChunk chunk = footer.CreateColumnChunk(compressionMethod, ms, Meta.Type.INT32, field.Path, 12, null);
+        int[] expected = Enumerable.Range(0, 12).ToArray();
+
+        for(int page = 0; page < 3; page++) {
+            using var data = new MemoryStream();
+            foreach(int value in expected.Skip(page * 4).Take(4))
+                data.Write(BitConverter.GetBytes(value));
+            using var compressed = await Compressor.Instance.CompressAsync(compressionMethod, options.CompressionLevel, data);
+            var header = new PageHeader {
+                Type = v2 ? PageType.DATA_PAGE_V2 : PageType.DATA_PAGE,
+                UncompressedPageSize = (int)data.Length,
+                CompressedPageSize = compressed.Memory.Length,
+                DataPageHeader = v2 ? null : new DataPageHeader {
+                    NumValues = 4,
+                    Encoding = Meta.Encoding.PLAIN,
+                    DefinitionLevelEncoding = Meta.Encoding.RLE,
+                    RepetitionLevelEncoding = Meta.Encoding.RLE
+                },
+                DataPageHeaderV2 = v2 ? new DataPageHeaderV2 {
+                    NumValues = 4,
+                    NumRows = 4,
+                    Encoding = Meta.Encoding.PLAIN,
+                    IsCompressed = compressionMethod != CompressionMethod.None
+                } : null
+            };
+            header.Write(new ThriftCompactProtocolWriter(ms));
+            ms.Write(compressed.Memory.Span);
+        }
+
+        using var source = new AsyncOnlyStream(ms, 3);
+        using var cancellation = new CancellationTokenSource();
+        source.OnReadAsync = token => Assert.Equal(cancellation.Token, token);
+        int[] actual = new int[expected.Length];
+        using var column = new ReadingColumn<int>(field, actual, null, null);
+        var reader = new DataColumnReader(field, source, chunk, null, footer, options);
+        await reader.ReadAsync(column, cancellation.Token);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Reading_columns_can_be_cancelled_during_header_or_payload(bool payload) {
+        using var ms = new MemoryStream();
+        var field = new DataField<int>("id", false);
+        var options = new ParquetOptions {
+            CompressionMethod = CompressionMethod.Zstd,
+            DictionaryEncodingThreshold = 0
+        };
+        await using(ParquetWriter writer = await ParquetWriter.CreateAsync(new ParquetSchema(field), ms, options)) {
+            using ParquetRowGroupWriter group = writer.CreateRowGroup();
+            await group.WriteAsync<int>(field, new[] { 1, 2, 3 });
+        }
+
+        using var source = new AsyncOnlyStream(ms, 1);
+        await using ParquetReader reader = await ParquetReader.CreateAsync(source);
+        ColumnMetaData metadata = reader.Metadata!.RowGroups[0].Columns[0].MetaData!;
+        ms.Position = metadata.DataPageOffset;
+        PageHeader.Read(new ThriftCompactProtocolReader(ms));
+        long cancelAt = payload ? ms.Position : metadata.DataPageOffset + 1;
+
+        using var cancellation = new CancellationTokenSource();
+        source.OnReadAsync = token => {
+            Assert.Equal(cancellation.Token, token);
+            if(source.Position >= cancelAt)
+                cancellation.Cancel();
+        };
+        using ParquetRowGroupReader rowGroup = reader.OpenRowGroupReader(0);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await rowGroup.ReadRawAsync<int>(reader.Schema.DataFields[0], new int[3], null, null, cancellation.Token));
+        Assert.True(cancellation.IsCancellationRequested);
     }
 
     [Theory]
@@ -335,40 +475,4 @@ public class ParquetReaderTest : TestBase {
 
     }
 
-    class AsyncOnlyStream : Stream {
-        private readonly Stream _baseStream;
-        private readonly int _maxSyncReads;
-        private int _syncReads = 0;
-
-        public AsyncOnlyStream(Stream baseStream, int maxSyncReads) {
-            _baseStream = baseStream;
-            _maxSyncReads = maxSyncReads;
-        }
-
-        public override bool CanRead => _baseStream.CanRead;
-
-        public override bool CanSeek => _baseStream.CanSeek;
-
-        public override bool CanWrite => _baseStream.CanWrite;
-
-        public override long Length => _baseStream.Length;
-
-        public override long Position { get => _baseStream.Position; set => _baseStream.Position = value; }
-
-        public override void Flush() => _baseStream.Flush();
-
-        public override int Read(byte[] buffer, int offset, int count) {
-            _syncReads++;
-            if(_syncReads > _maxSyncReads) {
-                throw new IOException($"limit of {_maxSyncReads} reached");
-            }
-            return _baseStream.Read(buffer, offset, count);
-        }
-
-        public override long Seek(long offset, SeekOrigin origin) => _baseStream.Seek(offset, origin);
-
-        public override void SetLength(long value) => _baseStream.SetLength(value);
-
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-    }
 }

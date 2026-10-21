@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Parquet.Extensions;
 
 namespace Parquet.Meta.Proto;
@@ -9,6 +11,7 @@ class ThriftCompactProtocolReader {
     private readonly Stream _inputStream;
     private readonly Stack<short> _lastField = new Stack<short>(15);
     private short _lastFieldId;
+    private readonly byte[] _singleByte = new byte[1];
 
     public ThriftCompactProtocolReader(Stream inputStream) {
         _inputStream = inputStream;
@@ -208,6 +211,120 @@ class ThriftCompactProtocolReader {
                 for(int i = 0; i < elementCount; i++) {
                     SkipField(elementType);
                 }
+                break;
+            default:
+                throw new ThriftProtocolException($"Invalid data in Thrift header. File is most likely corrupt (unexpected data type {compactType}).");
+        }
+    }
+
+    private async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken) {
+        await _inputStream.ReadExactlyAsync(_singleByte, cancellationToken);
+        return _singleByte[0];
+    }
+
+    private async ValueTask<ulong> ReadVarIntAsync(CancellationToken cancellationToken) {
+        ulong result = 0;
+        for(int shift = 0; shift < 64; shift += 7) {
+            byte b = await ReadByteAsync(cancellationToken);
+            if(shift == 63 && (b & 0xfe) != 0)
+                throw new ThriftProtocolException("Invalid variable-length integer in Thrift header.");
+            result |= (ulong)(b & 0x7f) << shift;
+            if((b & 0x80) == 0)
+                return result;
+        }
+        throw new ThriftProtocolException("Invalid variable-length integer in Thrift header.");
+    }
+
+    public async ValueTask<int> ReadI32Async(CancellationToken cancellationToken) =>
+        ZigzagToInt(checked((uint)await ReadVarIntAsync(cancellationToken)));
+
+    public async ValueTask<long> ReadI64Async(CancellationToken cancellationToken) =>
+        ZigzagToLong(await ReadVarIntAsync(cancellationToken));
+
+    public async ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken) {
+        int length = checked((int)await ReadVarIntAsync(cancellationToken));
+        if(length == 0)
+            return Array.Empty<byte>();
+        byte[] data = new byte[length];
+        await _inputStream.ReadExactlyAsync(data, cancellationToken);
+        return data;
+    }
+
+    public async ValueTask<(short FieldId, CompactType CompactType)> ReadNextFieldAsync(CancellationToken cancellationToken) {
+        byte header = await ReadByteAsync(cancellationToken);
+        if(header == (byte)CompactType.Stop)
+            return (0, CompactType.Stop);
+
+        short modifier = (short)((header & 0xf0) >> 4);
+        short fieldId = modifier == 0
+            ? (short)await ReadI32Async(cancellationToken)
+            : (short)(_lastFieldId + modifier);
+        _lastFieldId = fieldId;
+        return (fieldId, (CompactType)(header & 0x0f));
+    }
+
+    private async ValueTask<(int ElementCount, CompactType ElementType)> ReadListHeaderAsync(CancellationToken cancellationToken) {
+        byte sizeAndType = await ReadByteAsync(cancellationToken);
+        int count = (sizeAndType >> 4) & 0x0f;
+        if(count == 15)
+            count = checked((int)await ReadVarIntAsync(cancellationToken));
+        return (count, (CompactType)(sizeAndType & 0x0f));
+    }
+
+    private async ValueTask SkipCollectionValueAsync(CompactType compactType, CancellationToken cancellationToken) {
+        if(compactType is CompactType.BooleanTrue or CompactType.BooleanFalse)
+            await ReadByteAsync(cancellationToken);
+        else
+            await SkipFieldAsync(compactType, cancellationToken);
+    }
+
+    public async ValueTask SkipFieldAsync(CompactType compactType, CancellationToken cancellationToken) {
+        switch(compactType) {
+            case CompactType.BooleanTrue:
+            case CompactType.BooleanFalse:
+                break;
+            case CompactType.Byte:
+                await ReadByteAsync(cancellationToken);
+                break;
+            case CompactType.I16:
+            case CompactType.I32:
+            case CompactType.I64:
+                await ReadVarIntAsync(cancellationToken);
+                break;
+            case CompactType.Double:
+                await _inputStream.ReadExactlyAsync(new byte[sizeof(double)], cancellationToken);
+                break;
+            case CompactType.Binary:
+                await ReadBinaryAsync(cancellationToken);
+                break;
+            case CompactType.Struct:
+                StructBegin();
+                while(true) {
+                    var field = await ReadNextFieldAsync(cancellationToken);
+                    if(field.CompactType == CompactType.Stop)
+                        break;
+                    await SkipFieldAsync(field.CompactType, cancellationToken);
+                }
+                StructEnd();
+                break;
+            case CompactType.List:
+            case CompactType.Set:
+                var list = await ReadListHeaderAsync(cancellationToken);
+                for(int i = 0; i < list.ElementCount; i++)
+                    await SkipCollectionValueAsync(list.ElementType, cancellationToken);
+                break;
+            case CompactType.Map:
+                int count = checked((int)await ReadVarIntAsync(cancellationToken));
+                if(count == 0)
+                    break;
+                byte types = await ReadByteAsync(cancellationToken);
+                for(int i = 0; i < count; i++) {
+                    await SkipCollectionValueAsync((CompactType)(types >> 4), cancellationToken);
+                    await SkipCollectionValueAsync((CompactType)(types & 0x0f), cancellationToken);
+                }
+                break;
+            case CompactType.Uuid:
+                await _inputStream.ReadExactlyAsync(new byte[16], cancellationToken);
                 break;
             default:
                 throw new ThriftProtocolException($"Invalid data in Thrift header. File is most likely corrupt (unexpected data type {compactType}).");

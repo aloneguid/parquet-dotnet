@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
 using K4os.Compression.LZ4;
@@ -28,7 +29,8 @@ interface ICompressor {
     /// The returned memory owner contains the decompressed bytes. The source stream is read but not owned or disposed
     /// by this method.
     /// </summary>
-    ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength);
+    ValueTask<IMemoryOwner<byte>> Decompress(CompressionMethod method, Stream source, int destinationLength,
+        CancellationToken cancellationToken = default);
 }
 
 class DefaultCompressor : ICompressor {
@@ -42,11 +44,15 @@ class DefaultCompressor : ICompressor {
         return r;
     }
 
-    private async ValueTask<IMemoryOwner<byte>> NoneDecompress(Stream source, int destinationLength) {
+    private async ValueTask<IMemoryOwner<byte>> NoneDecompress(Stream source, int destinationLength, CancellationToken cancellationToken) {
         var r = MemoryOwner<byte>.Allocate(destinationLength);
-        await source.CopyToAsync(r.Memory);
-        return r;
-
+        try {
+            await source.CopyToAsync(r.Memory, cancellationToken);
+            return r;
+        } catch {
+            r.Dispose();
+            throw;
+        }
     }
 
     // "Snappy" compression
@@ -56,8 +62,8 @@ class DefaultCompressor : ICompressor {
         return Snappy.CompressToMemory(src);
     }
 
-    private async ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source) {
-        byte[] compressed = source.ToByteArray()!;
+    private async ValueTask<IMemoryOwner<byte>> SnappyDecompress(Stream source, CancellationToken cancellationToken) {
+        byte[] compressed = await source.ToByteArrayAsync(cancellationToken);
         return Snappy.DecompressToMemory(compressed);
     }
 
@@ -79,20 +85,23 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    private async ValueTask<IMemoryOwner<byte>> GzipDecompress(Stream source, int destinationLength) {
-        var owner = MemoryOwner<byte>.Allocate(destinationLength);
-        int copied = 0;
+    private async ValueTask<IMemoryOwner<byte>> GzipDecompress(Stream source, int destinationLength, CancellationToken cancellationToken) {
         using var ms = new MemoryStream();
-        await source.CopyToAsync(ms);
+        await source.CopyToAsync(ms, cancellationToken);
         ms.Position = 0;
-        using(var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true)) {
-            copied = await gzip.CopyToAsync(owner.Memory);
+        var owner = MemoryOwner<byte>.Allocate(destinationLength);
+        try {
+            using var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true);
+            int copied = await gzip.CopyToAsync(owner.Memory, cancellationToken);
+            if(copied < destinationLength) {
+                // IMPORTANT: .Slice() transfers ownership, so owner does not need to be disposed
+                owner = owner.Slice(0, copied);
+            }
+            return owner;
+        } catch {
+            owner.Dispose();
+            throw;
         }
-        if(copied < destinationLength) {
-            // IMPORTANT: .Slice() transfers ownership, so owner does not need to be disposed
-            owner = owner.Slice(0, copied);
-        }
-        return owner;
     }
 
     // "LZO" compression
@@ -120,7 +129,7 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    private async ValueTask<IMemoryOwner<byte>> BrotliDecompress(Stream source, int destinationLength) {
+    private async ValueTask<IMemoryOwner<byte>> BrotliDecompress(Stream source, int destinationLength, CancellationToken cancellationToken) {
         var owner = MemoryOwner<byte>.Allocate(destinationLength);
         using var brotli = new BrotliStream(source, CompressionMode.Decompress, leaveOpen: true);
 
@@ -129,12 +138,15 @@ class DefaultCompressor : ICompressor {
             int totalRead = 0;
             while(totalRead < destinationLength) {
                 int toRead = Math.Min(buffer.Length, destinationLength - totalRead);
-                int read = await brotli.ReadAsync(buffer, 0, toRead);
+                int read = await brotli.ReadAsync(buffer, 0, toRead, cancellationToken);
                 if(read == 0)
                     break;
                 new ReadOnlySpan<byte>(buffer, 0, read).CopyTo(owner.Span.Slice(totalRead, read));
                 totalRead += read;
             }
+        } catch {
+            owner.Dispose();
+            throw;
         } finally {
             ArrayPool<byte>.Shared.Return(buffer);
         }
@@ -199,9 +211,9 @@ class DefaultCompressor : ICompressor {
         return owner;
     }
 
-    private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength) {
+    private async ValueTask<IMemoryOwner<byte>> ZstdDecompress(Stream source, int destinationLength, CancellationToken cancellationToken) {
         using var decompressor = new ZstdSharp.Decompressor();
-        byte[] compressed = source.ToByteArray()!;
+        byte[] compressed = await source.ToByteArrayAsync(cancellationToken);
         // Do not pass destinationLength as maxDecompressedSize — some Parquet files report an incorrect
         // UncompressedPageSize in their metadata. Instead, let ZstdSharp read the actual content size
         // that is embedded in the Zstd frame header, which is always accurate.
@@ -232,8 +244,8 @@ class DefaultCompressor : ICompressor {
         return owner.Slice(0, compressedSize);
     }
 
-    private async ValueTask<IMemoryOwner<byte>> Lz4Decompress(Stream source, int destinationLength) {
-        byte[] compressed = source.ToByteArray()!;
+    private async ValueTask<IMemoryOwner<byte>> Lz4Decompress(Stream source, int destinationLength, CancellationToken cancellationToken) {
+        byte[] compressed = await source.ToByteArrayAsync(cancellationToken);
         var owner = MemoryOwner<byte>.Allocate(destinationLength);
         LZ4Codec.Decode(compressed, owner.Span);
         return owner;
@@ -264,24 +276,25 @@ class DefaultCompressor : ICompressor {
     }
 
     public async ValueTask<IMemoryOwner<byte>> Decompress(
-        CompressionMethod method, Stream source, int destinationLength) {
+        CompressionMethod method, Stream source, int destinationLength, CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
         switch(method) {
             case CompressionMethod.None:
-                return await NoneDecompress(source, destinationLength);
+                return await NoneDecompress(source, destinationLength, cancellationToken);
             case CompressionMethod.Snappy:
-                return await SnappyDecompress(source);
+                return await SnappyDecompress(source, cancellationToken);
             case CompressionMethod.Gzip:
-                return await GzipDecompress(source, destinationLength);
+                return await GzipDecompress(source, destinationLength, cancellationToken);
             case CompressionMethod.Lzo:
                 return await LzoDecompress(source, destinationLength);
             case CompressionMethod.Brotli:
-                return await BrotliDecompress(source, destinationLength);
+                return await BrotliDecompress(source, destinationLength, cancellationToken);
             case CompressionMethod.LZ4:
-                return await Lz4Decompress(source, destinationLength);
+                return await Lz4Decompress(source, destinationLength, cancellationToken);
             case CompressionMethod.Zstd:
-                return await ZstdDecompress(source, destinationLength);
+                return await ZstdDecompress(source, destinationLength, cancellationToken);
             case CompressionMethod.Lz4Raw:
-                return await Lz4Decompress(source, destinationLength);
+                return await Lz4Decompress(source, destinationLength, cancellationToken);
             default:
                 throw new NotSupportedException($"Compression method {method} is not supported.");
         }
