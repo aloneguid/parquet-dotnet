@@ -53,16 +53,20 @@ public class ParquetRowGroupWriter : IDisposable {
     /// the main WriteAsync method. This is useful for writing string columns without having to manually convert them to
     /// the required format.
     /// </summary>
+    /// <param name="field">The data field representing the column to write.</param>
+    /// <param name="values">The values to write for the column.</param>
+    /// <param name="repetitionLevels">Optional repetition levels for the column.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     public async Task WriteAsync(DataField field, IReadOnlyCollection<string?> values,
-        ReadOnlyMemory<int>? repetitionLevels = null) {
+        ReadOnlyMemory<int>? repetitionLevels = null, CancellationToken cancellationToken = default) {
         ReadOnlyMemory<char>?[] rented = ArrayPool<ReadOnlyMemory<char>?>.Shared.Rent(values.Count);
         try {
             int i = 0;
             foreach(string? s in values)
                 rented[i++] = s.AsNullableReadOnlyMemory();
-            await WriteAsync(field, new ReadOnlyMemory<ReadOnlyMemory<char>?>(rented, 0, i), repetitionLevels);
+            await WriteAsync(field, new ReadOnlyMemory<ReadOnlyMemory<char>?>(rented, 0, i), repetitionLevels, cancellationToken: cancellationToken);
         } finally {
-            ArrayPool<ReadOnlyMemory<char>?>.Shared.Return(rented);
+            ArrayPool<ReadOnlyMemory<char>?>.Shared.Return(rented, clearArray: true);
         }
     }
 
@@ -71,20 +75,20 @@ public class ParquetRowGroupWriter : IDisposable {
     /// calls the main WriteAsync method. This is useful for writing binary columns without having to manually convert
     /// them to the required format.
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="values"></param>
-    /// <param name="repetitionLevels"></param>
-    /// <returns></returns>
+    /// <param name="field">The data field representing the column to write.</param>
+    /// <param name="values">The values to write for the column.</param>
+    /// <param name="repetitionLevels">Optional repetition levels for the column.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     public async Task WriteAsync(DataField field, IReadOnlyCollection<byte[]?> values,
-        ReadOnlyMemory<int>? repetitionLevels = null) {
+        ReadOnlyMemory<int>? repetitionLevels = null, CancellationToken cancellationToken = default) {
         ReadOnlyMemory<byte>?[] rented = ArrayPool<ReadOnlyMemory<byte>?>.Shared.Rent(values.Count);
         try {
             int i = 0;
             foreach(byte[]? b in values)
                 rented[i++] = b.AsNullableReadOnlyMemory();
-            await WriteAsync(field, new ReadOnlyMemory<ReadOnlyMemory<byte>?>(rented, 0, i), repetitionLevels);
+            await WriteAsync(field, new ReadOnlyMemory<ReadOnlyMemory<byte>?>(rented, 0, i), repetitionLevels, cancellationToken: cancellationToken);
         } finally {
-            ArrayPool<ReadOnlyMemory<byte>?>.Shared.Return(rented);
+            ArrayPool<ReadOnlyMemory<byte>?>.Shared.Return(rented, clearArray: true);
         }
     }
 
