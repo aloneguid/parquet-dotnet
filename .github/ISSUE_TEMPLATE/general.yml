@@ -1,5 +1,5 @@
 name: General Issue
-description: Suggestions, ideas, discussons and everything that is not a bug.
+description: Suggestions, ideas, discussions and everything that is not a bug.
 title: "..."
 labels: [ "triage" ]
 assignees:
@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! Please note that this project prohibits the use of LLMs for writing code, firing bug reports, issues, pull requests and everything else. Issues created with LLMs will be treated as spam and you account may be blocked.
+        Thanks for taking the time to fill out this bug report! Please note that this project prohibits [LLM-generated](https://www.aloneguid.uk/posts/2026/10/on-llm-usage/) code, bug reports, issues, pull requests and everything else. Issues created with LLMs will be treated as spam and you account will be blocked.
   - type: textarea
     id: text
     attributes:

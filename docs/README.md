@@ -14,17 +14,17 @@
 **Fully managed, safe, extremely fast** .NET library to 📖read and ✍️write [Apache Parquet](https://parquet.apache.org/) files designed for .NET world (not a wrapper). Targets only modern .NET runtimes such as `.NET 10` and `.NET 8`.
 
 > [!IMPORTANT]
-> This project does **not use LLMs** for writing code. It **will not accept LLMs** for issues. No pull requests written by LLMs will be accepted. No LLMs for comments anywhere. Attempts to circumvent this may prevent your future contributions to this repository.
+> This project [does **not use LLMs**](https://www.aloneguid.uk/posts/2026/10/on-llm-usage/) for generating pull requests. It **will not accept LLMs** for issues. No pull requests written by LLMs will be accepted. No LLMs for comments anywhere. LLM-generated content will be treated as spam, and your account will be blocked from further contributions. However, you are welcome to fork this repository if you do not agree with this policy.
 
 # Features at a glance
 
-- 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e. desktops, servers, phones, watches and so on.
+- 0️⃣ **Has zero dependencies** - pure library that just works anywhere .NET works i.e., desktops, servers, phones, watches, and so on.
 - 🚀**Really fast.** Faster than Python and Java, and alternative C# implementations out there. It's even faster than native C++ implementations. **Hardware acceleration** is added in more and more places.
-- 🏠**NET native.** Designed to utilise .NET and made for .NET developers, not the other way around.
+- 🏠**NET native.** Designed to use .NET and made for .NET developers, not the other way around.
 - ❤️‍🩹**Not a "wrapper"** that forces you to fit in. It's the other way around — forces Parquet to fit into .NET.
 - 🦄**Unique Features**:
   - The only library that supports dynamic schemas.
-  - Supports all parquet types, encodings and compressions.
+  - Supports all parquet types, encodings, and compressions.
   - Fully supports [C# class serialization](#high-level-api), for all simple and **complex** Parquet types.
   - Provides **low-level**, high-level, and untyped API.
   - Access to file and column metadata.
@@ -47,6 +47,6 @@
 - [DeltaIO](https://github.com/aloneguid/delta) - Delta Lake implementation in pure .NET
 - [Personal Data Warehouse](https://github.com/BlazorData-Net/PersonalDataWarehouse) - Import(Excel/Parquet/SQL/Fabric)-Transform(C#/Python)-Report(SSRS)
 - [FastBCP](https://fastbcp.arpe.io/) - Export to parquet files in parallel from Oracle, SQL Server, MySQL, PostgreSQL, ODBC, Teradata, Netezza, SAP HANA, ClickHouse in one command line (Windows & Linux)
-- [Parquet.FSharp](https://github.com/rob-earwaker/parquet-fsharp) - Adds first-class support for F# types such as records, options, lists and discriminated unions
+- [Parquet.FSharp](https://github.com/rob-earwaker/parquet-fsharp) - Adds first-class support for F# types such as records, options, lists, and discriminated unions
 
 *...raise a PR to appear here...*
