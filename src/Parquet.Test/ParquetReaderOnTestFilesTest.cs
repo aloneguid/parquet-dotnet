@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Parquet.Data;
 using Parquet.Schema;
 using Parquet.Serialization;
 using Xunit;
@@ -415,11 +416,51 @@ public class ParquetReaderOnTestFilesTest : TestBase {
     }
 
 
+    /*
+     * Sample file is generated using Spark 4.2 using this query:
+     *
+select parse_json('{"key": 123, "data": [4, 5, "str"]}') as v
+union all
+select parse_json(null)
+union all
+select parse_json('123')
+union all
+select cast(123.456 as VARIANT)
+union all
+select to_variant_object(map('key', 'val'))
+union all
+select to_variant_object(struct('field', 'val'))
+     */
     [Fact]
-    public async Task UnshreddedVariantAsync() {
-        await using Stream s = OpenTestFile("variant_unshredded.parquet");
+    public async Task Variant_Basics() {
+        await using Stream s = OpenTestFile("variants_basic.parquet");
         await using ParquetReader r = await ParquetReader.CreateAsync(s);
-        Assert.NotNull(r.Schema);
+        DataField[] dfs = r.Schema.DataFields;
+        DataField variantMetadataField = dfs.First(d => d.Path.ToString() == "v/metadata");
+        DataField variantValueField = dfs.First(d => d.Path.ToString() == "v/value");
+        
+        using ParquetRowGroupReader groupReader = r.OpenRowGroupReader(0);
+        
+        RawColumnData<ReadOnlyMemory<byte>> variantMetadataValues = await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<byte>>(variantMetadataField);
+        RawColumnData<ReadOnlyMemory<byte>> variantValueValues = await groupReader.ReadRawColumnDataAsync<ReadOnlyMemory<byte>>(variantValueField);
+        
+        // value 0: JSON document
+        var m0Meta = new VariantMetadata(variantMetadataValues.Values[0]);
+        Assert.Equal(1, m0Meta.Version);
+        Assert.False(m0Meta.DictionaryIsSortedAndUnique);
+        Assert.Equal(2, m0Meta.Dictionary.Count);
+        Assert.Equal("key", m0Meta.Dictionary[0]);
+        Assert.Equal("data", m0Meta.Dictionary[1]);
+
+        // value 1: NULL json
+
+        // value 2: JSON string
+
+        // value 3: decimal primitive
+
+        // value 4: dictionary
+
+        // value 5: struct
     }
 
 }
